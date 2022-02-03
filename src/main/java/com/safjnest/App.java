@@ -73,37 +73,37 @@ public class App extends ListenerAdapter{
                 channel.sendMessage("LA MIA PASSIONE E' MINCRAAAAAAAAAAAAAAAAAAAAAAAAAAAAFT").queue();
             break;
 
-            case "divideandconquer":
-                if(commandArray.length == 2 && SafJNest.intIsParsable(commandArray[1])) {
+            case "dac":
+                try {
                     channel.sendMessage(String.valueOf(SafJNest.divideandconquer(Integer.parseInt(commandArray[1])))).queue();
-                    break;
+                } catch (Exception e) {
+                    channel.sendMessage("metti l'odiozir di numerino pls").queue();
                 }
-                channel.sendMessage("metti l'odiozir di numerino pls").queue();
             break;
 
             case "randombighi":
-                if(commandArray.length == 1){
-                    channel.sendMessage("metti l'odiozir di numerino pls").queue();
-                    break;
-                }
-                String bighi = String.valueOf(SafJNest.randomBighi(Integer.parseInt(commandArray[1])));
-                if(bighi.length() > 2000){
-                    File supp = new File("bighi.txt");
-                    FileWriter app;
-                    try {
-                        app = new FileWriter(supp);
-                        app.write(bighi);
-                        app.flush();
-                        app.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                try {
+                    String bighi = String.valueOf(SafJNest.randomBighi(Integer.parseInt(commandArray[1])));
+                    if(bighi.length() > 2000){
+                        File supp = new File("bighi.txt");
+                        FileWriter app;
+                        try {
+                            app = new FileWriter(supp);
+                            app.write(bighi);
+                            app.flush();
+                            app.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        channel.sendMessage("Il bighi era troppo insano per Discord, eccoti un bel file.").queue();
+                        channel.sendFile(supp).queue();   
+                        break;
                     }
-                    channel.sendMessage("Il bighi era troppo insano per Discord, eccoti un bel file.").queue();
-                    channel.sendFile(supp).queue();   
-                    break;
+                    channel.sendMessage("Eccoti il tuo bighi a " + commandArray[1] + " bit").queue();
+                    channel.sendMessage(bighi).queue();
+                } catch (Exception e) {
+                    channel.sendMessage(e.getMessage()).queue();
                 }
-                channel.sendMessage("Eccoti il tuo bighi a " + commandArray[1] + " bit").queue();
-                channel.sendMessage(bighi).queue();
             break;
 
             case "prefix":
@@ -151,5 +151,4 @@ public class App extends ListenerAdapter{
         }
         return false;
     }
-
 }
