@@ -9,10 +9,12 @@ import javax.security.auth.login.LoginException;
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.entities.Invite.Guild;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -28,6 +30,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 public class App extends ListenerAdapter{
     private static JDA jda;
     private static String PREFIX = "$";
+    private static String idAdminRole = "694980596291862548";
     public static void main( String[] args ) throws LoginException{
         jda = JDABuilder.createLight("OTM4NDg3NDcwMzM5ODAxMTY5.YfrAkQ.cgnAD_V_wUNrxYHBHmwsIvYJpgI", GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES)
             .addEventListeners(new App())
@@ -44,7 +47,6 @@ public class App extends ListenerAdapter{
         Message msg = event.getMessage();
         if(!msg.getContentRaw().startsWith(PREFIX)) 
             return;
-            
         MessageChannel channel = event.getChannel(); 
         
         if(!msg.getChannel().getId().equals("938513359626715176") && !msg.getChannel().getId().equals("733274067917996123")){
@@ -104,18 +106,50 @@ public class App extends ListenerAdapter{
                 channel.sendMessage(bighi).queue();
             break;
 
-            case "play":
-            //AudioManager audioManager = event.getGuild().getAudioManager();
-            //audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
-            //AudioSendHandler audioSendHandler = ;
-            //audioManager.setSendingHandler(audioSendHandler);
-            //playFileString(audioFile.getAbsolutePath());
+            case "prefix":
+                if(!hasRole(idAdminRole, event)){
+                    channel.sendMessage("im so sorry non sei admin non rompere il cazzo :D").queue();
+                    break;
+                }
+                if(commandArray.length == 1){
+                    channel.sendMessage("Inserire il nuovo prefisso").queue();
+                    break;
+                }
+                channel.sendMessage(PREFIX + " -----> " + commandArray[1]).queue();
+                PREFIX = commandArray[1];
             break;
+
+            case "sgozz":
+                if(!hasRole(idAdminRole, event)){
+                    channel.sendMessage("Brutto fallito non bannare se non sei admin UwU").queue();
+                    break;
+                }
+                Guild guild = event.getGuild();
+                Member member = event.getMessage().getMentionedMembers().get(0);
+                channel.sendMessage("Sgozzato @" + member.getNickname());
+                guild.ban(member,0,"rotto il cazzo").queue();
+
+            break;
+                case "play":
+                //AudioManager audioManager = event.getGuild().getAudioManager();
+                //audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+                //AudioSendHandler audioSendHandler = ;
+                //audioManager.setSendingHandler(audioSendHandler);
+                //playFileString(audioFile.getAbsolutePath());
+                break;
 
             default:
                 channel.sendMessage("Testa di cazzo il comando non esiste brutto fallito, /help").queue();
             break;
         }  
+    }
+
+    public static boolean hasRole(String idRole, MessageReceivedEvent event){
+        for(Role role : event.getMember().getRoles()){
+            if(role.getId().equals(idRole))
+                return true;
+        }
+        return false;
     }
 
 }
