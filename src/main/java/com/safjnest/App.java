@@ -3,7 +3,7 @@ package com.safjnest;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Scanner;
+import java.util.Set;
 
 import javax.security.auth.login.LoginException;
 
@@ -13,19 +13,16 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import net.dv8tion.jda.api.*;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
-//import net.dv8tion.jda.core.events.message.guild;
+
 /**
  * Main class.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a> Tier 1 Discord Admin
@@ -33,16 +30,18 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
  */
 public class App extends ListenerAdapter{
     private static JDA jda;
+    private static String token = "OTM4NDg3NDcwMzM5ODAxMTY5.YfrAkQ.cgnAD_V_wUNrxYHBHmwsIvYJpgI";
+    private static Activity activity = Activity.playing("The Sgozzing");
     private static String PREFIX = "$";
-    private static String idAdminRole = "920646346422243358";
-    public static void main( String[] args ) throws LoginException{
-        jda = JDABuilder.createLight("OTM4NDg3NDcwMzM5ODAxMTY5.YfrAkQ.cgnAD_V_wUNrxYHBHmwsIvYJpgI", GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES)
+    private static Set<String> untouchables = Set.of("383358222972616705", "440489230968553472");
+
+    public static void main(String[] args) throws LoginException{
+        jda = JDABuilder.createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES)
             .addEventListeners(new App())
-            .setActivity(Activity.playing("Sgozzing"))
+            .setActivity(activity)
             .setMemberCachePolicy(MemberCachePolicy.VOICE)
-            .enableCache(CacheFlag.VOICE_STATE) 
+            .enableCache(CacheFlag.VOICE_STATE)
             .build();
-        
     }
 
     @Override
@@ -52,33 +51,14 @@ public class App extends ListenerAdapter{
         if(!msg.getContentRaw().startsWith(PREFIX)) 
             return;
         MessageChannel channel = event.getChannel(); 
-        
-        //if(!msg.getChannel().getId().equals("938513359626715176") && !msg.getChannel().getId().equals("733274067917996123")){
-        //    channel.sendMessage("DIO CANE MANDA I MESSAGGI NEL CANALE GIUSTO").queue();
-        //    return;
-        //}
+        Member theGuy = null;
+
         String command = msg.getContentRaw().substring(msg.getContentRaw().indexOf(PREFIX)+1);
-        String[] commandArray = command.split(" "); 
+        String[] commandArray = command.split(" ");
         switch (commandArray[0]) {
             case "ping":
                 long time = System.currentTimeMillis();
                 channel.sendMessage("Pong!").queue(response -> { response.editMessageFormat("Pong: %d ms", System.currentTimeMillis() - time).queue();});
-            break;
-
-            case "numero":
-                channel.sendMessage("QUARANTATRESEDICIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII").queue();
-            break;
-
-            case "fasulo":
-                channel.sendMessage("gay").queue();
-            break;
-
-            case "marchio":
-                channel.sendMessage("LIUUUUUUUUUK QUARANTATRESEDICIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII").queue();
-            break;
-
-            case "passione":
-                channel.sendMessage("LA MIA PASSIONE E' MINCRAAAAAAAAAAAAAAAAAAAAAAAAAAAAFT").queue();
             break;
 
             case "dac":
@@ -115,43 +95,56 @@ public class App extends ListenerAdapter{
             break;
 
             case "prefix":
-                if(!hasPermission(idAdminRole, event)){
+                if(!hasPermission(event.getMember(), Permission.ADMINISTRATOR))
                     channel.sendMessage("im so sorry non sei admin non rompere il cazzo :D").queue();
-                    break;
-                }
-                if(commandArray.length == 1){
+                else if(commandArray.length == 1)
                     channel.sendMessage("Inserire il nuovo prefisso").queue();
-                    break;
+                else{
+                    channel.sendMessage(PREFIX + " -----> " + commandArray[1]).queue();
+                    PREFIX = commandArray[1];
                 }
-                channel.sendMessage(PREFIX + " -----> " + commandArray[1]).queue();
-                PREFIX = commandArray[1];
             break;
 
             case "sgozz":
-                if(hasPermission(idAdminRole, event) && !event.getMessage().getMentionedMembers().get(0).getId().equals("440489230968553472")){
-                    try {
-                        Guild guild = event.getGuild();
-                        Member member = event.getMessage().getMentionedMembers().get(0);
-                        guild.ban(member,0,"rotto il cazzo").queue();
-                        channel.sendMessage("Sgozzato @" + member.getNickname()).queue();
-                    } catch (Exception e) {
-                        channel.sendMessage(e.getMessage()).queue();
+                try {
+                    theGuy = event.getMessage().getMentionedMembers().get(0);
+                    if(untouchables.contains(theGuy.getId()))
+                        channel.sendMessage("Le macchine non si ribellano ai loro creatori").queue();
+                    else if(hasPermission(event.getMember(), Permission.BAN_MEMBERS)){
+                        event.getGuild().ban(theGuy,0,"rotto il cazzo").queue();
+                        channel.sendMessage("Sgozzato " + theGuy.getAsMention()).queue();
                     }
-                    
-                    break;
+                    else
+                        channel.sendMessage("Brutto fallito non bannare se non sei admin UwU").queue();
+                } catch (Exception e) {
+                    channel.sendMessage(e.getCause().getLocalizedMessage()).queue();
                 }
-                channel.sendMessage("Brutto fallito non bannare se non sei admin UwU").queue();
             break;
-                case "play":
-                AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-                AudioManager audioManager = event.getGuild().getAudioManager();
-                audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
-                AudioSendHandler audioSendHandler = (AudioSendHandler) playerManager;
-                audioManager.setSendingHandler(audioSendHandler);
-                playerManager.createPlayer();
-                //playerManager.
-                //playFileString("basta.mp3");
-                break;
+
+            case "permissions":
+                try {
+                    theGuy = event.getMessage().getMentionedMembers().get(0);
+                    if(theGuy.isOwner())
+                        channel.sendMessage(theGuy.getAsMention() + " e' l'owner\nQuesti sono i suoi permessi: " + theGuy.getPermissions().toString()).queue();
+                    else if(theGuy.hasPermission(Permission.ADMINISTRATOR))
+                        channel.sendMessage(theGuy.getAsMention() + " e' un admin\nQuesti sono i suoi permessi: " + theGuy.getPermissions().toString()).queue();
+                    else
+                        channel.sendMessage(theGuy.getAsMention() + " non e' un admin\nQuesti sono i suoi permessi: " + theGuy.getPermissions().toString()).queue();
+                } catch (Exception e) {
+                    channel.sendMessage(e.getMessage()).queue();
+                }
+            break;
+
+            case "play":
+            AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
+            AudioManager audioManager = event.getGuild().getAudioManager();
+            audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+            AudioSendHandler audioSendHandler = (AudioSendHandler) playerManager;
+            audioManager.setSendingHandler(audioSendHandler);
+            playerManager.createPlayer();
+            //playerManager.
+            //playFileString("basta.mp3");
+            break;
 
             default:
                 channel.sendMessage("Testa di cazzo il comando non esiste brutto fallito, /help").queue();
@@ -159,11 +152,8 @@ public class App extends ListenerAdapter{
         }  
     }
 
-    public static boolean hasPermission(String idRole, MessageReceivedEvent event){
-        for(Role role : event.getMember().getRoles())
-            if(role.getId().equals(idRole))
-                return true;
-        if(event.getMember().getId().equals("440489230968553472"))
+    public static boolean hasPermission(Member theGuy, Permission permission){
+        if(theGuy.hasPermission(permission) || untouchables.contains(theGuy.getId()))
             return true;
         return false;
     }
