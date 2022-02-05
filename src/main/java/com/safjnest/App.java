@@ -7,12 +7,19 @@ import java.util.Set;
 
 import javax.security.auth.login.LoginException;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.*;
-import net.dv8tion.jda.api.audio.AudioSendHandler;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.AudioChannel;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -34,6 +41,7 @@ public class App extends ListenerAdapter{
     private static Activity activity = Activity.playing("The Sgozzing");
     private static String PREFIX = "$";
     private static Set<String> untouchables = Set.of("383358222972616705", "440489230968553472");
+    private static AudioPlayer player;
 
     public static void main(String[] args) throws LoginException{
         jda = JDABuilder.createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES)
@@ -50,6 +58,7 @@ public class App extends ListenerAdapter{
         Message msg = event.getMessage();
         if(!msg.getContentRaw().startsWith(PREFIX)) 
             return;
+        Guild guild = event.getGuild();
         MessageChannel channel = event.getChannel(); 
         Member theGuy = null;
 
@@ -147,16 +156,50 @@ public class App extends ListenerAdapter{
             break;
 
             case "play":
-            AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-            AudioManager audioManager = event.getGuild().getAudioManager();
-            audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
-            AudioSendHandler audioSendHandler = (AudioSendHandler) playerManager;
-            audioManager.setSendingHandler(audioSendHandler);
-            playerManager.createPlayer();
-            //playerManager.
-            //playFileString("basta.mp3");
-            break;
+                AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+                AudioManager audioManager = guild.getAudioManager();
+                AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
+                player = playerManager.createPlayer();
+                AudioPlayerSendHandler audioPlayerSendHandler = new AudioPlayerSendHandler(player);
+                audioManager.setSendingHandler(audioPlayerSendHandler);
+                audioManager.openAudioConnection(myChannel);
 
+                TrackScheduler trackScheduler = new TrackScheduler(player);
+                player.addListener(trackScheduler);
+                playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
+                playerManager.loadItem(commandArray[1], new AudioLoadResultHandler() {
+                    @Override
+                    public void trackLoaded(AudioTrack track) {
+                    trackScheduler.addQueue(track);
+                    }
+                
+                    @Override
+                    public void playlistLoaded(AudioPlaylist playlist) {
+                    /* 
+                    for (AudioTrack track : playlist.getTracks()) {
+                        trackScheduler.queue(track);
+                    }
+                    */
+                    }
+                
+                    @Override
+                    public void noMatches() {
+                    channel.sendMessage("Canzone non trovata").queue();
+                    }
+                
+                    @Override
+                    public void loadFailed(FriendlyException throwable) {
+                    // Notify the user that everything exploded
+                    }
+                });
+                player.playTrack(trackScheduler.getTrack());
+            break;
+            
+            case "stop":
+                player.stopTrack();
+                channel.sendMessage("Ok bro⏸️").queue();
+            break;
+            
             default:
                 channel.sendMessage("Testa di cazzo il comando non esiste brutto fallito, /help").queue();
             break;
