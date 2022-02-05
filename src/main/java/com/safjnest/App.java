@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -26,7 +27,7 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 /**
  * Main class.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a> Tier 1 Discord Admin
- * @author < href="https://github.com/Leon412">Leon412</   a> Tier 1 Manipulator
+ * @author <a href="https://github.com/Leon412">Leon412</a> Tier 1 Manipulator
  */
 public class App extends ListenerAdapter{
     private static JDA jda;
@@ -108,7 +109,9 @@ public class App extends ListenerAdapter{
             case "sgozz":
                 try {
                     theGuy = event.getMessage().getMentionedMembers().get(0);
-                    if(untouchables.contains(theGuy.getId()))
+                    if(!event.getGuild().getMember(jda.getSelfUser()).hasPermission(Permission.BAN_MEMBERS))
+                        channel.sendMessage(jda.getSelfUser().getAsMention() + " non ha il permesso di bannare").queue();
+                    else if(untouchables.contains(theGuy.getId()))
                         channel.sendMessage("Le macchine non si ribellano ai loro creatori").queue();
                     else if(hasPermission(event.getMember(), Permission.BAN_MEMBERS)){
                         event.getGuild().ban(theGuy,0,"rotto il cazzo").queue();
@@ -116,9 +119,11 @@ public class App extends ListenerAdapter{
                     }
                     else
                         channel.sendMessage("Brutto fallito non bannare se non sei admin UwU").queue();
+                    break;
                 } catch (Exception e) {
-                    channel.sendMessage(e.getCause().getLocalizedMessage()).queue();
+                    channel.sendMessage(e.getMessage()).queue();
                 }
+                channel.sendMessage("Errore").queue();
             break;
 
             case "permissions":
@@ -130,6 +135,14 @@ public class App extends ListenerAdapter{
                         channel.sendMessage(theGuy.getAsMention() + " e' un admin\nQuesti sono i suoi permessi: " + theGuy.getPermissions().toString()).queue();
                     else
                         channel.sendMessage(theGuy.getAsMention() + " non e' un admin\nQuesti sono i suoi permessi: " + theGuy.getPermissions().toString()).queue();
+                } catch (Exception e) {
+                    channel.sendMessage(e.getMessage()).queue();
+                }
+            break;
+
+            case "img":
+                try {
+                    channel.sendMessage(event.getMessage().getMentionedUsers().get(0).getAvatarUrl()).queue();
                 } catch (Exception e) {
                     channel.sendMessage(e.getMessage()).queue();
                 }
