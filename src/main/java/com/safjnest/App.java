@@ -37,13 +37,14 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
  */
 public class App extends ListenerAdapter{
     private static JDA jda;
-    private static String token = "OTM4NDg3NDcwMzM5ODAxMTY5.YfrAkQ.cgnAD_V_wUNrxYHBHmwsIvYJpgI";
+    private static String token;
     private static Activity activity = Activity.playing("The Sgozzing");
     private static String PREFIX = "$";
     private static Set<String> untouchables = Set.of("383358222972616705", "440489230968553472");
     private static AudioPlayer player;
 
     public static void main(String[] args) throws LoginException{
+        token = args[0];
         jda = JDABuilder.createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES)
             .addEventListeners(new App())
             .setActivity(activity)
