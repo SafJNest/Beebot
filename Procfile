@@ -1,1 +1,1 @@
-worker: java -jar target/beebox-1.0-SNAPSHOT.jar
+worker: java -jar target/beebox-1.0-SNAPSHOT-jar-with-dependencies.jar
