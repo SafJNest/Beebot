@@ -167,6 +167,14 @@ public class SafJNest extends Thread {
         return (BigInteger.TWO.modPow(p, p).compareTo(BigInteger.TWO) == 0) ? 1>0 : 1<0;
     }
 
+    public static String getFirstPrime(BigInteger n){
+        n = (n.mod(BigInteger.TWO).equals(BigInteger.ZERO)) ? n.add(BigInteger.ONE) : n.add(BigInteger.ZERO);
+         System.out.println(n);
+        while(!isPrime(n))
+            n = n.add(BigInteger.TWO);
+        return n.toString();
+    }
+    
     public static String getJSalt(int byteNum) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBits(byteNum));
     }
@@ -176,5 +184,30 @@ public class SafJNest extends Thread {
         (new SecureRandom()).nextBytes(bytes);
         return bytes;
     }
+    /*
+    public static String getTime(long milliSec){
+        if(milliSec < 60000){
+            String s = String.valueOf((int)(milliSec)%60);
+            return (s.length() == 1) ? "0"+s : s;
+        }else if(milliSec < 3600000 && milliSec > 60000){
+            System.out.println("traker");
+            String s = String.valueOf((int)(milliSec)%60);
+            String m = String.valueOf((int)(Integer.valueOf(s) % 3600) / 60);
+            s = (s.length() == 1) ? "0"+s : s;
+            m = (m.length() == 1) ? "0"+m : m;
+            return m+":"+":"+s;
+        }else{
+            System.out.println("faker");
+            String s = String.valueOf((int)(milliSec)%60);
+            String m = String.valueOf((int)(Integer.valueOf(s) % 3600) / 60);
+            String h = String.valueOf(Integer.valueOf(s) / 3600);
+            s = (s.length() == 1) ? "0"+s : s;
+            m = (m.length() == 1) ? "0"+m : m;
+            h = (h.length() == 1) ? "0"+h : h;
+            return h+":"+m+":"+s;
+        }
+        
+    }
+    */
 
 }
