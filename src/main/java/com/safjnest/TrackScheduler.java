@@ -27,15 +27,16 @@ public class TrackScheduler extends AudioEventAdapter {
 
     @OverridingMethodsMustInvokeSuper
     public AudioTrack getTrack(){
-        while(queue.isEmpty()){try {
-            Thread.currentThread();
-			Thread.sleep(2);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }}
-        return queue.poll();
+      try {
+        while(queue.isEmpty()) {
+          Thread.sleep(2);
+        }
+        Thread.sleep(5);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      return queue.poll();
     }
-    
     
     @Override
     public void onPlayerPause(AudioPlayer player) {
