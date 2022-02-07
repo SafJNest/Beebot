@@ -46,7 +46,4 @@ public class Bighi extends Command {
             channel.sendMessage(e.getMessage()).queue();
         }
 	}
-    
-
-
 }

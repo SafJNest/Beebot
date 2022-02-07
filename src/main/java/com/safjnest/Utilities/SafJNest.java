@@ -3,6 +3,7 @@ package com.safjnest.Utilities;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.Base64;
 
 /**
@@ -29,22 +30,15 @@ public class SafJNest extends Thread {
                 speed/2);
     }
 
+    public static void printDbmrStyle(String line) {
+        printDbmrStyle(line, 15);
+    }
+
     public static void printDbmrStyle(String line, int speed) {
         try {
             for (char c : line.toCharArray()) {
                 System.out.print(c);
                 Thread.sleep(speed);
-            }
-            System.out.println();
-        } catch (Exception e) {
-        }
-    }
-
-    public static void printDbmrStyle(String line) {
-        try {
-            for (char c : line.toCharArray()) {
-                System.out.print(c);
-                Thread.sleep(15);
             }
             System.out.println();
         } catch (Exception e) {
@@ -159,7 +153,7 @@ public class SafJNest extends Thread {
         msg = msg.replaceAll(":diablo:", new StringBuilder().appendCodePoint(0x1F608).toString());
         msg = msg.replaceAll(":deltoide:", new StringBuilder().appendCodePoint(0x00394).toString());
         msg = msg.replaceAll(":squidgame:", (new StringBuilder().appendCodePoint(0x1F991).toString()
-                + new StringBuilder().appendCodePoint(0x1F3B2).toString()));
+                                           + new StringBuilder().appendCodePoint(0x1F3B2).toString()));
         return msg;
     }
 
@@ -169,7 +163,6 @@ public class SafJNest extends Thread {
 
     public static String getFirstPrime(BigInteger n){
         n = (n.mod(BigInteger.TWO).equals(BigInteger.ZERO)) ? n.add(BigInteger.ONE) : n.add(BigInteger.ZERO);
-         System.out.println(n);
         while(!isPrime(n))
             n = n.add(BigInteger.TWO);
         return n.toString();
@@ -184,30 +177,17 @@ public class SafJNest extends Thread {
         (new SecureRandom()).nextBytes(bytes);
         return bytes;
     }
-    /*
-    public static String getTime(long milliSec){
-        if(milliSec < 60000){
-            String s = String.valueOf((int)(milliSec)%60);
-            return (s.length() == 1) ? "0"+s : s;
-        }else if(milliSec < 3600000 && milliSec > 60000){
-            System.out.println("traker");
-            String s = String.valueOf((int)(milliSec)%60);
-            String m = String.valueOf((int)(Integer.valueOf(s) % 3600) / 60);
-            s = (s.length() == 1) ? "0"+s : s;
-            m = (m.length() == 1) ? "0"+m : m;
-            return m+":"+":"+s;
-        }else{
-            System.out.println("faker");
-            String s = String.valueOf((int)(milliSec)%60);
-            String m = String.valueOf((int)(Integer.valueOf(s) % 3600) / 60);
-            String h = String.valueOf(Integer.valueOf(s) / 3600);
-            s = (s.length() == 1) ? "0"+s : s;
-            m = (m.length() == 1) ? "0"+m : m;
-            h = (h.length() == 1) ? "0"+h : h;
-            return h+":"+m+":"+s;
-        }
-        
-    }
-    */
 
+    public static String getFormattedDuration(long millis) {
+        Duration duration = Duration.ofMillis(millis);
+        String formattedTime = String.format("%02d", duration.toHoursPart()) 
+                                            + ":" + String.format("%02d", duration.toMinutesPart()) 
+                                            + ":" + String.format("%02d", duration.toSecondsPart()) 
+                                            + "s";
+        if(formattedTime.startsWith("00:"))
+            formattedTime = formattedTime.substring(3);
+        if(formattedTime.startsWith("00:"))
+            formattedTime = formattedTime.substring(3);
+        return formattedTime;
+    }
 }

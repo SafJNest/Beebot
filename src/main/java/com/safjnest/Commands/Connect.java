@@ -13,8 +13,6 @@ public class Connect extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        /* fix
-        */
 		event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
 	}
     
