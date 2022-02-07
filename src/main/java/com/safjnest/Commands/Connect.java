@@ -13,7 +13,9 @@ public class Connect extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-		event.reply("faker");
+        /* fix
+        */
+		event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
 	}
     
 

@@ -1,4 +1,4 @@
-package com.safjnest;
+package com.safjnest.Utilities;
 import java.nio.ByteBuffer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.playback.AudioFrame;
