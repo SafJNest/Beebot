@@ -23,6 +23,9 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.jagrosh.jdautilities.command.CommandClient;
+import com.jagrosh.jdautilities.command.CommandClientBuilder;
+import com.safjnest.Commands.Connect;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
@@ -57,14 +60,15 @@ public class App extends ListenerAdapter {
     private static JDA jda;
     private static String token;
     private static Activity activity = Activity.playing("Outplaying other bots | $help");
-    private static String PREFIX = "$";
+    private static String PREFIX = "%";
     private static Set<String> untouchables = Set.of("383358222972616705", "440489230968553472");
     private static AudioPlayer player;
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
     public static void main(String[] args) throws LoginException {
-        token = "OTM4NDg3NDcwMzM5ODAxMTY5.YfrAkQ.X9rOkLp1sLY1QNZXYY15jPF6BW0";
+        //token = "OTM4NDg3NDcwMzM5ODAxMTY5.YfrAkQ.X9rOkLp1sLY1QNZXYY15jPF6BW0";
+        token = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
         jda = JDABuilder
                 .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS)
                 .addEventListeners(new App())
@@ -72,6 +76,17 @@ public class App extends ListenerAdapter {
                 .setMemberCachePolicy(MemberCachePolicy.VOICE)
                 .enableCache(CacheFlag.VOICE_STATE)
                 .build();
+
+        CommandClientBuilder builder = new CommandClientBuilder();
+        builder.setPrefix(PREFIX);
+        builder.setHelpWord("help");
+        
+        builder.addCommand(new Connect());
+
+        CommandClient client = builder.build();
+
+        jda.addEventListener(client);
+
                 
         tierOneLink.put("QZayYolcq-g", "MERIO EPRIA DUE ZERO DUE ZERO CAMERETTA EEEEEEEEEEEEEPPPPPPPPPPPPPPPPPPPRRRRRRRRRRRRRRRRRRIIIIIIIIIIIIIIIIIIAAAAAAAAAAAA");
         tierOneLink.put("IaudNxuNtso", "MERIO EPRIA QUI COME UN COGLIONE A SFOGARSI I SENTIMINETI POKLVEWRE EEEEEEEEEEEPRIAAAAAAA LA LUCE DEL MEEEEEEERIO CON LE SUE RIME DA CAZZARO NE REPPER NE METALLARO NON È CHIARO LO STROZZINOIFHUWSHGFEIU0GHS0URGH");
