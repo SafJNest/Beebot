@@ -1,4 +1,4 @@
-package com.safjnest;
+package com.safjnest.Utilities;
 
 import java.util.LinkedList;
 import java.util.Queue;

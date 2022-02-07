@@ -9,8 +9,6 @@
   <version>1.0-SNAPSHOT</version>
 
   <name>beebox</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,6 +17,11 @@
   </properties>
    
   <repositories>
+    <repository>
+      <id>chew</id>
+      <name>m2-chew</name>
+      <url>https://m2.chew.pro/snapshots</url>
+    </repository>
     <repository>
       <id>dv8tion</id>
       <name>m2-dv8tion</name>
@@ -41,17 +44,17 @@
     </dependency>
     <!-- https://mvnrepository.com/artifact/net.dv8tion/JDA -->
     <dependency>
+      <groupId>pw.chew</groupId>
+      <artifactId>jda-chewtils</artifactId>
+      <version>2.0-SNAPSHOT</version>
+      <scope>compile</scope>
+      <type>pom</type>
+    </dependency>
+    <dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
       <version>5.0.0-alpha.5</version>
     </dependency>
-    <dependency>
-        <groupId>com.jagrosh</groupId>
-        <artifactId>jda-utilities</artifactId>
-        <version>2.1.2</version>
-        <scope>compile</scope>
-        <type>pom</type>
-      </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-shade-plugin -->
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>

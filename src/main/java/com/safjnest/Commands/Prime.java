@@ -1,0 +1,55 @@
+package com.safjnest.Commands;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.SafJNest;
+
+import net.dv8tion.jda.api.entities.MessageChannel;
+
+public class Prime extends Command {
+    private int maxPrime;
+
+    public Prime(int maxPrime){
+        this.name = "prime";
+        this.aliases = new String[]{"imbimbo",};
+        this.help = "il bot ti outplaya con un numero random primo a tot bit";
+        this.maxPrime = maxPrime;
+    }
+
+	@Override
+	protected void execute(CommandEvent event) {
+        String[] commandArray = event.getMessage().getContentRaw().split(" ");
+        MessageChannel channel = event.getChannel();
+        try {
+            if (Integer.parseInt(commandArray[1]) > maxPrime)
+                channel.sendMessage("Non puoi richidere un bighi prime maggiore di " + maxPrime + " bits").queue();
+            else{
+                String primi = SafJNest.getFirstPrime(SafJNest.randomBighi(Integer.parseInt(commandArray[1])));
+                if (primi.length() > 2000) {
+                    File supp = new File("bighi.txt");
+                    FileWriter app;
+                    try {
+                        app = new FileWriter(supp);
+                        app.write(primi);
+                        app.flush();
+                        app.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    channel.sendMessage("Il bighi era troppo insano per Discord, eccoti un bel file.").queue();
+                    channel.sendFile(supp).queue();
+                } else {
+                    channel.sendMessage("Eccoti il tuo bighi a " + commandArray[1] + " bit").queue();
+                    channel.sendMessage(primi).queue();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            channel.sendMessage(e.getMessage()).queue();
+        }
+	}
+}
