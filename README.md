@@ -21,7 +21,8 @@ Il client dispone in oltre di comodi comandi tra cui:  (￣^￣)
 - [x] Non ci sono funzioni quindi non ci sono bugs 
 
 ## **Licenza**
-Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights reserved. SAFJNEST PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights reserved. SAFJNEST PROPRIETARY/CONFIDENTIAL. Use is subject to license terms. 
+non è vero fate il cazzo che vi pare.
 
 ## ***Contatti***
 ### Lorenzo Sanseverino
