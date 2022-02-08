@@ -27,7 +27,6 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 public class Play extends Command {
-    private JDA jda;
     private HashMap<String,String> tierOneLink;
     //private static File folder = new File("SoundBoard");
 
@@ -109,8 +108,8 @@ public class Play extends Command {
         if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
             channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
         eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
-        eb.setAuthor(jda.getSelfUser().getName(), "https://github.com/SafJNest",jda.getSelfUser().getAvatarUrl());
-        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs", null);
+        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
+        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
         if(isYoutube){
             eb.setThumbnail("https://img.youtube.com/vi/" + player.getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
             event.reply(eb.build());

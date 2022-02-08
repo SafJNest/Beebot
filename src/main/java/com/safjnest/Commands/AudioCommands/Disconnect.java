@@ -13,7 +13,6 @@ public class Disconnect extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        //TODO fix
 		event.getGuild().getAudioManager().closeAudioConnection();
 	}
     

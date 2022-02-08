@@ -38,10 +38,10 @@ public class Kick extends Command{
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.KICK_MEMBERS)) {
                 event.getGuild().kick(theGuy).queue(
-                                                        (e) -> event.reply("kickkato " + surelyTheGuy.getAsMention()), 
-                                                        new ErrorHandler().handle(
-                                                            ErrorResponse.MISSING_PERMISSIONS,
-                                                                (e) -> event.replyError("sorry, " + e.getMessage()))
+                                                (e) -> event.reply("kickkato " + surelyTheGuy.getAsMention()), 
+                                                new ErrorHandler().handle(
+                                                    ErrorResponse.MISSING_PERMISSIONS,
+                                                        (e) -> event.replyError("sorry, " + e.getMessage()))
                 );
             }else
                 event.reply("Brutto fallito non kickare se non sei admin UwU");

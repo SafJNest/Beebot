@@ -29,9 +29,14 @@ public class PermissionHandler {
         return false;
     }
 
+    public static String getEpria(){
+        return epria;
+    }
+
     public static boolean hasPermission(Member theGuy, Permission permission) {
         if (theGuy.hasPermission(permission) || untouchables.contains(theGuy.getId()))
             return true;
         return false;
     }
+
 }

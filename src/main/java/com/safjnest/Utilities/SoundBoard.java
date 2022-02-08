@@ -7,10 +7,11 @@ public class SoundBoard {
     private static File folder = new File(path);
 
     public static String containsFile(String nameFile){
-        File[] arr = folder.listFiles();
-            for(File eee : arr){
-                if(eee.getName().startsWith(nameFile))
-                    return eee.getName();
+        String[] names = getAllNamesNoExc();
+        String[] namesEx = getAllNames();
+            for(int i = 0; i < names.length; i++){
+                if(names[i].equalsIgnoreCase(nameFile))
+                    return namesEx[i];
             }
             return null;
     }
