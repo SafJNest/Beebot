@@ -8,6 +8,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.AudioPlayerSendHandler;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.SoundBoard;
 import com.safjnest.Utilities.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -45,7 +46,7 @@ public class Play extends Command {
         if(commandArray[1].contains("www.youtube.com"))
             isYoutube = true;
         else{
-                commandArray[1] = containsFile(commandArray[1]);
+                commandArray[1] = SoundBoard.containsFile(commandArray[1]);
                 System.out.println("nome del faker " + commandArray[1]);
                 if(commandArray[1] == null){
                     event.reply("Suono non trovato");
@@ -101,7 +102,10 @@ public class Play extends Command {
         eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
         eb.setDescription(player.getPlayingTrack().getInfo().title);
-        eb.setColor(new Color(255, 0, 0));
+        if(isYoutube)
+            eb.setColor(new Color(255, 0, 0));
+        else
+            eb.setColor(new Color(18, 223, 227));
         
         if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
             channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
@@ -120,13 +124,4 @@ public class Play extends Command {
         }
 	}
 
-    private static String containsFile(String nameFile){
-        File[] arr = folder.listFiles();
-            for(File eee : arr){
-                System.out.println(eee.getName());
-                if(eee.getName().startsWith(nameFile))
-                    return eee.getName();
-            }
-            return null;
-    }
 }
