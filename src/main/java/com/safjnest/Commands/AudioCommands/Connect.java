@@ -1,4 +1,4 @@
-package com.safjnest.Commands;
+package com.safjnest.Commands.AudioCommands;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -15,7 +15,4 @@ public class Connect extends Command {
 	protected void execute(CommandEvent event) {
 		event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
 	}
-    
-
-
 }

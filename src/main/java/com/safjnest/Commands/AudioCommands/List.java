@@ -1,4 +1,4 @@
-package com.safjnest.Commands;
+package com.safjnest.Commands.AudioCommands;
 
 import java.awt.Color;
 import java.io.File;
@@ -39,9 +39,5 @@ public class List extends Command {
         channel.sendMessageEmbeds(eb.build())
                     .addFile(file, "mp3.png")
                     .queue();
-        
 	}
-    
-
-
 }

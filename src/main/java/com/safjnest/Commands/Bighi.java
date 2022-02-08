@@ -14,7 +14,7 @@ public class Bighi extends Command {
     
     public Bighi(int maxBighi){
         this.name = "bighi";
-        this.aliases = new String[]{"random",};
+        this.aliases = new String[]{"random"};
         this.help = "il bot ti outplaya con un numero random a tot bit";
         this.maxBighi = maxBighi;
     }
