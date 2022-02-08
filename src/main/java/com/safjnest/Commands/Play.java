@@ -45,12 +45,14 @@ public class Play extends Command {
         if(commandArray[1].contains("www.youtube.com"))
             isYoutube = true;
         else{
-            commandArray[1] +=  ".mp3";
-            if(!containsFile(commandArray[1])){
-                event.reply("Suono non trovato");
-                return;
-            }
-            commandArray[1] = "SoundBoard\\" + commandArray[1];
+                commandArray[1] = containsFile(commandArray[1]);
+                System.out.println("nome del faker " + commandArray[1]);
+                if(commandArray[1] == null){
+                    event.reply("Suono non trovato");
+                    return;
+                }
+                commandArray[1] = "SoundBoard\\" + commandArray[1]; 
+                System.out.println("nome del faker 2 " + commandArray[1]);
         }
         MessageChannel channel = event.getChannel();
         EmbedBuilder eb = new EmbedBuilder();
@@ -118,13 +120,13 @@ public class Play extends Command {
         }
 	}
 
-    private static boolean containsFile(String nameFile){
+    private static String containsFile(String nameFile){
         File[] arr = folder.listFiles();
             for(File eee : arr){
                 System.out.println(eee.getName());
-                if(eee.getName().equalsIgnoreCase(nameFile))
-                    return true;
+                if(eee.getName().startsWith(nameFile))
+                    return eee.getName();
             }
-            return false;
+            return null;
     }
 }
