@@ -59,6 +59,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Bighi(maxBighi));
         builder.addCommand(new Prime(maxPrime));
         builder.addCommand(new Clear());
+        builder.addCommand(new List()); 
 
         CommandClient client = builder.build();
 
