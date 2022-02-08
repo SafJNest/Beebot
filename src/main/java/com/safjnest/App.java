@@ -65,6 +65,10 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Ban());
         builder.addCommand(new Kick());
         builder.addCommand(new Mute());
+        builder.addCommand(new BugsNotifier());
+        builder.addCommand(new Unban());
+        builder.addCommand(new UnMute());
+
 
         CommandClient client = builder.build();
 

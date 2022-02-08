@@ -17,12 +17,15 @@ Semplice bot di Discord che si occupa di fare tutto ciò che gli admin vogliono 
 - LIST --> Il bot restituisce l'elenco di tutti i suoni presenti nel bot.
 - BIGHI --> [bighi][nBits]| Il bot ti restituisce un numero casuale a n bit, se maggiore di 2000 caratteri sarà inviato un file.
 - PRIME--> [prime][nBits]| Il bot ti restituisce un numero casuale *primo* a n bit, se maggiore di 2000 caratteri sarà inviato un file.
+- BUGS --> [bugs][nomeCommando][Descrizione bugs]| Il bot invierà ai due dei il messaggio contentente la segnalazione dell'errore.
 
 #### ***Permessi speciali richiesti***
 - CLEAR--> [clear][nMessaggi]| Il bot cancellerà nMessaggi(max 100) nel canale in cui il comando è stato chiamato
 - KICK --> [kick][@user/userId]| Il bot espellerrà dal server l'utente desiderato.
 - BAN --> [ban][@user/userId]| Il bot bannerrà dal server l'utente desiderato.
 - MUTE --> [mute][@user/userId]| Il bot muterà(vocalmente) l'utente desiderato.
+- UNMUTE --> [unmute][@user/userId]| Il bot smuterà(vocalmente) l'utente desiderato.
+- UNBAN --> [unban][@user/userId]| Il bot sbannerà l'utente desiderato.
 
 # ***Ulteriori informazioni***
 ## ***Build with***
@@ -78,6 +81,7 @@ Semplice bot di Discord che si occupa di fare tutto ciò che gli admin vogliono 
 - [ ] Ban,kick e mute bugs nel caso in cui il bot abbia un ruolo inferiore all'utente che sarà bannato,kickato o mutato.
 ### ***Features***
 - [x] Aggiungere la possibilità di riprodurre suoni in locale(.mp3/ .opus) -> 08/02/22
+- [x] Aggiungere la possibilità di stampare gli utenti bannati. -> 08/02/22
 - [ ] Il comando list fa schifo.
 - [ ] Mancano i suoni quindi il comando list fa schifo.
 - [ ] Aggiungere i log di sistema.
