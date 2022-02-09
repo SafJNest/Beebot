@@ -38,22 +38,23 @@ public class Play extends Command {
 	@Override
 	protected void execute(CommandEvent event) {
         boolean isYoutube = false;
+        String toPlay = "";
         String[] commandArray = event.getMessage().getContentRaw().split(" ");
         if(event.getMember().getVoiceState().getChannel() == null){
             event.reply("Non sei in un canale vocale.");
             return;
         }
-        if(commandArray[1].contains("www.youtube.com"))
+        if(commandArray[1].contains("www.youtube.com")){
             isYoutube = true;
-        else{
-                commandArray[1] = SoundBoard.containsFile(commandArray[1]);
-                System.out.println("nome del faker " + commandArray[1]);
-                if(commandArray[1] == null){
-                    event.reply("Suono non trovato");
-                    return;
-                }
-                commandArray[1] = "SoundBoard" + File.separator + commandArray[1]; 
-                System.out.println("nome del faker 2 " + commandArray[1]);
+            toPlay = commandArray[1];
+        }else{
+            toPlay = SoundBoard.containsFile(commandArray[1]);
+            System.out.println("nome del faker " + commandArray[1]);
+            if(commandArray[1] == null){
+                event.reply("Suono non trovato");
+                return;
+            }
+            toPlay = "SoundBoard" + File.separator + toPlay; 
         }
         MessageChannel channel = event.getChannel();
         EmbedBuilder eb = new EmbedBuilder();
@@ -70,7 +71,7 @@ public class Play extends Command {
         playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
         playerManager.registerSourceManager(new LocalAudioSourceManager());
         
-        playerManager.loadItem(commandArray[1], new AudioLoadResultHandler() {
+        playerManager.loadItem(toPlay, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
                 trackScheduler.addQueue(track);
@@ -95,16 +96,18 @@ public class Play extends Command {
                 System.out.println("error faker " + throwable.getMessage());
             }
         });
-        System.out.println("bossetti " + playerManager.toString());
         player.playTrack(trackScheduler.getTrack());
         
         eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
-        eb.setDescription(player.getPlayingTrack().getInfo().title);
-        if(isYoutube)
+        if(isYoutube){
             eb.setColor(new Color(255, 0, 0));
-        else
-            eb.setColor(new Color(18, 223, 227));
+            eb.setDescription(player.getPlayingTrack().getInfo().title);
+        }
+        else{
+            eb.setColor(new Color(0, 255, 255));
+            eb.setDescription(commandArray[1]);
+        }
         
         if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
             channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
@@ -122,5 +125,4 @@ public class Play extends Command {
                         .queue();
         }
 	}
-
 }
