@@ -7,7 +7,7 @@ Semplice bot di Discord che si occupa di fare tutto ciò che gli admin vogliono 
 Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;D.
 - Server Discord del BeeBox: https://discord.gg/S2rpYbJ
 - Prefix: ***$***
-
+- Versione 1.1
 ## ***Comandi***
 
 #### ***Non richiedono alcun permesso***
@@ -101,9 +101,9 @@ Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;
 ## **Bugs da correggere e Features**
 ***(DD/MM/YY)***
 ### ***Bugs***
-- [ ] Connect e Disconnect bugs in caso l'utente non sia in una stanza vocale.
-- [ ] Play bugs in caso non gli sia dato nessun link o nome del file da cercare.
-- [ ] Clear bugs in caso di mancato numero di messaggi da eliminare o non ce ne siano
+- [x] Connect e Disconnect bugs in caso l'utente non sia in una stanza vocale.
+- [x] Play bugs in caso non gli sia dato nessun link o nome del file da cercare.
+- [x] Clear bugs in caso di mancato numero di messaggi da eliminare o non ce ne siano
 - [ ] Ban,kick e mute bugs nel caso in cui il bot abbia un ruolo inferiore all'utente che sarà bannato,kickato o mutato.
 ### ***Features***
 - [x] Aggiungere la possibilità di riprodurre suoni in locale(.mp3/ .opus) -> 08/02/22
