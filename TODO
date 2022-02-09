@@ -1,1 +1,10 @@
 fradws
+ban appeal command
+
+puo tornare utile: action.submit()
+.thenCompose((user) -> user.openPrivateChannel().submit())
+.thenCompose((channel) -> channel.sendMessage("west").submit())
+.whenComplete((v, error) -> {
+    if (error != null)
+        error.printStackTrace();
+});

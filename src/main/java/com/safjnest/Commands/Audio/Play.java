@@ -63,6 +63,7 @@ public class Play extends Command {
         AudioPlayer player = playerManager.createPlayer();
         AudioPlayerSendHandler audioPlayerSendHandler = new AudioPlayerSendHandler(player);
         audioManager.setSendingHandler(audioPlayerSendHandler);
+        audioManager.openAudioConnection(myChannel);
         TrackScheduler trackScheduler = new TrackScheduler(player);
         player.addListener(trackScheduler);
         
