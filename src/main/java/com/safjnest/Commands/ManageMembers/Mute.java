@@ -14,7 +14,7 @@ public class Mute extends Command{
     public Mute(){
         this.name = "Mute";
         this.aliases = new String[]{"dontlistentothesound"};
-        this.help = "il bot ti outplaya leggermente e finisci a strisciare fuori dal server (con la possibilità di rientrare)";
+        this.help = "muta lo user| [kick] [@user/idUser]";
     }
 
     @Override

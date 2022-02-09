@@ -14,7 +14,7 @@ public class UnMute extends Command{
     public UnMute(){
         this.name = "unmute";
         this.aliases = new String[]{"listentothesound"};
-        this.help = "il bot ti outplaya leggermente e finisci a strisciare fuori dal server (con la possibilità di rientrare)";
+        this.help = "smuta lo user| [unmute] [@user]";
     }
 
     @Override

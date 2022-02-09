@@ -12,7 +12,7 @@ public class BugsNotifier extends Command {
     public BugsNotifier(){
         this.name = "bugs";
         this.aliases = new String[]{"baco", "bughi", "report", "rep"};
-        this.help = "il bot inviera' un messaggio ai due dei creatori contenente il bug";
+        this.help = "Consente di inviare un messaggio ai due developer del bot con descrizione di un comando che da problemi`.| [bugs] [nome comando] [descrizione]";
         this.cooldown = 100;
     }
 

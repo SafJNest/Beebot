@@ -56,24 +56,30 @@ public class App extends ListenerAdapter {
         builder.setOwnerId("939876818465488926");
         
         builder.addCommand(new Ping());
+
         builder.addCommand(new Connect());
         builder.addCommand(new Disconnect());
-        builder.addCommand(new Play(tierOneLink));
-        builder.addCommand(new Bighi(maxBighi));
-        builder.addCommand(new Prime(maxPrime));
-        builder.addCommand(new Clear());
-        builder.addCommand(new List());
+
         builder.addCommand(new Ban());
+        builder.addCommand(new Unban());
         builder.addCommand(new Kick());
         builder.addCommand(new Mute());
-        builder.addCommand(new BugsNotifier());
-        builder.addCommand(new Unban());
         builder.addCommand(new UnMute());
-        builder.addCommand(new DAC());
-        builder.addCommand(new FastestRoot());
-        builder.addCommand(new Permissions());
+
+        builder.addCommand(new Play(tierOneLink));
+        builder.addCommand(new List());
+
+        builder.addCommand(new Clear());
         builder.addCommand(new Msg());
         builder.addCommand(new Image());
+        builder.addCommand(new Permissions());
+        
+        builder.addCommand(new Bighi(maxBighi));
+        builder.addCommand(new Prime(maxPrime));
+        builder.addCommand(new DAC());
+        builder.addCommand(new FastestRoot());
+        
+        builder.addCommand(new BugsNotifier());
 
         CommandClient client = builder.build();
 

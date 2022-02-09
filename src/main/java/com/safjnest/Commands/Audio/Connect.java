@@ -8,7 +8,7 @@ public class Connect extends Command {
     public Connect(){
         this.name = "connect";
         this.aliases = new String[]{"join", "comeherebroda"};
-        this.help = "il bot si connette e ti outplaya";
+        this.help = "Il bot si connette nel tuo canale vocale";
     }
 
 	@Override

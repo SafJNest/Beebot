@@ -8,7 +8,7 @@ public class Disconnect extends Command {
     public Disconnect(){
         this.name = "disconnect";
         this.aliases = new String[]{"bye", "levatidalcazzo"};
-        this.help = "il bot si disconnette e ti banna";
+        this.help = "Il bot si disconnette dal canale vocale del server in cui hai scritto il comando";
     }
 
 	@Override

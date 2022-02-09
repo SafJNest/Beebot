@@ -8,7 +8,7 @@ public class FastestRoot extends Command{
     public FastestRoot(){
         this.name = "fastinversesquareroot";
         this.aliases = new String[]{"radiceinversa", "invroot", "fisqrt"};
-        this.help = "il bot ti outplaya dicendoti la raadice quadrata inversa molto velocemente.";
+        this.help = "Consente di stampare il risultato della radice quadrata inversa veloce| [fastinversesquareroot] [numero]";
     }
 
     @Override

@@ -16,7 +16,7 @@ public class List extends Command {
     public List(){
         this.name = "list";
         this.aliases = new String[]{"listoide", "listina","lista"};
-        this.help = "il bot ti manda la lista di tutti i suoni";
+        this.help = "Il bot invia la lista di tutti i suoni locali";
     }
 
 	@Override
