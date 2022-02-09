@@ -49,13 +49,13 @@ public class Play extends Command {
             toPlay = commandArray[1];
         }else{
             toPlay = SoundBoard.containsFile(commandArray[1]);
-            System.out.println("nome del faker " + commandArray[1]);
             if(toPlay == null){
                 event.reply("Suono non trovato");
                 return;
             }
             toPlay = "SoundBoard" + File.separator + toPlay; 
         }
+        System.out.println(toPlay);
         MessageChannel channel = event.getChannel();
         EmbedBuilder eb = new EmbedBuilder();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
@@ -89,17 +89,18 @@ public class Play extends Command {
             @Override
             public void noMatches() {
                 channel.sendMessage("Canzone non trovata").queue();
-                return;
+                trackScheduler.addQueue(null);
             }
 
             @Override
             public void loadFailed(FriendlyException throwable) {
                 System.out.println("error faker " + throwable.getMessage());
-                 return;
             }
         });
-        player.playTrack(trackScheduler.getTrack());
         
+        player.playTrack(trackScheduler.getTrack());
+        if(player.getPlayingTrack() == null)
+            return;
         eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
         if(isYoutube){
@@ -111,8 +112,8 @@ public class Play extends Command {
             eb.setDescription(commandArray[1]);
         }
         
-        if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
-            channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
+        //if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
+        //    channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
         eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
