@@ -73,6 +73,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new DAC());
         builder.addCommand(new FastestRoot());
         builder.addCommand(new Permissions());
+        builder.addCommand(new Msg());
 
         CommandClient client = builder.build();
 

@@ -13,6 +13,9 @@ public class Connect extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-		event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
+        if(event.getMember().getVoiceState().getChannel() == null)
+            event.reply("Non sei in un canale vocale.");
+        else
+		    event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
 	}
 }

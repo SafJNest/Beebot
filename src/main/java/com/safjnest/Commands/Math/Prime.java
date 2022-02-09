@@ -15,7 +15,7 @@ public class Prime extends Command {
 
     public Prime(int maxPrime){
         this.name = "prime";
-        this.aliases = new String[]{"imbimbo",};
+        this.aliases = new String[]{"imbimbo","randomprime"};
         this.help = "il bot ti outplaya con un numero random primo a tot bit";
         this.maxPrime = maxPrime;
     }

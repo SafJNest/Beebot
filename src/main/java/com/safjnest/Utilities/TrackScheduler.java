@@ -21,7 +21,6 @@ public class TrackScheduler extends AudioEventAdapter {
     
     @OverridingMethodsMustInvokeSuper
     public void addQueue(AudioTrack track){
-        System.out.println("faker" + track.getIdentifier());
         queue.add(track);
     }
 

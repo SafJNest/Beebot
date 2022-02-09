@@ -27,7 +27,6 @@ import net.dv8tion.jda.api.managers.AudioManager;
 
 public class Play extends Command {
     private HashMap<String,String> tierOneLink;
-    //private static File folder = new File("SoundBoard");
 
     public Play(HashMap<String,String> tierOneLink){
         this.name = "play";
@@ -40,6 +39,10 @@ public class Play extends Command {
 	protected void execute(CommandEvent event) {
         boolean isYoutube = false;
         String[] commandArray = event.getMessage().getContentRaw().split(" ");
+        if(event.getMember().getVoiceState().getChannel() == null){
+            event.reply("Non sei in un canale vocale.");
+            return;
+        }
         if(commandArray[1].contains("www.youtube.com"))
             isYoutube = true;
         else{
@@ -60,7 +63,6 @@ public class Play extends Command {
         AudioPlayer player = playerManager.createPlayer();
         AudioPlayerSendHandler audioPlayerSendHandler = new AudioPlayerSendHandler(player);
         audioManager.setSendingHandler(audioPlayerSendHandler);
-        audioManager.openAudioConnection(myChannel);
         TrackScheduler trackScheduler = new TrackScheduler(player);
         player.addListener(trackScheduler);
         
