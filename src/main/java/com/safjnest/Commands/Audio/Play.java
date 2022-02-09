@@ -115,7 +115,7 @@ public class Play extends Command {
             eb.setThumbnail("https://img.youtube.com/vi/" + player.getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
             event.reply(eb.build());
         }else{
-            File file = new File("img\\mp3.png");
+            File file = new File("img" + File.separator+ "mp3.png");
             eb.setThumbnail("attachment://mp3.png");
              channel.sendMessageEmbeds(eb.build())
                         .addFile(file, "mp3.png")

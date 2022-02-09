@@ -9,11 +9,10 @@ public class SoundBoard {
     public static String containsFile(String nameFile){
         String[] names = getAllNamesNoExc();
         String[] namesEx = getAllNames();
-            for(int i = 0; i < names.length; i++){
-                if(names[i].equalsIgnoreCase(nameFile))
-                    return namesEx[i];
-            }
-            return null;
+        for(int i = 0; i < names.length; i++)
+            if(names[i].equalsIgnoreCase(nameFile))
+                return namesEx[i];
+        return null;
     }
 
     public static String[] getAllNames(){
