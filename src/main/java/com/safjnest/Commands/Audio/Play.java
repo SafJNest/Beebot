@@ -50,7 +50,7 @@ public class Play extends Command {
         }else{
             toPlay = SoundBoard.containsFile(commandArray[1]);
             System.out.println("nome del faker " + commandArray[1]);
-            if(commandArray[1] == null){
+            if(toPlay == null){
                 event.reply("Suono non trovato");
                 return;
             }
