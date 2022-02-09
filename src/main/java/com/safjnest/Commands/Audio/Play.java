@@ -112,8 +112,8 @@ public class Play extends Command {
             eb.setDescription(commandArray[1]);
         }
         
-        //if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
-        //    channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
+        if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
+            channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
         eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
