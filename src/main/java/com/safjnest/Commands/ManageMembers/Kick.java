@@ -13,7 +13,7 @@ public class Kick extends Command{
 
     public Kick(){
         this.name = "kick";
-        this.aliases = new String[]{"lightSgozz"};
+        this.aliases = new String[]{"lightSgozz", "espulsione"};
         this.help = "il bot ti outplaya leggermente e finisci a strisciare fuori dal server (con la possibilità di rientrare)";
     }
 
