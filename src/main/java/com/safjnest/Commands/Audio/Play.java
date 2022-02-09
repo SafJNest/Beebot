@@ -1,4 +1,4 @@
-package com.safjnest.Commands.AudioCommands;
+package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
 import java.io.File;
@@ -21,7 +21,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -81,7 +80,6 @@ public class Play extends Command {
                  * trackScheduler.queue(track);
                  * }
                  */
-                 
             }
         
             @Override

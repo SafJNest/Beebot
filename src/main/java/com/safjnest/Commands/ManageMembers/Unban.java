@@ -24,17 +24,16 @@ public class Unban extends Command{
     protected void execute(CommandEvent event) {
         try {
             if(event.getArgs().length() == 0){
-                String bans = "";
-                for (net.dv8tion.jda.api.entities.Guild.Ban ban : event.getGuild().retrieveBanList().complete())
-                    bans += ban.getUser().getAsMention() + " - ";
                 EmbedBuilder eb = new EmbedBuilder();
                 eb.setTitle("Persone sgozzate");
-                eb.setDescription(bans);
+                for (net.dv8tion.jda.api.entities.Guild.Ban ban : event.getGuild().retrieveBanList().complete())
+                    eb.appendDescription(ban.getUser().getAsMention() + " - ");
                 eb.setColor(new Color(0, 128, 128));
                 eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
-                eb.setFooter("*Questo non e' rythem, questa e' perfezione cit. steve jobs", null);
+                eb.setFooter("*Questo non e' rythem, questa e' perfezione cit. steve jobs (probabilmente)", null);
                 event.reply(eb.build());
             }
+
             else{
                 final User surelyTheGuy = event.getJDA().retrieveUserById(event.getArgs()).complete();
                 if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.BAN_MEMBERS))
@@ -56,9 +55,3 @@ public class Unban extends Command{
         }
     }
 }
-
-
-
-
-
-

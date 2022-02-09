@@ -21,17 +21,20 @@ public class UnMute extends Command{
     protected void execute(CommandEvent event) {
         Member theGuy = null;
         try {
-            theGuy = event.getMessage().getMentionedMembers().get(0);
+            if(event.getMessage().getMentionedMembers().size() > 0)
+                theGuy = event.getMessage().getMentionedMembers().get(0);
+            else
+                theGuy = event.getGuild().retrieveMemberById(event.getArgs()).complete();
             final Member surelyTheGuy = theGuy;
 
             if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.VOICE_MUTE_OTHERS))
                 event.reply(event.getJDA().getSelfUser().getAsMention() + " non ha il permesso di smutare");
-            else if(PermissionHandler.hasPermission(event.getMember(), Permission.VOICE_MUTE_OTHERS) && !theGuy.getVoiceState().isMuted()) {
+                
+            else if(PermissionHandler.hasPermission(event.getMember(), Permission.VOICE_MUTE_OTHERS) && !theGuy.getVoiceState().isMuted())
                 event.reply("Non smutare chi non e' smutato");
-                return;
-            }
+
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.VOICE_MUTE_OTHERS)) {
-                event.getGuild().mute(theGuy, false).queue(
+                event.getGuild().mute(surelyTheGuy, false).queue(
                                                         (e) -> event.reply("smutato " + surelyTheGuy.getAsMention()), 
                                                         new ErrorHandler().handle(
                                                             ErrorResponse.MISSING_PERMISSIONS,

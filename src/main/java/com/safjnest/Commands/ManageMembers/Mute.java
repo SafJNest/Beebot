@@ -21,10 +21,10 @@ public class Mute extends Command{
     protected void execute(CommandEvent event) {
         Member theGuy = null;
         try {
-            if(event.getMessage().getMentionedMembers().size() == 0)
-                theGuy = event.getGuild().retrieveMemberById(event.getMessage().getMentionedMembers().get(0).getId(), true).complete();
-            else
+            if(event.getMessage().getMentionedMembers().size() > 0)
                 theGuy = event.getMessage().getMentionedMembers().get(0);
+            else
+                theGuy = event.getGuild().retrieveMemberById(event.getArgs()).complete();
             final Member surelyTheGuy = theGuy;
 
             if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.VOICE_MUTE_OTHERS))
@@ -37,7 +37,7 @@ public class Mute extends Command{
                 event.reply("OHHHHHHHHHHHHHHHHHHHHHHHHHHHH NON MUTARE MEEEEEEEEEEEEEEERIO EEEEEEEEEEEEEEEEEPRIA, solo i king possono.");
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.VOICE_MUTE_OTHERS)) {
-                event.getGuild().mute(theGuy, true).queue(
+                event.getGuild().mute(surelyTheGuy, true).queue(
                                                         (e) -> event.reply("mutato " + surelyTheGuy.getAsMention()), 
                                                         new ErrorHandler().handle(
                                                             ErrorResponse.MISSING_PERMISSIONS,
@@ -46,7 +46,7 @@ public class Mute extends Command{
             } else
                 event.reply("Brutto fallito non kickare se non sei admin UwU");
         } catch (Exception e) {
-            event.replyError("sorry, " + e.getMessage());
+            event.replyError("frake, " + e.getMessage());
         }
     }
 }

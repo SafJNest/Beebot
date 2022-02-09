@@ -1,4 +1,4 @@
-package com.safjnest.Commands;
+package com.safjnest.Commands.ManageGuild;
 
 import java.util.List;
 

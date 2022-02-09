@@ -1,4 +1,4 @@
-package com.safjnest.Commands;
+package com.safjnest.Commands.Math;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -43,7 +43,7 @@ public class Prime extends Command {
                     channel.sendMessage("Il bighi era troppo insano per Discord, eccoti un bel file.").queue();
                     channel.sendFile(supp).queue();
                 } else {
-                    channel.sendMessage("Eccoti il tuo bighi a " + commandArray[1] + " bit").queue();
+                    channel.sendMessage("Eccoti il tuo bighi primi a " + commandArray[1] + " bit").queue();
                     channel.sendMessage(primi).queue();
                 }
             }
