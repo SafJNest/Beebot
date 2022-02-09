@@ -41,7 +41,7 @@ public class App extends ListenerAdapter {
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
     public static void main(String[] args) throws LoginException {
-        token = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
+        token = "OTM4NDg3NDcwMzM5ODAxMTY5.YfrAkQ.X9rOkLp1sLY1QNZXYY15jPF6BW0";
         jda = JDABuilder
                 .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS)
                 .addEventListeners(new App())
