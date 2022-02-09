@@ -52,7 +52,7 @@ public class Play extends Command {
                     event.reply("Suono non trovato");
                     return;
                 }
-                commandArray[1] = "SoundBoard\\" + commandArray[1]; 
+                commandArray[1] = "SoundBoard" + File.separator + commandArray[1]; 
                 System.out.println("nome del faker 2 " + commandArray[1]);
         }
         MessageChannel channel = event.getChannel();
