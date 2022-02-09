@@ -34,7 +34,7 @@ public class List extends Command {
         eb.setColor(new Color(0, 128, 128));
         eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rythem, questa e' perfezione cit. steve jobs", null);
-        File file = new File("img\\mp3.png");
+        File file = new File("img" + File.separator + "mp3.png");
         eb.setThumbnail("attachment://mp3.png");
         channel.sendMessageEmbeds(eb.build())
                     .addFile(file, "mp3.png")
