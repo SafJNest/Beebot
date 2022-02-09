@@ -15,7 +15,7 @@ public class Clear extends Command {
     public Clear(){
         this.name = "clear";
         this.aliases = new String[]{"cancella"};
-        this.help = "il bot cancella i messaggi come un frake";
+        this.help = "Il bot cancella i messaggi in un canale di testo (max 99)";
     }
 
 	@Override

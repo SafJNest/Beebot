@@ -8,7 +8,7 @@ public class Ping extends Command{
     public Ping(){
         this.name = "ping";
         this.aliases = new String[]{"pong", "pingpong"};
-        this.help = "il ping pong bro";
+        this.help = "Restituisce il ping del bot.";
     }
 
     @Override

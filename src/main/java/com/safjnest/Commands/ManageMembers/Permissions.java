@@ -10,7 +10,7 @@ public class Permissions extends Command{
     public Permissions(){
         this.name = "permissions";
         this.aliases = new String[]{"perms"};
-        this.help = "il bot ti outplaya leggermente e finisci a strisciare fuori dal server (con la possibilità di rientrare)";
+        this.help = "restituisce i permessi di uno user e dice se e' un admin del server [/permissions user]";
     }
 
     @Override

@@ -8,7 +8,7 @@ public class DAC extends Command{
     public DAC(){
         this.name = "dac";
         this.aliases = new String[]{"divideandconquer"};
-        this.help = "il bot ti outplaya dicendoti le cifre di un numero intero fino ad un max di 10 cifre.";
+        this.help = "Consente di stampare il numero di cifre di un numero intero(int) fino ad un max di 2^32| [dac] [numero]";
     }
 
     @Override

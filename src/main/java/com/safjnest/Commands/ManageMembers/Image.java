@@ -9,7 +9,7 @@ public class Image extends Command{
     public Image(){
         this.name = "image";
         this.aliases = new String[]{"img"};
-        this.help = "il bot ti outplaya veramente forte e finisci a strisciare fuori dal server (senza la possibilità di rientrare)";
+        this.help = "il bot invia l'immagine profilo dello user [/image user]";
     }
 
     @Override

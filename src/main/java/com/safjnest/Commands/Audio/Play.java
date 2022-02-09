@@ -31,7 +31,7 @@ public class Play extends Command {
     public Play(HashMap<String,String> tierOneLink){
         this.name = "play";
         this.aliases = new String[]{"nuovavita", "p", "ehiprimofreestyle2020nuovavitastoincamerettaascrivereco''namatitaco''steparolelascenavienedemolitaelavincoioquestacazzodipartitaspaccolatracciasifra,tispaccolafacciatuquanorappisembriarrugginitoletuerimecosìsquallidecherimangobasitodicitantocheiltuorapsfondamisachecontuttelecavolatechespariaffondailmioraptisfondailtuosprofonda...sehfrailtuosprofonda...ehi..okaycheconquesterimet'hogiàrottoilculoet'assicurochepertenonc'èfuturoquinditecensuroesevuoifareunacosabonabeveteercianuroteepornhubsembratecicciocolsuopagurosentel'attaccochetesferrotipiacepredereilferronell'anodatizicometizianoferroalloravuoipurelafamatisputoinfacciatipolamaiovado,sonoilredelrapancora,chiama."};
-        this.help = "il bot si connette e ti outplaya con le canzoni di mario";
+        this.help = "Il bot riproduce canzoni locali o link di youtube";
         this.tierOneLink = tierOneLink;
     }
 

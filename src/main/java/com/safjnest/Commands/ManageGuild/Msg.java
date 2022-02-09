@@ -13,7 +13,7 @@ public class Msg extends Command {
     public Msg(){
         this.name = "msg";
         this.aliases = new String[]{"messaggio", "message"};
-        this.help = "il bot manda un messaggio ad un frake";
+        this.help = "il bot manda un messaggio ad uno user [/msg user messaggio]";
     }
 
 	@Override
