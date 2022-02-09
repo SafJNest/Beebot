@@ -89,11 +89,13 @@ public class Play extends Command {
             @Override
             public void noMatches() {
                 channel.sendMessage("Canzone non trovata").queue();
+                return;
             }
 
             @Override
             public void loadFailed(FriendlyException throwable) {
                 System.out.println("error faker " + throwable.getMessage());
+                 return;
             }
         });
         player.playTrack(trackScheduler.getTrack());
