@@ -90,11 +90,16 @@ Semplice bot di Discord che si occupa di fare tutto ciò che gli admin vogliono 
 Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights reserved. SAFJNEST PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
 
 ## ***Contatti***
-### Lorenzo Sanseverino
+### Lorenzo Sanseverino 
+- Founder
+- Developer
 - lorenzosanseverino2003@gmail.com
 - Git: <a href="https://github.com/NeutronSun">NeutronSun</a> 
 - Discord: Sun#7606.
 ### Panichi Leonardo
+- Founder
+- Developer
 - panichileonardo4@gmail.com
 - Git: <a href="https://github.com/Leon412">Leon412</a> 
 - Discord: Leon_#7949
+

@@ -1,4 +1,4 @@
-package com.safjnest.Commands.AudioCommands;
+package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
 import java.io.File;

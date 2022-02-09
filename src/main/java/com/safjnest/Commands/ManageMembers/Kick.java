@@ -5,7 +5,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 
@@ -19,13 +19,13 @@ public class Kick extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
-        Member theGuy = null;
+        User theGuy = null;
         try {
-            if(event.getMessage().getMentionedMembers().size() == 0)
-                theGuy = event.getGuild().retrieveMemberById(event.getMessage().getMentionedMembers().get(0).getId(), true).complete();
+            if(event.getMessage().getMentionedMembers().size() > 0)
+                theGuy = event.getMessage().getMentionedMembers().get(0).getUser();
             else
-                theGuy = event.getMessage().getMentionedMembers().get(0);
-            final Member surelyTheGuy = theGuy;
+                theGuy = event.getJDA().retrieveUserById(event.getArgs()).complete();
+            final User surelyTheGuy = theGuy;
 
             if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.KICK_MEMBERS))
                 event.reply(event.getJDA().getSelfUser().getAsMention() + " non ha il permesso di kickare");
@@ -37,7 +37,7 @@ public class Kick extends Command{
                 event.reply("OHHHHHHHHHHHHHHHHHHHHHHHHHHHH NON KIKKARE MEEEEEEEEEEEEEEERIO EEEEEEEEEEEEEEEEEPRIA");
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.KICK_MEMBERS)) {
-                event.getGuild().kick(theGuy).queue(
+                event.getGuild().kick(surelyTheGuy.getId()).queue(
                                                 (e) -> event.reply("kickkato " + surelyTheGuy.getAsMention()), 
                                                 new ErrorHandler().handle(
                                                     ErrorResponse.MISSING_PERMISSIONS,

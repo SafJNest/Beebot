@@ -11,9 +11,11 @@ import java.util.HashMap;
 import javax.security.auth.login.LoginException;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
-import com.safjnest.Commands.*;
-import com.safjnest.Commands.AudioCommands.*;
+import com.safjnest.Commands.Audio.*;
+import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
+import com.safjnest.Commands.Math.*;
+import com.safjnest.Commands.Misc.*;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -68,7 +70,9 @@ public class App extends ListenerAdapter {
         builder.addCommand(new BugsNotifier());
         builder.addCommand(new Unban());
         builder.addCommand(new UnMute());
-
+        builder.addCommand(new DAC());
+        builder.addCommand(new FastestRoot());
+        builder.addCommand(new Permissions());
 
         CommandClient client = builder.build();
 

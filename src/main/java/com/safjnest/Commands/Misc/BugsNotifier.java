@@ -1,4 +1,4 @@
-package com.safjnest.Commands;
+package com.safjnest.Commands.Misc;
 
 import java.awt.Color;
 
@@ -7,13 +7,13 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-
 public class BugsNotifier extends Command {
 
     public BugsNotifier(){
         this.name = "bugs";
         this.aliases = new String[]{"baco", "bughi", "report", "rep"};
         this.help = "il bot inviera' un messaggio ai due dei creatori contenente il bug";
+        this.cooldown = 100;
     }
 
 	@Override

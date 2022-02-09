@@ -113,7 +113,7 @@ public class SafJNest extends Thread {
 
     public static BigInteger randomBighi(int numBits) {
         if (numBits < 1)
-            throw new IllegalArgumentException("SafJNest doesnt like negative numbers");
+            throw new IllegalArgumentException("SafJNest doesnt like 0 or negative numbers");
         numBits--;
         int numBytes = (int) (((long) numBits + 7) / 8);
         byte[] randomBits = new byte[numBytes];
