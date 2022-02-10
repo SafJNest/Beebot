@@ -131,6 +131,6 @@ Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights
 - Git: <a href="https://github.com/Leon412">Leon412</a> 
 - Discord: Leon_#7949
 
-## ***Contatti***
+## ***Storico Versioni***
 - 1.0 Released 05/02/22
 - Last Version 1.1 Released 09/02/22
