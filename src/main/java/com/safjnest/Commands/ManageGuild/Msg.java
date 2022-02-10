@@ -25,7 +25,7 @@ public class Msg extends Command {
             else
                 theGuy = event.getJDA().retrieveUserById(command[0]).complete();
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle("NEW MESSAGE FROM " + theGuy.getAsTag());
+        eb.setTitle("NEW MESSAGE FROM " + event.getAuthor().getAsTag());
         eb.setThumbnail(event.getAuthor().getAvatarUrl());
         eb.setDescription(command[1]);
         eb.setColor(new Color(3, 252, 169));
