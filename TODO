@@ -1,5 +1,8 @@
-fradws
+fraws e faker
 ban appeal command
+the stop command...
+selezionare lo user con il tag
+sun: voglio fare la coda (piango) ngueeeh
 
 puo tornare utile: action.submit()
 .thenCompose((user) -> user.openPrivateChannel().submit())
