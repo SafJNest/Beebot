@@ -101,10 +101,11 @@ Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;
 ## **Bugs da correggere e Features**
 ***(DD/MM/YY)***
 ### ***Bugs***
-- [x] Connect e Disconnect bugs in caso l'utente non sia in una stanza vocale.
-- [x] Play bugs in caso non gli sia dato nessun link o nome del file da cercare.
-- [x] Clear bugs in caso di mancato numero di messaggi da eliminare o non ce ne siano
+- [x] Connect e Disconnect bugs in caso l'utente non sia in una stanza vocale. -- > 09/02/22
+- [x] Play bugs in caso non gli sia dato nessun link o nome del file da cercare. -- > 09/02/22
+- [x] Clear bugs in caso di mancato numero di messaggi da eliminare o non ce ne siano -- > 09/02/22
 - [ ] Ban,kick e mute bugs nel caso in cui il bot abbia un ruolo inferiore all'utente che sarà bannato,kickato o mutato.
+- [ ] Il comando play ha così tanti bugs che non saprei da dove iniziare ad elencarli.
 ### ***Features***
 - [x] Aggiungere la possibilità di riprodurre suoni in locale(.mp3/ .opus) -> 08/02/22
 - [x] Aggiungere la possibilità di stampare gli utenti bannati. -> 08/02/22
@@ -112,6 +113,7 @@ Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;
 - [ ] Mancano i suoni quindi il comando list fa schifo.
 - [ ] Aggiungere i log di sistema.
 - [ ] Possibiltà di caricare i suoni tramite comando (Upload).
+- [ ] Aggiungere la coda al comando Play.
 ## **Licenza**
 Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights reserved. SAFJNEST PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
 
@@ -129,3 +131,6 @@ Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights
 - Git: <a href="https://github.com/Leon412">Leon412</a> 
 - Discord: Leon_#7949
 
+## ***Storico Versioni***
+- 1.0 Released 05/02/22
+- Last Version 1.1 Released 09/02/22
