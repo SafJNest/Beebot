@@ -7,7 +7,7 @@ Semplice bot di Discord che si occupa di fare tutto ciò che gli admin vogliono 
 Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;D.
 - Server Discord del BeeBox: https://discord.gg/S2rpYbJ
 - Prefix: ***$***
-- Versione 1.1
+- Versione 1.1.01
 ## ***Comandi***
 
 #### ***Non richiedono alcun permesso***
@@ -18,6 +18,7 @@ Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;
 - LIST --> Il bot restituisce l'elenco di tutti i suoni presenti nel bot.
 - BUGS --> [bugs][nomeCommando][Descrizione bugs]| Il bot invierà ai due dei il messaggio contentente la segnalazione dell'errore.
 - MSG --> [msg][idUser][message]| Il bot invierà all'utente desiderato il messaggio richiesto.
+- - RAM --> Il bot restituisce le sue statistiche della ram in uso, libera e totale.
 
 #### ***Richiedono permessi speciali***
 - CLEAR--> [clear][nMessaggi]| Il bot cancellerà nMessaggi(max 100) nel canale in cui il comando è stato chiamato
@@ -52,6 +53,7 @@ Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;
 - PRIME--> RANDOMPRIME
 - DAC--> DIVIDEANDCONQUER
 - FASTESTROOT--> RADICEINVERSA - FISQRT
+- RAM --> USAGE
 
 # ***Ulteriori informazioni***
 ## ***Build with***
