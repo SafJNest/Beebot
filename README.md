@@ -7,7 +7,7 @@ Semplice bot di Discord che si occupa di fare tutto ciò che gli admin vogliono 
 Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;D.
 - Server Discord del BeeBox: https://discord.gg/S2rpYbJ
 - Prefix: ***$***
-- Versione 1.1.02
+- Versione 1.1.021
 ## ***Comandi***
 
 #### ***Non richiedono alcun permesso***
