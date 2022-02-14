@@ -54,7 +54,7 @@ public class App extends ListenerAdapter {
 
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setPrefix(PREFIX);
-        builder.setHelpWord("wrfjowrflwkefWKFJAWREòLKFJAWFARJFKLEAJFOHFEUGFHIUF");
+        builder.setHelpWord("helpme");
         builder.setOwnerId("939876818465488926");
         
         builder.addCommand(new Ping());
