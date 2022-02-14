@@ -17,7 +17,7 @@ public class Unban extends Command{
     public Unban(){
         this.name = "unban";
         this.aliases = new String[]{"unsgozz", "undestroy", "unannihilate", "unradiateDeath", "sban", "pardon"};
-        this.help = "vieni perdonato da qualche dio supremo, non dimenticarti di ringraziare";
+        this.help = "Un Dio supremo ti perdona e ti consente di tornare nella landa dei SafJ, non dimenticarti di ringraziare";
     }
 
     @Override

@@ -1,0 +1,41 @@
+package com.safjnest.Commands.Misc;
+
+import java.awt.Color;
+
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
+
+import net.dv8tion.jda.api.EmbedBuilder;
+
+public class Aliases extends Command {
+
+    public Aliases() {
+        this.name = "Aliases";
+        this.aliases = new String[]{"alias"};
+        this.help = "Restituisce tutti gli alias dei vari comandi";
+    }
+
+    @Override
+    protected void execute(CommandEvent event) {
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle("Help", null);
+        eb.setColor(new Color(255, 196, 0));
+        eb.setDescription("**Lista dei Comandi del tier 1 bot!**");
+        
+        for (Command e : event.getClient().getCommands()) {
+            String aliases = "";
+            for(String alias : e.getAliases())
+                aliases += "- " + alias;
+            eb.addField(e.getName(), aliases, true);
+        }
+
+        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
+                event.getJDA().getSelfUser().getAvatarUrl());
+
+        eb.setFooter("*I numeri primi generati sono crittograficamente sicuri, se vi può essere utile :L", null);
+        event.getChannel().sendMessageEmbeds(eb.build())
+                .queue();
+
+    }
+
+}
