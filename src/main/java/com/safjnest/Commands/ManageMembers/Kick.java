@@ -1,13 +1,13 @@
 package com.safjnest.Commands.ManageMembers;
 
 import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.PermissionHandler;
+import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.requests.ErrorResponse;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
 
 public class Kick extends Command{
 

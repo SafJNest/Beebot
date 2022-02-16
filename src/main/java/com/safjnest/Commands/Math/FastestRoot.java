@@ -1,8 +1,8 @@
 package com.safjnest.Commands.Math;
 
+import com.safjnest.Utilities.SafJNest;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.SafJNest;
 
 public class FastestRoot extends Command{
     public FastestRoot(){
