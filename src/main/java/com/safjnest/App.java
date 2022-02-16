@@ -11,11 +11,12 @@ import java.util.HashMap;
 import javax.security.auth.login.LoginException;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
+
+import com.safjnest.Commands.Misc.*;
+import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
-import com.safjnest.Commands.Math.*;
-import com.safjnest.Commands.Misc.*;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -26,11 +27,15 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
 /**
- * Main class.
+ * Classe principale del bot.
+ * <p> La {@code JDA} viene istanziata e vengono specificati i suoi
+ * parametri (token, activity, cache exc..).
+ * Viene specificato l'eventListener {@code CommandClient} ed aggiunti i comandi. 
  * 
- * @author <a href="https://github.com/NeutronSun">NeutronSun</a> Tier 1 Discord
- *         Admin
- * @author <a href="https://github.com/Leon412">Leon412</a> Tier 1 Manipulator
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @version 1.1.02
  */
 public class App extends ListenerAdapter {
     private static JDA jda;
