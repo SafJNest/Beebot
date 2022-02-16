@@ -3,6 +3,12 @@ package com.safjnest.Commands.Audio;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.0
+ */
 public class Connect extends Command {
 
     public Connect(){

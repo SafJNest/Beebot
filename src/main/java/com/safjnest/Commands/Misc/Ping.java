@@ -3,6 +3,11 @@ package com.safjnest.Commands.Misc;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
+/**
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.0
+ */
 public class Ping extends Command{
 
     public Ping(){

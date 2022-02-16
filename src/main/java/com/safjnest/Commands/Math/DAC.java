@@ -4,6 +4,11 @@ import com.safjnest.Utilities.SafJNest;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * 
+ * @since 1.0
+ */
 public class DAC extends Command{
     public DAC(){
         this.name = "dac";

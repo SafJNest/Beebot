@@ -7,6 +7,12 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * 
+ * @since 1.1
+ */
 public class BugsNotifier extends Command {
 
     public BugsNotifier(){

@@ -5,6 +5,11 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.entities.User;
 
+/**
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.1
+ */
 public class Image extends Command{
     public Image(){
         this.name = "image";

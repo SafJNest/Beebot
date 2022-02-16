@@ -8,6 +8,11 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 
+/**
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.1
+ */
 public class Msg extends Command {
 
     public Msg(){

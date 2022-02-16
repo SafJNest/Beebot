@@ -9,6 +9,12 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.1
+ */
 public class UnMute extends Command{
 
     public UnMute(){

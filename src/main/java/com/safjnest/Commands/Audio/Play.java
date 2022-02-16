@@ -25,6 +25,12 @@ import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.entities.MessageChannel;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.0
+ */
 public class Play extends Command {
     private HashMap<String,String> tierOneLink;
 

@@ -7,6 +7,11 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * 
+ * @since 1.1.02
+ */
 public class Aliases extends Command {
 
     public Aliases() {
@@ -19,7 +24,7 @@ public class Aliases extends Command {
     protected void execute(CommandEvent event) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Help", null);
-        eb.setColor(new Color(255, 196, 0));
+        eb.setColor(new Color(0, 255, 213));
         eb.setDescription("**Lista dei Comandi del tier 1 bot!**");
         
         for (Command e : event.getClient().getCommands()) {
