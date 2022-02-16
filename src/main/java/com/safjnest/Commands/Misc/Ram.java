@@ -3,6 +3,11 @@ package com.safjnest.Commands.Misc;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * 
+ * @since 1.1.02
+ */
 public class Ram extends Command{
 
     public Ram(){
@@ -13,8 +18,9 @@ public class Ram extends Command{
 
     @Override
     protected void execute(CommandEvent e) {
-        e.reply("In uso: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
-        + "Totale: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
-        + "Libera: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb");
+        e.reply("Totale: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
+        + "In uso: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
+        + "Libera: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb"
+        + "maxMemory" + String.valueOf(Runtime.getRuntime().maxMemory()));
     }
 }

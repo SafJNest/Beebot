@@ -9,6 +9,10 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @since Alpha
+ */
 public class Bighi extends Command {
     private int maxBighi;
     
