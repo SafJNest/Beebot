@@ -45,16 +45,15 @@ public class Play extends Command {
 	protected void execute(CommandEvent event) {
         boolean isYoutube = false;
         String toPlay = "";
-        String[] commandArray = event.getMessage().getContentRaw().split(" ");
         if(event.getMember().getVoiceState().getChannel() == null){
             event.reply("Non sei in un canale vocale.");
             return;
         }
-        if(commandArray[1].contains("www.youtube.com")){
+        if(event.getArgs().contains("www.youtube.com")){
             isYoutube = true;
-            toPlay = commandArray[1];
+            toPlay = event.getArgs();
         }else{
-            toPlay = SoundBoard.containsFile(commandArray[1]);
+            toPlay = SoundBoard.containsFile(event.getArgs());
             if(toPlay == null){
                 event.reply("Suono non trovato");
                 return;
@@ -115,7 +114,7 @@ public class Play extends Command {
         }
         else{
             eb.setColor(new Color(0, 255, 255));
-            eb.setDescription(commandArray[1]);
+            eb.setDescription(event.getArgs());
         }
         
         if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
