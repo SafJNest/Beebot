@@ -13,6 +13,7 @@ import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
 import com.safjnest.Commands.Misc.*;
+import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.ManageGuild.*;
@@ -35,13 +36,13 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
- * @version 1.1.02
+ * @version 1.2
  */
 public class App extends ListenerAdapter {
     private static JDA jda;
     private static String token;
-    private static Activity activity = Activity.playing("Outplaying other bots | %help");
     private static String PREFIX = "%";
+    private static Activity activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
@@ -51,8 +52,7 @@ public class App extends ListenerAdapter {
         token = args[0];
         jda = JDABuilder
                 .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS)
-                .addEventListeners(new App())
-                .setActivity(activity)
+                .addEventListeners(new TheListener())
                 .setMemberCachePolicy(MemberCachePolicy.VOICE)
                 .enableCache(CacheFlag.VOICE_STATE)
                 .build();
@@ -61,6 +61,7 @@ public class App extends ListenerAdapter {
         builder.setPrefix(PREFIX);
         builder.setHelpWord("helpme");
         builder.setOwnerId("939876818465488926");
+        builder.setActivity(activity);
         
         builder.addCommand(new Ping());
 
@@ -92,9 +93,11 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Help());
         builder.addCommand(new Aliases());
 
+        builder.addCommand(new ServerInfo());
+
         CommandClient client = builder.build();
 
-        jda.addEventListener(client);
+       jda.addEventListener(client);
 
         tierOneLink.put("QZayYolcq-g", "MERIO EPRIA DUE ZERO DUE ZERO CAMERETTA EEEEEEEEEEEEEPPPPPPPPPPPPPPPPPPPRRRRRRRRRRRRRRRRRRIIIIIIIIIIIIIIIIIIAAAAAAAAAAAA");
         tierOneLink.put("IaudNxuNtso", "MERIO EPRIA QUI COME UN COGLIONE A SFOGARSI I SENTIMINETI POKLVEWRE EEEEEEEEEEEPRIAAAAAAA LA LUCE DEL MEEEEEEERIO CON LE SUE RIME DA CAZZARO NE REPPER NE METALLARO NON È CHIARO LO STROZZINOIFHUWSHGFEIU0GHS0URGH");
