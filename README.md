@@ -139,4 +139,5 @@ Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights
 
 ## ***Storico Versioni***
 - 1.0 Released 05/02/22
-- Last Version 1.1 Released 09/02/22
+- 1.1 Released 09/02/22
+- 1.2 Released 18/02/22
