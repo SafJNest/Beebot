@@ -21,6 +21,6 @@ public class Ram extends Command{
         e.reply("Totale: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
         + "In uso: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
         + "Libera: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
-        + "maxMemory: " + String.valueOf(Runtime.getRuntime().maxMemory()/1048576) + "mb");
+        + "Massima: " + String.valueOf(Runtime.getRuntime().maxMemory()/1048576) + "mb");
     }
 }
