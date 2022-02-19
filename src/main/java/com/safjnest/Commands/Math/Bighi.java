@@ -21,7 +21,7 @@ public class Bighi extends Command {
         this.aliases = new String[]{"random"};
         this.help ="Consente di generare un numero randomico a nBit.";
         this.maxBighi = maxBighi;
-        this.category = new Category("math");
+        this.category = new Category("Matematica");
         this.arguments = "[bighi] [numero]";
     }
 

@@ -23,7 +23,7 @@ public class Prime extends Command {
         this.aliases = new String[]{"imbimbo","randomprime"};
         this.help = "Consente di generare un numero *primo* randomico a nBit.";
         this.maxPrime = maxPrime;
-        this.category = new Category("math");
+        this.category = new Category("Matematica");
         this.arguments = " [prime] [nbit]";
     }
 

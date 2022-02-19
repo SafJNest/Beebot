@@ -20,9 +20,9 @@ public class Ban extends Command{
     public Ban(){
         this.name = "ban";
         this.aliases = new String[]{"sgozz", "destroy", "annihilate", "radiateDeath", "drinkRadithorForAYear"};
-        this.category = new Category("MemberManage");
+        this.category = new Category("Gestione Membri");
         this.arguments = "[ban] [@user]";
-        this.help = "il bot ti outplaya veramente forte e finisci a strisciare fuori dal server (senza la possibilità di rientrare).";
+        this.help = "Il bot ti outplaya veramente forte e finisci a strisciare fuori dal server (senza la possibilità di rientrare).";
     }
 
     @Override

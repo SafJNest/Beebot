@@ -37,7 +37,9 @@ public class Play extends Command {
     public Play(HashMap<String,String> tierOneLink){
         this.name = "play";
         this.aliases = new String[]{"nuovavita", "p"};
-        this.help = "Il bot riproduce canzoni locali o link di youtube";
+        this.help = "Il bot riproduce canzoni locali o link di youtube.\n"
+        + "Bisogna essere connessi in una stanza vocale.\n"
+        + "Nel caso il bot sia connesso in un'altra stanza si sposterà nella stessa dove è connesso l'autore del comando.";
         this.tierOneLink = tierOneLink;
         this.category = new Category("Audio");
         this.arguments = "[play] [link/nome suono]";

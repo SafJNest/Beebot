@@ -24,7 +24,7 @@ public class Unban extends Command{
         this.name = "unban";
         this.aliases = new String[]{"unsgozz", "undestroy", "unannihilate", "unradiateDeath", "sban", "pardon"};
         this.help = "Un Dio supremo ti perdona e ti consente di tornare nella landa dei SafJ, non dimenticarti di ringraziare";
-        this.category = new Category("MemberManage");
+        this.category = new Category("Gestione Membri");
         this.arguments = "[unbun] [@user]";
     }
 

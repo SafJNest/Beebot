@@ -18,8 +18,8 @@ public class Msg extends Command {
     public Msg(){
         this.name = "msg";
         this.aliases = new String[]{"messaggio", "message"};
-        this.help = "il bot manda un messaggio ad uno user.";
-        this.category = new Category("ServerManage");
+        this.help = "Il bot invierà un messaggio in privato all'utente richiesto.\nÈ possibile inviare un messaggio ad un solo utente alla volta.";
+        this.category = new Category("Gestione Server");
         this.arguments = "[msg] [@user/id] [messaggio]";
     }
 
