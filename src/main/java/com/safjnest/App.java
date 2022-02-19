@@ -25,6 +25,7 @@ import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
 /**
@@ -36,7 +37,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
- * @version 1.2
+ * @version 1.2.5
  */
 public class App extends ListenerAdapter {
     private static JDA jda;
@@ -54,6 +55,7 @@ public class App extends ListenerAdapter {
                 .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS)
                 .addEventListeners(new TheListener())
                 .setMemberCachePolicy(MemberCachePolicy.VOICE)
+                .setChunkingFilter(ChunkingFilter.ALL)
                 .enableCache(CacheFlag.VOICE_STATE)
                 .build();
 
