@@ -20,9 +20,9 @@ public class ServerInfo extends Command{
     public ServerInfo(){
         this.name = "serverinfo";
         this.aliases = new String[]{"servinfo", "serinf"};
-        this.help = "Informazioni utili del server in cui ti trovi";
+        this.help = "Informazioni utili del server in cui ti trovi.";
         //this.arguments = "dios, madosca, stiscos";
-        this.category = new Category("ServerManage");
+        this.category = new Category("Gestione Server");
     }
 
     public static int getGuildUserCount(Guild guild) {

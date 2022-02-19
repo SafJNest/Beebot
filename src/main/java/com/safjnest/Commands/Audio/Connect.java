@@ -14,7 +14,8 @@ public class Connect extends Command {
     public Connect(){
         this.name = "connect";
         this.aliases = new String[]{"join", "comeherebroda"};
-        this.help = "Il bot si connette nel tuo canale vocale";
+        this.help = "Il bot si connette nel tuo canale vocale\nSe già connesso in un altro canale sarà disconnesso dallo stesso.\n"
+        + "In caso tutti gli utenti escano dalla stanza il bot si disconnetterà automaticamente.";
         this.category = new Category("Audio");
         this.arguments = "null";
     }

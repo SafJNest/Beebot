@@ -19,7 +19,7 @@ public class Kick extends Command{
     public Kick(){
         this.name = "kick";
         this.aliases = new String[]{"lightSgozz", "espulsione"};
-        this.category = new Category("MemberManage");
+        this.category = new Category("Gestione Membri");
         this.arguments = "[kick] [@user]";
         this.help = "Il bot ti outplaya leggermente e finisci a strisciare fuori dal server (con la possibilità di rientrare).";
     }

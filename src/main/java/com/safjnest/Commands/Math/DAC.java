@@ -14,7 +14,7 @@ public class DAC extends Command{
         this.name = "dac";
         this.aliases = new String[]{"divideandconquer"};
         this.help = "Consente di stampare il numero di cifre di un numero intero(int) fino ad un max di 2^32.";
-        this.category = new Category("math");
+        this.category = new Category("Matematica");
         this.arguments = "[dac] [numero]";
     }
 

@@ -19,8 +19,8 @@ public class Mute extends Command{
     public Mute(){
         this.name = "Mute";
         this.aliases = new String[]{"dontlistentothesound"};
-        this.help = "muta lo user.";
-        this.category = new Category("MemberManage");
+        this.help = "Il bot muta un utene.";
+        this.category = new Category("Gestione Membri");
         this.arguments = "[mute] [@user]";
     }
 

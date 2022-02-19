@@ -14,8 +14,8 @@ public class Image extends Command{
     public Image(){
         this.name = "image";
         this.aliases = new String[]{"img"};
-        this.help = "il bot invia l'immagine profilo dello user.";
-        this.category = new Category("MemberManage");
+        this.help = "Il bot invia l'immagine profilo dello user.";
+        this.category = new Category("Gestione Membri");
         this.arguments = "[image] [@user]";
     }
 
