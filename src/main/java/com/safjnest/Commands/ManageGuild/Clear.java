@@ -22,6 +22,8 @@ public class Clear extends Command {
         this.name = "clear";
         this.aliases = new String[]{"cancella"};
         this.help = "Il bot cancella i messaggi in un canale di testo (max 99)";
+        this.category = new Category("ServerManage");
+        this.arguments = "[clear] [n messaggi]";
     }
 
 	@Override

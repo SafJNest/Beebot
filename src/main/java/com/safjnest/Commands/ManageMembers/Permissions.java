@@ -15,7 +15,9 @@ public class Permissions extends Command{
     public Permissions(){
         this.name = "permissions";
         this.aliases = new String[]{"perms"};
-        this.help = "Restituisce i permessi di uno user e dice se e' un admin del server| [permissions] [@user]";
+        this.help = "Restituisce i permessi di uno user e dice se e' un admin del server.";
+        this.category = new Category("MemberManage");
+        this.arguments = "[permissions] [@user]";
     }
 
     @Override

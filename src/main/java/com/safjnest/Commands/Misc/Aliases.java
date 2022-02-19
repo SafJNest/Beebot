@@ -18,6 +18,8 @@ public class Aliases extends Command {
         this.name = "Aliases";
         this.aliases = new String[]{"alias"};
         this.help = "Restituisce tutti gli alias dei vari comandi";
+        this.category = new Category("Misc");
+        this.arguments = "null";
     }
 
     @Override

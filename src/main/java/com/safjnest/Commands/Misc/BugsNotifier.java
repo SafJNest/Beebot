@@ -18,8 +18,10 @@ public class BugsNotifier extends Command {
     public BugsNotifier(){
         this.name = "bugs";
         this.aliases = new String[]{"baco", "bughi", "report", "rep"};
-        this.help = "Consente di inviare un messaggio ai due developer del bot con descrizione di un comando che da problemi`.| [bugs] [nome comando] [descrizione]";
+        this.help = "Consente di inviare un messaggio ai due developer del bot con descrizione di un comando che da problemi`.";
         this.cooldown = 100;
+        this.category = new Category("Misc");
+        this.arguments = "[bugs] [nome comando] [descrizione]";
     }
 
 	@Override

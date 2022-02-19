@@ -14,6 +14,8 @@ public class Ram extends Command{
         this.name = "ram";
         this.aliases = new String[]{"usage"};
         this.help = "Restituisce le statistiche di sistema del bot, ram in uso, libera e totale (mb).";
+        this.category = new Category("Misc");
+        this.arguments = "null";
     }
 
     @Override

@@ -19,7 +19,9 @@ public class Mute extends Command{
     public Mute(){
         this.name = "Mute";
         this.aliases = new String[]{"dontlistentothesound"};
-        this.help = "muta lo user| [kick] [@user/idUser]";
+        this.help = "muta lo user.";
+        this.category = new Category("MemberManage");
+        this.arguments = "[mute] [@user]";
     }
 
     @Override
