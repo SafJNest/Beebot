@@ -15,6 +15,8 @@ public class Disconnect extends Command {
         this.name = "disconnect";
         this.aliases = new String[]{"bye", "levatidalcazzo"};
         this.help = "Il bot si disconnette dal canale vocale del server in cui hai scritto il comando";
+        this.category = new Category("Audio");
+        this.arguments = "null";
     }
 
 	@Override

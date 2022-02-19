@@ -39,6 +39,8 @@ public class Play extends Command {
         this.aliases = new String[]{"nuovavita", "p"};
         this.help = "Il bot riproduce canzoni locali o link di youtube";
         this.tierOneLink = tierOneLink;
+        this.category = new Category("Audio");
+        this.arguments = "[play] [link/nome suono]";
     }
 
 	@Override

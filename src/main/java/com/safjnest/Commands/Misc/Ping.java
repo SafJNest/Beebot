@@ -14,6 +14,8 @@ public class Ping extends Command{
         this.name = "ping";
         this.aliases = new String[]{"pong", "pingpong"};
         this.help = "Restituisce il ping del bot. (ms)";
+        this.category = new Category("Misc");
+        this.arguments = "null";
     }
 
     @Override

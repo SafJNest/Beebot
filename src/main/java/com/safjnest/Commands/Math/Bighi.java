@@ -19,8 +19,10 @@ public class Bighi extends Command {
     public Bighi(int maxBighi){
         this.name = "bighi";
         this.aliases = new String[]{"random"};
-        this.help ="Consente di generare un numero randomico a nBit| [bighi] [nbit]";
+        this.help ="Consente di generare un numero randomico a nBit.";
         this.maxBighi = maxBighi;
+        this.category = new Category("math");
+        this.arguments = "[bighi] [numero]";
     }
 
 	@Override

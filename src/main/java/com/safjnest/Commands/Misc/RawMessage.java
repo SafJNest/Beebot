@@ -14,6 +14,8 @@ public class RawMessage extends Command{
         this.name = "getlastrawmessage";
         this.aliases = new String[]{"rawmsg"};
         this.help = "Restituisce il contenuto dell'ultimo messaggio mandato";
+        this.category = new Category("Misc");
+        this.arguments = "null";
     }
 
     @Override

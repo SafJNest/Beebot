@@ -22,6 +22,8 @@ public class List extends Command {
         this.name = "list";
         this.aliases = new String[]{"listoide", "listina","lista"};
         this.help = "Il bot invia la lista di tutti i suoni locali";
+        this.category = new Category("Audio");
+        this.arguments = "null";
     }
 
 	@Override

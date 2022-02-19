@@ -14,7 +14,9 @@ public class FastestRoot extends Command{
     public FastestRoot(){
         this.name = "fastinversesquareroot";
         this.aliases = new String[]{"radiceinversa", "invroot", "fisqrt"};
-        this.help = "Consente di stampare il risultato della radice quadrata inversa veloce| [fastinversesquareroot] [numero]";
+        this.help = "Consente di stampare il risultato della radice quadrata inversa veloce.";
+        this.category = new Category("math");
+        this.arguments = "[fastinversesquareroot] [numero]";
     }
 
     @Override

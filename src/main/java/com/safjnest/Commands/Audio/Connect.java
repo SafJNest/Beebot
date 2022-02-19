@@ -15,6 +15,8 @@ public class Connect extends Command {
         this.name = "connect";
         this.aliases = new String[]{"join", "comeherebroda"};
         this.help = "Il bot si connette nel tuo canale vocale";
+        this.category = new Category("Audio");
+        this.arguments = "null";
     }
 
 	@Override
