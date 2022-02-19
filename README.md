@@ -120,6 +120,7 @@ Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;
 - [ ] Aggiungere i log di sistema.
 - [ ] Possibiltà di caricare i suoni tramite comando (Upload).
 - [ ] Aggiungere la coda al comando Play.
+- [ ] Aggiungre comando Stop and Resume.
 ## **Licenza**
 Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights reserved. SAFJNEST PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
 
