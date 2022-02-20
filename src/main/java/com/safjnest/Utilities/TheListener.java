@@ -1,6 +1,7 @@
 package com.safjnest.Utilities;
 
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 /**
@@ -16,5 +17,4 @@ public class TheListener extends ListenerAdapter{
             e.getGuild().getAudioManager().closeAudioConnection();
         }
     }
-    
 }

@@ -4,8 +4,7 @@ import java.util.EventListener;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import com.safjnest.Utilities.FileListener;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -13,11 +12,11 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
  * 
  * @since 1.0
  */
-public class Connect extends Command implements EventListener{
+public class Upload extends Command{
 
-    public Connect(){
-        this.name = "connect";
-        this.aliases = new String[]{"join", "comeherebroda"};
+    public Upload(){
+        this.name = "upload";
+        this.aliases = new String[]{"up"};
         this.help = "Il bot si connette nel tuo canale vocale\nSe già connesso in un altro canale sarà disconnesso dallo stesso.\n"
         + "In caso tutti gli utenti escano dalla stanza il bot si disconnetterà automaticamente.";
         this.category = new Category("Audio");
@@ -26,15 +25,8 @@ public class Connect extends Command implements EventListener{
 
 	@Override
 	protected void execute(CommandEvent event) {
-        if(event.getMember().getVoiceState().getChannel() == null)
-            event.reply("Non sei in un canale vocale.");
-        else
-		    event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
-
+        event.reply("operativo e pronto a listenare");
+        FileListener listino = new FileListener(event.getArgs());
+        event.getJDA().addEventListener(listino);
 	}
-
-    
-    public void onMessageReceived(MessageReceivedEvent e){
-        System.out.println(e.getMessage().getAttachments().get(0).getFileExtension());
-    }
 }
