@@ -20,7 +20,7 @@ public class UnMute extends Command{
     public UnMute(){
         this.name = "unmute";
         this.aliases = new String[]{"listentothesound"};
-        this.help = "smuta lo user.";
+        this.help = "Smuta lo user.";
         this.category = new Category("Gestione Membri");
         this.arguments = "[unmute] [@user]";
     }
