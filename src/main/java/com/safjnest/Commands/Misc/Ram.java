@@ -13,7 +13,11 @@ public class Ram extends Command{
     public Ram(){
         this.name = "ram";
         this.aliases = new String[]{"usage"};
-        this.help = "Restituisce le statistiche di sistema del bot, ram in uso, libera e totale (mb).";
+        this.help = "Restituisce le statistiche di sistema del bot, ram in uso, libera e totale (mb).\n"
+        + "TOTALE: Ram messa a disposizione dal SO per il bot.\n"
+        + "In uso: Ram che sta effettivamente utilizzando il bot.\n"
+        + "Libera: Ram rimasta a disposizione per il bot.\n"
+        + "Massima: Ram messa a disposizione per Java in generale, equivale a -Xmx value.\n";
         this.category = new Category("Misc");
         this.arguments = "null";
     }

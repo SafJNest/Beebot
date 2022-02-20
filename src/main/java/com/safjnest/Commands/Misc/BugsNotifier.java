@@ -18,7 +18,8 @@ public class BugsNotifier extends Command {
     public BugsNotifier(){
         this.name = "bugs";
         this.aliases = new String[]{"baco", "bughi", "report", "rep"};
-        this.help = "Consente di inviare un messaggio ai due developer del bot con descrizione di un comando che da problemi`.";
+        this.help = "Consente di inviare un messaggio ai due developer del bot, con una accurata descrizione, le problematiche avute riguardante un comando.\n"
+        + "Per evitare possibili spam ha un cooldown di 100s.";
         this.cooldown = 100;
         this.category = new Category("Misc");
         this.arguments = "[bugs] [nome comando] [descrizione]";

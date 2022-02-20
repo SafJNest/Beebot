@@ -99,6 +99,8 @@ public class App extends ListenerAdapter {
 
         builder.addCommand(new RawMessage());
 
+        builder.addCommand(new Calc());
+
         CommandClient client = builder.build();
 
         jda.addEventListener(client);
