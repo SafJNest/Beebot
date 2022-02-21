@@ -1,7 +1,5 @@
 package com.safjnest.Commands.Audio;
 
-import java.util.EventListener;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.FileListener;
@@ -10,19 +8,19 @@ import com.safjnest.Utilities.FileListener;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
- * @since 1.0
+ * @since 1.2.5
  */
 public class Upload extends Command{
 
     public Upload(){
         this.name = "upload";
-        this.aliases = new String[]{"up"};
-        this.help = "Il bot si connette nel tuo canale vocale\nSe già connesso in un altro canale sarà disconnesso dallo stesso.\n"
-        + "In caso tutti gli utenti escano dalla stanza il bot si disconnetterà automaticamente.";
+        this.aliases = new String[]{"up", "add"};
+        this.help = "Il comando consente di poter caricare facilmente dei suoni nel database del bot.\nSe carichi dei file mp3 ci fai un piacere.\n"
+        + "Se carichi dei .opus ti sgozzo.";
         this.category = new Category("Audio");
-        this.arguments = "null";
+        this.arguments = "[upload] [nome del suono, senza specificare il formato]";
     }
-
+    
 	@Override
 	protected void execute(CommandEvent event) {
         event.reply("operativo e pronto a listenare");

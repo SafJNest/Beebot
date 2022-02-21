@@ -21,7 +21,6 @@ public class ServerInfo extends Command{
         this.name = "serverinfo";
         this.aliases = new String[]{"servinfo", "serinf"};
         this.help = "Informazioni utili del server in cui ti trovi.";
-        //this.arguments = "dios, madosca, stiscos";
         this.category = new Category("Gestione Server");
     }
 
@@ -45,8 +44,8 @@ public class ServerInfo extends Command{
 
         eb.addField("Descrizione del server", "```" + ((event.getGuild().getDescription() == null) ? "Descrizione non trovata" : event.getGuild().getDescription()) + "```", false);
 
-        eb.addField("Numero di Boost", "```" + String.valueOf(event.getGuild().getBoostCount()) + "```", true);
         eb.addField("Tier del Boost", "```" + event.getGuild().getBoostTier().name() + "```", true);
+        eb.addField("Numero di Boost", "```" + String.valueOf(event.getGuild().getBoostCount()) + "```", true);
         eb.addField("Ruolo dei Booster", "```" + ((event.getGuild().getBoostRole() == null) ? "NONE" : event.getGuild().getBoostRole().getName()) + "```", true);
 
         eb.addField("Numero dei Membri del server [" + String.valueOf(event.getGuild().getMemberCount()) + "]", "```" + "Membri: " + event.getGuild().getMembers().stream().filter(member -> !member.getUser().isBot()).count() + " | Bot: " + event.getGuild().getMembers().stream().filter(member -> member.getUser().isBot()).count() + "```", false);
@@ -54,7 +53,7 @@ public class ServerInfo extends Command{
         eb.addField("Livello contenuti espliciti", "```" + event.getGuild().getExplicitContentLevel().name() + "```", true);
         eb.addField("Livello NSFW", "```" + event.getGuild().getNSFWLevel().toString() + "```", true);
 
-        eb.addField("Data di creazione del server", "```" + DateTimeFormatter.ISO_LOCAL_DATE.format(event.getGuild().getTimeCreated()) + "```", false);
+        eb.addField("Data di creazione del server", "```" + DateTimeFormatter.ISO_LOCAL_DATE.format(event.getGuild().getTimeCreated()) + "```", false); //TODO cambia formato
 
         eb.addField("Regione", "```" + event.getGuild().getLocale().toString() + "```", true);
         eb.addField("Livello MFA richiesto", "```" + event.getGuild().getRequiredMFALevel().toString() + "```", true);
@@ -62,7 +61,7 @@ public class ServerInfo extends Command{
         
         event.reply(eb.build());
 
-        //event.reply(event.getGuild().getCategories().toString());
+        //event.reply(event.getGuild().getCategories().toString()); TODO usa sti schifi
         //event.reply(event.getGuild().getChannels().toString());
     }
 }

@@ -1,6 +1,5 @@
 package com.safjnest.Commands.Math;
 
-import java.util.ArrayList;
 import java.util.Set;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -93,8 +92,5 @@ public class Calc extends Command{
             e.printStackTrace();
             event.reply("SYNTAX ERROR: " + e.getMessage());
         }
-
-        
     }
-    
 }
