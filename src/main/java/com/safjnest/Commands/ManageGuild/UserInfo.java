@@ -73,7 +73,7 @@ public class UserInfo extends Command{
         int rolesCount = roles.length() - roles.replace(",", "").length(); //TOFIX magari non prendere il numero dei ruoli cosi`
         eb.addField("Ruoli [" 
                     + event.getGuild().getMember(theGuy).getRoles().size() + "] " 
-                    + "(stampati " + (rolesCount == 0 ? rolesCount : rolesCount + 1) + ")",
+                    + "(stampati " + (rolesCount == 0 ? rolesCount + 1 : rolesCount) + ")",
                     "```" + roles + "```", false);
 
         eb.addField("Nickname", "```" + (event.getGuild().getMember(theGuy).getNickname() == null ? "NO NICKNAME" : event.getGuild().getMember(theGuy).getNickname()) + "```", true);
