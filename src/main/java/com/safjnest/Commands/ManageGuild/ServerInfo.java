@@ -1,6 +1,8 @@
 package com.safjnest.Commands.ManageGuild;
 
 import java.awt.Color;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -16,6 +18,7 @@ import net.dv8tion.jda.api.entities.Member;
  * @since 1.1.02
  */
 public class ServerInfo extends Command{
+    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
 
     public ServerInfo(){
         this.name = "serverinfo";
@@ -44,16 +47,25 @@ public class ServerInfo extends Command{
 
         eb.addField("Descrizione del server", "```" + ((event.getGuild().getDescription() == null) ? "Descrizione non trovata" : event.getGuild().getDescription()) + "```", false);
 
+        eb.addField("Numero dei Membri del server [" + String.valueOf(event.getGuild().getMemberCount()) + "]", "```"
+                    + "Membri: " + event.getGuild().getMembers().stream().filter(member -> !member.getUser().isBot()).count()
+                    + " | Bot: " + event.getGuild().getMembers().stream().filter(member -> member.getUser().isBot()).count()
+                    + "```", false);
+
         eb.addField("Tier del Boost", "```" + event.getGuild().getBoostTier().name() + "```", true);
         eb.addField("Numero di Boost", "```" + String.valueOf(event.getGuild().getBoostCount()) + "```", true);
         eb.addField("Ruolo dei Booster", "```" + ((event.getGuild().getBoostRole() == null) ? "NONE" : event.getGuild().getBoostRole().getName()) + "```", true);
 
-        eb.addField("Numero dei Membri del server [" + String.valueOf(event.getGuild().getMemberCount()) + "]", "```" + "Membri: " + event.getGuild().getMembers().stream().filter(member -> !member.getUser().isBot()).count() + " | Bot: " + event.getGuild().getMembers().stream().filter(member -> member.getUser().isBot()).count() + "```", false);
+        eb.addField("Categorie e canali [" + event.getGuild().getChannels().size() + "]", "```" 
+                    + "Categorie: " + event.getGuild().getCategories().size() 
+                    + " | Testuali: " + event.getGuild().getTextChannels().size() 
+                    + " | Vocali " + event.getGuild().getVoiceChannels().size() + "```", false);
 
         eb.addField("Livello contenuti espliciti", "```" + event.getGuild().getExplicitContentLevel().name() + "```", true);
         eb.addField("Livello NSFW", "```" + event.getGuild().getNSFWLevel().toString() + "```", true);
 
-        eb.addField("Data di creazione del server", "```" + DateTimeFormatter.ISO_LOCAL_DATE.format(event.getGuild().getTimeCreated()) + "```", false); //TODO cambia formato
+        eb.addField("Data di creazione del server", "```" + dtf.format(event.getGuild().getTimeCreated()) 
+                    + " (" + event.getGuild().getTimeCreated().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)```", false);
 
         eb.addField("Regione", "```" + event.getGuild().getLocale().toString() + "```", true);
         eb.addField("Livello MFA richiesto", "```" + event.getGuild().getRequiredMFALevel().toString() + "```", true);
@@ -61,7 +73,7 @@ public class ServerInfo extends Command{
         
         event.reply(eb.build());
 
-        //event.reply(event.getGuild().getCategories().toString()); TODO usa sti schifi
+        //event.reply(event.getGuild().getCategories().toString())
         //event.reply(event.getGuild().getChannels().toString());
     }
 }
