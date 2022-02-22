@@ -13,7 +13,7 @@ public class Disconnect extends Command {
 
     public Disconnect(){
         this.name = "disconnect";
-        this.aliases = new String[]{"bye", "levatidalcazzo"};
+        this.aliases = new String[]{"bye", "levatidalcazzo", "chiama"};
         this.help = "Il bot si disconnette dal canale vocale in cui è attualmente connesso.\nÈ possibile disconnettere il bot solo se si è connessi nella sua stessa stanza(serve per non dare fastidio).";
         this.category = new Category("Audio");
         this.arguments = "null";
