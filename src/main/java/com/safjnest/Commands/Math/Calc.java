@@ -1,5 +1,6 @@
 package com.safjnest.Commands.Math;
 
+//import java.math.BigInteger;
 import java.util.Set;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -28,6 +29,7 @@ public class Calc extends Command{
         try {
             if(Character.isDigit(command.charAt(0))){
                 Double a = 0.0, b = 0.0;
+                //BigInteger x = BigInteger.ZERO, y = BigInteger.ZERO;
                 char sign = 'a';
                 System.out.println(command);
                 for(int i = 0; i < command.length(); i++){
