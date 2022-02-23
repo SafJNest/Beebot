@@ -6,7 +6,6 @@ import java.util.Set;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.User;
 
 public class PermissionHandler {
     private static Set<String> untouchables = Set.of("383358222972616705", "440489230968553472");
@@ -21,13 +20,13 @@ public class PermissionHandler {
     //}
 
     public static boolean isUntouchable(String id) {
-        if(untouchables.contains(id))
+        if (untouchables.contains(id))
             return true;
         return false;
     }
 
     public static boolean isEpria(String id) {
-        if(epria.equals(id))
+        if (epria.equals(id))
             return true;
         return false;
     }
@@ -36,11 +35,10 @@ public class PermissionHandler {
         return epria;
     }
 
-    public static List<String> getPermissionNames(User user){
+    public static List<String> getPermissionNames(Member member){
         List<String> finalPermissions= new ArrayList<String>();
-        //for (Role role : user.getJDA().) { TODO cose
-            
-        //}
+        for (Permission permission : member.getPermissions())
+            finalPermissions.add(permission.getName());
         return finalPermissions;
     }
 
