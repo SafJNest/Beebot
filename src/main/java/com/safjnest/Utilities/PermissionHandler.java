@@ -1,9 +1,12 @@
 package com.safjnest.Utilities;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 
 public class PermissionHandler {
     private static Set<String> untouchables = Set.of("383358222972616705", "440489230968553472");
@@ -31,6 +34,14 @@ public class PermissionHandler {
 
     public static String getEpria(){
         return epria;
+    }
+
+    public static List<String> getPermissionNames(User user){
+        List<String> finalPermissions= new ArrayList<String>();
+        //for (Role role : user.getJDA().) { TODO cose
+            
+        //}
+        return finalPermissions;
     }
 
     public static boolean hasPermission(Member theGuy, Permission permission) {

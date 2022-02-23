@@ -13,3 +13,5 @@ puo tornare utile: action.submit()
     if (error != null)
         error.printStackTrace();
 });
+
+DecimalFormat formatter = new DecimalFormat("0.00")

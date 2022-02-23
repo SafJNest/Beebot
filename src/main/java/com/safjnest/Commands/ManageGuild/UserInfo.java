@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -28,19 +30,16 @@ public class UserInfo extends Command{
         this.category = new Category("Gestione Server");
     }
 
-    private String getRoles(CommandEvent event, User theGuy) {
-        String roles = "";
+    private List<String> getMaxFieldableRoleNames(CommandEvent event, User theGuy) {
+        List<String> finalRoles= new ArrayList<String>();
+        int rolesLenght = 0;
         for (int i = 0; i < event.getGuild().getMember(theGuy).getRoles().size(); i++) {
-            String foo = event.getGuild().getMember(theGuy).getRoles().get(i).getName() + ", ";
-            if(roles.length() + foo.length() >= 1024)
+            rolesLenght += event.getGuild().getMember(theGuy).getRoles().get(i).getName().length() + 2;
+            if(rolesLenght >= 1024)
                 break;
-            roles += foo;
+            finalRoles.add(event.getGuild().getMember(theGuy).getRoles().get(i).getName());
         }
-        if (roles.length() >= 2)
-            roles = roles.substring(0, roles.length() - 2);
-        if(roles == null || roles == "")
-            roles = "NO ROLES";
-        return roles;
+        return finalRoles;
     }
 
     @Override
@@ -62,32 +61,50 @@ public class UserInfo extends Command{
             return;
         }
         
-        eb.setTitle("Informazioni dello user");
+        eb.setTitle(":busts_in_silhouette:Informazioni sullo user:busts_in_silhouette:");
         eb.setThumbnail(theGuy.getAvatarUrl());
         eb.setColor(new Color(116, 139, 151));
 
         eb.addField("Nome", "```" + theGuy.getAsTag() + "```", true);
         eb.addField("ID", "```" + theGuy.getId() + "```" , true);
 
-        String roles = getRoles(event, theGuy);
-        int rolesCount = roles.length() - roles.replace(",", "").length(); //TOFIX magari non prendere il numero dei ruoli cosi`
+        List<String> RoleNames = getMaxFieldableRoleNames(event, theGuy);
         eb.addField("Ruoli [" 
                     + event.getGuild().getMember(theGuy).getRoles().size() + "] " 
-                    + "(stampati " + (rolesCount == 0 ? rolesCount + 1 : rolesCount) + ")",
-                    "```" + roles + "```", false);
+                    + "(stampati " + RoleNames.size() + ")", "```" 
+                    + (RoleNames.size() == 0 
+                        ? "NO ROLES" 
+                        : RoleNames.toString().substring(1, RoleNames.toString().length() - 1))
+                    + "```", false);
 
-        eb.addField("Nickname", "```" + (event.getGuild().getMember(theGuy).getNickname() == null ? "NO NICKNAME" : event.getGuild().getMember(theGuy).getNickname()) + "```", true);
-        eb.addField("è un bot", "```" + ((theGuy.isBot() || PermissionHandler.isEpria(theGuy.getId())) ? "si" : "no") + "```" , true);
+        eb.addField("Nickname", "```" 
+                    + (event.getGuild().getMember(theGuy).getNickname() == null 
+                        ? "NO NICKNAME" 
+                        : event.getGuild().getMember(theGuy).getNickname()) 
+                    + "```", true);
 
-        eb.addField("è un admin", "```" + (event.getGuild().getMember(theGuy).hasPermission(Permission.ADMINISTRATOR) ? "si" : "no") + "```", false);//TODO aggiungi permessi
+        eb.addField("è un bot", "```" 
+                    + ((theGuy.isBot() || PermissionHandler.isEpria(theGuy.getId())) 
+                        ? "si" 
+                        : "no") 
+                    + "```" , true);
 
-        eb.addField("quando è entrato nel server", "```" 
+        eb.addField("Permessi del server", "```" 
+                    + (event.getGuild().getMember(theGuy).hasPermission(Permission.ADMINISTRATOR) 
+                        ? "👑 Amministratore (tutti i permessi)" 
+                        : PermissionHandler.getPermissionNames(theGuy)) 
+                    + "```", false);
+
+        eb.addField("Entrato nel server il (dd/mm/yyyy)", "```" 
                     + dtf.format(event.getGuild().getMember(theGuy).getTimeJoined()) 
                     + " (" + event.getGuild().getMember(theGuy).getTimeJoined().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)" 
                     + "```", false);
 
-        eb.addField("creazione dell'account", "```" + dtf.format(theGuy.getTimeCreated()) + " (" + theGuy.getTimeCreated().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)" + "```", false);
-
+        eb.addField("Creato l'account il (dd/mm/yyyy)", "```" 
+                    + dtf.format(theGuy.getTimeCreated()) 
+                    + " (" + theGuy.getTimeCreated().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)" 
+                    + "```", false);
+        
         event.reply(eb.build());
     }
 }
