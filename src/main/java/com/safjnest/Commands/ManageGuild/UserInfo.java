@@ -69,40 +69,41 @@ public class UserInfo extends Command{
         eb.addField("ID", "```" + theGuy.getId() + "```" , true);
 
         List<String> RoleNames = getMaxFieldableRoleNames(event, theGuy);
-        eb.addField("Ruoli [" 
-                    + event.getGuild().getMember(theGuy).getRoles().size() + "] " 
-                    + "(stampati " + RoleNames.size() + ")", "```" 
-                    + (RoleNames.size() == 0 
-                        ? "NO ROLES" 
+        eb.addField("Ruoli ["
+                    + event.getGuild().getMember(theGuy).getRoles().size() + "] "
+                    + "(stampati " + RoleNames.size() + ")", "```"
+                    + (RoleNames.size() == 0
+                        ? "NO ROLES"
                         : RoleNames.toString().substring(1, RoleNames.toString().length() - 1))
                     + "```", false);
 
-        eb.addField("Nickname", "```" 
-                    + (event.getGuild().getMember(theGuy).getNickname() == null 
-                        ? "NO NICKNAME" 
-                        : event.getGuild().getMember(theGuy).getNickname()) 
+        eb.addField("Nickname", "```"
+                    + (event.getGuild().getMember(theGuy).getNickname() == null
+                        ? "NO NICKNAME"
+                        : event.getGuild().getMember(theGuy).getNickname())
                     + "```", true);
 
-        eb.addField("è un bot", "```" 
-                    + ((theGuy.isBot() || PermissionHandler.isEpria(theGuy.getId())) 
-                        ? "si" 
-                        : "no") 
+        eb.addField("è un bot", "```"
+                    + ((theGuy.isBot() || PermissionHandler.isEpria(theGuy.getId()))
+                        ? "si"
+                        : "no")
                     + "```" , true);
 
-        eb.addField("Permessi del server", "```" 
-                    + (event.getGuild().getMember(theGuy).hasPermission(Permission.ADMINISTRATOR) 
-                        ? "👑 Amministratore (tutti i permessi)" 
-                        : PermissionHandler.getPermissionNames(theGuy)) 
+        String permissionNames = PermissionHandler.getPermissionNames(event.getGuild().getMember(theGuy)).toString();
+        eb.addField("Permessi del server", "```"
+                    + (event.getGuild().getMember(theGuy).hasPermission(Permission.ADMINISTRATOR)
+                        ? "👑 Amministratore (tutti i permessi)"
+                        : permissionNames.substring(1, permissionNames.length() - 1))
                     + "```", false);
 
         eb.addField("Entrato nel server il (dd/mm/yyyy)", "```" 
                     + dtf.format(event.getGuild().getMember(theGuy).getTimeJoined()) 
-                    + " (" + event.getGuild().getMember(theGuy).getTimeJoined().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)" 
+                    + " (" + event.getGuild().getMember(theGuy).getTimeJoined().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)"
                     + "```", false);
 
-        eb.addField("Creato l'account il (dd/mm/yyyy)", "```" 
+        eb.addField("Creato l'account il (dd/mm/yyyy)", "```"
                     + dtf.format(theGuy.getTimeCreated()) 
-                    + " (" + theGuy.getTimeCreated().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)" 
+                    + " (" + theGuy.getTimeCreated().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)"
                     + "```", false);
         
         event.reply(eb.build());
