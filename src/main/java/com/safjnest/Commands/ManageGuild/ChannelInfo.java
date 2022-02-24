@@ -22,9 +22,9 @@ public class ChannelInfo extends Command {
     public ChannelInfo(){
         this.name = "channelinfo";
         this.aliases = new String[]{"infochannel", "ci","ic","channel"};
-        this.help = "Il bot cancella i messaggi in un canale di testo fino ad un massimo di 99 messaggi(100 incluso il comando).";
+        this.help = "Il bot restituisce tutte le informazioni relative ad un canale, sia vocale che testuale.";
         this.category = new Category("Gestione Server");
-        this.arguments = "[clear] [n messaggi]";
+        this.arguments = "[channelinfo] [#canale/id canale]";
     }
 
 	@Override
@@ -46,7 +46,13 @@ public class ChannelInfo extends Command {
             eb.addField("ID Canale", "```" + v.getId() + "```", true);   
 
             eb.addField("BitRate Canale", "```" + v.getBitrate() + "```", false);   
-            eb.addField("Limite di utenti", "```" + v.getMembers().size() +"/"+ ((v.getUserLimit()==0)?"∞":v.getUserLimit()) + "```", false);
+            eb.addField("Limite di utenti", "```" 
+                        + v.getMembers().size() 
+                        +"/"
+                        + ((v.getUserLimit()==0)
+                            ?"∞"
+                            :v.getUserLimit()) 
+                        + "```", false);
             
             eb.addField("Tipo Canale", "```" + v.getType()+ "```", true);   
             eb.addField("Categoria", "```" + v.getParentCategory().getName() + "```", true);   
@@ -58,7 +64,11 @@ public class ChannelInfo extends Command {
             eb.addField("Nome Canale", "```" + c.getName() + "```", true);   
             eb.addField("ID Canale", "```" + c.getId() + "```", true);   
 
-            eb.addField("Topic Canale", "```" + ((c.getTopic()==null)?"Nessun topic per il canale":c.getTopic()) + "```", false); 
+            eb.addField("Topic Canale", "```" 
+                       + ((c.getTopic()==null)
+                            ?"Nessun topic per il canale"
+                            :c.getTopic()) 
+                       + "```", false); 
 
             eb.addField("Tipo Canale", "```" + c.getType()+ "```", true);   
             eb.addField("Categoria Canale", "```" + c.getParentCategory().getName() + "```", true);   

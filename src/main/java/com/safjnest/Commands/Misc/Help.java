@@ -40,7 +40,7 @@ public class Help extends Command {
             commands.get(e.getCategory().getName()).add(e);
         }
         eb.setTitle("📒INFORMAZIONI E COMANDI📒", null);
-        eb.setDescription("Il prefisso corrente è:```"+event.getClient().getPrefix()+"```"
+        eb.setDescription("Il prefisso corrente è: **"+event.getClient().getPrefix()+"**"
         + ", puoi avere maggiori informazioni tramite il comando: ```"+event.getClient().getPrefix()+"<nomecomando>.");
         eb.setColor(new Color(255, 196, 0));
         if(command.equals("")){
@@ -59,6 +59,7 @@ public class Help extends Command {
                 eb.addField(k, ss, true);
                 ss = "```\n";
             }
+            eb.setFooter("Il bot è sempre in costante aggiornamento ;D", null);
         }else{
             Command e = null;
             for(String k : commands.keySet()){
@@ -84,7 +85,7 @@ public class Help extends Command {
             }
 
             
-           
+            eb.setFooter("SE L'ARGS E' NULL BASTA DIGITARE IL COMANDO, LE QUADRE INDICANO CAMPO OBBLIGATORIO E LE TONDE FACOLTATIVO", null);
         }
         eb.addField("**ALTRE INFORMAZIONI**", "Il bot è stato sviluppato da sole due persone quindi in caso di bug o problemi non esitate a contattarli.", false);
         for(String id : PermissionHandler.getUntouchables()){
@@ -94,7 +95,6 @@ public class Help extends Command {
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
 
-        eb.setFooter("SE L'ARGS E' NULL BASTA DIGITARE IL COMANDO, LE QUADRE INDICANO CAMPO OBBLIGATORIO E LE TONDE FACOLTATIVO", null);
         event.getChannel().sendMessageEmbeds(eb.build())
                 .queue();
 
