@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -20,7 +21,7 @@ import net.dv8tion.jda.api.entities.User;
  * @since 1.2.5
  */
 public class UserInfo extends Command{
-    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
+    
 
     public UserInfo() {
         this.name = "userinfo";
@@ -90,25 +91,24 @@ public class UserInfo extends Command{
                     + "```" , true);
 
         String permissionNames = "";
-        for(String permission : PermissionHandler.getPermissionNames(event.getGuild().getMember(theGuy))){
-            permissionNames += permission + "\n";
-        }
+        for(String permission : PermissionHandler.getFilteredPermissionNames(event.getGuild().getMember(theGuy)))
+            permissionNames += "✅ " + permission + "\n";
         eb.addField("Permessi del server", "```"
                     + (event.getGuild().getMember(theGuy).hasPermission(Permission.ADMINISTRATOR)
                         ? "👑 Amministratore (tutti i permessi)"
-                        : permissionNames.substring(1, permissionNames.length() - 1))
+                        : permissionNames)
                     + "```", false);
 
         eb.addField("Entrato nel server il (dd/mm/yyyy)", "```" 
-                    + dtf.format(event.getGuild().getMember(theGuy).getTimeJoined()) 
-                    + " (" + event.getGuild().getMember(theGuy).getTimeJoined().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)"
+                    + DateHandler.formatDate(event.getGuild().getMember(theGuy).getTimeJoined())
                     + "```", false);
 
         eb.addField("Creato l'account il (dd/mm/yyyy)", "```"
-                    + dtf.format(theGuy.getTimeCreated()) 
-                    + " (" + theGuy.getTimeCreated().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)"
+                    + DateHandler.formatDate(theGuy.getTimeCreated())
                     + "```", false);
         
         event.reply(eb.build());
+        DateHandler.formatDate(theGuy.getTimeCreated());
+
     }
 }

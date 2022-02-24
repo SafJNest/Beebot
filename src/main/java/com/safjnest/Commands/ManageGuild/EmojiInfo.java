@@ -1,24 +1,12 @@
 package com.safjnest.Commands.ManageGuild;
 
-import java.net.URL;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-
-import javax.lang.model.util.Elements;
-
-import com.safjnest.Utilities.PermissionHandler;
-
-import org.jdom2.Document;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Emoji;
 import net.dv8tion.jda.api.entities.Emote;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
