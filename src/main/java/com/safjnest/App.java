@@ -53,11 +53,12 @@ public class App extends ListenerAdapter {
         token  = tokenCanary;
         //token = args[0];
         jda = JDABuilder
-                .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS)
+                .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
                 .addEventListeners(new TheListener())
                 .setMemberCachePolicy(MemberCachePolicy.VOICE)
                 .setChunkingFilter(ChunkingFilter.ALL)
-                .enableCache(CacheFlag.VOICE_STATE)
+                .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
+                
                 .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
@@ -79,6 +80,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Msg());
         builder.addCommand(new ServerInfo());
         builder.addCommand(new UserInfo());
+        builder.addCommand(new EmojiInfo());
         //Manage Member
         builder.addCommand(new Ban());
         builder.addCommand(new Unban());
