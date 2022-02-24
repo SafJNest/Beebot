@@ -53,13 +53,12 @@ public class App extends ListenerAdapter {
         token  = tokenCanary;
         //token = args[0];
         jda = JDABuilder
-                .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
-                .addEventListeners(new TheListener())
-                .setMemberCachePolicy(MemberCachePolicy.VOICE)
-                .setChunkingFilter(ChunkingFilter.ALL)
-                .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
-                
-                .build();
+            .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
+            .addEventListeners(new TheListener())
+            .setMemberCachePolicy(MemberCachePolicy.VOICE)
+            .setChunkingFilter(ChunkingFilter.ALL)
+            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
+            .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setPrefix(PREFIX);
@@ -67,7 +66,6 @@ public class App extends ListenerAdapter {
         builder.setOwnerId("939876818465488926");
         builder.setActivity(activity);
         
-
         //Audio
         builder.addCommand(new Connect());
         builder.addCommand(new Disconnect());

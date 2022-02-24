@@ -1,10 +1,10 @@
 package com.safjnest.Commands.ManageGuild;
 
 import java.awt.Color;
-import java.time.format.DateTimeFormatter;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.DateHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.GuildChannel;
@@ -17,7 +17,6 @@ import net.dv8tion.jda.api.entities.VoiceChannel;
  * @since 1.0
  */
 public class ChannelInfo extends Command {
-    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
 
     public ChannelInfo(){
         this.name = "channelinfo";
@@ -57,8 +56,7 @@ public class ChannelInfo extends Command {
             eb.addField("Tipo Canale", "```" + v.getType()+ "```", true);   
             eb.addField("Categoria", "```" + v.getParentCategory().getName() + "```", true);   
 
-            eb.addField("Data creazione Canale", "```" + dtf.format(v.getTimeCreated())+ "```", false);
-
+            eb.addField("Data creazione Canale", "```" + DateHandler.formatDate(v.getTimeCreated())+ "```", false);
         }else{
             c = event.getGuild().getTextChannelById(gc.getId());
             eb.addField("Nome Canale", "```" + c.getName() + "```", true);   
@@ -73,7 +71,7 @@ public class ChannelInfo extends Command {
             eb.addField("Tipo Canale", "```" + c.getType()+ "```", true);   
             eb.addField("Categoria Canale", "```" + c.getParentCategory().getName() + "```", true);   
 
-            eb.addField("Data creazione Canale", "```" + dtf.format(c.getTimeCreated())+ "```", false);
+            eb.addField("Data creazione Canale", "```" + DateHandler.formatDate(c.getTimeCreated()) + "```", false);
         } 
         event.reply(eb.build());
 	}
