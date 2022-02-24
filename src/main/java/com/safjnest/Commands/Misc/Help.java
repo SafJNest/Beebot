@@ -7,8 +7,10 @@ import java.util.HashMap;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.User;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -37,10 +39,11 @@ public class Help extends Command {
                 commands.put(e.getCategory().getName(), new ArrayList<Command>());
             commands.get(e.getCategory().getName()).add(e);
         }
-        eb.setTitle("Help", null);
+        eb.setTitle("📒INFORMAZIONI E COMANDI📒", null);
+        eb.setDescription("Il prefisso corrente è:```"+event.getClient().getPrefix()+"```"
+        + ", puoi avere maggiori informazioni tramite il comando: ```"+event.getClient().getPrefix()+"<nomecomando>.");
         eb.setColor(new Color(255, 196, 0));
         if(command.equals("")){
-            eb.setDescription("**Lista dei Comandi del tier 1 bot!**");
             /*
             for (Command e : event.getClient().getCommands()) {
                 eb.addField(e.getName(), e.getHelp(), true);
@@ -82,6 +85,11 @@ public class Help extends Command {
 
             
            
+        }
+        eb.addField("**ALTRE INFORMAZIONI**", "Il bot è stato sviluppato da sole due persone quindi in caso di bug o problemi non esitate a contattarli.", false);
+        for(String id : PermissionHandler.getUntouchables()){
+            User guy = event.getJDA().getUserById(id);
+            eb.addField("**"+guy.getName()+"**","```"+guy.getId()+"```", false);
         }
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
