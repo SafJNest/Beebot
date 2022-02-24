@@ -1,9 +1,8 @@
 package com.safjnest.Commands.ManageGuild;
 
-import java.time.format.DateTimeFormatter;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.DateHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Emote;
@@ -15,7 +14,6 @@ import net.dv8tion.jda.api.entities.Emote;
  * @since 1.0
  */
 public class EmojiInfo extends Command {
-    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
 
     public EmojiInfo(){
         this.name = "emoji";
@@ -39,7 +37,7 @@ public class EmojiInfo extends Command {
         :"```❌ No```"
         , true);
         eb.addField("**Emoji URL**", em.getImageUrl(), false);   
-        eb.addField("Creata il il (dd/mm/yyyy)", "```" + dtf.format(em.getTimeCreated())+ "```", false);
+        eb.addField("Creata il il (dd/mm/yyyy)", "```" + DateHandler.formatDate(em.getTimeCreated()) + "```", false);
         event.reply(eb.build());
 
 	}

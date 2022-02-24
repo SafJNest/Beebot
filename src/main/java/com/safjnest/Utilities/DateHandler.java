@@ -6,41 +6,34 @@ import java.util.Calendar;
 
 public class DateHandler {
     public static String formatDate(OffsetDateTime date){
-        boolean hasY = false;
-        boolean hasM = false;
-        boolean hasD = false;
-
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
 		
-        Calendar c = Calendar.getInstance();
-        c.setTimeInMillis(OffsetDateTime.now().toInstant().toEpochMilli() - date.toInstant().toEpochMilli());
-        int y = c.get(Calendar.YEAR)-1970;
-        int m = c.get(Calendar.MONTH);
-        int d = c.get(Calendar.DAY_OF_MONTH)-1;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(OffsetDateTime.now().toInstant().toEpochMilli() - date.toInstant().toEpochMilli());
+        int years = calendar.get(Calendar.YEAR) - 1970;
+        int months = calendar.get(Calendar.MONTH);
+        int days = calendar.get(Calendar.DAY_OF_MONTH) - 1;
 
         String finalDate = dtf.format(date) + " (";
-        if(y != 0){
-            hasY = true;
-            if(y == 1)
-                finalDate += y + " anno ";
+        if(years != 0){
+            if(years == 1)
+                finalDate += years + " anno ";
             else
-                finalDate += y + " anni ";
+                finalDate += years + " anni ";
         }
-        if(m != 0){
-            hasM = true;
-            if(m == 1)
-                finalDate += m + " mese ";
-            else
-                finalDate += m + " mesi ";
-        }
-        if(d != 0){
-            hasD = true;
-            if(hasY || hasM)
+        if(months != 0){
+            if(years != 0)
                 finalDate += "e ";
-            if(d == 1)
-                finalDate += d + " giorno ";
+            if(months == 1)
+                finalDate += months + " mese ";
             else
-                finalDate += d + " giorni ";
+                finalDate += months + " mesi ";
+        }
+        if(years == 0 && months == 0){
+            if(days == 1)
+                finalDate += days + " giorno ";
+            else
+                finalDate += days + " giorni ";
         }
         finalDate += "fa)";
         return finalDate;

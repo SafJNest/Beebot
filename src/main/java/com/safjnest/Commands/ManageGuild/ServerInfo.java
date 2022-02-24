@@ -1,16 +1,16 @@
 package com.safjnest.Commands.ManageGuild;
 
 import java.awt.Color;
-import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
-import java.time.format.DateTimeFormatter;
+import java.util.List;
+
+import net.dv8tion.jda.api.entities.Guild;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.DateHandler;
+import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.entities.Member;
  * @since 1.1.02
  */
 public class ServerInfo extends Command{
-    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
 
     public ServerInfo(){
         this.name = "serverinfo";
@@ -27,53 +26,96 @@ public class ServerInfo extends Command{
         this.category = new Category("Gestione Server");
     }
 
-    public static int getGuildUserCount(Guild guild) {
-        int i = 0;
-        for (Member member : guild.getMembers())
-          if (!member.getUser().isBot())
-            i++;
-        return i;
-    }
-
     @Override
     protected void execute(CommandEvent event) {
+        Guild guild = event.getGuild();
+
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Informazioni del server");
-        eb.setThumbnail(event.getGuild().getIconUrl());
+        eb.setThumbnail(guild.getIconUrl());
         eb.setColor(new Color(116, 139, 151));
 
-        eb.addField("Nome del server", "```" + event.getGuild().getName() + "```", true);
-        eb.addField("ID dell'Owner", "```" + event.getGuild().getOwnerId() + "```" , true);
+        eb.addField("Nome del server", "```" 
+                    + guild.getName() 
+                    + "```", true);
+        eb.addField("ID dell'Owner", "```" 
+                    + guild.getOwnerId() 
+                    + "```" , true);
 
-        eb.addField("Descrizione del server", "```" + ((event.getGuild().getDescription() == null) ? "Descrizione non trovata" : event.getGuild().getDescription()) + "```", false);
-
-        eb.addField("Numero dei Membri del server [" + String.valueOf(event.getGuild().getMemberCount()) + "]", "```"
-                    + "Membri: " + event.getGuild().getMembers().stream().filter(member -> !member.getUser().isBot()).count()
-                    + " | Bot: " + event.getGuild().getMembers().stream().filter(member -> member.getUser().isBot()).count()
+        eb.addField("Descrizione del server", "```" 
+                    + ((guild.getDescription() == null) 
+                        ? "Descrizione non trovata" 
+                        : guild.getDescription()) 
                     + "```", false);
 
-        eb.addField("Tier del Boost", "```" + event.getGuild().getBoostTier().name() + "```", true);
-        eb.addField("Numero di Boost", "```" + String.valueOf(event.getGuild().getBoostCount()) + "```", true);
-        eb.addField("Ruolo dei Booster", "```" + ((event.getGuild().getBoostRole() == null) ? "NONE" : event.getGuild().getBoostRole().getName()) + "```", true);
+        eb.addField("ID del Server", "```" 
+                    + guild.getId()
+                    + "```" , true);
+        eb.addField("Regione", "```" 
+                    + guild.getLocale().toString() 
+                    + "```", true);
 
-        eb.addField("Categorie e canali [" + event.getGuild().getChannels().size() + "]", "```" 
-                    + "Categorie: " + event.getGuild().getCategories().size() 
-                    + " | Testuali: " + event.getGuild().getTextChannels().size() 
-                    + " | Vocali " + event.getGuild().getVoiceChannels().size() + "```", false);
+        eb.addField("Numero dei Membri del server [" 
+                    + String.valueOf(guild.getMemberCount()) + "]", "```"
+                    + "Membri: " + guild.getMembers().stream()
+                                    .filter(member -> !member.getUser().isBot()).count()
+                    + " | Bot: " + guild.getMembers().stream()
+                                    .filter(member -> member.getUser().isBot()).count()
+                    + "```", false);
 
-        eb.addField("Livello contenuti espliciti", "```" + event.getGuild().getExplicitContentLevel().name() + "```", true);
-        eb.addField("Livello NSFW", "```" + event.getGuild().getNSFWLevel().toString() + "```", true);
+        eb.addField("Tier del Boost", "```" 
+                    + guild.getBoostTier().name() 
+                    + "```", true);
+        eb.addField("Numero di Boost", "```" 
+                    + String.valueOf(guild.getBoostCount()) 
+                    + "```", true);
+        eb.addField("Ruolo dei Booster", "```" 
+                    + (guild.getBoostRole() == null
+                        ? "NONE"
+                        : guild.getBoostRole().getName())
+                    + "```", true);
 
-        eb.addField("Data di creazione del server", "```" + dtf.format(event.getGuild().getTimeCreated()) 
-                    + " (" + event.getGuild().getTimeCreated().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)```", false);
+        eb.addField("Categorie e canali [" + guild.getChannels().size() + "]", "```" 
+                    +    "Categorie: " + guild.getCategories().size() 
+                    + " | Testuali: " + guild.getTextChannels().size() 
+                    + " | Vocali: " + guild.getVoiceChannels().size() 
+                    + "```", false);
 
-        eb.addField("Regione", "```" + event.getGuild().getLocale().toString() + "```", true);
-        eb.addField("Livello MFA richiesto", "```" + event.getGuild().getRequiredMFALevel().toString() + "```", true);
-        eb.addField("Livello verificazione", "```" + event.getGuild().getVerificationLevel().toString() + "```", true);
+        eb.addField("Emoji del server [" + guild.getEmotes().size() + "]", "```" 
+                    +    "Normali: " + guild.getEmotes().stream()
+                                        .filter(emote -> !emote.isAnimated()).count()
+                    + " | Animate: " + guild.getEmotes().stream()
+                                        .filter(emote -> emote.isAnimated()).count()
+                    + "```", false);
+
+        eb.addField("Livello contenuti espliciti", "```" 
+                    + guild.getExplicitContentLevel().name() 
+                    + "```", true);
+        eb.addField("Livello NSFW", "```" 
+                    + guild.getNSFWLevel().toString() 
+                    + "```", true);
+
+        List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(guild.getRoles(), 195);
+        eb.addField("Ruoli del server [" 
+                    + guild.getRoles().size() + "] (stampati " 
+                    + RoleNames.size() + ")" , "```" 
+                    + RoleNames.toString().substring(1, RoleNames.toString().length() - 1) 
+                    + "```", false);
+
+        eb.addField("Livello MFA richiesto", "```" 
+                    + guild.getRequiredMFALevel().toString() 
+                    + "```", true);
+        eb.addField("Livello verificazione", "```" 
+                    + guild.getVerificationLevel().toString() 
+                    + "```", true);
+
+        eb.addField("Data di creazione del server", "```" 
+                    + DateHandler.formatDate(guild.getTimeCreated()) 
+                    + "```", false);
         
         event.reply(eb.build());
 
-        //event.reply(event.getGuild().getCategories().toString())
-        //event.reply(event.getGuild().getChannels().toString());
+        //event.reply(guild.getCategories().toString())
+        //event.reply(guild.getChannels().toString());
     }
 }
