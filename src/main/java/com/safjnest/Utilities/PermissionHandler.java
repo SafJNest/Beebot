@@ -1,8 +1,10 @@
 package com.safjnest.Utilities;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -36,6 +38,8 @@ public class PermissionHandler {
     }
 
     public static List<String> getPermissionNames(Member member){
+        System.out.println(Permission.getPermissions(Permission.ALL_PERMISSIONS));
+        
         List<String> finalPermissions= new ArrayList<String>();
         for (Permission permission : member.getPermissions())
             finalPermissions.add(permission.getName());

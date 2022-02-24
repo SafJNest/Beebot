@@ -42,16 +42,16 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 public class App extends ListenerAdapter {
     private static JDA jda;
     private static String token;
-    private static String PREFIX = "%";
+    private static String PREFIX = "$";
     private static Activity activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
     //private static Activity activity = Activity.playing("waiting for jellyWX");
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
     public static void main(String[] args) throws LoginException {
-        //String tokenCanary = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
-        ///token  = tokenCanary;
-        token = args[0];
+        String tokenCanary = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
+        token  = tokenCanary;
+        //token = args[0];
         jda = JDABuilder
                 .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS)
                 .addEventListeners(new TheListener())
@@ -66,48 +66,42 @@ public class App extends ListenerAdapter {
         builder.setOwnerId("939876818465488926");
         builder.setActivity(activity);
         
-        builder.addCommand(new Ping());
 
+        //Audio
         builder.addCommand(new Connect());
         builder.addCommand(new Disconnect());
-
+        builder.addCommand(new List());
+        builder.addCommand(new Play(tierOneLink));
+        builder.addCommand(new Upload());
+        //Manage Guild
+        builder.addCommand(new ChannelInfo());
+        builder.addCommand(new Clear());
+        builder.addCommand(new Msg());
+        builder.addCommand(new ServerInfo());
+        builder.addCommand(new UserInfo());
+        //Manage Member
         builder.addCommand(new Ban());
         builder.addCommand(new Unban());
         builder.addCommand(new Kick());
         builder.addCommand(new Mute());
         builder.addCommand(new UnMute());
-
-        builder.addCommand(new Play(tierOneLink));
-        builder.addCommand(new List());
-
-        builder.addCommand(new Clear());
-        builder.addCommand(new Msg());
         builder.addCommand(new Image());
         builder.addCommand(new Permissions());
-        
+        //Math
         builder.addCommand(new Bighi(maxBighi));
         builder.addCommand(new Prime(maxPrime));
         builder.addCommand(new DAC());
         builder.addCommand(new FastestRoot());
-        
+        builder.addCommand(new Calc());
+        //Misc
+        builder.addCommand(new Ping());
         builder.addCommand(new BugsNotifier());
-
         builder.addCommand(new Ram());
         builder.addCommand(new Help());
         builder.addCommand(new Aliases());
-
-        builder.addCommand(new ServerInfo());
-        builder.addCommand(new UserInfo());
-
         builder.addCommand(new RawMessage());
 
-        builder.addCommand(new Calc());
-        builder.addCommand(new Upload());
-
-        builder.addCommand(new ChannelInfo());
-
         CommandClient client = builder.build();
-
         jda.addEventListener(client);
 
         tierOneLink.put("QZayYolcq-g", "MERIO EPRIA DUE ZERO DUE ZERO CAMERETTA EEEEEEEEEEEEEPPPPPPPPPPPPPPPPPPPRRRRRRRRRRRRRRRRRRIIIIIIIIIIIIIIIIIIAAAAAAAAAAAA");

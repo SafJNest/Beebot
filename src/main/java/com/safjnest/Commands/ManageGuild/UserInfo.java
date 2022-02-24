@@ -89,7 +89,10 @@ public class UserInfo extends Command{
                         : "no")
                     + "```" , true);
 
-        String permissionNames = PermissionHandler.getPermissionNames(event.getGuild().getMember(theGuy)).toString();
+        String permissionNames = "";
+        for(String permission : PermissionHandler.getPermissionNames(event.getGuild().getMember(theGuy))){
+            permissionNames += permission + "\n";
+        }
         eb.addField("Permessi del server", "```"
                     + (event.getGuild().getMember(theGuy).hasPermission(Permission.ADMINISTRATOR)
                         ? "👑 Amministratore (tutti i permessi)"
