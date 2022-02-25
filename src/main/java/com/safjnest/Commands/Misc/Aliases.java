@@ -39,7 +39,7 @@ public class Aliases extends Command {
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
 
-        eb.setFooter("*I numeri primi generati sono crittograficamente sicuri, se vi può essere utile :L", null);
+        eb.setFooter("Per ulteriori inforamzioni su un comando, fare **" + event.getClient().getPrefix()+"help<nome comando>**", null);
         event.getChannel().sendMessageEmbeds(eb.build())
                 .queue();
 

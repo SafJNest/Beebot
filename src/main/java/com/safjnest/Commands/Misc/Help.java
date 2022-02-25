@@ -44,12 +44,6 @@ public class Help extends Command {
         + ", puoi avere maggiori informazioni tramite il comando: ```"+event.getClient().getPrefix()+"<nomecomando>.");
         eb.setColor(new Color(255, 196, 0));
         if(command.equals("")){
-            /*
-            for (Command e : event.getClient().getCommands()) {
-                eb.addField(e.getName(), e.getHelp(), true);
-                
-            }
-            */
             String ss = "```\n";
             for(String k : commands.keySet()){
                 for(Command c : commands.get(k)){
@@ -87,6 +81,7 @@ public class Help extends Command {
             
             eb.setFooter("SE L'ARGS E' NULL BASTA DIGITARE IL COMANDO, LE QUADRE INDICANO CAMPO OBBLIGATORIO E LE TONDE FACOLTATIVO", null);
         }
+        
         eb.addField("**ALTRE INFORMAZIONI**", "Il bot è stato sviluppato da sole due persone quindi in caso di bug o problemi non esitate a contattarli.", false);
         for(String id : PermissionHandler.getUntouchables()){
             User guy = event.getJDA().getUserById(id);
