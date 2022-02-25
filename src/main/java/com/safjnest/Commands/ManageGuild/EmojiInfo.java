@@ -17,10 +17,10 @@ public class EmojiInfo extends Command {
 
     public EmojiInfo(){
         this.name = "emoji";
-        this.aliases = new String[]{"em"};
-        this.help = "Il bot cancella i messaggi in un canale di testo fino ad un massimo di 99 messaggi(100 incluso il comando).";
+        this.aliases = new String[]{"em", "eminfo"};
+        this.help = "Consente di stampare le informazioni relative ad una emoji, sia animata che non.";
         this.category = new Category("Gestione Server");
-        this.arguments = "[clear] [n messaggi]";
+        this.arguments = "[emoji] [nomeEmoji, emoji]";
     }
 
 	@Override
@@ -33,8 +33,8 @@ public class EmojiInfo extends Command {
         eb.addField("**ID emoji**", "```" + em.getId() + "```", true); 
         eb.addField("**GIF?**",
         (em.isAnimated())
-        ?"```✅ Si```"
-        :"```❌ No```"
+            ?"```✅ Si```"
+            :"```❌ No```"
         , true);
         eb.addField("**Emoji URL**", em.getImageUrl(), false);   
         eb.addField("Creata il il (dd/mm/yyyy)", "```" + DateHandler.formatDate(em.getTimeCreated()) + "```", false);
