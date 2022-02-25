@@ -17,7 +17,7 @@ public class EmojiInfo extends Command {
 
     public EmojiInfo(){
         this.name = "emoji";
-        this.aliases = new String[]{"em", "eminfo"};
+        this.aliases = new String[]{"em", "eminfo", "emojiinfo"};
         this.help = "Consente di stampare le informazioni relative ad una emoji, sia animata che non.";
         this.category = new Category("Gestione Server");
         this.arguments = "[emoji] [nomeEmoji, emoji]";

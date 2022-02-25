@@ -16,7 +16,7 @@ public class Aliases extends Command {
 
     public Aliases() {
         this.name = "Aliases";
-        this.aliases = new String[]{"alias"};
+        this.aliases = new String[]{"alias", "ilyas"};
         this.help = "Restituisce tutti gli alias dei vari comandi";
         this.category = new Category("Misc");
         this.arguments = "null";

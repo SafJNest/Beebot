@@ -41,7 +41,7 @@ public class Help extends Command {
         }
         eb.setTitle("📒INFORMAZIONI E COMANDI📒", null);
         eb.setDescription("Il prefisso corrente è: **"+event.getClient().getPrefix()+"**"
-        + ", puoi avere maggiori informazioni tramite il comando: ```"+event.getClient().getPrefix()+"<nomecomando>.");
+        + ", puoi avere maggiori informazioni tramite il comando: **"+event.getClient().getPrefix()+"<nomecomando>.**");
         eb.setColor(new Color(255, 196, 0));
         if(command.equals("")){
             String ss = "```\n";
@@ -81,12 +81,7 @@ public class Help extends Command {
             
             eb.setFooter("SE L'ARGS E' NULL BASTA DIGITARE IL COMANDO, LE QUADRE INDICANO CAMPO OBBLIGATORIO E LE TONDE FACOLTATIVO", null);
         }
-        
         eb.addField("**ALTRE INFORMAZIONI**", "Il bot è stato sviluppato da sole due persone quindi in caso di bug o problemi non esitate a contattarli.", false);
-        for(String id : PermissionHandler.getUntouchables()){
-            User guy = event.getJDA().getUserById(id);
-            eb.addField("**"+guy.getName()+"**","```"+guy.getId()+"```", false);
-        }
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
 

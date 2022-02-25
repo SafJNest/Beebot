@@ -64,7 +64,6 @@ public class Play extends Command {
             }
             toPlay = "SoundBoard" + File.separator + toPlay; 
         }
-        System.out.println(toPlay);
         MessageChannel channel = event.getChannel();
         EmbedBuilder eb = new EmbedBuilder();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
@@ -106,7 +105,6 @@ public class Play extends Command {
                 System.out.println("error faker " + throwable.getMessage());
             }
         });
-        
         player.playTrack(trackScheduler.getTrack());
         if(player.getPlayingTrack() == null)
             return;

@@ -37,7 +37,7 @@ public class Prime extends Command {
             else{
                 String primi = SafJNest.getFirstPrime(SafJNest.randomBighi(Integer.parseInt(commandArray[1])));
                 if (primi.length() > 2000) {
-                    File supp = new File("bighi.txt");
+                    File supp = new File("primi.txt");
                     FileWriter app;
                     try {
                         app = new FileWriter(supp);
