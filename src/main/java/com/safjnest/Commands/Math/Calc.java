@@ -13,14 +13,16 @@ import com.jagrosh.jdautilities.command.CommandEvent;
  */
 public class Calc extends Command{
 
-    private static final Set<String> OP = Set.of("+","-","*","/");
+    private static final Set<String> OP = Set.of("+","-","*","/", "^");
 
     public Calc(){
         this.name = "calc";
         this.aliases = new String[]{"c", "calcolatore", "calcolatrice"};
-        this.help = "Consente di effettuare semplici operazioni matematiche tra due numeri.";
+        this.help = "Consente di effettuare semplici operazioni matematiche tra due numeri."
+        + "Addizione, sottrazione, moltiplicazione, divisione ed elevamento a potenza.\n"
+        + "Le funzioni presenti sono radice, seno, coseno e tangente, con le loro funzioni inverse, e la funzione esponenziale.";
         this.category = new Category("Matematica");
-        this.arguments = "[calc] [(n+n) (n-n) (n*n) (n/n) (sqrt n) (sin n) (cos n ) (ln n) ]";
+        this.arguments = "[calc] [(n+n) (n-n) (n*n) (n/n) (n^n) (sqrt n) (sin n) (cos n ) (ln n) (tan n) (asin n) (acos n) (exp n)]";
     }
 
     @Override
@@ -56,8 +58,11 @@ public class Calc extends Command{
                     case '/':
                         event.reply(String.valueOf((a/b)));
                         break;
+                    
+                    case '^':
+                        event.reply(String.valueOf((Math.pow(a, b))));
+                        break;
                 }
-            
             }else{
                 String fun = "";
                 Double a = 0.0;
@@ -74,17 +79,29 @@ public class Calc extends Command{
                     case "ln":
                         event.reply(String.valueOf(Math.log(a)));
                         break;
-    
                     case "sqrt":
                         event.reply(String.valueOf(Math.sqrt(a)));
                         break;
-    
                     case "sin":
                         event.reply(String.valueOf(Math.sin(Math.toRadians(a))));
                         break;
-    
                     case "cos":
                         event.reply(String.valueOf(Math.cos(Math.toRadians(a))));
+                        break;
+                    case "tan":
+                        event.reply(String.valueOf(Math.tan(Math.toRadians(a))));
+                        break;
+                    case "acos":
+                        event.reply(String.valueOf(Math.acos(a)));
+                        break;
+                    case "asin":
+                        event.reply(String.valueOf(Math.asin(a)));
+                        break;
+                    case "atan":
+                        event.reply(String.valueOf(Math.atan(a)));
+                        break;
+                    case "exp":
+                        event.reply(String.valueOf(Math.exp(a)));
                         break;
                     default:
                         event.reply("La funzione non esiste, per ulteriori informazioni usare il comando help");

@@ -44,7 +44,7 @@ public class ChannelInfo extends Command {
             eb.addField("Nome Canale", "```" + v.getName() + "```", true);   
             eb.addField("ID Canale", "```" + v.getId() + "```", true);   
 
-            eb.addField("BitRate Canale", "```" + v.getBitrate() + "```", false);   
+            eb.addField("BitRate Canale", "```" + v.getBitrate()/1000 + "kbps```", false);   
             eb.addField("Limite di utenti", "```" 
                         + v.getMembers().size() 
                         +"/"
