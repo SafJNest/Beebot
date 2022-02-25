@@ -72,6 +72,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new List());
         builder.addCommand(new Play(tierOneLink));
         builder.addCommand(new Upload());
+
         //Manage Guild
         builder.addCommand(new ChannelInfo());
         builder.addCommand(new Clear());
@@ -79,6 +80,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new ServerInfo());
         builder.addCommand(new UserInfo());
         builder.addCommand(new EmojiInfo());
+
         //Manage Member
         builder.addCommand(new Ban());
         builder.addCommand(new Unban());
@@ -87,6 +89,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new UnMute());
         builder.addCommand(new Image());
         builder.addCommand(new Permissions());
+
         //Math
         builder.addCommand(new Bighi(maxBighi));
         builder.addCommand(new Prime(maxPrime));

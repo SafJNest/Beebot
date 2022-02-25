@@ -105,9 +105,7 @@ public class ServerInfo extends Command{
         eb.addField("Livello MFA richiesto", "```" 
                     + guild.getRequiredMFALevel().toString() 
                     + "```", true);
-        eb.addField("Livello verificazione", "```" 
-                    + guild.getVerificationLevel().toString() 
-                    + "```", true);
+        
 
         eb.addField("Data di creazione del server", "```" 
                     + DateHandler.formatDate(guild.getTimeCreated()) 
