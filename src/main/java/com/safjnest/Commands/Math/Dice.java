@@ -19,21 +19,22 @@ public class Dice extends Command {
         this.aliases = new String[]{"dado", "lanciadado", "roll"};
         this.help = "Il bot lancia uno o più dadi.";
         this.category = new Category("Matematica");
-        this.arguments = "[dice] (n dadi)";
+        this.arguments = "[dice] (n dadi) (n n facce)";
     }
 
 	@Override
 	protected void execute(CommandEvent event) {
-        String[] dice = new String[]{"1️⃣","2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣"};
-        String msg = "";
-        int ndice = (event.getArgs().equals("")) ? 1 : Integer.parseInt(event.getArgs());
-        int sum = 0;
-        for(int i = 0; i < ndice; i++){
-            int rand = (int)(Math.random() * 5);
-            sum+=rand+1;
-            msg+=dice[rand]+" ";
+        int ndice = 1, nface = 6, sum = 0;
+        if(!event.getArgs().equals("")){
+            ndice = Integer.parseInt(event.getArgs().split(" ")[0]);
+            if(!event.getArgs().split(" ")[1].equals(""))
+                nface = Integer.parseInt(event.getArgs().split(" ")[1]);
         }
+        for(int i = 0; i < ndice; i++)
+            sum+=(int)(Math.random() * nface) + 1;
         
-        event.reply((ndice < 3)?msg:String.valueOf(sum));
+        event.reply((ndice == 1)
+                    ? "Lanciato un dado con " + nface + " facce: " + sum        
+                    : "Lanciati " + ndice +  " dadi con " + nface + " facce: " + sum);
 	}
 }
