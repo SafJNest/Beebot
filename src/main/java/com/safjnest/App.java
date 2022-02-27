@@ -42,9 +42,9 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 public class App extends ListenerAdapter {
     private static JDA jda;
     private static String token;
-    private static String PREFIX = "%";
+    private static String PREFIX = "$";
     private static Activity activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
-    //private static Activity activity = Activity.playing("waiting for jellyWX");
+    //private static Activity activity = Activity.playing("testing quantum bogosort");
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
