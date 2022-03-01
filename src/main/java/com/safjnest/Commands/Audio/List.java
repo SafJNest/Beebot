@@ -22,10 +22,10 @@ public class List extends Command {
 
     public List(){
         this.name = "list";
-        this.aliases = new String[]{"listoide", "listina","lista"};
+        this.aliases = new String[]{"listoide", "listina","lista", "listona"};
         this.help = "Il bot invia la lista di tutti i suoni locali.";
         this.category = new Category("Audio");
-        this.arguments = "null";
+        this.arguments = "[list] (album)";
     }
 
 	@Override
@@ -33,10 +33,18 @@ public class List extends Command {
         MessageChannel channel = event.getChannel();
         HashMap<String, ArrayList<Mp3File>> tags = new HashMap<>();
         Mp3File[] files = SoundBoard.getMP3File();
-        for (Mp3File file : files){
-            if(!tags.containsKey(file.getId3v2Tag().getAlbumArtist()))
-                tags.put(file.getId3v2Tag().getAlbumArtist(), new ArrayList<Mp3File>());
-            tags.get(file.getId3v2Tag().getAlbumArtist()).add(file);
+        if(event.getArgs().equalsIgnoreCase("album")){
+            for (Mp3File file : files){
+                if(!tags.containsKey(file.getId3v2Tag().getAlbum()))
+                    tags.put(file.getId3v2Tag().getAlbum(), new ArrayList<Mp3File>());
+                tags.get(file.getId3v2Tag().getAlbum()).add(file);
+            }
+        }else{
+            for (Mp3File file : files){
+                if(!tags.containsKey(file.getId3v2Tag().getAlbumArtist()))
+                    tags.put(file.getId3v2Tag().getAlbumArtist(), new ArrayList<Mp3File>());
+                tags.get(file.getId3v2Tag().getAlbumArtist()).add(file);
+            }
         }
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("SoundBoard");
