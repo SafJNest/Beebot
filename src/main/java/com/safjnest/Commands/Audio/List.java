@@ -1,11 +1,14 @@
 package com.safjnest.Commands.Audio;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.awt.Color;
 
 import com.safjnest.Utilities.SoundBoard;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.mpatric.mp3agic.Mp3File;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -28,13 +31,25 @@ public class List extends Command {
 	@Override
 	protected void execute(CommandEvent event) {
         MessageChannel channel = event.getChannel();
-		String[] names = SoundBoard.getAllNamesNoExc();
+        HashMap<String, ArrayList<Mp3File>> tags = new HashMap<>();
+        Mp3File[] files = SoundBoard.getMP3File();
+        for (Mp3File file : files){
+            if(!tags.containsKey(file.getId3v2Tag().getAlbumArtist()))
+                tags.put(file.getId3v2Tag().getAlbumArtist(), new ArrayList<Mp3File>());
+            tags.get(file.getId3v2Tag().getAlbumArtist()).add(file);
+        }
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("SoundBoard");
-        String soundNames = "";
-        for(String name : names)
-            soundNames += name +  " - ";
-        eb.setDescription("Lista con tutti i suoni del tier 1 bot\n **" + soundNames + "**");
+        String soundNames = "```\n";
+            for(String k : tags.keySet()){
+                for(Mp3File f : tags.get(k)){
+                    soundNames+= f.getId3v2Tag().getTitle() + "\n";
+                }
+                soundNames+="```";
+                eb.addField(k, soundNames, true);
+                soundNames = "```\n";
+            }
+        eb.setDescription("Lista con tutti i suoni del tier 1 bot");
         eb.setColor(new Color(0, 128, 128));
         eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' soundfx, questa e' perfezione cit. steve jobs", null);
