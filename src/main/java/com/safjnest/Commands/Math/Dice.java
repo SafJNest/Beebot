@@ -1,14 +1,7 @@
 package com.safjnest.Commands.Math;
 
-import java.util.List;
-import com.safjnest.Utilities.PermissionHandler;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-
-import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageHistory;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
