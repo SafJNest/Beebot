@@ -132,10 +132,10 @@ Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights
 - lorenzosanseverino2003@gmail.com
 - Git: <a href="https://github.com/NeutronSun">NeutronSun</a> 
 - Discord: Sun#7606.
-### Panichi Leonardo
+### Leonardo Panichi
 - Founder
 - Developer
-- panichileonardo4@gmail.com
+- leonardopanichi4@gmail.com
 - Git: <a href="https://github.com/Leon412">Leon412</a> 
 - Discord: Leon_#7949
 
