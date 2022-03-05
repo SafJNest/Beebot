@@ -9,6 +9,7 @@ import com.safjnest.Utilities.SoundBoard;
 import com.safjnest.Utilities.TrackScheduler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.Utilities.AudioPlayerSendHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -110,18 +111,21 @@ public class Play extends Command {
             return;
         eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
+        eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
         if(isYoutube){
             eb.setColor(new Color(255, 0, 0));
             eb.setDescription(player.getPlayingTrack().getInfo().title);
         }
         else{
+            Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
             eb.setColor(new Color(0, 255, 255));
             eb.setDescription(event.getArgs());
+            eb.addField("Autore", mp.getId3v2Tag().getAlbumArtist(), true);
+            eb.addField("Album", mp.getId3v2Tag().getAlbum(), true);
         }
         
         if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
             channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
-        eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
         if(isYoutube){

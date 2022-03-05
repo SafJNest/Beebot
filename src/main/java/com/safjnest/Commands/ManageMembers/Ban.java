@@ -21,18 +21,23 @@ public class Ban extends Command{
         this.name = "ban";
         this.aliases = new String[]{"sgozz", "destroy", "annihilate", "radiateDeath", "drinkRadithorForAYear"};
         this.category = new Category("Gestione Membri");
-        this.arguments = "[ban] [@user]";
+        this.arguments = "[ban] [@user] (reason)";
         this.help = "Il bot ti outplaya veramente forte e finisci a strisciare fuori dal server (senza la possibilità di rientrare).";
     }
 
     @Override
     protected void execute(CommandEvent event) {
+
+        String[] args = event.getArgs().split(" ", 2);
+        String reason = (args.length < 2) ? "rotto il cazzo" : args[1];
+   
+        
         User theGuy = null;
         try {
             if(event.getMessage().getMentionedMembers().size() > 0)
                 theGuy = event.getMessage().getMentionedMembers().get(0).getUser();
             else
-                theGuy = event.getJDA().retrieveUserById(event.getArgs()).complete();
+                theGuy = event.getJDA().retrieveUserById(args[0]).complete();
             final User surelyTheGuy = theGuy;
 
             if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.BAN_MEMBERS))
@@ -45,7 +50,7 @@ public class Ban extends Command{
                 event.reply("OHHHHHHHHHHHHHHHHHHHHHHHHHHHH NON BANNARE MEEEEEEEEEEEEEEERIO EEEEEEEEEEEEEEEEEPRIA");
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.BAN_MEMBERS)) {
-                event.getGuild().ban(surelyTheGuy, 0, "rotto il cazzo").queue(
+                event.getGuild().ban(surelyTheGuy, 0, reason).queue(
                                                         (e) -> event.reply("bannato " + surelyTheGuy.getAsMention()), 
                                                         new ErrorHandler().handle(
                                                             ErrorResponse.MISSING_PERMISSIONS,
