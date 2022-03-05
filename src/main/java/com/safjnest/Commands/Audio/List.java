@@ -2,7 +2,6 @@ package com.safjnest.Commands.Audio;
 
 import java.io.File;
 import java.awt.Color;
-import java.util.Arrays;
 
 import com.safjnest.Utilities.SoundBoard;
 import com.jagrosh.jdautilities.command.Command;
