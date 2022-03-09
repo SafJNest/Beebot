@@ -6,9 +6,24 @@
 
 package com.safjnest;
 
+import java.io.File;
 import java.util.HashMap;
 
 import javax.security.auth.login.LoginException;
+import javax.xml.crypto.dsig.keyinfo.KeyName;
+
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
@@ -48,8 +63,37 @@ public class App extends ListenerAdapter {
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
+
+    private static String bucketName = "thebeebox";
+    private static String keyName = "tre.mp3";
     public static void main(String[] args) throws LoginException {
-        String tokenCanary = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
+        AWSCredentials credentials = new BasicAWSCredentials("AKIASJG3D4LSZMKR7L4R", "zufmhZG5m8QhDZCeBYALs2S1wOu/x9zgoYxjbZIV");
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        clientConfiguration.setSignerOverride("AWSS3V4SignerType");
+
+        AmazonS3 s3Client = AmazonS3ClientBuilder
+            .standard()
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("s3.us-east-1.amazonaws.com", "us-east-1"))
+            .withPathStyleAccessEnabled(true)
+            .withClientConfiguration(clientConfiguration)
+            .withCredentials(new AWSStaticCredentialsProvider(credentials))
+            .build();
+            
+        try {
+            System.out.println("Uploading a new object to S3 from a file\n");
+            File file = new File("C:\\Users\\leona\\OneDrive\\Documenti\\Java programmi a caso\\beebox\\SoundBoard\\eee.mp3");
+            // Upload file
+            PutObjectRequest request = new PutObjectRequest(bucketName, keyName, file);
+            ObjectMetadata metadata = new ObjectMetadata();
+            metadata.setContentType("audio/mpeg");
+            metadata.addUserMetadata("name", "eee");
+            metadata.addUserMetadata("category", "dio");
+            request.setMetadata(metadata);
+            s3Client.putObject(request);
+        }catch(AmazonClientException ace){
+            ace.printStackTrace();
+        }
+        /*String tokenCanary = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
         token  = tokenCanary;
         //token = args[0];
         jda = JDABuilder
@@ -114,5 +158,6 @@ public class App extends ListenerAdapter {
         tierOneLink.put("kP6Dg-a3p0k", "MERIO EPRIA TI PARLA DELLA SUA CITTA HA LA PISTOLA REHUGHYUW HGTUY9FWRYUH8GHY8U NON HAI CAPITO UN CAZZO DALLA VITA REUHGWUHGHWRU FECCIA DELL'UMANIT; RWUHGWUHGHUWGHUWRGHYUWRGWSUYIRELIWRGUHL NON SI CAPISCE UN CAZZO OIDOZIFER9 CANEKE");
         tierOneLink.put("D9G1VOjN_84", "IWAKE UP TO DE SOUND THE MUSIC THAT ALLWOA OOOOOOOOOOOH THE MISERTY, EVERYBODY WATNS OT BE MY ENBEMSYFWS=FGHEWUGTGWEG7 OHO RHTEUR08 7G9EGUH9TW9GUYH TW9");
         tierOneLink.put("zvNfGg5vKTs", "POVERO GABBIANOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO NON HAI VOGLIUA DI VOLARE SOPRA UNA SCOGLUIERAAAAAAAAAAAAAAAAAAAA HAI PERDUOT LA COMPAGNAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NON TIO GF8REWHUG A VIDEF TI CAPISC JAAAAAA PEKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK");
+        */
     }
 }
