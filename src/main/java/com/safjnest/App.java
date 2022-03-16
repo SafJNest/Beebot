@@ -10,6 +10,7 @@ import java.util.HashMap;
 
 import javax.security.auth.login.LoginException;
 
+
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
@@ -28,6 +29,15 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
+
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
 
 /**
  * Classe principale del bot.
@@ -62,6 +72,20 @@ public class App extends ListenerAdapter {
             .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
             .build();
 
+        AWSCredentials credentials = new BasicAWSCredentials("AKIASJG3D4LSZMKR7L4R", "zufmhZG5m8QhDZCeBYALs2S1wOu/x9zgoYxjbZIV");
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        clientConfiguration.setSignerOverride("AWSS3V4SignerType");
+
+        AmazonS3 s3Client = AmazonS3ClientBuilder
+            .standard()
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("s3.us-east-1.amazonaws.com", "us-east-1"))
+            .withPathStyleAccessEnabled(true)
+            .withClientConfiguration(clientConfiguration)
+            .withCredentials(new AWSStaticCredentialsProvider(credentials))
+            .build();
+
+        System.out.println("Connesso ad aws");
+
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setPrefix(PREFIX);
         builder.setHelpWord("helpme");
@@ -73,7 +97,8 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Disconnect());
         builder.addCommand(new List());
         builder.addCommand(new Play(tierOneLink));
-        builder.addCommand(new Upload());
+        builder.addCommand(new Upload(s3Client));
+        builder.addCommand(new PlaySound(s3Client));
 
         //Manage Guild
         builder.addCommand(new ChannelInfo());
