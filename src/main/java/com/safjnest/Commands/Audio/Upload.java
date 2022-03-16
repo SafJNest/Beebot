@@ -2,22 +2,16 @@ package com.safjnest.Commands.Audio;
 
 import java.io.File;
 
-//import javax.xml.crypto.dsig.keyinfo.KeyName;
-
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.FileListener;
+
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -26,50 +20,81 @@ import com.safjnest.Utilities.FileListener;
  * @since 1.2.5
  */
 public class Upload extends Command{
-
-    private static String bucketName = "thebeebox";
-    private static String keyName = "tre.mp3";
-
-    public Upload(){
+    private AmazonS3 s3Client;
+    private String fileName;
+    
+    public Upload(AmazonS3 s3Client){
         this.name = "upload";
         this.aliases = new String[]{"up", "add"};
-        this.help = "Il comando consente di poter caricare facilmente dei suoni nel database del bot.\nSe carichi dei file mp3 ci fai un piacere.\n"
+        this.help = "Il comando consente di poter caricare facilmente dei suoni nel database del bot.\n"
+        + "Se carichi dei file mp3 ci fai un piacere.\n"
         + "Se carichi dei .opus ti sgozzo.";
         this.category = new Category("Audio");
         this.arguments = "[upload] [nome del suono, senza specificare il formato]";
+        this.s3Client = s3Client;
     }
     
 	@Override
 	protected void execute(CommandEvent event) {
-        event.reply("operativo e pronto a listenare");
-        FileListener listino = new FileListener(event.getArgs());
-        event.getJDA().addEventListener(listino);
-        
-        AWSCredentials credentials = new BasicAWSCredentials("AKIASJG3D4LSZMKR7L4R", "zufmhZG5m8QhDZCeBYALs2S1wOu/x9zgoYxjbZIV");
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        clientConfiguration.setSignerOverride("AWSS3V4SignerType");
-
-        AmazonS3 s3Client = AmazonS3ClientBuilder
-            .standard()
-            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("s3.us-east-1.amazonaws.com", "us-east-1"))
-            .withPathStyleAccessEnabled(true)
-            .withClientConfiguration(clientConfiguration)
-            .withCredentials(new AWSStaticCredentialsProvider(credentials))
-            .build();
-            
-        try {
-            System.out.println("Uploading a new object to S3 from a file\n");
-            File file = new File("Upload\\eee.mp3");
-            // Upload file
-            PutObjectRequest request = new PutObjectRequest(bucketName, keyName, file);
-            ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentType("audio/mpeg");
-            metadata.addUserMetadata("name", "eee");
-            metadata.addUserMetadata("category", "dio");
-            request.setMetadata(metadata);
-            s3Client.putObject(request);
-        }catch(AmazonClientException ace){
-            ace.printStackTrace();
+        if((fileName = event.getArgs()) == ""){
+            event.reply("il nome idiota");
+            return;
         }
+
+        event.reply("operativo e pronto a listenare");
+        //TODO se ce n'è uno attivo fai esplodere cose
+
+        FileListener fileListener = new FileListener(event, fileName, s3Client);
+        event.getJDA().addEventListener(fileListener);
 	}
+}
+
+class FileListener extends ListenerAdapter {
+    private String name;
+    private AmazonS3 s3Client;
+    private CommandEvent event;
+
+    public FileListener(CommandEvent event, String name, AmazonS3 s3Client){
+        this.name = name;
+        this.s3Client = s3Client;
+        this.event = event;
+    }
+    
+    @Override
+    public void onMessageReceived(MessageReceivedEvent e){
+        if(e.getAuthor().isBot()){
+            return;
+        }
+
+        if(e.getMessage().getAttachments().size() <= 0){
+            event.reply("il file idiota");
+            e.getJDA().removeEventListener(this);
+            return;
+        }
+
+        File saveFile = new File("upload" + File.separator + (name +"."+ e.getMessage().getAttachments().get(0).getFileExtension()));
+        e.getMessage().getAttachments().get(0).downloadToFile(saveFile)
+            .thenAccept(file -> {
+                System.out.println("Upload del file su aws s3 " + file.getName());
+                try {
+                    PutObjectRequest request = new PutObjectRequest("thebeebox", name, file);
+                    ObjectMetadata metadata = new ObjectMetadata();
+                    metadata.setContentType("audio/mpeg");
+                    metadata.addUserMetadata("name", name);
+                    metadata.addUserMetadata("category", "we");
+                    request.setMetadata(metadata);
+                    s3Client.putObject(request);
+                }catch(AmazonClientException ace){
+                    ace.printStackTrace();
+                }
+                file.delete();
+            })
+            .exceptionally(t -> { // handle failure
+                t.printStackTrace();
+                e.getJDA().removeEventListener(this);
+                return null;
+            });
+        event.reply("tutto apposto man");
+        e.getJDA().removeEventListener(this);
+    }
 }
