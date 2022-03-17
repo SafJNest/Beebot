@@ -44,14 +44,18 @@ public class App extends ListenerAdapter {
     private static String token;
     private static String PREFIX = "%";
     private static Activity activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
-    //private static Activity activity = Activity.playing("testing quantum bogosort");
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
+    private static boolean isCanary = false;
     public static void main(String[] args) throws LoginException {
-        String tokenCanary = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
-        token  = tokenCanary;
-        token = args[0];
+        if(isCanary){
+            activity = Activity.playing("testing quantum bogosort");
+            token  = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
+            PREFIX = "$";
+        }else{
+            token = args[0];
+        }
         jda = JDABuilder
             .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
             .addEventListeners(new TheListener())
