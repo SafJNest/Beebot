@@ -35,17 +35,21 @@ public class List extends Command {
         MessageChannel channel = event.getChannel();
         HashMap<String, ArrayList<Mp3File>> tags = new HashMap<>();
         Mp3File[] files = SoundBoard.getMP3File();
+        //sorting by album
         if(event.getArgs().equalsIgnoreCase("album")){
             for (Mp3File file : files){
-                if(!tags.containsKey(file.getId3v2Tag().getAlbum()))
-                    tags.put(file.getId3v2Tag().getAlbum(), new ArrayList<Mp3File>());
-                tags.get(file.getId3v2Tag().getAlbum()).add(file);
+                String tag = (file.getId3v2Tag().getAlbum() == null) ? "Misc" : file.getId3v2Tag().getAlbum();
+                if(!tags.containsKey(tag))
+                    tags.put(tag, new ArrayList<Mp3File>());
+                tags.get(tag).add(file);
             }
         }else{
+            //sorting by artist
             for (Mp3File file : files){
-                if(!tags.containsKey(file.getId3v2Tag().getAlbumArtist()))
-                    tags.put(file.getId3v2Tag().getAlbumArtist(), new ArrayList<Mp3File>());
-                tags.get(file.getId3v2Tag().getAlbumArtist()).add(file);
+                String tag = (file.getId3v2Tag().getAlbumArtist() == null) ? "Misc" : file.getId3v2Tag().getAlbumArtist();
+                if(!tags.containsKey(tag))
+                    tags.put(tag, new ArrayList<Mp3File>());
+                tags.get(tag).add(file);
             }
         }
         EmbedBuilder eb = new EmbedBuilder();
