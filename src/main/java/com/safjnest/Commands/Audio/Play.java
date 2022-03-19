@@ -126,51 +126,44 @@ public class Play extends Command {
             eb.setDescription(event.getArgs());
             eb.addField("Autore", mp.getId3v2Tag().getAlbumArtist(), true);
             eb.addField("Album", mp.getId3v2Tag().getAlbum(), true);
+            String img = "mp3.pgn";
+            File file = new File("img" + File.separator+ "mp3.png");
             if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("merio")){
-                File file = new File("img" + File.separator+ "epria.jpg");
-                eb.setThumbnail("attachment://epria.jpg");
-                channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, "epria.jpg")
-                        .queue();
+                file = new File("img" + File.separator+ "epria.jpg");
+                img = "epria.jpg";
             }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("dirix")){
-                File file = new File("img" + File.separator+ "dirix.jpg");
-                eb.setThumbnail("attachment://dirix.jpg");
-                channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, "dirix.jpg")
-                        .queue();
+                file = new File("img" + File.separator+ "dirix.jpg");
+                img = "dirix.jpg";
             }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("teros")){
-                File file = new File("img" + File.separator+ "zucca.jpg");
-                eb.setThumbnail("attachment://zucca.jpg");
-                channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, "zucca.jpg")
-                        .queue();
+                file = new File("img" + File.separator+ "zucca.jpg");
+                img = "zucca.jpg";
             }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("herox")){
-                File file = new File("img" + File.separator+ "herox.jpg");
-                eb.setThumbnail("attachment://herox.jpg");
-                channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, "herox.jpg")
-                        .queue();
+                file = new File("img" + File.separator+ "herox.jpg");
+                img = "herox.jpg";
             }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("bomber")){
-                File file = new File("img" + File.separator+ "arcus.jpg");
-                eb.setThumbnail("attachment://arcus.jpg");
-                channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, "arcus.jpg")
-                        .queue();
+                file = new File("img" + File.separator+ "arcus.jpg");
+                img = "arcus.jpg";
             }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("ilyas")){
-                File file = new File("img" + File.separator+ "maluma.png");
-                eb.setThumbnail("attachment://maluma.png");
-                channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, "maluma.png")
-                        .queue();
-            
-            }else{
-                File file = new File("img" + File.separator+ "mp3.png");
-                eb.setThumbnail("attachment://mp3.png");
-                 channel.sendMessageEmbeds(eb.build())
-                            .addFile(file, "mp3.png")
-                            .queue();
+                file = new File("img" + File.separator+ "maluma.png");
+                img = "maluma.png";
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("pyke")){
+                file = new File("img" + File.separator+ "pyke.jpg");
+                img = "pyke.jpg";
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("thresh")){
+                file = new File("img" + File.separator+ "thresh.jpg");
+                img = "thresh.jpg";
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("blitzcrank")){
+                file = new File("img" + File.separator+ "blitz.png");
+                img = "blitz.png";
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("bard")){
+                file = new File("img" + File.separator+ "bard.png");
+                img = "bard.png";
             }
-        }
+            eb.setThumbnail("attachment://"+img);
+            channel.sendMessageEmbeds(eb.build())
+                    .addFile(file, img)
+                    .queue();
+            }
         
         if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
             channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
