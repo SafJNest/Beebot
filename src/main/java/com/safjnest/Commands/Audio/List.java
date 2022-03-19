@@ -54,14 +54,18 @@ public class List extends Command {
         }
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("SoundBoard");
+    
         String soundNames = "```\n";
-            for(String k : tags.keySet()){
+        int size = tags.size();
+            for(int i = 0; i < size; i++){
+                String k = getMax(tags);
                 for(Mp3File f : tags.get(k)){
                     soundNames+= f.getId3v2Tag().getTitle() + "\n";
                 }
                 soundNames+="```";
                 eb.addField(k, soundNames, true);
                 soundNames = "```\n";
+                tags.remove(k);
             }
         eb.setDescription("Lista con tutti i suoni del tier 1 bot");
         eb.setColor(new Color(0, 128, 128));
@@ -73,4 +77,19 @@ public class List extends Command {
                     .addFile(file, "mp3.png")
                     .queue();
 	}
+
+
+
+    public static String getMax(HashMap<String, ArrayList<Mp3File>> tags){
+        int max=0;
+        String maxKey = "";
+
+        for(String k : tags.keySet()){
+            if(tags.get(k).size() > max){
+                max = tags.get(k).size();
+                maxKey = k;
+            }
+        }
+        return maxKey;
+    }
 }

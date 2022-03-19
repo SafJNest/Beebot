@@ -112,9 +112,13 @@ public class Play extends Command {
         eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
         eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
+        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
+        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
         if(isYoutube){
             eb.setColor(new Color(255, 0, 0));
             eb.setDescription(player.getPlayingTrack().getInfo().title);
+            eb.setThumbnail("https://img.youtube.com/vi/" + player.getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+            event.reply(eb.build());
         }
         else{
             Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
@@ -122,21 +126,53 @@ public class Play extends Command {
             eb.setDescription(event.getArgs());
             eb.addField("Autore", mp.getId3v2Tag().getAlbumArtist(), true);
             eb.addField("Album", mp.getId3v2Tag().getAlbum(), true);
+            if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("merio")){
+                File file = new File("img" + File.separator+ "epria.jpg");
+                eb.setThumbnail("attachment://epria.jpg");
+                channel.sendMessageEmbeds(eb.build())
+                        .addFile(file, "epria.jpg")
+                        .queue();
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("dirix")){
+                File file = new File("img" + File.separator+ "dirix.jpg");
+                eb.setThumbnail("attachment://dirix.jpg");
+                channel.sendMessageEmbeds(eb.build())
+                        .addFile(file, "dirix.jpg")
+                        .queue();
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("teros")){
+                File file = new File("img" + File.separator+ "zucca.jpg");
+                eb.setThumbnail("attachment://zucca.jpg");
+                channel.sendMessageEmbeds(eb.build())
+                        .addFile(file, "zucca.jpg")
+                        .queue();
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("herox")){
+                File file = new File("img" + File.separator+ "herox.jpg");
+                eb.setThumbnail("attachment://herox.jpg");
+                channel.sendMessageEmbeds(eb.build())
+                        .addFile(file, "herox.jpg")
+                        .queue();
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("bomber")){
+                File file = new File("img" + File.separator+ "arcus.jpg");
+                eb.setThumbnail("attachment://arcus.jpg");
+                channel.sendMessageEmbeds(eb.build())
+                        .addFile(file, "arcus.jpg")
+                        .queue();
+            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("ilyas")){
+                File file = new File("img" + File.separator+ "maluma.png");
+                eb.setThumbnail("attachment://maluma.png");
+                channel.sendMessageEmbeds(eb.build())
+                        .addFile(file, "maluma.png")
+                        .queue();
+            
+            }else{
+                File file = new File("img" + File.separator+ "mp3.png");
+                eb.setThumbnail("attachment://mp3.png");
+                 channel.sendMessageEmbeds(eb.build())
+                            .addFile(file, "mp3.png")
+                            .queue();
+            }
         }
         
         if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
             channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-        if(isYoutube){
-            eb.setThumbnail("https://img.youtube.com/vi/" + player.getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-            event.reply(eb.build());
-        }else{
-            File file = new File("img" + File.separator+ "mp3.png");
-            eb.setThumbnail("attachment://mp3.png");
-             channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, "mp3.png")
-                        .queue();
-        }
 	}
 }
