@@ -126,41 +126,57 @@ public class Play extends Command {
             eb.setDescription(event.getArgs());
             eb.addField("Autore", mp.getId3v2Tag().getAlbumArtist(), true);
             eb.addField("Album", mp.getId3v2Tag().getAlbum(), true);
-            String img = "mp3.pgn";
-            File file = new File("img" + File.separator+ "mp3.png");
-            if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("merio")){
-                file = new File("img" + File.separator+ "epria.jpg");
-                img = "epria.jpg";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("dirix")){
-                file = new File("img" + File.separator+ "dirix.jpg");
-                img = "dirix.jpg";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("teros")){
-                file = new File("img" + File.separator+ "zucca.jpg");
-                img = "zucca.jpg";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("herox")){
-                file = new File("img" + File.separator+ "herox.jpg");
-                img = "herox.jpg";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("bomber")){
-                file = new File("img" + File.separator+ "arcus.jpg");
-                img = "arcus.jpg";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("ilyas")){
-                file = new File("img" + File.separator+ "maluma.png");
-                img = "maluma.png";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("pyke")){
-                file = new File("img" + File.separator+ "pyke.jpg");
-                img = "pyke.jpg";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("thresh")){
-                file = new File("img" + File.separator+ "thresh.jpg");
-                img = "thresh.jpg";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("blitzcrank")){
-                file = new File("img" + File.separator+ "blitz.png");
-                img = "blitz.png";
-            }else if(mp.getId3v2Tag().getAlbumArtist().equalsIgnoreCase("bard")){
-                file = new File("img" + File.separator+ "bard.png");
-                img = "bard.png";
-            }
-            eb.setThumbnail("attachment://"+img);
-            channel.sendMessageEmbeds(eb.build())
+            String img = "mp3.png";
+            switch (mp.getId3v2Tag().getAlbumArtist()) {
+                case "merio":
+                    img = "epria.jpg";
+                    break;
+                case "dirix":
+                    img = "dirix.jpg";
+                    break;
+                case "teros":
+                    img = "zucca.jpg";
+                    break;
+                case "herox":
+                    img = "herox.jpg";
+                    break;
+                case "bomber":
+                    img = "arcus.jpg";
+                    break;
+                case "ilyas":
+                    img = "maluma.PNG";
+                    break;
+                case "pyke":
+                    img = "pyke.jpg";
+                    break;
+                case "thresh":
+                    img = "zucca.jpg";
+                    break;
+                case "blitzcrank":
+                    img = "blitz.png";
+                    break;
+                case "bard":
+                    img = "bard.png";
+                    break;
+                case "nautilus":
+                    img = "nautilus.png";
+                    break;
+                case "fiddle":
+                    img = "fid.jpg";
+                    break;
+                case "pantanichi":
+                    img = "panta.jpg";
+                    break;
+                case "sunyx":
+                    img = "sun.jpg";
+                    break;
+                case "gskianto":
+                    img = "gk.png";
+                    break;
+                }
+                File file = new File("img" + File.separator+ img);
+                eb.setThumbnail("attachment://"+img);
+                channel.sendMessageEmbeds(eb.build())
                     .addFile(file, img)
                     .queue();
             }
