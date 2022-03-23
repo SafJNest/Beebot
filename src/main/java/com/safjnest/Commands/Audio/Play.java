@@ -150,7 +150,7 @@ public class Play extends Command {
                     img = "pyke.jpg";
                     break;
                 case "thresh":
-                    img = "zucca.jpg";
+                    img = "thresh.jpg";
                     break;
                 case "blitzcrank":
                     img = "blitz.png";
