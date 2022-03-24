@@ -173,6 +173,9 @@ public class Play extends Command {
                 case "gskianto":
                     img = "gk.png";
                     break;
+                case "jhin":
+                    img = "jhin.jpg";
+                    break;
                 }
                 File file = new File("img" + File.separator+ img);
                 eb.setThumbnail("attachment://"+img);
