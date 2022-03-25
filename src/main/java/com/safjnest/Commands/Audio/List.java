@@ -35,8 +35,9 @@ public class List extends Command {
         MessageChannel channel = event.getChannel();
         HashMap<String, ArrayList<Mp3File>> tags = new HashMap<>();
         Mp3File[] files = SoundBoard.getMP3File();
+        String[] args = event.getArgs().split(" ",2);
         //sorting by album
-        if(event.getArgs().equalsIgnoreCase("album")){
+        if(args[0].equalsIgnoreCase("album")){
             for (Mp3File file : files){
                 String tag = (file.getId3v2Tag().getAlbum() == null) ? "Misc" : file.getId3v2Tag().getAlbum();
                 if(!tags.containsKey(tag))
@@ -57,6 +58,31 @@ public class List extends Command {
     
         String soundNames = "```\n";
         int size = tags.size();
+        if(!args[0].equalsIgnoreCase("album") && !args[0].equalsIgnoreCase("")){
+            if(tags.containsKey(args[0])){
+                eb.setDescription("Lista con tutti i suoni di " + args[0]);
+                for(Mp3File f : tags.get(args[0]))
+                    soundNames+= f.getId3v2Tag().getTitle() + "\n";
+                soundNames = soundNames + "```\n";
+                eb.addField(args[0], soundNames, true);
+            }else{
+                event.reply(args[0] + " NON ESISTE PEZZO DIEGTBUHYREW");
+                return;    
+            }
+        }else if(args[0].equalsIgnoreCase("album") && !args[1].equalsIgnoreCase("")){
+            if(tags.containsKey(args[1])){
+                eb.setDescription("Lista con tutti i suoni dell'album " + args[0]);
+                for(Mp3File f : tags.get(args[1]))
+                    soundNames+= f.getId3v2Tag().getTitle() + "\n";
+                soundNames = soundNames + "```\n";
+                eb.addField(args[1], soundNames, true);
+            }else{
+                event.reply(args[1] + " NON ESISTE PEZZO DIEGTBUHYREW");
+                return;    
+            }
+        
+        }else{
+            eb.setDescription("Lista con tutti i suoni del tier 1 bot");
             for(int i = 0; i < size; i++){
                 String k = getMax(tags);
                 for(Mp3File f : tags.get(k)){
@@ -67,7 +93,7 @@ public class List extends Command {
                 soundNames = "```\n";
                 tags.remove(k);
             }
-        eb.setDescription("Lista con tutti i suoni del tier 1 bot");
+        }
         eb.setColor(new Color(0, 128, 128));
         eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' soundfx, questa e' perfezione cit. steve jobs", null);
