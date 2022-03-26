@@ -25,9 +25,9 @@ public class List extends Command {
     public List(){
         this.name = "list";
         this.aliases = new String[]{"listoide", "listina","lista", "listona"};
-        this.help = "Il bot invia la lista di tutti i suoni locali.";
+        this.help = "Il bot invia la lista di tutti i suoni locali.\nConsente in oltre di avere la lista dei suoni di un singolo autore o di un singolo album.";
         this.category = new Category("Audio");
-        this.arguments = "[list] (album)";
+        this.arguments = "[list] (nome autore) (album) (album + nome album)";
     }
 
 	@Override
@@ -55,7 +55,6 @@ public class List extends Command {
         }
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("SoundBoard");
-    
         String soundNames = "```\n";
         int size = tags.size();
         if(!args[0].equalsIgnoreCase("album") && !args[0].equalsIgnoreCase("")){
@@ -69,9 +68,9 @@ public class List extends Command {
                 event.reply(args[0] + " NON ESISTE PEZZO DIEGTBUHYREW");
                 return;    
             }
-        }else if(args[0].equalsIgnoreCase("album") && !args[1].equalsIgnoreCase("")){
+        }else if(args.length > 1 && args[0].equalsIgnoreCase("album")){
             if(tags.containsKey(args[1])){
-                eb.setDescription("Lista con tutti i suoni dell'album " + args[0]);
+                eb.setDescription("Lista con tutti i suoni dell'album " + args[1]);
                 for(Mp3File f : tags.get(args[1]))
                     soundNames+= f.getId3v2Tag().getTitle() + "\n";
                 soundNames = soundNames + "```\n";
