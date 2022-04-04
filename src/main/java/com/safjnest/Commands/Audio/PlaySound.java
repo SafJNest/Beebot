@@ -22,6 +22,26 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.FileListener;
 
+import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.SoundBoard;
+import com.safjnest.Utilities.TrackScheduler;
+import com.mpatric.mp3agic.Mp3File;
+import com.safjnest.Utilities.AudioPlayerSendHandler;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+
+import net.dv8tion.jda.api.entities.AudioChannel;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.managers.AudioManager;
+
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
+
 
 public class PlaySound extends Command{
     AmazonS3 s3Client;
@@ -48,7 +68,7 @@ public class PlaySound extends Command{
             fullObject = s3Client.getObject(new GetObjectRequest("thebeebox", name));
             System.out.println("Content-Type: " + fullObject.getObjectMetadata().getContentType());
             S3ObjectInputStream s3is = fullObject.getObjectContent();
-            FileOutputStream fos = new FileOutputStream(new File("Download"+ File.separator + name + ".mp3"));
+            FileOutputStream fos = new FileOutputStream(new File("SoundBoard"+ File.separator + name + ".mp3"));
             byte[] read_buf = new byte[1024];
             int read_len = 0;
             while ((read_len = s3is.read(read_buf)) > 0) {
@@ -59,5 +79,48 @@ public class PlaySound extends Command{
         } catch (AmazonClientException | IOException ace) {
             ace.printStackTrace();
         }
+        
+        name = "SoundBoard" + File.separator + name + ".mp3"; 
+        MessageChannel channel = event.getChannel();
+        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+        AudioManager audioManager = event.getGuild().getAudioManager();
+        AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
+        AudioPlayer player = playerManager.createPlayer();
+        AudioPlayerSendHandler audioPlayerSendHandler = new AudioPlayerSendHandler(player);
+        audioManager.setSendingHandler(audioPlayerSendHandler);
+        audioManager.openAudioConnection(myChannel);
+        TrackScheduler trackScheduler = new TrackScheduler(player);
+        player.addListener(trackScheduler);
+        playerManager.registerSourceManager(new LocalAudioSourceManager());
+        
+        playerManager.loadItem(name, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                trackScheduler.addQueue(track);
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {
+                /*
+                 * for (AudioTrack track : playlist.getTracks()) {
+                 * trackScheduler.queue(track);
+                 * }
+                 */
+            }
+        
+            @Override
+            public void noMatches() {
+                channel.sendMessage("Canzone non trovata").queue();
+                trackScheduler.addQueue(null);
+            }
+
+            @Override
+            public void loadFailed(FriendlyException throwable) {
+                System.out.println("error faker " + throwable.getMessage());
+            }
+        });
+        player.playTrack(trackScheduler.getTrack());
+        if(player.getPlayingTrack() == null)
+            return;
     }
 }
