@@ -47,7 +47,7 @@ public class App extends ListenerAdapter {
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
-    private static boolean isCanary = false;
+    private static boolean isCanary = true;
     public static void main(String[] args) throws LoginException {
         if(isCanary){
             activity = Activity.playing("testing quantum bogosort");
