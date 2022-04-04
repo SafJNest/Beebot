@@ -16,7 +16,7 @@ public class Dice extends Command {
         this.aliases = new String[]{"dado", "lanciadado", "roll", "dice"};
         this.help = "Il bot lancia uno o più dadi.";
         this.category = new Category("Matematica");
-        this.arguments = "[dice] (n dadi) (n n facce)";
+        this.arguments = "[dice] (n dadi) ([n dadi] (n facce))";
     }
 
 	@Override
