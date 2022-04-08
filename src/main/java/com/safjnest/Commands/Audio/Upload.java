@@ -4,9 +4,11 @@ import java.io.File;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -63,6 +65,7 @@ class FileListener extends ListenerAdapter {
     
     @Override
     public void onMessageReceived(MessageReceivedEvent e){
+        /*
         if(e.getChannel().equals(channel)){ 
             if(e.getAuthor().isBot())
                 return;
@@ -76,15 +79,25 @@ class FileListener extends ListenerAdapter {
                 e.getJDA().removeEventListener(this);
                 return;
             }
-            /*List<s3ObjectSummary> summaries = s3Client.listObjectsV2("thebeebox").getObjectSummaries()
-            for(s3ObjectSummary summary : summaries){
-
-            }
-            if(.get(0).getKey().equals(name)){
+            */
+            ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+                .withBucketName("thebeebox");
+            ObjectListing objectListing;
+            do {
+                objectListing = s3Client.listObjects(listObjectsRequest);
+                for (S3ObjectSummary objectSummary : 
+                    objectListing.getObjectSummaries()) {
+                    System.out.println( " - " + objectSummary.getKey() + "  (size = " + objectSummary.getSize() + ")");
+                }
+                listObjectsRequest.setMarker(objectListing.getNextMarker());
+            } while (objectListing.isTruncated());
+            /*
+            if(.get(0).getKey().equals(name)){1u 
                 event.reply("esiste gia");
                 e.getJDA().removeEventListener(this);
                 return;
             }*/ //TODO non funziona un cazzo
+/*
             File saveFile = new File("upload" + File.separator + (name +"."+ e.getMessage().getAttachments().get(0).getFileExtension()));
             e.getMessage().getAttachments().get(0).downloadToFile(saveFile)
                 .thenAccept(file -> {
@@ -109,6 +122,6 @@ class FileListener extends ListenerAdapter {
                 });
             event.reply("tutto apposto man");
             e.getJDA().removeEventListener(this);
-        }
+        }*/
     }
 }
