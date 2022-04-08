@@ -84,8 +84,6 @@ public class App extends ListenerAdapter {
             .withCredentials(new AWSStaticCredentialsProvider(credentials))
             .build();
 
-        System.out.println("Connesso ad aws");
-
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setPrefix(PREFIX);
         builder.setHelpWord("helpme");

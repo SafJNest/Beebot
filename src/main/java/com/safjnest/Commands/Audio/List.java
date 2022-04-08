@@ -24,7 +24,7 @@ public class List extends Command {
 
     public List(){
         this.name = "list";
-        this.aliases = new String[]{"listoide", "listina","lista", "listona"};
+        this.aliases = new String[]{"listoide", "listina", "lista", "listona"};
         this.help = "Il bot invia la lista di tutti i suoni locali.";
         this.category = new Category("Audio");
         this.arguments = "[list] (album)";
