@@ -93,7 +93,7 @@ public class App extends ListenerAdapter {
         //Audio
         builder.addCommand(new Connect());
         builder.addCommand(new Disconnect());
-        builder.addCommand(new List());
+        builder.addCommand(new List(s3Client));
         builder.addCommand(new Play(tierOneLink));
         builder.addCommand(new Upload(s3Client));
         builder.addCommand(new PlaySound(s3Client));
