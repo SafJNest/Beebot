@@ -71,19 +71,18 @@ class FileListener extends ListenerAdapter {
                 e.getJDA().removeEventListener(this);
                 return;
             }
-            /*
             if(e.getMessage().getAttachments().get(0).getSize() > 1048576){
                 event.reply("il file è troppo grosso idiota (1mb max)");
                 e.getJDA().removeEventListener(this);
                 return;
             }
-
             /*
             if(.get(0).getKey().equals(name)){1u 
                 event.reply("esiste gia");
                 e.getJDA().removeEventListener(this);
                 return;
             }*/ //TODO non funziona un cazzo
+            
             File saveFile = new File("upload" + File.separator + (name +"."+ e.getMessage().getAttachments().get(0).getFileExtension()));
             e.getMessage().getAttachments().get(0).downloadToFile(saveFile)
                 .thenAccept(file -> {
