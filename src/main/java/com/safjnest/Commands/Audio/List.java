@@ -2,10 +2,18 @@ package com.safjnest.Commands.Audio;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
 import java.awt.Color;
 
 import com.safjnest.Utilities.SoundBoard;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -21,39 +29,41 @@ import net.dv8tion.jda.api.entities.MessageChannel;
  * @since 1.1
  */
 public class List extends Command {
+    private AmazonS3 s3Client;
 
-    public List(){
+    public List(AmazonS3 s3Client){
         this.name = "list";
         this.aliases = new String[]{"listoide", "listina", "lista", "listona"};
         this.help = "Il bot invia la lista di tutti i suoni locali.";
         this.category = new Category("Audio");
         this.arguments = "[list] (album)";
+        this.s3Client = s3Client;
     }
 
 	@Override
 	protected void execute(CommandEvent event) {
+        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+                .withBucketName("thebeebox");
+            ObjectListing objectListing;
+            do {
+                objectListing = s3Client.listObjects(listObjectsRequest);
+                for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                    if(!alpha.containsKey(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()))
+                        alpha.put(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase(), new ArrayList<String>());
+                    alpha.get(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()).add(objectSummary.getKey());
+                }   
+                listObjectsRequest.setMarker(objectListing.getNextMarker());
+            } while (objectListing.isTruncated());
+        Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
+        sortedMap.putAll(alpha);
         MessageChannel channel = event.getChannel();
-        HashMap<String, ArrayList<Mp3File>> tags = new HashMap<>();
-        Mp3File[] files = SoundBoard.getMP3File();
-        if(event.getArgs().equalsIgnoreCase("album")){
-            for (Mp3File file : files){
-                if(!tags.containsKey(file.getId3v2Tag().getAlbum()))
-                    tags.put(file.getId3v2Tag().getAlbum(), new ArrayList<Mp3File>());
-                tags.get(file.getId3v2Tag().getAlbum()).add(file);
-            }
-        }else{
-            for (Mp3File file : files){
-                if(!tags.containsKey(file.getId3v2Tag().getAlbumArtist()))
-                    tags.put(file.getId3v2Tag().getAlbumArtist(), new ArrayList<Mp3File>());
-                tags.get(file.getId3v2Tag().getAlbumArtist()).add(file);
-            }
-        }
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("SoundBoard");
         String soundNames = "```\n";
-            for(String k : tags.keySet()){
-                for(Mp3File f : tags.get(k)){
-                    soundNames+= f.getId3v2Tag().getTitle() + "\n";
+            for(String k : sortedMap.keySet()) {
+                for(String s : sortedMap.get(k)){
+                    soundNames+= s + "\n";
                 }
                 soundNames+="```";
                 eb.addField(k, soundNames, true);
@@ -68,5 +78,6 @@ public class List extends Command {
         channel.sendMessageEmbeds(eb.build())
                     .addFile(file, "mp3.png")
                     .queue();
+        
 	}
 }
