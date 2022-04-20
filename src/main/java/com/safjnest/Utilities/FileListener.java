@@ -14,7 +14,7 @@ public class FileListener extends ListenerAdapter {
     
     @Override
     public void onMessageReceived(MessageReceivedEvent event){
-        File saveFile = new File("SoundBoard" + File.separator + (name +"."+ event.getMessage().getAttachments().get(0).getFileExtension()));
+        File saveFile = new File("upload" + File.separator + (name +"."+ event.getMessage().getAttachments().get(0).getFileExtension()));
         event.getMessage().getAttachments().get(0).downloadToFile(saveFile)
         .thenAccept(file -> System.out.println("Saved attachment to " + file.getName()))
         .exceptionally(t ->
