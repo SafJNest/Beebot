@@ -2,7 +2,6 @@ package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import com.amazonaws.AmazonClientException;
@@ -19,6 +18,8 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.SoundBoard;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
+import org.apache.commons.io.FileUtils;
+
 import net.dv8tion.jda.api.EmbedBuilder;
 
 import net.dv8tion.jda.api.entities.AudioChannel;
@@ -32,7 +33,6 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
-
 
 public class PlaySound extends Command{
     AmazonS3 s3Client;
@@ -53,25 +53,23 @@ public class PlaySound extends Command{
             event.reply("il nome idiota");
             return;
         }
-        //TODO deletare il file vecchio ogni ps
+        //TODO fix | deletare il file vecchio ogni ps bene
+        for (File file : new java.io.File("SoundBoard").listFiles())
+            file.delete();
+
         try {
             System.out.println("Downloading an object");
             fullObject = s3Client.getObject(new GetObjectRequest("thebeebox", name));
             System.out.println("Content-Type: " + fullObject.getObjectMetadata().getContentType());
             S3ObjectInputStream s3is = fullObject.getObjectContent();
-            FileOutputStream fos = new FileOutputStream(new File("SoundBoard"+ File.separator + name + ".mp3"));
-            byte[] read_buf = new byte[1024];
-            int read_len = 0;
-            while ((read_len = s3is.read(read_buf)) > 0) {
-                fos.write(read_buf, 0, read_len);
-            }
+            FileUtils.copyInputStreamToFile(s3is, new File("SoundBoard"+ File.separator + name + ".mp3"));
             s3is.close();
-            fos.close();
         } catch (AmazonClientException | IOException ace) {
             ace.printStackTrace();
         }
         
         name = "SoundBoard" + File.separator + name + ".mp3"; 
+        
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
@@ -83,7 +81,6 @@ public class PlaySound extends Command{
         TrackScheduler trackScheduler = new TrackScheduler(player);
         player.addListener(trackScheduler);
         playerManager.registerSourceManager(new LocalAudioSourceManager());
-        
         playerManager.loadItem(name, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
@@ -98,7 +95,7 @@ public class PlaySound extends Command{
                  * }
                  */
             }
-        
+            
             @Override
             public void noMatches() {
                 channel.sendMessage("Canzone non trovata").queue();
@@ -107,83 +104,32 @@ public class PlaySound extends Command{
 
             @Override
             public void loadFailed(FriendlyException throwable) {
-                System.out.println("error faker " + throwable.getMessage());
+                System.out.println("error: " + throwable.getMessage());
             }
         });
+
         player.playTrack(trackScheduler.getTrack());
         if(player.getPlayingTrack() == null)
             return;
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle("In riproduzione:");
-            eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
-            eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-            eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-                Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
-                eb.setColor(new Color(0, 255, 255));
-                eb.setDescription(event.getArgs());
-                eb.addField("Autore", mp.getId3v2Tag().getAlbumArtist(), true);
-                eb.addField("Album", mp.getId3v2Tag().getAlbum(), true);
-                String img = "mp3.png";
-                switch (mp.getId3v2Tag().getAlbumArtist()) {
-                    case "merio":
-                        img = "epria.jpg";
-                        break;
-                    case "dirix":
-                        img = "dirix.jpg";
-                        break;
-                    case "teros":
-                        img = "zucca.jpg";
-                        break;
-                    case "herox":
-                        img = "herox.jpg";
-                        break;
-                    case "bomber":
-                        img = "arcus.jpg";
-                        break;
-                    case "ilyas":
-                        img = "maluma.PNG";
-                        break;
-                    case "pyke":
-                        img = "pyke.jpg";
-                        break;
-                    case "thresh":
-                        img = "thresh.jpg";
-                        break;
-                    case "blitzcrank":
-                        img = "blitz.png";
-                        break;
-                    case "bard":
-                        img = "bard.png";
-                        break;
-                    case "nautilus":
-                        img = "nautilus.png";
-                        break;
-                    case "fiddle":
-                        img = "fid.jpg";
-                        break;
-                    case "pantanichi":
-                        img = "panta.jpg";
-                        break;
-                    case "sunyx":
-                        img = "sun.jpg";
-                        break;
-                    case "gskianto":
-                        img = "gk.png";
-                        break;
-                    case "jhin":
-                        img = "jhin.jpg";
-                        break;
-                    case "yone":
-                        img = "yone.jpg";
-                        break;
-                    case "yasuo":
-                        img = "yasuo.jpg";
-                        break;
-                    }
-                    File file = new File("img" + File.separator+ img);
-                    eb.setThumbnail("attachment://"+img);
-                    channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, img)
-                        .queue();
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle("In riproduzione:");
+        eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
+        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
+        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
+        Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
+        eb.setColor(new Color(0, 255, 255));
+        eb.setDescription(event.getArgs());
+        eb.addField("Autore", mp.getId3v2Tag().getAlbumArtist(), true);
+        eb.addField("Album", mp.getId3v2Tag().getAlbum(), true);
+        String img = "mp3.png";
+        switch (mp.getId3v2Tag().getAlbumArtist()) {
+            case "merio":img = "epria.jpg";break;case "dirix":img = "dirix.jpg";break;case "teros":img = "zucca.jpg";break;case "herox":img = "herox.jpg";break;case "bomber":img = "arcus.jpg";break;case "ilyas":img = "maluma.PNG";break;case "pyke":img = "pyke.jpg";break;case "thresh":img = "thresh.jpg";break;case "blitzcrank":img = "blitz.png";break;case "bard":img = "bard.png";break;case "nautilus":img = "nautilus.png";break;case "fiddle":img = "fid.jpg";break;case "pantanichi":img = "panta.jpg";break;case "sunyx":img = "sun.jpg";break;case "gskianto":img = "gk.png";break;case "jhin":img = "jhin.jpg";break;case "yone":img = "yone.jpg";break;case "yasuo":img = "yasuo.jpg";break;
+        }
+        File file = new File("img" + File.separator+ img);
+        eb.setThumbnail("attachment://" + img);
+        channel.sendMessageEmbeds(eb.build())
+            .addFile(file, img)
+            .queue();
     }
 }

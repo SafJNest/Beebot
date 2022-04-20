@@ -10,7 +10,6 @@ import java.util.HashMap;
 
 import javax.security.auth.login.LoginException;
 
-
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
@@ -31,6 +30,7 @@ import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -51,28 +51,42 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
  * @version 1.2.5
  */
 public class App extends ListenerAdapter {
+    private static boolean isCanary = true;
     private static JDA jda;
     private static String token;
-    private static String PREFIX = "$";
-    //private static Activity activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
-    private static Activity activity = Activity.playing("testing quantum bogosort");
+    private static String PREFIX;
+    private static Activity activity;
+
+    private static String AWSAccesKey;
+    private static String AWSSecretKey;
+
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
+
     private static HashMap<String, String> tierOneLink = new HashMap<>();
 
     public static void main(String[] args) throws LoginException {
-        String tokenCanary = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
-        token  = tokenCanary;
-        //token = args[0];
-        jda = JDABuilder
-            .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
-            .addEventListeners(new TheListener())
-            .setMemberCachePolicy(MemberCachePolicy.VOICE)
-            .setChunkingFilter(ChunkingFilter.ALL)
-            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
-            .build();
+        if(args.length > 0){
+            isCanary = Boolean.parseBoolean(args[0]);
+        }
+        if(isCanary){
+            System.out.println("[main] INFO Canary mode on");
+            token = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
+            PREFIX = "$";
+            activity = Activity.playing("Testing quantum bogosort | " + PREFIX + "help");
+            AWSAccesKey = "AKIASJG3D4LSZMKR7L4R";
+            AWSSecretKey = "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";
+        }
+        else{
+            System.out.println("[main] INFO Canary mode off");
+            token = args[1];
+            PREFIX = "%";
+            activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
+            AWSAccesKey = args[2];
+            AWSSecretKey = args[3];
+        }
 
-        AWSCredentials credentials = new BasicAWSCredentials("AKIASJG3D4LSZMKR7L4R", "zufmhZG5m8QhDZCeBYALs2S1wOu/x9zgoYxjbZIV");
+        AWSCredentials credentials = new BasicAWSCredentials(AWSAccesKey, AWSSecretKey);
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.setSignerOverride("AWSS3V4SignerType");
 
@@ -82,6 +96,22 @@ public class App extends ListenerAdapter {
             .withPathStyleAccessEnabled(true)
             .withClientConfiguration(clientConfiguration)
             .withCredentials(new AWSStaticCredentialsProvider(credentials))
+            .build();
+
+        try {
+            s3Client.doesBucketExistV2("thebeebox");
+        } catch (SdkClientException e) {
+            e.printStackTrace();
+            return;
+        }
+        System.out.println("[AWS] INFO Connection Successful!");
+
+        jda = JDABuilder
+            .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
+            .addEventListeners(new TheListener())
+            .setMemberCachePolicy(MemberCachePolicy.VOICE)
+            .setChunkingFilter(ChunkingFilter.ALL)
+            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
