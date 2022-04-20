@@ -18,6 +18,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 
@@ -79,6 +80,7 @@ public class Play extends Command {
         
         playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
         playerManager.registerSourceManager(new LocalAudioSourceManager());
+        playerManager.registerSourceManager(new HttpAudioSourceManager());
         
         playerManager.loadItem(toPlay, new AudioLoadResultHandler() {
             @Override
@@ -112,9 +114,13 @@ public class Play extends Command {
         eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
         eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
+        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
+        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
         if(isYoutube){
             eb.setColor(new Color(255, 0, 0));
             eb.setDescription(player.getPlayingTrack().getInfo().title);
+            eb.setThumbnail("https://img.youtube.com/vi/" + player.getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+            event.reply(eb.build());
         }
         else{
             Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
@@ -122,21 +128,71 @@ public class Play extends Command {
             eb.setDescription(event.getArgs());
             eb.addField("Autore", mp.getId3v2Tag().getAlbumArtist(), true);
             eb.addField("Album", mp.getId3v2Tag().getAlbum(), true);
-        }
+            String img = "mp3.png";
+            switch (mp.getId3v2Tag().getAlbumArtist()) {
+                case "merio":
+                    img = "epria.jpg";
+                    break;
+                case "dirix":
+                    img = "dirix.jpg";
+                    break;
+                case "teros":
+                    img = "zucca.jpg";
+                    break;
+                case "herox":
+                    img = "herox.jpg";
+                    break;
+                case "bomber":
+                    img = "arcus.jpg";
+                    break;
+                case "ilyas":
+                    img = "maluma.PNG";
+                    break;
+                case "pyke":
+                    img = "pyke.jpg";
+                    break;
+                case "thresh":
+                    img = "thresh.jpg";
+                    break;
+                case "blitzcrank":
+                    img = "blitz.png";
+                    break;
+                case "bard":
+                    img = "bard.png";
+                    break;
+                case "nautilus":
+                    img = "nautilus.png";
+                    break;
+                case "fiddle":
+                    img = "fid.jpg";
+                    break;
+                case "pantanichi":
+                    img = "panta.jpg";
+                    break;
+                case "sunyx":
+                    img = "sun.jpg";
+                    break;
+                case "gskianto":
+                    img = "gk.png";
+                    break;
+                case "jhin":
+                    img = "jhin.jpg";
+                    break;
+                case "yone":
+                    img = "yone.jpg";
+                    break;
+                case "yasuo":
+                    img = "yasuo.jpg";
+                    break;
+                }
+                File file = new File("img" + File.separator+ img);
+                eb.setThumbnail("attachment://"+img);
+                channel.sendMessageEmbeds(eb.build())
+                    .addFile(file, img)
+                    .queue();
+            }
         
         if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
             channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-        if(isYoutube){
-            eb.setThumbnail("https://img.youtube.com/vi/" + player.getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-            event.reply(eb.build());
-        }else{
-            File file = new File("img" + File.separator+ "mp3.png");
-            eb.setThumbnail("attachment://mp3.png");
-             channel.sendMessageEmbeds(eb.build())
-                        .addFile(file, "mp3.png")
-                        .queue();
-        }
 	}
 }
