@@ -9,6 +9,8 @@ package com.safjnest;
 import java.util.HashMap;
 
 import javax.security.auth.login.LoginException;
+
+
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
@@ -28,6 +30,15 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
+
 /**
  * Classe principale del bot.
  * <p> La {@code JDA} viene istanziata e vengono specificati i suoi
@@ -42,26 +53,35 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 public class App extends ListenerAdapter {
     private static JDA jda;
     private static String token;
-    private static String PREFIX = "%";
-    private static Activity activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
+    private static String PREFIX = "$";
+    //private static Activity activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
+    private static Activity activity = Activity.playing("testing quantum bogosort");
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
     private static HashMap<String, String> tierOneLink = new HashMap<>();
-    private static boolean isCanary = false;
+
     public static void main(String[] args) throws LoginException {
-        if(isCanary){
-            activity = Activity.playing("testing quantum bogosort");
-            token  = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
-            PREFIX = "$";
-        }else{
-            token = args[0];
-        }
+        String tokenCanary = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
+        token  = tokenCanary;
+        //token = args[0];
         jda = JDABuilder
             .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
             .addEventListeners(new TheListener())
             .setMemberCachePolicy(MemberCachePolicy.VOICE)
             .setChunkingFilter(ChunkingFilter.ALL)
             .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
+            .build();
+
+        AWSCredentials credentials = new BasicAWSCredentials("AKIASJG3D4LSZMKR7L4R", "zufmhZG5m8QhDZCeBYALs2S1wOu/x9zgoYxjbZIV");
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        clientConfiguration.setSignerOverride("AWSS3V4SignerType");
+
+        AmazonS3 s3Client = AmazonS3ClientBuilder
+            .standard()
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("s3.us-east-1.amazonaws.com", "us-east-1"))
+            .withPathStyleAccessEnabled(true)
+            .withClientConfiguration(clientConfiguration)
+            .withCredentials(new AWSStaticCredentialsProvider(credentials))
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
@@ -73,9 +93,10 @@ public class App extends ListenerAdapter {
         //Audio
         builder.addCommand(new Connect());
         builder.addCommand(new Disconnect());
-        builder.addCommand(new List());
+        builder.addCommand(new List(s3Client));
         builder.addCommand(new Play(tierOneLink));
-        builder.addCommand(new Upload());
+        builder.addCommand(new Upload(s3Client));
+        builder.addCommand(new PlaySound(s3Client));
 
         //Manage Guild
         builder.addCommand(new ChannelInfo());

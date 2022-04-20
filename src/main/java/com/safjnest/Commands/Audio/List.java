@@ -3,14 +3,18 @@ package com.safjnest.Commands.Audio;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import java.awt.Color;
 
-import com.safjnest.Utilities.SoundBoard;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
+import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 
-import com.mpatric.mp3agic.Mp3File;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -21,78 +25,47 @@ import net.dv8tion.jda.api.entities.MessageChannel;
  * @since 1.1
  */
 public class List extends Command {
+    private AmazonS3 s3Client;
 
-    public List(){
+    public List(AmazonS3 s3Client){
         this.name = "list";
-        this.aliases = new String[]{"listoide", "listina","lista", "listona"};
-        this.help = "Il bot invia la lista di tutti i suoni locali.\nConsente in oltre di avere la lista dei suoni di un singolo autore o di un singolo album.";
+        this.aliases = new String[]{"listoide", "listina", "lista", "listona"};
+        this.help = "Il bot invia la lista di tutti i suoni locali.";
         this.category = new Category("Audio");
-        this.arguments = "[list] (nome autore) (album) (album + nome album)";
+        this.arguments = "[list] (album)";
+        this.s3Client = s3Client;
     }
 
 	@Override
 	protected void execute(CommandEvent event) {
+        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+                .withBucketName("thebeebox");
+            ObjectListing objectListing;
+            do {
+                objectListing = s3Client.listObjects(listObjectsRequest);
+                for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                    if(!alpha.containsKey(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()))
+                        alpha.put(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase(), new ArrayList<String>());
+                    alpha.get(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()).add(objectSummary.getKey());
+                }   
+                listObjectsRequest.setMarker(objectListing.getNextMarker());
+            } while (objectListing.isTruncated());
+        Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
+        sortedMap.putAll(alpha);
         MessageChannel channel = event.getChannel();
-        HashMap<String, ArrayList<Mp3File>> tags = new HashMap<>();
-        Mp3File[] files = SoundBoard.getMP3File();
-        String[] args = event.getArgs().split(" ",2);
-        //sorting by album
-        if(args[0].equalsIgnoreCase("album")){
-            for (Mp3File file : files){
-                String tag = (file.getId3v2Tag().getAlbum() == null) ? "Misc" : file.getId3v2Tag().getAlbum();
-                if(!tags.containsKey(tag))
-                    tags.put(tag, new ArrayList<Mp3File>());
-                tags.get(tag).add(file);
-            }
-        }else{
-            //sorting by artist
-            for (Mp3File file : files){
-                String tag = (file.getId3v2Tag().getAlbumArtist() == null) ? "Misc" : file.getId3v2Tag().getAlbumArtist();
-                if(!tags.containsKey(tag))
-                    tags.put(tag, new ArrayList<Mp3File>());
-                tags.get(tag).add(file);
-            }
-        }
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("SoundBoard");
         String soundNames = "```\n";
-        int size = tags.size();
-        if(!args[0].equalsIgnoreCase("album") && !args[0].equalsIgnoreCase("")){
-            if(tags.containsKey(args[0])){
-                eb.setDescription("Lista con tutti i suoni di " + args[0]);
-                for(Mp3File f : tags.get(args[0]))
-                    soundNames+= f.getId3v2Tag().getTitle() + "\n";
-                soundNames = soundNames + "```\n";
-                eb.addField(args[0], soundNames, true);
-            }else{
-                event.reply(args[0] + " NON ESISTE PEZZO DIEGTBUHYREW");
-                return;    
-            }
-        }else if(args.length > 1 && args[0].equalsIgnoreCase("album")){
-            if(tags.containsKey(args[1])){
-                eb.setDescription("Lista con tutti i suoni dell'album " + args[1]);
-                for(Mp3File f : tags.get(args[1]))
-                    soundNames+= f.getId3v2Tag().getTitle() + "\n";
-                soundNames = soundNames + "```\n";
-                eb.addField(args[1], soundNames, true);
-            }else{
-                event.reply(args[1] + " NON ESISTE PEZZO DIEGTBUHYREW");
-                return;    
-            }
-        
-        }else{
-            eb.setDescription("Lista con tutti i suoni del tier 1 bot");
-            for(int i = 0; i < size; i++){
-                String k = getMax(tags);
-                for(Mp3File f : tags.get(k)){
-                    soundNames+= f.getId3v2Tag().getTitle() + "\n";
+            for(String k : sortedMap.keySet()) {
+                for(String s : sortedMap.get(k)){
+                    soundNames+= s + "\n";
                 }
                 soundNames+="```";
                 eb.addField(k, soundNames, true);
                 soundNames = "```\n";
-                tags.remove(k);
             }
-        }
+        eb.setDescription("Lista con tutti i suoni del tier 1 bot");
         eb.setColor(new Color(0, 128, 128));
         eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' soundfx, questa e' perfezione cit. steve jobs", null);
@@ -101,20 +74,6 @@ public class List extends Command {
         channel.sendMessageEmbeds(eb.build())
                     .addFile(file, "mp3.png")
                     .queue();
+        
 	}
-
-
-
-    public static String getMax(HashMap<String, ArrayList<Mp3File>> tags){
-        int max=0;
-        String maxKey = "";
-
-        for(String k : tags.keySet()){
-            if(tags.get(k).size() > max){
-                max = tags.get(k).size();
-                maxKey = k;
-            }
-        }
-        return maxKey;
-    }
 }
