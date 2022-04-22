@@ -37,7 +37,7 @@ public class Upload extends Command{
 	@Override
 	protected void execute(CommandEvent event) {
         if((fileName = event.getArgs()) == ""){
-            event.reply("il nome idiota");
+            event.reply("manca il nome");
             return;
         }
 
@@ -67,12 +67,12 @@ class FileListener extends ListenerAdapter {
             if(e.getAuthor().isBot())
                 return;
             if(e.getMessage().getAttachments().size() <= 0){
-                event.reply("il file idiota");
+                event.reply("manca il file");
                 e.getJDA().removeEventListener(this);
                 return;
             }
             if(e.getMessage().getAttachments().get(0).getSize() > 1048576){
-                event.reply("il file è troppo grosso idiota (1mb max)");
+                event.reply("il file è troppo grosso (1mb max)");
                 e.getJDA().removeEventListener(this);
                 return;
             }
@@ -81,7 +81,7 @@ class FileListener extends ListenerAdapter {
                 event.reply("esiste gia");
                 e.getJDA().removeEventListener(this);
                 return;
-            }*/ //TODO non funziona un cazzo
+            }*/ //TODO non funziona niente
             
             File saveFile = new File("rsc" + File.separator + "Upload" + File.separator + (name +"."+ e.getMessage().getAttachments().get(0).getFileExtension()));
             e.getMessage().getAttachments().get(0).downloadToFile(saveFile)
@@ -101,11 +101,12 @@ class FileListener extends ListenerAdapter {
                     file.delete();
                 })
                 .exceptionally(t -> { // handle failure
+                    event.reply("errore nel caricamento del file");
                     t.printStackTrace();
                     e.getJDA().removeEventListener(this);
                     return null;
                 });
-            event.reply("tutto apposto man");
+            event.reply("file caricato con successo");
             e.getJDA().removeEventListener(this);
         }
     }

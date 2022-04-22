@@ -38,7 +38,6 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
-
 /**
  * Classe principale del bot.
  * <p> La {@code JDA} viene istanziata e vengono specificati i suoi

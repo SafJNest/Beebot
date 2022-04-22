@@ -50,12 +50,12 @@ public class Kick extends Command{
                                                 (e) -> event.reply("kickkato " + surelyTheGuy.getAsMention()), 
                                                 new ErrorHandler().handle(
                                                     ErrorResponse.MISSING_PERMISSIONS,
-                                                        (e) -> event.replyError("sorry, " + e.getMessage()))
+                                                        (e) -> event.replyError("error: " + e.getMessage()))
                 );
             }else
                 event.reply("Brutto fallito non kickare se non sei admin UwU");
         } catch (Exception e) {
-            event.replyError("sorry, catched " + e.getMessage());
+            event.replyError("error: catched " + e.getMessage());
         }
     }
 }
