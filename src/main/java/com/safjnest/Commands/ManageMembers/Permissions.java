@@ -2,6 +2,7 @@ package com.safjnest.Commands.ManageMembers;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -13,11 +14,12 @@ import net.dv8tion.jda.api.entities.Member;
  */
 public class Permissions extends Command{
     public Permissions(){
-        this.name = "permissions";
-        this.aliases = new String[]{"perms", "permission"};
-        this.help = "Restituisce i permessi di uno user e dice se e' un admin del server.";
-        this.category = new Category("Gestione Membri");
-        this.arguments = "[permissions] [@user]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

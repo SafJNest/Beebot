@@ -2,6 +2,7 @@ package com.safjnest.Commands.Misc;
 
 import java.awt.Color;
 
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -16,13 +17,12 @@ import net.dv8tion.jda.api.EmbedBuilder;
 public class BugsNotifier extends Command {
 
     public BugsNotifier(){
-        this.name = "bugs";
-        this.aliases = new String[]{"baco", "bughi", "report", "rep"};
-        this.help = "Consente di inviare un messaggio ai due developer del bot, con una accurata descrizione, le problematiche avute riguardante un comando.\n"
-        + "Per evitare possibili spam ha un cooldown di 100s.";
-        this.cooldown = 100;
-        this.category = new Category("Misc");
-        this.arguments = "[bugs] [nome comando] [descrizione]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
 	@Override

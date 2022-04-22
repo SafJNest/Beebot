@@ -1,5 +1,6 @@
 package com.safjnest.Commands.ManageMembers;
 
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -18,11 +19,12 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
 public class Ban extends Command{
 
     public Ban(){
-        this.name = "ban";
-        this.aliases = new String[]{"sgozz", "destroy", "annihilate", "radiateDeath", "drinkRadithorForAYear"};
-        this.category = new Category("Gestione Membri");
-        this.arguments = "[ban] [@user] (reason)";
-        this.help = "Il bot ti outplaya veramente forte e finisci a strisciare fuori dal server (senza la possibilità di rientrare).";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

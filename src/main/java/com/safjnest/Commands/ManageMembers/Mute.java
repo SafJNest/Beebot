@@ -1,5 +1,6 @@
 package com.safjnest.Commands.ManageMembers;
 
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -17,11 +18,12 @@ import net.dv8tion.jda.api.exceptions.ErrorHandler;
 public class Mute extends Command{
 
     public Mute(){
-        this.name = "Mute";
-        this.aliases = new String[]{"dontlistentothesound"};
-        this.help = "Il bot muta un utene.";
-        this.category = new Category("Gestione Membri");
-        this.arguments = "[mute] [@user]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

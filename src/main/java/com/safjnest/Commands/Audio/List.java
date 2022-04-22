@@ -13,8 +13,7 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-
-
+import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -28,11 +27,12 @@ public class List extends Command {
     private AmazonS3 s3Client;
 
     public List(AmazonS3 s3Client){
-        this.name = "list";
-        this.aliases = new String[]{"listoide", "listina", "lista", "listona"};
-        this.help = "Il bot invia la lista di tutti i suoni locali.";
-        this.category = new Category("Audio");
-        this.arguments = "[list] (album)";
+        this.name = this.getClass().getSimpleName();;
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
         this.s3Client = s3Client;
     }
 
@@ -69,7 +69,7 @@ public class List extends Command {
         eb.setColor(new Color(0, 128, 128));
         eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' soundfx, questa e' perfezione cit. steve jobs", null);
-        File file = new File("img" + File.separator + "mp3.png");
+        File file = new File("rsc" + File.separator + "img" + File.separator + "mp3.png");
         eb.setThumbnail("attachment://mp3.png");
         channel.sendMessageEmbeds(eb.build())
                     .addFile(file, "mp3.png")

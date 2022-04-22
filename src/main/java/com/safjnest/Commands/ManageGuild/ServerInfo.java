@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -20,10 +21,12 @@ import net.dv8tion.jda.api.EmbedBuilder;
 public class ServerInfo extends Command{
 
     public ServerInfo(){
-        this.name = "serverinfo";
-        this.aliases = new String[]{"servinfo", "serinf"};
-        this.help = "Informazioni utili del server in cui ti trovi.";
-        this.category = new Category("Gestione Server");
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

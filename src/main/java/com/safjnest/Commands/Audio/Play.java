@@ -8,6 +8,7 @@ import com.safjnest.Utilities.TrackScheduler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.AudioPlayerSendHandler;
+import com.safjnest.Utilities.JSONReader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -32,14 +33,13 @@ public class Play extends Command {
     private HashMap<String,String> tierOneLink;
 
     public Play(HashMap<String,String> tierOneLink){
-        this.name = "play";
-        this.aliases = new String[]{"nuovavita", "p"};
-        this.help = "Il bot riproduce link di youtube.\n"
-        + "Bisogna essere connessi in una stanza vocale.\n"
-        + "Nel caso il bot sia connesso in un'altra stanza si sposterà nella stessa dove è connesso l'autore del comando.";
+        this.name = this.getClass().getSimpleName();;
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
         this.tierOneLink = tierOneLink;
-        this.category = new Category("Audio");
-        this.arguments = "[play] [link]";
     }
 
 	@Override

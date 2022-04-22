@@ -5,6 +5,7 @@ import java.awt.Color;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
+import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.GuildChannel;
@@ -19,11 +20,12 @@ import net.dv8tion.jda.api.entities.VoiceChannel;
 public class ChannelInfo extends Command {
 
     public ChannelInfo(){
-        this.name = "channelinfo";
-        this.aliases = new String[]{"infochannel", "ci","ic","channel"};
-        this.help = "Il bot restituisce tutte le informazioni relative ad un canale, sia vocale che testuale.";
-        this.category = new Category("Gestione Server");
-        this.arguments = "[channelinfo] [#canale/id canale]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
 	@Override

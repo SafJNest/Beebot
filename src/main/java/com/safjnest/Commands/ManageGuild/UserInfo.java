@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -24,11 +25,12 @@ public class UserInfo extends Command{
     private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
 
     public UserInfo() {
-        this.name = "userinfo";
-        this.aliases = new String[]{"usinf"};
-        this.help = "Informazioni utili di uno user.";
-        this.arguments = "[userinfo] [@user]";
-        this.category = new Category("Gestione Server");
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     private List<String> getMaxFieldableRoleNames(CommandEvent event, User theGuy) {

@@ -5,6 +5,7 @@ import java.util.Set;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -16,13 +17,12 @@ public class Calc extends Command{
     private static final Set<String> OP = Set.of("+","-","*","/", "^");
 
     public Calc(){
-        this.name = "calc";
-        this.aliases = new String[]{"c", "calcolatore", "calcolatrice"};
-        this.help = "Consente di effettuare semplici operazioni matematiche tra due numeri."
-        + "Addizione, sottrazione, moltiplicazione, divisione ed elevamento a potenza.\n"
-        + "Le funzioni presenti sono radice, seno, coseno e tangente, con le loro funzioni inverse, e la funzione esponenziale.";
-        this.category = new Category("Matematica");
-        this.arguments = "[calc] [(n+n) (n-n) (n*n) (n/n) (n^n) (sqrt n) (sin n) (cos n ) (ln n) (tan n) (asin n) (acos n) (exp n)]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

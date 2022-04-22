@@ -2,6 +2,7 @@ package com.safjnest.Commands.ManageMembers;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.entities.User;
 
@@ -12,11 +13,12 @@ import net.dv8tion.jda.api.entities.User;
  */
 public class Image extends Command{
     public Image(){
-        this.name = "image";
-        this.aliases = new String[]{"img"};
-        this.help = "Il bot invia l'immagine profilo dello user.";
-        this.category = new Category("Gestione Membri");
-        this.arguments = "[image] [@user]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

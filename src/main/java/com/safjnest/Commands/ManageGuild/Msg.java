@@ -4,6 +4,7 @@ import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
@@ -16,11 +17,12 @@ import net.dv8tion.jda.api.entities.User;
 public class Msg extends Command {
 
     public Msg(){
-        this.name = "msg";
-        this.aliases = new String[]{"messaggio", "message"};
-        this.help = "Il bot invierà un messaggio in privato all'utente richiesto.\nÈ possibile inviare un messaggio ad un solo utente alla volta.";
-        this.category = new Category("Gestione Server");
-        this.arguments = "[msg] [@user/id] [messaggio]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
 	@Override

@@ -1,5 +1,6 @@
 package com.safjnest.Commands.Math;
 
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -12,11 +13,12 @@ import com.jagrosh.jdautilities.command.CommandEvent;
  */
 public class FastestRoot extends Command{
     public FastestRoot(){
-        this.name = "fastinversesquareroot";
-        this.aliases = new String[]{"radiceinversa", "invroot", "fisqrt"};
-        this.help = "Consente di stampare il risultato della radice quadrata inversa veloce.";
-        this.category = new Category("Matematica");
-        this.arguments = "[fastinversesquareroot] [numero]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -15,11 +16,12 @@ import net.dv8tion.jda.api.EmbedBuilder;
 public class Aliases extends Command {
 
     public Aliases() {
-        this.name = "Aliases";
-        this.aliases = new String[]{"alias", "ilyas"};
-        this.help = "Restituisce tutti gli alias dei vari comandi";
-        this.category = new Category("Misc");
-        this.arguments = "null";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override
