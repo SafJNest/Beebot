@@ -1,17 +1,10 @@
-function readTextFile(file, callback) {
-    var rawFile = new XMLHttpRequest();
-    rawFile.overrideMimeType("application/json");
-    rawFile.open("GET", file, true);
-    rawFile.onreadystatechange = function() {
-        if (rawFile.readyState === 4 && rawFile.status == "200") {
-            callback(rawFile.responseText);
+//print all the command info, reading the file json
+function printAll() {
+    var data = JSON.parse("commands.json");
+    for (var i = 0; i < data.length; i++) {
+        for (var j = 0; j < data[i].length; j++) {
+            document.getElementById("command").innerHTML += data[i][j] + " ";
         }
+        document.getElementById("command").innerHTML += "<br>";
     }
-    rawFile.send(null);
 }
-
-//usage:
-readTextFile("/commands.json", function(text){
-    var data = JSON.parse(text);
-    console.log(data);
-});
