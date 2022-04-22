@@ -57,7 +57,7 @@ public class PlaySound extends Command{
             return;
         }
         //TODO fix | deletare il file vecchio ogni ps bene
-        for (File file : new java.io.File("SoundBoard").listFiles())
+        for (File file : new java.io.File("rsc" + File.separator + "SoundBoard").listFiles())
             file.delete();
 
         try {
@@ -65,13 +65,13 @@ public class PlaySound extends Command{
             fullObject = s3Client.getObject(new GetObjectRequest("thebeebox", name));
             System.out.println("Content-Type: " + fullObject.getObjectMetadata().getContentType());
             S3ObjectInputStream s3is = fullObject.getObjectContent();
-            FileUtils.copyInputStreamToFile(s3is, new File("SoundBoard"+ File.separator + name + ".mp3"));
+            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + name + ".mp3"));
             s3is.close();
         } catch (AmazonClientException | IOException ace) {
             ace.printStackTrace();
         }
         
-        name = "SoundBoard" + File.separator + name + ".mp3"; 
+        name = "rsc" + File.separator + "SoundBoard" + File.separator + name + ".mp3";
         
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
