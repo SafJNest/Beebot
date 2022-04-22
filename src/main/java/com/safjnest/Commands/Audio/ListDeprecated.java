@@ -20,9 +20,9 @@ import net.dv8tion.jda.api.entities.MessageChannel;
  * 
  * @since 1.1
  */
-public class ListV2 extends Command {
+public class ListDeprecated extends Command {
 
-    public ListV2(){
+    public ListDeprecated(){
         this.name = "listV2";
         this.aliases = new String[]{"listoideV2", "listinaV2"};
         this.help = "Il bot invia la lista di tutti i suoni su aws s3.";

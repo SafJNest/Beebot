@@ -31,7 +31,7 @@ public class Image extends Command{
                 theGuy = event.getJDA().retrieveUserById(event.getArgs()).complete();
             event.reply(theGuy.getAvatarUrl());
         } catch (Exception e) {
-            event.reply("sorry, " + e.getMessage());
+            event.reply("error: " + e.getMessage());
         }
     }
 }

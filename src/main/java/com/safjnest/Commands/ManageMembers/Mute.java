@@ -37,7 +37,7 @@ public class Mute extends Command{
             final Member surelyTheGuy = theGuy;
 
             if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.VOICE_MUTE_OTHERS))
-                event.reply(event.getJDA().getSelfUser().getAsMention() + " non ha il permesso di kickare");
+                event.reply(event.getJDA().getSelfUser().getAsMention() + " non ha il permesso di mutare");
 
             else if (PermissionHandler.isUntouchable(theGuy.getId()))
                 event.reply("Le macchine non si ribellano ai loro creatori");
@@ -53,9 +53,9 @@ public class Mute extends Command{
                                                                 (e) -> event.replyError("sorry, " + e.getMessage()))
                 );
             } else
-                event.reply("Brutto fallito non kickare se non sei admin UwU");
+                event.reply("Brutto fallito non mutare se non sei admin UwU");
         } catch (Exception e) {
-            event.replyError("frake, " + e.getMessage());
+            event.replyError("error: " + e.getMessage());
         }
     }
 }
