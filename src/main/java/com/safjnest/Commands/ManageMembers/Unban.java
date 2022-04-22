@@ -3,6 +3,7 @@ package com.safjnest.Commands.ManageMembers;
 import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -21,11 +22,12 @@ import net.dv8tion.jda.api.exceptions.ErrorHandler;
 public class Unban extends Command{
 
     public Unban(){
-        this.name = "unban";
-        this.aliases = new String[]{"unsgozz", "undestroy", "unannihilate", "unradiateDeath", "sban", "pardon"};
-        this.help = "Un Dio supremo ti perdona e ti consente di tornare nella landa dei SafJ, non dimenticarti di ringraziare";
-        this.category = new Category("Gestione Membri");
-        this.arguments = "[unbun] [@user]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

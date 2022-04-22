@@ -2,6 +2,7 @@ package com.safjnest.Commands.Misc;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -11,15 +12,12 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 public class Ram extends Command{
 
     public Ram(){
-        this.name = "ram";
-        this.aliases = new String[]{"usage"};
-        this.help = "Restituisce le statistiche di sistema del bot, ram in uso, libera e totale (mb).\n"
-        + "TOTALE: Ram messa a disposizione dal SO per il bot.\n"
-        + "In uso: Ram che sta effettivamente utilizzando il bot.\n"
-        + "Libera: Ram rimasta a disposizione per il bot.\n"
-        + "Massima: Ram messa a disposizione per Java in generale, equivale a -Xmx value.\n";
-        this.category = new Category("Misc");
-        this.arguments = "null";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

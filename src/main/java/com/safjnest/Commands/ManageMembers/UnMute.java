@@ -1,5 +1,6 @@
 package com.safjnest.Commands.ManageMembers;
 
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -18,11 +19,12 @@ import net.dv8tion.jda.api.exceptions.ErrorHandler;
 public class UnMute extends Command{
 
     public UnMute(){
-        this.name = "unmute";
-        this.aliases = new String[]{"listentothesound"};
-        this.help = "Smuta lo user.";
-        this.category = new Category("Gestione Membri");
-        this.arguments = "[unmute] [@user]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

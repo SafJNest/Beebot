@@ -14,6 +14,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.Utilities.TrackScheduler;
 import com.safjnest.Utilities.AudioPlayerSendHandler;
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.SoundBoard;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -40,10 +41,12 @@ public class PlaySound extends Command{
     String name;
 
     public PlaySound(AmazonS3 s3Client){
-        this.name = "playsound";
-        this.aliases = new String[]{"ps", "playsos"};
-        this.category = new Category("Audio");
-        this.arguments = "[playsound] [nome del suono, senza specificare il formato]";
+        this.name = this.getClass().getSimpleName();;
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
         this.s3Client = s3Client;
     }
 
@@ -126,7 +129,7 @@ public class PlaySound extends Command{
         switch (mp.getId3v2Tag().getAlbumArtist()) {
             case "merio":img = "epria.jpg";break;case "dirix":img = "dirix.jpg";break;case "teros":img = "zucca.jpg";break;case "herox":img = "herox.jpg";break;case "bomber":img = "arcus.jpg";break;case "ilyas":img = "maluma.PNG";break;case "pyke":img = "pyke.jpg";break;case "thresh":img = "thresh.jpg";break;case "blitzcrank":img = "blitz.png";break;case "bard":img = "bard.png";break;case "nautilus":img = "nautilus.png";break;case "fiddle":img = "fid.jpg";break;case "pantanichi":img = "panta.jpg";break;case "sunyx":img = "sun.jpg";break;case "gskianto":img = "gk.png";break;case "jhin":img = "jhin.jpg";break;case "yone":img = "yone.jpg";break;case "yasuo":img = "yasuo.jpg";break;
         }
-        File file = new File("img" + File.separator+ img);
+        File file = new File("rsc" + File.separator + "rsc" + File.separator + "img" + File.separator+ img);
         eb.setThumbnail("attachment://" + img);
         channel.sendMessageEmbeds(eb.build())
             .addFile(file, img)

@@ -2,6 +2,7 @@ package com.safjnest.Commands.Audio;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -12,11 +13,12 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 public class Disconnect extends Command {
 
     public Disconnect(){
-        this.name = "disconnect";
-        this.aliases = new String[]{"bye", "levatidalcazzo", "chiama"};
-        this.help = "Il bot si disconnette dal canale vocale in cui è attualmente connesso.\nÈ possibile disconnettere il bot solo se si è connessi nella sua stessa stanza(serve per non dare fastidio).";
-        this.category = new Category("Audio");
-        this.arguments = "null";
+        this.name = this.getClass().getSimpleName();;
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
 	@Override

@@ -9,7 +9,7 @@ import com.mpatric.mp3agic.Mp3File;
 import com.mpatric.mp3agic.UnsupportedTagException;
 
 public class SoundBoard {
-    private static String path = "SoundBoard";
+    private static String path = "rsc" + File.separator + "SoundBoard";
     private static File folder = new File(path);
 
     public static String containsFile(String nameFile){

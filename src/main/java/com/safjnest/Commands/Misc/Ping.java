@@ -2,6 +2,7 @@ package com.safjnest.Commands.Misc;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -11,11 +12,12 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 public class Ping extends Command{
 
     public Ping(){
-        this.name = "ping";
-        this.aliases = new String[]{"pong", "pingpong"};
-        this.help = "Restituisce il ping del bot in millisecondi.";
-        this.category = new Category("Misc");
-        this.arguments = "null";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

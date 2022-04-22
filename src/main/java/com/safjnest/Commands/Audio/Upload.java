@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -24,13 +25,12 @@ public class Upload extends Command{
     private String fileName;
     
     public Upload(AmazonS3 s3Client){
-        this.name = "upload";
-        this.aliases = new String[]{"up", "add"};
-        this.help = "Il comando consente di poter caricare facilmente dei suoni nel database del bot.\n"
-        + "Se carichi dei file mp3 ci fai un piacere.\n"
-        + "Se carichi dei .opus ti sgozzo.";
-        this.category = new Category("Audio");
-        this.arguments = "[upload] [nome del suono, senza specificare il formato]";
+        this.name = this.getClass().getSimpleName();;
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
         this.s3Client = s3Client;
     }
     
@@ -83,7 +83,7 @@ class FileListener extends ListenerAdapter {
                 return;
             }*/ //TODO non funziona un cazzo
             
-            File saveFile = new File("upload" + File.separator + (name +"."+ e.getMessage().getAttachments().get(0).getFileExtension()));
+            File saveFile = new File("rsc" + File.separator + "Upload" + File.separator + (name +"."+ e.getMessage().getAttachments().get(0).getFileExtension()));
             e.getMessage().getAttachments().get(0).downloadToFile(saveFile)
                 .thenAccept(file -> {
                     System.out.println("Upload del file su aws s3 " + file.getName());

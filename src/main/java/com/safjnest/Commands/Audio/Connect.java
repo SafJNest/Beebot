@@ -4,6 +4,7 @@ import java.util.EventListener;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -16,12 +17,12 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 public class Connect extends Command implements EventListener{
 
     public Connect(){
-        this.name = "connect";
-        this.aliases = new String[]{"join", "comeherebroda"};
-        this.help = "Il bot si connette nel tuo canale vocale\nSe già connesso in un altro canale sarà disconnesso dallo stesso.\n"
-        + "In caso tutti gli utenti escano dalla stanza il bot si disconnetterà automaticamente.";
-        this.category = new Category("Audio");
-        this.arguments = "null";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
 	@Override
@@ -33,7 +34,6 @@ public class Connect extends Command implements EventListener{
 
 	}
 
-    
     public void onMessageReceived(MessageReceivedEvent e){
         System.out.println(e.getMessage().getAttachments().get(0).getFileExtension());
     }

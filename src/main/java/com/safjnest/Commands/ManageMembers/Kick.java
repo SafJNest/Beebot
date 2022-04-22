@@ -1,6 +1,7 @@
 package com.safjnest.Commands.ManageMembers;
 
 import com.jagrosh.jdautilities.command.Command;
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -17,11 +18,12 @@ import net.dv8tion.jda.api.exceptions.ErrorHandler;
 public class Kick extends Command{
 
     public Kick(){
-        this.name = "kick";
-        this.aliases = new String[]{"lightSgozz", "espulsione"};
-        this.category = new Category("Gestione Membri");
-        this.arguments = "[kick] [@user]";
-        this.help = "Il bot ti outplaya leggermente e finisci a strisciare fuori dal server (con la possibilità di rientrare).";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
     @Override

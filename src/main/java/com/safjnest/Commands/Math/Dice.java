@@ -2,6 +2,7 @@ package com.safjnest.Commands.Math;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -12,11 +13,12 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 public class Dice extends Command {
 
     public Dice(){
-        this.name = "dice";
-        this.aliases = new String[]{"dado", "lanciadado", "roll", "dice"};
-        this.help = "Il bot lancia uno o più dadi.";
-        this.category = new Category("Matematica");
-        this.arguments = "[dice] (n dadi) ([n dadi] (n facce))";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
 	@Override

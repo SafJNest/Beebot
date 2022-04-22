@@ -3,6 +3,7 @@ package com.safjnest.Commands.Math;
 import java.io.File;
 import java.io.FileWriter;
 
+import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -17,12 +18,12 @@ public class Bighi extends Command {
     private int maxBighi;
     
     public Bighi(int maxBighi){
-        this.name = "bighi";
-        this.aliases = new String[]{"random"};
-        this.help ="Consente di generare un numero randomico a nBit.";
-        this.maxBighi = maxBighi;
-        this.category = new Category("Matematica");
-        this.arguments = "[bighi] [numero]";
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
 	@Override
@@ -36,7 +37,7 @@ public class Bighi extends Command {
             }
             String bighi = String.valueOf(SafJNest.randomBighi(Integer.parseInt(commandArray[1])));
             if (bighi.length() > 2000) {
-                File supp = new File("bighi.txt");
+                File supp = new File("rsc"+File.separator + "bighi.txt");
                 FileWriter app;
                 app = new FileWriter(supp);
                 app.write(bighi);
