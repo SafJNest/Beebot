@@ -9,7 +9,6 @@ async function printAll() {
     document.getElementById("command").innerHTML = json[command]["help"];    
 }
 
-
 async function loadAll() {
     const response = await fetch("/rsc/commands.json");
     const aaa = await response.json();

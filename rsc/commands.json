@@ -177,14 +177,14 @@
     "aliases":{
         "alias" : ["alias", "ilyas"],
         "help"  : "Restituisce tutti gli alias dei vari comandi",
-        "category" : "Misc",
+        "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
     "bugsnotifier":{
         "alias" : ["baco", "bughi", "report", "rep", "bugs"],
         "help"  : "Consente di inviare un messaggio ai due developer del bot, con una accurata descrizione, le problematiche avute riguardante un comando.\nPer evitare possibili spam ha un cooldown di 100s.",
-        "category" : "Misc",
+        "category" : "Miscellaneo",
         "cooldown" : "100",
         "arguments" : "[bugs] [nome comando] [descrizione]"
     },
@@ -192,28 +192,28 @@
     "help":{
         "alias" : ["command", "commands", "info"],
         "help"  : "Consente di visualizzare l'elenco di tutti i comandi.\nSe viene usata la sintassi [help][nomeComando] si otterrà una descrizione specifica del comando richiesto.",
-        "category" : "Misc",
+        "category" : "Miscellaneo",
         "arguments" : "[help](nome comando)"
     },
 
     "ping":{
         "alias" : ["pong", "pingpong", "latency"],
         "help"  : "Restituisce il ping del bot in millisecondi.",
-        "category" : "Misc",
+        "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
     "ram":{
         "alias" : ["usage", "riiiim"],
         "help"  : "Restituisce le statistiche di sistema del bot, ram in uso, libera e totale (mb).\nTOTALE: Ram messa a disposizione dal SO per il bot.\nIn uso: Ram che sta effettivamente utilizzando il bot.\nLibera: Ram rimasta a disposizione per il bot.\nMassima: Ram messa a disposizione per Java in generale, equivale a -Xmx value.\n",
-        "category" : "Misc",
+        "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
     "rawmessage":{
         "alias" : ["rawmsg", "rawmessage"],
         "help"  : "Restituisce tutti gli alias dei vari comandi",
-        "category" : "Misc",
+        "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     }
 
