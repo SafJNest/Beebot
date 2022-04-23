@@ -1,5 +1,4 @@
-let isReady = false;
-
+//TODO RENDERE DECENTI LE FUNZIONI
 async function printAll() {
     const response = await fetch("/rsc/commands.json");
     const aaa = await response.json();
