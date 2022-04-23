@@ -21,19 +21,22 @@ async function loadAll() {
       commands.get(json[key]["category"]).push(key);
     }
     let keys = Array.from(commands.keys());
+    var containerCommands = document.createElement("div");
+    containerCommands.className = "containerCommands";
+    document.body.appendChild(containerCommands);
     for (var key in keys) {
       var category = document.createElement("div");
       category.className = "categories";
       var h1 = document.createElement("h1");
       h1.innerHTML = keys[key];
       category.appendChild(h1);
-      document.body.appendChild(category);
+      containerCommands.appendChild(category);
       commands.get(keys[key]).forEach(function(name){
         command = json[name];
         var button = document.createElement("button");
         button.innerHTML = name;
         button.className = "collapsible";
-        document.body.appendChild(button);
+        containerCommands.appendChild(button);
         var content = document.createElement("div");
         content.className = "content";
         content.style = "display:none";
@@ -63,7 +66,7 @@ async function loadAll() {
         tr.appendChild(td4);
         tr.appendChild(td5);
         table.appendChild(tr);
-        document.body.appendChild(table);
+        containerCommands.appendChild(table);
         var tr = document.createElement("tr");
         tr.className = "inside";
         var td1 = document.createElement("td");
@@ -93,7 +96,8 @@ async function loadAll() {
         tr.appendChild(td4);
         tr.appendChild(td5);
         table.appendChild(tr);
-        document.body.appendChild(content);
+        containerCommands.appendChild(content);
+
       });
     }
     sgozz();
