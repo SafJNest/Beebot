@@ -1,23 +1,23 @@
 {
     "connect":{
         "alias" : ["join", "comeherebroda"],
-        "help"  : "Il bot si connette nel tuo canale vocale\nSe già connesso in un altro canale sarà disconnesso dallo stesso.\nIn caso tutti gli utenti escano dalla stanza il bot si disconnetterà automaticamente.",
+        "help"  : "Il bot si connette nel tuo canale vocale.\nSe già connesso in un altro canale sarà disconnesso dallo stesso.\nIn caso tutti gli utenti escano dalla stanza il bot si disconnetterà automaticamente.",
         "category" : "Audio",
-        "arguments" : "null"
+        "arguments" : "[nomeComando]"
     },
 
     "disconnect":{
         "alias" : ["bye", "levatidalcazzo", "chiama"],
         "help"  : "Il bot si disconnette dal canale vocale in cui è attualmente connesso.\nÈ possibile disconnettere il bot solo se si è connessi nella sua stessa stanza(serve per non dare fastidio).",
         "category" : "Audio",
-        "arguments" : "null"
+        "arguments" : "[nomeComando]"
     },
 
     "list":{
         "alias" : ["listina", "listona", "listoide"],
         "help"  : "Il bot invia la lista di tutti i suoni locali.",
         "category" : "Audio",
-        "arguments" : "null"
+        "arguments" : "[nomeComando]"
     },
 
     "play":{
@@ -73,7 +73,7 @@
         "alias" : ["servinfo", "serinf"],
         "help"  : "Informazioni utili del server in cui ti trovi.",
         "category" : "Gestione Server",
-        "arguments" : "null"
+        "arguments" : "[nomeComando]"
     },
 
     "userinfo":{
@@ -178,7 +178,7 @@
         "alias" : ["alias", "ilyas"],
         "help"  : "Restituisce tutti gli alias dei vari comandi",
         "category" : "Misc",
-        "arguments" : "Null"
+        "arguments" : "[nomeComando]"
     },
 
     "bugsnotifier":{
@@ -200,21 +200,21 @@
         "alias" : ["pong", "pingpong", "latency"],
         "help"  : "Restituisce il ping del bot in millisecondi.",
         "category" : "Misc",
-        "arguments" : "Null"
+        "arguments" : "[nomeComando]"
     },
 
     "ram":{
         "alias" : ["usage", "riiiim"],
         "help"  : "Restituisce le statistiche di sistema del bot, ram in uso, libera e totale (mb).\nTOTALE: Ram messa a disposizione dal SO per il bot.\nIn uso: Ram che sta effettivamente utilizzando il bot.\nLibera: Ram rimasta a disposizione per il bot.\nMassima: Ram messa a disposizione per Java in generale, equivale a -Xmx value.\n",
         "category" : "Misc",
-        "arguments" : "Null"
+        "arguments" : "[nomeComando]"
     },
 
     "rawmessage":{
         "alias" : ["rawmsg", "rawmessage"],
         "help"  : "Restituisce tutti gli alias dei vari comandi",
         "category" : "Misc",
-        "arguments" : "Null"
+        "arguments" : "[nomeComando]"
     }
 
 }

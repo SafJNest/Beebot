@@ -4,24 +4,41 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <script src="script.js"></script>
     <title>Document</title>
 </head>
 <style>
+  body{
+        font-family: 'Quicksand', sans-serif;
+        background-image: linear-gradient( 136deg, rgba(0,0,0,0.65) 12.9%, rgba(0,0,0,1) 145.4% );
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+
+    }
     .collapsible {
       background-color: #777;
       color: white;
       cursor: pointer;
       padding: 18px;
-      width: 100%;
+      width: 85%;
       border: none;
       text-align: left;
       outline: none;
       font-size: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
     }
     
     .active, .collapsible:hover {
-      background-color: #555;
+      transition: height 2s;
     }
     
     .content {
@@ -30,19 +47,54 @@
       overflow: hidden;
       background-color: #f1f1f1;
     }
+     .top{
+      font-weight: bold;
+      background-color: #008080;
+    }
+    .inside{
+      font-weight: bold;
+      background-color:#fff;
+    }
+    table{
+      width: 85%;
+      max-width: 85%;
+    }
+    button:hover{
+        border-radius: 15px 15px 15px 15px;
+        border-collapse: collapse;
+        background: #c6c6c6;
+        animation:  shake 0.4s;
+    }
+    @keyframes shake{
+        0%{
+          transform: translateX(0)
+        }
+        25%{
+          transform: translateX(25px);
+        }
+          
+        50%{
+          transform: translateX(-25px);
+        }
+        100%{
+          transform: translateX(0px);
+        }
+      }
+    .title{
+      color:white;
+    }
+
+    .categories{
+      font-weight: bold;
+      color:white;
+    }
     </style>
 <body>
-        <input type="text" id="faker"><br><br>
-        <input type="submit" value="Submit" onclick="printAll()">
-    <p id="command"></p>
-
-        <button type="button" class="collapsible">Open Section 3</button>
-        <div class="content">
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-        </div>
+    <div class="title">
+      <h1>COMANDI DEL TIER 1 BOT</h1>
+    </div>
         <script type="text/javascript">
-             loadAll();
-            sgozz();
+            loadAll();
           </script>
 
 </body>
