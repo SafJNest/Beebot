@@ -16,10 +16,9 @@
         font-family: 'Quicksand', sans-serif;
         background-image: linear-gradient( 136deg, rgba(0,0,0,0.65) 12.9%, rgba(0,0,0,1) 145.4% );
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         gap: 10px;
-        justify-content: center;
-        align-items: center;
+        padding-top: 1%;
 
     }
     .collapsible {
@@ -59,11 +58,16 @@
       width: 85%;
       max-width: 85%;
     }
-    button:hover{
+    .collapsible:hover{
         border-radius: 15px 15px 15px 15px;
         border-collapse: collapse;
         background: #c6c6c6;
         animation:  shake 0.4s;
+    }
+    .sidebarBtt:hover{
+        border-radius: 15px 0px 0px 15px;
+        border-collapse: collapse;
+        background-color: transparent;
     }
     @keyframes shake{
         0%{
@@ -87,11 +91,64 @@
     .categories{
       font-weight: bold;
       color:white;
+      padding: 2%; 
+    }
+    .containerCommands{
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      margin-left: 30%;
+      max-width:70%;
+    }
+    .contentSideBar{
+      background-color: #008080;
+      color:white;
+      display: flex;
+      flex-direction: column;
+      font-weight: bold;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+      width: 30%;
+      max-width: 30%;
+      height: 100%;
+      position: fixed;
+      top:0px; 
+    }
+    .sidebar{
+      display: flex;
+      flex-direction: column;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+    .sidebarBtt{
+      background-color: #777;
+      color: white;
+      cursor: pointer;
+      height: 96px;
+      width: 100%;
+      border: none;
+      text-align: left;
+      outline: none;
+      font-size: 15px;
+      border-radius: 10px 0px 0px 10px;
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     }
     </style>
 <body>
-    <div class="title">
-      <h1>COMANDI DEL TIER 1 BOT</h1>
+  <div class="contentSideBar">
+      <div class="title">
+        <h1>COMANDI DEL TIER 1 BOT</h1>
+      </div>
+      <div class="sidebar">
+        <button class="sidebarBtt">HOME</button>
+        <button class="sidebarBtt">COMMANDS</button>
+        <button class="sidebarBtt">COMMITS</button>
+        <button class="sidebarBtt">STATS</button>
+      </div>
     </div>
     
         <script type="text/javascript">
