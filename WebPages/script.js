@@ -1,5 +1,5 @@
-//TODO RENDERE DECENTI LE FUNZIONI
-var lastOpen;
+let lastOpen;
+
 function init() {
   lastOpen = document.getElementsByClassName("home")[0];
   console.log(lastOpen);
@@ -7,7 +7,7 @@ function init() {
 
 function backToHome() {
   let home = document.getElementsByClassName("home")[0];
-  if(alreadyOpen(home)) {
+  if (alreadyOpen(home)) {
     return;
   }
   home.style.display = "inherit";
@@ -29,17 +29,17 @@ function backToCommands() {
 
 function alreadyOpen(div) {
   if (div.style.display != "none") {
-    console.log(div.style.display);
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 async function loadAll() {
+  //get the file
   const response = await fetch("/rsc/commands.json");
   const aaa = await response.json();
   var json = JSON.parse(JSON.stringify(aaa));
+  //put all the commands in a map grouped by category
   let commands = new Map();
   for (let key in json) {
     if (!commands.has(json[key]["category"])) {
@@ -47,32 +47,36 @@ async function loadAll() {
     }
     commands.get(json[key]["category"]).push(key);
   }
-  let keys = Array.from(commands.keys());
+  //create the html div
   var containerCommands = document.createElement("div");
   containerCommands.className = "containerCommands";
   containerCommands.style.display = "inherit";
   lastOpen = containerCommands;
   document.body.appendChild(containerCommands);
+  //create the html div for each category and iterate over categories
+  let keys = Array.from(commands.keys());
   for (var key in keys) {
     var category = document.createElement("div");
-    category.className = "categories";
     var h1 = document.createElement("h1");
+    category.className = "categories";
     h1.innerHTML = keys[key];
     category.appendChild(h1);
     containerCommands.appendChild(category);
+    //iterate over the commands of the category "key"
+    //name = command's name
     commands.get(keys[key]).forEach(function (name) {
       command = json[name];
       var button = document.createElement("button");
+      var content = document.createElement("div");
+      var table = document.createElement("table");
+      var tr = document.createElement("tr");
       button.innerHTML = name;
       button.className = "collapsible";
       containerCommands.appendChild(button);
-      var content = document.createElement("div");
       content.className = "content";
       content.style = "display:none";
-      var table = document.createElement("table");
       table.className = "table";
       table.style = "display:none";
-      var tr = document.createElement("tr");
       tr.className = "top";
       var td1 = document.createElement("td");
       var td2 = document.createElement("td");
@@ -97,12 +101,12 @@ async function loadAll() {
       table.appendChild(tr);
       containerCommands.appendChild(table);
       var tr = document.createElement("tr");
-      tr.className = "inside";
       var td1 = document.createElement("td");
       var td2 = document.createElement("td");
       var td3 = document.createElement("td");
       var td4 = document.createElement("td");
       var td5 = document.createElement("td");
+      tr.className = "inside";
       td1.style = "border-radius: 0px 0px 0px 15px;";
       td5.style = "border-radius: 0px 0px 15px 0px;";
       td1.innerHTML = command["help"];
@@ -118,8 +122,7 @@ async function loadAll() {
         }
       }
       td4.innerHTML = alias;
-      td5.innerHTML =
-        command["cooldown"] == undefined ? 0 : command["cooldown"] + "s";
+      td5.innerHTML = command["cooldown"] == undefined ? 0 : command["cooldown"] + "s";
       tr.appendChild(td1);
       tr.appendChild(td2);
       tr.appendChild(td3);
@@ -129,10 +132,10 @@ async function loadAll() {
       containerCommands.appendChild(content);
     });
   }
-  sgozz();
+  setListenerCollapsible();
 }
 
-function sgozz() {
+function setListenerCollapsible() {
   var coll = document.getElementsByClassName("collapsible");
   for (i = 0; i < coll.length; i++) {
     coll[i].addEventListener("click", function () {
