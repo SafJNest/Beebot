@@ -1,0 +1,141 @@
+body{
+    font-family: 'Quicksand', sans-serif;
+    background-image: linear-gradient( 136deg, rgba(0,0,0,0.65) 12.9%, rgba(0,0,0,1) 145.4% );
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    padding-top: 1%;
+
+}
+
+/*HOMEPAGE*/
+.home{
+  
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  margin-left: 20%;
+  max-width:80%;
+}
+
+/*BUTTON COMMANDS*/
+.collapsible {
+  background-color: #777;
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  width: 85%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+}
+
+.active, .collapsible:hover {
+  transition: height 2s;
+}
+.collapsible:hover{
+    border-radius: 15px 15px 15px 15px;
+    border-collapse: collapse;
+    background: #c6c6c6;
+    animation:  shake 0.4s;
+}
+.categories{
+    font-weight: bold;
+    color:white;
+    padding: 2%; 
+}
+.containerCommands{
+    display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  position: relative;
+  margin-left: 30%;
+  max-width:80%;
+}
+.content {
+  padding: 0 18px;
+  display: none;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+/*TABLE*/
+table{
+  width: 85%;
+  max-width: 85%;
+}
+ .top{
+  font-weight: bold;
+  background-color: #008080;
+}
+.inside{
+  font-weight: bold;
+  background-color:#fff;
+}
+@keyframes shake{
+    0%{
+        transform: translateX(0)
+    }
+    25%{
+      transform: translateX(25px);
+    }
+    
+    50%{
+        transform: translateX(-25px);
+    }
+    100%{
+        transform: translateX(0px);
+    }
+}
+.title{
+    color:white;
+}
+
+/*SIDEBAR*/
+.sidebar{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+.contentSideBar{
+    background-color: #008080;
+    color:white;
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    width: 20%;
+    max-width: 30%;
+    height: 100%;
+    position: fixed;
+    top:0px; 
+}
+.sidebarBtt{
+    background-color: #777;
+    color: white;
+  cursor: pointer;
+  height: 96px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 15px;
+  border-radius: 10px 0px 0px 10px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+.sidebarBtt:hover{
+    border-radius: 15px 0px 0px 15px;
+    border-collapse: collapse;
+    background-color: transparent;
+}
