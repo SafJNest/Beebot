@@ -139,3 +139,32 @@ table{
     border-collapse: collapse;
     background-color: transparent;
 }
+
+
+/*Documents*/
+.documents{  
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-left: 25%;
+  gap: 10%;
+  width:80%;
+  position: fixed;
+  height: 100%;
+}
+
+.content{
+  background-color:red;
+  color:white;
+  display: flex;
+  flex-direction: column;
+  font-weight: bold;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  width: 20%;
+  max-width: 100%;
+  height: 40%;
+  position: relative;
+
+}

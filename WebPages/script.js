@@ -5,6 +5,7 @@ function init() {
   console.log(lastOpen);
 }
 
+
 function backToHome() {
   let home = document.getElementsByClassName("home")[0];
   if (alreadyOpen(home)) {
@@ -24,6 +25,15 @@ function backToCommands() {
   } else if (!alreadyOpen(containerCommands)) {
     containerCommands.style.display = "inherit";
     lastOpen = document.getElementsByClassName("containerCommands")[0];
+  }
+}
+
+function backToDocuments() {
+  lastOpen.style.display = "none";
+  let documents = document.getElementsByClassName("documents")[0];
+  if (!alreadyOpen(documents)) {
+    documents.style.display = "inherit";
+    lastOpen = document.getElementsByClassName("documents")[0];
   }
 }
 
@@ -149,3 +159,5 @@ function setListenerCollapsible() {
     });
   }
 }
+
+
