@@ -64,6 +64,11 @@ public class App extends ListenerAdapter {
 
     private static HashMap<String, String> tierOneLink = new HashMap<>();
 
+    /**
+     * Metodo principale del bot.
+     * @param args
+     * @throws LoginException
+     */
     public static void main(String[] args) throws LoginException {
         if(args.length > 0){
             isCanary = Boolean.parseBoolean(args[0]);
