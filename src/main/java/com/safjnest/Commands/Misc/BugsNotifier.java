@@ -10,12 +10,16 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 
 /**
+ * This command let the user send a message to the {@link com.safjnest.Utilities.PermissionHandler#untouchables developers}
+ * about a bug that occurs with a command.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.1
  */
 public class BugsNotifier extends Command {
-
+    /**
+     * Default constructor for the class.
+     */
     public BugsNotifier(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
@@ -24,7 +28,9 @@ public class BugsNotifier extends Command {
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
     }
-
+    /**
+     * This method is called every time a member executes the command.
+     */
 	@Override
 	protected void execute(CommandEvent event) {
         String[] commandArray = event.getArgs().split(" ", 2);

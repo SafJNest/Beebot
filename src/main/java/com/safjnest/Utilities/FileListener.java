@@ -6,16 +6,29 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 /**
+ * This is an auxiliary class for the command {@link com.safjnest.Commands.Audio.Upload Upload}.
+ * <p>Every time a member wants to upload a new file, this class will be called.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  */
 public class FileListener extends ListenerAdapter {
+    /**name of the file to be uploaded */
     private String name;
 
-    public FileListener(String diocane){
-        this.name = diocane;
+    /**
+     * Constructor for the class.	
+     * @param name name of the file to be uploaded
+     */
+    public FileListener(String name){
+        this.name = name;
     }
     
+    /**
+     * This method is called every time a member sends a message or a file.
+     * <p>If a message is sent there will be an exception, otherwise the file will be
+     * temporarily saved in the directory {@code rsc/Soundboard}
+     * @param event the event that was triggered
+     */
     @Override
     public void onMessageReceived(MessageReceivedEvent event){
         File saveFile = new File("rsc" + File.separator + "Upload" + File.separator + (name +"."+ event.getMessage().getAttachments().get(0).getFileExtension()));
