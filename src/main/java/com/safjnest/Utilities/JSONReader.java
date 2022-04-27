@@ -10,11 +10,19 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+/**
+ * Contains the methods to read the JSON file with all the commands descriptions.
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @since 1.3
+ */
 public class JSONReader {
     private String path = "rsc" + File.separator +"commands.json";
     private FileReader reader;
     private JSONParser jsonParser;
 
+    /**
+     * default constructor
+     */
     public JSONReader(){
         jsonParser = new JSONParser();
         try {
@@ -24,6 +32,12 @@ public class JSONReader {
         }
     }
 
+    /**
+     * Gets a string with a specific arguments of the command.
+     * @param nameCommand name of the command
+     * @param thing name of the argument
+     * @return a string with the argument, otherwise {@code null}
+     */
     public String getString(String nameCommand, String thing){
         nameCommand = nameCommand.toLowerCase();
         thing = thing.toLowerCase();
@@ -37,6 +51,12 @@ public class JSONReader {
             return null;
         }
     }
+    /**
+     * Gets an array of the arguments of a command.
+     * @param nameCommand name of the command
+     * @param thing name of the argument 
+     * @return an array of strings with the argument, otherwise {@code null}
+     */
     public String[] getArray(String nameCommand, String thing){
         nameCommand = nameCommand.toLowerCase();
         thing = thing.toLowerCase();
@@ -56,6 +76,11 @@ public class JSONReader {
         }
     }
     
+    /**
+     * Gets the cooldown of a command.
+     * @param nameCommand name of the command
+     * @return a int with the cooldown, otherwise {@code null}
+     */
     public int getCooldown(String nameCommand){
         nameCommand = nameCommand.toLowerCase();
         Object obj;

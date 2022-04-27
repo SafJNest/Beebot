@@ -1,6 +1,5 @@
 com\safjnest\Commands\Math\FastestRoot.class
 com\safjnest\Commands\Audio\Upload.class
-com\safjnest\Commands\Audio\ListV2.class
 com\safjnest\Utilities\TheListener.class
 com\safjnest\Commands\Audio\FileListener.class
 com\safjnest\Commands\Math\DAC.class

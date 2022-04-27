@@ -16,6 +16,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
 
 /**
+ * @deprecated
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.1
