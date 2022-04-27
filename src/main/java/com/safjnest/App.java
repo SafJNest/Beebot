@@ -39,10 +39,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 /**
- * Classe principale del bot.
- * <p> La {@code JDA} viene istanziata e vengono specificati i suoi
- * parametri (token, activity, cache exc..).
- * Viene specificato l'eventListener {@code CommandClient} ed aggiunti i comandi. 
+ * Main class of the bot.
+ * <p> The {@code JDA} is instantiated and his parameters are 
+ * specified (token, activity, cache, ...). The bot connects to
+ * discord and AWS S3. The bot's commands are instantiated.
  * 
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
