@@ -8,12 +8,19 @@ import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 /**
+ * This class handles all events that could occur during the listening:
+ * <ul>
+ * <li>On update of a voice channel (to make the bot leave an empty voice channel)</li>
+ * <li>On join of a user (to make the bot welcome the new member)</li>
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.2
  */
 public class TheListener extends ListenerAdapter{
 
+    /**
+     * On update of a voice channel (to make the bot leave an empty voice channel)
+     */
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent e){
         if(e.getGuild().getAudioManager().isConnected() && e.getChannelLeft().getMembers().size() == 1 ){
@@ -21,7 +28,10 @@ public class TheListener extends ListenerAdapter{
         }
     }
 
-    @Override // USE THIS WHEN YOU WANT TO OVERRIDE A METHOD
+    /**
+     * On join of a user (to make the bot welcome the new member)
+     */
+    @Override 
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         User newguy = event.getUser();
         TextChannel welcome = event.getGuild().getSystemChannel();
@@ -31,7 +41,9 @@ public class TheListener extends ListenerAdapter{
             + ", una volta fatto avrai accesso alle varie stanze del server.\nRicorda di seguire le regole e per qualsiasi informazione contatta i vari admin.").queue();
     }
 
-    
+    /**
+     * On update of a user's boost time (to make the bot praise the user)
+     */    
     public void onGuildMemberUpdateBoostTime​(GuildMemberUpdateBoostTimeEvent event){
         User newguy = event.getUser();
         TextChannel welcome = event.getGuild().getSystemChannel();

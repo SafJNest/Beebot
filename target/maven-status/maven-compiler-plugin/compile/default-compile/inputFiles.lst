@@ -1,41 +1,42 @@
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\App.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Utilities\DateHandler.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Utilities\PermissionHandler.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageMembers\Permissions.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Math\Dice.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Audio\ListV2.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageMembers\Mute.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Utilities\SafJNest.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Audio\List.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageMembers\Unban.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Utilities\TrackScheduler.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Audio\PlaySound.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageGuild\Msg.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageMembers\UnMute.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Misc\RawMessage.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Utilities\SoundBoard.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageGuild\Clear.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageGuild\UserInfo.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Misc\BugsNotifier.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Utilities\AudioPlayerSendHandler.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageGuild\ServerInfo.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Audio\Upload.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Math\Calc.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Audio\Connect.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Math\Bighi.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Math\DAC.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Misc\Ping.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageMembers\Image.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageMembers\Kick.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Utilities\TheListener.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageGuild\EmojiInfo.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Misc\Help.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageGuild\ChannelInfo.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Audio\Disconnect.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\ManageMembers\Ban.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Math\Prime.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Misc\Aliases.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Audio\Play.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Misc\Ram.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Utilities\FileListener.java
-C:\Users\leona\OneDrive\Documenti\Java programmi a caso\beebox\src\main\java\com\safjnest\Commands\Math\FastestRoot.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Audio\Upload.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\SafJNest.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Math\Dice.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\RawMessage.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\SoundBoard.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Ban.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\Ping.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Math\Calc.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\Ram.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\FileListener.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Kick.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\UserInfo.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Math\Bighi.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Audio\List.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\UnMute.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\Msg.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\App.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\Clear.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\ChannelInfo.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\AudioPlayerSendHandler.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Audio\PlaySound.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\EmojiInfo.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\Aliases.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Audio\ListDeprecated.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\TrackScheduler.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Mute.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Audio\Play.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Math\DAC.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Image.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Math\FastestRoot.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Math\Prime.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\DateHandler.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\BugsNotifier.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Audio\Connect.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\PermissionHandler.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\ServerInfo.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Permissions.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Unban.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\JSONReader.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Audio\Disconnect.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\TheListener.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\Help.java

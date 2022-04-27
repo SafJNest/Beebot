@@ -8,9 +8,26 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 
+/**
+ * This class handles all matters related to discord permissions.
+ * It also stores the discord tags of the members that have special permissions.
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * @since 1.0
+ */
 public class PermissionHandler {
-    private static Set<String> untouchables = Set.of("383358222972616705", "440489230968553472");
-    private static String epria = "707479292644163604";
+    /**
+     * This list contains the discord tags of the authors of the bot.
+     * <ul>
+     * <li>Leon412</li>
+     * <li>NeutronSun</li>
+     * </ul>
+     */
+    private static final Set<String> untouchables = Set.of("383358222972616705", "440489230968553472");
+
+    /**
+     * Discord tag of Merio epria
+     */
+    private static final String epria = "707479292644163604";
 
     public static Set<String> getUntouchables() {
         return untouchables;
@@ -19,23 +36,42 @@ public class PermissionHandler {
     //public static void addUntouchable(String id){
 
     //}
-
+    
+    /**
+     * Check if a discord tag is in the list of {@link com.safjnest.Utilities.PermissionHandler#untouchables untouchables}
+     * 
+     * @param id Discord tag of the member
+     * @return True if the member is in the list, false otherwise
+     */
     public static boolean isUntouchable(String id) {
         if (untouchables.contains(id))
             return true;
         return false;
     }
 
+    /**
+     * Check if a member is Epria
+     * @param id Discord tag of the member
+     * @return True if the member is Epria, false otherwise
+     */
     public static boolean isEpria(String id) {
         if (epria.equals(id))
             return true;
         return false;
     }
 
+    /**
+     * @return Epria's discord tag
+     */
     public static String getEpria(){
         return epria;
     }
 
+    /**
+     * Get all the permissions of a member in the guild that the command is executed in.
+     * @param member Member to check
+     * @return List of permission names
+     */
     public static List<String> getPermissionNames(Member member){
         List<String> finalPermissions= new ArrayList<String>();
         for (Permission permission : member.getPermissions())
@@ -43,6 +79,12 @@ public class PermissionHandler {
         return finalPermissions;
     }
 
+    /**
+     * Get the filtered permissions of a member in the guild that the command is executed in.
+     * <p>Only takes the permissions that are returned from {@link com.safjnest.Utilities.PermissionHandler#getImportantPermissionsValue getImportantPermissionsValue}
+     * @param member Member to check
+     * @return List of permission names
+     */
     public static List<String> getFilteredPermissionNames(Member member) {
         List<String> finalPermissions= new ArrayList<String>();
         for (Permission permission : member.getPermissions())
@@ -51,6 +93,10 @@ public class PermissionHandler {
         return finalPermissions;
     }
 
+    /**
+     * Gets the value of the important permissions.
+     * @return The long rappresentation of the permissions that are important for the bot
+     */
     public static long getImportantPermissionsValue(){ 
         return Permission.getRaw(Permission.MANAGE_CHANNEL, Permission.CREATE_INSTANT_INVITE, 
         Permission.NICKNAME_CHANGE, Permission.NICKNAME_MANAGE, Permission.MANAGE_SERVER, 
@@ -63,10 +109,22 @@ public class PermissionHandler {
         Permission.VOICE_STREAM, Permission.ADMINISTRATOR);
     }
 
+    /**
+     * 
+     * @param roles
+     * @return
+     */
     public static List<String> getMaxFieldableRoleNames(List<Role> roles) {
         return getMaxFieldableRoleNames(roles, 1024);
     }
 
+    /**
+     * Gets the maximum number of roles that can fit in an embed's field 
+     * and makes a list with their names omitting the ones that would make the field too long.
+     * @param roles List of roles
+     * @param charNumber Maximum number of characters
+     * @return List of roles names
+     */
     public static List<String> getMaxFieldableRoleNames(List<Role> roles, int charNumber) {
         if(charNumber > 1024)
             throw new IllegalArgumentException("il numero dei caratteri non puo' essere maggiore di 1024");
@@ -81,6 +139,13 @@ public class PermissionHandler {
         return finalRoles;
     }
 
+    /**
+     * Checks if a member has a specific permission.
+     * <p>If the member is in the untouchables list, it returns true.
+     * @param theGuy Member to check
+     * @param permission Permission to check
+     * @return True if the member has the permission, false otherwise
+     */
     public static boolean hasPermission(Member theGuy, Permission permission) {
         if (theGuy.hasPermission(permission) || untouchables.contains(theGuy.getId()))
             return true;
