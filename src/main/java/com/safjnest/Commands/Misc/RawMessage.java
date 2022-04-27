@@ -9,8 +9,15 @@ import com.safjnest.Utilities.JSONReader;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
 
+/**
+ * This commands gets the raw textual content of the last message sent a user.
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * @since 1.2
+ */
 public class RawMessage extends Command{
-
+    /**
+     * Default constructor for the class.
+     */
     public RawMessage(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
@@ -20,6 +27,9 @@ public class RawMessage extends Command{
         this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
+    /**
+     * This method is called every time a member executes the command.
+     */
     @Override
     protected void execute(CommandEvent event) {
         MessageHistory history = new MessageHistory(event.getChannel());

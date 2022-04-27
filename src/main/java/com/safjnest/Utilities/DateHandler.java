@@ -4,7 +4,17 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 
+/**
+ * This class is used to handle and print dates and playing-time.
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ */
 public class DateHandler {
+
+    /**
+     * This method is used to print playing-time.
+     * @return String with playing-time
+     */
     public static String formatDate(OffsetDateTime date){
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
 		
