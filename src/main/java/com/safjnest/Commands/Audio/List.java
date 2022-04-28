@@ -45,12 +45,17 @@ public class List extends Command {
             do {
                 objectListing = s3Client.listObjects(listObjectsRequest);
                 for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
-                    if(!alpha.containsKey(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()))
-                        alpha.put(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase(), new ArrayList<String>());
-                    alpha.get(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()).add(objectSummary.getKey());
+                    if(s3Client.getObjectMetadata("thebeebox", objectSummary.getKey()).getUserMetaDataOf("guild").equals(event.getGuild().getId())){
+                        System.out.println("faker");
+                        if(!alpha.containsKey(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()))
+                            alpha.put(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase(), new ArrayList<String>());
+                        alpha.get(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()).add(objectSummary.getKey());
+
+                    }
                 }   
                 listObjectsRequest.setMarker(objectListing.getNextMarker());
             } while (objectListing.isTruncated());
+        System.out.println("finito");
         Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
         sortedMap.putAll(alpha);
         MessageChannel channel = event.getChannel();
