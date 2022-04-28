@@ -82,7 +82,9 @@ class FileListener extends ListenerAdapter {
                 e.getJDA().removeEventListener(this);
                 return;
             }*/ //TODO non funziona niente
-            
+            File uploadFolder = new File("rsc" + File.separator + "Upload");
+            if(!uploadFolder.exists())
+                uploadFolder.mkdir();
             File saveFile = new File("rsc" + File.separator + "Upload" + File.separator + (name +"."+ e.getMessage().getAttachments().get(0).getFileExtension()));
             e.getMessage().getAttachments().get(0).downloadToFile(saveFile)
                 .thenAccept(file -> {
@@ -92,7 +94,8 @@ class FileListener extends ListenerAdapter {
                         ObjectMetadata metadata = new ObjectMetadata();
                         metadata.setContentType("audio/mpeg");
                         metadata.addUserMetadata("name", name);
-                        metadata.addUserMetadata("category", "we");
+                        metadata.addUserMetadata("guild", e.getGuild().getId());
+                        metadata.addUserMetadata("author", e.getAuthor().getId());
                         request.setMetadata(metadata);
                         s3Client.putObject(request);
                     }catch(AmazonClientException ace){
