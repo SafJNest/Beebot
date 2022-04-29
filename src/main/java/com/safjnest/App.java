@@ -126,11 +126,12 @@ public class App extends ListenerAdapter {
         
         //Audio
         builder.addCommand(new Connect());
+        builder.addCommand(new DeleteSound(s3Client));
         builder.addCommand(new Disconnect());
         builder.addCommand(new List(s3Client));
         builder.addCommand(new Play(tierOneLink));
-        builder.addCommand(new Upload(s3Client));
         builder.addCommand(new PlaySound(s3Client));
+        builder.addCommand(new Upload(s3Client));
 
         //Manage Guild
         builder.addCommand(new ChannelInfo());
