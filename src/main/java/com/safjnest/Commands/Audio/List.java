@@ -38,17 +38,19 @@ public class List extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
+        String prefix = event.getGuild().getId();
         HashMap<String, ArrayList<String>> alpha = new HashMap<>();
         ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-                .withBucketName("thebeebox");
+                .withBucketName("thebeebox")
+                .withPrefix(prefix);
             ObjectListing objectListing;
             do {
                 objectListing = s3Client.listObjects(listObjectsRequest);
                 for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
-                    if(!alpha.containsKey(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()))
-                        alpha.put(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase(), new ArrayList<String>());
-                    alpha.get(String.valueOf(objectSummary.getKey().charAt(0)).toUpperCase()).add(objectSummary.getKey());
-                } 
+                    if(!alpha.containsKey(String.valueOf(objectSummary.getKey().split("/")[2].charAt(0)).toUpperCase()))
+                        alpha.put(String.valueOf(objectSummary.getKey().split("/")[2].charAt(0)).toUpperCase(), new ArrayList<String>());
+                    alpha.get(String.valueOf(objectSummary.getKey().split("/")[2].charAt(0)).toUpperCase()).add(objectSummary.getKey().split("/")[2]);
+                }
                 listObjectsRequest.setMarker(objectListing.getNextMarker());
             } while (objectListing.isTruncated());
         Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
@@ -58,6 +60,7 @@ public class List extends Command {
         eb.setTitle("SoundBoard");
         String soundNames = "```\n";
             for(String k : sortedMap.keySet()) {
+                System.out.println(k + " " + sortedMap.get(k).size());
                 for(String s : sortedMap.get(k)){
                     soundNames+= s + "\n";
                 }

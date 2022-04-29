@@ -90,6 +90,7 @@ class FileListener extends ListenerAdapter {
                 .thenAccept(file -> {
                     System.out.println("Upload del file su aws s3 " + file.getName());
                     try {
+                        name = e.getGuild().getId() + "/" + e.getAuthor().getId() +"/"+ name;
                         PutObjectRequest request = new PutObjectRequest("thebeebox", name, file);
                         ObjectMetadata metadata = new ObjectMetadata();
                         metadata.setContentType("audio/mpeg");
