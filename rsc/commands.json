@@ -6,6 +6,12 @@
         "arguments" : "[nomeComando]"
     },
 
+    "customizesound":{
+        "alias" : ["custom", "cs", "personalize"],
+        "help"  : "Il bot rimuove il suono dal database.",
+        "category" : "Audio",
+        "arguments" : "[nomeComando]"
+    },
     "deletesound":{
         "alias" : ["delete", "ds", "forget"],
         "help"  : "Il bot rimuove il suono dal database.",
