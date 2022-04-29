@@ -1,13 +1,13 @@
 # ***THE BEEBOX***
 
-![ffewfe](img/logo.png)
+![ffewfe](/rsc/img/logo.png)
 
 ## ***Panoramica (≧ڡ≦*)***
 Semplice bot di Discord che si occupa di fare tutto ciò che gli admin vogliono fargli fare.
 Consente di riprodurre canzone, amministara i vari membri e tanto altro ancora ;D.
 - Server Discord del BeeBox: https://discord.gg/S2rpYbJ
-- Prefix: ***$***
-- Versione 1.2.5
+- Prefix: ***%***
+- Versione 1.3
 ## ***Comandi***
 
 #### ***Non richiedono alcun permesso***

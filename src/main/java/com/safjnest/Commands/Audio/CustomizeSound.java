@@ -9,16 +9,14 @@ import com.safjnest.Utilities.JSONReader;
 import net.dv8tion.jda.api.Permission;
 
 /**
- * The command lets you delete a sound from the server.
- * <p>You have to be a server admin to use the command.</p>
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.3
  */
-public class DeleteSound extends Command{
+public class CustomizeSound extends Command{
     private AmazonS3 s3Client;
     
-    public DeleteSound(AmazonS3 s3Client){
+    public CustomizeSound(AmazonS3 s3Client){
         this.name = this.getClass().getSimpleName();;
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -38,11 +36,8 @@ public class DeleteSound extends Command{
         if((fileName = event.getArgs()) == ""){
             event.reply("manca il nome");
             return;
-        }else if(!s3Client.doesObjectExist("thebeebox", fileName)){
-            event.reply(fileName + " non esiste");
-            return;
         }
-        
+
         s3Client.deleteObject("thebeebox", fileName);
         event.reply(fileName + " sgozzato con successo");
 
