@@ -1,12 +1,21 @@
 package com.safjnest.Utilities;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.jagrosh.jdautilities.command.CommandEvent;
+
+import org.apache.commons.io.FileUtils;
 
 public class AwsS3 {
     private AmazonS3 s3Client;
@@ -43,6 +52,28 @@ public class AwsS3 {
             listObjectsRequest.setMarker(objectListing.getNextMarker());
         } while (objectListing.isTruncated());
         return alpha;
+    }
+
+    public String getPrefix(CommandEvent event){
+        return event.getGuild().getId() + "/";
+    }
+
+    public boolean fileExists(String fileName){
+        return s3Client.doesObjectExist(bucket, fileName);
+    }
+
+    public void downloadFile(String fileName, String filePath) {
+        try {
+            System.out.println("Downloading an object");
+            S3Object fullObject = s3Client.getObject(
+                new GetObjectRequest("thebeebox", fileName));
+            System.out.println("Content-Type: " + fullObject.getObjectMetadata().getContentType());
+            S3ObjectInputStream s3is = fullObject.getObjectContent();
+            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + ".mp3"));
+            s3is.close();
+        } catch (AmazonClientException | IOException exception) {
+            exception.printStackTrace();
+        }
     }
 
 }

@@ -14,6 +14,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.Utilities.TrackScheduler;
 import com.safjnest.Utilities.AudioPlayerSendHandler;
+import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.SoundBoard;
@@ -37,7 +38,6 @@ import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 
 public class PlaySound extends Command{
     AmazonS3 s3Client;
-    S3Object fullObject = null;
     String name;
 
     public PlaySound(AmazonS3 s3Client){
@@ -60,17 +60,8 @@ public class PlaySound extends Command{
         for (File file : new java.io.File("rsc" + File.separator + "SoundBoard").listFiles())
             file.delete();
 
-        try {
-            System.out.println("Downloading an object");
-            fullObject = s3Client.getObject(new GetObjectRequest("thebeebox", name));
-            System.out.println("Content-Type: " + fullObject.getObjectMetadata().getContentType());
-            S3ObjectInputStream s3is = fullObject.getObjectContent();
-            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + name + ".mp3"));
-            s3is.close();
-        } catch (AmazonClientException | IOException ace) {
-            ace.printStackTrace();
-        }
-        
+        AwsS3 a = new AwsS3(s3Client, "thebeebox");
+        a.downloadFile(name, "f");
         name = "rsc" + File.separator + "SoundBoard" + File.separator + name + ".mp3";
         
         MessageChannel channel = event.getChannel();
