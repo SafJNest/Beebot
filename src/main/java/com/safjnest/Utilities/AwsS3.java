@@ -62,7 +62,7 @@ public class AwsS3 {
         return s3Client.doesObjectExist(bucket, fileName);
     }
 
-    public void downloadFile(String fileName, CommandEvent event) {
+    public S3Object downloadFile(String fileName, CommandEvent event) {
         String prefix = getPrefix(event);
         try {
             ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
@@ -86,8 +86,10 @@ public class AwsS3 {
             S3ObjectInputStream s3is = fullObject.getObjectContent();
             FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + ".mp3"));
             s3is.close();
+            return fullObject;
         } catch (AmazonClientException | IOException exception) {
             exception.printStackTrace();
+            return null;
         }
     }
 
