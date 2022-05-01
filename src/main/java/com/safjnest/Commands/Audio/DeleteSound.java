@@ -38,12 +38,9 @@ public class DeleteSound extends Command{
         if((fileName = event.getArgs()) == ""){
             event.reply("manca il nome");
             return;
-        }else if(!s3Client.doesObjectExist("thebeebox", fileName)){
-            event.reply(fileName + " non esiste");
-            return;
         }
         
-        s3Client.deleteObject("thebeebox", fileName);
+        s3Client.deleteObject("thebeebox", event.getGuild().getId() + "/" + event.getAuthor().getId() + "/" + fileName );
         event.reply(fileName + " sgozzato con successo");
 
 	}
