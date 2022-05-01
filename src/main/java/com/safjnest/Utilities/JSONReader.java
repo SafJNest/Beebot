@@ -13,6 +13,7 @@ import org.json.simple.parser.ParseException;
 /**
  * Contains the methods to read the JSON file with all the commands descriptions.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
  * @since 1.3
  */
 public class JSONReader {
