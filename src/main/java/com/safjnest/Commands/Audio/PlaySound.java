@@ -61,7 +61,7 @@ public class PlaySound extends Command{
             file.delete();
 
         AwsS3 a = new AwsS3(s3Client, "thebeebox");
-        a.downloadFile(name, "f");
+        a.downloadFile(name, event);
         name = "rsc" + File.separator + "SoundBoard" + File.separator + name + ".mp3";
         
         MessageChannel channel = event.getChannel();
@@ -105,7 +105,7 @@ public class PlaySound extends Command{
         player.playTrack(trackScheduler.getTrack());
         if(player.getPlayingTrack() == null)
             return;
-
+        /*
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
         eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
@@ -125,5 +125,6 @@ public class PlaySound extends Command{
         channel.sendMessageEmbeds(eb.build())
             .addFile(file, img)
             .queue();
+        */       
     }
 }

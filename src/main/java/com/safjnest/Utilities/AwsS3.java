@@ -62,11 +62,26 @@ public class AwsS3 {
         return s3Client.doesObjectExist(bucket, fileName);
     }
 
-    public void downloadFile(String fileName, String filePath) {
+    public void downloadFile(String fileName, CommandEvent event) {
+        String prefix = getPrefix(event);
         try {
+            ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+            .withBucketName(bucket)
+            .withPrefix(prefix);
+            ObjectListing objectListing;
+            do {
+                objectListing = s3Client.listObjects(listObjectsRequest);
+                for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                    if(objectSummary.getKey().split("/")[2].equalsIgnoreCase(fileName)){
+                        prefix = objectSummary.getKey();
+                        break;
+                    }
+            }
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+        } while (objectListing.isTruncated());
             System.out.println("Downloading an object");
             S3Object fullObject = s3Client.getObject(
-                new GetObjectRequest("thebeebox", fileName));
+                new GetObjectRequest("thebeebox", prefix));
             System.out.println("Content-Type: " + fullObject.getObjectMetadata().getContentType());
             S3ObjectInputStream s3is = fullObject.getObjectContent();
             FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + ".mp3"));
