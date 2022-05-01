@@ -1,26 +1,20 @@
+//TODO RIFARE QUESTA CLASSE DI MERDA INGUARADFBILE :D
 package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
 import java.io.File;
-import java.io.IOException;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.Utilities.TrackScheduler;
 import com.safjnest.Utilities.AudioPlayerSendHandler;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.SoundBoard;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-import org.apache.commons.io.FileUtils;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -61,7 +55,7 @@ public class PlaySound extends Command{
             file.delete();
 
         AwsS3 a = new AwsS3(s3Client, "thebeebox");
-        a.downloadFile(name, event);
+        S3Object sound = a.downloadFile(name, event);
         name = "rsc" + File.separator + "SoundBoard" + File.separator + name + ".mp3";
         
         MessageChannel channel = event.getChannel();
@@ -105,26 +99,28 @@ public class PlaySound extends Command{
         player.playTrack(trackScheduler.getTrack());
         if(player.getPlayingTrack() == null)
             return;
-        /*
+        
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
         eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-        Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
+        eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
+        eb.setFooter("*Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)", null);
+        //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
         eb.setColor(new Color(0, 255, 255));
         eb.setDescription(event.getArgs());
-        eb.addField("Autore", mp.getId3v2Tag().getAlbumArtist(), true);
-        eb.addField("Album", mp.getId3v2Tag().getAlbum(), true);
+        eb.addField("Autore", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
+        eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName()    , true);
         String img = "mp3.png";
+        /*
         switch (mp.getId3v2Tag().getAlbumArtist()) {
             case "merio":img = "epria.jpg";break;case "dirix":img = "dirix.jpg";break;case "teros":img = "zucca.jpg";break;case "herox":img = "herox.jpg";break;case "bomber":img = "arcus.jpg";break;case "ilyas":img = "maluma.PNG";break;case "pyke":img = "pyke.jpg";break;case "thresh":img = "thresh.jpg";break;case "blitzcrank":img = "blitz.png";break;case "bard":img = "bard.png";break;case "nautilus":img = "nautilus.png";break;case "fiddle":img = "fid.jpg";break;case "pantanichi":img = "panta.jpg";break;case "sunyx":img = "sun.jpg";break;case "gskianto":img = "gk.png";break;case "jhin":img = "jhin.jpg";break;case "yone":img = "yone.jpg";break;case "yasuo":img = "yasuo.jpg";break;
         }
-        File file = new File("rsc" + File.separator + "rsc" + File.separator + "img" + File.separator+ img);
+        */
+        File file = new File("rsc" + File.separator + "img" + File.separator+ img);
         eb.setThumbnail("attachment://" + img);
         channel.sendMessageEmbeds(eb.build())
             .addFile(file, img)
             .queue();
-        */       
+        
     }
 }
