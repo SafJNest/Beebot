@@ -110,7 +110,7 @@ public class PlaySound extends Command{
         eb.setColor(new Color(0, 255, 255));
         eb.setDescription(event.getArgs());
         eb.addField("Autore", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
-        eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName()    , true);
+        eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName(), true);
         String img = "mp3.png";
         /*
         switch (mp.getId3v2Tag().getAlbumArtist()) {
