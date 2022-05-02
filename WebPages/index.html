@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="script.js"></script>
     <script src="bot.js"></script>
     <script src="server.js"></script>
@@ -22,8 +23,13 @@
         <h1>COMANDI DEL TIER 1 BOT</h1>
       </div>
       <div class="sidebar">
-        <button onclick="backToHome()" class="sidebarBtt">HOME</button>
-        <button onclick="backToCommands()" class="sidebarBtt">COMMANDS</button>
+        <button onclick="backToHome()" class="sidebarBtt"><span class="material-icons">
+          emoji_nature
+          </span>HOME</button>
+        <button onclick="backToCommands()" class="sidebarBtt">
+          <span class="material-icons">
+            help
+            </span>COMMANDS</button>
         <button onclick="backToDocuments()" class="sidebarBtt">DOCUMENTS</button>
         <button class="sidebarBtt">STATS</button>
       </div>

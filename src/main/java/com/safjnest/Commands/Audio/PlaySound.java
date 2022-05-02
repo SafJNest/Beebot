@@ -50,6 +50,7 @@ public class PlaySound extends Command{
             event.reply("il nome idiota");
             return;
         }
+
         //TODO fix | deletare il file vecchio ogni ps bene
         for (File file : new java.io.File("rsc" + File.separator + "SoundBoard").listFiles())
             file.delete();
