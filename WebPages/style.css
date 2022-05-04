@@ -1,27 +1,35 @@
+html{
+    height: 100%;
+}
+
 body{
     font-family: 'Quicksand', sans-serif;
     background-image: linear-gradient( 136deg, rgba(0,0,0,0.65) 12.9%, rgba(0,0,0,1) 145.4% );
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    padding-top: 1%;
+    height: 100%;
+}
 
+#riga{
+    height: 100%;
+}
+
+#col1{
+    height: 100%;
+    width: 200pt;
+}
+
+#sideBar{
+    background-color: #008080;
+    color:white;
+    font-weight: bold;
+    height: 100%;
 }
 
 /*HOMEPAGE*/
 .home{
-  
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  position: relative;
-  margin-left: 20%;
-  width:100%;
-  height: 100%;
+    height: 100%;
 }
 
+/*
 /*BUTTON COMMANDS*/
 .collapsible {
   background-color: #777;
@@ -53,16 +61,17 @@ body{
     padding: 2%; 
 }
 .containerCommands{
-    display: flex;
+  display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   position: relative;
-  margin-left: 30%;
+  margin-left: 27%;
   max-width:80%;
 }
 .content {
+
   padding: 0 18px;
   display: none;
   overflow: hidden;
@@ -100,28 +109,6 @@ table{
     color:white;
 }
 
-/*SIDEBAR*/
-.sidebar{
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-}
-.contentSideBar{
-    background-color: #008080;
-    color:white;
-    display: flex;
-    flex-direction: column;
-    font-weight: bold;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    width: 20%;
-    max-width: 30%;
-    height: 100%;
-    position: fixed;
-    top:0px; 
-}
 .sidebarBtt{
   background-color: #008080;
   color: white;
@@ -147,9 +134,8 @@ table{
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
-  justify-content: center;
-  margin-left: 25%;
-  gap: 10%;
+  margin-left: 20%;
+  gap: 10%; 
   width:80%;
   position: fixed;
   height: 100%;
