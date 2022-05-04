@@ -9,12 +9,16 @@ import com.safjnest.Utilities.JSONReader;
 import net.dv8tion.jda.api.EmbedBuilder;
 
 /**
+ * Gets a list of aliases for a command.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.1.02
  */
 public class Aliases extends Command {
-
+    
+    /**
+     * Default constructor for the class.
+     */
     public Aliases() {
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
@@ -24,6 +28,9 @@ public class Aliases extends Command {
         this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
+    /**
+     * This method is called every time a member executes the command.
+     */
     @Override
     protected void execute(CommandEvent event) {
         EmbedBuilder eb = new EmbedBuilder();

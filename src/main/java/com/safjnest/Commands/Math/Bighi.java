@@ -11,12 +11,19 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import net.dv8tion.jda.api.entities.MessageChannel;
 
 /**
+ * The command create a random number with n-bits.
+ * <p>If the number is longer than 2000 characters, it will be sent as file.</p>
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since Alpha
  */
 public class Bighi extends Command {
+    /**The max number of bits */
     private int maxBighi;
     
+    /**
+     * Constructor
+     * @param maxBighi
+     */
     public Bighi(int maxBighi){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
@@ -26,6 +33,9 @@ public class Bighi extends Command {
         this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
+    /**
+     * This method is called every time a member executes the command.
+     */
 	@Override
 	protected void execute(CommandEvent event) {
         String[] commandArray = event.getMessage().getContentRaw().split(" ");
