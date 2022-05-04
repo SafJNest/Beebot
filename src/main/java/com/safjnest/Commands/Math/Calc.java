@@ -8,12 +8,17 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
 
 /**
+ * This class is used to calculate the result of a mathematical expression.
+ * <p>There is one way to use it:</p>
+ * By typing <code>%calc</code> followed by the expression you want to calculate.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.2.5
  */
 public class Calc extends Command{
-
+    /**
+     * A set of all the operators that can be used in a mathematical expression.
+     */
     private static final Set<String> OP = Set.of("+","-","*","/", "^");
 
     public Calc(){

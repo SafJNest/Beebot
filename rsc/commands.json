@@ -14,7 +14,7 @@
     },
     "deletesound":{
         "alias" : ["delete", "ds", "forget"],
-        "help"  : "Il bot rimuove il suono dal database.",
+        "help"  : "Il bot rimuove il suono dal database.\nSe non sei l'autore del suono non potrai eliminarlo.",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
