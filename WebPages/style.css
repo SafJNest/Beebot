@@ -29,6 +29,13 @@ body{
   height: 100%;
 }
 
+#title{
+  padding-top: 5%;
+  text-align: center;
+  color:white;
+  font-size: 70;
+}
+
 /*
 /*BUTTON COMMANDS*/
 .collapsible {
