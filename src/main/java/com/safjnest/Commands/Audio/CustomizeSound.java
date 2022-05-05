@@ -17,7 +17,7 @@ public class CustomizeSound extends Command{
     private AmazonS3 s3Client;
     
     public CustomizeSound(AmazonS3 s3Client){
-        this.name = this.getClass().getSimpleName();;
+        this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
         this.cooldown = new JSONReader().getCooldown(this.name);
