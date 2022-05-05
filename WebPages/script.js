@@ -5,6 +5,19 @@ function init() {
   console.log(lastOpen);
 }
 
+function openSidebar() {
+  document.getElementById("main").style.marginLeft = "100pt";
+  document.getElementById("sidebar").style.width = "100pt";
+  document.getElementById("sidebar").style.display = "block";
+  document.getElementById("openNav").style.display = 'none';
+}
+
+function closeSidebar() {
+  document.getElementById("main").style.marginLeft = "0%";
+  document.getElementById("sidebar").style.display = "none";
+  document.getElementById("openNav").style.display = "inline-block";
+}
+
 
 function backToHome() {
   let home = document.getElementsByClassName("home")[0];

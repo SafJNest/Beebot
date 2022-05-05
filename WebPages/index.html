@@ -12,13 +12,59 @@
     <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <script src="script.js"></script>
     <script src="bot.js"></script>
     <script src="server.js"></script>
-    <title>Document</title>
+    <title>SafJ</title>
 </head>
 <body>
-<div class="row" id="riga">
+
+  <div class="w3-sidebar w3-bar-block w3-card w3-animate-left" style="display:none" id="sidebar">
+    <button class="w3-bar-item w3-button w3-large"
+    onclick="closeSidebar()">Close &times;</button>
+    <a href="#" class="w3-bar-item w3-button">Link 1</a>
+    <a href="#" class="w3-bar-item w3-button">Link 2</a>
+    <a href="#" class="w3-bar-item w3-button">Link 3</a>
+  </div>
+
+  <div id="main">
+
+    <div class="w3-teal">
+      <div style="display:flex">
+        <div>
+          <button id="openNav" class="w3-button w3-teal w3-xlarge" onclick="openSidebar()">&#9776;</button>
+        </div>
+        <div class="w3-container">
+          <h1 style="font-size:19pt; padding-top:0pt;">The Bee Box</h1>
+        </div>
+      </div> 
+    </div>
+    
+  <div class="w3-container">
+    <div class="home">
+      <img src="/rsc/img/logoBeeBot.png" alt="frake" width="40%" height="80%">
+    </div>
+
+    <div class="documents" style="display:none">
+      <button class="contentButton"><img src="/rsc/img/pc.png" height ="80%" width="100%" />PROJECT CHARTER</button>
+      <button class="contentButton"><img src="/rsc/img/zucca.jpg" height ="80" width="100" />NeutronSun</button>
+      <button class="contentButton"><img src="/rsc/img/javadoc.png" height ="80%" width="100%" />JAVADOC</button>
+      <button class="contentButton"><img src="/rsc/img/yasuo.jpg" height ="80" width="100" />Leon412</button>
+    </div>
+
+    <script>
+      init();
+    </script>
+  </div>
+     
+  </div>
+  
+  <script>
+  
+  </script>
+
+<!--<div class="row" id="riga">
   <div class="col" id="col1">
     <div id="sideBar">
       <button onclick="backToHome()" class="sidebarBtt">HOME</button>
@@ -46,6 +92,6 @@
       init();
     </script>
   </div>
-</div>
+</div> !-->
 </body>
 </html>
