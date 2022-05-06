@@ -88,7 +88,7 @@ public class SoundBoard {
     }
 
     /**
-     * @deprecated
+     * 
      * Get all the names of the mp3 files in the soundboard without the extension.
      * @return
      * an array of {@code String}

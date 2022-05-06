@@ -83,6 +83,8 @@ async function loadAll() {
     //iterate over the commands of the category "key"
     //name = command's name
     commands.get(keys[key]).forEach(function (name) {
+      let commandCard = document.createElement("div");
+      commandCard.className = "command-card";
       command = json[name];
       var button = document.createElement("button");
       var content = document.createElement("div");
@@ -90,7 +92,7 @@ async function loadAll() {
       var tr = document.createElement("tr");
       button.innerHTML = name;
       button.className = "collapsible";
-      containerCommands.appendChild(button);
+      commandCard.appendChild(button);
       content.className = "content";
       content.style = "display:none";
       table.className = "table";
@@ -117,7 +119,7 @@ async function loadAll() {
       tr.appendChild(td4);
       tr.appendChild(td5);
       table.appendChild(tr);
-      containerCommands.appendChild(table);
+      commandCard.appendChild(table);
       var tr = document.createElement("tr");
       var td1 = document.createElement("td");
       var td2 = document.createElement("td");
@@ -147,7 +149,8 @@ async function loadAll() {
       tr.appendChild(td4);
       tr.appendChild(td5);
       table.appendChild(tr);
-      containerCommands.appendChild(content);
+      commandCard.appendChild(content);
+      category.appendChild(commandCard)
     });
   }
   setListenerCollapsible();
