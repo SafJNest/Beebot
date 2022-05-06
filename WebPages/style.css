@@ -10,19 +10,8 @@ html{
 }
 
 body{
-  /*background-image: linear-gradient( 136deg, rgba(0,0,0,0.65) 12.9%, rgba(0,0,0,1) 145.4% );*/
-  /*background-image: linear-gradient( 135deg, #3B2667 10%, #BC78EC 100%);*/
   background-image: linear-gradient( 110.3deg,  rgba(73,93,109,1) 4.3%, rgba(49,55,82,1) 96.7% );
   height: 100%;
-}
-
-#riga{
-  height: 100%;
-}
-
-#col1{
-  height: 100%;
-  width: 200pt;
 }
 
 #sidebar{
@@ -33,7 +22,6 @@ body{
   font-weight: 500;
   font-size: 12pt;
 }
-
 
 /*HOMEPAGE*/
 .home{
@@ -51,19 +39,28 @@ body{
 
 /*
 /*BUTTON COMMANDS*/
-.collapsible {
-background-color: #777;
-color: white;
-cursor: pointer;
-padding: 18px;
-width: 85%;
-border: none;
-text-align: left;
-outline: none;
-font-size: 15px;
-border-radius: 10px;
-box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+.command-container{
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+.command-card{
+  width: 40%;
+  text-align: center;
+}
 
+.collapsible {
+  text-align: center;
+  background-color: #777;
+  color: white;
+  cursor: pointer;
+  padding: 18px;
+  border: none;
+  width: 100%;
+  outline: none;
+  font-size: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 .active, .collapsible:hover {
@@ -80,20 +77,28 @@ transition: height 2s;
   color:white;
   padding: 2%; 
 }
-.command-container{
-  gap: 20px;
-  
-}
 .content {
   padding: 0 18px;
   display: none;
   overflow: hidden;
   background-color: #f1f1f1;
 }
+
 /*TABLE*/
 table{
-  width: 85%;
-  max-width: 85%;
+  color: black;
+  text-align: center;
+  margin-bottom: 10%;
+  font-family: quicksand;
+  font-weight: 500;
+  font-size: 12pt;
+
+}
+tr, td{
+  margin: 0 auto;
+  width: 100%;
+  text-align: center;
+
 }
 .top{
   font-weight: bold;
@@ -122,31 +127,9 @@ table{
   color:white;
 }
 
-.sidebarBtt{
-background-color: #008080;
-color: white;
-cursor: pointer;
-height: 96px;
-width: 100%;
-border: none;
-text-align: left;
-outline: none;
-font-size: 15px;
-/*border-radius: 10px 0px 0px 10px;*/
-/*box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);*/
-}
-.sidebarBtt:hover{
-  background-color: #c6c6c6;
- /* border-radius: 15px 0px 0px 15px;*/
-  border-collapse: collapse;
-}
-
 
 /*Documents*/
 .documents{  
-display: flex;
-flex-direction: column;
-flex-wrap: wrap;
 margin-left: 20%;
 gap: 10%; 
 width:80%;
@@ -167,30 +150,4 @@ height: 40%;
 position: relative;
 border: none;
 text-align: center;
-
-}
-
-.material-icons {
-font-family: 'Material Icons';
-font-weight: normal;
-font-style: normal;
-font-size: 10px;  /* Preferred icon size */
-display: inline-block;
-line-height: 1;
-text-transform: none;
-letter-spacing: normal;
-word-wrap: normal;
-white-space: nowrap;
-direction: ltr;
-
-/* Support for all WebKit browsers. */
--webkit-font-smoothing: antialiased;
-/* Support for Safari and Chrome. */
-text-rendering: optimizeLegibility;
-
-/* Support for Firefox. */
--moz-osx-font-smoothing: grayscale;
-
-/* Support for IE. */
-font-feature-settings: 'liga';
 }

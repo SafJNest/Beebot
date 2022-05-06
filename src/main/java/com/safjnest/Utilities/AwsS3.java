@@ -64,6 +64,7 @@ public class AwsS3 {
     }
 
     public S3Object downloadFile(String fileName, CommandEvent event) {
+    
         String prefix = getPrefix(event);
         try {
             ListObjectsRequest listObjectsRequest = new ListObjectsRequest()

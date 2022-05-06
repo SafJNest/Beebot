@@ -50,9 +50,11 @@ public class PlaySound extends Command{
             event.reply("il nome idiota");
             return;
         }
-
+        File soundBoard = new File("rsc" + File.separator + "SoundBoard");
+        if(!soundBoard.exists())
+            soundBoard.mkdirs();
         //TODO fix | deletare il file vecchio ogni ps bene
-        for (File file : new java.io.File("rsc" + File.separator + "SoundBoard").listFiles())
+        for (File file : soundBoard.listFiles())
             file.delete();
 
         AwsS3 a = new AwsS3(s3Client, "thebeebox");
