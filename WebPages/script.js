@@ -32,13 +32,12 @@ function backToHome() {
 function backToCommands() {
   lastOpen.style.display = "none";
   let containerCommands =
-    document.getElementsByClassName("containerCommands")[0];
-  if (containerCommands == undefined) {
-    loadAll();
-  } else if (!alreadyOpen(containerCommands)) {
+    document.getElementsByClassName("command-container")[0];
+   if (!alreadyOpen(containerCommands)) {
     containerCommands.style.display = "inherit";
-    lastOpen = document.getElementsByClassName("containerCommands")[0];
+    lastOpen = document.getElementsByClassName("command-container")[0];
   }
+  loadAll();
 }
 
 function backToDocuments() {
@@ -70,12 +69,8 @@ async function loadAll() {
     }
     commands.get(json[key]["category"]).push(key);
   }
-  //create the html div
-  var containerCommands = document.createElement("div");
-  containerCommands.className = "containerCommands";
-  containerCommands.style.display = "inherit";
+  let containerCommands = document.getElementsByClassName("command-container")[0];
   lastOpen = containerCommands;
-  document.body.appendChild(containerCommands);
   //create the html div for each category and iterate over categories
   let keys = Array.from(commands.keys());
   for (var key in keys) {
