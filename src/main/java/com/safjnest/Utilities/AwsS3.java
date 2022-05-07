@@ -86,7 +86,7 @@ public class AwsS3 {
                 new GetObjectRequest("thebeebox", prefix));
             System.out.println("Content-Type: " + fullObject.getObjectMetadata().getContentType());
             S3ObjectInputStream s3is = fullObject.getObjectContent();
-            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + ".mp3"));
+            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + "." +fullObject.getObjectMetadata().getUserMetaDataOf("format")));
             s3is.close();
             return fullObject;
         } catch (AmazonClientException | IOException exception) {

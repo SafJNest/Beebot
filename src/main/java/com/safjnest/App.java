@@ -14,6 +14,7 @@ import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
 import com.safjnest.Commands.Misc.*;
+import com.safjnest.Utilities.SoundBoard;
 import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
@@ -89,7 +90,8 @@ public class App extends ListenerAdapter {
             AWSAccesKey = args[2];
             AWSSecretKey = args[3];
         }
-
+        SoundBoard a = new SoundBoard();
+        System.out.println(a.getExtension("eee"));
         AWSCredentials credentials = new BasicAWSCredentials(AWSAccesKey, AWSSecretKey);
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.setSignerOverride("AWSS3V4SignerType");
