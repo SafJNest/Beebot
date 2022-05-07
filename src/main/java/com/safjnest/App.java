@@ -90,8 +90,7 @@ public class App extends ListenerAdapter {
             AWSAccesKey = args[2];
             AWSSecretKey = args[3];
         }
-        SoundBoard a = new SoundBoard();
-        System.out.println(a.getExtension("eee"));
+
         AWSCredentials credentials = new BasicAWSCredentials(AWSAccesKey, AWSSecretKey);
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.setSignerOverride("AWSS3V4SignerType");
@@ -179,3 +178,4 @@ public class App extends ListenerAdapter {
         tierOneLink.put("zvNfGg5vKTs", "POVERO GABBIANOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO NON HAI VOGLIUA DI VOLARE SOPRA UNA SCOGLUIERAAAAAAAAAAAAAAAAAAAA HAI PERDUOT LA COMPAGNAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NON TIO GF8REWHUG A VIDEF TI CAPISC JAAAAAA PEKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK");
     }
 }
+    
