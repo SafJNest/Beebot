@@ -101,4 +101,14 @@ public class SoundBoard {
         }
         return names;
     }
+
+    public static String getExtension(String name){
+        File[] arr = folder.listFiles();
+        for(File file : arr){
+            if(name.equalsIgnoreCase(file.getName().substring(0, file.getName().indexOf("."))))
+                return file.getName().substring(file.getName().indexOf(".") + 1);
+        }
+        return null;
+    }
+
 }

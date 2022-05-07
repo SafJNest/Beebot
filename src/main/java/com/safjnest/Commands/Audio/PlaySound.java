@@ -13,6 +13,7 @@ import com.safjnest.Utilities.AudioPlayerSendHandler;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.SoundBoard;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 
@@ -59,7 +60,12 @@ public class PlaySound extends Command{
 
         AwsS3 a = new AwsS3(s3Client, "thebeebox");
         S3Object sound = a.downloadFile(name, event);
-        name = "rsc" + File.separator + "SoundBoard" + File.separator + name + ".mp3";
+        String extension = SoundBoard.getExtension(name);
+        if(extension == null){
+            event.reply("il file non esiste");
+            return;
+        }
+        name = "rsc" + File.separator + "SoundBoard" + File.separator + name +"."+ extension;
         
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
