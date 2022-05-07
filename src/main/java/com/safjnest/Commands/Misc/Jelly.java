@@ -20,6 +20,7 @@ public class Jelly extends Command {
     @Override
     protected void execute(CommandEvent event) {
         event.reply("blblblablvblbbla");
+        event.getGuild().getMemberById(event.getAuthor().getId()).modifyNickname(event.getAuthor().getName() + "WX");
     }
     
 }
