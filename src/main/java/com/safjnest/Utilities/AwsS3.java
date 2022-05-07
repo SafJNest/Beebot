@@ -27,7 +27,7 @@ public class AwsS3 {
     }
     
     public void initialize() {
-        
+        //TODO fucking dothis
     }
 
     /**
