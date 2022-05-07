@@ -41,7 +41,7 @@
     },
 
     "playsound":{
-        "alias" : ["ps", "playsos", "jelly"],
+        "alias" : ["ps", "playsos"],
         "help"  : "Il bot riproduce un suono tra quelli presenti nel database.\nBisogna essere connessi in una stanza vocale.\nNel caso il bot sia connesso in un'altra stanza si sposterà nella stessa dove è connesso l'autore del comando.",
         "category" : "Audio",
         "arguments" : "[playsound] [nome del file senza specificare il formato]"
@@ -226,6 +226,13 @@
     "rawmessage":{
         "alias" : ["rawmsg", "rawmessage"],
         "help"  : "Restituisce tutti gli alias dei vari comandi",
+        "category" : "Miscellaneo",
+        "arguments" : "[nomeComando]"
+    },
+
+    "jelly":{
+        "alias" : ["soundfx", "reminderbot", "jude", "jude southworth", "jellywx"],
+        "help"  : "Evoca il dio dei falliti",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     }
