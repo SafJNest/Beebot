@@ -235,6 +235,13 @@
         "help"  : "Evoca il dio dei falliti",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
+    },
+
+    "modifynickname":{
+        "alias" : ["modnick", "nick"],
+        "help"  : "Cambia il nickname ad un membro della gilda",
+        "category" : "Gestione Membri",
+        "arguments" : "[nomeComando] [membro] [nuovo nick]"
     }
 
 }
