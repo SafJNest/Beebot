@@ -20,6 +20,6 @@ public class Jelly extends Command {
     @Override
     protected void execute(CommandEvent event) {
         event.reply("blblblablvblbbla");
+        
     }
-    
 }
