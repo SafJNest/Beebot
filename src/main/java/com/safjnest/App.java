@@ -165,6 +165,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Help());
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
+        builder.addCommand(new Jelly());
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
