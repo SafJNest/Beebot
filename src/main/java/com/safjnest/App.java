@@ -134,6 +134,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Upload(s3Client));
 
         //Manage Guild
+        builder.addCommand(new Anonym());
         builder.addCommand(new ChannelInfo());
         builder.addCommand(new Clear());
         builder.addCommand(new Msg());
