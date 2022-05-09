@@ -87,7 +87,7 @@ public class Play extends Command {
 
             @Override
             public void loadFailed(FriendlyException throwable) {
-                System.out.println("error faker " + throwable.getMessage());
+                event.reply(throwable.getMessage());
             }
         });
         player.playTrack(trackScheduler.getTrack());
