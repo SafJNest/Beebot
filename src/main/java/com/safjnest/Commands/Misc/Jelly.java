@@ -7,7 +7,11 @@ import com.safjnest.Utilities.JSONReader;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.requests.ErrorResponse;
-
+/**
+ * 
+ * @author <a href="https://github.com/Leon412">Leon412</a> 
+ * @since 1.3
+ */
 public class Jelly extends Command {
     /**
      * Default constructor for the class.
@@ -26,7 +30,7 @@ public class Jelly extends Command {
         Member theGuy;
         String[] args = event.getArgs().split(" ", 2);
         
-        if(args.length == 0)
+        if(args[0].equals(" "))
             theGuy = event.getMember();
         else if(event.getMessage().getMentionedMembers().size() > 0)
             theGuy = event.getMessage().getMentionedMembers().get(0);

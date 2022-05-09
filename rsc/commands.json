@@ -74,6 +74,12 @@
         "category" : "Gestione Server",
         "arguments" : "[emoji] [nomeEmoji, emoji]"
     },
+    "anonym":{
+        "alias" : ["staropoli", "an"],
+        "help"  : "Il bot invierà un messaggio in privato all'utente richiesto in maniera anonima.\nÈ possibile inviare un messaggio ad un solo utente alla volta.",
+        "category" : "Gestione Server",
+        "arguments" : "[msg] [@user/id] [messaggio]"
+    },
 
     "msg":{
         "alias" : ["messaggio", "message"],
@@ -238,7 +244,7 @@
     },
 
     "modifynickname":{
-        "alias" : ["modnick", "nick"],
+        "alias" : ["modnick", "nick", "nickradogna"],
         "help"  : "Cambia il nickname ad un membro della gilda",
         "category" : "Gestione Membri",
         "arguments" : "[nomeComando] [membro] [nuovo nick]"
