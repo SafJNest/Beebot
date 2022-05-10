@@ -75,7 +75,7 @@ public class App extends ListenerAdapter {
         }
         if(isCanary){
             System.out.println("[main] INFO Canary mode on");
-            token = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
+            token = "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g";
             PREFIX = "$";
             activity = Activity.playing("Testing jellysort | " + PREFIX + "help");
             AWSAccesKey = "AKIASJG3D4LSZMKR7L4R";
