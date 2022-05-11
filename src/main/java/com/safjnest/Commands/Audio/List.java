@@ -45,7 +45,6 @@ public class List extends Command {
         eb.setTitle("SoundBoard");
         String soundNames = "```\n";
             for(String k : sortedMap.keySet()) {
-                System.out.println(k + " " + sortedMap.get(k).size());
                 for(String s : sortedMap.get(k)){
                     soundNames+= s + "\n";
                 }
