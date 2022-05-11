@@ -1,10 +1,3 @@
-let lastOpen;
-
-function init() {
-  lastOpen = document.getElementsByClassName("home")[0];
-  console.log(lastOpen);
-}
-
 function openSidebar() {
   document.getElementById("main").style.marginLeft = "100pt";
   document.getElementById("sidebar").style.width = "100pt";
@@ -18,45 +11,8 @@ function closeSidebar() {
   document.getElementById("openNav").style.display = "inline-block";
 }
 
-
-function backToHome() {
-  let home = document.getElementsByClassName("home")[0];
-  if (alreadyOpen(home)) {
-    return;
-  }
-  home.style.display = "inherit";
-  lastOpen.style.display = "none";
-  lastOpen = home;
-}
-
-function backToCommands() {
-  lastOpen.style.display = "none";
-  let containerCommands =
-    document.getElementsByClassName("command-container")[0];
-   if (!alreadyOpen(containerCommands)) {
-    containerCommands.style.display = "inherit";
-    lastOpen = document.getElementsByClassName("command-container")[0];
-  }
-  loadAll();
-}
-
-function backToDocuments() {
-  lastOpen.style.display = "none";
-  let documents = document.getElementsByClassName("documents")[0];
-  if (!alreadyOpen(documents)) {
-    documents.style.display = "inherit";
-    lastOpen = document.getElementsByClassName("documents")[0];
-  }
-}
-
-function alreadyOpen(div) {
-  if (div.style.display != "none") {
-    return true;
-  }
-  return false;
-}
-
 async function loadAll() {
+  console.log("erger");
   //get the file
   const response = await fetch("/rsc/commands.json");
   const aaa = await response.json();
@@ -69,17 +25,21 @@ async function loadAll() {
     }
     commands.get(json[key]["category"]).push(key);
   }
-  let containerCommands = document.getElementsByClassName("command-container")[0];
+  let containerCommands = document.getElementsByClassName("outside-command-container")[0];
   lastOpen = containerCommands;
   //create the html div for each category and iterate over categories
   let keys = Array.from(commands.keys());
   for (var key in keys) {
     var category = document.createElement("div");
     var h1 = document.createElement("h1");
-    category.className = "categories";
+    category.className = "category-container";
+    let commandsContainer = document.createElement("div");
+    commandsContainer.className = "commands-container";
+
     h1.innerHTML = keys[key];
     category.appendChild(h1);
     containerCommands.appendChild(category);
+    category.appendChild(commandsContainer);
     //iterate over the commands of the category "key"
     //name = command's name
     commands.get(keys[key]).forEach(function (name) {
@@ -150,7 +110,7 @@ async function loadAll() {
       tr.appendChild(td5);
       table.appendChild(tr);
       commandCard.appendChild(content);
-      category.appendChild(commandCard)
+      commandsContainer.appendChild(commandCard)
     });
   }
   setListenerCollapsible();
