@@ -30,7 +30,7 @@ public class Jelly extends Command {
         Member theGuy;
         String[] args = event.getArgs().split(" ", 2);
         
-        if(args[0].equals(" "))
+        if(args[0].equals(""))
             theGuy = event.getMember();
         else if(event.getMessage().getMentionedMembers().size() > 0)
             theGuy = event.getMessage().getMentionedMembers().get(0);
