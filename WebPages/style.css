@@ -37,13 +37,27 @@ body{
   font-weight: 500;
 }
 
-/*
+
 /*BUTTON COMMANDS*/
+
+.outside-command-container{
+
+}
+
+.category-container{
+
+}
+
+
 .command-container{
   width: 100%;
   max-width: 100%;
   text-align: center;
 }
+
+
+
+
 .command-card{
   width: 40%;
   text-align: center;
