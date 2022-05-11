@@ -29,14 +29,28 @@ body{
 }
 
 #title{
-  padding-top: 5%;
+  padding-top: 1.5%;
   text-align: center;
   color:white;
-  font-size:60pt;
+  font-size: 3.0vw;
   font-family: 'Quicksand';
   font-weight: 500;
 }
 
+.cards-container {
+  display: flex;
+  margin-top: 15em;
+  margin-bottom: 15em;
+}
+
+.cards-section-two{
+  margin-right: 5em;
+  width: 30%;
+}
+
+.cards-section-two {
+  width: 30%;
+}
 
 /*BUTTON COMMANDS*/
 
@@ -48,14 +62,11 @@ body{
 
 }
 
-
 .command-container{
   width: 100%;
   max-width: 100%;
   text-align: center;
 }
-
-
 
 
 .command-card{
