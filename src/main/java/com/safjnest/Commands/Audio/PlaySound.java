@@ -13,6 +13,7 @@ import com.safjnest.Utilities.AudioPlayerSendHandler;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.SoundBoard;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 
@@ -50,14 +51,21 @@ public class PlaySound extends Command{
             event.reply("il nome idiota");
             return;
         }
-
+        File soundBoard = new File("rsc" + File.separator + "SoundBoard");
+        if(!soundBoard.exists())
+            soundBoard.mkdirs();
         //TODO fix | deletare il file vecchio ogni ps bene
-        for (File file : new java.io.File("rsc" + File.separator + "SoundBoard").listFiles())
+        for (File file : soundBoard.listFiles())
             file.delete();
 
         AwsS3 a = new AwsS3(s3Client, "thebeebox");
         S3Object sound = a.downloadFile(name, event);
-        name = "rsc" + File.separator + "SoundBoard" + File.separator + name + ".mp3";
+        String extension = SoundBoard.getExtension(name);
+        if(extension == null){
+            event.reply("il file non esiste");
+            return;
+        }
+        name = "rsc" + File.separator + "SoundBoard" + File.separator + name +"."+ extension;
         
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
@@ -112,6 +120,8 @@ public class PlaySound extends Command{
         eb.addField("Autore", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
         eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName(), true);
         String img = "mp3.png";
+        if(extension.equals("opus"))
+            img = "jelly.png";
         /*
         switch (mp.getId3v2Tag().getAlbumArtist()) {
             case "merio":img = "epria.jpg";break;case "dirix":img = "dirix.jpg";break;case "teros":img = "zucca.jpg";break;case "herox":img = "herox.jpg";break;case "bomber":img = "arcus.jpg";break;case "ilyas":img = "maluma.PNG";break;case "pyke":img = "pyke.jpg";break;case "thresh":img = "thresh.jpg";break;case "blitzcrank":img = "blitz.png";break;case "bard":img = "bard.png";break;case "nautilus":img = "nautilus.png";break;case "fiddle":img = "fid.jpg";break;case "pantanichi":img = "panta.jpg";break;case "sunyx":img = "sun.jpg";break;case "gskianto":img = "gk.png";break;case "jhin":img = "jhin.jpg";break;case "yone":img = "yone.jpg";break;case "yasuo":img = "yasuo.jpg";break;

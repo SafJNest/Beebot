@@ -41,7 +41,7 @@
     },
 
     "playsound":{
-        "alias" : ["ps", "playsos", "jelly"],
+        "alias" : ["ps", "playsos"],
         "help"  : "Il bot riproduce un suono tra quelli presenti nel database.\nBisogna essere connessi in una stanza vocale.\nNel caso il bot sia connesso in un'altra stanza si sposterà nella stessa dove è connesso l'autore del comando.",
         "category" : "Audio",
         "arguments" : "[playsound] [nome del file senza specificare il formato]"
@@ -73,6 +73,12 @@
         "help"  : "Consente di stampare le informazioni relative ad una emoji, sia animata che non.",
         "category" : "Gestione Server",
         "arguments" : "[emoji] [nomeEmoji, emoji]"
+    },
+    "anonym":{
+        "alias" : ["staropoli", "an"],
+        "help"  : "Il bot invierà un messaggio in privato all'utente richiesto in maniera anonima.\nÈ possibile inviare un messaggio ad un solo utente alla volta.",
+        "category" : "Gestione Server",
+        "arguments" : "[msg] [@user/id] [messaggio]"
     },
 
     "msg":{
@@ -228,6 +234,20 @@
         "help"  : "Restituisce tutti gli alias dei vari comandi",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
+    },
+
+    "jelly":{
+        "alias" : ["soundfx", "reminderbot", "jude", "jude southworth", "jellywx"],
+        "help"  : "Evoca il dio dei falliti",
+        "category" : "Miscellaneo",
+        "arguments" : "[nomeComando]"
+    },
+
+    "modifynickname":{
+        "alias" : ["modnick", "nick", "nickradogna"],
+        "help"  : "Cambia il nickname ad un membro della gilda",
+        "category" : "Gestione Membri",
+        "arguments" : "[nomeComando] [membro] [nuovo nick]"
     }
 
 }
