@@ -18,6 +18,7 @@ public class Bighi extends Command {
     private int maxBighi;
     
     public Bighi(int maxBighi){
+        this.maxBighi = maxBighi;
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");

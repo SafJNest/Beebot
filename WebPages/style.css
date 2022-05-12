@@ -10,7 +10,7 @@ html{
 }
 
 body{
-  background-image: linear-gradient( 110.3deg,  rgba(73,93,109,1) 4.3%, rgba(49,55,82,1) 96.7% );
+  background-image: linear-gradient( to right,  rgba(73,93,109,1) 4.3%, rgba(49,55,82,1) 96.7% );
   height: 100%;
 }
 
@@ -55,11 +55,21 @@ body{
 /*BUTTON COMMANDS*/
 
 .outside-command-container{
-
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+}
+.category-container{
+  margin: 0 auto;
 }
 
-.category-container{
-
+.category-name{
+  color: #f7f7f7;
+  font-size: 3.5em;
+  font-family: 'Quicksand';
+  font-weight: 500;
+  margin-bottom: 1em;
+  text-align: center;
 }
 
 .command-container{
@@ -68,24 +78,36 @@ body{
   text-align: center;
 }
 
+.commands-container{
+  
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+  max-width: 100%;
+  text-align: center;
+}
 
 .command-card{
-  width: 40%;
-  text-align: center;
+  padding: 2.8px;
+  align-items: center;
 }
 
 .collapsible {
   text-align: center;
-  background-color: #777;
+  background-color: rgba(119, 119, 119, 0);
   color: white;
   cursor: pointer;
   padding: 18px;
-  border: none;
+  border: 2px solid #008080;
   width: 100%;
   outline: none;
   font-size: 15px;
   border-radius: 10px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+ /* box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);*/
+}
+
+.active{
+  background-color: #c6c6c6;
 }
 
 .active, .collapsible:hover {
@@ -97,11 +119,6 @@ transition: height 2s;
   background: #c6c6c6;
   animation:  shake 0.4s;
 }
-.categories{
-  font-weight: bold;
-  color:white;
-  padding: 2%; 
-}
 .content {
   padding: 0 18px;
   display: none;
@@ -111,6 +128,8 @@ transition: height 2s;
 
 /*TABLE*/
 table{
+  margin-left: auto;
+  margin-right: auto;
   color: black;
   text-align: center;
   margin-bottom: 10%;

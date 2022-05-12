@@ -77,9 +77,9 @@ public class App extends ListenerAdapter {
             System.out.println("[main] INFO Canary mode on");
             token = "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g";
             PREFIX = "$";
-            activity = Activity.playing("Testing jellysort | " + PREFIX + "help");
-            AWSAccesKey = "AKIASJG3D4LSZMKR7L4R";
-            AWSSecretKey = "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";
+            activity = Activity.playing("taking jelly's head and slauthering it because he is a fucking bot oidozir annodam ieidocrope jelly fix the faker dashboard");
+            AWSAccesKey = "***REMOVED***";
+            AWSSecretKey = "***REMOVED***";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
