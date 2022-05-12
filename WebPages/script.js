@@ -32,6 +32,7 @@ async function loadAll() {
   for (var key in keys) {
     var category = document.createElement("div");
     var h1 = document.createElement("h1");
+    h1.className = "category-name";
     category.className = "category-container";
     let commandsContainer = document.createElement("div");
     commandsContainer.className = "commands-container";
