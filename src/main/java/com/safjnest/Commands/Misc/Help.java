@@ -38,7 +38,6 @@ public class Help extends Command {
         String command = event.getArgs();
         EmbedBuilder eb = new EmbedBuilder();
         HashMap<String, ArrayList<Command>> commands = new HashMap<>();
-
         for (Command e : event.getClient().getCommands()) {
             if(!commands.containsKey(e.getCategory().getName()))
                 commands.put(e.getCategory().getName(), new ArrayList<Command>());
@@ -46,7 +45,7 @@ public class Help extends Command {
         }
         eb.setTitle("📒INFORMAZIONI E COMANDI📒", null);
         eb.setDescription("Il prefisso corrente è: **"+event.getClient().getPrefix()+"**"
-        + ", puoi avere maggiori informazioni tramite il comando: **"+event.getClient().getPrefix()+"<nomecomando>.**");
+        + ", puoi avere maggiori informazioni tramite il comando: **"+event.getClient().getPrefix()+"help <nomecomando>.**");
         eb.setColor(new Color(255, 196, 0));
         if(command.equals("")){
             String ss = "```\n";
@@ -87,6 +86,7 @@ public class Help extends Command {
             eb.setFooter("SE L'ARGS E' NULL BASTA DIGITARE IL COMANDO, LE QUADRE INDICANO CAMPO OBBLIGATORIO E LE TONDE FACOLTATIVO", null);
         }
         eb.addField("**ALTRE INFORMAZIONI**", "Il bot è stato sviluppato da sole due persone quindi in caso di bug o problemi non esitate a contattarli.", false);
+        eb.addField("Numero comandi disponibili:", "```"+event.getClient().getCommands().size()+"```", true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
 

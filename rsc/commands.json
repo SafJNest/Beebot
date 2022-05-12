@@ -160,9 +160,9 @@
 
     "calc":{
         "alias" : ["c", "calcolatore", "calcolatrice"],
-        "help"  : "Consente di effettuare semplici operazioni matematiche tra due numeri.Addizione, sottrazione, moltiplicazione, divisione ed elevamento a potenza.\nLe funzioni presenti sono radice, seno, coseno e tangente, con le loro funzioni inverse, e la funzione esponenziale.",
+        "help"  : "Consente di effettuare semplici operazioni matematiche tra due numeri.Addizione, sottrazione, moltiplicazione, divisione ed elevamento a potenza.\nLe funzioni presenti sono radice, seno, coseno e tangente, con le loro funzioni inverse, la funzione esponenziale, modulo, ceil/floor/round, random e le varie costanti matematiche (pi, e, phi, euler, catalan).",
         "category" : "Matematica",
-        "arguments" : "[calc] [(n+n) (n-n) (n*n) (n/n) (n^n) (sqrt n) (sin n) (cos n ) (ln n) (tan n) (asin n) (acos n) (exp n)]"
+        "arguments" : "[calc] [(n+n) (n-n) (n*n) (n/n) (n^n) (sqrt n) (sin n) (cos n ) (ln n) (tan n) (asin n) (acos n) (exp n) (abs n) (ceil n) (floor n) (random) (pi) (e) (phi) (euler) (catalan)]"
     },
 
     "dac":{
@@ -209,7 +209,7 @@
     },
 
     "help":{
-        "alias" : ["command", "commands", "info"],
+        "alias" : ["command", "commands"],
         "help"  : "Consente di visualizzare l'elenco di tutti i comandi.\nSe viene usata la sintassi [help][nomeComando] si otterrà una descrizione specifica del comando richiesto.",
         "category" : "Miscellaneo",
         "arguments" : "[help](nome comando)"
@@ -248,6 +248,19 @@
         "help"  : "Cambia il nickname ad un membro della gilda",
         "category" : "Gestione Membri",
         "arguments" : "[nomeComando] [membro] [nuovo nick]"
+    },
+    "move":{
+        "alias" : ["mv", "sposta"],
+        "help"  : "Sposta un membro della gilda in un altra stanza.\nè possibile spostare più di un membro alla volta.",
+        "category" : "Gestione Membri",
+        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu)." 
+    },
+    
+    "info":{
+        "alias" : ["inf"],
+        "help"  : "Sposta un membro della gilda in un altra stanza.\nè possibile spostare più di un membro alla volta.",
+        "category" : "Gestione Membri",
+        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu)." 
     }
 
 }

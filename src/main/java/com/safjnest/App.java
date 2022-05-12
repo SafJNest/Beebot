@@ -146,6 +146,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Ban());
         builder.addCommand(new Unban());
         builder.addCommand(new Kick());
+        builder.addCommand(new Move());
         builder.addCommand(new Mute());
         builder.addCommand(new UnMute());
         builder.addCommand(new Image());
@@ -167,6 +168,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
+        builder.addCommand(new Info());
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
