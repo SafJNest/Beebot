@@ -1,50 +1,18 @@
-let lastOpen;
-
-function init() {
-  lastOpen = document.getElementsByClassName("home")[0];
-  console.log(lastOpen);
+function openSidebar() {
+  document.getElementById("main").style.marginLeft = "100pt";
+  document.getElementById("sidebar").style.width = "100pt";
+  document.getElementById("sidebar").style.display = "block";
+  document.getElementById("openNav").style.display = 'none';
 }
 
-
-function backToHome() {
-  let home = document.getElementsByClassName("home")[0];
-  if (alreadyOpen(home)) {
-    return;
-  }
-  home.style.display = "inherit";
-  lastOpen.style.display = "none";
-  lastOpen = home;
-}
-
-function backToCommands() {
-  lastOpen.style.display = "none";
-  let containerCommands =
-    document.getElementsByClassName("containerCommands")[0];
-  if (containerCommands == undefined) {
-    loadAll();
-  } else if (!alreadyOpen(containerCommands)) {
-    containerCommands.style.display = "inherit";
-    lastOpen = document.getElementsByClassName("containerCommands")[0];
-  }
-}
-
-function backToDocuments() {
-  lastOpen.style.display = "none";
-  let documents = document.getElementsByClassName("documents")[0];
-  if (!alreadyOpen(documents)) {
-    documents.style.display = "inherit";
-    lastOpen = document.getElementsByClassName("documents")[0];
-  }
-}
-
-function alreadyOpen(div) {
-  if (div.style.display != "none") {
-    return true;
-  }
-  return false;
+function closeSidebar() {
+  document.getElementById("main").style.marginLeft = "0%";
+  document.getElementById("sidebar").style.display = "none";
+  document.getElementById("openNav").style.display = "inline-block";
 }
 
 async function loadAll() {
+  console.log("erger");
   //get the file
   const response = await fetch("/rsc/commands.json");
   const aaa = await response.json();
@@ -57,24 +25,27 @@ async function loadAll() {
     }
     commands.get(json[key]["category"]).push(key);
   }
-  //create the html div
-  var containerCommands = document.createElement("div");
-  containerCommands.className = "containerCommands";
-  containerCommands.style.display = "inherit";
+  let containerCommands = document.getElementsByClassName("outside-command-container")[0];
   lastOpen = containerCommands;
-  document.body.appendChild(containerCommands);
   //create the html div for each category and iterate over categories
   let keys = Array.from(commands.keys());
   for (var key in keys) {
     var category = document.createElement("div");
     var h1 = document.createElement("h1");
-    category.className = "categories";
+    h1.className = "category-name";
+    category.className = "category-container";
+    let commandsContainer = document.createElement("div");
+    commandsContainer.className = "commands-container";
+
     h1.innerHTML = keys[key];
     category.appendChild(h1);
     containerCommands.appendChild(category);
+    category.appendChild(commandsContainer);
     //iterate over the commands of the category "key"
     //name = command's name
     commands.get(keys[key]).forEach(function (name) {
+      let commandCard = document.createElement("div");
+      commandCard.className = "command-card";
       command = json[name];
       var button = document.createElement("button");
       var content = document.createElement("div");
@@ -82,7 +53,7 @@ async function loadAll() {
       var tr = document.createElement("tr");
       button.innerHTML = name;
       button.className = "collapsible";
-      containerCommands.appendChild(button);
+      commandCard.appendChild(button);
       content.className = "content";
       content.style = "display:none";
       table.className = "table";
@@ -109,7 +80,7 @@ async function loadAll() {
       tr.appendChild(td4);
       tr.appendChild(td5);
       table.appendChild(tr);
-      containerCommands.appendChild(table);
+      commandCard.appendChild(table);
       var tr = document.createElement("tr");
       var td1 = document.createElement("td");
       var td2 = document.createElement("td");
@@ -139,7 +110,8 @@ async function loadAll() {
       tr.appendChild(td4);
       tr.appendChild(td5);
       table.appendChild(tr);
-      containerCommands.appendChild(content);
+      commandCard.appendChild(content);
+      commandsContainer.appendChild(commandCard)
     });
   }
   setListenerCollapsible();

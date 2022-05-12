@@ -20,6 +20,7 @@ public class Prime extends Command {
     private int maxPrime;
 
     public Prime(int maxPrime){
+        this.maxPrime = maxPrime;
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");

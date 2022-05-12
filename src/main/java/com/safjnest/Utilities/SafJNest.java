@@ -111,6 +111,10 @@ public class SafJNest extends Thread {
         return (x > 0) ? x : -x;
     }
 
+    public static double abs(double x) {
+        return (x > 0) ? x : -x;
+    }
+
     public static BigInteger randomBighi(int numBits) {
         if (numBits < 1)
             throw new IllegalArgumentException("SafJNest doesnt like 0 or negative numbers");

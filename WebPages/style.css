@@ -1,66 +1,123 @@
-body{
-    font-family: 'Quicksand', sans-serif;
-    background-image: linear-gradient( 136deg, rgba(0,0,0,0.65) 12.9%, rgba(0,0,0,1) 145.4% );
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
-    padding-top: 1%;
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&family=Quicksand:wght@600;700&display=swap');
 
+:root {
+  --main-bg-color: brown;
+}
+
+html{
+  height: 100%;
+}
+
+body{
+  background-image: linear-gradient( to right,  rgba(73,93,109,1) 4.3%, rgba(49,55,82,1) 96.7% );
+  height: 100%;
+}
+
+#sidebar{
+  background-color: #a8a7a7;
+  color:white;
+  height: 100%;
+  font-family: quicksand;
+  font-weight: 500;
+  font-size: 12pt;
 }
 
 /*HOMEPAGE*/
 .home{
-  
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  position: relative;
-  margin-left: 20%;
-  width:100%;
   height: 100%;
 }
 
+#title{
+  padding-top: 1.5%;
+  text-align: center;
+  color:white;
+  font-size: 3.0vw;
+  font-family: 'Quicksand';
+  font-weight: 500;
+}
+
+.cards-container {
+  display: flex;
+  margin-top: 15em;
+  margin-bottom: 15em;
+}
+
+.cards-section-two{
+  margin-right: 5em;
+  width: 30%;
+}
+
+.cards-section-two {
+  width: 30%;
+}
+
 /*BUTTON COMMANDS*/
+
+.outside-command-container{
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+}
+.category-container{
+  margin: 0 auto;
+}
+
+.category-name{
+  color: #f7f7f7;
+  font-size: 3.5em;
+  font-family: 'Quicksand';
+  font-weight: 500;
+  margin-bottom: 1em;
+  text-align: center;
+}
+
+.command-container{
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+
+.commands-container{
+  
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+  max-width: 100%;
+  text-align: center;
+}
+
+.command-card{
+  padding: 2.8px;
+  align-items: center;
+}
+
 .collapsible {
-  background-color: #777;
+  text-align: center;
+  background-color: rgba(119, 119, 119, 0);
   color: white;
   cursor: pointer;
   padding: 18px;
-  width: 85%;
-  border: none;
-  text-align: left;
+  border: 2px solid #008080;
+  width: 100%;
   outline: none;
   font-size: 15px;
   border-radius: 10px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+ /* box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);*/
+}
 
+.active{
+  background-color: #c6c6c6;
 }
 
 .active, .collapsible:hover {
-  transition: height 2s;
+transition: height 2s;
 }
 .collapsible:hover{
-    border-radius: 15px 15px 15px 15px;
-    border-collapse: collapse;
-    background: #c6c6c6;
-    animation:  shake 0.4s;
-}
-.categories{
-    font-weight: bold;
-    color:white;
-    padding: 2%; 
-}
-.containerCommands{
-    display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  position: relative;
-  margin-left: 30%;
-  max-width:80%;
+  border-radius: 15px 15px 15px 15px;
+  border-collapse: collapse;
+  background: #c6c6c6;
+  animation:  shake 0.4s;
 }
 .content {
   padding: 0 18px;
@@ -68,12 +125,26 @@ body{
   overflow: hidden;
   background-color: #f1f1f1;
 }
+
 /*TABLE*/
 table{
-  width: 85%;
-  max-width: 85%;
+  margin-left: auto;
+  margin-right: auto;
+  color: black;
+  text-align: center;
+  margin-bottom: 10%;
+  font-family: quicksand;
+  font-weight: 500;
+  font-size: 12pt;
+
 }
- .top{
+tr, td{
+  margin: 0 auto;
+  width: 100%;
+  text-align: center;
+
+}
+.top{
   font-weight: bold;
   background-color: #008080;
 }
@@ -82,116 +153,45 @@ table{
   background-color:#fff;
 }
 @keyframes shake{
-    0%{
-        transform: translateX(0)
-    }
-    25%{
-      transform: translateX(25px);
-    }
-    
-    50%{
-        transform: translateX(-25px);
-    }
-    100%{
-        transform: translateX(0px);
-    }
+  0%{
+      transform: translateX(0)
+  }
+  25%{
+    transform: translateX(25px);
+  }
+  
+  50%{
+      transform: translateX(-25px);
+  }
+  100%{
+      transform: translateX(0px);
+  }
 }
 .title{
-    color:white;
-}
-
-/*SIDEBAR*/
-.sidebar{
-    display: flex;
-    flex-direction: column;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-}
-.contentSideBar{
-    background-color: #008080;
-    color:white;
-    display: flex;
-    flex-direction: column;
-    font-weight: bold;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-    width: 20%;
-    max-width: 30%;
-    height: 100%;
-    position: fixed;
-    top:0px; 
-}
-.sidebarBtt{
-  background-color: #008080;
-  color: white;
-  cursor: pointer;
-  height: 96px;
-  width: 100%;
-  border: none;
-  text-align: left;
-  outline: none;
-  font-size: 15px;
-  /*border-radius: 10px 0px 0px 10px;*/
-  /*box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);*/
-}
-.sidebarBtt:hover{
-    background-color: #c6c6c6;
-   /* border-radius: 15px 0px 0px 15px;*/
-    border-collapse: collapse;
+  color:white;
 }
 
 
 /*Documents*/
 .documents{  
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-left: 25%;
-  gap: 10%;
-  width:80%;
-  position: fixed;
-  height: 100%;
+margin-left: 20%;
+gap: 10%; 
+width:80%;
+position: fixed;
+height: 100%;
 }
 
 .contentButton{
-  background-color:rgba(0, 204, 255, 0.984);
-  color:white;
-  display: flex;
-  flex-direction: column;
-  border-radius: 20px;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  width: 20%;
-  max-width: 100%;
-  height: 40%;
-  position: relative;
-  border: none;
-  text-align: center;
-
-}
-
-.material-icons {
-  font-family: 'Material Icons';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 10px;  /* Preferred icon size */
-  display: inline-block;
-  line-height: 1;
-  text-transform: none;
-  letter-spacing: normal;
-  word-wrap: normal;
-  white-space: nowrap;
-  direction: ltr;
-
-  /* Support for all WebKit browsers. */
-  -webkit-font-smoothing: antialiased;
-  /* Support for Safari and Chrome. */
-  text-rendering: optimizeLegibility;
-
-  /* Support for Firefox. */
-  -moz-osx-font-smoothing: grayscale;
-
-  /* Support for IE. */
-  font-feature-settings: 'liga';
+background-color:rgba(0, 204, 255, 0.984);
+color:white;
+display: flex;
+flex-direction: column;
+border-radius: 20px;
+box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+width: 20%;
+max-width: 100%;
+height: 40%;
+position: relative;
+border: none;
+text-align: center;
 }

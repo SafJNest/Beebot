@@ -27,7 +27,7 @@ public class AwsS3 {
     }
     
     public void initialize() {
-        
+        //TODO fucking dothis
     }
 
     /**
@@ -64,6 +64,7 @@ public class AwsS3 {
     }
 
     public S3Object downloadFile(String fileName, CommandEvent event) {
+    
         String prefix = getPrefix(event);
         try {
             ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
@@ -80,12 +81,10 @@ public class AwsS3 {
             }
             listObjectsRequest.setMarker(objectListing.getNextMarker());
         } while (objectListing.isTruncated());
-            System.out.println("Downloading an object");
             S3Object fullObject = s3Client.getObject(
                 new GetObjectRequest("thebeebox", prefix));
-            System.out.println("Content-Type: " + fullObject.getObjectMetadata().getContentType());
             S3ObjectInputStream s3is = fullObject.getObjectContent();
-            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + ".mp3"));
+            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + "." +fullObject.getObjectMetadata().getUserMetaDataOf("format")));
             s3is.close();
             return fullObject;
         } catch (AmazonClientException | IOException exception) {

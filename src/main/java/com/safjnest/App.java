@@ -75,11 +75,11 @@ public class App extends ListenerAdapter {
         }
         if(isCanary){
             System.out.println("[main] INFO Canary mode on");
-            token = "OTM5ODc2ODE4NDY1NDg4OTI2.Yf_Ofw.1Ql5INVXqLSPXYG7OxRaCD5A8bU";
+            token = "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g";
             PREFIX = "$";
-            activity = Activity.playing("Testing quantum bogosort | " + PREFIX + "help");
-            AWSAccesKey = "AKIASJG3D4LSZMKR7L4R";
-            AWSSecretKey = "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";
+            activity = Activity.playing("taking jelly's head and slauthering it because he is a fucking bot oidozir annodam ieidocrope jelly fix the faker dashboard");
+            AWSAccesKey = "AKIASJG3D4LS4UT7VPX4";
+            AWSSecretKey = "9RlRQCIJlCCYTLdg/Y9DiDHUQXjt6/6fhzohM/su";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
@@ -134,6 +134,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Upload(s3Client));
 
         //Manage Guild
+        builder.addCommand(new Anonym());
         builder.addCommand(new ChannelInfo());
         builder.addCommand(new Clear());
         builder.addCommand(new Msg());
@@ -149,6 +150,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new UnMute());
         builder.addCommand(new Image());
         builder.addCommand(new Permissions());
+        builder.addCommand(new ModifyNickname());
 
         //Math
         builder.addCommand(new Bighi(maxBighi));
@@ -164,10 +166,10 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Help());
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
+        builder.addCommand(new Jelly());
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
-        System.out.println("Operativo e pronto ad outplayare jelly");
         
         tierOneLink.put("QZayYolcq-g", "MERIO EPRIA DUE ZERO DUE ZERO CAMERETTA EEEEEEEEEEEEEPPPPPPPPPPPPPPPPPPPRRRRRRRRRRRRRRRRRRIIIIIIIIIIIIIIIIIIAAAAAAAAAAAA");
         tierOneLink.put("IaudNxuNtso", "MERIO EPRIA QUI COME UN COGLIONE A SFOGARSI I SENTIMINETI POKLVEWRE EEEEEEEEEEEPRIAAAAAAA LA LUCE DEL MEEEEEEERIO CON LE SUE RIME DA CAZZARO NE REPPER NE METALLARO NON È CHIARO LO STROZZINOIFHUWSHGFEIU0GHS0URGH");
@@ -177,3 +179,4 @@ public class App extends ListenerAdapter {
         tierOneLink.put("zvNfGg5vKTs", "POVERO GABBIANOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO NON HAI VOGLIUA DI VOLARE SOPRA UNA SCOGLUIERAAAAAAAAAAAAAAAAAAAA HAI PERDUOT LA COMPAGNAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NON TIO GF8REWHUG A VIDEF TI CAPISC JAAAAAA PEKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK");
     }
 }
+    

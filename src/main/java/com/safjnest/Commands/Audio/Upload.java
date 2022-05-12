@@ -97,6 +97,7 @@ class FileListener extends ListenerAdapter {
                         metadata.addUserMetadata("name", name);
                         metadata.addUserMetadata("guild", e.getGuild().getId());
                         metadata.addUserMetadata("author", e.getAuthor().getId());
+                        metadata.addUserMetadata("format", e.getMessage().getAttachments().get(0).getFileExtension());
                         request.setMetadata(metadata);
                         s3Client.putObject(request);
                     }catch(AmazonClientException ace){
