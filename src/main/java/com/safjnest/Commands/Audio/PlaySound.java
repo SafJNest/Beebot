@@ -4,7 +4,6 @@ package com.safjnest.Commands.Audio;
 import java.awt.Color;
 import java.io.File;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -32,10 +31,10 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 
 public class PlaySound extends Command{
-    AmazonS3 s3Client;
+    AwsS3 s3Client;
     String name;
 
-    public PlaySound(AmazonS3 s3Client){
+    public PlaySound(AwsS3 s3Client){
         this.name = this.getClass().getSimpleName();;
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -58,8 +57,7 @@ public class PlaySound extends Command{
         for (File file : soundBoard.listFiles())
             file.delete();
 
-        AwsS3 a = new AwsS3(s3Client, "thebeebox");
-        S3Object sound = a.downloadFile(name, event);
+        S3Object sound = s3Client.downloadFile(name, event);
         String extension = SoundBoard.getExtension(name);
         if(extension == null){
             event.reply("il file non esiste");
