@@ -1,14 +1,14 @@
 {
     "connect":{
         "alias" : ["join", "comeherebroda"],
-        "help"  : "Connette il bot",
+        "help"  : "Connette il bot alla stanza vocale.",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
 
     "customizesound":{
         "alias" : ["custom", "cs", "personalize"],
-        "help"  : "Rimuove il suono dal database.",
+        "help"  : "WIP",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
@@ -22,14 +22,14 @@
 
     "disconnect":{
         "alias" : ["bye", "levatidalcazzo", "chiama"],
-        "help"  : "Disconnette il bot",
+        "help"  : "Disconnette il bot dalla stanza vocale.",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
 
     "list":{
         "alias" : ["listina", "listona", "listoide"],
-        "help"  : "Mostra la lista dei souni in questo server",
+        "help"  : "Mostra la lista dei souni in questo server.",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
@@ -43,14 +43,14 @@
 
     "playsound":{
         "alias" : ["ps", "playsos"],
-        "help"  : "Riproduce un suono dal nome",
+        "help"  : "Riproduce un suono dal nome.",
         "category" : "Audio",
         "arguments" : "[playsound] [nome del suono]"
     },
 
     "upload":{
         "alias" : ["up", "add"],
-        "help"  :"Carica un file nel database",
+        "help"  :"Carica un file nel database.",
         "category" : "Audio",
         "arguments" : "[upload] [nome del suono]"
     },
@@ -64,7 +64,7 @@
 
     "clear":{
         "alias" : ["cancella"],
-        "help"  : "Cancella messaggi in un canale testuale (max 99)",
+        "help"  : "Cancella messaggi in un canale testuale (max 99).",
         "category" : "Gestione Server",
         "arguments" : "[clear] [n messaggi]"
     },
@@ -98,7 +98,7 @@
 
     "userinfo":{
         "alias" : ["usinf", "uinfo"],
-        "help"  : "Mostra le informazioni di uno user",
+        "help"  : "Mostra le informazioni di un utente.",
         "category" : "Gestione Server",
         "arguments" : "[userinfo] [@user]"
     },
@@ -147,14 +147,14 @@
 
     "unmute":{
         "alias" : ["listentothesound"],
-        "help"  : "Smuta l'utente.",
+        "help"  : "Smuta un utente.",
         "category" : "Gestione Membri",
         "arguments" : "[unmute] [@user]"
     },
 
     "bighi":{
         "alias" : ["random"],
-        "help"  : "Genera un numero random a n bit",
+        "help"  : "Genera un numero random a n bit.",
         "category" : "Matematica",
         "arguments" : "[bighi] [numero]"
     },
@@ -189,14 +189,14 @@
 
     "prime":{
         "alias" : ["imbimbo","randomprime"],
-        "help"  : "Genera un numero primo a n bit",
+        "help"  : "Genera un numero primo a n bit.",
         "category" : "Matematica",
         "arguments" : "[prime] [nbit]"
     },
 
     "aliases":{
         "alias" : ["alias", "ilyas"],
-        "help"  : "Mostra gli alias dei comandi",
+        "help"  : "Mostra gli alias dei comandi.",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
@@ -232,28 +232,28 @@
 
     "rawmessage":{
         "alias" : ["rawmsg", "rawmessage"],
-        "help"  : "Restituisce un messaggio",
+        "help"  : "Restituisce un messaggio.",
         "category" : "Miscellaneo",
-        "arguments" : "[nomeComando]"
+        "arguments" : "[nomeComando][id msg]"
     },
 
     "jelly":{
         "alias" : ["soundfx", "reminderbot", "jude", "jude southworth", "jellywx"],
-        "help"  : "Evoca il dio dei falliti",
+        "help"  : "Evoca il dio dei falliti.",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
     "modifynickname":{
         "alias" : ["modnick", "nick", "nickradogna"],
-        "help"  : "Cambia il nickname ad un membro della gilda",
+        "help"  : "Cambia il nickname ad un membro del server.",
         "category" : "Gestione Membri",
         "arguments" : "[nomeComando] [membro] [nuovo nick]"
     },
 
     "vandalizeserver":{
         "alias" : ["vandalize", "vanda"],
-        "help"  : "Vandalizza un server, usa con cura",
+        "help"  : "Vandalizza un server, usa con cura.",
         "category" : "Pericolosi",
         "arguments" : "[nomeComando] [server]"
     }
