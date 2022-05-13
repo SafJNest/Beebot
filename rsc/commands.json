@@ -256,5 +256,12 @@
         "help"  : "Vandalizza un server, usa con cura.",
         "category" : "Pericolosi",
         "arguments" : "[nomeComando] [server]"
+    },
+
+    "invitebot":{
+        "alias" : ["invite", "inbot"],
+        "help"  : "Crea un link di invito del server.",
+        "category" : "Gestione Server",
+        "arguments" : "[nomeComando]"
     }
 }

@@ -119,6 +119,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new ServerInfo());
         builder.addCommand(new UserInfo());
         builder.addCommand(new EmojiInfo());
+        builder.addCommand(new InviteBot());
 
         //Manage Member
         builder.addCommand(new Ban());
