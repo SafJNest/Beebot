@@ -44,6 +44,8 @@ public class Move extends Command{
         }else if(event.getMessage().getMentionedUsers().size() > 0){
             theGuy = event.getMessage().getMentionedUsers().get(0);
             flag = false;
+        }else if(!event.getArgs().equals(" ")){
+            theGuys = event.getGuild().getVoiceChannelById(args[0]).getMembers();  
         }else{
             event.reply("Non ho capito a chi vuoi spostare.");
             return;
@@ -73,21 +75,19 @@ public class Move extends Command{
                 event.reply("Non ho trovato il canale.");
                 return;
             }else if(channel.getId().equals(event.getMember().getVoiceState().getChannel().getId())){
-                event.reply("Sei già in quel canale odizor");
+                event.reply("Sei già in quel canale odizor annodam.");
                 return;
             }
         }
         if(theGuy == null){
             for(Member member : theGuys){
                 event.getGuild().moveVoiceMember(member, channel).queue();
-                event.reply(member.getAsMention() + " spostato in: " + channel.getName());
             }
+            event.reply("Spostati "+theGuys.size() +" utenti in:        "+ channel.getName());
             return;
-        }else{
-            event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), channel).queue();
-            event.reply(theGuy.getAsMention() + " spostato in: " + channel.getName());
         }
-        event.reply("che oidozir e' successo annodam");
+        event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), channel).queue();
+        event.reply(theGuy.getAsMention() + " spostato in: " + channel.getName());
             
 
     }

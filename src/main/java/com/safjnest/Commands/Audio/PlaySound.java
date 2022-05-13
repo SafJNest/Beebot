@@ -111,6 +111,7 @@ public class PlaySound extends Command{
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
+        System.out.println(player.getPlayingTrack().getInfo().length);
         eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
         eb.setFooter("*Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)", null);

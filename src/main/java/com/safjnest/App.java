@@ -149,7 +149,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Kick());
         builder.addCommand(new Move());
         builder.addCommand(new Mute());
-        builder.addCommand(new UnMute());
+        builder.addCommand(new UnMute());   
         builder.addCommand(new Image());
         builder.addCommand(new Permissions());
         builder.addCommand(new ModifyNickname());

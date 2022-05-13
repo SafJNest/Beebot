@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 
@@ -101,12 +102,11 @@ public class UserInfo extends Command{
 
         eb.addField("Entrato nel server il (dd/mm/yyyy)", "```" 
                     + dtf.format(event.getGuild().getMember(theGuy).getTimeJoined()) 
-                    + " (" + event.getGuild().getMember(theGuy).getTimeJoined().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)"
+                    + DateHandler.formatDate(event.getGuild().getMember(theGuy).getTimeJoined())
                     + "```", false);
 
-        eb.addField("Creato l'account il (dd/mm/yyyy)", "```"
-                    + dtf.format(theGuy.getTimeCreated()) 
-                    + " (" + theGuy.getTimeCreated().until(OffsetDateTime.now(), ChronoUnit.DAYS) + " giorni fa)"
+        eb.addField("Creato l'account il (dd/mm/yyyy)", "```" 
+                    + DateHandler.formatDate(theGuy.getTimeCreated())
                     + "```", false);
         
         event.reply(eb.build());

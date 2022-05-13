@@ -116,7 +116,8 @@ transition: height 2s;
 .collapsible:hover{
   border-radius: 15px 15px 15px 15px;
   border-collapse: collapse;
-  background: #c6c6c6;
+  
+  border: 2.4px solid #a5e6e6;
   animation:  shake 0.4s;
 }
 .content {
