@@ -33,10 +33,10 @@ import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 
 public class PlaySound extends Command{
     AmazonS3 s3Client;
-    String name;
+    String nameFile;
 
     public PlaySound(AmazonS3 s3Client){
-        this.name = this.getClass().getSimpleName();;
+        this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
         this.cooldown = new JSONReader().getCooldown(this.name);
@@ -47,7 +47,7 @@ public class PlaySound extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
-        if((name = event.getArgs()) == ""){
+        if((nameFile = event.getArgs()) == ""){
             event.reply("il nome idiota");
             return;
         }
@@ -59,13 +59,13 @@ public class PlaySound extends Command{
             file.delete();
 
         AwsS3 a = new AwsS3(s3Client, "thebeebox");
-        S3Object sound = a.downloadFile(name, event);
-        String extension = SoundBoard.getExtension(name);
+        S3Object sound = a.downloadFile(nameFile, event);
+        String extension = SoundBoard.getExtension(nameFile);
         if(extension == null){
             event.reply("il file non esiste");
             return;
         }
-        name = "rsc" + File.separator + "SoundBoard" + File.separator + name +"."+ extension;
+        nameFile = "rsc" + File.separator + "SoundBoard" + File.separator + nameFile +"."+ extension;
         
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
@@ -78,7 +78,7 @@ public class PlaySound extends Command{
         TrackScheduler trackScheduler = new TrackScheduler(player);
         player.addListener(trackScheduler);
         playerManager.registerSourceManager(new LocalAudioSourceManager());
-        playerManager.loadItem(name, new AudioLoadResultHandler() {
+        playerManager.loadItem(nameFile, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
                 trackScheduler.addQueue(track);

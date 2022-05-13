@@ -57,15 +57,16 @@ public class Help extends Command {
                 eb.addField(k, ss, true);
                 ss = "```\n";
             }
+            eb.addField("Numero comandi disponibili:", "```"+event.getClient().getCommands().size()+"```", false);
             eb.setFooter("Il bot è sempre in costante aggiornamento ;D", null);
         }else{
             Command e = null;
             for(String k : commands.keySet()){
                 for(Command c : commands.get(k)){
-                   if(c.getName().equalsIgnoreCase(command) || Arrays.asList(c.getAliases()).contains(command) ){
-                       e = c;
-                       break;
-                   }
+                    if(c.getName().equalsIgnoreCase(command) || Arrays.asList(c.getAliases()).contains(command) ){
+                        e = c;
+                        break;
+                    }
                 }
             }
             eb.setDescription("**COMANDO " + e.getName().toUpperCase() + "**");
@@ -86,7 +87,6 @@ public class Help extends Command {
             eb.setFooter("SE L'ARGS E' NULL BASTA DIGITARE IL COMANDO, LE QUADRE INDICANO CAMPO OBBLIGATORIO E LE TONDE FACOLTATIVO", null);
         }
         eb.addField("**ALTRE INFORMAZIONI**", "Il bot è stato sviluppato da sole due persone quindi in caso di bug o problemi non esitate a contattarli.", false);
-        eb.addField("Numero comandi disponibili:", "```"+event.getClient().getCommands().size()+"```", true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
 

@@ -4,6 +4,8 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
 
+import net.dv8tion.jda.api.entities.User;
+
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -23,6 +25,15 @@ public class Disconnect extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
+        User theGuy = null;
+        if(event.getMessage().getMentionedMembers().size() == 0){
+            event.reply("Non hai menzionato nessuno");
+            return;
+        }else{
+            theGuy = event.getMessage().getMentionedMembers().get(0).getUser();
+            //disconnect a user
+            event.getGuild().kickVoiceMember(event.getGuild().getMember(theGuy)).queue();
+        }
 		event.getGuild().getAudioManager().closeAudioConnection();
 	}
     
