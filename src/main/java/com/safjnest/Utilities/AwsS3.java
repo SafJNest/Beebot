@@ -93,4 +93,34 @@ public class AwsS3 {
         }
     }
 
+    public S3Object downloadFile(String fileName, CommandEvent event, String newFileName) {
+    
+        String prefix = getPrefix(event);
+        try {
+            ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+            .withBucketName(bucket)
+            .withPrefix(prefix);
+            ObjectListing objectListing;
+            do {
+                objectListing = s3Client.listObjects(listObjectsRequest);
+                for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                    if(objectSummary.getKey().split("/")[2].equalsIgnoreCase(fileName)){
+                        prefix = objectSummary.getKey();
+                        break;
+                    }
+            }
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+        } while (objectListing.isTruncated());
+            S3Object fullObject = s3Client.getObject(
+                new GetObjectRequest("thebeebox", prefix));
+            S3ObjectInputStream s3is = fullObject.getObjectContent();
+            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + newFileName + "." +fullObject.getObjectMetadata().getUserMetaDataOf("format")));
+            s3is.close();
+            return fullObject;
+        } catch (AmazonClientException | IOException exception) {
+            exception.printStackTrace();
+            return null;
+        }
+    }
+
 }

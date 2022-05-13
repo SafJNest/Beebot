@@ -6,12 +6,6 @@
         "arguments" : "[nomeComando]"
     },
 
-    "customizesound":{
-        "alias" : ["custom", "cs", "personalize"],
-        "help"  : "Il bot rimuove il suono dal database.",
-        "category" : "Audio",
-        "arguments" : "[nomeComando]"
-    },
     "deletesound":{
         "alias" : ["delete", "ds", "forget"],
         "help"  : "Il bot rimuove il suono dal database.\nSe non sei l'autore del suono non potrai eliminarlo.",
@@ -21,9 +15,16 @@
 
     "disconnect":{
         "alias" : ["bye", "levatidalcazzo", "chiama"],
-        "help"  : "Il bot si disconnette dal canale vocale in cui è attualmente connesso.\nÈ possibile disconnettere il bot solo se si è connessi nella sua stessa stanza(serve per non dare fastidio).",
+        "help"  : "Il bot disconnette un utente dal canale vocale in cui si trova.\nSe non si specifica nessuno verrà disconnesso il bot.\nÈ possibile disconnettere il bot solo se si è connessi nella sua stessa stanza(serve per non dare fastidio).",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
+    },
+
+    "downloadsound":{
+        "alias" : ["dl", "download"],
+        "help"  : "Il bot scarica il suono dal database e lo invia al canale vocale.",
+        "category" : "Audio",
+        "arguments" : "[nomeComando] [nomeSuono]"
     },
 
     "list":{
@@ -253,7 +254,7 @@
         "alias" : ["mv", "sposta"],
         "help"  : "Sposta un membro della gilda in un altra stanza.\nè possibile spostare più di un membro alla volta.",
         "category" : "Gestione Membri",
-        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu)." 
+        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu) | (membro) (afk)." 
     },
     
     "info":{
