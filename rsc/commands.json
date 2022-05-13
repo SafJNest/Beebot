@@ -248,6 +248,13 @@
         "help"  : "Cambia il nickname ad un membro della gilda",
         "category" : "Gestione Membri",
         "arguments" : "[nomeComando] [membro] [nuovo nick]"
+    },
+
+    "vandalizeserver":{
+        "alias" : ["vandalize", "vanda"],
+        "help"  : "Vandalizza un server, usa con cura",
+        "category" : "Pericolosi",
+        "arguments" : "[nomeComando] [server]"
     }
 
 }

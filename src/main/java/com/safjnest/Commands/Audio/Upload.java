@@ -8,6 +8,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -21,10 +22,10 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
  * @since 1.2.5
  */
 public class Upload extends Command{
-    private AmazonS3 s3Client;
+    private AwsS3 s3Client;
     private String fileName;
     
-    public Upload(AmazonS3 s3Client){
+    public Upload(AwsS3 s3Client){
         this.name = this.getClass().getSimpleName();;
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -42,7 +43,7 @@ public class Upload extends Command{
         }
 
         event.reply("operativo e pronto a listenare");
-        FileListener fileListener = new FileListener(event, fileName, event.getChannel(), s3Client);
+        FileListener fileListener = new FileListener(event, fileName, event.getChannel(), s3Client.getS3Client());
         event.getJDA().addEventListener(fileListener);
 	}
 }

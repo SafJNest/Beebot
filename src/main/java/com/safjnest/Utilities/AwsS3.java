@@ -6,7 +6,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.SdkClientException;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -18,16 +24,38 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import org.apache.commons.io.FileUtils;
 
 public class AwsS3 {
-    private AmazonS3 s3Client;
+    private AWSCredentials credentials;
     private String bucket;
+    private AmazonS3 s3Client;
 
-    public AwsS3(AmazonS3 s3Client, String bucket) {
-        this.s3Client = s3Client;
+    public AwsS3(AWSCredentials credentials, String bucket) {
+        this.credentials = credentials;
         this.bucket = bucket;
     }
     
     public void initialize() {
-        //TODO fucking dothis
+        ClientConfiguration clientConfiguration = new ClientConfiguration();
+        clientConfiguration.setSignerOverride("AWSS3V4SignerType");
+
+        s3Client = AmazonS3ClientBuilder
+            .standard()
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("s3.us-east-1.amazonaws.com", "us-east-1"))
+            .withPathStyleAccessEnabled(true)
+            .withClientConfiguration(clientConfiguration)
+            .withCredentials(new AWSStaticCredentialsProvider(credentials))
+            .build();
+
+        try {
+            s3Client.doesBucketExistV2(bucket);
+        } catch (SdkClientException e) {
+            e.printStackTrace();
+            throw e;
+        }
+        System.out.println("[AWS] INFO Connection Successful!");
+    }
+
+    public AmazonS3 getS3Client() {
+        return s3Client;
     }
 
     /**

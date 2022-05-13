@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.awt.Color;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.AwsS3;
@@ -22,9 +21,9 @@ import net.dv8tion.jda.api.entities.MessageChannel;
  * @since 1.1
  */
 public class List extends Command {
-    private AmazonS3 s3Client;
+    private AwsS3 s3Client;
 
-    public List(AmazonS3 s3Client){
+    public List(AwsS3 s3Client){
         this.name = this.getClass().getSimpleName();;
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -36,8 +35,7 @@ public class List extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        AwsS3 s3 = new AwsS3(s3Client, "thebeebox");
-        HashMap<String, ArrayList<String>> alpha = s3.listObjects(event.getGuild().getId());
+        HashMap<String, ArrayList<String>> alpha = s3Client.listObjects(event.getGuild().getId());
         Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
         sortedMap.putAll(alpha);
         MessageChannel channel = event.getChannel();

@@ -10,13 +10,16 @@ import java.util.HashMap;
 
 import javax.security.auth.login.LoginException;
 
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
 import com.safjnest.Commands.Misc.*;
+import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
+import com.safjnest.Commands.Dangerous.VandalizeServer;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 
@@ -28,15 +31,6 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
-
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 
 /**
  * Main class of the bot.
@@ -58,6 +52,7 @@ public class App extends ListenerAdapter {
 
     private static String AWSAccesKey;
     private static String AWSSecretKey;
+    private static String bucket = "thebeebox";
 
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
@@ -77,7 +72,7 @@ public class App extends ListenerAdapter {
             System.out.println("[main] INFO Canary mode on");
             token = "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g";
             PREFIX = "$";
-            activity = Activity.playing("taking jelly's head and slauthering it because he is a fucking bot oidozir annodam ieidocrope jelly fix the faker dashboard");
+            activity = Activity.playing("taking sanseverino's head and slauthering it because he is a fucking bot oidozir annodam ieidocrope lorenzo fix the faker");
             AWSAccesKey = "AKIASJG3D4LS4UT7VPX4";
             AWSSecretKey = "9RlRQCIJlCCYTLdg/Y9DiDHUQXjt6/6fhzohM/su";
         }
@@ -90,25 +85,8 @@ public class App extends ListenerAdapter {
             AWSSecretKey = args[3];
         }
 
-        AWSCredentials credentials = new BasicAWSCredentials(AWSAccesKey, AWSSecretKey);
-        ClientConfiguration clientConfiguration = new ClientConfiguration();
-        clientConfiguration.setSignerOverride("AWSS3V4SignerType");
-
-        AmazonS3 s3Client = AmazonS3ClientBuilder
-            .standard()
-            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("s3.us-east-1.amazonaws.com", "us-east-1"))
-            .withPathStyleAccessEnabled(true)
-            .withClientConfiguration(clientConfiguration)
-            .withCredentials(new AWSStaticCredentialsProvider(credentials))
-            .build();
-
-        try {
-            s3Client.doesBucketExistV2("thebeebox");
-        } catch (SdkClientException e) {
-            e.printStackTrace();
-            return;
-        }
-        System.out.println("[AWS] INFO Connection Successful!");
+        AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
+        s3Client.initialize();
         
         jda = JDABuilder
             .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
@@ -159,6 +137,10 @@ public class App extends ListenerAdapter {
         builder.addCommand(new FastestRoot());
         builder.addCommand(new Calc());
         builder.addCommand(new Dice());
+
+        //Dangerous
+        builder.addCommand(new VandalizeServer());
+
         //Misc
         builder.addCommand(new Ping());
         builder.addCommand(new BugsNotifier());
