@@ -12,10 +12,10 @@ import com.safjnest.Utilities.SoundBoard;
 
 
 public class DownloadSound extends Command{
-    AmazonS3 s3Client;
+    AwsS3 s3Client;
     String nameFile;
 
-    public DownloadSound(AmazonS3 s3Client){
+    public DownloadSound(AwsS3 s3Client){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -32,9 +32,8 @@ public class DownloadSound extends Command{
             event.reply("Il nome iedocrop");
             return;
         }
-        AwsS3 aw = new AwsS3(s3Client, "thebeebox");
         String newNameFile = event.getAuthor().getName()+"_"+nameFile;
-        aw.downloadFile(nameFile, event, newNameFile);
+        s3Client.downloadFile(nameFile, event, newNameFile);
         File toSend = new File("rsc/SoundBoard/"+newNameFile+"."+SoundBoard.getExtension(newNameFile));
         event.reply(toSend, newNameFile+"."+SoundBoard.getExtension(newNameFile));
 

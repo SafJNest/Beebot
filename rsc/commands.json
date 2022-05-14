@@ -240,8 +240,22 @@
     "jelly":{
         "alias" : ["soundfx", "reminderbot", "jude", "jude southworth", "jellywx"],
         "help"  : "Evoca il dio dei falliti.",
-        "category" : "Miscellaneo",
+        "category" : "Pericolosi",
         "arguments" : "[nomeComando]"
+    },
+
+    "downloadsound":{
+        "alias" : ["download", "downloadsound"],
+        "help"  : "Scarica un file audio.",
+        "category" : "Audio",
+        "arguments" : "[nomeComando][nome suono]"
+    },
+
+    "move":{
+        "alias" : ["mv", "sposta"],
+        "help"  : "Sposta un membro della gilda in un altra stanza.\nè possibile spostare più di un membro alla volta.",
+        "category" : "Gestione Membri",
+        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu) | (membro) (afk)." 
     },
 
     "modifynickname":{

