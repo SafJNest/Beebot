@@ -2,6 +2,7 @@ c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Ma
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\SoundBoard.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Ban.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\Ping.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Dangerous\VandalizeServer.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Kick.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Math\Bighi.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Audio\List.java
@@ -31,6 +32,7 @@ c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Mi
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\FileListener.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\UserInfo.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\UnMute.java
+c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\InviteBot.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\Msg.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageGuild\ChannelInfo.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\AudioPlayerSendHandler.java
@@ -44,7 +46,6 @@ c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\A
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Image.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\BugsNotifier.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Utilities\PermissionHandler.java
-c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\Info.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Permissions.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\ManageMembers\Unban.java
 c:\Users\eprot\Documents\GitHub\TheBeeBox\src\main\java\com\safjnest\Commands\Misc\Jelly.java

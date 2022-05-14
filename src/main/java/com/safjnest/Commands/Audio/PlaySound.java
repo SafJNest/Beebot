@@ -3,6 +3,8 @@ package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
 import java.io.File;
+import java.io.IOException;
+import java.util.Locale;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
@@ -16,6 +18,8 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.SoundBoard;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
+import org.gagravarr.opus.OpusFile;
+import org.gagravarr.opus.OpusStatistics;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -32,10 +36,10 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 
 public class PlaySound extends Command{
-    AmazonS3 s3Client;
+    AwsS3 s3Client;
     String nameFile;
 
-    public PlaySound(AmazonS3 s3Client){
+    public PlaySound(AwsS3 s3Client){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -58,8 +62,7 @@ public class PlaySound extends Command{
         for (File file : soundBoard.listFiles())
             file.delete();
 
-        AwsS3 a = new AwsS3(s3Client, "thebeebox");
-        S3Object sound = a.downloadFile(nameFile, event);
+        S3Object sound = s3Client.downloadFile(nameFile, event);
         String extension = SoundBoard.getExtension(nameFile);
         if(extension == null){
             event.reply("il file non esiste");
@@ -104,15 +107,24 @@ public class PlaySound extends Command{
                 System.out.println("error: " + throwable.getMessage());
             }
         });
-
+        OpusFile opus = null;
+        OpusStatistics stats = null;
+        if(extension.equals("opus")){
+            try {
+                opus = SoundBoard.getOpus(nameFile); 
+                stats = new OpusStatistics(opus);
+                stats.calculate();
+            }catch(IOException e){e.printStackTrace();}
+        }
         player.playTrack(trackScheduler.getTrack());
         if(player.getPlayingTrack() == null)
             return;
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
-        System.out.println(player.getPlayingTrack().getInfo().length);
-        eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
+        eb.addField("Durata",(extension.equals("opus") 
+                                   ? SafJNest.getFormattedDuration((Math.round(stats.getDurationSeconds()))*1000)
+                                   : SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length)) , true);
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
         eb.setFooter("*Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)", null);
         //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
@@ -121,8 +133,9 @@ public class PlaySound extends Command{
         eb.addField("Autore", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
         eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName(), true);
         String img = "mp3.png";
-        if(extension.equals("opus"))
+        if(extension.equals("opus")){
             img = "jelly.png";
+        }
         /*
         switch (mp.getId3v2Tag().getAlbumArtist()) {
             case "merio":img = "epria.jpg";break;case "dirix":img = "dirix.jpg";break;case "teros":img = "zucca.jpg";break;case "herox":img = "herox.jpg";break;case "bomber":img = "arcus.jpg";break;case "ilyas":img = "maluma.PNG";break;case "pyke":img = "pyke.jpg";break;case "thresh":img = "thresh.jpg";break;case "blitzcrank":img = "blitz.png";break;case "bard":img = "bard.png";break;case "nautilus":img = "nautilus.png";break;case "fiddle":img = "fid.jpg";break;case "pantanichi":img = "panta.jpg";break;case "sunyx":img = "sun.jpg";break;case "gskianto":img = "gk.png";break;case "jhin":img = "jhin.jpg";break;case "yone":img = "yone.jpg";break;case "yasuo":img = "yasuo.jpg";break;
