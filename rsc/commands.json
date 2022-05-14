@@ -1,219 +1,219 @@
 {
     "connect":{
         "alias" : ["join", "comeherebroda"],
-        "help"  : "Il bot si connette nel tuo canale vocale.\nSe già connesso in un altro canale sarà disconnesso dallo stesso.\nIn caso tutti gli utenti escano dalla stanza il bot si disconnetterà automaticamente.",
+        "help"  : "Connette il bot alla stanza vocale.",
+        "category" : "Audio",
+        "arguments" : "[nomeComando]"
+    },
+
+    "customizesound":{
+        "alias" : ["custom", "cs", "personalize"],
+        "help"  : "WIP",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
 
     "deletesound":{
         "alias" : ["delete", "ds", "forget"],
-        "help"  : "Il bot rimuove il suono dal database.\nSe non sei l'autore del suono non potrai eliminarlo.",
+        "help"  : "Rimuove il suono dal database.",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
 
     "disconnect":{
         "alias" : ["bye", "levatidalcazzo", "chiama"],
-        "help"  : "Il bot disconnette un utente dal canale vocale in cui si trova.\nSe non si specifica nessuno verrà disconnesso il bot.\nÈ possibile disconnettere il bot solo se si è connessi nella sua stessa stanza(serve per non dare fastidio).",
+        "help"  : "Disconnette il bot dalla stanza vocale.",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
 
-    "downloadsound":{
-        "alias" : ["dl", "download"],
-        "help"  : "Il bot scarica il suono dal database e lo invia al canale vocale.",
-        "category" : "Audio",
-        "arguments" : "[nomeComando] [nomeSuono]"
-    },
-
     "list":{
         "alias" : ["listina", "listona", "listoide"],
-        "help"  : "Il bot invia la lista di tutti i suoni locali.",
+        "help"  : "Mostra la lista dei souni in questo server.",
         "category" : "Audio",
         "arguments" : "[nomeComando]"
     },
 
     "play":{
         "alias" : ["p", "nuovavita", "yt"],
-        "help"  : "Il bot riproduce link di youtube.\nBisogna essere connessi in una stanza vocale.\nNel caso il bot sia connesso in un'altra stanza si sposterà nella stessa dove è connesso l'autore del comando.",
+        "help"  : "Riproduce un link di youtube.",
         "category" : "Audio",
-        "arguments" : "[play] [link video]"
+        "arguments" : "[play] [link youtube]"
     },
 
     "playsound":{
         "alias" : ["ps", "playsos"],
-        "help"  : "Il bot riproduce un suono tra quelli presenti nel database.\nBisogna essere connessi in una stanza vocale.\nNel caso il bot sia connesso in un'altra stanza si sposterà nella stessa dove è connesso l'autore del comando.",
+        "help"  : "Riproduce un suono dal nome.",
         "category" : "Audio",
-        "arguments" : "[playsound] [nome del file senza specificare il formato]"
+        "arguments" : "[playsound] [nome del suono]"
     },
 
     "upload":{
         "alias" : ["up", "add"],
-        "help"  :"Il comando consente di poter caricare facilmente dei suoni nel database del bot.\nSe carichi dei file mp3 ci fai un piacere.\nSe carichi dei .opus ti sgozzo.",
+        "help"  :"Carica un file nel database.",
         "category" : "Audio",
-        "arguments" : "[upload] [nome del file senza specificare il formato]"
+        "arguments" : "[upload] [nome del suono]"
     },
 
     "channelinfo":{
         "alias" : ["infochannel", "ci","ic","channel"],
-        "help"  : "Il bot restituisce tutte le informazioni relative ad un canale, sia vocale che testuale.",
+        "help"  : "Mostra le informazioni sul canale (sia vocale che testuale).",
         "category" : "Gestione Server",
         "arguments" : "[channelinfo] [#canale/id canale]"
     },
 
     "clear":{
         "alias" : ["cancella"],
-        "help"  : "Il bot cancella i messaggi in un canale di testo fino ad un massimo di 99 messaggi(100 incluso il comando).",
+        "help"  : "Cancella messaggi in un canale testuale (max 99).",
         "category" : "Gestione Server",
         "arguments" : "[clear] [n messaggi]"
     },
 
     "emojiinfo":{
         "alias" : ["em", "eminfo", "emojiinfo"],
-        "help"  : "Consente di stampare le informazioni relative ad una emoji, sia animata che non.",
+        "help"  : "Mostra le informazioni di un emoji.",
         "category" : "Gestione Server",
         "arguments" : "[emoji] [nomeEmoji, emoji]"
     },
     "anonym":{
         "alias" : ["staropoli", "an"],
-        "help"  : "Il bot invierà un messaggio in privato all'utente richiesto in maniera anonima.\nÈ possibile inviare un messaggio ad un solo utente alla volta.",
+        "help"  : "Invia un messaggio anonimo in privato ad un utente.",
         "category" : "Gestione Server",
         "arguments" : "[msg] [@user/id] [messaggio]"
     },
 
     "msg":{
         "alias" : ["messaggio", "message"],
-        "help"  : "Il bot invierà un messaggio in privato all'utente richiesto.\nÈ possibile inviare un messaggio ad un solo utente alla volta.",
+        "help"  : "Invia un messaggio in privato ad un utente.",
         "category" : "Gestione Server",
         "arguments" : "[msg] [@user/id] [messaggio]"
     },
 
     "serverinfo":{
         "alias" : ["servinfo", "serinf"],
-        "help"  : "Informazioni utili del server in cui ti trovi.",
+        "help"  : "Mostra le informazioni sul server.",
         "category" : "Gestione Server",
         "arguments" : "[nomeComando]"
     },
 
     "userinfo":{
         "alias" : ["usinf", "uinfo"],
-        "help"  : "Informazioni utili di uno user.",
+        "help"  : "Mostra le informazioni di un utente.",
         "category" : "Gestione Server",
         "arguments" : "[userinfo] [@user]"
     },
 
     "ban":{
         "alias" : ["sgozz", "destroy", "annihilate", "radiateDeath", "drinkRadithorForAYear"],
-        "help"  : "Il bot ti outplaya veramente forte e finisci a strisciare fuori dal server (senza la possibilità di rientrare).",
+        "help"  : "Banna un membro del server.",
         "category" : "Gestione Membri",
         "arguments" : "[ban] [@user] (reason)"
     },
 
     "image":{
         "alias" : ["img"],
-        "help"  : "Il bot invia l'immagine profilo dello user.",
+        "help"  : "Mostra l'immagine profilo di un utente.",
         "category" : "Gestione Membri",
         "arguments" : "[image] [@user]"
     },
 
     "kick":{
         "alias" : ["lightSgozz", "espulsione"],
-        "help"  : "Il bot ti outplaya leggermente e finisci a strisciare fuori dal server (con la possibilità di rientrare).",
+        "help"  : "kickka un membro del server.",
         "category" : "Gestione Membri",
         "arguments" : "[kick] [@user]"
     },
 
     "mute":{
         "alias" : ["dontlistentothesound"],
-        "help"  : "Il bot muta un utene.",
+        "help"  : "Muta un utente.",
         "category" : "Gestione Membri",
         "arguments" : "[mute] [@user]"
     },
 
     "permissions":{
         "alias" : ["perms", "permission"],
-        "help"  : "Restituisce i permessi di uno user e dice se e' un admin del server.",
+        "help"  : "Mostra i permessi di un membro del server.",
         "category" : "Gestione Membri",
         "arguments" : "[permissions] [@user]"
     },
 
     "unban":{
         "alias" : ["unsgozz", "undestroy", "unannihilate", "unradiateDeath", "sban", "pardon"],
-        "help"  : "Un Dio supremo ti perdona e ti consente di tornare nella landa dei SafJ, non dimenticarti di ringraziare",
+        "help"  : "Sbanna un membro del server.",
         "category" : "Gestione Membri",
         "arguments" : "[unbun] [@user]"
     },
 
     "unmute":{
         "alias" : ["listentothesound"],
-        "help"  : "Smuta lo user.",
+        "help"  : "Smuta un utente.",
         "category" : "Gestione Membri",
         "arguments" : "[unmute] [@user]"
     },
 
     "bighi":{
         "alias" : ["random"],
-        "help"  : "Consente di generare un numero randomico a nBit.",
+        "help"  : "Genera un numero random a n bit.",
         "category" : "Matematica",
         "arguments" : "[bighi] [numero]"
     },
 
     "calc":{
         "alias" : ["c", "calcolatore", "calcolatrice"],
-        "help"  : "Consente di effettuare semplici operazioni matematiche tra due numeri.Addizione, sottrazione, moltiplicazione, divisione ed elevamento a potenza.\nLe funzioni presenti sono radice, seno, coseno e tangente, con le loro funzioni inverse, la funzione esponenziale, modulo, ceil/floor/round, random e le varie costanti matematiche (pi, e, phi, euler, catalan).",
+        "help"  : "Effettua operazioni matematiche.\nAddizione, sottrazione, moltiplicazione, divisione ed elevamento a potenza.\nLe funzioni presenti sono radice, seno, coseno e tangente, con le loro funzioni inverse, e la funzione esponenziale.",
         "category" : "Matematica",
-        "arguments" : "[calc] [(n+n) (n-n) (n*n) (n/n) (n^n) (sqrt n) (sin n) (cos n ) (ln n) (tan n) (asin n) (acos n) (exp n) (abs n) (ceil n) (floor n) (random) (pi) (e) (phi) (euler) (catalan)]"
+        "arguments" : "[calc] [(n+n) (n-n) (n*n) (n/n) (n^n) (sqrt n) (sin n) (cos n ) (ln n) (tan n) (asin n) (acos n) (exp n)]"
     },
 
     "dac":{
         "alias" : ["divideandconquer"],
-        "help"  : "Consente di stampare il numero di cifre di un numero intero(int) fino ad un max di 2^32.",
+        "help"  : "Calcola quante cifre ha un numero intero (max 2^32).",
         "category" : "Matematica",
         "arguments" : "[dac] [numero]"
     },
 
     "dice":{
         "alias" : ["dado", "lanciadado", "roll", "dice"],
-        "help"  : "Il bot lancia uno o più dadi.",
+        "help"  : "Lancia uno o più dadi.",
         "category" : "Matematica",
         "arguments" : "[dice] (n dadi) ([n dadi] (n facce))"
     },
 
     "fastestroot":{
         "alias" : ["radiceinversa", "invroot", "fisqrt"],
-        "help"  : "Consente di stampare il risultato della radice quadrata inversa veloce.",
+        "help"  : "Calcola la radice quadrata inversa di un numero quake style.",
         "category" : "Matematica",
         "arguments" : "[fastinversesquareroot] [numero]"
     },
 
     "prime":{
         "alias" : ["imbimbo","randomprime"],
-        "help"  : "Consente di generare un numero *primo* randomico a nBit.",
+        "help"  : "Genera un numero primo a n bit.",
         "category" : "Matematica",
         "arguments" : "[prime] [nbit]"
     },
 
     "aliases":{
         "alias" : ["alias", "ilyas"],
-        "help"  : "Restituisce tutti gli alias dei vari comandi",
+        "help"  : "Mostra gli alias dei comandi.",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
     "bugsnotifier":{
         "alias" : ["baco", "bughi", "report", "rep", "bugs"],
-        "help"  : "Consente di inviare un messaggio ai due developer del bot, con una accurata descrizione, le problematiche avute riguardante un comando.\nPer evitare possibili spam ha un cooldown di 100s.",
+        "help"  : "Reporta un bug che hai incontrato mentre usi questo bot.",
         "category" : "Miscellaneo",
         "cooldown" : "100",
         "arguments" : "[bugs] [nome comando] [descrizione]"
     },
 
     "help":{
-        "alias" : ["command", "commands"],
-        "help"  : "Consente di visualizzare l'elenco di tutti i comandi.\nSe viene usata la sintassi [help][nomeComando] si otterrà una descrizione specifica del comando richiesto.",
+        "alias" : ["command", "commands", "info"],
+        "help"  : "Mostra l'elenco di tutti i comandi o informazioni dettagliate su uno.",
         "category" : "Miscellaneo",
-        "arguments" : "[help](nome comando)"
+        "arguments" : "[help][nome comando]"
     },
 
     "ping":{
@@ -225,43 +225,43 @@
 
     "ram":{
         "alias" : ["usage", "riiiim"],
-        "help"  : "Restituisce le statistiche di sistema del bot, ram in uso, libera e totale (mb).\nTOTALE: Ram messa a disposizione dal SO per il bot.\nIn uso: Ram che sta effettivamente utilizzando il bot.\nLibera: Ram rimasta a disposizione per il bot.\nMassima: Ram messa a disposizione per Java in generale, equivale a -Xmx value.\n",
+        "help"  : "Mostra informazioni riguardanti l'uso della ram del bot.",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
     "rawmessage":{
         "alias" : ["rawmsg", "rawmessage"],
-        "help"  : "Restituisce tutti gli alias dei vari comandi",
+        "help"  : "Restituisce un messaggio.",
         "category" : "Miscellaneo",
-        "arguments" : "[nomeComando]"
+        "arguments" : "[nomeComando][id msg]"
     },
 
     "jelly":{
         "alias" : ["soundfx", "reminderbot", "jude", "jude southworth", "jellywx"],
-        "help"  : "Evoca il dio dei falliti",
+        "help"  : "Evoca il dio dei falliti.",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
     "modifynickname":{
         "alias" : ["modnick", "nick", "nickradogna"],
-        "help"  : "Cambia il nickname ad un membro della gilda",
+        "help"  : "Cambia il nickname ad un membro del server.",
         "category" : "Gestione Membri",
         "arguments" : "[nomeComando] [membro] [nuovo nick]"
     },
-    "move":{
-        "alias" : ["mv", "sposta"],
-        "help"  : "Sposta un membro della gilda in un altra stanza.\nè possibile spostare più di un membro alla volta.",
-        "category" : "Gestione Membri",
-        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu) | (membro) (afk)." 
-    },
-    
-    "info":{
-        "alias" : ["inf"],
-        "help"  : "Sposta un membro della gilda in un altra stanza.\nè possibile spostare più di un membro alla volta.",
-        "category" : "Gestione Membri",
-        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu)." 
-    }
 
+    "vandalizeserver":{
+        "alias" : ["vandalize", "vanda"],
+        "help"  : "Vandalizza un server, usa con cura.",
+        "category" : "Pericolosi",
+        "arguments" : "[nomeComando] [server]"
+    },
+
+    "invitebot":{
+        "alias" : ["invite", "inbot"],
+        "help"  : "Crea un link di invito del server.",
+        "category" : "Gestione Server",
+        "arguments" : "[nomeComando]"
+    }
 }

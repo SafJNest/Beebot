@@ -1,9 +1,8 @@
 package com.safjnest.Commands.Audio;
 
-
-import com.amazonaws.services.s3.AmazonS3;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.Permission;
@@ -16,9 +15,9 @@ import net.dv8tion.jda.api.Permission;
  * @since 1.3
  */
 public class DeleteSound extends Command{
-    private AmazonS3 s3Client;
+    private AwsS3 s3Client;
     
-    public DeleteSound(AmazonS3 s3Client){
+    public DeleteSound(AwsS3 s3Client){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -40,7 +39,7 @@ public class DeleteSound extends Command{
             return;
         }
         
-        s3Client.deleteObject("thebeebox", event.getGuild().getId() + "/" + event.getAuthor().getId() + "/" + fileName );
+        s3Client.getS3Client().deleteObject("thebeebox", event.getGuild().getId() + "/" + event.getAuthor().getId() + "/" + fileName );
         event.reply(fileName + " sgozzato con successo");
 
 	}
