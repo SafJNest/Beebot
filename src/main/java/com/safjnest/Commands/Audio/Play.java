@@ -33,7 +33,7 @@ public class Play extends Command {
     private HashMap<String,String> tierOneLink;
 
     public Play(HashMap<String,String> tierOneLink){
-        this.name = this.getClass().getSimpleName();;
+        this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
         this.cooldown = new JSONReader().getCooldown(this.name);
