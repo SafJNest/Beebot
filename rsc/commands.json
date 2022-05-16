@@ -48,6 +48,13 @@
         "arguments" : "[playsound] [nome del suono]"
     },
 
+    "stop":{
+        "alias" : ["stoppete", "donteventhinkaboutit"],
+        "help"  : "Ferma la riproduzione di suoni.",
+        "category" : "Audio",
+        "arguments" : "[stop]"
+    },
+
     "upload":{
         "alias" : ["up", "add"],
         "help"  :"Carica un file nel database.",

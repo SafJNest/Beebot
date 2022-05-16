@@ -4,9 +4,7 @@ package com.safjnest.Commands.Audio;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3Object;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -17,9 +15,6 @@ import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.SoundBoard;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
-import org.gagravarr.opus.OpusFile;
-import org.gagravarr.opus.OpusStatistics;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -107,41 +102,38 @@ public class PlaySound extends Command{
                 System.out.println("error: " + throwable.getMessage());
             }
         });
-        OpusFile opus = null;
-        OpusStatistics stats = null;
-        if(extension.equals("opus")){
-            try {
-                opus = SoundBoard.getOpus(nameFile); 
-                stats = new OpusStatistics(opus);
-                stats.calculate();
-            }catch(IOException e){e.printStackTrace();}
-        }
+
         player.playTrack(trackScheduler.getTrack());
         if(player.getPlayingTrack() == null)
             return;
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
-        eb.addField("Durata",(extension.equals("opus") 
-                                   ? SafJNest.getFormattedDuration((Math.round(stats.getDurationSeconds()))*1000)
-                                   : SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length)) , true);
+
+        try {
+            eb.addField("Durata",(extension.equals("opus") 
+                                       ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(nameFile)))*1000)
+                                       : SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length)) , true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
         eb.setFooter("*Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)", null);
         //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
+
         eb.setColor(new Color(0, 255, 255));
         eb.setDescription(event.getArgs());
         eb.addField("Autore", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
         eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName(), true);
-        String img = "mp3.png";
-        if(extension.equals("opus")){
+
+        String img = "idk";
+        if(extension.equals("opus"))
             img = "jelly.png";
-        }
-        /*
-        switch (mp.getId3v2Tag().getAlbumArtist()) {
-            case "merio":img = "epria.jpg";break;case "dirix":img = "dirix.jpg";break;case "teros":img = "zucca.jpg";break;case "herox":img = "herox.jpg";break;case "bomber":img = "arcus.jpg";break;case "ilyas":img = "maluma.PNG";break;case "pyke":img = "pyke.jpg";break;case "thresh":img = "thresh.jpg";break;case "blitzcrank":img = "blitz.png";break;case "bard":img = "bard.png";break;case "nautilus":img = "nautilus.png";break;case "fiddle":img = "fid.jpg";break;case "pantanichi":img = "panta.jpg";break;case "sunyx":img = "sun.jpg";break;case "gskianto":img = "gk.png";break;case "jhin":img = "jhin.jpg";break;case "yone":img = "yone.jpg";break;case "yasuo":img = "yasuo.jpg";break;
-        }
-        */
-        File file = new File("rsc" + File.separator + "img" + File.separator+ img);
+        else
+            img = "mp3.png";
+
+        File file = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
         channel.sendMessageEmbeds(eb.build())
             .addFile(file, img)

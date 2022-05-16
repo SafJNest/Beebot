@@ -111,6 +111,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Play(tierOneLink));
         builder.addCommand(new PlaySound(s3Client));
         builder.addCommand(new Upload(s3Client));
+        builder.addCommand(new Stop());
 
         //Manage Guild
         builder.addCommand(new Anonym());
