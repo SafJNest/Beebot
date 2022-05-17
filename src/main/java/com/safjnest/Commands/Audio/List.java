@@ -35,7 +35,13 @@ public class List extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        HashMap<String, ArrayList<String>> alpha = s3Client.listObjects(event.getGuild().getId());
+        HashMap<String, ArrayList<String>> alpha = null;
+        String[] args = event.getArgs().split(" ");
+        if(args[0].equals("me"))
+            alpha = s3Client.listObjects(event.getGuild().getId(), event.getAuthor().getId());
+        else
+            alpha = s3Client.listObjects(event.getGuild().getId());
+        
         Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
         sortedMap.putAll(alpha);
         MessageChannel channel = event.getChannel();

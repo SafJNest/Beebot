@@ -72,7 +72,7 @@ public class App extends ListenerAdapter {
             System.out.println("[main] INFO Canary mode on");
             token = "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g";
             PREFIX = "$";
-            activity = Activity.playing("taking sanseverino's head and slauthering it because he is a fucking bot oidozir annodam ieidocrope lorenzo fix the faker");
+            activity = Activity.playing("OIDOZIR");
             AWSAccesKey = "AKIASJG3D4LS4UT7VPX4";
             AWSSecretKey = "9RlRQCIJlCCYTLdg/Y9DiDHUQXjt6/6fhzohM/su";
         }
@@ -97,6 +97,7 @@ public class App extends ListenerAdapter {
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
+        
         builder.setPrefix(PREFIX);
         builder.setHelpWord("helpme");
         builder.setOwnerId("939876818465488926");

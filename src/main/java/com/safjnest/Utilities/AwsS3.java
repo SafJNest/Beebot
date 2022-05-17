@@ -82,6 +82,54 @@ public class AwsS3 {
         return alpha;
     }
 
+    /**
+     * Makes a list of all the files in the bucket.
+     * <p>The files are sorted by the first letter of the file name in the lexicographic order.
+     * @param id
+     * @return
+     */
+    public HashMap<String, ArrayList<String>> listObjects(String prefix, String id) {
+        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+            .withBucketName(bucket);
+        ObjectListing objectListing;
+        do {
+            objectListing = s3Client.listObjects(listObjectsRequest);
+            for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                if(objectSummary.getKey().split("/")[1].equals(id)) {
+                    if(!alpha.containsKey(String.valueOf(objectSummary.getKey().split("/")[2].charAt(0)).toUpperCase()))
+                        alpha.put(String.valueOf(objectSummary.getKey().split("/")[2].charAt(0)).toUpperCase(), new ArrayList<String>());
+                    alpha.get(String.valueOf(objectSummary.getKey().split("/")[2].charAt(0)).toUpperCase()).add(objectSummary.getKey().split("/")[2]);
+                }
+            }
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+        } while (objectListing.isTruncated());
+        return alpha;
+    }
+
+    /**
+     * Makes a list of all the files in the bucket.
+     * <p>The files are sorted by the first letter of the file name in the lexicographic order.
+     * @param id
+     * @return
+     */
+    public HashMap<String, ArrayList<String>> listObjectsByServer() {
+        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+            .withBucketName(bucket);
+        ObjectListing objectListing;
+        do {
+            objectListing = s3Client.listObjects(listObjectsRequest);
+            for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                if(!alpha.containsKey(objectSummary.getKey().split("/")[0]))
+                    alpha.put(objectSummary.getKey().split("/")[0], new ArrayList<String>());
+                alpha.get(objectSummary.getKey().split("/")[0]).add(objectSummary.getKey());
+            }
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+        } while (objectListing.isTruncated());
+        return alpha;
+    }
+
     public String getPrefix(CommandEvent event){
         return event.getGuild().getId() + "/";
     }
@@ -92,25 +140,30 @@ public class AwsS3 {
     }
 
     public S3Object downloadFile(String fileName, CommandEvent event) {
-    
-        String prefix = getPrefix(event);
+        HashMap<String, ArrayList<String>> alpha = listObjectsByServer();
+        String prefix = event.getGuild().getId();
+        String name = null;
         try {
-            ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-            .withBucketName(bucket)
-            .withPrefix(prefix);
-            ObjectListing objectListing;
-            do {
-                objectListing = s3Client.listObjects(listObjectsRequest);
-                for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
-                    if(objectSummary.getKey().split("/")[2].equalsIgnoreCase(fileName)){
-                        prefix = objectSummary.getKey();
+            if(alpha.containsKey(prefix)) {
+                for(String file : alpha.get(prefix)) {
+                    if(fileName.equalsIgnoreCase(file.split("/")[2])) {
+                        name = file;
                         break;
                     }
+                }
             }
-            listObjectsRequest.setMarker(objectListing.getNextMarker());
-        } while (objectListing.isTruncated());
+            if(name == null){
+                for(String key : alpha.keySet()) {
+                    for(String file : alpha.get(key)) {
+                        if(fileName.equalsIgnoreCase(file.split("/")[2])) {
+                            name = file;
+                            break;
+                        }
+                    }
+                }
+            }
             S3Object fullObject = s3Client.getObject(
-                new GetObjectRequest("thebeebox", prefix));
+                new GetObjectRequest("thebeebox", name));
             S3ObjectInputStream s3is = fullObject.getObjectContent();
             FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + "." +fullObject.getObjectMetadata().getUserMetaDataOf("format")));
             s3is.close();

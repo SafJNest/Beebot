@@ -58,11 +58,11 @@ public class PlaySound extends Command{
             file.delete();
 
         S3Object sound = s3Client.downloadFile(nameFile, event);
-        String extension = SoundBoard.getExtension(nameFile);
-        if(extension == null){
+        if(sound == null){
             event.reply("il file non esiste");
             return;
         }
+        String extension = SoundBoard.getExtension(nameFile);
         nameFile = "rsc" + File.separator + "SoundBoard" + File.separator + nameFile +"."+ extension;
         
         MessageChannel channel = event.getChannel();
@@ -122,16 +122,19 @@ public class PlaySound extends Command{
         eb.setFooter("*Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)", null);
         //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
 
-        eb.setColor(new Color(0, 255, 255));
         eb.setDescription(event.getArgs());
         eb.addField("Autore", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
         eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName(), true);
 
         String img = "idk";
-        if(extension.equals("opus"))
-            img = "jelly.png";
-        else
+        if(extension.equals("opus")){
+            eb.setColor(new Color(255, 0, 0));
+            img = "opus.png";
+        }else{
             img = "mp3.png";
+    	     eb.setColor(new Color(0, 255, 255));
+        }   
+            
 
         File file = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
