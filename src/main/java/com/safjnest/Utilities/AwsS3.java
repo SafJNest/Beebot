@@ -113,6 +113,32 @@ public class AwsS3 {
      * @param id
      * @return
      */
+    public HashMap<String, ArrayList<String>> listObjectsByServer(String id, CommandEvent event) {
+        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+            .withBucketName(bucket);
+        ObjectListing objectListing;
+        do {
+            objectListing = s3Client.listObjects(listObjectsRequest);
+            for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                if(objectSummary.getKey().split("/")[1].equals(id)) {
+                    String serverName = event.getJDA().getGuildById(objectSummary.getKey().split("/")[0]).getName();
+                    if(!alpha.containsKey(serverName))
+                    alpha.put(serverName, new ArrayList<String>());
+                alpha.get(serverName).add(objectSummary.getKey().split("/")[2]);
+                }
+            }
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+        } while (objectListing.isTruncated());
+        return alpha;
+    }
+
+    /**
+     * Makes a list of all the files in the bucket.
+     * <p>The files are sorted by the first letter of the file name in the lexicographic order.
+     * @param id
+     * @return
+     */
     public HashMap<String, ArrayList<String>> listObjectsByServer() {
         HashMap<String, ArrayList<String>> alpha = new HashMap<>();
         ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
