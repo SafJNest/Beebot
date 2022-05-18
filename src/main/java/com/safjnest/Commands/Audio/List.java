@@ -38,7 +38,7 @@ public class List extends Command {
         HashMap<String, ArrayList<String>> alpha = null;
         String[] args = event.getArgs().split(" ");
         if(args[0].equals("me"))
-            alpha = s3Client.listObjects(event.getGuild().getId(), event.getAuthor().getId());
+            alpha = s3Client.listObjectsByServer(event.getAuthor().getId(), event);
         else
             alpha = s3Client.listObjects(event.getGuild().getId());
         
@@ -47,16 +47,18 @@ public class List extends Command {
         MessageChannel channel = event.getChannel();
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("SoundBoard");
-        String soundNames = "```\n";
+        String soundNames = "";
             for(String k : sortedMap.keySet()) {
+                soundNames += "**"+ k +"**" + ":\n";
                 for(String s : sortedMap.get(k)){
-                    soundNames+= s + "\n";
+                    soundNames+= s + " - ";
                 }
-                soundNames+="```";
-                eb.addField(k, soundNames, true);
-                soundNames = "```\n";
+                soundNames+="\n";
+                //eb.addField(k, soundNames, true);
             }
-        eb.setDescription("Lista con tutti i suoni del tier 1 bot");
+            System.out.println(soundNames);
+            event.reply(soundNames);
+        /*eb.setDescription("Lista con tutti i suoni del tier 1 bot");
         eb.setColor(new Color(0, 128, 128));
         eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' soundfx, questa e' perfezione cit. steve jobs (probabilmente)", null);
@@ -65,6 +67,6 @@ public class List extends Command {
         channel.sendMessageEmbeds(eb.build())
                     .addFile(file, "mp3.png")
                     .queue();
-        
+        */
 	}
 }

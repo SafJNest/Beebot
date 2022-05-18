@@ -111,7 +111,7 @@
     },
 
     "ban":{
-        "alias" : ["sgozz", "destroy", "annihilate", "radiateDeath", "drinkRadithorForAYear"],
+        "alias" : ["sgozz", "destroy", "annihilate", "radiateDeath", "drinkRadithorForAYear", "ohthemisery"],
         "help"  : "Banna un membro del server.",
         "category" : "Gestione Membri",
         "arguments" : "[ban] [@user] (reason)"
@@ -132,7 +132,7 @@
     },
 
     "mute":{
-        "alias" : ["dontlistentothesound"],
+        "alias" : ["dontlistentothesound", "makeapantanichi"],
         "help"  : "Muta un utente.",
         "category" : "Gestione Membri",
         "arguments" : "[mute] [@user]"

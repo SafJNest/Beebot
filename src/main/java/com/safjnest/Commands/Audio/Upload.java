@@ -71,7 +71,7 @@ class FileListener extends ListenerAdapter {
                 event.reply("manca il file");
                 e.getJDA().removeEventListener(this);
                 return;
-            }
+            }   
             if(e.getMessage().getAttachments().get(0).getSize() > 1048576){
                 event.reply("il file è troppo grosso (1mb max)");
                 e.getJDA().removeEventListener(this);
