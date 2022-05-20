@@ -209,7 +209,7 @@
     },
 
     "bugsnotifier":{
-        "alias" : ["baco", "bughi", "report", "rep", "bugs"],
+        "alias" : ["baco", "bughi", "report", "rep", "bugs", "reptail96", "reptail", "rep066", "moonny", "moonnypunto"],
         "help"  : "Reporta un bug che hai incontrato mentre usi questo bot.",
         "category" : "Miscellaneo",
         "cooldown" : "100",

@@ -41,16 +41,25 @@ body{
   display: flex;
   margin-top: 15em;
   margin-bottom: 15em;
+  text-align: center;
+  color: white;
 }
 
+.cards-section-one{
+  margin-right: 5em;
+  width: 30%;
+}
 .cards-section-two{
   margin-right: 5em;
   width: 30%;
 }
 
-.cards-section-two {
+.cards-section-three{
+  margin-right: 5em;
   width: 30%;
 }
+
+
 
 /*BUTTON COMMANDS*/
 
