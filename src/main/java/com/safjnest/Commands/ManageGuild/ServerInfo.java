@@ -10,6 +10,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -19,6 +20,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
  * @since 1.1.02
  */
 public class ServerInfo extends Command{
+    private final int defaultRoleCharNumber = 200;
 
     public ServerInfo(){
         this.name = this.getClass().getSimpleName();
@@ -31,6 +33,12 @@ public class ServerInfo extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
+        int roleCharNumber;
+        if(!SafJNest.isInteger(event.getArgs()) || (Integer.parseInt(event.getArgs())) > 1024 || (Integer.parseInt(event.getArgs())) < 1)
+            roleCharNumber = defaultRoleCharNumber;
+        else
+            roleCharNumber = Integer.parseInt(event.getArgs());
+
         Guild guild = event.getGuild();
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -98,7 +106,7 @@ public class ServerInfo extends Command{
                     + guild.getNSFWLevel().toString() 
                     + "```", true);
 
-        List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(guild.getRoles(), 195);
+        List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(guild.getRoles(), roleCharNumber);
         eb.addField("Ruoli del server [" 
                     + guild.getRoles().size() + "] (stampati " 
                     + RoleNames.size() + ")" , "```" 
