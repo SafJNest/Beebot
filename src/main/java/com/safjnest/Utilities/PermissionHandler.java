@@ -1,6 +1,7 @@
 package com.safjnest.Utilities;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -32,10 +33,6 @@ public class PermissionHandler {
     public static Set<String> getUntouchables() {
         return untouchables;
     }
-
-    //public static void addUntouchable(String id){
-
-    //}
     
     /**
      * Check if a discord tag is in the list of {@link com.safjnest.Utilities.PermissionHandler#untouchables untouchables}
@@ -128,13 +125,29 @@ public class PermissionHandler {
     public static List<String> getMaxFieldableRoleNames(List<Role> roles, int charNumber) {
         if(charNumber > 1024)
             throw new IllegalArgumentException("il numero dei caratteri non puo' essere maggiore di 1024");
-        List<String> finalRoles= new ArrayList<String>();
-        int rolesLenght = 0;
+        List<String> finalRoles = new ArrayList<String>();
+        int rolesLenght = 0, countSpaces;
+        List<Character> toDelete = Arrays.asList((char)8291, (char)8194, (char)32); //Only deletes them if they are at the very beginning/end of the role name
         for (int i = 0; i < roles.size(); i++) {
-            rolesLenght += roles.get(i).getName().length() + 2;
+            String role = roles.get(i).getName();
+
+            countSpaces = 0;
+            while(toDelete.contains(role.charAt(countSpaces)))
+                countSpaces++;
+            if(countSpaces > 0){
+                role = role.substring(countSpaces);
+                countSpaces = 0;
+            }
+            while(toDelete.contains(role.charAt(role.length()-countSpaces-1)))
+                countSpaces++;
+            if(countSpaces > 0)
+                role = role.substring(0, role.length()-countSpaces);
+
+            rolesLenght += role.length() + 2; //accounts for the virgule and space put by the toString method of the final List
             if(rolesLenght >= charNumber)
                 break;
-            finalRoles.add(roles.get(i).getName());
+            
+            finalRoles.add(role);
         }
         return finalRoles;
     }

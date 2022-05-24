@@ -1,8 +1,6 @@
 package com.safjnest.Commands.ManageGuild;
 
 import java.awt.Color;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -10,6 +8,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -21,7 +20,7 @@ import net.dv8tion.jda.api.entities.User;
  * @since 1.2.5
  */
 public class UserInfo extends Command{
-    private DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
+    private final int defaultRoleCharNumber = 200;
 
     public UserInfo() {
         this.name = this.getClass().getSimpleName();
@@ -32,21 +31,13 @@ public class UserInfo extends Command{
         this.arguments = new JSONReader().getString(this.name, "arguments");
     }
 
-    private List<String> getMaxFieldableRoleNames(CommandEvent event, User theGuy) {
-        List<String> finalRoles= new ArrayList<String>();
-        int rolesLenght = 0;
-        for (int i = 0; i < event.getGuild().getMember(theGuy).getRoles().size(); i++) {
-            rolesLenght += event.getGuild().getMember(theGuy).getRoles().get(i).getName().length() + 2;
-            if(rolesLenght >= 1024)
-                break;
-            finalRoles.add(event.getGuild().getMember(theGuy).getRoles().get(i).getName());
-        }
-        return finalRoles;
-    }
-
     @Override
     protected void execute(CommandEvent event) {
-        EmbedBuilder eb = new EmbedBuilder();
+        int roleCharNumber;
+        if(!SafJNest.isInteger(event.getArgs()) || (Integer.parseInt(event.getArgs())) > 1024 || (Integer.parseInt(event.getArgs())) < 1)
+            roleCharNumber = defaultRoleCharNumber;
+        else
+            roleCharNumber = Integer.parseInt(event.getArgs());
 
         User theGuy;
         if(event.getMessage().getMentionedMembers().size() > 0)
@@ -59,10 +50,11 @@ public class UserInfo extends Command{
             }
         }
         if(!event.getGuild().isMember(theGuy)){
-            event.reply("Lo user non fa parte della gilda");
+            event.reply("L'utente non fa parte della gilda");
             return;
         }
-        
+
+        EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":busts_in_silhouette:Informazioni sullo user:busts_in_silhouette:");
         eb.setThumbnail(theGuy.getAvatarUrl());
         eb.setColor(new Color(116, 139, 151));
@@ -70,7 +62,7 @@ public class UserInfo extends Command{
         eb.addField("Nome", "```" + theGuy.getAsTag() + "```", true);
         eb.addField("ID", "```" + theGuy.getId() + "```" , true);
 
-        List<String> RoleNames = getMaxFieldableRoleNames(event, theGuy);
+        List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(event.getGuild().getMember(theGuy).getRoles(), roleCharNumber);
         eb.addField("Ruoli ["
                     + event.getGuild().getMember(theGuy).getRoles().size() + "] "
                     + "(stampati " + RoleNames.size() + ")", "```"
@@ -99,7 +91,6 @@ public class UserInfo extends Command{
                     + "```", false);
 
         eb.addField("Entrato nel server il (dd/mm/yyyy)", "```" 
-                    + dtf.format(event.getGuild().getMember(theGuy).getTimeJoined()) 
                     + DateHandler.formatDate(event.getGuild().getMember(theGuy).getTimeJoined())
                     + "```", false);
 
