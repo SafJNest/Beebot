@@ -37,6 +37,11 @@ body{
   font-weight: 500;
 }
 
+.card-title{
+  padding-top: 1.5%;
+  font-size: 1.8vw;
+}
+
 .cards-container {
   display: flex;
   margin-top: 15em;

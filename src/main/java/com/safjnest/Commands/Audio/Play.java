@@ -7,7 +7,7 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TrackScheduler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.AudioPlayerSendHandler;
+import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.JSONReader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -56,7 +56,7 @@ public class Play extends Command {
         AudioManager audioManager = event.getGuild().getAudioManager();
         AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
         AudioPlayer player = playerManager.createPlayer();
-        AudioPlayerSendHandler audioPlayerSendHandler = new AudioPlayerSendHandler(player);
+        AudioHandler audioPlayerSendHandler = new AudioHandler(player);
         audioManager.setSendingHandler(audioPlayerSendHandler);
         audioManager.openAudioConnection(myChannel);
         TrackScheduler trackScheduler = new TrackScheduler(player);
