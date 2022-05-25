@@ -2,6 +2,7 @@ package com.safjnest.Commands.Audio;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.JSONReader;
 
 
@@ -18,6 +19,8 @@ public class Stop extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        //https://github.com/jagrosh/MusicBot/blob/master/src/main/java/com/jagrosh/jmusicbot/audio/AudioHandler.java
+        AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
+        handler.stop();
+        event.reply("Stoppato");
     }
 }
