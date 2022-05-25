@@ -72,7 +72,7 @@ public class App extends ListenerAdapter {
             System.out.println("[main] INFO Canary mode on");
             token = "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g";
             PREFIX = "$";
-            activity = Activity.playing("OIDOZIR");
+            activity = Activity.playing("ANNODAM OIDOZIR IEIDOCROPE BEAMBUZL BILLY");
             AWSAccesKey = "***REMOVED***";
             AWSSecretKey = "***REMOVED***";
         }

@@ -34,14 +34,17 @@ public class List extends Command {
         String[] args = event.getArgs().split(" ");
         boolean isListMe = args[0].equals("me");
         String soundNames = "";
+        int cont = 0;
         if(isListMe){
             alpha = s3Client.listObjectsByServer(event.getAuthor().getId(), event);
             Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
             sortedMap.putAll(alpha);
             for(String serverName : sortedMap.keySet()) {
                 soundNames += "**"+ serverName +"**" + ":\n";
-                for(String soundName : sortedMap.get(serverName))
+                for(String soundName : sortedMap.get(serverName)){
                     soundNames += soundName + " - ";
+                    cont++;
+                }
                 soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
             }
         }else{
@@ -51,11 +54,14 @@ public class List extends Command {
             soundNames = "**"+ event.getGuild().getName() +"**:\n";
             for(String k : sortedMap.keySet()) {
                 //TODO TOGTLIERE IL BUZL ALFABRTICO
-                for(String s : sortedMap.get(k))
+                for(String s : sortedMap.get(k)){
                     soundNames+= s + " - ";
+                    cont++;
+                }
             }
             soundNames = soundNames.substring(0, soundNames.length()-3);
         } 
+        soundNames += "\nSuono totali: " + cont;
         event.reply(soundNames);
     }
 }
