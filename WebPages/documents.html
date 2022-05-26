@@ -17,11 +17,9 @@
     <a href="index.html" class="w3-bar-item w3-button">HOME</a>
     <a href="commands.html" class="w3-bar-item w3-button">COMMANDS</a>
     <a href="#" class="w3-bar-item w3-button" onclick="backToDocuments()">DOCUMENTS</a>
-    <a href="#" class="w3-bar-item w3-button" onclick="backToStats()">STATS</a>
   </div>
 
   <div id="main">
-
     <div id="navBar" class="w3-teal">
       <div style="display:flex">
         <button id="openNav" class="w3-button w3-teal w3-xlarge" onclick="openSidebar()">&#9776;</button>
@@ -32,20 +30,19 @@
     </div>
     
     <div class="w3-container">
-        <div>
-      
-              <iframe
-                src='../Doc/Latex/BeeBot.pdf'
-                width="500"
-                height="678"
-                id="pdf"
-              >
-              <p>This browser does not support PDF!</p>
-              </iframe>
-            
-          </div>
+      <div class="document-container">
+        <div class="document">
+          <iframe
+            src='../Doc/Latex/BeeBot.pdf'
+            width="500"
+            height="678"
+            id="pdf"
+          >
+            <p>This browser does not support PDF!</p>
+          </iframe>
+        </div>
+      </div>
     </div>
-    
   </div>
 </body>
 </html>
