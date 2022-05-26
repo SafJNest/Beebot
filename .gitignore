@@ -24,5 +24,3 @@ hs_err_pid*
 
 target/
 .vscode/
-
-rsc/SoundBoard/*
