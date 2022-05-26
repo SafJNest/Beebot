@@ -28,6 +28,16 @@ body{
   height: 100%;
 }
 
+.invite{
+  font-size: 18pt;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+
+}
+
 #title{
   padding-top: 1.5%;
   text-align: center;
@@ -42,6 +52,10 @@ body{
   font-size: 1.8vw;
 }
 
+.cards-paragraph{
+  font-size: 1.2vw;
+}
+
 .cards-container {
   display: flex;
   margin-top: 15em;
@@ -53,17 +67,22 @@ body{
 .cards-section-one{
   margin-right: 5em;
   width: 30%;
+  border: 2px solid #008080;
+  border-radius: 10px;
 }
 .cards-section-two{
   margin-right: 5em;
   width: 30%;
+  border: 2px solid #008080;
+  border-radius: 10px;
 }
 
 .cards-section-three{
   margin-right: 5em;
   width: 30%;
+  border: 2px solid #008080;
+  border-radius: 10px;
 }
-
 
 
 /*BUTTON COMMANDS*/
@@ -161,7 +180,7 @@ tr, td{
 }
 .top{
   font-weight: bold;
-  background-color: #008080;
+  background-color: #08948c;
 }
 .inside{
   font-weight: bold;
@@ -194,6 +213,14 @@ gap: 10%;
 width:80%;
 position: fixed;
 height: 100%;
+}
+
+.document-container{
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+  max-width: 100%;
+  text-align: center;
 }
 
 .contentButton{
