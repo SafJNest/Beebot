@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.safjnest"},{"l":"com.safjnest.Commands.Audio"},{"l":"com.safjnest.Commands.ManageGuild"},{"l":"com.safjnest.Commands.ManageMembers"},{"l":"com.safjnest.Commands.Math"},{"l":"com.safjnest.Commands.Misc"},{"l":"com.safjnest.Utilities"}];updateSearchResults();
