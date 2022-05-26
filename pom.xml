@@ -130,6 +130,25 @@
     <version>0.8</version>
     <type>pom</type>
 </dependency>
+<!-- https://mvnrepository.com/artifact/com.google.apis/google-api-services-youtube -->
+<dependency>
+  <groupId>com.google.apis</groupId>
+  <artifactId>google-api-services-youtube</artifactId>
+  <version>v3-rev222-1.25.0</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+<dependency>
+  <groupId>org.jsoup</groupId>
+  <artifactId>jsoup</artifactId>
+  <version>1.15.1</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.json/json -->
+<dependency>
+  <groupId>org.json</groupId>
+  <artifactId>json</artifactId>
+  <version>20220320</version>
+</dependency>
+
   </dependencies>
 
   <build>

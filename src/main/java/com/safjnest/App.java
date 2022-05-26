@@ -46,12 +46,14 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
 public class App extends ListenerAdapter {
     private static boolean isCanary = true;
     private static JDA jda;
-    private static String token;
     private static String PREFIX;
     private static Activity activity;
 
+    private static String token;
     private static String AWSAccesKey;
     private static String AWSSecretKey;
+    private static String youtubeApiKey;
+
     private static String bucket = "thebeebox";
 
     private static final int maxBighi = 11700;
@@ -75,6 +77,7 @@ public class App extends ListenerAdapter {
             activity = Activity.playing("ANNODAM OIDOZIR IEIDOCROPE BEAMBUZL BILLY");
             AWSAccesKey = "AKIASJG3D4LS4UT7VPX4";
             AWSSecretKey = "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";
+            youtubeApiKey = "AIzaSyDEqe8Vh15I9WfXJAZMFbnYpnx7xQrE92o";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
@@ -83,6 +86,7 @@ public class App extends ListenerAdapter {
             activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
             AWSAccesKey = args[2];
             AWSSecretKey = args[3];
+            youtubeApiKey = args[4];
         }
 
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
@@ -109,7 +113,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Disconnect());
         builder.addCommand(new DownloadSound(s3Client));
         builder.addCommand(new List(s3Client));
-        builder.addCommand(new Play(tierOneLink));
+        builder.addCommand(new Play(youtubeApiKey, tierOneLink));
         builder.addCommand(new PlaySound(s3Client));
         builder.addCommand(new Upload(s3Client));
         builder.addCommand(new Stop());
