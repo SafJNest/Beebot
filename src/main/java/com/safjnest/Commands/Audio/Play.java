@@ -91,7 +91,7 @@ public class Play extends Command {
         if(toPlay == null){
             String keyword = event.getArgs();
             keyword = keyword.replace(" ", "+");
-            String url = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&q=" + keyword + "&key=" + youtubeApiKey;
+            String url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=" + keyword + "&key=" + youtubeApiKey;
             try {
                 URL theUrl = new URL(url);
                 URLConnection request = theUrl.openConnection();
