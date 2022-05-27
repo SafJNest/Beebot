@@ -29,12 +29,13 @@ public class Disconnect extends Command {
         if(event.getMessage().getMentionedMembers().size() == 0){
             event.reply("Non hai menzionato nessuno");
             return;
+        }else if(event.getArgs().equalsIgnoreCase("bot")){
+            event.getGuild().getAudioManager().closeAudioConnection();
         }else{
             theGuy = event.getMessage().getMentionedMembers().get(0).getUser();
-            //disconnect a user
             event.getGuild().kickVoiceMember(event.getGuild().getMember(theGuy)).queue();
         }
-		event.getGuild().getAudioManager().closeAudioConnection();
+		
 	}
     
 
