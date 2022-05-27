@@ -48,9 +48,7 @@ public class List extends Command {
                 soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
             }
         }else{
-           ArrayList<String> sounds = s3Client.listObjects(event.getGuild().getId());
-            Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
-            sortedMap.putAll(alpha);
+            ArrayList<String> sounds = s3Client.listObjects(event.getGuild().getId());
             soundNames = "**"+ event.getGuild().getName() +"**:\n";
             for(String s : sounds){
                 soundNames+= s + " - ";
