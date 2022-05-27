@@ -64,7 +64,7 @@ public class AwsS3 {
      * @param prefix
      * @return
      */
-    public HashMap<String, ArrayList<String>> listObjects(String prefix) {
+    public HashMap<String, ArrayList<String>> listObjectsLexicographic(String prefix) {
         HashMap<String, ArrayList<String>> alpha = new HashMap<>();
         ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
             .withBucketName(bucket)
@@ -80,6 +80,27 @@ public class AwsS3 {
             listObjectsRequest.setMarker(objectListing.getNextMarker());
         } while (objectListing.isTruncated());
         return alpha;
+    }
+
+    /**
+     * Makes a list of all the files in the bucket.
+     * <p>The files are sorted by the first letter of the file name in the lexicographic order.
+     * @param prefix
+     * @return
+     */
+    public ArrayList<String> listObjects(String prefix) {
+        ArrayList<String> sounds = new ArrayList<String>();
+        ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+            .withBucketName(bucket)
+            .withPrefix(prefix);
+        ObjectListing objectListing;
+        do {
+            objectListing = s3Client.listObjects(listObjectsRequest);
+            for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) 
+                sounds.add(objectSummary.getKey().split("/")[2]);
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+        } while (objectListing.isTruncated());
+        return sounds;
     }
 
     /**

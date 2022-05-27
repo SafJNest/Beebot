@@ -48,16 +48,13 @@ public class List extends Command {
                 soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
             }
         }else{
-            alpha = s3Client.listObjects(event.getGuild().getId());
+           ArrayList<String> sounds = s3Client.listObjects(event.getGuild().getId());
             Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
             sortedMap.putAll(alpha);
             soundNames = "**"+ event.getGuild().getName() +"**:\n";
-            for(String k : sortedMap.keySet()) {
-                //TODO TOGTLIERE IL BUZL ALFABRTICO
-                for(String s : sortedMap.get(k)){
-                    soundNames+= s + " - ";
-                    cont++;
-                }
+            for(String s : sounds){
+                soundNames+= s + " - ";
+                cont++;
             }
             soundNames = soundNames.substring(0, soundNames.length()-3);
         } 
