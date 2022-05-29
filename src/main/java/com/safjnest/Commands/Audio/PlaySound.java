@@ -68,13 +68,16 @@ public class PlaySound extends Command{
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
+        
         AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
         AudioPlayer player = playerManager.createPlayer();
         AudioHandler audioPlayerSendHandler = new AudioHandler(player);
+
         audioManager.setSendingHandler(audioPlayerSendHandler);
         audioManager.openAudioConnection(myChannel);
         TrackScheduler trackScheduler = new TrackScheduler(player);
         player.addListener(trackScheduler);
+        
         playerManager.registerSourceManager(new LocalAudioSourceManager());
         playerManager.loadItem(nameFile, new AudioLoadResultHandler() {
             @Override
@@ -141,6 +144,5 @@ public class PlaySound extends Command{
         channel.sendMessageEmbeds(eb.build())
             .addFile(file, img)
             .queue();
-        
     }
 }

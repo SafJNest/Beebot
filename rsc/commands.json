@@ -34,15 +34,15 @@
         "arguments" : "[nomeComando]"
     },
 
-    "play":{
-        "alias" : ["p", "nuovavita", "yt"],
+    "playyoutube":{
+        "alias" : ["y", "py", "nuovavita", "yt"],
         "help"  : "Riproduce un link di youtube.",
         "category" : "Audio",
         "arguments" : "[play] [link youtube]"
     },
 
     "playsound":{
-        "alias" : ["ps", "playsos"],
+        "alias" : ["p", "ps", "playsos", "sot"],
         "help"  : "Riproduce un suono dal nome.",
         "category" : "Audio",
         "arguments" : "[playsound] [nome del suono]"

@@ -1,1 +1,1 @@
-worker: java -jar target/beebox-1.0-SNAPSHOT-jar-with-dependencies.jar false "OTM4NDg3NDcwMzM5ODAxMTY5.GgeqCi.1fHPBYNb2GplXm5kVrNAt2pZI8JidXeJ70uzb4" "AKIASJG3D4LS4UT7VPX4" "9RlRQCIJlCCYTLdg/Y9DiDHUQXjt6/6fhzohM/su" "AIzaSyDEqe8Vh15I9WfXJAZMFbnYpnx7xQrE92o"
+worker: java -jar target/beebox-1.0-SNAPSHOT-jar-with-dependencies.jar false "OTM4NDg3NDcwMzM5ODAxMTY5.GgeqCi.1fHPBYNb2GplXm5kVrNAt2pZI8JidXeJ70uzb4" "AKIASJG3D4LS4UT7VPX4" "9RlRQCIJlCCYTLdg/Y9DiDHUQXjt6/6fhzohM/su" "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns"
