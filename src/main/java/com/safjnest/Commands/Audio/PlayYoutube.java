@@ -1,7 +1,6 @@
 package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -22,7 +21,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -43,11 +41,11 @@ import net.dv8tion.jda.api.entities.MessageChannel;
  * 
  * @since 1.0
  */
-public class Play extends Command {
+public class PlayYoutube extends Command {
     private String youtubeApiKey;
     private HashMap<String,String> tierOneLink;
 
-    public Play(String youtubeApiKey, HashMap<String,String> tierOneLink){
+    public PlayYoutube(String youtubeApiKey, HashMap<String,String> tierOneLink){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -89,11 +87,9 @@ public class Play extends Command {
 
         String toPlay = getVideoIdFromYoutubeUrl(event.getArgs());
         if(toPlay == null){
-            String keyword = event.getArgs();
-            keyword = keyword.replace(" ", "+");
-            String url = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=" + keyword + "&key=" + youtubeApiKey;
             try {
-                URL theUrl = new URL(url);
+                URL theUrl = new URL("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=" + event.getArgs().replace(" ", "+") + "&key=" + youtubeApiKey);
+                System.out.println(theUrl);
                 URLConnection request = theUrl.openConnection();
                 request.connect();
                 JSONParser parser = new JSONParser();
@@ -102,10 +98,12 @@ public class Play extends Command {
                 JSONObject item = (JSONObject) items.get(0);
                 JSONObject id = (JSONObject) item.get("id");
                 toPlay = (String) id.get("videoId");
-            } catch (IOException | ParseException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                event.reply("Nessun video trovato.");
+                return;
             }
         }
+
 
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
@@ -158,7 +156,7 @@ public class Play extends Command {
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
         eb.setColor(new Color(255, 0, 0));
-        eb.setDescription(player.getPlayingTrack().getInfo().title);
+        eb.setDescription("[" + player.getPlayingTrack().getInfo().title + "](" + player.getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + player.getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
         event.reply(eb.build());
         

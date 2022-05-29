@@ -37,7 +37,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
   /**
    *  constructor
-   * @param player Comes from {@link com.safjnest.Commands.Audio.Play Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
+   * @param player Comes from {@link com.safjnest.Commands.Audio.PlayYoutube Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
    */
   public TrackScheduler(AudioPlayer player) {
     this.player = player;
@@ -45,7 +45,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
   /**
    * Add the track to the {@link com.safjnest.Utilities.TrackScheduler#queue queue}
-   * @param track Comes from {@link com.safjnest.Commands.Audio.Play Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
+   * @param track Comes from {@link com.safjnest.Commands.Audio.PlayYoutube Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
    */
   @OverridingMethodsMustInvokeSuper
   public void addQueue(AudioTrack track) {
@@ -54,7 +54,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
   /**
    * When a new track is required from 
-   * {@link com.safjnest.Commands.Audio.Play Play} 
+   * {@link com.safjnest.Commands.Audio.PlayYoutube Play} 
    * or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
    * the method polls the first track in the {@link com.safjnest.Utilities.TrackScheduler#queue queue}
    * @return
@@ -93,6 +93,9 @@ public class TrackScheduler extends AudioEventAdapter {
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
     if (endReason.mayStartNext) {
       // Start next track
+    }
+    else{
+      player.destroy();
     }
 
     // endReason == FINISHED: A track finished or died by an exception (mayStartNext

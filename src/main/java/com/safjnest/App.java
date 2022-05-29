@@ -77,12 +77,12 @@ public class App extends ListenerAdapter {
             activity = Activity.playing("ANNODAM OIDOZIR IEIDOCROPE BEAMBUZL BILLY");
             AWSAccesKey = "***REMOVED***";
             AWSSecretKey = "***REMOVED***";
-            youtubeApiKey = "AIzaSyDEqe8Vh15I9WfXJAZMFbnYpnx7xQrE92o";
+            youtubeApiKey = "***REMOVED***";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
             token = args[1];
-            PREFIX = "%";
+            PREFIX = "p";
             activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
             AWSAccesKey = args[2];
             AWSSecretKey = args[3];
@@ -113,7 +113,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Disconnect());
         builder.addCommand(new DownloadSound(s3Client));
         builder.addCommand(new List(s3Client));
-        builder.addCommand(new Play(youtubeApiKey, tierOneLink));
+        builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
         builder.addCommand(new PlaySound(s3Client));
         builder.addCommand(new Upload(s3Client));
         builder.addCommand(new Stop());
