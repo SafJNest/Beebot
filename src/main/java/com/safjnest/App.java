@@ -90,7 +90,7 @@ public class App extends ListenerAdapter {
             AWSAccesKey = args[2];
             AWSSecretKey = args[3];
             youtubeApiKey = args[4];
-            ttsApiKey = args[5];
+            ttsApiKey = "d6199f5911f4493da571729f8127ce37";
         }
         TTSHandler tts = new TTSHandler(ttsApiKey);
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
