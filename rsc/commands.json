@@ -48,6 +48,13 @@
         "arguments" : "[playsound] [nome del suono]"
     },
 
+    "tts":{
+        "alias" : ["t", "parla", "parladiocane"],
+        "help"  : "Legge.",
+        "category" : "Audio",
+        "arguments" : "[tts] [frase da leggere]"
+    },
+
     "stop":{
         "alias" : ["stoppete", "donteventhinkaboutit"],
         "help"  : "Ferma la riproduzione di suoni.",
