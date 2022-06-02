@@ -16,6 +16,7 @@ import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Utilities.AwsS3;
+import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
@@ -53,6 +54,7 @@ public class App extends ListenerAdapter {
     private static String AWSAccesKey;
     private static String AWSSecretKey;
     private static String youtubeApiKey;
+    private static String ttsApiKey;
 
     private static String bucket = "thebeebox";
 
@@ -78,6 +80,7 @@ public class App extends ListenerAdapter {
             AWSAccesKey = "***REMOVED***";
             AWSSecretKey = "***REMOVED***";
             youtubeApiKey = "***REMOVED***";
+            ttsApiKey = "***REMOVED***";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
@@ -87,8 +90,9 @@ public class App extends ListenerAdapter {
             AWSAccesKey = args[2];
             AWSSecretKey = args[3];
             youtubeApiKey = args[4];
+            ttsApiKey = args[5];
         }
-
+        TTSHandler tts = new TTSHandler(ttsApiKey);
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
         s3Client.initialize();
         
@@ -116,6 +120,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
         builder.addCommand(new PlaySound(s3Client));
         builder.addCommand(new Upload(s3Client));
+        builder.addCommand(new TTS(tts));
         builder.addCommand(new Stop());
 
         //Manage Guild
