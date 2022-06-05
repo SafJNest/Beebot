@@ -92,7 +92,7 @@ public class App extends ListenerAdapter {
             youtubeApiKey = args[4];
             ttsApiKey = "***REMOVED***";
         }
-        TTSHandler tts = new TTSHandler(ttsApiKey);
+        //TTSHandler tts = new TTSHandler(ttsApiKey);
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
         s3Client.initialize();
         
@@ -120,7 +120,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
         builder.addCommand(new PlaySound(s3Client));
         builder.addCommand(new Upload(s3Client));
-        builder.addCommand(new TTS(tts));
+        //builder.addCommand(new TTS(tts));
         builder.addCommand(new Stop());
 
         //Manage Guild
