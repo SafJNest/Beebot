@@ -10,6 +10,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -72,7 +73,7 @@ class FileListener extends ListenerAdapter {
                 e.getJDA().removeEventListener(this);
                 return;
             }   
-            if(e.getMessage().getAttachments().get(0).getSize() > 1048576){
+            if(e.getMessage().getAttachments().get(0).getSize() > 1048576 && !PermissionHandler.isUntouchable(event.getAuthor().getId())){
                 event.reply("il file è troppo grosso (1mb max)");
                 e.getJDA().removeEventListener(this);
                 return;
@@ -116,4 +117,5 @@ class FileListener extends ListenerAdapter {
             e.getJDA().removeEventListener(this);
         }
     }
+
 }

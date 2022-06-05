@@ -50,7 +50,6 @@ public class TTS extends Command{
         File file = new File("rsc" + File.separator + "tts");
         if(!file.exists())
             file.mkdirs();
-            
         tts.makeSpeech(event.getArgs(), event.getAuthor().getName());
         String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
         MessageChannel channel = event.getChannel();
