@@ -124,14 +124,14 @@
     <version>0.8</version>
     <type>jar</type>
 </dependency>
-<!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss -->
+<!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss 
 <dependency>
   <groupId>org.openhab.voice</groupId>
   <artifactId>org.openhab.voice.voicerss</artifactId>
   <version>2.0.0</version>
   <scope>system</scope>
   <systemPath>${basedir}/rsc/jar/voicerss_tts.jar</systemPath>
-</dependency>
+</dependency>-->
 <dependency>
     <groupId>org.gagravarr</groupId>
     <artifactId>vorbis-java-parent</artifactId>
