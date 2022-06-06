@@ -3,12 +3,12 @@ package com.safjnest.Utilities;
 import java.io.File;
 import java.io.FileOutputStream;
 
-import com.voicerss.tts.AudioCodec;
-import com.voicerss.tts.AudioFormat;
-import com.voicerss.tts.Languages;
-import com.voicerss.tts.VoiceParameters;
-import com.voicerss.tts.VoiceProvider;
-import com.voicerss.tts.Voices;
+import com.safjnest.Utilities.tts.AudioCodec;
+import com.safjnest.Utilities.tts.AudioFormat;
+import com.safjnest.Utilities.tts.Languages;
+import com.safjnest.Utilities.tts.VoiceParameters;
+import com.safjnest.Utilities.tts.VoiceProvider;
+import com.safjnest.Utilities.tts.Voices;
 
 public class TTSHandler {
     private VoiceProvider tts;
@@ -19,6 +19,9 @@ public class TTSHandler {
     }
 
     public void makeSpeech(String speech, String userName) {
+        for (File file : new File(path).listFiles())
+            file.delete();
+
         VoiceParameters params = new VoiceParameters(speech, Languages.Italian);
         params.setCodec(AudioCodec.MP3);
         params.setVoice(Voices.Italian.Pietro);
