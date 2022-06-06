@@ -20,6 +20,7 @@ import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
+import com.safjnest.Commands.Dangerous.RandomMove;
 import com.safjnest.Commands.Dangerous.VandalizeServer;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
@@ -156,6 +157,7 @@ public class App extends ListenerAdapter {
 
         //Dangerous
         builder.addCommand(new VandalizeServer());
+        builder.addCommand(new RandomMove());
 
         //Misc
         builder.addCommand(new Ping());
