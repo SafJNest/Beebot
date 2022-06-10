@@ -285,6 +285,12 @@
         "category" : "Pericolosi",
         "arguments" : "[nomeComando] [server]"
     },
+    "randommove":{
+        "alias" : ["rm", "fakerandom"],
+        "help"  : "Sposta un utente in stanze a caso n volte",
+        "category" : "Pericolosi",
+        "arguments" : "[nomeComando] [id/@user] [n volte]"
+    },
 
     "invitebot":{
         "alias" : ["invite", "inbot"],
