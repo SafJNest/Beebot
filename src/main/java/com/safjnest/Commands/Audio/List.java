@@ -10,6 +10,8 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 
+import net.dv8tion.jda.api.entities.Guild;
+
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
@@ -48,13 +50,27 @@ public class List extends Command {
                 soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
             }
         }else{
-            ArrayList<String> sounds = s3Client.listObjects(event.getGuild().getId());
-            soundNames = "**"+ event.getGuild().getName() +"**:\n";
+            Guild guild = null;
+            if(args.length > 0){
+                try {
+                    guild = event.getJDA().getGuildById(args[0]);
+                } catch (Exception e) {
+                    guild = event.getGuild();
+                }
+                if(guild == null)
+                    guild = event.getGuild();
+            }
+            else
+                guild = event.getGuild();
+
+            ArrayList<String> sounds = s3Client.listObjects(guild.getId());
+            soundNames = "**" + guild.getName() + "**:\n";
             for(String s : sounds){
                 soundNames+= s + " - ";
                 cont++;
             }
-            soundNames = soundNames.substring(0, soundNames.length()-3);
+            if(sounds.size() > 0)
+                soundNames = soundNames.substring(0, soundNames.length() - 3);
         } 
         soundNames += "\nSuono totali: " + cont;
         event.reply(soundNames);
