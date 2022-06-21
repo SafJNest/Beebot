@@ -11,6 +11,7 @@ import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -49,11 +50,11 @@ public class List extends Command {
                 }
                 soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
             }
-        }else{
+        }else if(args[0].equalsIgnoreCase("server") || args[0].equalsIgnoreCase("")){
             Guild guild = null;
             if(args.length > 0){
                 try {
-                    guild = event.getJDA().getGuildById(args[0]);
+                    guild = event.getJDA().getGuildById(args[1]);
                 } catch (Exception e) {
                     guild = event.getGuild();
                 }
@@ -71,6 +72,34 @@ public class List extends Command {
             }
             if(sounds.size() > 0)
                 soundNames = soundNames.substring(0, soundNames.length() - 3);
+        }else if(args[0].equalsIgnoreCase("user")){
+            User theGuy = null;
+            if(event.getMessage().getMentionedMembers().size() > 0){
+                theGuy = event.getJDA().getUserById(event.getMessage().getMentionedMembers().get(0).getId());
+                if(theGuy == null)
+                    theGuy = event.getAuthor();
+            }else if(args.length > 0){
+                try {
+                    theGuy = event.getJDA().getUserById(args[1]);
+                } catch (Exception e) {
+                    theGuy = event.getAuthor();
+                }
+                if(theGuy == null)
+                    theGuy = event.getAuthor();
+            }
+            else
+                theGuy = event.getAuthor();
+            alpha = s3Client.listObjectsByServer(theGuy.getId(), event);
+            Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
+            sortedMap.putAll(alpha);
+            for(String serverName : sortedMap.keySet()) {
+                soundNames += "**"+ serverName +"**" + ":\n";
+                for(String soundName : sortedMap.get(serverName)){
+                    soundNames += soundName + " - ";
+                    cont++;
+                }
+                soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
+            }
         } 
         soundNames += "\nSuono totali: " + cont;
         event.reply(soundNames);
