@@ -143,7 +143,13 @@ public class AwsS3 {
             objectListing = s3Client.listObjects(listObjectsRequest);
             for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
                 if(objectSummary.getKey().split("/")[1].equals(id)) {
-                    String serverName = event.getJDA().getGuildById(objectSummary.getKey().split("/")[0]).getName();
+                    String serverName = "";
+                    try {
+                        serverName = event.getJDA().getGuildById(objectSummary.getKey().split("/")[0]).getName();
+                        
+                    } catch (Exception e) {
+                        serverName = "ImNotInTheServer";
+                    }
                     if(!alpha.containsKey(serverName))
                     alpha.put(serverName, new ArrayList<String>());
                 alpha.get(serverName).add(objectSummary.getKey().split("/")[2]);
