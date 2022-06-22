@@ -3,6 +3,7 @@ package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
 import java.io.File;
+import java.util.Set;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -14,7 +15,6 @@ import com.safjnest.Utilities.TTSHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-
 import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -30,6 +30,7 @@ import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 public class TTS extends Command{
     String speech;
     TTSHandler tts;
+    private static final Set<String> ita = Set.of("Pietro", "Mia", "Bria");
 
     public TTS(TTSHandler tts){
         this.name = this.getClass().getSimpleName();
@@ -50,7 +51,12 @@ public class TTS extends Command{
         File file = new File("rsc" + File.separator + "tts");
         if(!file.exists())
             file.mkdirs();
-        tts.makeSpeech(event.getArgs(), event.getAuthor().getName());
+        if(ita.contains(event.getArgs().split(" ")[0])){
+            speech = event.getArgs().substring(event.getArgs().indexOf(" "));
+            tts.makeSpeech(speech, event.getAuthor().getName(), event.getArgs().split(" ")[0]);
+        }else{
+            tts.makeSpeech(event.getArgs(), event.getAuthor().getName());
+        }
         String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
