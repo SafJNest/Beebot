@@ -3,11 +3,13 @@ package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
 import java.io.File;
+import java.util.HashMap;
 import java.util.Set;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.TrackScheduler;
+import com.safjnest.Utilities.tts.Languages;
 import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
@@ -31,7 +33,7 @@ public class TTS extends Command{
     String speech;
     TTSHandler tts;
     private static final Set<String> ita = Set.of("Pietro", "Mia", "Bria");
-
+    private static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
     public TTS(TTSHandler tts){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
@@ -40,6 +42,12 @@ public class TTS extends Command{
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
         this.tts = tts;
+/* 
+        for(String l : Languages.langagues){
+            voices.put(l, new Set<String>());
+        }
+     */   
+    
     }
 
     @Override
