@@ -10,6 +10,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.TrackScheduler;
 import com.safjnest.Utilities.tts.Languages;
+import com.safjnest.Utilities.tts.Voices;
 import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.SafJNest;
@@ -42,11 +43,31 @@ public class TTS extends Command{
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
         this.tts = tts;
-/* 
-        for(String l : Languages.langagues){
-            voices.put(l, new Set<String>());
-        }
-     */   
+        voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Arabic_SaudiArabia.id, Set.of(Voices.Arabic_SaudiArabia.array));
+        voices.put(Voices.Bulgarian.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Catalan.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Catalan.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Chinese_China.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Chinese_HongKong.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Chinese_Taiwan.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Croatian.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Czech.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Danish.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Dutch_Belgium.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Dutch_Netherlands.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.English_Australia.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.English_Canada.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.English_GreatBritain.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.English_India.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.English_Ireland.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.English_UnitedStates.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
+        voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
+
     
     }
 
