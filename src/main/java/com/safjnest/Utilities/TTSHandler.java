@@ -40,11 +40,11 @@ public class TTSHandler {
         }
     }
 
-    public void makeSpeech(String speech, String userName, String voiceName) {
+    public void makeSpeech(String speech, String userName, String voiceName, String language) {
         for (File file : new File(path).listFiles())
             file.delete();
 
-        VoiceParameters params = new VoiceParameters(speech, Languages.Italian);
+        VoiceParameters params = new VoiceParameters(speech, language);
         params.setCodec(AudioCodec.MP3);
         params.setVoice(voiceName);
         params.setFormat(AudioFormat.Format_44KHZ.AF_44khz_16bit_stereo);
