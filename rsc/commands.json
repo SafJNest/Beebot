@@ -297,5 +297,19 @@
         "help"  : "Crea un link di invito del server.",
         "category" : "Gestione Server",
         "arguments" : "[nomeComando]"
+    },
+
+    "listguild":{
+        "alias" : ["lg", "guilds"],
+        "help"  : "Restituisce una lista dei server in cui il bot è presente",
+        "category" : "Gestione Server",
+        "arguments" : "[nomeComando]"
+    },
+
+    "threadcounter":{
+        "alias" : ["countt", "thread", "dbmr"],
+        "help"  : "Restituisce una lista dei thread attualmente attivi nel server di heroku",
+        "category" : "Miscellaneo",
+        "arguments" : "[nomeComando]"
     }
 }

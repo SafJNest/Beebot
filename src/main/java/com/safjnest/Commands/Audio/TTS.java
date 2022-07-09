@@ -95,7 +95,7 @@ public class TTS extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
-        String language = "ita";
+        String language = "it-it";
         String voice = "Pietro";
         MessageChannel channel = event.getChannel();
         if((speech = event.getArgs()) == ""){

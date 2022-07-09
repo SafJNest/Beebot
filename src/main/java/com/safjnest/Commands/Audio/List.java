@@ -100,8 +100,25 @@ public class List extends Command {
                 }
                 soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
             }
-        } 
+        }else if(args[0].equalsIgnoreCase("global")){
+            alpha = s3Client.listObjectsByServer();
+            Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
+            sortedMap.putAll(alpha);
+            for(String serverName : sortedMap.keySet()) {
+                soundNames += "**"+ 
+                ((event.getJDA().getGuildById(serverName) == null)
+                    ? "Nome non disponibile"
+                    : event.getJDA().getGuildById(serverName).getName()) +"**" + ":\n";
+                for(String soundName : sortedMap.get(serverName)){
+                    soundNames += soundName.split("/")[2] + " - ";
+                    cont++;
+                }
+                soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
+            }
+        }
         soundNames += "\nSuono totali: " + cont;
         event.reply(soundNames);
     }
 }
+//TODO rifare la classe list e AWSS3 perche' sono merdose
+//OIDOZIRF

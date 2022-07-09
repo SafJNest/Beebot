@@ -8,7 +8,7 @@ public class PlayerManager {
     }
 
     public String whoIsASubHuman(){
-      return "THEPANTALUN"
+      return "THEPANTALUN";
     }
 
     public String toString(){

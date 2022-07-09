@@ -103,6 +103,7 @@ public class AwsS3 {
         return sounds;
     }
 
+
     /**
      * Makes a list of all the files in the bucket.
      * <p>The files are sorted by the first letter of the file name in the lexicographic order.
@@ -163,7 +164,6 @@ public class AwsS3 {
     /**
      * Makes a list of all the files in the bucket.
      * <p>The files are sorted by the first letter of the file name in the lexicographic order.
-     * @param id
      * @return
      */
     public HashMap<String, ArrayList<String>> listObjectsByServer() {
