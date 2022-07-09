@@ -29,7 +29,7 @@ public class ListGuild extends Command {
         List<Guild> guilds = event.getJDA().getGuilds();
         String list = "Il Bot è presente nei seguinti server:\n";
         for(Guild guild : guilds){
-            list+="**"+guild.getName()+"** - ";
+            list+="**"+guild.getName()+"("+guild.getId()+")** - ";
         }
         list = list.substring(0, list.length()-3);
         event.reply(list);
