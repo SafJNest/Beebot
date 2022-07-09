@@ -34,13 +34,18 @@ public class ServerInfo extends Command{
     @Override
     protected void execute(CommandEvent event) {
         int roleCharNumber;
-        if(!SafJNest.isInteger(event.getArgs()) || (Integer.parseInt(event.getArgs())) > 1024 || (Integer.parseInt(event.getArgs())) < 1)
+        Guild guild = null;
+        try {
+            guild = (event.getJDA().getGuildById(event.getArgs())==null) ? event.getGuild() : event.getJDA().getGuildById(event.getArgs());
+        } catch (Exception e) {
+            guild = event.getGuild();
+        }
+        String args = "";
+        if(!SafJNest.isInteger(args) || (Integer.parseInt(args)) > 1024 || (Integer.parseInt(args)) < 1)
             roleCharNumber = defaultRoleCharNumber;
         else
-            roleCharNumber = Integer.parseInt(event.getArgs());
-
-        Guild guild = event.getGuild();
-
+            roleCharNumber = Integer.parseInt(args);
+        
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Informazioni del server");
         eb.setThumbnail(guild.getIconUrl());
