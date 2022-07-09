@@ -135,6 +135,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new UserInfo());
         builder.addCommand(new EmojiInfo());
         builder.addCommand(new InviteBot());
+        builder.addCommand(new ListGuild());
 
         //Manage Member
         builder.addCommand(new Ban());
@@ -167,6 +168,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
+        builder.addCommand(new ThreadCounter());
 
         CommandClient client = builder.build();
         jda.addEventListener(client);

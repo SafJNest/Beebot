@@ -33,6 +33,7 @@ public class RandomMove extends Command{
         List<VoiceChannel> channels = null;
         VoiceChannel channel = null;
         boolean flag = true;
+        
         int n;
         String[] args = event.getArgs().split(" ");
         if(args[0].equalsIgnoreCase("me"))
@@ -49,7 +50,6 @@ public class RandomMove extends Command{
             return;
         }
         n = Integer.parseInt(args[1]);
-        System.out.println(n);
         channels = event.getGuild().getVoiceChannels();
         if(theGuy == null){
             for(int i = 0; i < n; i++){
