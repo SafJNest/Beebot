@@ -32,7 +32,6 @@ public class RandomMove extends Command{
         List<Member> theGuys = null;
         List<VoiceChannel> channels = null;
         VoiceChannel channel = null;
-        boolean flag = true;
         
         int n;
         String[] args = event.getArgs().split(" ");
@@ -44,7 +43,6 @@ public class RandomMove extends Command{
 
         }else if(event.getMessage().getMentionedUsers().size() > 0){
             theGuy = event.getMessage().getMentionedUsers().get(0);
-            flag = false;
         }else{
             event.reply("Non ho capito a chi vuoi rompere il cazzo.");
             return;

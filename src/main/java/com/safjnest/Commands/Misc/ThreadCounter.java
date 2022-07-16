@@ -5,9 +5,6 @@ import org.apache.commons.lang3.ThreadUtils;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
-
-import net.dv8tion.jda.api.events.Event;
-
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
