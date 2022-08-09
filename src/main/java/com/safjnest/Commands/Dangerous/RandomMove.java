@@ -32,29 +32,38 @@ public class RandomMove extends Command{
         List<Member> theGuys = null;
         List<VoiceChannel> channels = null;
         VoiceChannel channel = null;
+        VoiceChannel startChannel = null;
         
         int n;
         String[] args = event.getArgs().split(" ");
         if(args[0].equalsIgnoreCase("me"))
             theGuy = event.getAuthor();
+        
 
         if(args[0].equalsIgnoreCase("here")){
             theGuys = event.getMember().getVoiceState().getChannel().getMembers();
-
         }else if(event.getMessage().getMentionedUsers().size() > 0){
             theGuy = event.getMessage().getMentionedUsers().get(0);
         }else{
             event.reply("Non ho capito a chi vuoi rompere il cazzo.");
             return;
         }
+        if(theGuy == null)
+            startChannel = event.getGuild().getVoiceChannelById(event.getGuild().getMemberById(event.getAuthor().getId()).getVoiceState().getChannel().getId());
+        else
+            startChannel = event.getGuild().getVoiceChannelById(event.getGuild().getMemberById(theGuy.getId()).getVoiceState().getChannel().getId());
+        
         n = Integer.parseInt(args[1]);
         channels = event.getGuild().getVoiceChannels();
         if(theGuy == null){
-            for(int i = 0; i < n; i++){
+            for(int i = 0; i < n - 1; i++){
                 channel = channels.get((int)(Math.random() * (channels.size()-1)));
                 for(Member member : theGuys){
                     event.getGuild().moveVoiceMember(member, channel).queue();
                 }
+            }
+            for(Member member : theGuys){
+                event.getGuild().moveVoiceMember(member, startChannel).queue();
             }
             return;
         }
@@ -62,6 +71,7 @@ public class RandomMove extends Command{
             channel = channels.get((int)(Math.random() * (channels.size()-1)));
             event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), channel).queue();
         }
+        event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), startChannel).queue();
         return;
             
 
