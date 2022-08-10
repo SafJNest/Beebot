@@ -42,8 +42,8 @@ public class RandomMove extends Command{
 
         if(args[0].equalsIgnoreCase("here")){
             theGuys = event.getMember().getVoiceState().getChannel().getMembers();
-        }else if(event.getMessage().getMentionedUsers().size() > 0){
-            theGuy = event.getMessage().getMentionedUsers().get(0);
+        }else if(event.getMessage().getMentions().getMembers().size() > 0){
+            theGuy = event.getMessage().getMentions().getUsers().get(0);
         }else{
             event.reply("Non ho capito a chi vuoi rompere il cazzo.");
             return;

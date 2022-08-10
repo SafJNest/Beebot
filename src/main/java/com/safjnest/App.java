@@ -100,11 +100,11 @@ public class App extends ListenerAdapter {
         s3Client.initialize();
         
         jda = JDABuilder
-            .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
+            .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
             .addEventListeners(new TheListener())
             .setMemberCachePolicy(MemberCachePolicy.VOICE)
             .setChunkingFilter(ChunkingFilter.ALL)
-            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
+            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI)
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
@@ -158,7 +158,7 @@ public class App extends ListenerAdapter {
 
         //Dangerous
         builder.addCommand(new VandalizeServer());
-        //builder.addCommand(new RandomMove());
+        builder.addCommand(new RandomMove());
 
         //Misc
         builder.addCommand(new Ping());

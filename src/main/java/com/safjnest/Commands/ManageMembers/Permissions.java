@@ -28,8 +28,8 @@ public class Permissions extends Command{
         String per = "";
         try {
             
-            if(event.getMessage().getMentionedMembers().size() > 0)
-                theGuy = event.getMessage().getMentionedMembers().get(0);
+            if(event.getMessage().getMentions().getMembers().size() > 0)
+                theGuy = event.getMessage().getMentions().getMembers().get(0);
             else
                 theGuy = event.getGuild().retrieveMemberById(event.getArgs()).complete();
             if (theGuy.isOwner())

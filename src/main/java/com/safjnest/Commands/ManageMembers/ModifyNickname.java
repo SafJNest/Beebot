@@ -28,8 +28,8 @@ public class ModifyNickname extends Command {
         
         if(args.length < 2)
             return;
-        else if(event.getMessage().getMentionedMembers().size() > 0)
-            theGuy = event.getMessage().getMentionedMembers().get(0);
+        else if(event.getMessage().getMentions().getMembers().size() > 0)
+            theGuy = event.getMessage().getMentions().getMembers().get(0);
         else
             theGuy = event.getGuild().getMemberById(args[0]);
         

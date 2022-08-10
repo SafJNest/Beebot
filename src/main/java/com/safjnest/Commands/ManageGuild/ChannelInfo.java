@@ -33,8 +33,8 @@ public class ChannelInfo extends Command {
         TextChannel c = null;
         VoiceChannel v = null;
         GuildChannel gc = null;
-        if(event.getMessage().getMentionedChannels().size() > 0) 
-            gc = event.getMessage().getMentionedChannels().get(0);
+        if(event.getMessage().getMentions().getChannels().size() > 0) 
+            gc = event.getMessage().getMentions().getChannels().get(0);
         else if(event.getArgs() != null) 
             gc = event.getGuild().getGuildChannelById(event.getArgs());
         
