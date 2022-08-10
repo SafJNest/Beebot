@@ -40,8 +40,8 @@ public class UserInfo extends Command{
             roleCharNumber = Integer.parseInt(event.getArgs());
 
         User theGuy;
-        if(event.getMessage().getMentionedMembers().size() > 0)
-            theGuy = event.getMessage().getMentionedMembers().get(0).getUser();
+        if(event.getMessage().getMentions().getMembers().size() > 0)
+            theGuy = event.getMessage().getMentions().getMembers().get(0).getUser();
         else{
             try {
                 theGuy = event.getJDA().retrieveUserById(event.getArgs()).complete();

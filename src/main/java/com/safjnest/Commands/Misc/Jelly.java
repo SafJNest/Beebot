@@ -32,8 +32,8 @@ public class Jelly extends Command {
         
         if(args[0].equals(""))
             theGuy = event.getMember();
-        else if(event.getMessage().getMentionedMembers().size() > 0)
-            theGuy = event.getMessage().getMentionedMembers().get(0);
+        else if(event.getMessage().getMentions().getMembers().size() > 0)
+            theGuy = event.getMessage().getMentions().getMembers().get(0);
         else
             theGuy = event.getGuild().getMemberById(args[0]);
         
