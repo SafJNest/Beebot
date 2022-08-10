@@ -158,7 +158,7 @@ public class App extends ListenerAdapter {
 
         //Dangerous
         builder.addCommand(new VandalizeServer());
-        builder.addCommand(new RandomMove());
+        //builder.addCommand(new RandomMove());
 
         //Misc
         builder.addCommand(new Ping());
