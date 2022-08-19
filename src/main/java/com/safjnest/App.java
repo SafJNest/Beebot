@@ -22,6 +22,8 @@ import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.RandomMove;
 import com.safjnest.Commands.Dangerous.VandalizeServer;
+import com.safjnest.Commands.LOL.Champ;
+import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 
@@ -169,6 +171,9 @@ public class App extends ListenerAdapter {
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
         builder.addCommand(new ThreadCounter());
+
+        builder.addCommand(new Champ());
+        builder.addCommand(new Summoner());
 
         CommandClient client = builder.build();
         jda.addEventListener(client);

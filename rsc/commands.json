@@ -311,5 +311,18 @@
         "help"  : "Restituisce una lista dei thread attualmente attivi nel server di heroku",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
+    },
+
+    "champ":{
+        "alias" : [],
+        "help"  : "Restituisce una lista dei thread attualmente attivi nel server di heroku",
+        "category" : "League Of Legends",
+        "arguments" : "[nomeComando]"
+    },
+    "summoner":{
+        "alias" : ["sum"],
+        "help"  : "Restituisce una lista dei thread attualmente attivi nel server di heroku",
+        "category" : "League Of Legends",
+        "arguments" : "[nomeComando]"
     }
 }
