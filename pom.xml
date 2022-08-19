@@ -27,6 +27,10 @@
       <name>m2-dv8tion</name>
       <url>https://m2.dv8tion.net/releases</url>
     </repository>
+      <repository>
+          <id>jitpack.io</id>
+          <url>https://jitpack.io</url>
+      </repository>
   </repositories>
 
   <dependencyManagement>
@@ -148,6 +152,11 @@
   <groupId>com.google.apis</groupId>
   <artifactId>google-api-services-youtube</artifactId>
   <version>v3-rev222-1.25.0</version>
+</dependency>
+<dependency>
+  <groupId>com.github.taycaldwell</groupId>
+  <artifactId>riot-api-java</artifactId>
+  <version>4.3.0</version>
 </dependency>
   </dependencies>
 
