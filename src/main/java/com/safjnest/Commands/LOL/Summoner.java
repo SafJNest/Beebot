@@ -42,7 +42,7 @@ public class Summoner extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
-        ApiConfig config = new ApiConfig().setKey("RGAPI-20fc9d9e-5735-44ac-93b1-2d20d00892bb");
+        ApiConfig config = new ApiConfig().setKey("RGAPI-dbc17efe-5aa7-4d89-a88a-80ae8a71962b");
         RiotApi api = new RiotApi(config);
         String name = event.getArgs();
         try {
@@ -54,7 +54,7 @@ public class Summoner extends Command {
             eb.addField("Livello", String.valueOf(player.getSummonerLevel()), true);
             eb.setColor(new Color(255, 0, 0));
             eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-            //eb.setThumbnail(api.getDataProfileIcons(platform, locale, version));
+            eb.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.15.1/img/profileicon/"+String.valueOf(player.getProfileIconId())+".png");
             event.reply(eb.build());
 
         } catch (RiotApiException e) {

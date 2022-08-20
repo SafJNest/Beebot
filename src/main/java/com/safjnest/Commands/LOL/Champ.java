@@ -40,7 +40,7 @@ public class Champ extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
-        ApiConfig config = new ApiConfig().setKey("RGAPI-20fc9d9e-5735-44ac-93b1-2d20d00892bb");
+        ApiConfig config = new ApiConfig().setKey("RGAPI-9b579dd0-edeb-4afb-9804-7c31b066842f");
         RiotApi api = new RiotApi(config);
         try {
             Champion c = api.getDataChampion(Platform.EUW, 1);
