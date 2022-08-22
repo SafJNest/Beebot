@@ -13,11 +13,22 @@ import net.rithms.riot.api.RiotApiException;
 */
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.rithms.riot.api.ApiConfig;
-import net.rithms.riot.api.RiotApi;
-import net.rithms.riot.api.RiotApiException;
-import net.rithms.riot.api.endpoints.static_data.dto.Champion;
-import net.rithms.riot.constant.Platform;
+import no.stelar7.api.r4j.basic.APICredentials;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.impl.R4J.LOLAPI;
+import no.stelar7.api.r4j.impl.lol.builders.champion.ChampionBuilder;
+import no.stelar7.api.r4j.impl.lol.builders.league.LeagueBuilder;
+import no.stelar7.api.r4j.impl.lol.raw.ChampionAPI;
+import no.stelar7.api.r4j.impl.lol.raw.LeagueAPI;
+import no.stelar7.api.r4j.pojo.lol.champion.ChampionRotationInfo;
+import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionStats;
+import no.stelar7.api.r4j.pojo.lol.shared.BaseSpellData;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampionSpell;
+import no.stelar7.api.r4j.pojo.lol.staticdata.shared.Image;
+import no.stelar7.api.r4j.pojo.lol.staticdata.shared.SpellVars;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -42,25 +53,23 @@ public class Summoner extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
-        ApiConfig config = new ApiConfig().setKey("RGAPI-dbc17efe-5aa7-4d89-a88a-80ae8a71962b");
-        RiotApi api = new RiotApi(config);
-        String name = event.getArgs();
-        try {
-            net.rithms.riot.api.endpoints.summoner.dto.Summoner player = api.getSummonerByName(Platform.EUW, name);
-            EmbedBuilder eb = new EmbedBuilder();
-            eb = new EmbedBuilder();
-            eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-            eb.setTitle("Summoner: " + player.getName());
-            eb.addField("Livello", String.valueOf(player.getSummonerLevel()), true);
-            eb.setColor(new Color(255, 0, 0));
-            eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-            eb.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.15.1/img/profileicon/"+String.valueOf(player.getProfileIconId())+".png");
-            event.reply(eb.build());
-
-        } catch (RiotApiException e) {
-            e.printStackTrace();
-            event.reply(e.getMessage());
+        R4J r4j = new R4J(new APICredentials("RGAPI-1e6d6e75-afac-41b4-bd5b-1e5f6c9f277d"));
+        ChampionBuilder builder = new ChampionBuilder().withPlatform(LeagueShard.EUW1);
+        ChampionRotationInfo c = builder.getFreeToPlayRotation();
+        for(StaticChampion ce : c.getFreeChampions()){
+            String spl = "q";
+            for(StaticChampionSpell spell : ce.getSpells()){
+                EmbedBuilder b = new EmbedBuilder();
+                b.setAuthor("fakerr");
+                spl = Character.toString(spell.getImage().getFull().charAt(spell.getImage().getFull().indexOf(".")-1));
+                spl = spl.toLowerCase();
+                System.out.println("https://raw.communitydragon.org/latest/game/assets/characters/"+ce.getName().toLowerCase()+"/hud/icons2d/"+ce.getName().toLowerCase()+"_"+spl+".png");
+                b.setThumbnail("https://raw.communitydragon.org/latest/game/assets/characters/"+ce.getName().toLowerCase()+"/hud/icons2d/"+ce.getName().toLowerCase()+"_"+spl+".png");
+                event.reply(b.build());
+            }      
+            break;
         }
+        
 	}
 
 }
