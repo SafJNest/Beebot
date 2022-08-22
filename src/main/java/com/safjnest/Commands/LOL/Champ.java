@@ -3,19 +3,7 @@ package com.safjnest.Commands.LOL;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
-/* 
-import net.rithms.riot.constant.Region;
-import net.rithms.riot.dto.Summoner.Summoner;
-import net.rithms.riot.api.RiotApi;
-import net.rithms.riot.api.RiotApiException;
-*/
 
-import net.rithms.riot.api.ApiConfig;
-import net.rithms.riot.api.RiotApi;
-import net.rithms.riot.api.RiotApiException;
-import net.rithms.riot.api.endpoints.static_data.dto.Champion;
-import net.rithms.riot.api.endpoints.summoner.dto.Summoner;
-import net.rithms.riot.constant.Platform;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -40,6 +28,7 @@ public class Champ extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
+        /*
         ApiConfig config = new ApiConfig().setKey("RGAPI-9b579dd0-edeb-4afb-9804-7c31b066842f");
         RiotApi api = new RiotApi(config);
         try {
@@ -51,6 +40,7 @@ public class Champ extends Command {
             e.printStackTrace();
             event.reply(e.getMessage());
         }
+         */
 	}
 
 }
