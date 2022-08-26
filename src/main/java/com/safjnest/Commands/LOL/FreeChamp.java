@@ -1,16 +1,12 @@
 package com.safjnest.Commands.LOL;
 
 import java.awt.Color;
+import java.io.File;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
-/* 
-import net.rithms.riot.constant.Region;
-import net.rithms.riot.dto.Summoner.Summoner;
-import net.rithms.riot.api.RiotApi;
-import net.rithms.riot.api.RiotApiException;
-*/
+
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import no.stelar7.api.r4j.basic.APICredentials;
@@ -19,6 +15,7 @@ import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.impl.R4J.LOLAPI;
 import no.stelar7.api.r4j.impl.lol.builders.champion.ChampionBuilder;
 import no.stelar7.api.r4j.impl.lol.builders.league.LeagueBuilder;
+import no.stelar7.api.r4j.impl.lol.lcu.LCUApi;
 import no.stelar7.api.r4j.impl.lol.raw.ChampionAPI;
 import no.stelar7.api.r4j.impl.lol.raw.LeagueAPI;
 import no.stelar7.api.r4j.pojo.lol.champion.ChampionRotationInfo;
@@ -34,12 +31,12 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class Summoner extends Command {
+public class FreeChamp extends Command {
     
     /**
      * Constructor
      */
-    public Summoner(){
+    public FreeChamp(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -53,8 +50,23 @@ public class Summoner extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = new no.stelar7.api.r4j.pojo.lol.summoner.Summoner();
+        ChampionBuilder builder = new ChampionBuilder().withPlatform(LeagueShard.EUW1);
+        ChampionRotationInfo c = builder.getFreeToPlayRotation();
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(event.getAuthor().getName());
+        eb.setColor(new Color(0,255,0));
+        eb.setTitle("Lista dei Campioni Gratuiti della settimana:");
+        String s = "";
+        for(StaticChampion ce : c.getFreeChampions())
+            s+=ce.getName()+"\n";
         
+        String img = "iconLol.png";
+        File file = new File("rsc" + File.separator + "img" + File.separator + img);
+        eb.setDescription(s);
+        eb.setThumbnail("attachment://" + img);
+        event.getChannel().sendMessageEmbeds(eb.build())
+            .addFile(file, img)
+            .queue();
 	}
 
 }
