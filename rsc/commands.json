@@ -324,5 +324,11 @@
         "help"  : "Restituisce una lista dei thread attualmente attivi nel server di heroku",
         "category" : "League Of Legends",
         "arguments" : "[nomeComando]"
+    },
+    "freechamp":{
+        "alias" : ["fc", "rotation"],
+        "help"  : "Restituisce una lista con tutti i campioni gratuiti della settimana nel server selezionato. (Default EUW)",
+        "category" : "League Of Legends",
+        "arguments" : "[nomeComando]"
     }
 }
