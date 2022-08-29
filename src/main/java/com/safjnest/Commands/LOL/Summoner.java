@@ -24,11 +24,14 @@ import no.stelar7.api.r4j.impl.lol.raw.ChampionAPI;
 import no.stelar7.api.r4j.impl.lol.raw.LeagueAPI;
 import no.stelar7.api.r4j.impl.shared.AccountAPI;
 import no.stelar7.api.r4j.pojo.lol.champion.ChampionRotationInfo;
+import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
+import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMasteryList;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntryList;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueItem;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionStats;
 import no.stelar7.api.r4j.pojo.lol.shared.BaseSpellData;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampionSpell;
 import no.stelar7.api.r4j.pojo.lol.staticdata.shared.Image;
@@ -61,7 +64,6 @@ public class Summoner extends Command {
         String args = event.getArgs();
         R4J r = new R4J(new APICredentials("RGAPI-9b796e85-3845-411f-ba86-a94f03f2a54f"));
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
-        System.out.println(s.getName());
         try {
             LeagueEntry entry = r.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(0);
             EmbedBuilder builder = new EmbedBuilder();
@@ -73,6 +75,27 @@ public class Summoner extends Command {
                             entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " juicy lps\n"
                             + entry.getWins() + "W/"+entry.getLosses()+"L\n"
                             + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%", true);
+            String masteryString = "";
+            int cont = 0;
+            for(ChampionMastery mastery : s.getChampionMasteries()){
+                masteryString += "[" + mastery.getChampionLevel() + "] " + r.getDDragonAPI().getChampion(mastery.getChampionId()).getName() + " " + mastery.getChampionPoints() + " points\n";
+                if(cont == 2)
+                    break;
+                cont++;
+            }
+            builder.addField("Top 3 Champ", masteryString, false);
+            String activity = "";
+            try {
+                for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
+                    if(partecipant.getSummonerId().equals(s.getSummonerId())){
+                        activity = "Playing a " + s.getCurrentGame().getGameMode().name()+ " as " + r.getDDragonAPI().getChampion(partecipant.getChampionId()).getName();
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                activity = "Not in a game";
+            }
+            builder.addField("Activity", activity, true);
             event.reply(builder.build());
             
         } catch (Exception e) {
