@@ -106,7 +106,7 @@ public class App extends ListenerAdapter {
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
         s3Client.initialize();
 
-        R4J riotApi = new R4J(new APICredentials("RGAPI-1dade5ac-4aa9-4c58-9fe4-e47359927331"));
+        R4J riotApi = new R4J(new APICredentials("RGAPI-9b796e85-3845-411f-ba86-a94f03f2a54f"));
         
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)

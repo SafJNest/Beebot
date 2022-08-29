@@ -57,8 +57,9 @@ public class FreeChamp extends Command {
         eb.setColor(new Color(0,255,0));
         eb.setTitle("Lista dei Campioni Gratuiti della settimana:");
         String s = "";
-        for(StaticChampion ce : c.getFreeChampions())
-            s+=ce.getName()+"\n";
+        for(StaticChampion ce : c.getFreeChampions()){
+            s+=ce.getName()+" | ";
+        }
         
         String img = "iconLol.png";
         File file = new File("rsc" + File.separator + "img" + File.separator + img);
