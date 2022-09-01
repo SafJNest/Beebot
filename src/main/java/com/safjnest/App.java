@@ -24,6 +24,7 @@ import com.safjnest.Commands.Dangerous.RandomMove;
 import com.safjnest.Commands.Dangerous.VandalizeServer;
 import com.safjnest.Commands.LOL.Champ;
 import com.safjnest.Commands.LOL.FreeChamp;
+import com.safjnest.Commands.LOL.RankMatch;
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
@@ -88,7 +89,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey = "9RlRQCIJlCCYTLdg/Y9DiDHUQXjt6/6fhzohM/su";
             youtubeApiKey = "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns";
             ttsApiKey = "d6199f5911f4493da571729f8127ce37";
-            riotKey ="RGAPI-1dade5ac-4aa9-4c58-9fe4-e47359927331";
+            riotKey ="RGAPI-76a8f176-433f-470c-aa83-1af37ee9e27f";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
@@ -99,6 +100,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey  = args[3];
             youtubeApiKey = args[4];
             ttsApiKey     = args[5];
+            riotKey       = args[6];
         }
 
         TTSHandler tts = new TTSHandler(ttsApiKey);
@@ -106,7 +108,7 @@ public class App extends ListenerAdapter {
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
         s3Client.initialize();
 
-        R4J riotApi = new R4J(new APICredentials("RGAPI-9b796e85-3845-411f-ba86-a94f03f2a54f"));
+        R4J riotApi = new R4J(new APICredentials(riotKey));
         
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
@@ -118,6 +120,7 @@ public class App extends ListenerAdapter {
 
         CommandClientBuilder builder = new CommandClientBuilder();
         
+
         builder.setPrefix(PREFIX);
         builder.setHelpWord("helpme");
         builder.setOwnerId("939876818465488926");
@@ -180,8 +183,9 @@ public class App extends ListenerAdapter {
         builder.addCommand(new ThreadCounter());
 
         builder.addCommand(new Champ());
-        builder.addCommand(new Summoner());
+        builder.addCommand(new Summoner(riotApi));
         builder.addCommand(new FreeChamp());
+        builder.addCommand(new RankMatch(riotApi));
 
         CommandClient client = builder.build();
         jda.addEventListener(client);

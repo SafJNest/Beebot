@@ -5,23 +5,10 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
 
 
-import net.dv8tion.jda.api.EmbedBuilder;
-import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.impl.R4J.LOLAPI;
 import no.stelar7.api.r4j.impl.lol.builders.champion.ChampionBuilder;
-import no.stelar7.api.r4j.impl.lol.builders.league.LeagueBuilder;
-import no.stelar7.api.r4j.impl.lol.raw.ChampionAPI;
-import no.stelar7.api.r4j.impl.lol.raw.LeagueAPI;
 import no.stelar7.api.r4j.pojo.lol.champion.ChampionRotationInfo;
-import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionStats;
-import no.stelar7.api.r4j.pojo.lol.shared.BaseSpellData;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampionSpell;
-import no.stelar7.api.r4j.pojo.lol.staticdata.shared.Image;
-import no.stelar7.api.r4j.pojo.lol.staticdata.shared.SpellVars;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -49,7 +36,7 @@ public class Champ extends Command {
         ChampionBuilder builder = new ChampionBuilder().withPlatform(LeagueShard.EUW1);
         ChampionRotationInfo c = builder.getFreeToPlayRotation();
         for(StaticChampion ce : c.getFreeChampions()){
-           System.out.println(ce.getName());
+            System.out.println(ce.getName());
             break;
         }
 	}

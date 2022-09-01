@@ -9,23 +9,10 @@ import com.safjnest.Utilities.JSONReader;
 
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.impl.R4J.LOLAPI;
 import no.stelar7.api.r4j.impl.lol.builders.champion.ChampionBuilder;
-import no.stelar7.api.r4j.impl.lol.builders.league.LeagueBuilder;
-import no.stelar7.api.r4j.impl.lol.lcu.LCUApi;
-import no.stelar7.api.r4j.impl.lol.raw.ChampionAPI;
-import no.stelar7.api.r4j.impl.lol.raw.LeagueAPI;
 import no.stelar7.api.r4j.pojo.lol.champion.ChampionRotationInfo;
-import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionStats;
-import no.stelar7.api.r4j.pojo.lol.shared.BaseSpellData;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampionSpell;
-import no.stelar7.api.r4j.pojo.lol.staticdata.shared.Image;
-import no.stelar7.api.r4j.pojo.lol.staticdata.shared.SpellVars;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -54,7 +41,7 @@ public class FreeChamp extends Command {
         ChampionRotationInfo c = builder.getFreeToPlayRotation();
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName());
-        eb.setColor(new Color(0,255,0));
+        eb.setColor(new Color(250,225,56));
         eb.setTitle("Lista dei Campioni Gratuiti della settimana:");
         String s = "";
         for(StaticChampion ce : c.getFreeChampions()){
