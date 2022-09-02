@@ -108,7 +108,13 @@ public class App extends ListenerAdapter {
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
         s3Client.initialize();
 
-        R4J riotApi = new R4J(new APICredentials(riotKey));
+        R4J riotApi = null;
+        try {
+            riotApi = new R4J(new APICredentials(riotKey));
+            System.out.println("[R4J] INFO Connection Successful!");
+        } catch (Exception e) {
+            System.out.println("[R4J] INFO Annodam Not Successful!");
+        } 
         
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
