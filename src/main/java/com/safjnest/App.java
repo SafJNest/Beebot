@@ -16,6 +16,7 @@ import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Utilities.AwsS3;
+import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
@@ -63,6 +64,11 @@ public class App extends ListenerAdapter {
     private static String youtubeApiKey;
     private static String ttsApiKey;
     private static String riotKey;
+
+    private static String hostName = "ec2-54-247-137-184.eu-west-1.compute.amazonaws.com";
+    private static String database = "df52tpbes6100h";
+    private static String user = "rtfcxffinekosr";
+    private static String password = "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de";
 
     private static String bucket = "thebeebox";
 
@@ -115,7 +121,7 @@ public class App extends ListenerAdapter {
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         } 
-        
+        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
             .addEventListeners(new TheListener())
