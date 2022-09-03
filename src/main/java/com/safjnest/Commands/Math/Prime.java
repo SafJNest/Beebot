@@ -10,6 +10,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -50,7 +51,7 @@ public class Prime extends Command {
                         e.printStackTrace();
                     }
                     channel.sendMessage("Il bighi era troppo insano per Discord, eccoti un bel file.").queue();
-                    channel.sendFile(supp).queue();
+                    channel.sendFiles(FileUpload.fromData(supp)).queue();
                 } else {
                     channel.sendMessage("Eccoti il tuo bighi primi a " + commandArray[1] + " bit").queue();
                     channel.sendMessage(primi).queue();

@@ -9,6 +9,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 /**
  * The command create a random number with n-bits.
@@ -55,7 +56,7 @@ public class Bighi extends Command {
                 app.flush();
                 app.close();
                 channel.sendMessage("Il bighi era troppo insano per Discord, eccoti un bel file.").queue();
-                channel.sendFile(supp).queue();
+                channel.sendFiles(FileUpload.fromData(supp)).queue();
             } else {
                 channel.sendMessage("Eccoti il tuo bighi a " + commandArray[1] + " bit").queue();
                 channel.sendMessage(bighi).queue();

@@ -9,6 +9,7 @@ import com.safjnest.Utilities.JSONReader;
 
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.lol.builders.champion.ChampionBuilder;
 import no.stelar7.api.r4j.pojo.lol.champion.ChampionRotationInfo;
@@ -53,7 +54,7 @@ public class FreeChamp extends Command {
         eb.setDescription(s);
         eb.setThumbnail("attachment://" + img);
         event.getChannel().sendMessageEmbeds(eb.build())
-            .addFile(file, img)
+            .addFiles(FileUpload.fromData(file))
             .queue();
 	}
 
