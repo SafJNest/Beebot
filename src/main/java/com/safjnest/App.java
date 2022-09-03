@@ -96,7 +96,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey = "***REMOVED***";
             youtubeApiKey = "***REMOVED***";
             ttsApiKey = "***REMOVED***";
-            riotKey ="RGAPI-0ad4c547-c01b-493f-86b0-a2661d9a3fef";
+            riotKey ="RGAPI-a87f4ffc-c676-4598-8e64-bed22e205eef";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
@@ -117,7 +117,7 @@ public class App extends ListenerAdapter {
 
         R4J riotApi = null;
         try {
-            riotApi = new R4J(new APICredentials("RGAPI-6073cb37-dcbe-4899-9b80-a57de3138c50"));
+            riotApi = new R4J(new APICredentials(riotKey));
             System.out.println("[R4J] INFO Connection Successful!");
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
