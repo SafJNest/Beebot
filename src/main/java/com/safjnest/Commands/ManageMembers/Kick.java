@@ -30,8 +30,8 @@ public class Kick extends Command{
     protected void execute(CommandEvent event) {
         User theGuy = null;
         try {
-            if(event.getMessage().getMentionedMembers().size() > 0)
-                theGuy = event.getMessage().getMentionedMembers().get(0).getUser();
+            if(event.getMessage().getMentions().getMembers().size() > 0)
+                theGuy = event.getMessage().getMentions().getMembers().get(0).getUser();
             else
                 theGuy = event.getJDA().retrieveUserById(event.getArgs()).complete();
             final User surelyTheGuy = theGuy;
@@ -46,7 +46,7 @@ public class Kick extends Command{
                 event.reply("OHHHHHHHHHHHHHHHHHHHHHHHHHHHH NON KIKKARE MEEEEEEEEEEEEEEERIO EEEEEEEEEEEEEEEEEPRIA");
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.KICK_MEMBERS)) {
-                event.getGuild().kick(surelyTheGuy.getId()).queue(
+                event.getGuild().kick(surelyTheGuy).queue(
                                                 (e) -> event.reply("kickkato " + surelyTheGuy.getAsMention()), 
                                                 new ErrorHandler().handle(
                                                     ErrorResponse.MISSING_PERMISSIONS,

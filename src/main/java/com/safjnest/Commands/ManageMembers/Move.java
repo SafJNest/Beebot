@@ -41,8 +41,8 @@ public class Move extends Command{
             for(Member member : theGuys)
                 System.out.println(member.getUser().getName());
 
-        }else if(event.getMessage().getMentionedUsers().size() > 0){
-            theGuy = event.getMessage().getMentionedUsers().get(0);
+        }else if(event.getMessage().getMentions().getUsers().size() > 0){
+            theGuy = event.getMessage().getMentions().getUsers().get(0);
             flag = false;
         }else if(!event.getArgs().equals(" ")){
             theGuys = event.getGuild().getVoiceChannelById(args[0]).getMembers();  
@@ -63,11 +63,11 @@ public class Move extends Command{
                 event.reply("Non hai un canale afk");
                 return;
             }
-        }else if(event.getMessage().getMentionedMembers().size() == 1 && flag)
-            channel = event.getGuild().getVoiceChannelById(event.getMessage().getMentionedMembers().get(0).getVoiceState().getChannel().getId());
+        }else if(event.getMessage().getMentions().getMembers().size() == 1 && flag)
+            channel = event.getGuild().getVoiceChannelById(event.getMessage().getMentions().getMembers().get(0).getVoiceState().getChannel().getId());
         
-        else if(event.getMessage().getMentionedMembers().size() == 2)
-            channel = event.getGuild().getVoiceChannelById(event.getMessage().getMentionedMembers().get(1).getVoiceState().getChannel().getId());
+        else if(event.getMessage().getMentions().getMembers().size() == 2)
+            channel = event.getGuild().getVoiceChannelById(event.getMessage().getMentions().getMembers().get(1).getVoiceState().getChannel().getId());
         
         else{
             channel = event.getGuild().getVoiceChannelById(args[1]);

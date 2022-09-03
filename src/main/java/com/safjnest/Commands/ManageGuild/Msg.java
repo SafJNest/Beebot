@@ -29,8 +29,8 @@ public class Msg extends Command {
 	protected void execute(CommandEvent event) {
         User theGuy = null;
         String[] command = event.getArgs().split(" ", 2);
-        if(event.getMessage().getMentionedMembers().size() > 0)
-                theGuy = event.getMessage().getMentionedMembers().get(0).getUser();
+        if(event.getMessage().getMentions().getMembers().size() > 0)
+                theGuy = event.getMessage().getMentions().getMembers().get(0).getUser();
             else
                 theGuy = event.getJDA().retrieveUserById(command[0]).complete();
         EmbedBuilder eb = new EmbedBuilder();

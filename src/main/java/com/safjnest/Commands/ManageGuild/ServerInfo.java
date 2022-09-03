@@ -97,11 +97,11 @@ public class ServerInfo extends Command{
                     + " | Vocali: " + guild.getVoiceChannels().size() 
                     + "```", false);
 
-        eb.addField("Emoji del server [" + guild.getEmotes().size() + "]", "```" 
-                    +    "Normali: " + guild.getEmotes().stream()
-                                        .filter(emote -> !emote.isAnimated()).count()
-                    + " | Animate: " + guild.getEmotes().stream()
-                                        .filter(emote -> emote.isAnimated()).count()
+        eb.addField("Emoji del server [" + guild.getStickers().size() + "]", "```" 
+                    +    "Normali: " + guild.getStickers().stream()
+                                        .filter(emote -> !emote.isAvailable()).count()
+                    + " | Animate: " + guild.getStickers().stream()
+                                        .filter(emote -> emote.isAvailable()).count()
                     + "```", false);
 
         eb.addField("Livello contenuti espliciti", "```" 
@@ -110,7 +110,6 @@ public class ServerInfo extends Command{
         eb.addField("Livello NSFW", "```" 
                     + guild.getNSFWLevel().toString() 
                     + "```", true);
-
         List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(guild.getRoles(), roleCharNumber);
         eb.addField("Ruoli del server [" 
                     + guild.getRoles().size() + "] (stampati " 
