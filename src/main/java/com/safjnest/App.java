@@ -26,6 +26,7 @@ import com.safjnest.Commands.Dangerous.VandalizeServer;
 import com.safjnest.Commands.LOL.Champ;
 import com.safjnest.Commands.LOL.FreeChamp;
 import com.safjnest.Commands.LOL.RankMatch;
+import com.safjnest.Commands.LOL.SetUser;
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
@@ -95,7 +96,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey = "***REMOVED***";
             youtubeApiKey = "***REMOVED***";
             ttsApiKey = "***REMOVED***";
-            riotKey ="RGAPI-f73ffe97-8a06-456d-91a1-f8d47acf59d4";
+            riotKey ="RGAPI-0ad4c547-c01b-493f-86b0-a2661d9a3fef";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
@@ -116,7 +117,7 @@ public class App extends ListenerAdapter {
 
         R4J riotApi = null;
         try {
-            riotApi = new R4J(new APICredentials(riotKey));
+            riotApi = new R4J(new APICredentials("RGAPI-6073cb37-dcbe-4899-9b80-a57de3138c50"));
             System.out.println("[R4J] INFO Connection Successful!");
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
@@ -195,9 +196,10 @@ public class App extends ListenerAdapter {
         builder.addCommand(new ThreadCounter());
 
         builder.addCommand(new Champ());
-        builder.addCommand(new Summoner(riotApi));
+        builder.addCommand(new Summoner(riotApi, sql));
         builder.addCommand(new FreeChamp());
-        builder.addCommand(new RankMatch(riotApi));
+        builder.addCommand(new RankMatch(riotApi, sql));
+        builder.addCommand(new SetUser(riotApi, sql));
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
