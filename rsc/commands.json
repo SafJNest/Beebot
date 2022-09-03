@@ -336,5 +336,12 @@
         "help"  : "Restituisce una lista con il rank di tutti i giocatori in partita.",
         "category" : "League Of Legends",
         "arguments" : "[nomeComando] [nomeGiocatore]"
+    },
+
+    "setuser":{
+        "alias" : [],
+        "help"  : "",
+        "category" : "League Of Legends",
+        "arguments" : "[nomeComando] [nomeGiocatore]"
     }
 }

@@ -5,7 +5,7 @@ import java.awt.Color;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
-
+import com.safjnest.Utilities.PostgreSQL;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -20,10 +20,11 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
  */
 public class RankMatch extends Command {
     private R4J r;
+    private PostgreSQL sql;
     /**
      * Constructor
      */
-    public RankMatch(R4J r){
+    public RankMatch(R4J r, PostgreSQL sql  ){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -31,6 +32,7 @@ public class RankMatch extends Command {
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
         this.r = r;
+        this.sql = sql;
     }
 
     /**
@@ -39,7 +41,12 @@ public class RankMatch extends Command {
 	@Override
 	protected void execute(CommandEvent event) {
         String args = event.getArgs();
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        if(!args.equals("")){
+            s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
+        }else{
+            s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getLolInfo(event.getAuthor().getId(),"account_id"));
+        }
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle("Partita di: " + s.getName());
