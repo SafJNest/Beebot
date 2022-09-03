@@ -74,8 +74,8 @@ public class List extends Command {
                 soundNames = soundNames.substring(0, soundNames.length() - 3);
         }else if(args[0].equalsIgnoreCase("user")){
             User theGuy = null;
-            if(event.getMessage().getMentionedMembers().size() > 0){
-                theGuy = event.getJDA().getUserById(event.getMessage().getMentionedMembers().get(0).getId());
+            if(event.getMessage().getMentions().getMembers().size() > 0){
+                theGuy = event.getJDA().getUserById(event.getMessage().getMentions().getMembers().get(0).getId());
                 if(theGuy == null)
                     theGuy = event.getAuthor();
             }else if(args.length > 0){

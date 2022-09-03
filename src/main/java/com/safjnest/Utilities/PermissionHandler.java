@@ -98,7 +98,7 @@ public class PermissionHandler {
         return Permission.getRaw(Permission.MANAGE_CHANNEL, Permission.CREATE_INSTANT_INVITE, 
         Permission.NICKNAME_CHANGE, Permission.NICKNAME_MANAGE, Permission.MANAGE_SERVER, 
         Permission.MANAGE_ROLES, Permission.MANAGE_PERMISSIONS, Permission.MANAGE_WEBHOOKS, 
-        Permission.VIEW_CHANNEL, Permission.MANAGE_EMOTES_AND_STICKERS, Permission.MESSAGE_SEND, 
+        Permission.VIEW_CHANNEL, Permission.MANAGE_EMOJIS_AND_STICKERS, Permission.MESSAGE_SEND, 
         Permission.MODERATE_MEMBERS, Permission.MESSAGE_MANAGE, Permission.MESSAGE_EMBED_LINKS, 
         Permission.MESSAGE_ATTACH_FILES, Permission.MESSAGE_HISTORY, Permission.MESSAGE_EXT_EMOJI, 
         Permission.MESSAGE_MENTION_EVERYONE, Permission.MESSAGE_ADD_REACTION, Permission.MANAGE_THREADS, 

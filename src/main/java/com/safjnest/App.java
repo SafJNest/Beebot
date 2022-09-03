@@ -16,12 +16,17 @@ import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Utilities.AwsS3;
+import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.RandomMove;
 import com.safjnest.Commands.Dangerous.VandalizeServer;
+import com.safjnest.Commands.LOL.Champ;
+import com.safjnest.Commands.LOL.FreeChamp;
+import com.safjnest.Commands.LOL.RankMatch;
+import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 
@@ -29,6 +34,8 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import no.stelar7.api.r4j.basic.APICredentials;
+import no.stelar7.api.r4j.impl.R4J;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
@@ -56,6 +63,12 @@ public class App extends ListenerAdapter {
     private static String AWSSecretKey;
     private static String youtubeApiKey;
     private static String ttsApiKey;
+    private static String riotKey;
+
+    private static String hostName = "***REMOVED***";
+    private static String database = "***REMOVED***";
+    private static String user = "***REMOVED***";
+    private static String password = "***REMOVED***";
 
     private static String bucket = "thebeebox";
 
@@ -82,6 +95,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey = "***REMOVED***";
             youtubeApiKey = "***REMOVED***";
             ttsApiKey = "***REMOVED***";
+            riotKey ="RGAPI-76a8f176-433f-470c-aa83-1af37ee9e27f";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
@@ -92,23 +106,33 @@ public class App extends ListenerAdapter {
             AWSSecretKey  = args[3];
             youtubeApiKey = args[4];
             ttsApiKey     = args[5];
+            riotKey       = args[6];
         }
 
         TTSHandler tts = new TTSHandler(ttsApiKey);
         
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
         s3Client.initialize();
-        
+
+        R4J riotApi = null;
+        try {
+            riotApi = new R4J(new APICredentials(riotKey));
+            System.out.println("[R4J] INFO Connection Successful!");
+        } catch (Exception e) {
+            System.out.println("[R4J] INFO Annodam Not Successful!");
+        } 
+        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);
         jda = JDABuilder
-            .createLight(token, GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS)
+            .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
             .addEventListeners(new TheListener())
             .setMemberCachePolicy(MemberCachePolicy.VOICE)
             .setChunkingFilter(ChunkingFilter.ALL)
-            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOTE)
+            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI)
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
         
+
         builder.setPrefix(PREFIX);
         builder.setHelpWord("helpme");
         builder.setOwnerId("939876818465488926");
@@ -158,7 +182,7 @@ public class App extends ListenerAdapter {
 
         //Dangerous
         builder.addCommand(new VandalizeServer());
-        //builder.addCommand(new RandomMove());
+        builder.addCommand(new RandomMove());
 
         //Misc
         builder.addCommand(new Ping());
@@ -169,6 +193,11 @@ public class App extends ListenerAdapter {
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
         builder.addCommand(new ThreadCounter());
+
+        builder.addCommand(new Champ());
+        builder.addCommand(new Summoner(riotApi));
+        builder.addCommand(new FreeChamp());
+        builder.addCommand(new RankMatch(riotApi));
 
         CommandClient client = builder.build();
         jda.addEventListener(client);

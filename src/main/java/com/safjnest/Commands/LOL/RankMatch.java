@@ -1,0 +1,74 @@
+package com.safjnest.Commands.LOL;
+
+import java.awt.Color;
+
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.JSONReader;
+
+
+import net.dv8tion.jda.api.EmbedBuilder;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
+
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @since 1.3
+ */
+public class RankMatch extends Command {
+    private R4J r;
+    /**
+     * Constructor
+     */
+    public RankMatch(R4J r){
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.r = r;
+    }
+
+    /**
+     * This method is called every time a member executes the command.
+     */
+	@Override
+	protected void execute(CommandEvent event) {
+        String args = event.getArgs();
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
+        try {
+            EmbedBuilder builder = new EmbedBuilder();
+            builder.setTitle("Partita di: " + s.getName());
+            builder.setColor(new Color(250,225,56));
+            builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
+            String blueSide = "";
+            String redSide = "";
+            for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
+                String sum = partecipant.getSummonerName();
+                String stats = "";
+                try {
+                    LeagueEntry entry = r.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, partecipant.getSummonerId()).getLeagueEntry().get(0);
+                    stats = entry.getTier().toLowerCase() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP | "
+                        + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
+
+                } catch (Exception e) {stats = "unranked";}
+                if(partecipant.getTeam() == TeamType.BLUE)
+                    blueSide += "**" + sum + "** " + stats+ "\n";
+                else
+                    redSide += "**" + sum + "** " + stats+ "\n";
+                
+            }
+            builder.addField("**BLUE SIDE**", blueSide, false);
+            builder.addField("**RED SIDE**", redSide, true);
+            event.reply(builder.build());
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+	}
+
+}

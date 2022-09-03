@@ -311,5 +311,30 @@
         "help"  : "Restituisce una lista dei thread attualmente attivi nel server di heroku",
         "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
+    },
+
+    "champ":{
+        "alias" : [],
+        "help"  : "non va un cazzo",
+        "category" : "League Of Legends",
+        "arguments" : "[nomeComando]"
+    },
+    "summoner":{
+        "alias" : ["sum"],
+        "help"  : "Consente di visualizzare le statistiche di un giocatore.",
+        "category" : "League Of Legends",
+        "arguments" : "[nomeComando] [nomeGiocatore]"
+    },
+    "freechamp":{
+        "alias" : ["fc", "rotation"],
+        "help"  : "Restituisce una lista con tutti i campioni gratuiti della settimana nel server selezionato. (Default EUW)",
+        "category" : "League Of Legends",
+        "arguments" : "[nomeComando]"
+    },
+    "rankmatch":{
+        "alias" : ["match", "ranks"],
+        "help"  : "Restituisce una lista con il rank di tutti i giocatori in partita.",
+        "category" : "League Of Legends",
+        "arguments" : "[nomeComando] [nomeGiocatore]"
     }
 }

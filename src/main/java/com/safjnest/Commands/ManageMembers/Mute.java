@@ -30,8 +30,8 @@ public class Mute extends Command{
     protected void execute(CommandEvent event) {
         Member theGuy = null;
         try {
-            if(event.getMessage().getMentionedMembers().size() > 0)
-                theGuy = event.getMessage().getMentionedMembers().get(0);
+            if(event.getMessage().getMentions().getMembers().size() > 0)
+                theGuy = event.getMessage().getMentions().getMembers().get(0);
             else
                 theGuy = event.getGuild().retrieveMemberById(event.getArgs()).complete();
             final Member surelyTheGuy = theGuy;
