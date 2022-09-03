@@ -9,6 +9,7 @@ import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 /**
  * @author <a href="https://github.com/NeuntronSun">NeutronSun</a>
@@ -43,7 +44,7 @@ public class Anonym extends Command {
         eb.setColor(new Color(3, 252, 169));
         theGuy.openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(
             eb.build())
-            .addFile(file,img)
+            .addFiles(FileUpload.fromData(file))
             .queue());
 	}
 }

@@ -20,6 +20,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.AudioChannel;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -185,7 +186,7 @@ public class TTS extends Command{
         File path = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
         channel.sendMessageEmbeds(eb.build())
-            .addFile(path, img)
+            .addFiles(FileUpload.fromData(path))
             .queue();
         
     }

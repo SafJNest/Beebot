@@ -14,6 +14,7 @@ import com.mpatric.mp3agic.Mp3File;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 /**
  * @deprecated
@@ -86,7 +87,7 @@ public class ListDeprecated extends Command {
         File file = new File("rsc" + File.separator + "img" + File.separator + "mp3.png");
         eb.setThumbnail("attachment://mp3.png");
         channel.sendMessageEmbeds(eb.build())
-                    .addFile(file, "mp3.png")
+                    .addFiles(FileUpload.fromData(file))
                     .queue();
 	}
 }
