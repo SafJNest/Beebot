@@ -5,6 +5,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 public class PostgreSQL {
     Connection c;
@@ -46,6 +47,78 @@ public class PostgreSQL {
             return info;
         } catch (SQLException e) {
             e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void addRole(String discordId, String roleId){
+        Statement stmt;
+        try {
+            String query = "INSERT INTO welcome_roles(role_id, discord_id)"
+                            + "VALUES('" + roleId + "','" + discordId +"');";
+            stmt = c.createStatement();
+            stmt.executeQuery(query);
+            stmt.close();
+        } catch (SQLException e) {e.printStackTrace();}
+    }
+
+    public void setWelcomeMessage(String discordId, String channelId, String message){
+        Statement stmt;
+        try {
+            String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text)"
+                            + "VALUES('" + discordId + "','" + channelId +"','" + message + "');";
+            System.out.println(query);
+            stmt = c.createStatement();
+            stmt.executeQuery(query);
+            stmt.close();
+        } catch (SQLException e) {e.printStackTrace();}
+    }
+
+    public String getWelcomeChannel(String discordId){
+        Statement stmt;
+        try {
+            String query = "SELECT channel_id FROM welcome_message WHERE discord_id = '" + discordId + "';";
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            rs.next();
+            String info = rs.getString("channel_id");
+            rs.close();
+            stmt.close();
+            return info;
+        } catch (SQLException e) {
+            return null;
+        }
+    }
+
+    public String getWelcomeMessage(String discordId){
+        Statement stmt;
+        try {
+            String query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + discordId + "';";
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            rs.next();
+            String info = rs.getString("message_text");
+            rs.close();
+            stmt.close();
+            return info;
+        } catch (SQLException e) {
+            return null;
+        }
+    } 
+    public ArrayList<String> getWelcomeRoles(String discordId){
+        Statement stmt;
+        ArrayList<String> roles = new ArrayList<>();
+        try {
+            String query = "SELECT role_id FROM welcome_roles WHERE discord_id = '" + discordId + "';";
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while(rs.next()){
+                roles.add(rs.getString("role_id"));
+            };
+            rs.close();
+            stmt.close();
+            return roles;
+        } catch (SQLException e) {
             return null;
         }
     }

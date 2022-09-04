@@ -20,6 +20,7 @@ import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
+import com.safjnest.Commands.Advanced.SetWelcome;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.RandomMove;
 import com.safjnest.Commands.Dangerous.VandalizeServer;
@@ -123,9 +124,10 @@ public class App extends ListenerAdapter {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         } 
         PostgreSQL sql = new PostgreSQL(hostName, database, user, password);
+        TheListener listenerozzo = new TheListener(sql);
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
-            .addEventListeners(new TheListener())
+            .addEventListeners(listenerozzo)
             .setMemberCachePolicy(MemberCachePolicy.VOICE)
             .setChunkingFilter(ChunkingFilter.ALL)
             .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI)
@@ -172,6 +174,9 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Image());
         builder.addCommand(new Permissions());
         builder.addCommand(new ModifyNickname());
+
+        //Advanced
+        builder.addCommand(new SetWelcome(sql));
 
         //Math
         builder.addCommand(new Bighi(maxBighi));

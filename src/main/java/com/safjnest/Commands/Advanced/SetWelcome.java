@@ -1,0 +1,58 @@
+package com.safjnest.Commands.Advanced;
+
+import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.PostgreSQL;
+
+import java.util.ArrayList;
+
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
+
+/**
+ * @author <a href="https://github.com/NeuntronSun">NeutronSun</a>
+ * 
+ * @since 1.3
+ */
+public class SetWelcome extends Command {
+    private PostgreSQL sql;
+
+    public SetWelcome(PostgreSQL sql) {
+        this.name = this.getClass().getSimpleName();
+        this.aliases = new JSONReader().getArray(this.name, "alias");
+        this.help = new JSONReader().getString(this.name, "help");
+        this.cooldown = new JSONReader().getCooldown(this.name);
+        this.category = new Category(new JSONReader().getString(this.name, "category"));
+        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.sql = sql;
+    }
+
+    @Override
+    protected void execute(CommandEvent event) {
+        String message = event.getMessage().getContentRaw();
+        String channel = null;
+        ArrayList<String> roles = new ArrayList<>();
+        System.out.println(event.getMessage().getContentRaw());
+        for (int i = 0; i < message.indexOf("|"); i++) {
+            if (message.charAt(i) == '#') {
+                channel = message.substring(i + 1, i + 19);
+                i += 19;
+            } else if (message.charAt(i) == '@' && message.charAt(i + 1) == '&') {
+                roles.add(message.substring(i + 2, i + 20));
+                i += 20;
+            }
+        }
+        if(channel == null){
+            try {
+                channel = event.getGuild().getSystemChannel().getId();
+            } catch (Exception e) {
+                event.reply("Canale mancante, selezionare un canale o settare il canale generale del server.");
+                return;
+            }
+        }
+        message = message.substring(message.indexOf("|")+1);
+        sql.setWelcomeMessage(event.getGuild().getId(), channel, message);
+        for(String role : roles)
+            sql.addRole(event.getGuild().getId(), role);
+        event.reply("Tutto okay capo");
+    }
+}

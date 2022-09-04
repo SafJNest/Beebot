@@ -1,7 +1,11 @@
 package com.safjnest.Utilities;
 
+import java.util.ArrayList;
+
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
@@ -17,7 +21,11 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
  * @since 1.2
  */
 public class TheListener extends ListenerAdapter{
+    private PostgreSQL sql;
 
+    public TheListener(PostgreSQL sql){
+        this.sql = sql;
+    }
     /**
      * On update of a voice channel (to make the bot leave an empty voice channel)
      */
@@ -33,12 +41,23 @@ public class TheListener extends ListenerAdapter{
      */
     @Override 
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        User newguy = event.getUser();
-        TextChannel welcome = event.getGuild().getSystemChannel();
-        welcome.sendMessage(
-            "Ehi " + newguy.getAsMention() + ", Benvenuto nel "+event.getGuild().getName() +".\n"
-            + "Per iniziare ottieni il verificato nella stanza " + event.getGuild().getTextChannelById("706174812690579497").getAsMention()
-            + ", una volta fatto avrai accesso alle varie stanze del server.\nRicorda di seguire le regole e per qualsiasi informazione contatta i vari admin.").queue();
+        System.out.println("wehuyg8f");
+        MessageChannel channel = null;
+        User newGuy = event.getUser();
+        String notNullPls = sql.getWelcomeChannel(event.getGuild().getId());
+        System.out.println(notNullPls);
+        if(notNullPls == null)
+            return;
+        channel = event.getGuild().getTextChannelById(notNullPls);
+        String message = sql.getWelcomeMessage(event.getGuild().getId());
+        message = message.replace("#user", newGuy.getAsMention());
+        channel.sendMessage(message).queue();
+        ArrayList<String> roles = sql.getWelcomeRoles(event.getGuild().getId());
+        if(roles.size() > 0){
+            for(String role : roles){
+                event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
+            }
+        }
     }
 
     /**
