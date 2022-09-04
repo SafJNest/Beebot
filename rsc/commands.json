@@ -343,5 +343,13 @@
         "help"  : "",
         "category" : "League Of Legends",
         "arguments" : "[nomeComando] [nomeGiocatore]"
+    },
+
+    "setwelcome":{
+        "alias" : [],
+        "help"  : "Consente di settare un messaggio di benvenuto ogni volta che entra un nuovo utente nel server. E' necessario settare un canale dove inviare il messaggio, se omesso sara' usato quello default di discord, e dei ruoli(facoltativi). Usare '|' come separatore tra i tag ed il messaggio effettivo. Ex: psetwelcome #benvenuti @ruolo | ciao. Tramite #user sara' taggato il nuovo membro.",
+        "category" : "Advanced",
+        "arguments" : "[nomeComando] (#canale)(@ruoli) | [messaggio]"
     }
+
 }
