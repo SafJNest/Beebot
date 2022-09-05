@@ -97,7 +97,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey = "***REMOVED***";
             youtubeApiKey = "***REMOVED***";
             ttsApiKey = "***REMOVED***";
-            riotKey ="RGAPI-a87f4ffc-c676-4598-8e64-bed22e205eef";
+            riotKey ="RGAPI-d4341ff6-122f-45c4-a49a-844d5d5d2c41";
         }
         else{
             System.out.println("[main] INFO Canary mode off");
