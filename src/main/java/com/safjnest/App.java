@@ -89,7 +89,7 @@ public class App extends ListenerAdapter {
             isCanary = Boolean.parseBoolean(args[0]);
         }
         if(isCanary){
-            System.out.println("[main] INFO Canary mode on");
+            System.out.println("[MAIN] INFO Canary mode on");
             token = "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g";
             PREFIX = "$";
             activity = Activity.playing("ANNODAM OIDOZIR IEIDOCROPE BEAMBUZL BILLY");
@@ -100,7 +100,7 @@ public class App extends ListenerAdapter {
             riotKey ="RGAPI-d4341ff6-122f-45c4-a49a-844d5d5d2c41";
         }
         else{
-            System.out.println("[main] INFO Canary mode off");
+            System.out.println("[MAIN] INFO The beast is turning on!");
             PREFIX = "p";
             activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
             token         = args[1];
