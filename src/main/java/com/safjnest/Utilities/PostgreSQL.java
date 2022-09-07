@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import org.postgresql.util.PSQLException;
+
 public class PostgreSQL {
     Connection c;
 
@@ -23,13 +25,16 @@ public class PostgreSQL {
         }
     }
 
-    public void addElement(String query){
+    public boolean addElement(String query){
         Statement stmt;
         try {
             stmt = c.createStatement();
             stmt.executeQuery(query);
             stmt.close();
-        } catch (SQLException e) {e.printStackTrace();}
+            return true;
+        }
+        catch (PSQLException e) {return true;}
+        catch (SQLException e1) {return false;}
     }
 
 
