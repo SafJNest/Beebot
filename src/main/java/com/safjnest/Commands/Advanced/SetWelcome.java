@@ -49,10 +49,16 @@ public class SetWelcome extends Command {
                 return;
             }
         }
+        String discordId = event.getGuild().getId();
         message = message.substring(message.indexOf("|")+1);
-        sql.setWelcomeMessage(event.getGuild().getId(), channel, message);
-        for(String role : roles)
-            sql.addRole(event.getGuild().getId(), role);
+        String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text)"
+                            + "VALUES('" + discordId + "','" + channel +"','" + message + "');";
+        sql.addElement(query);
+        for(String role : roles){
+            query = "INSERT INTO welcome_roles(role_id, discord_id)"
+                            + "VALUES('" + role + "','" + discordId +"');";
+            sql.addElement(query);
+        }
         event.reply("Tutto okay capo");
     }
 }
