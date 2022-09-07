@@ -3,8 +3,6 @@ package com.safjnest.Commands.Advanced;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PostgreSQL;
 
-import java.util.ArrayList;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -44,7 +42,9 @@ public class SetRoom extends Command {
         name = argsArr[1];
         String query = "INSERT INTO rooms_nickname(discord_id, room_id, room_name)"
                             + "VALUES('" + event.getGuild().getId() + "','" + channel +"','" + name + "');";
-        sql.addElement(query);
-        event.reply("Tutto okay capo");
+        if(sql.addElement(query))
+            event.reply("Tutto okay capo");
+        else
+            event.reply("what faker is this?");
     }
 }
