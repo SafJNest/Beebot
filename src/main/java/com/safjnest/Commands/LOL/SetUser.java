@@ -45,7 +45,9 @@ public class SetUser extends Command {
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
         try {
-            sql.AddLolUSer(event.getAuthor().getId(), s.getPUUID(), s.getAccountId(), s.getSummonerId(), s.getName());
+            String query = "INSERT INTO LOL_user(discord_id, summoner_id, account_id, sum_name)"
+                    + "VALUES('"+event.getGuild().getId()+"','"+s.getSummonerId()+"','"+s.getAccountId()+"','"+s.getName()+"');";
+            sql.addElement(query);
         } catch (Exception e) {
             e.printStackTrace();
         }

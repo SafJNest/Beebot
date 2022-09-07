@@ -23,16 +23,15 @@ public class PostgreSQL {
         }
     }
 
-    public void AddLolUSer(String discId, String PUUID, String accountId, String sumId, String sumName){
+    public void addElement(String query){
         Statement stmt;
         try {
-            String query = "INSERT INTO LOL_user(discord_id, summoner_id, account_id, sum_name)"
-                    + "VALUES('"+discId+"','"+sumId+"','"+accountId+"','"+sumName+"');";
             stmt = c.createStatement();
             stmt.executeQuery(query);
             stmt.close();
         } catch (SQLException e) {e.printStackTrace();}
     }
+
 
     public String getLolInfo(String id, String column){
         Statement stmt;
@@ -51,28 +50,6 @@ public class PostgreSQL {
         }
     }
 
-    public void addRole(String discordId, String roleId){
-        Statement stmt;
-        try {
-            String query = "INSERT INTO welcome_roles(role_id, discord_id)"
-                            + "VALUES('" + roleId + "','" + discordId +"');";
-            stmt = c.createStatement();
-            stmt.executeQuery(query);
-            stmt.close();
-        } catch (SQLException e) {e.printStackTrace();}
-    }
-
-    public void setWelcomeMessage(String discordId, String channelId, String message){
-        Statement stmt;
-        try {
-            String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text)"
-                            + "VALUES('" + discordId + "','" + channelId +"','" + message + "');";
-            System.out.println(query);
-            stmt = c.createStatement();
-            stmt.executeQuery(query);
-            stmt.close();
-        } catch (SQLException e) {e.printStackTrace();}
-    }
 
     public String getWelcomeChannel(String discordId){
         Statement stmt;
@@ -122,4 +99,37 @@ public class PostgreSQL {
             return null;
         }
     }
+
+    public String getString(String query, String nameRow){
+        Statement stmt;
+        try {
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            rs.next();
+            String info = rs.getString(nameRow);
+            rs.close();
+            stmt.close();
+            return info;
+        } catch (SQLException e) {
+            return null;
+        }
+    }
+
+    public ArrayList<String> getListString(String query, String nameRow){
+        Statement stmt;
+        ArrayList<String> arr = new ArrayList<>();
+        try {
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while(rs.next()){
+                arr.add(rs.getString(nameRow));
+            }
+            rs.close();
+            stmt.close();
+            return arr;
+        } catch (SQLException e) {
+            return null;
+        }
+    }
+
 }

@@ -20,6 +20,7 @@ import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
+import com.safjnest.Commands.Advanced.SetRoom;
 import com.safjnest.Commands.Advanced.SetWelcome;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.RandomMove;
@@ -97,7 +98,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey = "***REMOVED***";
             youtubeApiKey = "***REMOVED***";
             ttsApiKey = "***REMOVED***";
-            riotKey ="RGAPI-d4341ff6-122f-45c4-a49a-844d5d5d2c41";
+            riotKey ="RGAPI-21a5b60e-de05-4381-82ce-6aac86ed80df";
         }
         else{
             System.out.println("[MAIN] INFO The beast is turning on!");
@@ -168,15 +169,17 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Ban());
         builder.addCommand(new Unban());
         builder.addCommand(new Kick());
-        builder.addCommand(new Move());
+        builder.addCommand(new Move(sql));
         builder.addCommand(new Mute());
         builder.addCommand(new UnMute());   
         builder.addCommand(new Image());
         builder.addCommand(new Permissions());
         builder.addCommand(new ModifyNickname());
+        builder.addCommand(new ListRoom(sql));
 
         //Advanced
         builder.addCommand(new SetWelcome(sql));
+        builder.addCommand(new SetRoom(sql));
 
         //Math
         builder.addCommand(new Bighi(maxBighi));

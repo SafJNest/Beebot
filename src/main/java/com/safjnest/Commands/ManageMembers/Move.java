@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.PostgreSQL;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.entities.Member;
@@ -17,13 +18,15 @@ import net.dv8tion.jda.api.entities.VoiceChannel;
  */
 public class Move extends Command{
 
-    public Move(){
+    private PostgreSQL sql;
+    public Move(PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
         this.cooldown = new JSONReader().getCooldown(this.name);
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.sql = sql;
     }
 
     @Override
@@ -32,7 +35,7 @@ public class Move extends Command{
         List<Member> theGuys = null;
         VoiceChannel channel = null;
         boolean flag = true;
-        String[] args = event.getArgs().split(" ");
+        String[] args = event.getArgs().split(" ",2);
         if(args[0].equalsIgnoreCase("me"))
             theGuy = event.getAuthor();
 
@@ -70,7 +73,21 @@ public class Move extends Command{
             channel = event.getGuild().getVoiceChannelById(event.getMessage().getMentions().getMembers().get(1).getVoiceState().getChannel().getId());
         
         else{
-            channel = event.getGuild().getVoiceChannelById(args[1]);
+            System.out.println(args[1]);
+            String query = "SELECT room_id FROM rooms_nickname WHERE discord_id = '" + event.getGuild().getId() + "' AND room_name = '" + args[1] +"';";
+            String idRoom = (sql.getString(query, "room_id") == null) ? "" : sql.getString(query, "room_id");
+            if(idRoom.equals("")){
+                try {
+                    channel = event.getGuild().getVoiceChannelById(args[1]);
+                    
+                } catch (Exception e) {
+                    event.reply("Canale mancante o non trovato");
+                    return;
+                }
+            }
+            channel = (event.getGuild().getVoiceChannelById(idRoom) != null) 
+                        ? event.getGuild().getVoiceChannelById(idRoom)
+                        : null;
             if(channel == null){
                 event.reply("Non ho trovato il canale.");
                 return;
