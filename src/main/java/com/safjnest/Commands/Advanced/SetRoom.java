@@ -40,11 +40,21 @@ public class SetRoom extends Command {
             channel = argsArr[0];
         }
         name = argsArr[1];
-        String query = "INSERT INTO rooms_nickname(discord_id, room_id, room_name)"
-                            + "VALUES('" + event.getGuild().getId() + "','" + channel +"','" + name + "');";
-        if(sql.addElement(query))
-            event.reply("Tutto okay capo");
-        else
-            event.reply("what faker is this?");
+        String query = "SELECT room_name FROM rooms_nickname WHERE discord_id = '" + event.getGuild().getId() + "' AND room_id = '" + argsArr[0] +"';";
+        if(sql.getString(query, "room_name") == null){
+            query = "INSERT INTO rooms_nickname(discord_id, room_id, room_name)"
+                                + "VALUES('" + event.getGuild().getId() + "','" + channel +"','" + name + "');";
+            
+            if(sql.runQuery(query))
+                event.reply("Tutto okay capo");
+            else
+                event.reply("what faker is this?");
+        }else{
+            query = "UPDATE rooms_nickname SET room_name = '" + argsArr[1] + "' WHERE discord_id = '" + event.getGuild().getId() + "' AND room_id = '" + argsArr[0] +"';";
+            if(sql.runQuery(query))
+                event.reply("Nome canale modificato con successo");
+            else 
+                event.reply("what faker is this");
+        }
     }
 }

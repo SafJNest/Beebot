@@ -25,7 +25,7 @@ public class PostgreSQL {
         }
     }
 
-    public boolean addElement(String query){
+    public boolean runQuery(String query){
         Statement stmt;
         try {
             stmt = c.createStatement();
@@ -120,7 +120,7 @@ public class PostgreSQL {
         }
     }
 
-    public ArrayList<String> getListString(String query, String nameRow){
+     public ArrayList<String> getListString(String query, String nameRow){
         Statement stmt;
         ArrayList<String> arr = new ArrayList<>();
         try {
