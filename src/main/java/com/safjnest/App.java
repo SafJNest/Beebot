@@ -21,7 +21,6 @@ import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
-import com.safjnest.Commands.Advanced.*;
 import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
@@ -98,7 +97,7 @@ public class App extends ListenerAdapter {
         else{
             System.out.println("[MAIN] INFO The beast is turning on!");
             PREFIX = "p";
-            activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
+            activity = Activity.playing("The most powerful discord bot ever. Stronger than faker weaker than panichi leonardo | " + PREFIX + "help");
             token         = args[1];
             AWSAccesKey   = args[2];
             AWSSecretKey  = args[3];
