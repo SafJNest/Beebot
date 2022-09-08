@@ -69,6 +69,26 @@
         "arguments" : "[upload] [nome del suono]"
     },
 
+    "downloadsound":{
+        "alias" : ["download", "downloadsound"],
+        "help"  : "Scarica un file audio.",
+        "category" : "Audio",
+        "arguments" : "[nomeComando][nome suono]"
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     "channelinfo":{
         "alias" : ["infochannel", "ci","ic","channel"],
         "help"  : "Mostra le informazioni sul canale (sia vocale che testuale).",
@@ -89,20 +109,7 @@
         "category" : "Gestione Server",
         "arguments" : "[emoji] [nomeEmoji, emoji]"
     },
-    "anonym":{
-        "alias" : ["staropoli", "an"],
-        "help"  : "Invia un messaggio anonimo in privato ad un utente.",
-        "category" : "Gestione Server",
-        "arguments" : "[msg] [@user/id] [messaggio]"
-    },
-
-    "msg":{
-        "alias" : ["messaggio", "message"],
-        "help"  : "Invia un messaggio in privato ad un utente.",
-        "category" : "Gestione Server",
-        "arguments" : "[msg] [@user/id] [messaggio]"
-    },
-
+    
     "serverinfo":{
         "alias" : ["servinfo", "serinf"],
         "help"  : "Mostra le informazioni sul server.",
@@ -116,6 +123,44 @@
         "category" : "Gestione Server",
         "arguments" : "[userinfo] [@user]"
     },
+
+    "setwelcome":{
+        "alias" : [],
+        "help"  : "Consente di settare un messaggio di benvenuto ogni volta che entra un nuovo utente nel server. E' necessario settare un canale dove inviare il messaggio, se omesso sara' usato quello default di discord, e dei ruoli(facoltativi). Usare '|' come separatore tra i tag ed il messaggio effettivo. Ex: psetwelcome #benvenuti @ruolo | ciao. Tramite #user sara' taggato il nuovo membro.",
+        "category" : "Gestione Server",
+        "arguments" : "[nomeComando] (#canale)(@ruoli) | [messaggio]"
+    },
+
+    "setroom":{
+        "alias" : ["room"],
+        "help"  : "Consente di settare un nickname per le varie stanza per utilizzare il comando 'move'.",
+        "category" : "Gestione Server",
+        "arguments" : "[nomeComando] [#canale] || [nomeComando] [idCanale] "
+    },
+
+    "listroom":{
+        "alias" : ["rooms"],
+        "help"  : "Restituisce una lista con tutti i nickname delle stanze",
+        "category" : "Gestione Server",
+        "arguments" : "[nomeComando] [#canale] || [nomeComando] [idCanale] "
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     "ban":{
         "alias" : ["sgozz", "destroy", "annihilate", "radiateDeath", "drinkRadithorForAYear", "ohthemisery"],
@@ -166,6 +211,32 @@
         "arguments" : "[unmute] [@user]"
     },
 
+    "move":{
+        "alias" : ["mv", "sposta"],
+        "help"  : "Sposta un membro della gilda in un altra stanza.\nè possibile spostare più di un membro alla volta.",
+        "category" : "Gestione Membri",
+        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu) | (membro) (afk)." 
+    },
+
+    "modifynickname":{
+        "alias" : ["modnick", "nick", "nickradogna"],
+        "help"  : "Cambia il nickname ad un membro del server.",
+        "category" : "Gestione Membri",
+        "arguments" : "[nomeComando] [membro] [nuovo nick]"
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
     "bighi":{
         "alias" : ["random"],
         "help"  : "Genera un numero random a n bit.",
@@ -207,6 +278,20 @@
         "category" : "Matematica",
         "arguments" : "[prime] [nbit]"
     },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     "aliases":{
         "alias" : ["alias", "ilyas"],
@@ -251,58 +336,17 @@
         "arguments" : "[nomeComando][id msg]"
     },
 
-    "jelly":{
-        "alias" : ["soundfx", "reminderbot", "jude", "jude southworth", "jellywx"],
-        "help"  : "Evoca il dio dei falliti.",
-        "category" : "Pericolosi",
-        "arguments" : "[nomeComando]"
-    },
-
-    "downloadsound":{
-        "alias" : ["download", "downloadsound"],
-        "help"  : "Scarica un file audio.",
-        "category" : "Audio",
-        "arguments" : "[nomeComando][nome suono]"
-    },
-
-    "move":{
-        "alias" : ["mv", "sposta"],
-        "help"  : "Sposta un membro della gilda in un altra stanza.\nè possibile spostare più di un membro alla volta.",
-        "category" : "Gestione Membri",
-        "arguments" : "[nomeComando] (here = tutti i membri del canale in cui sei) (id canale) | (me = tu) (id canale) | (membro) (id canale) | (membro) (here = canale in cui sei tu) | (membro) (afk)." 
-    },
-
-    "modifynickname":{
-        "alias" : ["modnick", "nick", "nickradogna"],
-        "help"  : "Cambia il nickname ad un membro del server.",
-        "category" : "Gestione Membri",
-        "arguments" : "[nomeComando] [membro] [nuovo nick]"
-    },
-
-    "vandalizeserver":{
-        "alias" : ["vandalize", "vanda"],
-        "help"  : "Vandalizza un server, usa con cura.",
-        "category" : "Pericolosi",
-        "arguments" : "[nomeComando] [server]"
-    },
-    "randommove":{
-        "alias" : ["rm", "fakerandom"],
-        "help"  : "Sposta un utente in stanze a caso n volte",
-        "category" : "Pericolosi",
-        "arguments" : "[nomeComando] [id/@user] [n volte]"
-    },
-
     "invitebot":{
         "alias" : ["invite", "inbot"],
         "help"  : "Crea un link di invito del server.",
-        "category" : "Gestione Server",
+        "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
     "listguild":{
         "alias" : ["lg", "guilds"],
         "help"  : "Restituisce una lista dei server in cui il bot è presente",
-        "category" : "Gestione Server",
+        "category" : "Miscellaneo",
         "arguments" : "[nomeComando]"
     },
 
@@ -313,24 +357,78 @@
         "arguments" : "[nomeComando]"
     },
 
+    "anonym":{
+        "alias" : ["staropoli", "an"],
+        "help"  : "Invia un messaggio anonimo in privato ad un utente.",
+        "category" : "Miscellaneo",
+        "arguments" : "[msg] [@user/id] [messaggio]"
+    },
+
+    "msg":{
+        "alias" : ["messaggio", "message"],
+        "help"  : "Invia un messaggio in privato ad un utente.",
+        "category" : "Miscellaneo",
+        "arguments" : "[msg] [@user/id] [messaggio]"
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+    "jelly":{
+        "alias" : ["soundfx", "reminderbot", "jude", "jude southworth", "jellywx"],
+        "help"  : "Evoca il dio dei falliti.",
+        "category" : "Pericolosi",
+        "arguments" : "[nomeComando]"
+    },
+
+    "vandalizeserver":{
+        "alias" : ["vandalize", "vanda"],
+        "help"  : "Vandalizza un server, usa con cura.",
+        "category" : "Pericolosi",
+        "arguments" : "[nomeComando] [server]"
+    },
+
+    "randommove":{
+        "alias" : ["rm", "fakerandom"],
+        "help"  : "Sposta un utente in stanze a caso n volte",
+        "category" : "Pericolosi",
+        "arguments" : "[nomeComando] [id/@user] [n volte]"
+    },
+
+
+
+
+
     "champ":{
         "alias" : [],
         "help"  : "non va un cazzo",
         "category" : "League Of Legends",
         "arguments" : "[nomeComando]"
     },
+
     "summoner":{
         "alias" : ["sum"],
         "help"  : "Consente di visualizzare le statistiche di un giocatore.",
         "category" : "League Of Legends",
         "arguments" : "[nomeComando] [nomeGiocatore]"
     },
+
     "freechamp":{
         "alias" : ["fc", "rotation"],
         "help"  : "Restituisce una lista con tutti i campioni gratuiti della settimana nel server selezionato. (Default EUW)",
         "category" : "League Of Legends",
         "arguments" : "[nomeComando]"
     },
+
     "rankmatch":{
         "alias" : ["match", "ranks"],
         "help"  : "Restituisce una lista con il rank di tutti i giocatori in partita.",
@@ -340,30 +438,9 @@
 
     "setuser":{
         "alias" : [],
-        "help"  : "",
+        "help"  : "Consente di settare il proprio profilo collegato al profilo discord.",
         "category" : "League Of Legends",
         "arguments" : "[nomeComando] [nomeGiocatore]"
-    },
-
-    "setwelcome":{
-        "alias" : [],
-        "help"  : "Consente di settare un messaggio di benvenuto ogni volta che entra un nuovo utente nel server. E' necessario settare un canale dove inviare il messaggio, se omesso sara' usato quello default di discord, e dei ruoli(facoltativi). Usare '|' come separatore tra i tag ed il messaggio effettivo. Ex: psetwelcome #benvenuti @ruolo | ciao. Tramite #user sara' taggato il nuovo membro.",
-        "category" : "Advanced",
-        "arguments" : "[nomeComando] (#canale)(@ruoli) | [messaggio]"
-    },
-
-    "setroom":{
-        "alias" : ["room"],
-        "help"  : "Consente di settare un nickname per le varie stanza per utilizzare il comando 'move'.",
-        "category" : "Advanced",
-        "arguments" : "[nomeComando] [#canale] || [nomeComando] [idCanale] "
-    },
-
-    "listroom":{
-        "alias" : ["rooms"],
-        "help"  : "Restituisce una lista con tutti i nickname delle stanze",
-        "category" : "Advanced",
-        "arguments" : "[nomeComando] [#canale] || [nomeComando] [idCanale] "
     }
 
 }

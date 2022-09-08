@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Advanced;
+package com.safjnest.Commands.ManageGuild;
 
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PostgreSQL;

@@ -41,17 +41,19 @@ public class Move extends Command{
 
         else if(args[0].equalsIgnoreCase("here")){
             theGuys = event.getMember().getVoiceState().getChannel().getMembers();
-            for(Member member : theGuys)
-                System.out.println(member.getUser().getName());
-
         }else if(event.getMessage().getMentions().getUsers().size() > 0){
             theGuy = event.getMessage().getMentions().getUsers().get(0);
             flag = false;
-        }else if(!event.getArgs().equals(" ")){
-            theGuys = event.getGuild().getVoiceChannelById(args[0]).getMembers();  
         }else{
-            event.reply("Non ho capito a chi vuoi spostare.");
-            return;
+            try {
+                if(event.getGuild().getVoiceChannelById(args[0])!=null)
+                    theGuys = event.getGuild().getVoiceChannelById(args[0]).getMembers();
+                theGuy = event.getJDA().getUserById(args[0]);
+                
+            } catch (Exception e) {
+                event.reply("Formato errato");
+                return;
+            }
         }
         //get the channel
         if(args[1].equalsIgnoreCase("")){
@@ -60,7 +62,7 @@ public class Move extends Command{
         }else if(args[1].equalsIgnoreCase("here"))
             channel = event.getGuild().getVoiceChannelById(event.getMember().getVoiceState().getChannel().getId());
        
-            else if(args[1].equalsIgnoreCase("afk")){
+        else if(args[1].equalsIgnoreCase("afk")){
             channel = event.getGuild().getAfkChannel();
             if(channel == null){
                 event.reply("Non hai un canale afk");
@@ -73,7 +75,6 @@ public class Move extends Command{
             channel = event.getGuild().getVoiceChannelById(event.getMessage().getMentions().getMembers().get(1).getVoiceState().getChannel().getId());
         
         else{
-            System.out.println(args[1]);
             String query = "SELECT room_id FROM rooms_nickname WHERE discord_id = '" + event.getGuild().getId() + "' AND room_name = '" + args[1] +"';";
             String idRoom = (sql.getString(query, "room_id") == null) ? "" : sql.getString(query, "room_id");
             if(idRoom.equals("")){
