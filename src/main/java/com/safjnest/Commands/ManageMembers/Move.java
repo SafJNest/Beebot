@@ -75,13 +75,15 @@ public class Move extends Command{
             channel = event.getGuild().getVoiceChannelById(event.getMessage().getMentions().getMembers().get(1).getVoiceState().getChannel().getId());
         
         else{
-            String query = "SELECT room_id FROM rooms_nickname WHERE discord_id = '" + event.getGuild().getId() + "' AND room_name = '" + args[1] +"';";
-            String idRoom = (sql.getString(query, "room_id") == null) ? "" : sql.getString(query, "room_id");
+            String query = "SELECT room_id "
+                            + "FROM rooms_nickname" 
+                            + "WHERE discord_id = '" + event.getGuild().getId() + "' AND room_name = '" + args[1] +"';";
+            String idRoom = (sql.getString(query, "room_id") == null) 
+                            ? "" 
+                            : sql.getString(query, "room_id");
             if(idRoom.equals("")){
-                try {
-                    channel = event.getGuild().getVoiceChannelById(args[1]);
-                    
-                } catch (Exception e) {
+                try {channel = event.getGuild().getVoiceChannelById(args[1]);} 
+                catch (Exception e) {
                     event.reply("Canale mancante o non trovato");
                     return;
                 }

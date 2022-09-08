@@ -1,1 +1,1 @@
-worker: java -jar target/beebox-1.0-SNAPSHOT-jar-with-dependencies.jar false "OTM4NDg3NDcwMzM5ODAxMTY5.GgeqCi.1fHPBYNb2GplXm5kVrNAt2pZI8JidXeJ70uzb4" "***REMOVED***" "***REMOVED***" "***REMOVED***" "***REMOVED***" "RGAPI-21a5b60e-de05-4381-82ce-6aac86ed80df"
+worker: java -jar target/beebox-1.0-SNAPSHOT-jar-with-dependencies.jar false "OTM4NDg3NDcwMzM5ODAxMTY5.GgeqCi.1fHPBYNb2GplXm5kVrNAt2pZI8JidXeJ70uzb4" "***REMOVED***" "***REMOVED***" "***REMOVED***" "***REMOVED***" "***REMOVED***"

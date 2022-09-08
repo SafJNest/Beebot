@@ -92,7 +92,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey = "***REMOVED***";
             youtubeApiKey = "***REMOVED***";
             ttsApiKey = "***REMOVED***";
-            riotKey ="RGAPI-21a5b60e-de05-4381-82ce-6aac86ed80df";
+            riotKey ="***REMOVED***";
         }
         else{
             System.out.println("[MAIN] INFO The beast is turning on!");
