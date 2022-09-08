@@ -53,11 +53,11 @@ public class SetWelcome extends Command {
         message = message.substring(message.indexOf("|")+1);
         String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text)"
                             + "VALUES('" + discordId + "','" + channel +"','" + message + "');";
-        sql.addElement(query);
+        sql.runQuery(query);
         for(String role : roles){
             query = "INSERT INTO welcome_roles(role_id, discord_id)"
                             + "VALUES('" + role + "','" + discordId +"');";
-            sql.addElement(query);
+            sql.runQuery(query);
         }
         event.reply("Tutto okay capo");
     }

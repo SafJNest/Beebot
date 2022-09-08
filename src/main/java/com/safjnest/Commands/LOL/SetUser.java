@@ -47,7 +47,7 @@ public class SetUser extends Command {
         try {
             String query = "INSERT INTO LOL_user(discord_id, summoner_id, account_id, sum_name)"
                     + "VALUES('"+event.getGuild().getId()+"','"+s.getSummonerId()+"','"+s.getAccountId()+"','"+s.getName()+"');";
-            sql.addElement(query);
+            sql.runQuery(query);
         } catch (Exception e) {
             e.printStackTrace();
         }
