@@ -3,8 +3,6 @@ package com.safjnest.Commands.ManageMembers;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PostgreSQL;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.Command;

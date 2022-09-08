@@ -11,39 +11,34 @@ import java.util.HashMap;
 import javax.security.auth.login.LoginException;
 
 import com.amazonaws.auth.BasicAWSCredentials;
+
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
+
+import com.safjnest.Utilities.*;
+import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
-import com.safjnest.Utilities.AwsS3;
-import com.safjnest.Utilities.PostgreSQL;
-import com.safjnest.Utilities.TTSHandler;
-import com.safjnest.Utilities.TheListener;
 import com.safjnest.Commands.Math.*;
-import com.safjnest.Commands.Advanced.SetRoom;
-import com.safjnest.Commands.Advanced.SetWelcome;
 import com.safjnest.Commands.Audio.*;
-import com.safjnest.Commands.Dangerous.RandomMove;
-import com.safjnest.Commands.Dangerous.VandalizeServer;
-import com.safjnest.Commands.LOL.Champ;
-import com.safjnest.Commands.LOL.FreeChamp;
-import com.safjnest.Commands.LOL.RankMatch;
-import com.safjnest.Commands.LOL.SetUser;
-import com.safjnest.Commands.LOL.Summoner;
+import com.safjnest.Commands.Advanced.*;
+import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
+
+
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
-import no.stelar7.api.r4j.basic.APICredentials;
-import no.stelar7.api.r4j.impl.R4J;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
+import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.basic.APICredentials;
 /**
  * Main class of the bot.
  * <p> The {@code JDA} is instantiated and his parameters are 
@@ -53,7 +48,7 @@ import net.dv8tion.jda.api.utils.MemberCachePolicy;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
- * @version 1.2.5
+ * @version 2.0
  */
 public class App extends ListenerAdapter {
     private static boolean isCanary = true;
