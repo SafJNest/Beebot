@@ -92,7 +92,7 @@ public class App extends ListenerAdapter {
             AWSSecretKey = "9RlRQCIJlCCYTLdg/Y9DiDHUQXjt6/6fhzohM/su";
             youtubeApiKey = "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns";
             ttsApiKey = "d6199f5911f4493da571729f8127ce37";
-            riotKey ="RGAPI-21a5b60e-de05-4381-82ce-6aac86ed80df";
+            riotKey ="RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89";
         }
         else{
             System.out.println("[MAIN] INFO The beast is turning on!");
