@@ -1,12 +1,10 @@
 package com.safjnest.Commands.Misc;
 
-import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 
 /**
  * Gets a list of aliases for a command.

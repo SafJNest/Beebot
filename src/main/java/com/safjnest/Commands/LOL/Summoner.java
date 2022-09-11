@@ -52,7 +52,6 @@ public class Summoner extends Command {
         if(!args.equals("")){
             s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
         }else{
-            System.out.println(sql.getLolInfo(event.getAuthor().getId(),"account_id"));
             String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
             s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
         };

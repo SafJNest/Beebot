@@ -6,7 +6,9 @@ import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
 //import net.dv8tion.jda.api.entities.Emote;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -27,7 +29,17 @@ public class EmojiInfo extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        /*Emote em = (event.getMessage().getEmotes().size()!=0) ? event.getMessage().getEmotes().get(0) : event.getGuild().getEmotesByName(event.getArgs(), true).get(0);
+        String args = event.getArgs();
+        String idEmoji = null;
+        CustomEmoji em = null;
+        if(args.contains("<")){
+            try {
+                idEmoji = args.substring(args.lastIndexOf(":")+1, args.length()-1);
+                em = event.getGuild().getEmojiById(idEmoji);
+            } catch (Exception e) {
+                event.reply("Emote non trovata");
+            }
+        }
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":laughing: "+"**EMOJI INFO**"+" :laughing:");
         eb.setThumbnail(em.getImageUrl());
@@ -41,6 +53,5 @@ public class EmojiInfo extends Command {
         eb.addField("**Emoji URL**", em.getImageUrl(), false);   
         eb.addField("Creata il il (dd/mm/yyyy)", "```" + DateHandler.formatDate(em.getTimeCreated()) + "```", false);
         event.reply(eb.build());
-        */
 	}
 }

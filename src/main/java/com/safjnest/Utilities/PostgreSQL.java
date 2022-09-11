@@ -9,9 +9,23 @@ import java.util.ArrayList;
 
 import org.postgresql.util.PSQLException;
 
+/**
+ * Contains all the method to comunicate with the postgre heroku's database.
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @since 2.0
+ */
 public class PostgreSQL {
+    /** Object that opens the connection between database and beeby */
     Connection c;
 
+    /**
+     * Constructor
+     * 
+     * @param hostName Hostname, as 'keria123.eu-west-1.compute.fakerAws.com'
+     * @param database Name of the database to connect in
+     * @param user Username
+     * @param password Password
+     */
     public PostgreSQL(String hostName, String database, String user, String password){
         try {
             Class.forName("org.postgresql.Driver");
@@ -25,6 +39,12 @@ public class PostgreSQL {
         }
     }
 
+    /**
+     * Run a query that not return anything. INSERT, CREATE, DELETE, DROP, UPDATE
+     * @param query
+     * @return
+     * True if the query has been run correctly, otherwise false.
+     */
     public boolean runQuery(String query){
         Statement stmt;
         try {
@@ -37,74 +57,13 @@ public class PostgreSQL {
         catch (SQLException e1) {return false;}
     }
 
-
-    public String getLolInfo(String id, String column){
-        Statement stmt;
-        try {
-            String query = "SELECT "+column+" FROM LOL_user WHERE discord_id = '" + id + "';";
-            stmt = c.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
-            rs.next();
-            String info = rs.getString(column);
-            rs.close();
-            stmt.close();
-            return info;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
-    public String getWelcomeChannel(String discordId){
-        Statement stmt;
-        try {
-            String query = "SELECT channel_id FROM welcome_message WHERE discord_id = '" + discordId + "';";
-            stmt = c.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
-            rs.next();
-            String info = rs.getString("channel_id");
-            rs.close();
-            stmt.close();
-            return info;
-        } catch (SQLException e) {
-            return null;
-        }
-    }
-
-    public String getWelcomeMessage(String discordId){
-        Statement stmt;
-        try {
-            String query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + discordId + "';";
-            stmt = c.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
-            rs.next();
-            String info = rs.getString("message_text");
-            rs.close();
-            stmt.close();
-            return info;
-        } catch (SQLException e) {
-            return null;
-        }
-    } 
-    public ArrayList<String> getWelcomeRoles(String discordId){
-        Statement stmt;
-        ArrayList<String> roles = new ArrayList<>();
-        try {
-            String query = "SELECT role_id FROM welcome_roles WHERE discord_id = '" + discordId + "';";
-            stmt = c.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
-            while(rs.next()){
-                roles.add(rs.getString("role_id"));
-            };
-            rs.close();
-            stmt.close();
-            return roles;
-        } catch (SQLException e) {
-            return null;
-        }
-    }
-
+    /**
+     * Run a query and return a string, so just an element in a row.
+     * @param query query to be run 
+     * @param nameRow name of the row to get element
+     * @return
+     * A {@code String} if the query is run correctly, otherwise {@code null}
+     */
     public String getString(String query, String nameRow){
         Statement stmt;
         try {
@@ -121,6 +80,13 @@ public class PostgreSQL {
         }
     }
 
+    /**
+     * Run a query and return an array of strings, so an entire row.
+     * @param query query to be run 
+     * @param nameRow name of the row 
+     * @return
+     * An {@code ArrayList<String>} if the query is run correctly, otherwise {@code null}
+     */
      public ArrayList<String> getListString(String query, String nameRow){
         Statement stmt;
         ArrayList<String> arr = new ArrayList<>();
