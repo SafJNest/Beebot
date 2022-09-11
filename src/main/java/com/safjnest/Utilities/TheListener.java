@@ -1,7 +1,6 @@
 package com.safjnest.Utilities;
 
 import java.util.ArrayList;
-
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
@@ -43,17 +42,21 @@ public class TheListener extends ListenerAdapter{
         System.out.println("wehuyg8f");
         MessageChannel channel = null;
         User newGuy = event.getUser();
-        String notNullPls = sql.getWelcomeChannel(event.getGuild().getId());
+        String query = "SELECT channel_id FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "';";
+        String notNullPls = sql.getString(query, "channel_id");
         System.out.println(notNullPls);
         if(notNullPls == null)
             return;
         channel = event.getGuild().getTextChannelById(notNullPls);
-        String message = sql.getWelcomeMessage(event.getGuild().getId());
+        query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "';";
+        String message = sql.getString(query, "message_text");
         message = message.replace("#user", newGuy.getAsMention());
         channel.sendMessage(message).queue();
-        ArrayList<String> roles = sql.getWelcomeRoles(event.getGuild().getId());
+        query = "SELECT role_id FROM welcome_roles WHERE discord_id = '" + event.getGuild().getId() + "';";
+        ArrayList<String> roles = sql.getListString(query, "role_id");
         if(roles.size() > 0){
             for(String role : roles){
+                System.out.println(role);
                 event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
             }
         }
@@ -67,4 +70,5 @@ public class TheListener extends ListenerAdapter{
         TextChannel welcome = event.getGuild().getSystemChannel();
         welcome.sendMessage("NO FUCKING WAY " + newguy.getAsMention() + " HA BOOSTATO IL SERVER!!\n" + event.getGuild().getBoostCount()).queue();
     }
+
 }
