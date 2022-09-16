@@ -12,6 +12,7 @@ import com.safjnest.Utilities.TrackScheduler;
 import com.safjnest.Utilities.tts.Voices;
 import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -33,8 +34,9 @@ import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 public class TTS extends Command{
     String speech;
     TTSHandler tts;
-    private static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
-    public TTS(TTSHandler tts){
+    PostgreSQL sql;
+    public static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
+    public TTS(TTSHandler tts, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -42,6 +44,7 @@ public class TTS extends Command{
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
         this.tts = tts;
+        this.sql = sql;
         voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
         voices.put(Voices.Arabic_SaudiArabia.id, Set.of(Voices.Arabic_SaudiArabia.array));
         voices.put(Voices.Bulgarian.id, Set.of(Voices.Bulgarian.array));
@@ -97,7 +100,7 @@ public class TTS extends Command{
     @Override
     protected void execute(CommandEvent event) {
         String language = "it-it";
-        String voice = "Pietro";
+        String voice = "keria";
         MessageChannel channel = event.getChannel();
         if((speech = event.getArgs()) == ""){
             event.reply("scrivi qualcosa pezzo diemrdqa");
@@ -116,13 +119,26 @@ public class TTS extends Command{
         }
         File file = new File("rsc" + File.separator + "tts");
         if(!file.exists())
-            file.mkdirs();     
+            file.mkdirs();
         for(String key : voices.keySet()){
             if(voices.get(key).contains(event.getArgs().split(" ")[0])){
                 language = key;
                 voice = event.getArgs().split(" ")[0];
-                speech = event.getArgs().substring(event.getArgs().indexOf(" "));
             }
+        }
+        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';";
+        if(!voice.equals("keria")){
+            speech = event.getArgs().substring(event.getArgs().indexOf(" "));
+        }
+        else if(sql.getString(query, "name_tts") != null){
+            voice = sql.getString(query, "name_tts");
+            query = "SELECT language_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';"; 
+            language = sql.getString(query, "language_tts");
+            speech = event.getArgs();
+        }
+        else{
+            voice = "Mia";  
+            speech = event.getArgs();
         }
         tts.makeSpeech(speech, event.getAuthor().getName(), voice, language);
         

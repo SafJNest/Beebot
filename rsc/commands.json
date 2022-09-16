@@ -138,6 +138,13 @@
         "arguments" : "[nomeComando] [#canale] || [nomeComando] [idCanale] "
     },
 
+    "setvoice":{
+        "alias" : ["voice"],
+        "help"  : "Consente di settare una voce default per il tts.",
+        "category" : "Gestione Server",
+        "arguments" : "[nomeComando] [nomeVoce]"
+    },
+
     "listroom":{
         "alias" : ["rooms"],
         "help"  : "Restituisce una lista con tutti i nickname delle stanze",
