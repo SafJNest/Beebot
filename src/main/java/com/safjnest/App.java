@@ -145,7 +145,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
         builder.addCommand(new PlaySound(s3Client));
         builder.addCommand(new Upload(s3Client));
-        builder.addCommand(new TTS(tts));
+        builder.addCommand(new TTS(tts, sql));
         builder.addCommand(new Stop());
 
         //Manage Guild
@@ -174,6 +174,7 @@ public class App extends ListenerAdapter {
         //Advanced
         builder.addCommand(new SetWelcome(sql));
         builder.addCommand(new SetRoom(sql));
+        builder.addCommand(new SetVoice(sql));
 
         //Math
         builder.addCommand(new Bighi(maxBighi));
