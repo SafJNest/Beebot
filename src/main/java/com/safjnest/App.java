@@ -123,9 +123,9 @@ public class App extends ListenerAdapter {
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
             .addEventListeners(listenerozzo)
-            .setMemberCachePolicy(MemberCachePolicy.VOICE)
+            .setMemberCachePolicy(MemberCachePolicy.ALL)
             .setChunkingFilter(ChunkingFilter.ALL)
-            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI)
+            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER)
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
