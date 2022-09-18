@@ -97,7 +97,7 @@ public class App extends ListenerAdapter {
         else{
             System.out.println("[MAIN] INFO The beast is turning on!");
             PREFIX = "p";
-            activity = Activity.playing("The most powerful discord bot ever. Stronger than faker weaker than panichi leonardo | " + PREFIX + "help");
+            activity = Activity.playing("서폿 차이 | " + PREFIX + "help");
             token         = args[1];
             AWSAccesKey   = args[2];
             AWSSecretKey  = args[3];
