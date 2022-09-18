@@ -7,8 +7,6 @@ import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
-//import net.dv8tion.jda.api.entities.Emote;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>

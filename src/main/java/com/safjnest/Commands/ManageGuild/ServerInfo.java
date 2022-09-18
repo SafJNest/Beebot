@@ -96,10 +96,9 @@ public class ServerInfo extends Command{
                     + " | Testuali: " + guild.getTextChannels().size() 
                     + " | Vocali: " + guild.getVoiceChannels().size() 
                     + "```", false);
-
-        eb.addField("Emoji del server [" + guild.getStickers().size() + "]", "```" 
-                    +    "Normali: " + guild.getStickers().stream()
-                                        .filter(emote -> !emote.isAvailable()).count()
+        eb.addField("Emoji del server [" +(guild.getEmojis().size()+guild.getStickers().size()) + "]", "```" 
+                    +    "Normali: " + guild.getEmojis().stream()
+                                        .filter(emote -> emote.isAvailable()).count()
                     + " | Animate: " + guild.getStickers().stream()
                                         .filter(emote -> emote.isAvailable()).count()
                     + "```", false);

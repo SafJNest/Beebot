@@ -46,53 +46,23 @@ public class TTS extends Command{
         this.tts = tts;
         this.sql = sql;
         voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
-        voices.put(Voices.Arabic_SaudiArabia.id, Set.of(Voices.Arabic_SaudiArabia.array));
-        voices.put(Voices.Bulgarian.id, Set.of(Voices.Bulgarian.array));
-        voices.put(Voices.Catalan.id, Set.of(Voices.Catalan.array));
         voices.put(Voices.Chinese_China.id, Set.of(Voices.Chinese_China.array));
-        voices.put(Voices.Chinese_HongKong.id, Set.of(Voices.Chinese_HongKong.array));
-        voices.put(Voices.Chinese_Taiwan.id, Set.of(Voices.Chinese_Taiwan.array));
-        voices.put(Voices.Croatian.id, Set.of(Voices.Croatian.array));
-        voices.put(Voices.Czech.id, Set.of(Voices.Czech.array));
-        voices.put(Voices.Danish.id, Set.of(Voices.Danish.array));
-        voices.put(Voices.Dutch_Belgium.id, Set.of(Voices.Dutch_Belgium.array));
         voices.put(Voices.Dutch_Netherlands.id, Set.of(Voices.Dutch_Netherlands.array));
-        voices.put(Voices.English_Australia.id, Set.of(Voices.English_Australia.array));
-        voices.put(Voices.English_Canada.id, Set.of(Voices.English_Canada.array));
         voices.put(Voices.English_GreatBritain.id, Set.of(Voices.English_GreatBritain.array));
         voices.put(Voices.English_India.id, Set.of(Voices.English_India.array));
-        voices.put(Voices.English_Ireland.id, Set.of(Voices.English_Ireland.array));
         voices.put(Voices.English_UnitedStates.id, Set.of(Voices.English_UnitedStates.array));
-        voices.put(Voices.Finnish.id, Set.of(Voices.Finnish.array));
-        voices.put(Voices.French_Canada.id, Set.of(Voices.French_Canada.array));
         voices.put(Voices.French_France.id, Set.of(Voices.French_France.array));
-        voices.put(Voices.French_Switzerland.id, Set.of(Voices.French_Switzerland.array));
-        voices.put(Voices.German_Austria.id, Set.of(Voices.German_Austria.array));
         voices.put(Voices.German_Germany.id, Set.of(Voices.German_Germany.array));
-        voices.put(Voices.German_Switzerland.id, Set.of(Voices.German_Switzerland.array));
         voices.put(Voices.Greek.id, Set.of(Voices.Greek.array));
-        voices.put(Voices.Hebrew.id, Set.of(Voices.Hebrew.array));
-        voices.put(Voices.Hindi.id, Set.of(Voices.Hindi.array));
-        voices.put(Voices.Hungarian.id, Set.of(Voices.Hungarian.array));
-        voices.put(Voices.Indonesian.id, Set.of(Voices.Indonesian.array));
         voices.put(Voices.Italian.id, Set.of(Voices.Italian.array));
         voices.put(Voices.Japanese.id, Set.of(Voices.Japanese.array));
         voices.put(Voices.Korean.id, Set.of(Voices.Korean.array));
-        voices.put(Voices.Malay.id, Set.of(Voices.Malay.array));
-        voices.put(Voices.Norwegian.id, Set.of(Voices.Norwegian.array));
         voices.put(Voices.Polish.id, Set.of(Voices.Polish.array));
-        voices.put(Voices.Portuguese_Brazil.id, Set.of(Voices.Portuguese_Brazil.array));
         voices.put(Voices.Portuguese_Portugal.id, Set.of(Voices.Portuguese_Portugal.array));
         voices.put(Voices.Romanian.id, Set.of(Voices.Romanian.array));
         voices.put(Voices.Russian.id, Set.of(Voices.Russian.array));
-        voices.put(Voices.Slovak.id, Set.of(Voices.Slovak.array));
         voices.put(Voices.Spanish_Mexico.id, Set.of(Voices.Spanish_Mexico.array));
         voices.put(Voices.Spanish_Spain.id, Set.of(Voices.Spanish_Spain.array));
-        voices.put(Voices.Swedish.id, Set.of(Voices.Swedish.array));
-        voices.put(Voices.Tamil.id, Set.of(Voices.Tamil.array));
-        voices.put(Voices.Thai.id, Set.of(Voices.Thai.array));
-        voices.put(Voices.Turkish.id, Set.of(Voices.Turkish.array));
-        voices.put(Voices.Vietnamese.id, Set.of(Voices.Vietnamese.array));
 
     
     }
@@ -102,19 +72,27 @@ public class TTS extends Command{
         String language = "it-it";
         String voice = "keria";
         MessageChannel channel = event.getChannel();
+        EmbedBuilder eb = null;
         if((speech = event.getArgs()) == ""){
             event.reply("scrivi qualcosa pezzo diemrdqa");
             return;
         }else if (event.getArgs().split(" ")[0].equalsIgnoreCase("list")){
+            eb = new EmbedBuilder();
+            eb.setTitle("Lista delle lingue disponibili nel tier 21 bot:");
+            eb.setColor(new Color(255, 196, 0));
             String lang = "";
+            String voiceString = "";
             for(String key : voices.keySet()){
                 lang += "**"+ key.toUpperCase() +"**" + ":\n";
                 for(String s : voices.get(key)){
-                    lang += s + " - ";
+                    voiceString += s + " - ";
                 }
-                lang = lang.substring(0, lang.length()-3) + "\n";
+                eb.addField(lang, voiceString, true);
+                lang = "";
+                voiceString = "";
             }
-            event.reply(lang);
+            eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+            event.reply(eb.build());
             return;
         }
         File file = new File("rsc" + File.separator + "tts");
@@ -186,7 +164,7 @@ public class TTS extends Command{
         if(player.getPlayingTrack() == null)
             return;
         
-        EmbedBuilder eb = new EmbedBuilder();
+        eb = new EmbedBuilder();
         eb.setTitle("In riproduzione:");
         eb.addField("Durata",SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length),true);
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
@@ -196,7 +174,7 @@ public class TTS extends Command{
         eb.addField("Lingua", language, true);
         eb.addField("Voce", voice, true);
         String img = "jelly.png";
-        eb.setColor(new Color(255, 0, 0));
+        eb.setColor(new Color(255, 196, 0));
             
 
         File path = new File("rsc" + File.separator + "img" + File.separator + img);
