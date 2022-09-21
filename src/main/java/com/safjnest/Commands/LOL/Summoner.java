@@ -49,16 +49,30 @@ public class Summoner extends Command {
 	protected void execute(CommandEvent event) {
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        if(!args.equals("")){
-            s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
-        }else{
+        if(args.equals("")){
             String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
-            s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
-        };
+            try {
+                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
+            } catch (Exception e) {
+               event.reply("Non hai collegato il tuo account Riot.");
+               return;
+            }
+        }
+        else if(event.getMessage().getMentions().getMembers().size() != 0){
+            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMessage().getMentions().getMembers().get(0).getId() + "';";
+            try {
+                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
+            } catch (Exception e) {
+                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " non ha collegato il suo account Riot.");
+                return;
+            }
+        }else{
+            s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
+        }
         
         try {
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setAuthor(event.getAuthor().getName());
+            builder.setAuthor(s.getName());
             builder.setColor(new Color(250,225,56));
             builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
