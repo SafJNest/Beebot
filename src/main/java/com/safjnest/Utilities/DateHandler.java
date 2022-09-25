@@ -27,25 +27,25 @@ public class DateHandler {
         String finalDate = dtf.format(date) + " (";
         if(years != 0){
             if(years == 1)
-                finalDate += years + " anno ";
+                finalDate += years + " year ";
             else
-                finalDate += years + " anni ";
+                finalDate += years + " years ";
         }
         if(months != 0){
             if(years != 0)
-                finalDate += "e ";
+                finalDate += "and ";
             if(months == 1)
-                finalDate += months + " mese ";
+                finalDate += months + " month ";
             else
-                finalDate += months + " mesi ";
+                finalDate += months + " months ";
         }
         if(years == 0 && months == 0){
             if(days == 1)
-                finalDate += days + " giorno ";
+                finalDate += days + " day ";
             else
-                finalDate += days + " giorni ";
+                finalDate += days + " days ";
         }
-        finalDate += "fa)";
+        finalDate += "ago)";
         return finalDate;
     }
 }

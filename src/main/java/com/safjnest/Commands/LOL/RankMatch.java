@@ -75,7 +75,7 @@ public class RankMatch extends Command {
             event.reply(builder.build());
             
         } catch (Exception e) {
-            event.reply(s.getName() + " non è in game.");
+            event.reply(s.getName() + " is not in a match.");
         }
 	}
 

@@ -34,9 +34,9 @@ public class Ram extends Command{
     */
      @Override
     protected void execute(CommandEvent e) {
-        e.reply("Totale: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
-        + "In uso: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
-        + "Libera: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
-        + "Massima: " + String.valueOf(Runtime.getRuntime().maxMemory()/1048576) + "mb");
+        e.reply("Total: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
+        + "Usage: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
+        + "Free: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
+        + "Max: " + String.valueOf(Runtime.getRuntime().maxMemory()/1048576) + "mb");
     }
 }

@@ -28,7 +28,7 @@ public class DownloadSound extends Command{
     protected void execute(CommandEvent event) {
         nameFile = event.getArgs();
         if(nameFile.isEmpty()){
-            event.reply("Il nome iedocrop");
+            event.reply("Missing sound's name.");
             return;
         }
         String newNameFile = event.getAuthor().getName()+"_"+nameFile;

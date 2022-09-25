@@ -33,10 +33,11 @@ public class SetVoice extends Command {
             if(TTS.voices.get(key).contains(event.getArgs().split(" ")[0])){
                 language = key;
                 voice = event.getArgs().split(" ")[0];
+                break;
             }
         }
         if(voice.equals("keria")){
-            event.reply("Voce non trovata, usare il commando " + event.getPrefix() + "t list.");
+            event.reply("Voice not found, use command" + event.getPrefix() + "t list");
             return;
         }
         String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';";
@@ -45,16 +46,16 @@ public class SetVoice extends Command {
                                 + "VALUES('" + event.getGuild().getId() + "','" + voice + "','" + language + "');";
             
             if(sql.runQuery(query))
-                event.reply("Tutto okay capo");
+                event.reply("All set correctly");
             else
-                event.reply("what faker is this?");
+                event.reply("Error: wrong voice name probably");
         }else{
             query = "UPDATE tts_guilds SET name_tts = '" + voice + "' WHERE discord_id = '" + event.getGuild().getId() + "';";
             String query2 = "UPDATE tts_guilds SET language_tts = '" + language + "' WHERE discord_id = '" + event.getGuild().getId() + "';";
             if(sql.runQuery(query) && sql.runQuery(query2))
-                event.reply("Voce default modificata con successo");
+                event.reply("Default voice modified correctly");
             else 
-                event.reply("what faker is this");
+                event.reply("Error: wrong voice name probably");
         }
     }
 }

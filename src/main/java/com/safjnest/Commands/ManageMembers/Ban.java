@@ -31,7 +31,7 @@ public class Ban extends Command{
     protected void execute(CommandEvent event) {
 
         String[] args = event.getArgs().split(" ", 2);
-        String reason = (args.length < 2) ? "rotto il cazzo" : args[1];
+        String reason = (args.length < 2) ? "unspecified reason" : args[1];
    
         
         User theGuy = null;
@@ -43,23 +43,23 @@ public class Ban extends Command{
             final User surelyTheGuy = theGuy;
 
             if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.BAN_MEMBERS))
-                event.reply(event.getJDA().getSelfUser().getAsMention() + " non ha il permesso di bannare");
+                event.reply(event.getJDA().getSelfUser().getAsMention() + " doesn't have the permissions to ban, give the bot an admin role");
 
             else if (PermissionHandler.isUntouchable(theGuy.getId()))
-                event.reply("Le macchine non si ribellano ai loro creatori");
+                event.reply("Don't you dare touch my creators.");
 
             else if(PermissionHandler.isEpria(theGuy.getId()) && !PermissionHandler.isUntouchable(event.getAuthor().getId()))
                 event.reply("OHHHHHHHHHHHHHHHHHHHHHHHHHHHH NON BANNARE MEEEEEEEEEEEEEEERIO EEEEEEEEEEEEEEEEEPRIA");
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.BAN_MEMBERS)) {
                 event.getGuild().ban(surelyTheGuy, 0, reason).queue(
-                                                        (e) -> event.reply("bannato " + surelyTheGuy.getAsMention()), 
+                                                        (e) -> event.reply("banned " + surelyTheGuy.getAsMention()), 
                                                         new ErrorHandler().handle(
                                                             ErrorResponse.MISSING_PERMISSIONS,
                                                                 (e) -> event.replyError("sorry, " + e.getMessage()))
                 );
             }else
-                event.reply("Brutto fallito non bannare se non sei admin UwU");
+                event.reply("You can't ban if you're not an admin UwU");
         } catch (Exception e) {
             event.replyError("sorry, " + e.getMessage());
         }

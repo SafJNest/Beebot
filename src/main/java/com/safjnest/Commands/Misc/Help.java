@@ -35,17 +35,21 @@ public class Help extends Command {
      */
     @Override
     protected void execute(CommandEvent event) {
+        int nCom = 0;
         String command = event.getArgs();
         EmbedBuilder eb = new EmbedBuilder();
         HashMap<String, ArrayList<Command>> commands = new HashMap<>();
         for (Command e : event.getClient().getCommands()) {
-            if(!commands.containsKey(e.getCategory().getName()))
-                commands.put(e.getCategory().getName(), new ArrayList<Command>());
-            commands.get(e.getCategory().getName()).add(e);
+            if(!e.getCategory().getName().equals("Dangerous")){
+                if(!commands.containsKey(e.getCategory().getName()))
+                    commands.put(e.getCategory().getName(), new ArrayList<Command>());
+                commands.get(e.getCategory().getName()).add(e);
+                nCom++;
+            }
         }
-        eb.setTitle("📒INFORMAZIONI E COMANDI📒", null);
-        eb.setDescription("Il prefisso corrente è: **"+event.getClient().getPrefix()+"**"
-        + ", puoi avere maggiori informazioni tramite il comando: **"+event.getClient().getPrefix()+"help <nomecomando>.**");
+        eb.setTitle("📒INFO AND COMMAND📒", null);
+        eb.setDescription("Current prefix is: **"+event.getClient().getPrefix()+"**"
+        + ", you can get more information using: **"+event.getClient().getPrefix()+"help <nameCommand>.**");
         eb.setColor(new Color(255, 196, 0));
         if(command.equals("")){
             String ss = "```\n";
@@ -57,8 +61,8 @@ public class Help extends Command {
                 eb.addField(k, ss, true);
                 ss = "```\n";
             }
-            eb.addField("Numero comandi disponibili:", "```"+event.getClient().getCommands().size()+"```", false);
-            eb.setFooter("Il bot è sempre in costante aggiornamento ;D", null);
+            eb.addField("Number of commands avaible:", "```"+nCom+"```", false);
+            eb.setFooter("Beebot is continuously updated by the two KINGS ;D", null);
         }else{
             Command e = null;
             for(String k : commands.keySet()){
@@ -69,9 +73,9 @@ public class Help extends Command {
                     }
                 }
             }
-            eb.setDescription("**COMANDO " + e.getName().toUpperCase() + "**");
-            eb.addField("**DESCRIZIONE**","```"+e.getHelp()+"```", false);
-            eb.addField("**CATEGORIA**","```"+e.getCategory().getName()+"```", false);
+            eb.setDescription("**COMMAND " + e.getName().toUpperCase() + "**");
+            eb.addField("**DESCRIPTION**","```"+e.getHelp()+"```", false);
+            eb.addField("**CATEGORY**","```"+e.getCategory().getName()+"```", false);
             eb.addField("**ARG**","```"+e.getArguments()+"```", true);
             eb.addField("**COOLDOWN**","```"+e.getCooldown()+"```", true);
             if(e.getAliases().length > 0){
@@ -84,9 +88,9 @@ public class Help extends Command {
             }
 
             
-            eb.setFooter("SE L'ARGS E' NULL BASTA DIGITARE IL COMANDO, LE QUADRE INDICANO CAMPO OBBLIGATORIO E LE TONDE FACOLTATIVO", null);
+            eb.setFooter("IN CASE ARGS IS NULL ITS ENOUGH WRITE JUST THE COMMAND, [] MEANS A REQUIRED FIELD WHITE () DONT ", null);
         }
-        eb.addField("**ALTRE INFORMAZIONI**", "Il bot è stato sviluppato da sole due persone quindi in caso di bug o problemi non esitate a contattarli.", false);
+        eb.addField("**OTHER INFORMATION**", "Beebot has been developed by only two people, so dont break the balls", false);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
 

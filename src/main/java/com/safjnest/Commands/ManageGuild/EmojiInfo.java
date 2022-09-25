@@ -35,21 +35,21 @@ public class EmojiInfo extends Command {
                 idEmoji = args.substring(args.lastIndexOf(":")+1, args.length()-1);
                 em = event.getGuild().getEmojiById(idEmoji);
             } catch (Exception e) {
-                event.reply("Emote non trovata");
+                event.reply("Emote not found");
             }
         }
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":laughing: "+"**EMOJI INFO**"+" :laughing:");
         eb.setThumbnail(em.getImageUrl());
-        eb.addField("**Nome**", "```" + em.getName() + "```", true);   
-        eb.addField("**ID emoji**", "```" + em.getId() + "```", true); 
+        eb.addField("**Name**", "```" + em.getName() + "```", true);   
+        eb.addField("**Emoji ID**", "```" + em.getId() + "```", true); 
         eb.addField("**GIF?**",
         (em.isAnimated())
-            ?"```✅ Si```"
+            ?"```✅ Yes```"
             :"```❌ No```"
         , true);
         eb.addField("**Emoji URL**", em.getImageUrl(), false);   
-        eb.addField("Creata il il (dd/mm/yyyy)", "```" + DateHandler.formatDate(em.getTimeCreated()) + "```", false);
+        eb.addField("Emoji created on (dd/mm/yyyy)", "```" + DateHandler.formatDate(em.getTimeCreated()) + "```", false);
         event.reply(eb.build());
 	}
 }

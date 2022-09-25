@@ -33,11 +33,11 @@ public class Clear extends Command {
 	protected void execute(CommandEvent event) {
         String[] commandArray = event.getMessage().getContentRaw().split(" ");
         if (!PermissionHandler.hasPermission(event.getMember(), Permission.MESSAGE_MANAGE)){
-            event.reply("im so sorry non sei admin non rompere le scatole :D");
+            event.reply("You can't use this command if you're not admin");
             return;
         }
         if(Integer.parseInt(commandArray[1]) > 99){
-            event.reply("Puoi cancellare massimo 100 messaggi alla volta, quindi 99 + il comando = 100");
+            event.reply("You can't delete more than 99 messages at once");
             return;
         }
         MessageHistory history = new MessageHistory(event.getChannel());

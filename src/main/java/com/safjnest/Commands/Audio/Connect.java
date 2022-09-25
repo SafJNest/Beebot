@@ -28,7 +28,7 @@ public class Connect extends Command implements EventListener{
 	@Override
 	protected void execute(CommandEvent event) {
         if(event.getMember().getVoiceState().getChannel() == null)
-            event.reply("Non sei in un canale vocale.");
+            event.reply("You need to be in a voice channel to use this command");
         else
 		    event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
 

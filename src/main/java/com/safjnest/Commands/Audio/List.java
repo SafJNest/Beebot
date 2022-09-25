@@ -107,7 +107,7 @@ public class List extends Command {
             for(String serverName : sortedMap.keySet()) {
                 soundNames += "**"+ 
                 ((event.getJDA().getGuildById(serverName) == null)
-                    ? "Nome non disponibile"
+                    ? "Server name not found."
                     : event.getJDA().getGuildById(serverName).getName()) +"**" + ":\n";
                 for(String soundName : sortedMap.get(serverName)){
                     soundNames += soundName.split("/")[2] + " - ";
@@ -116,7 +116,7 @@ public class List extends Command {
                 soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
             }
         }
-        soundNames += "\nSuono totali: " + cont;
+        soundNames += "\nTotal sounds: " + cont;
         event.reply(soundNames);
     }
 }

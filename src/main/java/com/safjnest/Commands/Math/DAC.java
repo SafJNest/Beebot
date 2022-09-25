@@ -25,7 +25,7 @@ public class DAC extends Command{
         try {
             event.reply(String.valueOf(SafJNest.divideandconquer(Integer.parseInt(event.getArgs()))));
         } catch (NumberFormatException e) {
-            event.replyError("Metti un numero al massimo a 10 cifre");
+            event.replyError("Only number dont longer than 10 digits. ");
         } catch (Exception e) {
             event.replyError("sorry, " + e.getMessage());
         }

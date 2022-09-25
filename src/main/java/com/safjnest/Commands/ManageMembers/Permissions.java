@@ -33,13 +33,13 @@ public class Permissions extends Command{
             else
                 theGuy = event.getGuild().retrieveMemberById(event.getArgs()).complete();
             if (theGuy.isOwner())
-                event.reply(theGuy.getAsMention() + " e' l'owner fa come cazzo vuole ora deleta il server se parli");
+                event.reply(theGuy.getAsMention() + " is the owner of the server.");
             else if (theGuy.hasPermission(Permission.ADMINISTRATOR))
-                event.reply(theGuy.getAsMention() + " e' un admin può fare tutto quello che vuole.");
+                event.reply(theGuy.getAsMention() + " is an admin.");
             else{
                 for(Permission p :  theGuy.getPermissions())
                     per+=p.getName() + "\n";
-                event.reply(theGuy.getAsMention() + " non e' un admin\nQuesti sono i suoi permessi: " + per);
+                event.reply(theGuy.getAsMention() + " is not an admin\nThese are his permissions: " + per);
             }
         } catch (Exception e) {
             event.replyError("sorry, " + e.getMessage());

@@ -26,7 +26,7 @@ public class FastestRoot extends Command{
         try {
             event.reply(String.valueOf(SafJNest.fastInvSquareRoot(Float.parseFloat(event.getArgs()))));
         } catch (NumberFormatException e) {
-            event.replyError("Metti un numero al massimo a 10 cifre e non negativo. (Usa il punto non la virgola)");
+            event.replyError("Only insert a positive number and not longer than 10 digits");
         } catch (Exception e) {
             event.replyError("sorry, " + e.getMessage());
         }

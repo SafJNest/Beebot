@@ -27,7 +27,7 @@ public class ListGuild extends Command {
 	@Override
 	protected void execute(CommandEvent event) {
         List<Guild> guilds = event.getJDA().getGuilds();
-        String list = "Il Bot è presente nei seguinti server:\n";
+        String list = "Here the list where the bot is in: \n";
         for(Guild guild : guilds){
             list+="**"+guild.getName()+"("+guild.getId()+")** - ";
         }

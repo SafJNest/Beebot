@@ -83,7 +83,7 @@ public class ListDeprecated extends Command {
         eb.setDescription("Lista con tutti i suoni del tier 1 bot");
         eb.setColor(new Color(0, 128, 128));
         eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
-        eb.setFooter("*Questo non e' soundfx, questa e' perfezione cit. steve jobs", null);
+        eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
         File file = new File("rsc" + File.separator + "img" + File.separator + "mp3.png");
         eb.setThumbnail("attachment://mp3.png");
         channel.sendMessageEmbeds(eb.build())

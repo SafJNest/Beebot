@@ -47,81 +47,81 @@ public class ServerInfo extends Command{
             roleCharNumber = Integer.parseInt(args);
         
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle("Informazioni del server");
+        eb.setTitle(":desktop: **SERVER INFORMATION** :desktop:");
         eb.setThumbnail(guild.getIconUrl());
         eb.setColor(new Color(116, 139, 151));
 
-        eb.addField("Nome del server", "```" 
+        eb.addField("Server name", "```" 
                     + guild.getName() 
                     + "```", true);
-        eb.addField("ID dell'Owner", "```" 
+        eb.addField("Owner's ID", "```" 
                     + guild.getOwnerId() 
                     + "```" , true);
 
-        eb.addField("Descrizione del server", "```" 
+        eb.addField("Server Description", "```" 
                     + ((guild.getDescription() == null) 
-                        ? "Descrizione non trovata" 
+                        ? "Description not found" 
                         : guild.getDescription()) 
                     + "```", false);
 
-        eb.addField("ID del Server", "```" 
+        eb.addField("Server's ID", "```" 
                     + guild.getId()
                     + "```" , true);
-        eb.addField("Regione", "```" 
+        eb.addField("Region", "```" 
                     + guild.getLocale().toString() 
                     + "```", true);
 
-        eb.addField("Numero dei Membri del server [" 
+        eb.addField("Total number of members [" 
                     + String.valueOf(guild.getMemberCount()) + "]", "```"
-                    + "Membri: " + guild.getMembers().stream()
+                    + "Members: " + guild.getMembers().stream()
                                     .filter(member -> !member.getUser().isBot()).count()
-                    + " | Bot: " + guild.getMembers().stream()
+                    + " | Bots: " + guild.getMembers().stream()
                                     .filter(member -> member.getUser().isBot()).count()
                     + "```", false);
 
-        eb.addField("Tier del Boost", "```" 
+        eb.addField("Tier boot", "```" 
                     + guild.getBoostTier().name() 
                     + "```", true);
-        eb.addField("Numero di Boost", "```" 
+        eb.addField("Boost number", "```" 
                     + String.valueOf(guild.getBoostCount()) 
                     + "```", true);
-        eb.addField("Ruolo dei Booster", "```" 
+        eb.addField("Booster role", "```" 
                     + (guild.getBoostRole() == null
                         ? "NONE"
                         : guild.getBoostRole().getName())
                     + "```", true);
 
-        eb.addField("Categorie e canali [" + guild.getChannels().size() + "]", "```" 
-                    +    "Categorie: " + guild.getCategories().size() 
-                    + " | Testuali: " + guild.getTextChannels().size() 
-                    + " | Vocali: " + guild.getVoiceChannels().size() 
+        eb.addField("Categories and channel [" + guild.getChannels().size() + "]", "```" 
+                    +    "Categories: " + guild.getCategories().size() 
+                    + " | Text channel: " + guild.getTextChannels().size() 
+                    + " | Voice channel: " + guild.getVoiceChannels().size() 
                     + "```", false);
-        eb.addField("Emoji del server [" +(guild.getEmojis().size()+guild.getStickers().size()) + "]", "```" 
-                    +    "Normali: " + guild.getEmojis().stream()
+        eb.addField("Emojies [" +(guild.getEmojis().size()+guild.getStickers().size()) + "]", "```" 
+                    +    "Emojies: " + guild.getEmojis().stream()
                                         .filter(emote -> emote.isAvailable()).count()
-                    + " | Animate: " + guild.getStickers().stream()
+                    + " | Gif: " + guild.getStickers().stream()
                                         .filter(emote -> emote.isAvailable()).count()
                     + "```", false);
 
-        eb.addField("Livello contenuti espliciti", "```" 
+        eb.addField("Explicit content level", "```" 
                     + guild.getExplicitContentLevel().name() 
                     + "```", true);
-        eb.addField("Livello NSFW", "```" 
+        eb.addField("NSFW level", "```" 
                     + guild.getNSFWLevel().toString() 
                     + "```", true);
         List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(guild.getRoles(), roleCharNumber);
-        eb.addField("Ruoli del server [" 
-                    + guild.getRoles().size() + "] (stampati " 
+        eb.addField("Server roles [" 
+                    + guild.getRoles().size() + "] (printed " 
                     + RoleNames.size() + ")" , "```" 
                     + RoleNames.toString().substring(1, RoleNames.toString().length() - 1) 
                     + "```", false);
 
-        eb.addField("Livello MFA richiesto", "```" 
+        eb.addField("Required MFA level", "```" 
                     + guild.getRequiredMFALevel().toString() 
                     + "```", true);
         
 
-        eb.addField("Data di creazione del server", "```" 
+        eb.addField("Server created on", "```" 
                     + DateHandler.formatDate(guild.getTimeCreated()) 
                     + "```", false);
         

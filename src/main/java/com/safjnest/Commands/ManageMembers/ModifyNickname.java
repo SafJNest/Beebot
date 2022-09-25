@@ -35,7 +35,7 @@ public class ModifyNickname extends Command {
         
         try {
             theGuy.modifyNickname(args[1]).queue(
-            (e) -> event.reply("Cambio di nick di  " + theGuy.getAsMention() + " effettuato"), 
+            (e) -> event.reply("Changed nickname of " + theGuy.getAsMention() + " exectued"), 
             new ErrorHandler().handle(
                 ErrorResponse.MISSING_PERMISSIONS,
                     (e) -> event.replyError("Sorry, " + e.getMessage()))

@@ -24,6 +24,7 @@ public class RandomMove extends Command{
         this.cooldown = new JSONReader().getCooldown(this.name);
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.hidden = true;
     }
 
     @Override
@@ -45,7 +46,7 @@ public class RandomMove extends Command{
         }else if(event.getMessage().getMentions().getMembers().size() > 0){
             theGuy = event.getMessage().getMentions().getUsers().get(0);
         }else{
-            event.reply("Non ho capito a chi vuoi rompere il cazzo.");
+            event.reply("You have to mention or write the Id of the one you want to random move");
             return;
         }
         if(theGuy == null)

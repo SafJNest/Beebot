@@ -45,7 +45,7 @@ public class SetWelcome extends Command {
             try {
                 channel = event.getGuild().getSystemChannel().getId();
             } catch (Exception e) {
-                event.reply("Canale mancante, selezionare un canale o settare il canale generale del server.");
+                event.reply("Mention or write the id of the channel you want to set as welcome or set a 'system channel' on your server's settings");
                 return;
             }
         }
@@ -59,6 +59,6 @@ public class SetWelcome extends Command {
                             + "VALUES('" + role + "','" + discordId +"');";
             sql.runQuery(query);
         }
-        event.reply("Tutto okay capo");
+        event.reply("All set correctly");
     }
 }

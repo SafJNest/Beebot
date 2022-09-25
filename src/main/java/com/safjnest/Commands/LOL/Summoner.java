@@ -54,7 +54,7 @@ public class Summoner extends Command {
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
             } catch (Exception e) {
-               event.reply("Non hai collegato il tuo account Riot.");
+               event.reply("You dont have connected your Riot account.");
                return;
             }
         }
@@ -63,7 +63,7 @@ public class Summoner extends Command {
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
             } catch (Exception e) {
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " non ha collegato il suo account Riot.");
+                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
                 return;
             }
         }else{

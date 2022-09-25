@@ -37,23 +37,23 @@ public class Mute extends Command{
             final Member surelyTheGuy = theGuy;
 
             if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.VOICE_MUTE_OTHERS))
-                event.reply(event.getJDA().getSelfUser().getAsMention() + " non ha il permesso di mutare");
+                event.reply(event.getJDA().getSelfUser().getAsMention() + " you dont have permission to mute");
 
             else if (PermissionHandler.isUntouchable(theGuy.getId()))
-                event.reply("Le macchine non si ribellano ai loro creatori");
+                event.reply("Dont dare touch my creators.");
 
             else if(PermissionHandler.isEpria(theGuy.getId()) && !PermissionHandler.isUntouchable(event.getAuthor().getId()))
                 event.reply("OHHHHHHHHHHHHHHHHHHHHHHHHHHHH NON MUTARE MEEEEEEEEEEEEEEERIO EEEEEEEEEEEEEEEEEPRIA, solo i king possono.");
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.VOICE_MUTE_OTHERS)) {
                 event.getGuild().mute(surelyTheGuy, true).queue(
-                                                        (e) -> event.reply("mutato " + surelyTheGuy.getAsMention()), 
+                                                        (e) -> event.reply("muted " + surelyTheGuy.getAsMention()), 
                                                         new ErrorHandler().handle(
                                                             ErrorResponse.MISSING_PERMISSIONS,
                                                                 (e) -> event.replyError("sorry, " + e.getMessage()))
                 );
             } else
-                event.reply("Brutto fallito non mutare se non sei admin UwU");
+                event.reply("Dont mute if you are not an admin UwU.");
         } catch (Exception e) {
             event.replyError("error: " + e.getMessage());
         }

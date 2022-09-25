@@ -33,7 +33,7 @@ public class Dice extends Command {
             sum+=(int)(Math.random() * nface) + 1;
         
         event.reply((ndice == 1)
-                    ? "Lanciato un dado con " + nface + " facce: " + sum        
-                    : "Lanciati " + ndice +  " dadi con " + nface + " facce: " + sum);
+                    ? "Rolled a " + nface + "-sided dice: " + sum        
+                    : "Rolled " + ndice +" "+nface + "-sided dices: " + sum);
 	}
 }

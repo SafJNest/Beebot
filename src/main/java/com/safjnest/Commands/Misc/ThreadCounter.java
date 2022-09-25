@@ -32,6 +32,6 @@ public class ThreadCounter extends Command{
             if(t.getName().startsWith("lava"))
                 cont++;
         }
-        e.reply("Thread lava player attivi: " + cont +"\nTotale pp eseguiti: " + cont/3);
+        e.reply("Active LavaPlayer's Threads: " + cont +"\n" +e.getPrefix()+"p executed: " + cont/3);
     }
 }

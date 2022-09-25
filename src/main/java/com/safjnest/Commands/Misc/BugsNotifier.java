@@ -35,7 +35,7 @@ public class BugsNotifier extends Command {
 	protected void execute(CommandEvent event) {
         String[] commandArray = event.getArgs().split(" ", 2);
         if(commandArray.length < 2) {
-            event.reply("Descrivi il bug\nUsare il seguente formato [bugs] [nome comando] [descrizione]");
+            event.reply("Describe the bug\nWrite use the format [bugs] [command name] [description]");
             return;
         }
         

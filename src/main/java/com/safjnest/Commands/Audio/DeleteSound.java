@@ -31,16 +31,16 @@ public class DeleteSound extends Command{
 	protected void execute(CommandEvent event) {
         String fileName = "";
         if(!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.MANAGE_SERVER)){
-            event.reply("Non sei autorizzato a deletare i suoni testa di merda");
+            event.reply("You don't have permission to manage the server");
             return;
         }
         if((fileName = event.getArgs()) == ""){
-            event.reply("manca il nome");
+            event.reply("Missing sound's name.");
             return;
         }
         
         s3Client.getS3Client().deleteObject("thebeebox", event.getGuild().getId() + "/" + event.getAuthor().getId() + "/" + fileName );
-        event.reply(fileName + " sgozzato con successo");
+        event.reply(fileName + " deleted.");
 
 	}
 }

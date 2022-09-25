@@ -51,13 +51,13 @@ public class Move extends Command{
                 theGuy = event.getJDA().getUserById(args[0]);
                 
             } catch (Exception e) {
-                event.reply("Formato errato");
+                event.reply("Error");
                 return;
             }
         }
         //get the channel
         if(args[1].equalsIgnoreCase("")){
-            event.reply("Non ho capito a dove vuoi spostare.");
+            event.reply("Missing user/s to move.");
             return;
         }else if(args[1].equalsIgnoreCase("here"))
             channel = event.getGuild().getVoiceChannelById(event.getMember().getVoiceState().getChannel().getId());
@@ -65,7 +65,7 @@ public class Move extends Command{
         else if(args[1].equalsIgnoreCase("afk")){
             channel = event.getGuild().getAfkChannel();
             if(channel == null){
-                event.reply("Non hai un canale afk");
+                event.reply("Set an afk channel.");
                 return;
             }
         }else if(event.getMessage().getMentions().getMembers().size() == 1 && flag)
@@ -82,7 +82,7 @@ public class Move extends Command{
             if(idRoom.equals("")){
                 try {channel = event.getGuild().getVoiceChannelById(args[1]);} 
                 catch (Exception e) {
-                    event.reply("Canale mancante o non trovato");
+                    event.reply("Missing channel or not found.");
                     return;
                 }
             }
@@ -90,10 +90,10 @@ public class Move extends Command{
                         ? event.getGuild().getVoiceChannelById(idRoom)
                         : null;
             if(channel == null){
-                event.reply("Non ho trovato il canale.");
+                event.reply("Missing channel or not found.");
                 return;
             }else if(channel.getId().equals(event.getMember().getVoiceState().getChannel().getId())){
-                event.reply("Sei già in quel canale odizor annodam.");
+                event.reply("You are already there.");
                 return;
             }
         }
@@ -101,11 +101,11 @@ public class Move extends Command{
             for(Member member : theGuys){
                 event.getGuild().moveVoiceMember(member, channel).queue();
             }
-            event.reply("Spostati "+theGuys.size() +" utenti in:        "+ channel.getName());
+            event.reply("Moved  "+theGuys.size() +" users in:        "+ channel.getName());
             return;
         }
         event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), channel).queue();
-        event.reply(theGuy.getAsMention() + " spostato in: " + channel.getName());
+        event.reply(theGuy.getAsMention() + " moved in: " + channel.getName());
             
 
     }
