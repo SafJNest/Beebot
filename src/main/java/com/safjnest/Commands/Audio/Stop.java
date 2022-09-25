@@ -21,6 +21,6 @@ public class Stop extends Command {
     protected void execute(CommandEvent event) {
         AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
         handler.stop();
-        event.reply("Stoppato");
+        event.reply("Stopped");
     }
 }

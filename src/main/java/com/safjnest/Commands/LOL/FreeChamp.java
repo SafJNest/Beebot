@@ -43,7 +43,7 @@ public class FreeChamp extends Command {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName());
         eb.setColor(new Color(250,225,56));
-        eb.setTitle("Lista dei Campioni Gratuiti della settimana:");
+        eb.setTitle("List of free champion:");
         String s = "";
         for(StaticChampion ce : c.getFreeChampions()){
             s+=ce.getName()+" | ";

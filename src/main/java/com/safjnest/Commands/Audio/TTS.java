@@ -61,7 +61,7 @@ public class TTS extends Command{
         voices.put(Voices.Portuguese_Portugal.id, Set.of(Voices.Portuguese_Portugal.array));
         voices.put(Voices.Romanian.id, Set.of(Voices.Romanian.array));
         voices.put(Voices.Russian.id, Set.of(Voices.Russian.array));
-        voices.put(Voices.Spanish_Mexico.id, Set.of(Voices.Spanish_Mexico.array));
+        voices.put(Voices.Swedish.id, Set.of(Voices.Swedish.array));
         voices.put(Voices.Spanish_Spain.id, Set.of(Voices.Spanish_Spain.array));
 
     
@@ -74,11 +74,11 @@ public class TTS extends Command{
         MessageChannel channel = event.getChannel();
         EmbedBuilder eb = null;
         if((speech = event.getArgs()) == ""){
-            event.reply("scrivi qualcosa pezzo diemrdqa");
+            event.reply("Write somthing you want the bot to say");
             return;
         }else if (event.getArgs().split(" ")[0].equalsIgnoreCase("list")){
             eb = new EmbedBuilder();
-            eb.setTitle("Lista delle lingue disponibili nel tier 21 bot:");
+            eb.setTitle("Available languages:");
             eb.setColor(new Color(255, 196, 0));
             String lang = "";
             String voiceString = "";
@@ -150,7 +150,7 @@ public class TTS extends Command{
             
             @Override
             public void noMatches() {
-                channel.sendMessage("Canzone non trovata").queue();
+                channel.sendMessage("Not found").queue();
                 trackScheduler.addQueue(null);
             }
 
@@ -165,14 +165,14 @@ public class TTS extends Command{
             return;
         
         eb = new EmbedBuilder();
-        eb.setTitle("In riproduzione:");
-        eb.addField("Durata",SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length),true);
+        eb.setTitle("Playing now:");
+        eb.addField("Lenght",SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length),true);
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
-        eb.setFooter("*Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)", null);
+        eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
 
         eb.setDescription(event.getArgs());
-        eb.addField("Lingua", language, true);
-        eb.addField("Voce", voice, true);
+        eb.addField("Language", language, true);
+        eb.addField("Voice", voice, true);
         String img = "jelly.png";
         eb.setColor(new Color(255, 196, 0));
             

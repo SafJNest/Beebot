@@ -28,18 +28,14 @@ public class Disconnect extends Command {
         User theGuy = null;
         if(event.getArgs().equalsIgnoreCase("bot")){
             event.getGuild().getAudioManager().closeAudioConnection();
-
-        }else if(event.getMessage().getMentions().getMembers().size() == 0){
-            
-            event.reply("Non hai menzionato nessuno");
-            return;
-        }else{
+        }
+        else if(event.getMessage().getMentions().getMembers().size() > 0){
             theGuy = event.getMessage().getMentions().getMembers().get(0).getUser();
             event.getGuild().kickVoiceMember(event.getGuild().getMember(theGuy)).queue();
         }
-		
+        else{
+            event.reply("I don't know who to disconnect (mention the member you want to disconnect or write bot to disconnect the bot)");
+            return;
+        }
 	}
-    
-
-
 }

@@ -37,23 +37,23 @@ public class Kick extends Command{
             final User surelyTheGuy = theGuy;
 
             if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.KICK_MEMBERS))
-                event.reply(event.getJDA().getSelfUser().getAsMention() + " non ha il permesso di kickare");
+                event.reply(event.getJDA().getSelfUser().getAsMention() + " you dont have the permission to kick");
 
             else if (PermissionHandler.isUntouchable(theGuy.getId()))
-                event.reply("Le macchine non si ribellano ai loro creatori");
+                event.reply("Dont dare touch my creators.");
 
             else if(PermissionHandler.isEpria(theGuy.getId()) && !PermissionHandler.isUntouchable(event.getAuthor().getId()))
                 event.reply("OHHHHHHHHHHHHHHHHHHHHHHHHHHHH NON KIKKARE MEEEEEEEEEEEEEEERIO EEEEEEEEEEEEEEEEEPRIA");
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.KICK_MEMBERS)) {
                 event.getGuild().kick(surelyTheGuy).queue(
-                                                (e) -> event.reply("kickkato " + surelyTheGuy.getAsMention()), 
+                                                (e) -> event.reply("Kicked " + surelyTheGuy.getAsMention()), 
                                                 new ErrorHandler().handle(
                                                     ErrorResponse.MISSING_PERMISSIONS,
                                                         (e) -> event.replyError("error: " + e.getMessage()))
                 );
             }else
-                event.reply("Brutto fallito non kickare se non sei admin UwU");
+                event.reply("Dont kick if you are not an admin UwU.");
         } catch (Exception e) {
             event.replyError("error: catched " + e.getMessage());
         }

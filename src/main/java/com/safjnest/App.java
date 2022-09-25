@@ -97,7 +97,7 @@ public class App extends ListenerAdapter {
         else{
             System.out.println("[MAIN] INFO The beast is turning on!");
             PREFIX = "p";
-            activity = Activity.playing("서폿 차이 | " + PREFIX + "help");
+            activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
             token         = args[1];
             AWSAccesKey   = args[2];
             AWSSecretKey  = args[3];

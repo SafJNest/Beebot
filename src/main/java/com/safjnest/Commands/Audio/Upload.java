@@ -39,11 +39,11 @@ public class Upload extends Command{
 	@Override
 	protected void execute(CommandEvent event) {
         if((fileName = event.getArgs()) == ""){
-            event.reply("manca il nome");
+            event.reply("You have to write the name of the sound");
             return;
         }
 
-        event.reply("operativo e pronto a listenare");
+        event.reply("Ok, now upload the sound here in mp3 or **opus** format");
         FileListener fileListener = new FileListener(event, fileName, event.getChannel(), s3Client.getS3Client());
         event.getJDA().addEventListener(fileListener);
 	}
@@ -54,6 +54,7 @@ class FileListener extends ListenerAdapter {
     private AmazonS3 s3Client;
     private CommandEvent event;
     private MessageChannel channel;
+    private float maxFileSize = 1049000; //in bytes
 
     public FileListener(CommandEvent event, String name, MessageChannel channel, AmazonS3 s3Client ){
         this.name = name;
@@ -69,12 +70,12 @@ class FileListener extends ListenerAdapter {
             if(e.getAuthor().isBot())
                 return;
             if(e.getMessage().getAttachments().size() <= 0){
-                event.reply("manca il file");
+                event.reply("You have to upload the sound, you can try again by reusing the command");
                 e.getJDA().removeEventListener(this);
                 return;
             }   
-            if(e.getMessage().getAttachments().get(0).getSize() > 1048576 && !PermissionHandler.isUntouchable(event.getAuthor().getId())){
-                event.reply("il file è troppo grosso (1mb max)");
+            if(e.getMessage().getAttachments().get(0).getSize() > maxFileSize && !PermissionHandler.isUntouchable(event.getAuthor().getId())){
+                event.reply("The file is too big (" + maxFileSize/1048576 + "mb max)");
                 e.getJDA().removeEventListener(this);
                 return;
             }
@@ -108,12 +109,12 @@ class FileListener extends ListenerAdapter {
                     file.delete();
                 })
                 .exceptionally(t -> { // handle failure
-                    event.reply("errore nel caricamento del file");
+                    event.reply("An error occured in the upload of the file");
                     t.printStackTrace();
                     e.getJDA().removeEventListener(this);
                     return null;
                 });
-            event.reply("file caricato con successo");
+            event.reply("File uploaded succesfully");
             e.getJDA().removeEventListener(this);
         }
     }

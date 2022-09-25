@@ -44,7 +44,7 @@ public class Bighi extends Command {
         MessageChannel channel = event.getChannel();
         try {
             if (Integer.parseInt(commandArray[1]) > maxBighi) {
-                channel.sendMessage("Non puoi richidere un bighi maggiore di " + maxBighi + " bits").queue();
+                channel.sendMessage("The number cant be bigger than " + maxBighi + " bits").queue();
                 return;
             }
             String bighi = String.valueOf(SafJNest.randomBighi(Integer.parseInt(commandArray[1])));
@@ -55,10 +55,9 @@ public class Bighi extends Command {
                 app.write(bighi);
                 app.flush();
                 app.close();
-                channel.sendMessage("Il bighi era troppo insano per Discord, eccoti un bel file.").queue();
+                channel.sendMessage("Your number is too insane for discord, we need a file for hold it").queue();
                 channel.sendFiles(FileUpload.fromData(supp)).queue();
             } else {
-                channel.sendMessage("Eccoti il tuo bighi a " + commandArray[1] + " bit").queue();
                 channel.sendMessage(bighi).queue();
             }
         } catch (Exception e) {

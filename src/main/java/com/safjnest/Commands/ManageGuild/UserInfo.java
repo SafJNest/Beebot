@@ -50,22 +50,22 @@ public class UserInfo extends Command{
             }
         }
         if(!event.getGuild().isMember(theGuy)){
-            event.reply("L'utente non fa parte della gilda");
+            event.reply("The user is not in this server");
             return;
         }
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle(":busts_in_silhouette:Informazioni sullo user:busts_in_silhouette:");
+        eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT "+theGuy.getName()+"** :busts_in_silhouette:");
         eb.setThumbnail(theGuy.getAvatarUrl());
         eb.setColor(new Color(116, 139, 151));
 
-        eb.addField("Nome", "```" + theGuy.getAsTag() + "```", true);
+        eb.addField("Name", "```" + theGuy.getAsTag() + "```", true);
         eb.addField("ID", "```" + theGuy.getId() + "```" , true);
 
         List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(event.getGuild().getMember(theGuy).getRoles(), roleCharNumber);
-        eb.addField("Ruoli ["
+        eb.addField("Roles ["
                     + event.getGuild().getMember(theGuy).getRoles().size() + "] "
-                    + "(stampati " + RoleNames.size() + ")", "```"
+                    + "(Printed " + RoleNames.size() + ")", "```"
                     + (RoleNames.size() == 0
                         ? "NO ROLES"
                         : RoleNames.toString().substring(1, RoleNames.toString().length() - 1))
@@ -77,24 +77,24 @@ public class UserInfo extends Command{
                         : event.getGuild().getMember(theGuy).getNickname())
                     + "```", true);
 
-        eb.addField("è un bot", "```"
+        eb.addField("Is a bot", "```"
                     + ((theGuy.isBot() || PermissionHandler.isEpria(theGuy.getId()))
-                        ? "si"
+                        ? "yes"
                         : "no")
                     + "```" , true);
 
         String permissionNames = PermissionHandler.getPermissionNames(event.getGuild().getMember(theGuy)).toString();
-        eb.addField("Permessi del server", "```"
+        eb.addField("Permissions", "```"
                     + (event.getGuild().getMember(theGuy).hasPermission(Permission.ADMINISTRATOR)
-                        ? "👑 Amministratore (tutti i permessi)"
+                        ? "👑 Admin "
                         : permissionNames.substring(1, permissionNames.length() - 1))
                     + "```", false);
 
-        eb.addField("Entrato nel server il (dd/mm/yyyy)", "```" 
+        eb.addField("Join this server on (dd/mm/yyyy)", "```" 
                     + DateHandler.formatDate(event.getGuild().getMember(theGuy).getTimeJoined())
                     + "```", false);
 
-        eb.addField("Creato l'account il (dd/mm/yyyy)", "```" 
+        eb.addField("Account created on (dd/mm/yyyy)", "```" 
                     + DateHandler.formatDate(theGuy.getTimeCreated())
                     + "```", false);
         

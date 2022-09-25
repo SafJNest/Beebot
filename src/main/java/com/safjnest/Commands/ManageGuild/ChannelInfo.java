@@ -39,15 +39,15 @@ public class ChannelInfo extends Command {
             gc = event.getGuild().getGuildChannelById(event.getArgs());
         
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle("**INFORMAZIONI SUL CANALE**");
+        eb.setTitle("**CHANNEL INFO**");
         eb.setColor(new Color(116, 139, 151));
         if(gc.getType().isAudio()){
             v = event.getGuild().getVoiceChannelById(event.getArgs());
-            eb.addField("Nome Canale", "```" + v.getName() + "```", true);   
-            eb.addField("ID Canale", "```" + v.getId() + "```", true);   
+            eb.addField("Channel name", "```" + v.getName() + "```", true);   
+            eb.addField("Channel ID", "```" + v.getId() + "```", true);   
 
-            eb.addField("BitRate Canale", "```" + v.getBitrate()/1000 + "kbps```", false);   
-            eb.addField("Limite di utenti", "```" 
+            eb.addField("BitRate ", "```" + v.getBitrate()/1000 + "kbps```", false);   
+            eb.addField("Number limit", "```" 
                         + v.getMembers().size() 
                         +"/"
                         + ((v.getUserLimit()==0)
@@ -55,25 +55,25 @@ public class ChannelInfo extends Command {
                             :v.getUserLimit()) 
                         + "```", false);
             
-            eb.addField("Tipo Canale", "```" + v.getType()+ "```", true);   
-            eb.addField("Categoria", "```" + v.getParentCategory().getName() + "```", true);   
+            eb.addField("Type", "```" + v.getType()+ "```", true);   
+            eb.addField("Category", "```" + v.getParentCategory().getName() + "```", true);   
 
-            eb.addField("Data creazione Canale", "```" + DateHandler.formatDate(v.getTimeCreated())+ "```", false);
+            eb.addField("Created", "```" + DateHandler.formatDate(v.getTimeCreated())+ "```", false);
         }else{
             c = event.getGuild().getTextChannelById(gc.getId());
-            eb.addField("Nome Canale", "```" + c.getName() + "```", true);   
-            eb.addField("ID Canale", "```" + c.getId() + "```", true);   
+            eb.addField("Channel name", "```" + c.getName() + "```", true);   
+            eb.addField("Channel ID", "```" + c.getId() + "```", true);   
 
-            eb.addField("Topic Canale", "```" 
+            eb.addField("Channel Topic", "```" 
                        + ((c.getTopic()==null)
-                            ?"Nessun topic per il canale"
+                            ?"None"
                             :c.getTopic()) 
                        + "```", false); 
 
-            eb.addField("Tipo Canale", "```" + c.getType()+ "```", true);   
-            eb.addField("Categoria Canale", "```" + c.getParentCategory().getName() + "```", true);   
+            eb.addField("Type", "```" + c.getType()+ "```", true);   
+            eb.addField("Category", "```" + c.getParentCategory().getName() + "```", true);   
 
-            eb.addField("Data creazione Canale", "```" + DateHandler.formatDate(c.getTimeCreated()) + "```", false);
+            eb.addField("Channel created on", "```" + DateHandler.formatDate(c.getTimeCreated()) + "```", false);
         } 
         event.reply(eb.build());
 	}

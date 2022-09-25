@@ -35,30 +35,30 @@ public class Unban extends Command{
         try {
             if(event.getArgs().length() == 0){
                 EmbedBuilder eb = new EmbedBuilder();
-                eb.setTitle("Persone sgozzate");
+                eb.setTitle("List of banned users");
                 for (net.dv8tion.jda.api.entities.Guild.Ban ban : event.getGuild().retrieveBanList().complete())
                     eb.appendDescription(ban.getUser().getAsMention() + " - ");
                 eb.setColor(new Color(0, 128, 128));
                 eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
-                eb.setFooter("*Questo non e' rythem, questa e' perfezione cit. steve jobs (probabilmente)", null);
+                eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null);
                 event.reply(eb.build());
             }
 
             else{
                 final User surelyTheGuy = event.getJDA().retrieveUserById(event.getArgs()).complete();
                 if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.BAN_MEMBERS))
-                    event.reply(event.getJDA().getSelfUser().getAsMention() + " non ha il permesso di sbannare");
+                    event.reply(event.getJDA().getSelfUser().getAsMention() + " you dont have permission to unban");
 
                 else if (PermissionHandler.hasPermission(event.getMember(), Permission.BAN_MEMBERS)) {
                     event.getGuild().unban(surelyTheGuy).queue(
-                                                            (e) -> event.reply("Sbannato " + surelyTheGuy.getAsMention()), 
+                                                            (e) -> event.reply("Unbanned " + surelyTheGuy.getAsMention()), 
                                                             new ErrorHandler().handle(
                                                                 ErrorResponse.MISSING_PERMISSIONS,
                                                                     (e) -> event.replyError("sorry, " + e.getMessage()))
                     );
                 }
                 else 
-                    event.reply("Brutto fallito non sbannare se non sei admin UwU");
+                event.reply(event.getJDA().getSelfUser().getAsMention() + " you dont have permission to unban");
             }
         } catch (Exception e) {
             event.replyError("sorry, " + e.getMessage());

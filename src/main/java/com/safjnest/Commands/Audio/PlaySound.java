@@ -48,7 +48,7 @@ public class PlaySound extends Command{
     @Override
     protected void execute(CommandEvent event) {
         if((nameFile = event.getArgs()) == ""){
-            event.reply("il nome idiota");
+            event.reply("Missing name");
             return;
         }
         File soundBoard = new File("rsc" + File.separator + "SoundBoard");
@@ -60,7 +60,7 @@ public class PlaySound extends Command{
 
         S3Object sound = s3Client.downloadFile(nameFile, event);
         if(sound == null){
-            event.reply("il file non esiste");
+            event.reply("File not found");
             return;
         }
         String extension = SoundBoard.getExtension(nameFile);
@@ -97,7 +97,7 @@ public class PlaySound extends Command{
             
             @Override
             public void noMatches() {
-                channel.sendMessage("Canzone non trovata").queue();
+                channel.sendMessage("File not found").queue();
                 trackScheduler.addQueue(null);
             }
 
@@ -112,10 +112,10 @@ public class PlaySound extends Command{
             return;
         
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle("In riproduzione:");
+        eb.setTitle("Playing now:");
 
         try {
-            eb.addField("Durata",(extension.equals("opus") 
+            eb.addField("Lenght",(extension.equals("opus") 
                                        ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(nameFile)))*1000)
                                        : SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length)) , true);
         } catch (IOException e) {
@@ -123,11 +123,11 @@ public class PlaySound extends Command{
         }
 
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
-        eb.setFooter("*Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)", null);
+        eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
         //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
 
         eb.setDescription(event.getArgs());
-        eb.addField("Autore", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
+        eb.addField("Author", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
         eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName(), true);
 
         String img = "idk";

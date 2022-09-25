@@ -36,7 +36,7 @@ public class Prime extends Command {
         MessageChannel channel = event.getChannel();
         try {
             if (Integer.parseInt(commandArray[1]) > maxPrime)
-                channel.sendMessage("Non puoi richidere un bighi prime maggiore di " + maxPrime + " bits").queue();
+                channel.sendMessage("The prime number cant be bigger than " + maxPrime + " bits").queue();
             else{
                 String primi = SafJNest.getFirstPrime(SafJNest.randomBighi(Integer.parseInt(commandArray[1])));
                 if (primi.length() > 2000) {
@@ -50,10 +50,9 @@ public class Prime extends Command {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    channel.sendMessage("Il bighi era troppo insano per Discord, eccoti un bel file.").queue();
+                    channel.sendMessage("Your prime number is too insane for discord, we need a file for hold it").queue();
                     channel.sendFiles(FileUpload.fromData(supp)).queue();
                 } else {
-                    channel.sendMessage("Eccoti il tuo bighi primi a " + commandArray[1] + " bit").queue();
                     channel.sendMessage(primi).queue();
                 }
             }

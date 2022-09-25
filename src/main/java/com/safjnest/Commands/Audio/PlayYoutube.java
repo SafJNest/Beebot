@@ -81,7 +81,7 @@ public class PlayYoutube extends Command {
 	@Override
 	protected void execute(CommandEvent event) {
         if(event.getMember().getVoiceState().getChannel() == null){
-            event.reply("Non sei in un canale vocale.");
+            event.reply("You need to be in a voice channel to use this command");
             return;
         }
 
@@ -99,7 +99,7 @@ public class PlayYoutube extends Command {
                 JSONObject id = (JSONObject) item.get("id");
                 toPlay = (String) id.get("videoId");
             } catch (Exception e) {
-                event.reply("Nessun video trovato.");
+                event.reply("No video found");
                 return;
             }
         }
@@ -135,7 +135,7 @@ public class PlayYoutube extends Command {
         
             @Override
             public void noMatches() {
-                channel.sendMessage("Canzone non trovata").queue();
+                channel.sendMessage("Not found").queue();
                 trackScheduler.addQueue(null);
             }
 
@@ -151,8 +151,8 @@ public class PlayYoutube extends Command {
 
         EmbedBuilder eb = new EmbedBuilder();
         eb = new EmbedBuilder();
-        eb.setTitle("In riproduzione:");
-        eb.addField("Durata", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
+        eb.setTitle("Playing now:");
+        eb.addField("Lenght", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
         eb.setColor(new Color(255, 0, 0));
