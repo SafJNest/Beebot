@@ -2,6 +2,9 @@ package com.safjnest.Commands.ManageMembers;
 
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
+
+import java.util.concurrent.TimeUnit;
+
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -52,7 +55,7 @@ public class Ban extends Command{
                 event.reply("OHHHHHHHHHHHHHHHHHHHHHHHHHHHH NON BANNARE MEEEEEEEEEEEEEEERIO EEEEEEEEEEEEEEEEEPRIA");
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.BAN_MEMBERS)) {
-                event.getGuild().ban(surelyTheGuy, 0, reason).queue(
+                event.getGuild().ban(surelyTheGuy, 0, TimeUnit.SECONDS).reason(reason).queue(
                                                         (e) -> event.reply("banned " + surelyTheGuy.getAsMention()), 
                                                         new ErrorHandler().handle(
                                                             ErrorResponse.MISSING_PERMISSIONS,

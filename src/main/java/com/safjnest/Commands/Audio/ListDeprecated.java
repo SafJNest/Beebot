@@ -13,7 +13,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.mpatric.mp3agic.Mp3File;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 /**

@@ -8,9 +8,9 @@ import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.JSONReader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.GuildChannel;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>

