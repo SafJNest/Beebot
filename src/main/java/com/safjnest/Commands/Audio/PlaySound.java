@@ -12,6 +12,7 @@ import com.safjnest.Utilities.TrackScheduler;
 import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.SoundBoard;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -31,10 +32,12 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 
 public class PlaySound extends Command{
+    PostgreSQL sql;
     AwsS3 s3Client;
     String nameFile;
 
-    public PlaySound(AwsS3 s3Client){
+
+    public PlaySound(AwsS3 s3Client, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -42,6 +45,7 @@ public class PlaySound extends Command{
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
         this.s3Client = s3Client;
+        this.sql = sql;
     }
 
     @Override
@@ -109,25 +113,43 @@ public class PlaySound extends Command{
         player.playTrack(trackScheduler.getTrack());
         if(player.getPlayingTrack() == null)
             return;
-        
+        String query;
+        String queryId = "SELECT id_sound FROM sound_id WHERE name_sound = '"+sound.getKey().split("/")[2] + "' AND discord_id = '" + sound.getKey().split("/")[0]+"';";
+        String sound_id = sql.getString(queryId, "id_sound");
+        String user_id = event.getAuthor().getId();
+            query = "SELECT times FROM play join sound_id on play.id_sound = sound_id.id_sound where play.id_sound = '"+sound_id+"' and play.user_id = '"+event.getAuthor().getId()+"';";
+            if(sql.getString(query, "times") == null ){
+                query = "INSERT INTO play(user_id, id_sound, times) VALUES('"+user_id+"','"+sound_id+"', 1);";        
+            }else{
+                query = "UPDATE play SET times = times + 1 WHERE id_sound = (" + sound_id+ ") AND user_id = '" +user_id+"';";
+            }
+        sql.runQuery(query);
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Playing now:");
 
+        eb.setDescription("```" + event.getArgs() + "```");
+
+        eb.addField("Author", "```" + event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName() + "```", true);
         try {
-            eb.addField("Lenght",(extension.equals("opus") 
-                                       ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(nameFile)))*1000)
-                                       : SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length)) , true);
+            eb.addField("Lenght","```" + (extension.equals("opus") 
+            ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(nameFile)))*1000)
+            : SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length)) + "```", true);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        
+        eb.addBlankField(true);
 
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
         eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
         //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
 
-        eb.setDescription(event.getArgs());
-        eb.addField("Author", event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName(), true);
-        eb.addField("Guild", event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName(), true);
+        
+        eb.addField("Guild", "```" + event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName() + "```", true);
+        query = "SELECT SUM(times) FROM PLAY where id_sound='"+sound_id+"';";
+
+        String playedTimes = sql.getString(query, "sum");
+        eb.addField("Played", "```" + playedTimes + (playedTimes.equals("1") ? " time" : " times") + "```", true);
 
         String img = "idk";
         if(extension.equals("opus")){

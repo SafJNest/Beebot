@@ -11,6 +11,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.PostgreSQL;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -25,8 +26,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 public class Upload extends Command{
     private AwsS3 s3Client;
     private String fileName;
+    private PostgreSQL sql;
     
-    public Upload(AwsS3 s3Client){
+    public Upload(AwsS3 s3Client, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();;
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
@@ -34,6 +36,7 @@ public class Upload extends Command{
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
         this.s3Client = s3Client;
+        this.sql = sql;
     }
     
 	@Override
@@ -44,7 +47,7 @@ public class Upload extends Command{
         }
 
         event.reply("Ok, now upload the sound here in mp3 or **opus** format");
-        FileListener fileListener = new FileListener(event, fileName, event.getChannel(), s3Client.getS3Client());
+        FileListener fileListener = new FileListener(event, fileName, event.getChannel(), s3Client.getS3Client(), sql);
         event.getJDA().addEventListener(fileListener);
 	}
 }
@@ -55,12 +58,14 @@ class FileListener extends ListenerAdapter {
     private CommandEvent event;
     private MessageChannel channel;
     private float maxFileSize = 1049000; //in bytes
+    private PostgreSQL sql;
 
-    public FileListener(CommandEvent event, String name, MessageChannel channel, AmazonS3 s3Client ){
+    public FileListener(CommandEvent event, String name, MessageChannel channel, AmazonS3 s3Client, PostgreSQL sql){
         this.name = name;
         this.s3Client = s3Client;
         this.event = event;
         this. channel = channel;
+        this.sql = sql;
     }
     
     @Override
@@ -115,6 +120,9 @@ class FileListener extends ListenerAdapter {
                     return null;
                 });
             event.reply("File uploaded succesfully");
+            String query = "INSERT INTO sound_id(name_sound, discord_id)"
+                    + "VALUES('"+name+"','"+event.getGuild().getId()+"');";
+            sql.runQuery(query);
             e.getJDA().removeEventListener(this);
         }
     }
