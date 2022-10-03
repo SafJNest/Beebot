@@ -4,6 +4,7 @@ import java.io.File;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.utils.FileProxy;
 
 /**
  * This is an auxiliary class for the command {@link com.safjnest.Commands.Audio.Upload Upload}.
@@ -32,13 +33,13 @@ public class FileListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event){
         File saveFile = new File("rsc" + File.separator + "Upload" + File.separator + (name +"."+ event.getMessage().getAttachments().get(0).getFileExtension()));
-        event.getMessage().getAttachments().get(0).downloadToFile(saveFile)
-        .thenAccept(file -> System.out.println("Saved attachment to " + file.getName()))
-        .exceptionally(t ->
-        { // handle failure
-            t.printStackTrace();
-            return null;
-        });
+        new FileProxy(event.getMessage().getAttachments().get(0).getUrl()).downloadToFile(saveFile)
+            .thenAccept(file -> System.out.println("Saved attachment to " + file.getName()))
+            .exceptionally(t ->
+            { // handle failure
+                t.printStackTrace();
+                return null;
+            });
         event.getJDA().removeEventListener(this);
     }
 }

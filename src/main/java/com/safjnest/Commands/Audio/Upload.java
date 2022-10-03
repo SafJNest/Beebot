@@ -13,9 +13,11 @@ import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.PostgreSQL;
 
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.utils.FileProxy;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -70,61 +72,64 @@ class FileListener extends ListenerAdapter {
     
     @Override
     public void onMessageReceived(MessageReceivedEvent e){
-        
-        if(e.getChannel().equals(channel)){ 
-            if(e.getAuthor().isBot())
-                return;
-            if(e.getMessage().getAttachments().size() <= 0){
-                event.reply("You have to upload the sound, you can try again by reusing the command");
-                e.getJDA().removeEventListener(this);
-                return;
-            }   
-            if(e.getMessage().getAttachments().get(0).getSize() > maxFileSize && !PermissionHandler.isUntouchable(event.getAuthor().getId())){
-                event.reply("The file is too big (" + maxFileSize/1048576 + "mb max)");
-                e.getJDA().removeEventListener(this);
-                return;
-            }
-            /*
-            if(.get(0).getKey().equals(name)){1u 
-                event.reply("esiste gia");
-                e.getJDA().removeEventListener(this);
-                return;
-            }*/ //TODO non funziona niente
-            File uploadFolder = new File("rsc" + File.separator + "Upload");
-            if(!uploadFolder.exists())
-                uploadFolder.mkdir();
-            File saveFile = new File("rsc" + File.separator + "Upload" + File.separator + (name +"."+ e.getMessage().getAttachments().get(0).getFileExtension()));
-            e.getMessage().getAttachments().get(0).downloadToFile(saveFile)
-                .thenAccept(file -> {
-                    System.out.println("Upload del file su aws s3 " + file.getName());
-                    try {
-                        name = e.getGuild().getId() + "/" + e.getAuthor().getId() +"/"+ name;
-                        PutObjectRequest request = new PutObjectRequest("thebeebox", name, file);
-                        ObjectMetadata metadata = new ObjectMetadata();
-                        metadata.setContentType("audio/mpeg");
-                        metadata.addUserMetadata("name", name);
-                        metadata.addUserMetadata("guild", e.getGuild().getId());
-                        metadata.addUserMetadata("author", e.getAuthor().getId());
-                        metadata.addUserMetadata("format", e.getMessage().getAttachments().get(0).getFileExtension());
-                        request.setMetadata(metadata);
-                        s3Client.putObject(request);
-                    }catch(AmazonClientException ace){
-                        ace.printStackTrace();
-                    }
-                    file.delete();
-                })
-                .exceptionally(t -> { // handle failure
-                    event.reply("An error occured in the upload of the file");
-                    t.printStackTrace();
-                    e.getJDA().removeEventListener(this);
-                    return null;
-                });
-            event.reply("File uploaded succesfully");
-            String query = "INSERT INTO sound_id(name_sound, discord_id)"
-                    + "VALUES('"+name+"','"+event.getGuild().getId()+"');";
-            sql.runQuery(query);
-            e.getJDA().removeEventListener(this);
+        if(!e.getChannel().equals(channel) || e.getAuthor().isBot()){
+            return;
         }
-    }
+        if(e.getMessage().getAttachments().size() <= 0){
+            event.reply("You have to upload the sound, you can try again by reusing the command");
+            e.getJDA().removeEventListener(this);
+            return;
+        }
 
+        Attachment attachment = e.getMessage().getAttachments().get(0);
+
+        if(attachment.getSize() > maxFileSize && !PermissionHandler.isUntouchable(event.getAuthor().getId())){
+            event.reply("The file is too big (" + maxFileSize/1048576 + "mb max)");
+            e.getJDA().removeEventListener(this);
+            return;
+        }
+
+        String query = "INSERT INTO sound(name, guild_id, user_id, extension) VALUES('" 
+                     + name + "','" + event.getGuild().getId() + "','" + event.getAuthor().getId() + "','" + attachment.getFileExtension() + "')"
+                     + " RETURNING id;";
+
+        String id = sql.getString(query, "id");
+
+        if(id.equals(null)){
+            event.reply("An error with the PostgreSQL database occured");
+            e.getJDA().removeEventListener(this);
+            return;
+        }
+
+        File uploadFolder = new File("rsc" + File.separator + "Upload");
+        if(!uploadFolder.exists())
+            uploadFolder.mkdir();
+
+        File saveFile = new File("rsc" + File.separator + "Upload" + File.separator + (name + "." + attachment.getFileExtension()));
+
+        new FileProxy(attachment.getUrl()).downloadToFile(saveFile)
+            .thenAccept(file -> {
+                System.out.println("Uploading the file on aws s3 " + file.getName());
+                try {
+                    PutObjectRequest request = new PutObjectRequest("thebeebox", id, file);
+                    ObjectMetadata metadata = new ObjectMetadata();
+                    metadata.setContentType("audio/mpeg");
+                    metadata.addUserMetadata("format", attachment.getFileExtension());
+                    request.setMetadata(metadata);
+                    s3Client.putObject(request);
+                }catch(AmazonClientException ace){
+                    ace.printStackTrace();
+                }
+                file.delete();
+            })
+            .exceptionally(t -> { // handle failure
+                event.reply("An error occured while uploading the file");
+                t.printStackTrace();
+                e.getJDA().removeEventListener(this);
+                return null;
+            });
+        event.reply("File uploaded succesfully");
+        
+        e.getJDA().removeEventListener(this);
+    }
 }

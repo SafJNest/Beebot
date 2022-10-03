@@ -60,21 +60,23 @@ public class PostgreSQL {
     /**
      * Run a query and return a string, so just an element in a row.
      * @param query query to be run 
-     * @param nameRow name of the row to get element
+     * @param nameCol name of the row to get element
      * @return
      * A {@code String} if the query is run correctly, otherwise {@code null}
      */
-    public String getString(String query, String nameRow){
+    public String getString(String query, String nameCol){
         Statement stmt;
         try {
             stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query);
             rs.next();
-            String info = rs.getString(nameRow);
+            String info = rs.getString(nameCol);
+            rs.next();
             rs.close();
             stmt.close();
             return info;
         } catch (SQLException e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -82,18 +84,18 @@ public class PostgreSQL {
     /**
      * Run a query and return an array of strings, so an entire row.
      * @param query query to be run 
-     * @param nameRow name of the row 
+     * @param nameCol name of the row 
      * @return
      * An {@code ArrayList<String>} if the query is run correctly, otherwise {@code null}
      */
-     public ArrayList<String> getListString(String query, String nameRow){
+     public ArrayList<String> getListString(String query, String nameCol){
         Statement stmt;
         ArrayList<String> arr = new ArrayList<>();
         try {
             stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query);
             while(rs.next()){
-                arr.add(rs.getString(nameRow));
+                arr.add(rs.getString(nameCol));
             }
             rs.close();
             stmt.close();
@@ -103,4 +105,29 @@ public class PostgreSQL {
         }
     }
 
+    /**
+    * Keria CHI?
+    *
+    *
+     */
+    public ArrayList<ArrayList<String>> getTuple(String query, int nCol){
+        Statement stmt;
+        ArrayList<ArrayList<String>> arr = new ArrayList<>();
+        
+        try {
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while(rs.next()){
+                arr.add(new ArrayList<>());
+                for(int i = 1; i <= nCol; i++){
+                    arr.get(arr.size()-1).add(rs.getString(i));
+                }
+            }
+            rs.close();
+            stmt.close();
+            return arr;
+        } catch (SQLException e) {
+            return arr;
+        }
+    }
 }
