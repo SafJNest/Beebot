@@ -52,7 +52,7 @@ public class ListDeprecated extends Command {
         e.getJDA().removeEventListener(this);
         return;
     }*/
-
+    
         MessageChannel channel = event.getChannel();
         HashMap<String, ArrayList<Mp3File>> tags = new HashMap<>();
         Mp3File[] files = SoundBoard.getMP3File();
@@ -89,6 +89,7 @@ public class ListDeprecated extends Command {
         channel.sendMessageEmbeds(eb.build())
                     .addFiles(FileUpload.fromData(file))
                     .queue();
+                    
 	}
 }
 

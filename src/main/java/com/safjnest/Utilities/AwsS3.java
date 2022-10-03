@@ -27,10 +27,12 @@ public class AwsS3 {
     private AWSCredentials credentials;
     private String bucket;
     private AmazonS3 s3Client;
+    private PostgreSQL sql;
 
-    public AwsS3(AWSCredentials credentials, String bucket) {
+    public AwsS3(AWSCredentials credentials, String bucket, PostgreSQL sql) {
         this.credentials = credentials;
         this.bucket = bucket;
+        this.sql = sql;
     }
     
     public void initialize() {
@@ -193,30 +195,9 @@ public class AwsS3 {
     }
 
     public S3Object downloadFile(String fileName, CommandEvent event) {
-        HashMap<String, ArrayList<String>> alpha = listObjectsByServer();
-        String prefix = event.getGuild().getId();
-        String name = null;
         try {
-            if(alpha.containsKey(prefix)) {
-                for(String file : alpha.get(prefix)) {
-                    if(fileName.equalsIgnoreCase(file.split("/")[2])) {
-                        name = file;
-                        break;
-                    }
-                }
-            }
-            if(name == null){
-                for(String key : alpha.keySet()) {
-                    for(String file : alpha.get(key)) {
-                        if(fileName.equalsIgnoreCase(file.split("/")[2])) {
-                            name = file;
-                            break;
-                        }
-                    }
-                }
-            }
             S3Object fullObject = s3Client.getObject(
-                new GetObjectRequest("thebeebox", name));
+                new GetObjectRequest(bucket, fileName));
             S3ObjectInputStream s3is = fullObject.getObjectContent();
             FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + "." +fullObject.getObjectMetadata().getUserMetaDataOf("format")));
             s3is.close();
@@ -246,7 +227,7 @@ public class AwsS3 {
             listObjectsRequest.setMarker(objectListing.getNextMarker());
         } while (objectListing.isTruncated());
             S3Object fullObject = s3Client.getObject(
-                new GetObjectRequest("thebeebox", prefix));
+                new GetObjectRequest(bucket, prefix));
             S3ObjectInputStream s3is = fullObject.getObjectContent();
             FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + newFileName + "." +fullObject.getObjectMetadata().getUserMetaDataOf("format")));
             s3is.close();
@@ -255,6 +236,33 @@ public class AwsS3 {
             exception.printStackTrace();
             return null;
         }
+    }
+
+    public void insertIntoFakerGumaKeriaGiuroCheMiStaiSullePalle(){
+            ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
+                .withBucketName(bucket);
+            ObjectListing objectListing;
+            do {
+                objectListing = s3Client.listObjects(listObjectsRequest);
+                for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
+                    S3Object fullObject = s3Client.getObject(
+                        new GetObjectRequest("thebeebox", objectSummary.getKey()));
+                    String id;
+                    String query = "SELECT id FROM sound WHERE name = '" + objectSummary.getKey().split("/")[2] + "' AND guild_id = '"+fullObject.getObjectMetadata().getUserMetaDataOf("guild")+"';";
+                    id = sql.getString(query, "id");
+                    s3Client.copyObject("thebeebox", objectSummary.getKey(), "thebeebot", id);
+                    try {
+                        fullObject.close();
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    
+                    
+                }
+            listObjectsRequest.setMarker(objectListing.getNextMarker());
+            } while (objectListing.isTruncated());
+            System.out.println("ye");
     }
 
 }

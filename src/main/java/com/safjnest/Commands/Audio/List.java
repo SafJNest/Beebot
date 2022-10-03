@@ -105,7 +105,7 @@ public class List extends Command {
             Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
             sortedMap.putAll(alpha);
             for(String serverName : sortedMap.keySet()) {
-                soundNames += "**"+ 
+                soundNames += "**" + 
                 ((event.getJDA().getGuildById(serverName) == null)
                     ? "Server name not found."
                     : event.getJDA().getGuildById(serverName).getName()) +"**" + ":\n";

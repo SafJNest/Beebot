@@ -11,10 +11,8 @@ import java.util.HashMap;
 import javax.security.auth.login.LoginException;
 
 import com.amazonaws.auth.BasicAWSCredentials;
-
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
-
 
 import com.safjnest.Utilities.*;
 import com.safjnest.Commands.LOL.*;
@@ -24,8 +22,6 @@ import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
-
-
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -40,7 +36,7 @@ import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.basic.APICredentials;
 /**
  * Main class of the bot.
- * <p> The {@code JDA} is instantiated and his parameters are 
+ * <p> The {@code JDA} is instantiated and his parameters are  
  * specified (token, activity, cache, ...). The bot connects to
  * discord and AWS S3. The bot's commands are instantiated.
  * 
@@ -67,7 +63,7 @@ public class App extends ListenerAdapter {
     private static String user = "***REMOVED***";
     private static String password = "***REMOVED***";
 
-    private static String bucket = "thebeebox";
+    private static String bucket = "thebeebot";
 
     private static final int maxBighi = 11700;
     private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
@@ -98,17 +94,18 @@ public class App extends ListenerAdapter {
             System.out.println("[MAIN] INFO The beast is turning on!");
             PREFIX = "p";
             activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
-            token         = args[1];
-            AWSAccesKey   = args[2];
-            AWSSecretKey  = args[3];
+            token                 = args[1];
+            AWSAccesKey     = args[2];
+            AWSSecretKey   = args[3];
             youtubeApiKey = args[4];
-            ttsApiKey     = args[5];
-            riotKey       = args[6];
+            ttsApiKey         = args[5];
+            riotKey             = args[6];
         }
 
         TTSHandler tts = new TTSHandler(ttsApiKey);
+        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);   
         
-        AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket);
+        AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket, sql);
         s3Client.initialize();
 
         R4J riotApi = null;
@@ -117,11 +114,11 @@ public class App extends ListenerAdapter {
             System.out.println("[R4J] INFO Connection Successful!");
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
-        } 
-        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);
+        }  
+        
         TheListener listenerozzo = new TheListener(sql);
         jda = JDABuilder
-            .createLight(token, GatewayIntent.MESSAGE_CONTENT ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
+            .createLight(token, GatewayIntent.MESSAGE_CONTENT  ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
             .addEventListeners(listenerozzo)
             .setMemberCachePolicy(MemberCachePolicy.ALL)
             .setChunkingFilter(ChunkingFilter.ALL)
@@ -130,12 +127,13 @@ public class App extends ListenerAdapter {
 
         CommandClientBuilder builder = new CommandClientBuilder();
         
+        
 
         builder.setPrefix(PREFIX);
         builder.setHelpWord("helpme");
         builder.setOwnerId("939876818465488926");
         builder.setActivity(activity);
-        
+                
         //Audio
         builder.addCommand(new Connect());
         builder.addCommand(new DeleteSound(s3Client));
@@ -165,7 +163,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new Kick());
         builder.addCommand(new Move(sql));
         builder.addCommand(new Mute());
-        builder.addCommand(new UnMute());   
+        builder.addCommand(new UnMute());      
         builder.addCommand(new Image());
         builder.addCommand(new Permissions());
         builder.addCommand(new ModifyNickname());
@@ -206,13 +204,16 @@ public class App extends ListenerAdapter {
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
-       
+              
         tierOneLink.put("QZayYolcq-g", "MERIO EPRIA DUE ZERO DUE ZERO CAMERETTA EEEEEEEEEEEEEPPPPPPPPPPPPPPPPPPPRRRRRRRRRRRRRRRRRRIIIIIIIIIIIIIIIIIIAAAAAAAAAAAA");
         tierOneLink.put("IaudNxuNtso", "MERIO EPRIA QUI COME UN COGLIONE A SFOGARSI I SENTIMINETI POKLVEWRE EEEEEEEEEEEPRIAAAAAAA LA LUCE DEL MEEEEEEERIO CON LE SUE RIME DA CAZZARO NE REPPER NE METALLARO NON È CHIARO LO STROZZINOIFHUWSHGFEIU0GHS0URGH");
         tierOneLink.put("Ed8I24y8QW4", "MERIO EPRIA HA SCOPERTO IL RAP DA POCO NON HA SENSO FARE PROGETTI SE NON SAI FARE NIENTE LA MAFIA VULCANO O VESUIO LAVA IL MERIO COL FUOCO MEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERIO");
         tierOneLink.put("kP6Dg-a3p0k", "MERIO EPRIA TI PARLA DELLA SUA CITTA HA LA PISTOLA REHUGHYUW HGTUY9FWRYUH8GHY8U NON HAI CAPITO UN CAZZO DALLA VITA REUHGWUHGHWRU FECCIA DELL'UMANIT; RWUHGWUHGHUWGHUWRGHYUWRGWSUYIRELIWRGUHL NON SI CAPISCE UN CAZZO OIDOZIFER9 CANEKE");
         tierOneLink.put("D9G1VOjN_84", "IWAKE UP TO DE SOUND THE MUSIC THAT ALLWOA OOOOOOOOOOOH THE MISERTY, EVERYBODY WATNS OT BE MY ENBEMSYFWS=FGHEWUGTGWEG7 OHO RHTEUR08 7G9EGUH9TW9GUYH TW9");
         tierOneLink.put("zvNfGg5vKTs", "POVERO GABBIANOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO NON HAI VOGLIUA DI VOLARE SOPRA UNA SCOGLUIERAAAAAAAAAAAAAAAAAAAA HAI PERDUOT LA COMPAGNAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NON TIO GF8REWHUG A VIDEF TI CAPISC JAAAAAA PEKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK");
+
+        
+                  
     }
 }
-    
+        
