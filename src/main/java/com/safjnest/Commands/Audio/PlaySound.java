@@ -160,8 +160,10 @@ public class PlaySound extends Command{
         else{
             query = "UPDATE play SET times = times + 1 WHERE id_sound = (" + id + ") AND user_id = '" + event.getAuthor().getId() + "';";
         }
-
+        
         sql.runQuery(query);
+        query = "SELECT SUM(times) FROM PLAY where id_sound='" + id + "';";
+        String timesPlayed = sql.getString(query, "sum");
         
         
         EmbedBuilder eb = new EmbedBuilder();
@@ -176,9 +178,7 @@ public class PlaySound extends Command{
             eb.addField("Lenght","```" + (extension.equals("opus") 
             ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(fileName)))*1000)
             : SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length)) + "```", true);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) {e.printStackTrace();}
         
         eb.addBlankField(true);
 
@@ -186,20 +186,16 @@ public class PlaySound extends Command{
 
         eb.addField("Guild", "```" + event.getJDA().getGuildById(guildId).getName() + "```", true);
 
-        query = "SELECT SUM(times) FROM PLAY where id_sound='" + id + "';";
-        String timesPlayed = sql.getString(query, "sum");
         eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + "```", true);
 
         String img = "idk";
-        if(extension.equals("opus")){
-            eb.setColor(new Color(255, 0, 0));
+        if(extension.equals("opus"))
             img = "opus.png";
-        }
-        else{
-            eb.setColor(new Color(0, 255, 255));
+        
+        else
             img = "mp3.png"; 
-        }   
-
+           
+        eb.setColor(new Color(255, 196, 0));
         eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
             
         File imgFile = new File("rsc" + File.separator + "img" + File.separator + img);

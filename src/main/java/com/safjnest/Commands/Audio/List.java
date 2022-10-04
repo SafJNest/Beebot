@@ -5,14 +5,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.google.api.services.youtube.model.Member;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PostgreSQL;
 
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 
 /**
@@ -21,17 +18,15 @@ import net.dv8tion.jda.api.entities.User;
  * @since 1.1
  */
 public class List extends Command {
-    private AwsS3 s3Client;
     private PostgreSQL sql;
 
-    public List(AwsS3 s3Client, PostgreSQL sql){
+    public List(PostgreSQL sql){
         this.name = this.getClass().getSimpleName();;
         this.aliases = new JSONReader().getArray(this.name, "alias");
         this.help = new JSONReader().getString(this.name, "help");
         this.cooldown = new JSONReader().getCooldown(this.name);
         this.category = new Category(new JSONReader().getString(this.name, "category"));
         this.arguments = new JSONReader().getString(this.name, "arguments");
-        this.s3Client = s3Client;
         this.sql = sql;
     }
 
@@ -40,9 +35,7 @@ public class List extends Command {
         String query = "";
         String soundNames = "";
         int cont = 0;
-        if(event.getArgs().equals("server"))
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '"+event.getGuild().getId()+"';";
-        else if(event.getArgs().equals("me"))
+        if(event.getArgs().equals("me"))
             query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '"+event.getAuthor().getId()+"';";
         else if(event.getArgs().equals("global"))
             query = "SELECT id, name, guild_id, user_id, extension FROM sound;";
@@ -57,8 +50,9 @@ public class List extends Command {
                     event.reply("ID not found");
                 }
             }
-            //TODO: qualcosina ogni tanto da errore ora devo andare non faccio in tempo HEHE SAFj
             query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '"+theGuy.getId()+"';";
+        }else{
+            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '"+event.getGuild().getId()+"';";
         }
         ArrayList<ArrayList<String>> arr = sql.getTuple(query, 5);
         HashMap<String, ArrayList<String>> alpha = new HashMap<>();
@@ -82,5 +76,3 @@ public class List extends Command {
         event.reply(soundNames);
     }
 }
-//TODO rifare la classe list e AWSS3 perche' sono merdose
-//OIDOZIRF

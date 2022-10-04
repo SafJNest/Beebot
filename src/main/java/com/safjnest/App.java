@@ -139,7 +139,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new DeleteSound(s3Client, sql));
         builder.addCommand(new Disconnect());
         builder.addCommand(new DownloadSound(s3Client, sql));
-        builder.addCommand(new List(s3Client, sql));
+        builder.addCommand(new List(sql));
         builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
         builder.addCommand(new PlaySound(s3Client, sql));
         builder.addCommand(new Upload(s3Client, sql));
