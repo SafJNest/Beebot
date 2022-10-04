@@ -47,6 +47,10 @@ public class Upload extends Command{
             event.reply("You have to write the name of the sound");
             return;
         }
+        if(fileName.matches("[0123456789]*")){
+            event.reply("You can't use a name that only contains numbers");
+            return;
+        }
 
         event.reply("Ok, now upload the sound here in mp3 or **opus** format");
         FileListener fileListener = new FileListener(event, fileName, event.getChannel(), s3Client.getS3Client(), sql);
@@ -88,7 +92,7 @@ class FileListener extends ListenerAdapter {
             e.getJDA().removeEventListener(this);
             return;
         }
-
+        
         String query = "INSERT INTO sound(name, guild_id, user_id, extension) VALUES('" 
                      + name + "','" + event.getGuild().getId() + "','" + event.getAuthor().getId() + "','" + attachment.getFileExtension() + "')"
                      + " RETURNING id;";
@@ -111,7 +115,7 @@ class FileListener extends ListenerAdapter {
             .thenAccept(file -> {
                 System.out.println("Uploading the file on aws s3 " + file.getName());
                 try {
-                    PutObjectRequest request = new PutObjectRequest("thebeebox", id, file);
+                    PutObjectRequest request = new PutObjectRequest("thebeebot", id, file);
                     ObjectMetadata metadata = new ObjectMetadata();
                     metadata.setContentType("audio/mpeg");
                     metadata.addUserMetadata("format", attachment.getFileExtension());
