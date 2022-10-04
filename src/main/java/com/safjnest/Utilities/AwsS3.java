@@ -194,12 +194,12 @@ public class AwsS3 {
         return s3Client.doesObjectExist(bucket, fileName);
     }
 
-    public S3Object downloadFile(String fileName, CommandEvent event) {
+    public S3Object downloadFile(String path, String fileName, CommandEvent event) {
         try {
             S3Object fullObject = s3Client.getObject(
                 new GetObjectRequest(bucket, fileName));
             S3ObjectInputStream s3is = fullObject.getObjectContent();
-            FileUtils.copyInputStreamToFile(s3is, new File("rsc" + File.separator + "SoundBoard"+ File.separator + fileName + "." +fullObject.getObjectMetadata().getUserMetaDataOf("format")));
+            FileUtils.copyInputStreamToFile(s3is, new File(path + fileName + "." + fullObject.getObjectMetadata().getUserMetaDataOf("format")));
             s3is.close();
             return fullObject;
         } catch (AmazonClientException | IOException exception) {

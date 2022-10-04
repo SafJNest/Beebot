@@ -76,7 +76,6 @@ public class PostgreSQL {
             stmt.close();
             return info;
         } catch (SQLException e) {
-            e.printStackTrace();
             return null;
         }
     }
