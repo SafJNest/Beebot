@@ -35,6 +35,7 @@ import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 public class PlaySound extends Command{
     PostgreSQL sql;
     AwsS3 s3Client;
+    String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
     String fileName;
 
 
@@ -64,10 +65,10 @@ public class PlaySound extends Command{
         for (File file : soundBoard.listFiles())
             file.delete();
 
-        //String query = "SELECT id, name, guild_id FROM sound WHERE name = '" + fileName + "' AND guild_id = '" + event.getGuild().getId() + "';";
+        
         String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE name = '" + fileName + "';";
         String id = null, name, guildId, userId, extension;
-        ArrayList<ArrayList<String>> arr = sql.getTuple(query, 5); //qualcuno ha visto gesù, dentro al parcheggio della pizzeria
+        ArrayList<ArrayList<String>> arr = sql.getTuple(query, 5);
         int indexForKeria = -1;
         for(int i = 0; i < arr.size(); i++){
             if(arr.get(i).get(2).equals(event.getGuild().getId())){
@@ -86,14 +87,14 @@ public class PlaySound extends Command{
         userId = arr.get(indexForKeria).get(3);
         extension = arr.get(indexForKeria).get(4);
 
-        S3Object sound = s3Client.downloadFile(id, event);
-        
+        S3Object sound = s3Client.downloadFile(path, id, event);
+
         if(sound == null){
             event.reply("sound not found in aws s3");
             return;
         }
         
-        fileName = "rsc" + File.separator + "SoundBoard" + File.separator + id +"."+ extension;
+        fileName = path + id + "." + extension;
         
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
@@ -140,21 +141,25 @@ public class PlaySound extends Command{
         if(player.getPlayingTrack() == null)
             return;
 
-        //String query;
-        query = "SELECT times FROM play join sound on play.id_sound = sound.id where play.id_sound = '"+id+"' and play.user_id = '"+userId+"';";
-        if(sql.getString(query, "times") == null ){
-            query = "INSERT INTO play(user_id, id_sound, times) VALUES('"+userId+"','"+id+"', 1);";        
-        }else{
-            query = "UPDATE play SET times = times + 1 WHERE id_sound = (" + id+ ") AND user_id = '" +userId+"';";
+        query = "SELECT times FROM play where play.id_sound = '" + id + "' and play.user_id = '" + event.getAuthor().getId() + "';";
+        if(sql.getString(query, "times") == null){
+            query = "INSERT INTO play(user_id, id_sound, times) VALUES('" + event.getAuthor().getId() + "','" + id + "', 1);";
         }
+        else{
+            query = "UPDATE play SET times = times + 1 WHERE id_sound = (" + id + ") AND user_id = '" + event.getAuthor().getId() + "';";
+        }
+
         sql.runQuery(query);
         
+        
         EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
+
         eb.setTitle("Playing now:");
+        eb.setDescription("```" + name + "```");
 
-        eb.setDescription("```" + event.getArgs() + "```");
-
-        eb.addField("Author", "```" + event.getJDA().getUserById(sound.getObjectMetadata().getUserMetaDataOf("author")).getName() + "```", true);
+        eb.addField("Author", "```" + event.getJDA().getUserById(userId).getName() + "```", true);
         try {
             eb.addField("Lenght","```" + (extension.equals("opus") 
             ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(fileName)))*1000)
@@ -165,31 +170,31 @@ public class PlaySound extends Command{
         
         eb.addBlankField(true);
 
-        eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
-        eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
         //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
 
-        
-        eb.addField("Guild", "```" + event.getJDA().getGuildById(sound.getObjectMetadata().getUserMetaDataOf("guild")).getName() + "```", true);
-        query = "SELECT SUM(times) FROM PLAY where id_sound='" + id + "';";
+        eb.addField("Guild", "```" + event.getJDA().getGuildById(guildId).getName() + "```", true);
 
-        String playedTimes = sql.getString(query, "sum");
-        eb.addField("Played", "```" + playedTimes + (playedTimes.equals("1") ? " time" : " times") + "```", true);
+        query = "SELECT SUM(times) FROM PLAY where id_sound='" + id + "';";
+        String timesPlayed = sql.getString(query, "sum");
+        eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + "```", true);
 
         String img = "idk";
         if(extension.equals("opus")){
             eb.setColor(new Color(255, 0, 0));
             img = "opus.png";
-        }else{
-            img = "mp3.png";
-    	     eb.setColor(new Color(0, 255, 255));
+        }
+        else{
+            eb.setColor(new Color(0, 255, 255));
+            img = "mp3.png"; 
         }   
-            
 
-        File file = new File("rsc" + File.separator + "img" + File.separator + img);
+        eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
+            
+        File imgFile = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
+
         channel.sendMessageEmbeds(eb.build())
-        .addFiles(FileUpload.fromData(file))
+            .addFiles(FileUpload.fromData(imgFile))
             .queue();
     }
 }
