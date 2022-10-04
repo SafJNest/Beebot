@@ -65,10 +65,22 @@ public class PlaySound extends Command{
         for (File file : soundBoard.listFiles())
             file.delete();
 
-        
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE name = '" + fileName + "';";
+        String query = null;
         String id = null, name, guildId, userId, extension;
-        ArrayList<ArrayList<String>> arr = sql.getTuple(query, 5);
+        ArrayList<ArrayList<String>> arr = null;
+
+        if(fileName.matches("[0123456789]*")){
+            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE id = '" + fileName + "';";
+        }
+        else{
+            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE name = '" + fileName + "';";
+        }
+
+        if((arr = sql.getTuple(query, 5)).isEmpty()){
+            event.reply("There is no sound with that name/id");
+            return;
+        }
+
         int indexForKeria = -1;
         for(int i = 0; i < arr.size(); i++){
             if(arr.get(i).get(2).equals(event.getGuild().getId())){
@@ -157,7 +169,7 @@ public class PlaySound extends Command{
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
 
         eb.setTitle("Playing now:");
-        eb.setDescription("```" + name + "```");
+        eb.setDescription("```" + name + " (ID: " + id + ")" + "```");
 
         eb.addField("Author", "```" + event.getJDA().getUserById(userId).getName() + "```", true);
         try {

@@ -126,7 +126,7 @@ public class PostgreSQL {
             stmt.close();
             return arr;
         } catch (SQLException e) {
-            return arr;
+            return null;
         }
     }
 }
