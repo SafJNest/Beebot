@@ -10,10 +10,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.TrackScheduler;
+import com.safjnest.Utilities.PlayerManager;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.JSONReader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -22,13 +21,9 @@ import org.json.simple.JSONObject;
 
 import org.json.simple.parser.JSONParser;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -44,6 +39,7 @@ import net.dv8tion.jda.api.managers.AudioManager;
 public class PlayYoutube extends Command {
     private String youtubeApiKey;
     private HashMap<String,String> tierOneLink;
+    private PlayerManager pm;
 
     public PlayYoutube(String youtubeApiKey, HashMap<String,String> tierOneLink){
         this.name = this.getClass().getSimpleName();
@@ -104,24 +100,18 @@ public class PlayYoutube extends Command {
             }
         }
 
-
+        pm = new PlayerManager();
+        
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
-        AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        AudioPlayer player = playerManager.createPlayer();
-        AudioHandler audioPlayerSendHandler = new AudioHandler(player);
-        audioManager.setSendingHandler(audioPlayerSendHandler);
+        audioManager.setSendingHandler(pm.getAudioHandler());
         audioManager.openAudioConnection(myChannel);
-        TrackScheduler trackScheduler = new TrackScheduler(player);
-        player.addListener(trackScheduler);
         
-        playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
-        
-        playerManager.loadItem(toPlay, new AudioLoadResultHandler() {
+        pm.getAudioPlayerManager().loadItem(toPlay, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                trackScheduler.addQueue(track);
+                pm.getTrackScheduler().addQueue(track);
             }
 
             @Override
@@ -136,7 +126,7 @@ public class PlayYoutube extends Command {
             @Override
             public void noMatches() {
                 channel.sendMessage("Not found").queue();
-                trackScheduler.addQueue(null);
+                pm.getTrackScheduler().addQueue(null);
             }
 
             @Override
@@ -145,22 +135,21 @@ public class PlayYoutube extends Command {
             }
         });
 
-        player.playTrack(trackScheduler.getTrack());
-        if(player.getPlayingTrack() == null)
-            return;
+        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
 
         EmbedBuilder eb = new EmbedBuilder();
         eb = new EmbedBuilder();
         eb.setTitle("Playing now:");
-        eb.addField("Lenght", SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length) , true);
+        eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
         eb.setColor(new Color(255, 0, 0));
-        eb.setDescription("[" + player.getPlayingTrack().getInfo().title + "](" + player.getPlayingTrack().getInfo().uri + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + player.getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+        eb.setDescription("[" + pm.getPlayer().getPlayingTrack().getInfo().title + "](" + pm.getPlayer().getPlayingTrack().getInfo().uri + ")");
+        eb.setThumbnail("https://img.youtube.com/vi/" + pm.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
         event.reply(eb.build());
         
-        if(tierOneLink.containsKey(player.getPlayingTrack().getIdentifier()))
-            channel.sendMessage(tierOneLink.get(player.getPlayingTrack().getIdentifier())).queue();
-	}
+        if(tierOneLink.containsKey(pm.getPlayer().getPlayingTrack().getIdentifier()))
+            channel.sendMessage(tierOneLink.get(pm.getPlayer().getPlayingTrack().getIdentifier())).queue();
+	
+    }
 }

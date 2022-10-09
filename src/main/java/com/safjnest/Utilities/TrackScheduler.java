@@ -34,13 +34,15 @@ public class TrackScheduler extends AudioEventAdapter {
   AudioPlayer player;
   /**Queue that contains all the track */
   private Queue<AudioTrack> queue = new LinkedList<>();
+  private PlayerManager publicMagister;
 
   /**
    *  constructor
    * @param player Comes from {@link com.safjnest.Commands.Audio.PlayYoutube Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
    */
-  public TrackScheduler(AudioPlayer player) {
+  public TrackScheduler(AudioPlayer player, PlayerManager pm) {
     this.player = player;
+    this.publicMagister = pm;
   }
 
   /**
@@ -91,12 +93,13 @@ public class TrackScheduler extends AudioEventAdapter {
 
   @Override
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-    if (endReason.mayStartNext) {
-      // Start next track
-    }
-    else{
-      player.destroy();
-    }
+      if(endReason.name().equals("FINISHED")){
+        publicMagister.terminator3LeMacchineRibelli();
+      }
+      else if(endReason.name().equals("CLEANUP")){
+        publicMagister.terminator3LeMacchineRibelli();
+      }
+    
 
     // endReason == FINISHED: A track finished or died by an exception (mayStartNext
     // = true).
@@ -111,13 +114,11 @@ public class TrackScheduler extends AudioEventAdapter {
 
   @Override
   public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
-    // An already playing track threw an exception (track end event will still be
-    // received separately)
+    System.out.println("sono qui keria");
   }
 
   @Override
   public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
-    // Audio track has been unable to provide us any audio, might want to just start
-    // a new track
+    System.out.println("sono qui guma");
   }
 }

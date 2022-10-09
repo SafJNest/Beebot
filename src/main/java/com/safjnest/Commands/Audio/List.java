@@ -35,25 +35,29 @@ public class List extends Command {
         String query = "";
         String soundNames = "";
         int cont = 0;
+
         if(event.getArgs().equals("me"))
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '"+event.getAuthor().getId()+"';";
+            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + event.getAuthor().getId() + "';";
         else if(event.getArgs().equals("global"))
             query = "SELECT id, name, guild_id, user_id, extension FROM sound;";
         else if(event.getArgs().split(" ")[0].equals("user")){
             User theGuy = null;
             if(event.getMessage().getMentions().getUsers().size() > 0){
                 theGuy = event.getMessage().getMentions().getUsers().get(0);
-            }else{
+            }
+            else{
                 try {
                     theGuy = event.getJDA().getUserById(event.getArgs().split(" ")[1]);
                 } catch (Exception e) {
-                    event.reply("ID not found");
+                    event.reply("This is not a valid user id");
                 }
             }
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '"+theGuy.getId()+"';";
-        }else{
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '"+event.getGuild().getId()+"';";
+            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + theGuy.getId() + "';";
         }
+        else{
+            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + event.getGuild().getId() + "';";
+        }
+
         ArrayList<ArrayList<String>> arr = sql.getTuple(query, 5);
         HashMap<String, ArrayList<String>> alpha = new HashMap<>();
         for(int i = 0; i < arr.size(); i++){
@@ -61,17 +65,19 @@ public class List extends Command {
                 alpha.put(arr.get(i).get(2), new ArrayList<>());
             alpha.get(arr.get(i).get(2)).add(arr.get(i).get(1));
         }
+
         Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
         sortedMap.putAll(alpha);
         for(String serverId : sortedMap.keySet()) {
-            String serverName = (event.getJDA().getGuildById(serverId)!=null) ? event.getJDA().getGuildById(serverId).getName() : "Im not in the server"; 
-            soundNames += "**"+ serverName +"**" + ":\n";
+            String serverName = (event.getJDA().getGuildById(serverId) != null) ? event.getJDA().getGuildById(serverId).getName() : "Im not in the server"; 
+            soundNames += "**" + serverName + "**" + ":\n";
             for(String soundName : sortedMap.get(serverId)){
                 soundNames += soundName + " - ";
                 cont++;
             }
-            soundNames = soundNames.substring(0, soundNames.length()-3) + "\n";
+            soundNames = soundNames.substring(0, soundNames.length() - 3) + "\n";
         }
+
         soundNames += "\nTotal sounds: " + cont;
         event.reply(soundNames);
     }
