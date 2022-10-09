@@ -1,6 +1,9 @@
 package com.safjnest.Commands.LOL;
 
 import java.awt.Color;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -75,22 +78,32 @@ public class Summoner extends Command {
             builder.setAuthor(s.getName());
             builder.setColor(new Color(250,225,56));
             builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
-            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
-            try {
-                LeagueEntry entry = r.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(0);
-                builder.addField("Rank", 
-                                entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
-                                + entry.getWins() + "W/"+entry.getLosses()+"L\n"
-                                + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%", true);
-                
-            } catch (Exception e) {
-                builder.addField("Rank", "Unranked", true);
+            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
+            
+            for(int i = 0; i < 2; i++){
+                try {
+                    LeagueEntry entry = r.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(i);
+                    builder.addField(entry.getQueueType().commonName(), 
+                    entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
+                    + entry.getWins() + "W/"+entry.getLosses()+"L\n"
+                    + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%", true); 
+                } catch (Exception e) {
+                    if(i == 0){
+                        builder.addField("5v5 Ranked Solo", "Unranked", true);
+                        builder.addField("5v5 Ranked Flex Queue", "Unranked", true);
+                    }else{
+                        String sup = r.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(0).getQueueType().commonName();
+                        builder.addField((sup.equals("5v5 Ranked Solo"))?"5v5 Ranked Flex Queue":"5v5 Ranked Solo", "Unranked", true);
+                    }
+                }
             }
             String masteryString = "";
             int cont = 0;
+            DecimalFormat df = new DecimalFormat("#,##0", 
+            new DecimalFormatSymbols(Locale.US));
             try {
                 for(ChampionMastery mastery : s.getChampionMasteries()){
-                    masteryString += "[" + mastery.getChampionLevel() + "] " + r.getDDragonAPI().getChampion(mastery.getChampionId()).getName() + " " + mastery.getChampionPoints() + " points\n";
+                    masteryString += "[" + mastery.getChampionLevel()+ "] " + r.getDDragonAPI().getChampion(mastery.getChampionId()).getName() + " " + df.format(mastery.getChampionPoints()) + " points\n";
                     if(cont == 2)
                         break;
                     cont++;
