@@ -8,10 +8,9 @@ import java.util.Set;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.TrackScheduler;
 import com.safjnest.Utilities.tts.Voices;
-import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.PlayerManager;
 import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
@@ -23,19 +22,18 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.utils.FileUpload;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 
 public class TTS extends Command{
-    String speech;
-    TTSHandler tts;
-    PostgreSQL sql;
+    private String speech;
+    private TTSHandler tts;
+    private PostgreSQL sql;
+    private PlayerManager pm;
+    
     public static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
+    
     public TTS(TTSHandler tts, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new JSONReader().getArray(this.name, "alias");
@@ -73,6 +71,7 @@ public class TTS extends Command{
         String voice = "keria";
         MessageChannel channel = event.getChannel();
         EmbedBuilder eb = null;
+
         if((speech = event.getArgs()) == ""){
             event.reply("Write somthing you want the bot to say");
             return;
@@ -95,6 +94,8 @@ public class TTS extends Command{
             event.reply(eb.build());
             return;
         }
+
+
         File file = new File("rsc" + File.separator + "tts");
         if(!file.exists())
             file.mkdirs();
@@ -121,22 +122,19 @@ public class TTS extends Command{
         tts.makeSpeech(speech, event.getAuthor().getName(), voice, language);
         
         String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
+        
+        pm = new PlayerManager();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
-        
-        AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        AudioPlayer player = playerManager.createPlayer();
-        AudioHandler audioPlayerSendHandler = new AudioHandler(player);
 
-        audioManager.setSendingHandler(audioPlayerSendHandler);
+        audioManager.setSendingHandler(pm.getAudioHandler());
+
         audioManager.openAudioConnection(myChannel);
-        TrackScheduler trackScheduler = new TrackScheduler(player);
-        player.addListener(trackScheduler);
-        playerManager.registerSourceManager(new LocalAudioSourceManager());
-        playerManager.loadItem(nameFile, new AudioLoadResultHandler() {
+
+        pm.getAudioPlayerManager().loadItem(nameFile, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                trackScheduler.addQueue(track);
+                pm.getTrackScheduler().addQueue(track);
             }
 
             @Override
@@ -151,7 +149,7 @@ public class TTS extends Command{
             @Override
             public void noMatches() {
                 channel.sendMessage("Not found").queue();
-                trackScheduler.addQueue(null);
+                pm.getTrackScheduler().addQueue(null);
             }
 
             @Override
@@ -160,20 +158,18 @@ public class TTS extends Command{
             }
         });
 
-        player.playTrack(trackScheduler.getTrack());
-        if(player.getPlayingTrack() == null)
-            return;
+        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());;
         
         eb = new EmbedBuilder();
         eb.setTitle("Playing now:");
-        eb.addField("Lenght",SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length),true);
+        eb.addField("Lenght",SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length),true);
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
         eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
 
         eb.setDescription(event.getArgs());
         eb.addField("Language", language, true);
         eb.addField("Voice", voice, true);
-        String img = "jelly.png";
+        String img = "tts.png";
         eb.setColor(new Color(255, 196, 0));
             
 

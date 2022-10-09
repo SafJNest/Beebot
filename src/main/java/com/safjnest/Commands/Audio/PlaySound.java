@@ -9,10 +9,9 @@ import java.util.ArrayList;
 import com.amazonaws.services.s3.model.S3Object;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.TrackScheduler;
-import com.safjnest.Utilities.AudioHandler;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.PlayerManager;
 import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.SoundBoard;
@@ -24,19 +23,16 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.utils.FileUpload;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 
 public class PlaySound extends Command{
     PostgreSQL sql;
     AwsS3 s3Client;
     String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
     String fileName;
+    PlayerManager pm;
 
 
     public PlaySound(AwsS3 s3Client, PostgreSQL sql){
@@ -52,6 +48,7 @@ public class PlaySound extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
+        
         if((fileName = event.getArgs()) == ""){
             event.reply("Missing name");
             return;
@@ -107,25 +104,23 @@ public class PlaySound extends Command{
         }
         
         fileName = path + id + "." + extension;
+
+        pm = new PlayerManager();
         
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
-        
-        AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        AudioPlayer player = playerManager.createPlayer();
-        AudioHandler audioPlayerSendHandler = new AudioHandler(player);
-
-        audioManager.setSendingHandler(audioPlayerSendHandler);
+        audioManager.setSendingHandler(pm.getAudioHandler());
         audioManager.openAudioConnection(myChannel);
-        TrackScheduler trackScheduler = new TrackScheduler(player);
-        player.addListener(trackScheduler);
+
+        if(pm.getPlayer().getPlayingTrack() != null){
+            //pm.stopAudioHandler();
+        }
         
-        playerManager.registerSourceManager(new LocalAudioSourceManager());
-        playerManager.loadItem(fileName, new AudioLoadResultHandler() {
+        pm.getAudioPlayerManager().loadItem(fileName, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                trackScheduler.addQueue(track);
+                pm.getTrackScheduler().addQueue(track);
             }
 
             @Override
@@ -140,7 +135,7 @@ public class PlaySound extends Command{
             @Override
             public void noMatches() {
                 channel.sendMessage("File not found").queue();
-                trackScheduler.addQueue(null);
+                pm.getTrackScheduler().addQueue(null);
             }
 
             @Override
@@ -149,9 +144,8 @@ public class PlaySound extends Command{
             }
         });
 
-        player.playTrack(trackScheduler.getTrack());
-        if(player.getPlayingTrack() == null)
-            return;
+        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        
 
         query = "SELECT times FROM play where play.id_sound = '" + id + "' and play.user_id = '" + event.getAuthor().getId() + "';";
         if(sql.getString(query, "times") == null){
@@ -164,7 +158,8 @@ public class PlaySound extends Command{
         sql.runQuery(query);
         query = "SELECT SUM(times) FROM PLAY where id_sound='" + id + "';";
         String timesPlayed = sql.getString(query, "sum");
-        
+        query = "SELECT times FROM PLAY where id_sound='" + id + "' AND user_id='"+event.getAuthor().getId()+"';";
+        String timesPlayedByUser = sql.getString(query, "times");
         
         EmbedBuilder eb = new EmbedBuilder();
 
@@ -177,7 +172,7 @@ public class PlaySound extends Command{
         try {
             eb.addField("Lenght","```" + (extension.equals("opus") 
             ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(fileName)))*1000)
-            : SafJNest.getFormattedDuration(player.getPlayingTrack().getInfo().length)) + "```", true);
+            : SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length)) + "```", true);
         } catch (IOException e) {e.printStackTrace();}
         
         eb.addBlankField(true);
@@ -186,7 +181,7 @@ public class PlaySound extends Command{
 
         eb.addField("Guild", "```" + event.getJDA().getGuildById(guildId).getName() + "```", true);
 
-        eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + "```", true);
+        eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + " (yours: "+timesPlayedByUser+")```", true);
 
         String img = "idk";
         if(extension.equals("opus"))
