@@ -10,14 +10,16 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.JSONReader;
 import com.safjnest.Utilities.PostgreSQL;
 
-import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.1
  */
-public class List extends Command {
+public class List extends Command{
     private PostgreSQL sql;
 
     public List(PostgreSQL sql){
@@ -32,44 +34,47 @@ public class List extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        String query = "";
+        Button keria1 = Button.primary("lexo", "Server");
+        Button keria2 = Button.primary("idOrder", "ID Order");
+        Button keria3 = Button.primary("mostPlayed", "Most played");
+        Button keria4 = Button.primary("byUser", "Yours");
+        Button keria5 = Button.primary("global", "Global");
+        MessageCreateBuilder message = new MessageCreateBuilder();
+        message.setContent(getListLexo(event.getJDA(), sql, event.getGuild().getId()));
+        message.addActionRow(keria1, keria2, keria3, keria4, keria5);
+        event.reply(message.build());
+    }
+
+    public static String getListLexo(JDA jda, PostgreSQL sql, String serverId){
+        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + serverId + "';";
+        return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
+    }
+
+    public static String getListUser(JDA jda, PostgreSQL sql, String userId){
+        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + userId + "';";
+        return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
+    }
+    
+    public static String getListGlobal(JDA jda, PostgreSQL sql){
+        String query = "SELECT id, name, guild_id, user_id, extension FROM sound;";
+        return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
+    }
+
+    public static String getListMostPlayed(JDA jda, PostgreSQL sql){
+        String query = "SELECT sound.id, sound.name, sound.guild_id, sound.user_id, SUM(times) FROM sound join play on sound.id=play.id_sound GROUP BY sound.id ORDER BY SUM(times)DESC;";
+        return getSoundsName(jda, getMapTimes(sql.getTuple(query, 5)));
+    }  
+    
+    public static String getListId(JDA jda, PostgreSQL sql){
+        String query = "SELECT id, name, guild_id, user_id, extension FROM sound ORDER BY id;";
+        return getSoundsName(jda, getMapId(sql.getTuple(query, 5)));
+    } 
+
+    private static String getSoundsName(JDA jda, Map<String, ArrayList<String>> sortedMap){
         String soundNames = "";
         int cont = 0;
-
-        if(event.getArgs().equals("me"))
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + event.getAuthor().getId() + "';";
-        else if(event.getArgs().equals("global"))
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound;";
-        else if(event.getArgs().split(" ")[0].equals("user")){
-            User theGuy = null;
-            if(event.getMessage().getMentions().getUsers().size() > 0){
-                theGuy = event.getMessage().getMentions().getUsers().get(0);
-            }
-            else{
-                try {
-                    theGuy = event.getJDA().getUserById(event.getArgs().split(" ")[1]);
-                } catch (Exception e) {
-                    event.reply("This is not a valid user id");
-                }
-            }
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + theGuy.getId() + "';";
-        }
-        else{
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + event.getGuild().getId() + "';";
-        }
-
-        ArrayList<ArrayList<String>> arr = sql.getTuple(query, 5);
-        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
-        for(int i = 0; i < arr.size(); i++){
-            if(!alpha.containsKey(arr.get(i).get(2)))
-                alpha.put(arr.get(i).get(2), new ArrayList<>());
-            alpha.get(arr.get(i).get(2)).add(arr.get(i).get(1));
-        }
-
-        Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
-        sortedMap.putAll(alpha);
         for(String serverId : sortedMap.keySet()) {
-            String serverName = (event.getJDA().getGuildById(serverId) != null) ? event.getJDA().getGuildById(serverId).getName() : "Im not in the server"; 
+            String serverName = (jda.getGuildById(serverId) != null) ? jda.getGuildById(serverId).getName() : "Im not in the server"; 
             soundNames += "**" + serverName + "**" + ":\n";
             for(String soundName : sortedMap.get(serverId)){
                 soundNames += soundName + " - ";
@@ -77,8 +82,42 @@ public class List extends Command {
             }
             soundNames = soundNames.substring(0, soundNames.length() - 3) + "\n";
         }
-
         soundNames += "\nTotal sounds: " + cont;
-        event.reply(soundNames);
+        return soundNames;
+    }
+
+
+    private static Map<String, ArrayList<String>> getMap(ArrayList<ArrayList<String>> arr){
+        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
+        for(int i = 0; i < arr.size(); i++){
+            if(!alpha.containsKey(arr.get(i).get(2)))
+                alpha.put(arr.get(i).get(2), new ArrayList<>());
+            alpha.get(arr.get(i).get(2)).add(arr.get(i).get(1));
+        }
+        Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
+        sortedMap.putAll(alpha);
+        return sortedMap;
+    }
+
+    private static Map<String, ArrayList<String>> getMapTimes(ArrayList<ArrayList<String>> arr){
+        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
+        for(int i = 0; i < arr.size(); i++){
+            if(!alpha.containsKey(arr.get(i).get(2)))
+                alpha.put(arr.get(i).get(2), new ArrayList<>());
+            alpha.get(arr.get(i).get(2)).add(arr.get(i).get(1)+" ("+arr.get(i).get(4)+")");
+        }
+        Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
+        return sortedMap;
+    }
+
+    private static Map<String, ArrayList<String>> getMapId(ArrayList<ArrayList<String>> arr){
+        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
+        for(int i = 0; i < arr.size(); i++){
+            if(!alpha.containsKey(arr.get(i).get(2)))
+                alpha.put(arr.get(i).get(2), new ArrayList<>());
+            alpha.get(arr.get(i).get(2)).add(arr.get(i).get(1)+" ("+arr.get(i).get(0)+")");
+        }
+        Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
+        return sortedMap;
     }
 }
