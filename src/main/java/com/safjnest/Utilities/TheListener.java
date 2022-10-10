@@ -1,12 +1,16 @@
 package com.safjnest.Utilities;
 
 import java.util.ArrayList;
+
+import com.safjnest.Commands.Audio.List;
+
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 /**
@@ -70,5 +74,26 @@ public class TheListener extends ListenerAdapter{
         TextChannel welcome = event.getGuild().getSystemChannel();
         welcome.sendMessage("NO FUCKING WAY " + newguy.getAsMention() + " HA BOOSTATO IL SERVER!!\n" + event.getGuild().getBoostCount()).queue();
     }
+
+    @Override
+    public void onButtonInteraction(ButtonInteractionEvent event){
+        if(event.getButton().getId().equals("lexo")){
+            event.deferEdit().queue();
+            event.getMessage().editMessage(List.getListLexo(event.getJDA(), sql, event.getGuild().getId())).queue();
+        }else if(event.getButton().getId().equals("idOrder")){
+            event.deferEdit().queue();
+            event.getMessage().editMessage(List.getListId(event.getJDA(), sql)).queue();
+        }else if(event.getButton().getId().equals("mostPlayed")){
+            event.deferEdit().queue();
+            event.getMessage().editMessage(List.getListMostPlayed(event.getJDA(), sql)).queue();
+        }else if(event.getButton().getId().equals("byUser")){
+            event.deferEdit().queue();
+            event.getMessage().editMessage(List.getListUser(event.getJDA(), sql, event.getMember().getId())).queue();
+        }else if(event.getButton().getId().equals("global")){
+            event.deferEdit().queue();
+            event.getMessage().editMessage(List.getListGlobal(event.getJDA(), sql)).queue();
+        }
+    }
+
 
 }
