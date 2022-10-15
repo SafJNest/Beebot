@@ -203,6 +203,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new FreeChamp());
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
+        builder.addCommand(new PlayedWith(riotApi, sql));
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
