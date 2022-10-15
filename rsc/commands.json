@@ -448,6 +448,13 @@
         "help"  : "Allow to connect for a user his Riot profile.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName]"
+    },
+
+    "playedwith":{
+        "alias" : ["pw"],
+        "help"  : "Get a list with all the people a user played with.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [summonerName] (n games to analyze)"
     }
 
 }
