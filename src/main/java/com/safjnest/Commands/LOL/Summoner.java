@@ -91,6 +91,7 @@ public class Summoner extends Command {
                     if(i == 0){
                         builder.addField("5v5 Ranked Solo", "Unranked", true);
                         builder.addField("5v5 Ranked Flex Queue", "Unranked", true);
+                        break;
                     }else{
                         String sup = r.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(0).getQueueType().commonName();
                         builder.addField((sup.equals("5v5 Ranked Solo"))?"5v5 Ranked Flex Queue":"5v5 Ranked Solo", "Unranked", true);
