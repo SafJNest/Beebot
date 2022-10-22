@@ -1,10 +1,8 @@
 /*fraws e faker
 ban appeal command
-the stop command...
 selezionare lo user con il tag
 sun: voglio fare la coda (piango) ngueeeh
 invertire tier boost con numero di boost nel cmd serverinfo
-epria
 
 puo tornare utile: action.submit()
 .thenCompose((user) -> user.openPrivateChannel().submit())

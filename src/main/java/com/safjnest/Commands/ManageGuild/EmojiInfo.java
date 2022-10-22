@@ -3,7 +3,9 @@ package com.safjnest.Commands.ManageGuild;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
+import java.awt.Color;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
@@ -18,11 +20,11 @@ public class EmojiInfo extends Command {
 
     public EmojiInfo(){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
     }
 
 	@Override
@@ -39,6 +41,7 @@ public class EmojiInfo extends Command {
             }
         }
         EmbedBuilder eb = new EmbedBuilder();
+        eb.setColor(Color.decode(App.color));
         eb.setTitle(":laughing: "+"**EMOJI INFO**"+" :laughing:");
         eb.setThumbnail(em.getImageUrl());
         eb.addField("**Name**", "```" + em.getName() + "```", true);   

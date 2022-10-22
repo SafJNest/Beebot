@@ -2,7 +2,7 @@ package com.safjnest.Commands.Audio;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.CommandsHandler;
 
 import net.dv8tion.jda.api.entities.User;
 
@@ -16,17 +16,17 @@ public class Disconnect extends Command {
 
     public Disconnect(){
         this.name = this.getClass().getSimpleName();;
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
     }
 
 	@Override
 	protected void execute(CommandEvent event) {
         User theGuy = null;
-        if(event.getArgs().equalsIgnoreCase("bot")){
+        if(event.getArgs().equalsIgnoreCase("bot") || event.getArgs().equalsIgnoreCase("")){
             event.getGuild().getAudioManager().closeAudioConnection();
         }
         else if(event.getMessage().getMentions().getMembers().size() > 0){
@@ -34,7 +34,7 @@ public class Disconnect extends Command {
             event.getGuild().kickVoiceMember(event.getGuild().getMember(theGuy)).queue();
         }
         else{
-            event.reply("I don't know who to disconnect (mention the member you want to disconnect or write bot to disconnect the bot)");
+            event.reply("I don't know who to disconnect (mention the member you want to disconnect or write bot or nothing to disconnect the bot)");
             return;
         }
 	}

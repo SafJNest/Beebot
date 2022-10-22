@@ -16,15 +16,15 @@ import org.json.simple.parser.ParseException;
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * @since 1.3
  */
-public class JSONReader {
-    private String path = "rsc" + File.separator +"commands.json";
+public class CommandsHandler {
+    private String path = "rsc" + File.separator + "commands.json";
     private FileReader reader;
     private JSONParser jsonParser;
 
     /**
      * default constructor
      */
-    public JSONReader(){
+    public CommandsHandler(){
         jsonParser = new JSONParser();
         try {
             reader = new FileReader(path);

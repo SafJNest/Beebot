@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.AwsS3;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PostgreSQL;
 
 import net.dv8tion.jda.api.Permission;
@@ -23,11 +23,11 @@ public class DeleteSound extends Command{
     
     public DeleteSound(AwsS3 s3Client, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.s3Client = s3Client;
         this.sql = sql;
     }

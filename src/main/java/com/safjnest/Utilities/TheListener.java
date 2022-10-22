@@ -43,12 +43,10 @@ public class TheListener extends ListenerAdapter{
      */
     @Override 
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        System.out.println("wehuyg8f");
         MessageChannel channel = null;
         User newGuy = event.getUser();
         String query = "SELECT channel_id FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "';";
         String notNullPls = sql.getString(query, "channel_id");
-        System.out.println(notNullPls);
         if(notNullPls == null)
             return;
         channel = event.getGuild().getTextChannelById(notNullPls);
@@ -60,7 +58,6 @@ public class TheListener extends ListenerAdapter{
         ArrayList<String> roles = sql.getListString(query, "role_id");
         if(roles.size() > 0){
             for(String role : roles){
-                System.out.println(role);
                 event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
             }
         }

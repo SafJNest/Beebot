@@ -244,12 +244,7 @@
 
 
 
-    "bighi":{
-        "alias" : ["random"],
-        "help"  : "Generate a random number.",
-        "category" : "Math",
-        "arguments" : "[bighi] [nBits]"
-    },
+   
 
     "calc":{
         "alias" : ["c", "calculator","calculate"],
@@ -258,25 +253,13 @@
         "arguments" : "[calc] [(n+n) (n-n) (n*n) (n/n) (n^n) (sqrt n) (sin n) (cos n ) (ln n) (tan n) (asin n) (acos n) (exp n)]"
     },
 
-    "dac":{
-        "alias" : ["divideandconquer"],
-        "help"  : "Count the digits of a number (max 2^32).",
-        "category" : "Math",
-        "arguments" : "[dac] [number]"
-    },
+    
 
     "dice":{
         "alias" : ["aleaiactaest", "roll"],
         "help"  : "Roll one or more dices.",
         "category" : "Math",
         "arguments" : "[dice] (number) ([number] (side))"
-    },
-
-    "fastestroot":{
-        "alias" : ["invroot", "fisqrt"],
-        "help"  : "Calculate the inverse root in the fastest way.",
-        "category" : "Math",
-        "arguments" : "[fastinversesquareroot] [number]"
     },
 
     "prime":{

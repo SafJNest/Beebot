@@ -1,1 +1,1 @@
-worker: java -jar target/beebox-1.0-SNAPSHOT-jar-with-dependencies.jar false "OTM4NDg3NDcwMzM5ODAxMTY5.GgeqCi.1fHPBYNb2GplXm5kVrNAt2pZI8JidXeJ70uzb4" "***REMOVED***" "***REMOVED***" "***REMOVED***" "***REMOVED***" "***REMOVED***"
+worker: java -jar target/beebox-1.0-SNAPSHOT-jar-with-dependencies.jar "beebot"

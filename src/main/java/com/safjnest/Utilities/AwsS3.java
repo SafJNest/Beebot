@@ -254,7 +254,6 @@ public class AwsS3 {
                     try {
                         fullObject.close();
                     } catch (Exception e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                     

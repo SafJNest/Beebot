@@ -5,7 +5,8 @@ import java.awt.Color;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -21,11 +22,11 @@ public class ChannelInfo extends Command {
 
     public ChannelInfo(){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
     }
 
 	@Override
@@ -40,7 +41,7 @@ public class ChannelInfo extends Command {
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("**CHANNEL INFO**");
-        eb.setColor(new Color(116, 139, 151));
+        eb.setColor(Color.decode(App.color));
         if(gc.getType().isAudio()){
             v = event.getGuild().getVoiceChannelById(event.getArgs());
             eb.addField("Channel name", "```" + v.getName() + "```", true);   

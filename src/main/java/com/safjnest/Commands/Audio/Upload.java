@@ -9,7 +9,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.AwsS3;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.PostgreSQL;
 
@@ -32,11 +32,11 @@ public class Upload extends Command{
     
     public Upload(AwsS3 s3Client, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();;
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.s3Client = s3Client;
         this.sql = sql;
     }
@@ -92,8 +92,11 @@ class FileListener extends ListenerAdapter {
             e.getJDA().removeEventListener(this);
             return;
         }
+
+        String query = "SELECT id FROM sound WHERE name = '" + name + "' AND user_id = '" + event.getAuthor().getId() + "'";
         
-        String query = "INSERT INTO sound(name, guild_id, user_id, extension) VALUES('" 
+        
+        query = "INSERT INTO sound(name, guild_id, user_id, extension) VALUES('" 
                      + name + "','" + event.getGuild().getId() + "','" + event.getAuthor().getId() + "','" + attachment.getFileExtension() + "')"
                      + " RETURNING id;";
 

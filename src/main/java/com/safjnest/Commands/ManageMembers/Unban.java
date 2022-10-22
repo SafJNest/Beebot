@@ -3,7 +3,8 @@ package com.safjnest.Commands.ManageMembers;
 import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -23,11 +24,11 @@ public class Unban extends Command{
 
     public Unban(){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
     }
 
     @Override
@@ -38,7 +39,7 @@ public class Unban extends Command{
                 eb.setTitle("List of banned users");
                 for (net.dv8tion.jda.api.entities.Guild.Ban ban : event.getGuild().retrieveBanList().complete())
                     eb.appendDescription(ban.getUser().getAsMention() + " - ");
-                eb.setColor(new Color(0, 128, 128));
+                eb.setColor(Color.decode(App.color));
                 eb.setAuthor(event.getSelfUser().getName(), "https://github.com/SafJNest",event.getSelfUser().getAvatarUrl());
                 eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null);
                 event.reply(eb.build());

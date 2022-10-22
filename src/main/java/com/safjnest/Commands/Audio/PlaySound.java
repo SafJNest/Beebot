@@ -1,4 +1,3 @@
-//TODO RIFARE QUESTA CLASSE DI MERDA INGUARADFBILE :D
 package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
@@ -9,8 +8,9 @@ import java.util.ArrayList;
 import com.amazonaws.services.s3.model.S3Object;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.App;
 import com.safjnest.Utilities.AwsS3;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PlayerManager;
 import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.SafJNest;
@@ -37,11 +37,11 @@ public class PlaySound extends Command{
 
     public PlaySound(AwsS3 s3Client, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.s3Client = s3Client;
         this.sql = sql;
     }
@@ -190,7 +190,7 @@ public class PlaySound extends Command{
         else
             img = "mp3.png"; 
            
-        eb.setColor(new Color(255, 196, 0));
+        eb.setColor(Color.decode(App.color));
         eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
             
         File imgFile = new File("rsc" + File.separator + "img" + File.separator + img);

@@ -6,9 +6,14 @@
 
 package com.safjnest;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
 import java.util.HashMap;
 
-import javax.security.auth.login.LoginException;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.jagrosh.jdautilities.command.CommandClient;
@@ -46,10 +51,12 @@ import no.stelar7.api.r4j.basic.APICredentials;
  * @version 2.0
  */
 public class App extends ListenerAdapter {
-    private static boolean isCanary = true;
     private static JDA jda;
     private static String PREFIX;
     private static Activity activity;
+    public static String color;
+    private static String ownerID;
+    private static String helpWord;
 
     private static String token;
     private static String AWSAccesKey;
@@ -58,49 +65,58 @@ public class App extends ListenerAdapter {
     private static String ttsApiKey;
     private static String riotKey;
 
-    private static String hostName = "***REMOVED***";
-    private static String database = "***REMOVED***";
-    private static String user = "***REMOVED***";
-    private static String password = "***REMOVED***";
+    private static String hostName;
+    private static String database;
+    private static String user;
+    private static String password;
 
-    private static String bucket = "thebeebot";
+    private static String bucket;
 
-    private static final int maxBighi = 11700;
-    private static final int maxPrime = (int) Integer.valueOf(maxBighi/5).floatValue();
+    private static int maxPrime ;
 
     private static HashMap<String, String> tierOneLink = new HashMap<>();
 
     /**
      * Metodo principale del bot.
      * @param args
-     * @throws LoginException
      */
-    public static void main(String[] args) throws LoginException {
-        if(args.length > 0){
-            isCanary = Boolean.parseBoolean(args[0]);
+    public static void main(String[] args) {
+        boolean isCanary=(args.length>0)?0>1:1>0;
+
+        JSONParser parser = new JSONParser();
+        JSONObject settings = null, discordSettings = null, awsSettings = null, postgreSQLSettings = null;
+
+        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
+            settings = (JSONObject) parser.parse(reader);
+            settings = (JSONObject) settings.get((isCanary) ? "canary" : args[0]);
+            discordSettings = (JSONObject) settings.get("DiscordSettings");
+            awsSettings = (JSONObject) settings.get("AmazonAWS");
+            postgreSQLSettings = (JSONObject) settings.get("PostgreSQL");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        if(isCanary){
-            System.out.println("[MAIN] INFO Canary mode on");
-            token = "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g";
-            PREFIX = "$";
-            activity = Activity.playing("ANNODAM OIDOZIR IEIDOCROPE BEAMBUZL BILLY");
-            AWSAccesKey = "***REMOVED***";
-            AWSSecretKey = "***REMOVED***";
-            youtubeApiKey = "***REMOVED***";
-            ttsApiKey = "***REMOVED***";
-            riotKey ="***REMOVED***";
-        }
-        else{
-            System.out.println("[MAIN] INFO The beast is turning on!");
-            PREFIX = "p";
-            activity = Activity.playing("Outplaying other bots | " + PREFIX + "help");
-            token                 = args[1];
-            AWSAccesKey     = args[2];
-            AWSSecretKey   = args[3];
-            youtubeApiKey = args[4];
-            ttsApiKey         = args[5];
-            riotKey             = args[6];
-        }
+
+        
+        PREFIX = discordSettings.get("prefix").toString();
+        activity = Activity.playing(discordSettings.get("activity").toString());
+        token = discordSettings.get("discordToken").toString();
+        color = discordSettings.get("embedColor").toString();
+        ownerID = discordSettings.get("ownerID").toString();
+        helpWord = discordSettings.get("helpWord").toString();
+        
+        maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
+        AWSAccesKey = awsSettings.get("AWSAccesKey").toString();
+        AWSSecretKey = awsSettings.get("AWSSecretKey").toString();
+        bucket = awsSettings.get("AWSbucketName").toString();
+        
+        youtubeApiKey = settings.get("youtubeApiKey").toString();
+        ttsApiKey = settings.get("ttsApiKey").toString();
+        riotKey = settings.get("riotKey").toString();
+
+        hostName = postgreSQLSettings.get("HostName").toString();
+        database = postgreSQLSettings.get("database").toString();
+        user = postgreSQLSettings.get("user").toString();
+        password = postgreSQLSettings.get("password").toString();
 
         TTSHandler tts = new TTSHandler(ttsApiKey);
         PostgreSQL sql = new PostgreSQL(hostName, database, user, password);   
@@ -115,8 +131,6 @@ public class App extends ListenerAdapter {
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }  
-
-        //PlayerManager pm = new PlayerManager();
         
         TheListener listenerozzo = new TheListener(sql);
         jda = JDABuilder
@@ -129,11 +143,9 @@ public class App extends ListenerAdapter {
 
         CommandClientBuilder builder = new CommandClientBuilder();
         
-        
-
         builder.setPrefix(PREFIX);
-        builder.setHelpWord("helpme");
-        builder.setOwnerId("939876818465488926");
+        builder.setHelpWord(helpWord);
+        builder.setOwnerId(ownerID);
         builder.setActivity(activity);
                 
         //Audio
@@ -177,10 +189,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new SetVoice(sql));
 
         //Math
-        builder.addCommand(new Bighi(maxBighi));
         builder.addCommand(new Prime(maxPrime));
-        builder.addCommand(new DAC());
-        builder.addCommand(new FastestRoot());
         builder.addCommand(new Calc());
         builder.addCommand(new Dice());
 
@@ -207,13 +216,6 @@ public class App extends ListenerAdapter {
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
-              
-        tierOneLink.put("QZayYolcq-g", "MERIO EPRIA DUE ZERO DUE ZERO CAMERETTA EEEEEEEEEEEEEPPPPPPPPPPPPPPPPPPPRRRRRRRRRRRRRRRRRRIIIIIIIIIIIIIIIIIIAAAAAAAAAAAA");
-        tierOneLink.put("IaudNxuNtso", "MERIO EPRIA QUI COME UN COGLIONE A SFOGARSI I SENTIMINETI POKLVEWRE EEEEEEEEEEEPRIAAAAAAA LA LUCE DEL MEEEEEEERIO CON LE SUE RIME DA CAZZARO NE REPPER NE METALLARO NON È CHIARO LO STROZZINOIFHUWSHGFEIU0GHS0URGH");
-        tierOneLink.put("Ed8I24y8QW4", "MERIO EPRIA HA SCOPERTO IL RAP DA POCO NON HA SENSO FARE PROGETTI SE NON SAI FARE NIENTE LA MAFIA VULCANO O VESUIO LAVA IL MERIO COL FUOCO MEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERIO");
-        tierOneLink.put("kP6Dg-a3p0k", "MERIO EPRIA TI PARLA DELLA SUA CITTA HA LA PISTOLA REHUGHYUW HGTUY9FWRYUH8GHY8U NON HAI CAPITO UN CAZZO DALLA VITA REUHGWUHGHWRU FECCIA DELL'UMANIT; RWUHGWUHGHUWGHUWRGHYUWRGWSUYIRELIWRGUHL NON SI CAPISCE UN CAZZO OIDOZIFER9 CANEKE");
-        tierOneLink.put("D9G1VOjN_84", "IWAKE UP TO DE SOUND THE MUSIC THAT ALLWOA OOOOOOOOOOOH THE MISERTY, EVERYBODY WATNS OT BE MY ENBEMSYFWS=FGHEWUGTGWEG7 OHO RHTEUR08 7G9EGUH9TW9GUYH TW9");
-        tierOneLink.put("zvNfGg5vKTs", "POVERO GABBIANOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO NON HAI VOGLIUA DI VOLARE SOPRA UNA SCOGLUIERAAAAAAAAAAAAAAAAAAAA HAI PERDUOT LA COMPAGNAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA NON TIO GF8REWHUG A VIDEF TI CAPISC JAAAAAA PEKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK"); 
     }
 }
         

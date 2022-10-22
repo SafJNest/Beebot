@@ -7,7 +7,8 @@ import java.util.HashMap;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -24,11 +25,11 @@ public class Help extends Command {
      */
     public Help() {
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
     }
     /**
      * This method is called every time a member executes the command.
@@ -50,7 +51,7 @@ public class Help extends Command {
         eb.setTitle("📒INFO AND COMMAND📒", null);
         eb.setDescription("Current prefix is: **"+event.getClient().getPrefix()+"**"
         + ", you can get more information using: **"+event.getClient().getPrefix()+"help <nameCommand>.**");
-        eb.setColor(new Color(255, 196, 0));
+        eb.setColor(Color.decode(App.color));
         if(command.equals("")){
             String ss = "```\n";
             for(String k : commands.keySet()){

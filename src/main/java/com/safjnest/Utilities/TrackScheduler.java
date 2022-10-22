@@ -114,11 +114,11 @@ public class TrackScheduler extends AudioEventAdapter {
 
   @Override
   public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
-    System.out.println("sono qui keria");
+    System.out.println("Track exception");
   }
 
   @Override
   public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
-    System.out.println("sono qui guma");
+    System.out.println("Track stuck");
   }
 }
