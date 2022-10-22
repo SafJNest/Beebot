@@ -25,10 +25,10 @@ target/
 .vscode/
 l4j8cache/
 
-rsc/Upload
-rsc/tts
-rsc/SoundBoard
+rsc/Upload/*
+rsc/tts/*
+rsc/SoundBoard/*
 
 rsc/settings.json
 
-TODO
+/TODO
