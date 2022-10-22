@@ -29,6 +29,6 @@ rsc/Upload/*
 rsc/tts/*
 rsc/SoundBoard/*
 
-rsc/settings.json
+settings.json
 
 /TODO
