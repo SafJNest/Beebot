@@ -142,7 +142,8 @@ public class App extends ListenerAdapter {
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
-        
+        jda.upsertCommand("name", "wef").queue();
+        jda.getGuildById("608967318789160970").upsertCommand("fewfwef", "wef").queue();
         builder.setPrefix(PREFIX);
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
