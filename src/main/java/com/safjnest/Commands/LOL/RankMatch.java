@@ -4,7 +4,8 @@ import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PostgreSQL;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -26,11 +27,11 @@ public class RankMatch extends Command {
      */
     public RankMatch(R4J r, PostgreSQL sql  ){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.r = r;
         this.sql = sql;
     }
@@ -51,7 +52,7 @@ public class RankMatch extends Command {
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle("Partita di: " + s.getName());
-            builder.setColor(new Color(250,225,56));
+            builder.setColor(Color.decode(App.color));
             builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
             String blueSide = "";
             String redSide = "";

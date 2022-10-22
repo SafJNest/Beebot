@@ -9,7 +9,7 @@ import java.util.Map;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PostgreSQL;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -30,11 +30,11 @@ public class PlayedWith extends Command {
      */
     public PlayedWith(R4J r, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.r = r;
         this.sql = sql;
     }

@@ -1,4 +1,4 @@
-//TODO RIFARE QUESTA CLASSE DI MERDA INGUARADFBILE :D | mmh... dontt know about that chief
+//TODO RIFARE QUESTA CLASSE DI MERDA INGUARADFBILE :D | tu sei inguardabile
 package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
@@ -9,7 +9,8 @@ import java.util.Set;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.tts.Voices;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PlayerManager;
 import com.safjnest.Utilities.PostgreSQL;
 import com.safjnest.Utilities.SafJNest;
@@ -36,11 +37,11 @@ public class TTS extends Command{
     
     public TTS(TTSHandler tts, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.tts = tts;
         this.sql = sql;
         voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
@@ -170,7 +171,7 @@ public class TTS extends Command{
         eb.addField("Language", language, true);
         eb.addField("Voice", voice, true);
         String img = "tts.png";
-        eb.setColor(new Color(255, 196, 0));
+        eb.setColor(Color.decode(App.color));
             
 
         File path = new File("rsc" + File.separator + "img" + File.separator + img);

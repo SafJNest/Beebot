@@ -5,7 +5,7 @@ import java.util.Set;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SafJNest;
 
 /**
@@ -24,11 +24,11 @@ public class Calc extends Command{
 
     public Calc(){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
     }
 
     @Override
@@ -83,7 +83,7 @@ public class Calc extends Command{
                     fun = command;
                 }
                 switch(fun){
-                    case "log":
+                    case "ln":
                         event.reply(String.valueOf(Math.log(a)));
                         break;
                     case "sqrt":

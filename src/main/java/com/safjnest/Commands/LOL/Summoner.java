@@ -7,7 +7,8 @@ import java.util.Locale;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 /* 
 import net.rithms.riot.constant.Region;
 import net.rithms.riot.dto.Summoner.Summoner;
@@ -36,11 +37,11 @@ public class Summoner extends Command {
      */
     public Summoner(R4J r, PostgreSQL sql){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.r = r;
         this.sql = sql;
     }
@@ -76,7 +77,7 @@ public class Summoner extends Command {
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setAuthor(s.getName());
-            builder.setColor(new Color(250,225,56));
+            builder.setColor(Color.decode(App.color));
             builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
             

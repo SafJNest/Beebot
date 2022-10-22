@@ -13,7 +13,8 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.PlayerManager;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import org.json.simple.JSONArray;
@@ -43,11 +44,11 @@ public class PlayYoutube extends Command {
 
     public PlayYoutube(String youtubeApiKey, HashMap<String,String> tierOneLink){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.youtubeApiKey = youtubeApiKey;
         this.tierOneLink = tierOneLink;
     }
@@ -143,7 +144,7 @@ public class PlayYoutube extends Command {
         eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-        eb.setColor(new Color(255, 0, 0));
+        eb.setColor(Color.decode(App.color));
         eb.setDescription("[" + pm.getPlayer().getPlayingTrack().getInfo().title + "](" + pm.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + pm.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
         event.reply(eb.build());

@@ -5,7 +5,8 @@ import java.io.File;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -26,11 +27,11 @@ public class FreeChamp extends Command {
      */
     public FreeChamp(){
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
     }
 
     /**
@@ -42,7 +43,7 @@ public class FreeChamp extends Command {
         ChampionRotationInfo c = builder.getFreeToPlayRotation();
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName());
-        eb.setColor(new Color(250,225,56));
+        eb.setColor(Color.decode(App.color));
         eb.setTitle("List of free champion:");
         String s = "";
         for(StaticChampion ce : c.getFreeChampions()){

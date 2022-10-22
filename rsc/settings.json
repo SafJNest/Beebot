@@ -1,0 +1,93 @@
+{
+    "beebot": {
+        "DiscordSettings":{
+            "discordToken": "OTM4NDg3NDcwMzM5ODAxMTY5.GgeqCi.1fHPBYNb2GplXm5kVrNAt2pZI8JidXeJ70uzb4",
+            "embedColor": "#ffc400",
+            "prefix": "p",
+            "activity": "Outplaying other bots | p help\nhttps://github.com/SafJNest/TheBeeBox",
+            "ownerID": "938487470339801169",
+            "helpWord": "helpme",
+            "maxPrime": "11700",
+            "info":"[MAIN] INFO The beast is turning on!"
+        },
+        
+        "AmazonAWS":{
+            "AWSAccesKey": "AKIASJG3D4LS4UT7VPX4",
+            "AWSSecretKey": "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",
+            "AWSbucketName": "thebeebot"
+        },
+        
+        "PostgreSQL": {
+            "HostName": "ec2-54-247-137-184.eu-west-1.compute.amazonaws.com",
+            "database": "df52tpbes6100h",
+            "user": "rtfcxffinekosr",
+            "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
+        },
+
+        "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
+        "ttsApiKey": "d6199f5911f4493da571729f8127ce37",
+        "riotKey": "RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89"
+    },
+
+    "canary": {
+        "DiscordSettings":{
+            "discordToken": "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g",
+            "embedColor": "#ffc400",
+            "prefix": "$",
+            "activity": "IEIDO ANNODAM FAKER BULLY OIDOCROP DIO CANE ANIMALE | $ help",
+            "ownerID": "939876818465488926",
+            "helpWord": "helpme",
+            "maxPrime": "11700",
+            "info":"[MAIN] INFO Canary is turning on to implements extreme features!"
+            
+        },
+        
+        "AmazonAWS":{
+            "AWSAccesKey": "AKIASJG3D4LS4UT7VPX4",
+            "AWSSecretKey": "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",
+            "AWSbucketName": "thebeebot"
+        },
+        
+        "PostgreSQL": {
+            "HostName": "ec2-54-247-137-184.eu-west-1.compute.amazonaws.com",
+            "database": "df52tpbes6100h",
+            "user": "rtfcxffinekosr",
+            "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
+        },
+
+        "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
+        "ttsApiKey": "d6199f5911f4493da571729f8127ce37",
+        "riotKey": "RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89"
+    },
+
+    "beebot 2": {
+        "DiscordSettings":{
+            "discordToken": "OTgzMzE1MzM4ODg2Mjc5MjI5.Gq-wsr.Fdh33wlTAm9xsl73uO8Q4FcPEZbAdP5kbHIYmc",
+            "embedColor": "#ffc400",
+            "prefix": "%",
+            "activity": "Beebot's little brother | p help",
+            "ownerID": "939876818465488926",
+            "helpWord": "helpme",
+            "maxPrime": "11700",
+            "info":"[MAIN] INFO Beebot 2 is turning on to help the elder brother in case he dies!"
+            
+        },
+        
+        "AmazonAWS":{
+            "AWSAccesKey": "AKIASJG3D4LS4UT7VPX4",
+            "AWSSecretKey": "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",
+            "AWSbucketName": "thebeebot"
+        },
+        
+        "PostgreSQL": {
+            "HostName": "ec2-54-247-137-184.eu-west-1.compute.amazonaws.com",
+            "database": "df52tpbes6100h",
+            "user": "rtfcxffinekosr",
+            "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
+        },
+
+        "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
+        "ttsApiKey": "d6199f5911f4493da571729f8127ce37",
+        "riotKey": "RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89"
+    }
+}

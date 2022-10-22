@@ -6,7 +6,8 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
-import com.safjnest.Utilities.JSONReader;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 
@@ -24,11 +25,11 @@ public class UserInfo extends Command{
 
     public UserInfo() {
         this.name = this.getClass().getSimpleName();
-        this.aliases = new JSONReader().getArray(this.name, "alias");
-        this.help = new JSONReader().getString(this.name, "help");
-        this.cooldown = new JSONReader().getCooldown(this.name);
-        this.category = new Category(new JSONReader().getString(this.name, "category"));
-        this.arguments = new JSONReader().getString(this.name, "arguments");
+        this.aliases = new CommandsHandler().getArray(this.name, "alias");
+        this.help = new CommandsHandler().getString(this.name, "help");
+        this.cooldown = new CommandsHandler().getCooldown(this.name);
+        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
+        this.arguments = new CommandsHandler().getString(this.name, "arguments");
     }
 
     @Override
@@ -57,7 +58,7 @@ public class UserInfo extends Command{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT "+theGuy.getName()+"** :busts_in_silhouette:");
         eb.setThumbnail(theGuy.getAvatarUrl());
-        eb.setColor(new Color(116, 139, 151));
+        eb.setColor(Color.decode(App.color));
 
         eb.addField("Name", "```" + theGuy.getAsTag() + "```", true);
         eb.addField("ID", "```" + theGuy.getId() + "```" , true);
