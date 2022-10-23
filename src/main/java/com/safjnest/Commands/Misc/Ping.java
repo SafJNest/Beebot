@@ -1,8 +1,11 @@
 package com.safjnest.Commands.Misc;
 
+<<<<<<< Updated upstream
 
 import java.util.Map;
 
+=======
+>>>>>>> Stashed changes
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -24,7 +27,11 @@ import net.dv8tion.jda.api.utils.data.DataObject;
  * 
  * @since 1.0
  */
+<<<<<<< Updated upstream
 public class Ping extends SlashCommand{
+=======
+public class Ping extends Command {
+>>>>>>> Stashed changes
 
     /**
      * Default constructor for the class.
@@ -50,6 +57,11 @@ public class Ping extends SlashCommand{
         */
         e.deferReply().addContent(String.valueOf(System.currentTimeMillis() - time)).queue();
     }
+<<<<<<< Updated upstream
    
     
 }
+=======
+}
+
+>>>>>>> Stashed changes
