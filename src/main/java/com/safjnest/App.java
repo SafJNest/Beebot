@@ -143,13 +143,11 @@ public class App extends ListenerAdapter {
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
-        jda.upsertCommand("name", "wef").queue();
-        jda.getGuildById("608967318789160970").upsertCommand("fewfwef", "wef").queue();
         builder.setPrefix(PREFIX);
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
-        builder.forceGuildOnly("474935164451946506");
+       
                 
         //Audio
         builder.addCommand(new Connect());
@@ -218,6 +216,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new PlayedWith(riotApi, sql));
 
         builder.addSlashCommand(new PingCommand());
+        builder.addSlashCommand(new MoveSlash());
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
