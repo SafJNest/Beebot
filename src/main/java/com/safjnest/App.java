@@ -96,7 +96,6 @@ public class App extends ListenerAdapter {
             e.printStackTrace();
         }
 
-        
         PREFIX = discordSettings.get("prefix").toString();
         activity = Activity.playing(discordSettings.get("activity").toString());
         token = discordSettings.get("discordToken").toString();
@@ -117,6 +116,8 @@ public class App extends ListenerAdapter {
         database = postgreSQLSettings.get("database").toString();
         user = postgreSQLSettings.get("user").toString();
         password = postgreSQLSettings.get("password").toString();
+
+        System.out.println(discordSettings.get("info"));
 
         TTSHandler tts = new TTSHandler(ttsApiKey);
         PostgreSQL sql = new PostgreSQL(hostName, database, user, password);   
@@ -148,6 +149,7 @@ public class App extends ListenerAdapter {
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
+        builder.forceGuildOnly("474935164451946506");
                 
         //Audio
         builder.addCommand(new Connect());
@@ -214,6 +216,8 @@ public class App extends ListenerAdapter {
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
         builder.addCommand(new PlayedWith(riotApi, sql));
+
+        builder.addSlashCommand(new PingCommand());
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
