@@ -1,6 +1,8 @@
-package com.safjnest.Commands.Misc;
+package com.safjnest.Commands.ManageMembers;
 
-import java.util.Collections;
+
+import java.util.Arrays;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -8,11 +10,15 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-public class PingCommand extends SlashCommand {
+public class MoveSlash extends SlashCommand {
     
-    public PingCommand() {
-        this.name = "ping";
-        this.help = "Performs a ping to see the bot's delay";
+    public MoveSlash() {
+        this.name = "move";
+        this.options = Arrays.asList(
+                new OptionData(OptionType.STRING, "fwe", "gwr")
+                    .addChoice("fart ex", "fart ex"), 
+                new OptionData(OptionType.CHANNEL, "to", "persone da spostare"));
+        this.help = "Consente di spostare le persone e mandarle a fare in curghbuhrugw";
     }
     
     @Override
