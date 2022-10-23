@@ -1,6 +1,7 @@
 package com.safjnest.Commands.ManageGuild;
 
 import java.awt.Color;
+import java.time.ZoneId;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -59,7 +60,8 @@ public class ChannelInfo extends Command {
             eb.addField("Type", "```" + v.getType()+ "```", true);   
             eb.addField("Category", "```" + v.getParentCategory().getName() + "```", true);   
 
-            eb.addField("Created", "```" + DateHandler.formatDate(v.getTimeCreated())+ "```", false);
+            event.reply(ZoneId.getAvailableZoneIds().toString());
+            eb.addField("Created", "```" + v.getTimeCreated().atZoneSimilarLocal(ZoneId.of("Europe/Rome")) + " | " + DateHandler.formatDate(v.getTimeCreated())+ "```", false);
         }else{
             c = event.getGuild().getTextChannelById(gc.getId());
             eb.addField("Channel name", "```" + c.getName() + "```", true);   
@@ -71,8 +73,8 @@ public class ChannelInfo extends Command {
                             :c.getTopic()) 
                        + "```", false); 
 
-            eb.addField("Type", "```" + c.getType()+ "```", true);   
-            eb.addField("Category", "```" + c.getParentCategory().getName() + "```", true);   
+            eb.addField("Type", "```" + c.getType() + "```", true);
+            eb.addField("Category", "```" + c.getParentCategory().getName() + "```", true);
 
             eb.addField("Channel created on", "```" + DateHandler.formatDate(c.getTimeCreated()) + "```", false);
         } 
