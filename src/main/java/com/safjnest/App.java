@@ -28,6 +28,11 @@ import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 
+import com.safjnest.SlashCommands.Math.*;
+import com.safjnest.SlashCommands.Misc.*;
+
+
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -199,24 +204,40 @@ public class App extends ListenerAdapter {
         builder.addCommand(new RandomMove());
 
         //Misc
-        builder.addSlashCommand(new Ping());
+        builder.addCommand(new Ping());
         builder.addCommand(new BugsNotifier());
         builder.addCommand(new Ram());
         builder.addCommand(new Help());
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
-        builder.addSlashCommand(new ThreadCounter());
+        builder.addCommand(new ThreadCounter());
 
         builder.addCommand(new Champ());
-        builder.addSlashCommand(new Summoner(riotApi, sql));
+        builder.addCommand(new Summoner(riotApi, sql));
         builder.addCommand(new FreeChamp());
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
         builder.addCommand(new PlayedWith(riotApi, sql));
 
-        builder.addSlashCommand(new MoveSlash());
+        /*
+        * INSANE SLASH COMMAND DECLARATION
+        */
 
+        //Math
+        builder.addSlashCommand(new PrimeSlash(maxPrime));
+        builder.addSlashCommand(new DiceSlash());
+
+        //Misc
+        builder.addSlashCommand(new PingSlash());
+        builder.addSlashCommand(new BugsNotifierSlash());
+        builder.addSlashCommand(new RamSlash());
+        builder.addSlashCommand(new HelpSlash());
+        builder.addSlashCommand(new RawMessageSlash());
+        builder.addSlashCommand(new ThreadCounterSlash());
+        builder.addSlashCommand(new MsgSlash());
+        builder.addSlashCommand(new InviteBotSlash());
+        builder.addSlashCommand(new AnonymSlash());
         CommandClient client = builder.build();
         jda.addEventListener(client);
     }
