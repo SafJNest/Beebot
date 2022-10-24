@@ -1,21 +1,21 @@
-package com.safjnest.Commands.Misc;
+package com.safjnest.SlashCommands.Misc;
 
 import org.apache.commons.lang3.ThreadUtils;
 
-import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.3
  */
-public class ThreadCounter extends Command{
+public class ThreadCounterSlash extends SlashCommand{
     /**
      * Default constructor for the class.
      */
-    public ThreadCounter(){
-        this.name = this.getClass().getSimpleName();
+    public ThreadCounterSlash(){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
@@ -26,12 +26,12 @@ public class ThreadCounter extends Command{
      * This method is called every time a member executes the command.
     */
      @Override
-    protected void execute(CommandEvent e) {
+    protected void execute(SlashCommandEvent e) {
         double cont = 0.0;
         for (Thread t : ThreadUtils.getAllThreads()) {
             if(t.getName().startsWith("lava"))
                 cont++;
         }
-        e.reply("Active LavaPlayer's Threads: " + cont +"\n" +e.getPrefix()+"p executed: " + cont/3);
+        e.deferReply(true).addContent("Active LavaPlayer's Threads: " + cont +"\n").queue();
     }
 }
