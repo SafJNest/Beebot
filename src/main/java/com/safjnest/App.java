@@ -217,7 +217,6 @@ public class App extends ListenerAdapter {
         builder.addCommand(new SetUser(riotApi, sql));
         builder.addCommand(new PlayedWith(riotApi, sql));
 
-        builder.addSlashCommand(new PingCommand());
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
