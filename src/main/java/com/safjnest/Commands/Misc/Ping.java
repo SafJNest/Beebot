@@ -19,7 +19,7 @@ public class Ping extends SlashCommand{
      * Default constructor for the class.
      */
     public Ping(){
-        this.name = this.getClass().getSimpleName();
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
@@ -30,14 +30,12 @@ public class Ping extends SlashCommand{
      * This method is called every time a member executes the command.
      */
     @Override
-    protected void execute(SlashCommandEvent e) {
+    public void execute(SlashCommandEvent event) {
+        
         long time = System.currentTimeMillis();
-        /* 
-        e.reply("Pong!", response -> {
-            response.editMessageFormat("Pong: %d ms", System.currentTimeMillis() - time).queue();
-        });
-        */
-        e.deferReply().addContent(String.valueOf(System.currentTimeMillis() - time)).queue();
+        event.deferReply(true).queue(
+            hook -> hook.editOriginalFormat("Pong: %d ms ", System.currentTimeMillis() - time).queue()
+        );
     }
 
    

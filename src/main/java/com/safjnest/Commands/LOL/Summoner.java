@@ -3,10 +3,11 @@ package com.safjnest.Commands.LOL;
 import java.awt.Color;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Arrays;
 import java.util.Locale;
-
-import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
+    
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
 /* 
@@ -18,6 +19,8 @@ import net.rithms.riot.api.RiotApiException;
 import com.safjnest.Utilities.PostgreSQL;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
@@ -28,7 +31,7 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class Summoner extends Command {
+public class Summoner extends SlashCommand {
     
     private R4J r;
     private PostgreSQL sql;
@@ -36,12 +39,13 @@ public class Summoner extends Command {
      * Constructor
      */
     public Summoner(R4J r, PostgreSQL sql){
-        this.name = this.getClass().getSimpleName();
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.options = Arrays.asList(new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", false));
         this.r = r;
         this.sql = sql;
     }
@@ -50,29 +54,25 @@ public class Summoner extends Command {
      * This method is called every time a member executes the command.
      */
 	@Override
-	protected void execute(CommandEvent event) {
-        String args = event.getArgs();
+	protected void execute(SlashCommandEvent event) {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        if(args.equals("")){
-            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
+        if(event.getOption("user") == null){
+            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
             } catch (Exception e) {
-               event.reply("You dont have connected your Riot account.");
+               event.deferReply().addContent("You dont have connected your Riot account.").queue();
                return;
             }
-        }
-        else if(event.getMessage().getMentions().getMembers().size() != 0){
-            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMessage().getMentions().getMembers().get(0).getId() + "';";
+        }else{
             try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
+                s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("user").getAsString());
             } catch (Exception e) {
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
+                event.deferReply().addContent("Didn't found the user you asked for").queue();
                 return;
             }
-        }else{
-            s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
         }
+        
         
         try {
             EmbedBuilder builder = new EmbedBuilder();
@@ -127,7 +127,7 @@ public class Summoner extends Command {
                 activity = "Not in a game";
             }
             builder.addField("Activity", activity, true);
-            event.reply(builder.build());
+            event.replyEmbeds(builder.build()).queue();
             
         } catch (Exception e) {
             e.printStackTrace();

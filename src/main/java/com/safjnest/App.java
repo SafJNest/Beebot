@@ -199,23 +199,22 @@ public class App extends ListenerAdapter {
         builder.addCommand(new RandomMove());
 
         //Misc
-        builder.addCommand(new Ping());
+        builder.addSlashCommand(new Ping());
         builder.addCommand(new BugsNotifier());
         builder.addCommand(new Ram());
         builder.addCommand(new Help());
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
-        builder.addCommand(new ThreadCounter());
+        builder.addSlashCommand(new ThreadCounter());
 
         builder.addCommand(new Champ());
-        builder.addCommand(new Summoner(riotApi, sql));
+        builder.addSlashCommand(new Summoner(riotApi, sql));
         builder.addCommand(new FreeChamp());
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
         builder.addCommand(new PlayedWith(riotApi, sql));
 
-        builder.addSlashCommand(new PingCommand());
         builder.addSlashCommand(new MoveSlash());
 
         CommandClient client = builder.build();
