@@ -27,7 +27,9 @@ import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
-
+import com.safjnest.Commands.ManageMembers.Move;
+import com.safjnest.SlashCommands.LOL.*;
+import com.safjnest.SlashCommands.ManageMembers.*;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
 
@@ -223,6 +225,23 @@ public class App extends ListenerAdapter {
         /*
         * INSANE SLASH COMMAND DECLARATION
         */
+
+        builder.addSlashCommand(new SummonerSlash(riotApi, sql));
+        builder.addSlashCommand(new FreeChampSlash());
+        builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
+        builder.addSlashCommand(new SetUserSlash(riotApi, sql));
+        builder.addSlashCommand(new PlayedWithSlash(riotApi, sql));
+
+        //Manage Member
+        builder.addSlashCommand(new BanSlash());
+        builder.addSlashCommand(new UnbanSlash());
+        builder.addSlashCommand(new KickSlash());
+        //builder.addSlashCommand(new Move(sql));
+        builder.addSlashCommand(new MuteSlash());
+        builder.addSlashCommand(new UnMuteSlash());      
+        builder.addSlashCommand(new ImageSlash());
+        builder.addSlashCommand(new PermissionsSlash());
+        builder.addSlashCommand(new ModifyNicknameSlash());
 
         //Math
         builder.addSlashCommand(new PrimeSlash(maxPrime));
