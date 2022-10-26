@@ -29,6 +29,7 @@ import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 import com.safjnest.Commands.ManageMembers.Move;
 import com.safjnest.SlashCommands.LOL.*;
+import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
@@ -226,6 +227,18 @@ public class App extends ListenerAdapter {
         * INSANE SLASH COMMAND DECLARATION
         */
 
+        //Manage Guild
+        builder.addSlashCommand(new ChannelInfoSlash());
+        builder.addSlashCommand(new ClearSlash());
+        builder.addSlashCommand(new ServerInfoSlash());
+        builder.addSlashCommand(new UserInfoSlash());
+        builder.addSlashCommand(new EmojiInfoSlash());
+        builder.addSlashCommand(new SetWelcomeSlash(sql));
+        builder.addSlashCommand(new SetVoiceSlash(sql));
+
+
+
+        //lol
         builder.addSlashCommand(new SummonerSlash(riotApi, sql));
         builder.addSlashCommand(new FreeChampSlash());
         builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
