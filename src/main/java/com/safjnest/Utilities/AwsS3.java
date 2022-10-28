@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
 import org.apache.commons.io.FileUtils;
 
@@ -195,6 +196,20 @@ public class AwsS3 {
     }
 
     public S3Object downloadFile(String path, String fileName, CommandEvent event) {
+        try {
+            S3Object fullObject = s3Client.getObject(
+                new GetObjectRequest(bucket, fileName));
+            S3ObjectInputStream s3is = fullObject.getObjectContent();
+            FileUtils.copyInputStreamToFile(s3is, new File(path + fileName + "." + fullObject.getObjectMetadata().getUserMetaDataOf("format")));
+            s3is.close();
+            return fullObject;
+        } catch (AmazonClientException | IOException exception) {
+            exception.printStackTrace();
+            return null;
+        }
+    }
+
+    public S3Object downloadFile(String path, String fileName, SlashCommandEvent event) {
         try {
             S3Object fullObject = s3Client.getObject(
                 new GetObjectRequest(bucket, fileName));

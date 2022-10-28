@@ -28,6 +28,7 @@ import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 import com.safjnest.Commands.ManageMembers.Move;
+import com.safjnest.SlashCommands.Audio.PlaySoundSlash;
 import com.safjnest.SlashCommands.LOL.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
@@ -227,6 +228,8 @@ public class App extends ListenerAdapter {
         * INSANE SLASH COMMAND DECLARATION
         */
 
+        //audio
+        builder.addSlashCommand(new PlaySoundSlash(s3Client, sql));
         //Manage Guild
         builder.addSlashCommand(new ChannelInfoSlash());
         builder.addSlashCommand(new ClearSlash());

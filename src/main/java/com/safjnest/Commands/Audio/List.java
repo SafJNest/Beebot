@@ -44,7 +44,13 @@ public class List extends Command{
         message.addActionRow(keria1, keria2, keria3, keria4, keria5);
         event.reply(message.build());
     }
-
+    /*
+     * 0 id
+     * 1 name
+     * 2 guild
+     * 3 user id
+     * 4 extension
+     */
     public static String getListLexo(JDA jda, PostgreSQL sql, String serverId){
         String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + serverId + "';";
         return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
