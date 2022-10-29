@@ -112,7 +112,7 @@ public class SafJNest extends Thread {
     }
 
     public static double abs(double x) {
-        return (x > 0) ? x : -x;
+        return x>0?x:-x;
     }
 
     public static BigInteger randomBighi(int numBits) {
@@ -193,5 +193,13 @@ public class SafJNest extends Thread {
         if(formattedTime.startsWith("00:"))
             formattedTime = formattedTime.substring(3);
         return formattedTime;
+    }
+    
+    public static double factorial(double n){
+        double fact = 1;
+        for (int i = 2; i <= n; i++) {
+            fact *= i;
+        }
+        return fact;
     }
 }
