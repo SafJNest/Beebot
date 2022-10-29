@@ -5,11 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import com.amazonaws.services.s3.model.S3Object;
-import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.App;
@@ -25,7 +22,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -51,14 +47,8 @@ public class PlaySoundSlash extends SlashCommand{
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.s3Client = s3Client;
         this.sql = sql;
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound;";
-        ArrayList<Choice> choices = new ArrayList<>();
-        for(ArrayList<String> arr :  sql.getTuple(query, 5)){
-            choices.add(new Choice(arr.get(1), arr.get(0)));
-        }
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sound", "Sound to play", true)
-            .addChoices(choices));
+            new OptionData(OptionType.STRING, "sound", "Sound to play", true));
     }
 
     @Override
