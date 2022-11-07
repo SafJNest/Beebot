@@ -29,7 +29,7 @@
 
     "list":{
         "alias" : ["papyrus", "paper", "listoide"],
-        "help"  : "Display a list with all the sound in a server.\nUsing these arguments you can get:\nme = all the sounds you have uploaded.\nuser @user/IDuser = all the sounds a user has upload.\nglobal = all the sounds in the DB.",
+        "help"  : "Display a list with all the sound in a server.",
         "category" : "Audio",
         "arguments" : "[CommandName] | [me] | [user @user/IDuser] | [global]"
     },
