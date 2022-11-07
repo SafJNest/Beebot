@@ -27,6 +27,15 @@ import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
+import com.safjnest.Commands.ManageMembers.Move;
+import com.safjnest.SlashCommands.Audio.*;
+import com.safjnest.SlashCommands.LOL.*;
+import com.safjnest.SlashCommands.ManageGuild.*;
+import com.safjnest.SlashCommands.ManageMembers.*;
+import com.safjnest.SlashCommands.Math.*;
+import com.safjnest.SlashCommands.Misc.*;
+
+
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -81,6 +90,8 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
+        SafJNest.loadingBee(4);
+        
         boolean isCanary=(args.length>0)?0>1:1>0;
 
         JSONParser parser = new JSONParser();
@@ -214,7 +225,63 @@ public class App extends ListenerAdapter {
         builder.addCommand(new SetUser(riotApi, sql));
         builder.addCommand(new PlayedWith(riotApi, sql));
 
+        /*
+        * INSANE SLASH COMMAND DECLARATION
+        */
 
+        //audio
+        builder.addSlashCommand(new ConnectSlash());
+        builder.addSlashCommand(new DeleteSoundSlash(s3Client, sql));
+        builder.addSlashCommand(new DisconnectSlash());
+        builder.addSlashCommand(new DownloadSoundSlash(s3Client, sql));
+        builder.addSlashCommand(new ListSlash(sql));
+        builder.addSlashCommand(new PlayYoutubeSlash(youtubeApiKey, tierOneLink));
+        builder.addSlashCommand(new PlaySoundSlash(s3Client, sql));
+        builder.addSlashCommand(new UploadSlash(s3Client, sql));
+        builder.addSlashCommand(new TTSSlash(tts, sql));
+        builder.addSlashCommand(new StopSlash());
+        
+        //Manage Guild
+        builder.addSlashCommand(new ChannelInfoSlash());
+        builder.addSlashCommand(new ClearSlash());
+        builder.addSlashCommand(new ServerInfoSlash());
+        builder.addSlashCommand(new UserInfoSlash());
+        builder.addSlashCommand(new EmojiInfoSlash());
+        builder.addSlashCommand(new SetWelcomeSlash(sql));
+        builder.addSlashCommand(new SetVoiceSlash(sql));
+
+        //lol
+        builder.addSlashCommand(new SummonerSlash(riotApi, sql));
+        builder.addSlashCommand(new FreeChampSlash());
+        builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
+        builder.addSlashCommand(new SetUserSlash(riotApi, sql));
+        builder.addSlashCommand(new PlayedWithSlash(riotApi, sql));
+
+        //Manage Member
+        builder.addSlashCommand(new BanSlash());
+        builder.addSlashCommand(new UnbanSlash());
+        builder.addSlashCommand(new KickSlash());
+        builder.addSlashCommand(new MoveSlash());
+        builder.addSlashCommand(new MuteSlash());
+        builder.addSlashCommand(new UnMuteSlash());      
+        builder.addSlashCommand(new ImageSlash());
+        builder.addSlashCommand(new PermissionsSlash());
+        builder.addSlashCommand(new ModifyNicknameSlash());
+
+        //Math
+        builder.addSlashCommand(new PrimeSlash(maxPrime));
+        builder.addSlashCommand(new DiceSlash());
+
+        //Misc
+        builder.addSlashCommand(new PingSlash());
+        builder.addSlashCommand(new BugsNotifierSlash());
+        builder.addSlashCommand(new RamSlash());
+        builder.addSlashCommand(new HelpSlash());
+        builder.addSlashCommand(new RawMessageSlash());
+        builder.addSlashCommand(new ThreadCounterSlash());
+        builder.addSlashCommand(new MsgSlash());
+        builder.addSlashCommand(new InviteBotSlash());
+        builder.addSlashCommand(new AnonymSlash());
         CommandClient client = builder.build();
         jda.addEventListener(client);
     }
