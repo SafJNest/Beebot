@@ -1,12 +1,12 @@
-package com.safjnest.Commands.Audio;
+package com.safjnest.SlashCommands.Audio;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PostgreSQL;
 
@@ -19,11 +19,11 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
  * 
  * @since 1.1
  */
-public class List extends Command{
+public class ListSlash extends SlashCommand{
     private PostgreSQL sql;
 
-    public List(PostgreSQL sql){
-        this.name = this.getClass().getSimpleName();;
+    public ListSlash(PostgreSQL sql){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
@@ -33,7 +33,7 @@ public class List extends Command{
     }
 
 	@Override
-	protected void execute(CommandEvent event) {
+	protected void execute(SlashCommandEvent event) {
         Button keria1 = Button.primary("lexo", "Server");
         Button keria2 = Button.primary("idOrder", "ID Order");
         Button keria3 = Button.primary("mostPlayed", "Most played");
@@ -42,7 +42,7 @@ public class List extends Command{
         MessageCreateBuilder message = new MessageCreateBuilder();
         message.setContent(getListLexo(event.getJDA(), sql, event.getGuild().getId()));
         message.addActionRow(keria1, keria2, keria3, keria4, keria5);
-        event.reply(message.build());
+        event.deferReply().applyData(message.build()).queue();
     }
     /*
      * 0 id
