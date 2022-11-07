@@ -158,7 +158,6 @@ public class App extends ListenerAdapter {
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
-       
                 
         //Audio
         builder.addCommand(new Connect());
@@ -241,6 +240,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new UploadSlash(s3Client, sql));
         builder.addSlashCommand(new TTSSlash(tts, sql));
         builder.addSlashCommand(new StopSlash());
+        
         //Manage Guild
         builder.addSlashCommand(new ChannelInfoSlash());
         builder.addSlashCommand(new ClearSlash());
@@ -249,8 +249,6 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new EmojiInfoSlash());
         builder.addSlashCommand(new SetWelcomeSlash(sql));
         builder.addSlashCommand(new SetVoiceSlash(sql));
-
-
 
         //lol
         builder.addSlashCommand(new SummonerSlash(riotApi, sql));
