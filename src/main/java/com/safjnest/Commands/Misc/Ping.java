@@ -11,6 +11,7 @@ import com.safjnest.Utilities.CommandsHandler;
  * 
  * @since 1.0
  */
+
 public class Ping extends Command {
 
     /**
