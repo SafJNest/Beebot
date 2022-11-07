@@ -29,7 +29,8 @@ public class MoveSlash extends SlashCommand{
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "user", "User to move", true),
-            new OptionData(OptionType.CHANNEL, "destroom", "Destination Room", false),
+            new OptionData(OptionType.CHANNEL, "destroom", "Destination Room", false)
+                .setChannelTypes(ChannelType.VOICE),
             new OptionData(OptionType.USER, "destuser", "Destination User", false));
     }
 
@@ -37,10 +38,7 @@ public class MoveSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         User theGuy = event.getOption("user").getAsUser();
         VoiceChannel channel = null;
-        if(event.getGuild().getMemberById(theGuy.getId()).getVoiceState().getChannel() == null){
-            event.deferReply(true).addContent(theGuy.getName() + " needs to be in a voice channel to be moved.").queue();
-            return;
-        }
+        
         if(event.getOption("destroom") != null){
             if(event.getOption("destroom").getChannelType() != ChannelType.VOICE){
                 event.deferReply(true).addContent("Select a voice channel.").queue();
