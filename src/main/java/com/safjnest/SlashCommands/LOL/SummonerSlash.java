@@ -56,6 +56,7 @@ public class SummonerSlash extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        event.deferReply(true).queue();
         if(event.getOption("user") == null){
             String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
             try {
@@ -127,7 +128,7 @@ public class SummonerSlash extends SlashCommand {
                 activity = "Not in a game";
             }
             builder.addField("Activity", activity, true);
-            event.replyEmbeds(builder.build()).queue();
+            event.getHook().editOriginalEmbeds(builder.build()).queue();
             
         } catch (Exception e) {
             e.printStackTrace();

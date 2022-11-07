@@ -47,6 +47,7 @@ public class RankMatchSlash extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        event.deferReply(true).queue();
         if(event.getOption("user") == null){
             String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
             try {
@@ -87,7 +88,7 @@ public class RankMatchSlash extends SlashCommand {
             }
             builder.addField("**BLUE SIDE**", blueSide, false);
             builder.addField("**RED SIDE**", redSide, true);
-            event.deferReply(true).addEmbeds(builder.build()).queue();
+            event.getHook().editOriginalEmbeds(builder.build()).queue();
             
         } catch (Exception e) {
             event.reply(s.getName() + " is not in a match.");

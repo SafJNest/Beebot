@@ -28,7 +28,7 @@ import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 import com.safjnest.Commands.ManageMembers.Move;
-import com.safjnest.SlashCommands.Audio.PlaySoundSlash;
+import com.safjnest.SlashCommands.Audio.*;
 import com.safjnest.SlashCommands.LOL.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
@@ -231,7 +231,16 @@ public class App extends ListenerAdapter {
         */
 
         //audio
+        builder.addSlashCommand(new ConnectSlash());
+        builder.addSlashCommand(new DeleteSoundSlash(s3Client, sql));
+        builder.addSlashCommand(new DisconnectSlash());
+        builder.addSlashCommand(new DownloadSoundSlash(s3Client, sql));
+        builder.addSlashCommand(new ListSlash(sql));
+        builder.addSlashCommand(new PlayYoutubeSlash(youtubeApiKey, tierOneLink));
         builder.addSlashCommand(new PlaySoundSlash(s3Client, sql));
+        builder.addSlashCommand(new UploadSlash(s3Client, sql));
+        builder.addSlashCommand(new TTSSlash(tts, sql));
+        builder.addSlashCommand(new StopSlash());
         //Manage Guild
         builder.addSlashCommand(new ChannelInfoSlash());
         builder.addSlashCommand(new ClearSlash());
@@ -254,7 +263,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new BanSlash());
         builder.addSlashCommand(new UnbanSlash());
         builder.addSlashCommand(new KickSlash());
-        //builder.addSlashCommand(new Move(sql));
+        builder.addSlashCommand(new MoveSlash());
         builder.addSlashCommand(new MuteSlash());
         builder.addSlashCommand(new UnMuteSlash());      
         builder.addSlashCommand(new ImageSlash());
