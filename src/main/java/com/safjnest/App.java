@@ -90,7 +90,7 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
-        SafJNest.loadingBee(4);
+        //SafJNest.loadingBee(4);
         
         boolean isCanary=(args.length>0)?0>1:1>0;
 
@@ -271,6 +271,7 @@ public class App extends ListenerAdapter {
         //Math
         builder.addSlashCommand(new PrimeSlash(maxPrime));
         builder.addSlashCommand(new DiceSlash());
+        builder.addSlashCommand(new FunctionSlash());
 
         //Misc
         builder.addSlashCommand(new PingSlash());
