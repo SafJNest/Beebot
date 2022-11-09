@@ -83,6 +83,8 @@ public class App extends ListenerAdapter {
 
     private static int maxPrime ;
 
+    public static HashMap<String, String> guild_prefixes = new HashMap<>();
+
     private static HashMap<String, String> tierOneLink = new HashMap<>();
 
     /**
@@ -181,6 +183,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new EmojiInfo());
         builder.addCommand(new InviteBot());
         builder.addCommand(new ListGuild());
+        builder.addCommand(new ChangePrefix(sql));
 
         //Manage Member
         builder.addCommand(new Ban());
@@ -285,6 +288,8 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new AnonymSlash());
         CommandClient client = builder.build();
         jda.addEventListener(client);
+
+        //TODO fai i prefissi
     }
 }
         
