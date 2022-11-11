@@ -1,5 +1,6 @@
-package com.safjnest.Commands.LOL;
+package com.safjnest.SlashCommands.LOL;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -7,11 +8,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PostgreSQL;
 
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.impl.R4J;
@@ -21,20 +24,25 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class PlayedWith extends Command {
+public class LastMatchesSlash extends SlashCommand {
     private R4J r;
     private PostgreSQL sql;
     
     /**
      * Constructor
      */
-    public PlayedWith(R4J r, PostgreSQL sql){
-        this.name = this.getClass().getSimpleName();
+    public LastMatchesSlash(R4J r, PostgreSQL sql){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.options = Arrays.asList(
+            new OptionData(OptionType.INTEGER, "ngames", "Number of games to analyze", true)
+                .setMaxValue(20)
+                .setMinValue(1),
+            new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", false));
         this.r = r;
         this.sql = sql;
     }
@@ -43,40 +51,25 @@ public class PlayedWith extends Command {
      * This method is called every time a member executes the command.
      */
 	@Override
-	protected void execute(CommandEvent event) {
+	protected void execute(SlashCommandEvent event) {
+        event.deferReply(true).queue();
         HashMap<String, Integer> played = new HashMap<>();
-        int gamesToAnalyze = 0;
-        String args = event.getArgs();
+        int gamesToAnalyze = event.getOption("ngames").getAsInt();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        if(event.getMessage().getMentions().getMembers().size() != 0){
-            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMessage().getMentions().getMembers().get(0).getId() + "';";
+        if(event.getOption("user") == null){
+            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
-                gamesToAnalyze = (event.getArgs().split(" ").length==1)?20:Integer.parseInt(event.getArgs().split(" ",2)[1]);
             } catch (Exception e) {
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
-                return;
+               event.deferReply().addContent("You dont have connected your Riot account.").queue();
+               return;
             }
         }else{
             try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
-                if(s == null){
-                    s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args.split(" ")[0]);
-                    gamesToAnalyze = Integer.parseInt(event.getArgs().split(" ",2)[1]);
-                   if(s == null)
-                    throw new Exception(); 
-                }else{
-                    gamesToAnalyze = 20;
-                }
+                s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("user").getAsString());
             } catch (Exception e) {
-                String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
-                gamesToAnalyze = (event.getArgs().split(" ").length==0)?20:Integer.parseInt(event.getArgs());
-            } catch (Exception e1) {
-               event.reply("You dont have connected your Riot account.");
-               return;
-            }
+                event.deferReply().addContent("Didn't found the user you asked for").queue();
+                return;
             }
         }
         int gamesNumber = gamesToAnalyze;
@@ -103,7 +96,6 @@ public class PlayedWith extends Command {
                    gamesNumber = gamesNumber - 1;
                 }
             }
-            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -115,7 +107,7 @@ public class PlayedWith extends Command {
         }
         message+="\nThis command could be bugged, if you see something weird ask to the extreme main sup 1v9 machine to fix";
         
-        event.reply(message);
+        event.getHook().editOriginal(message).queue();
 	}
 
     public static HashMap<String, Integer>

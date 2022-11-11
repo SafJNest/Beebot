@@ -226,7 +226,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new FreeChamp());
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
-        builder.addCommand(new PlayedWith(riotApi, sql));
+        builder.addCommand(new LastMatches(riotApi, sql));
 
         /*
         * INSANE SLASH COMMAND DECLARATION
@@ -258,7 +258,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new FreeChampSlash());
         builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
         builder.addSlashCommand(new SetUserSlash(riotApi, sql));
-        builder.addSlashCommand(new PlayedWithSlash(riotApi, sql));
+        builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
 
         //Manage Member
         builder.addSlashCommand(new BanSlash());
