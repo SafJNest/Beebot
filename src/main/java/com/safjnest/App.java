@@ -9,13 +9,16 @@ package com.safjnest;
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.HashMap;
-
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
@@ -40,6 +43,7 @@ import com.safjnest.SlashCommands.Misc.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -92,7 +96,8 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
-        SafJNest.loadingBee(4);
+
+        //SafJNest.loadingBee(4);
         
         boolean isCanary=(args.length>0)?0>1:1>0;
 
@@ -156,11 +161,13 @@ public class App extends ListenerAdapter {
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
-        builder.setPrefix(PREFIX);
+        //builder.setPrefix(PREFIX);
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
-                
+
+        builder.setPrefixes(new String[]{"$", ":"});//prima setti tutti i prefissi possibili al mondo
+        
         //Audio
         builder.addCommand(new Connect());
         builder.addCommand(new DeleteSound(s3Client, sql));
@@ -227,10 +234,31 @@ public class App extends ListenerAdapter {
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
         builder.addCommand(new LastMatches(riotApi, sql));
+        //"474935164451946506" // id comodo qui
+        
+
+        //poi tramite database dovremmo fare tipo:
+        /*
+         * getIdByPrefix(":") -> alveare safj id(o più)
+         * if(msg.getGuild().getId().equals(id))
+         * true
+         */
+        BiFunction<MessageReceivedEvent, Command, Boolean> prefixFunction2 = (msg, command) -> {
+            if(msg.getMessage().getContentRaw().startsWith(":") && msg.getGuild().getId().equals("474935164451946506")) {
+                System.out.println(msg.getMessage().getContentRaw());
+                return true; 
+            }else if(!msg.getMessage().getContentRaw().startsWith(":") && !msg.getGuild().getId().equals("474935164451946506")){
+                System.out.println(msg.getMessage().getContentRaw());
+                return true; 
+            }else{
+                return false;
+            }
+        };
+        builder.setCommandPreProcessBiFunction(prefixFunction2); //
 
         /*
         * INSANE SLASH COMMAND DECLARATION
-        */
+        
 
         //audio
         builder.addSlashCommand(new ConnectSlash());
@@ -286,6 +314,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new MsgSlash());
         builder.addSlashCommand(new InviteBotSlash());
         builder.addSlashCommand(new AnonymSlash());
+        */
         CommandClient client = builder.build();
         jda.addEventListener(client);
 
