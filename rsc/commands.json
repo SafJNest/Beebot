@@ -447,7 +447,7 @@
         "arguments" : "[CommandName] [summonerName]"
     },
 
-    "playedwith":{
+    "lastmatches":{
         "alias" : ["pw"],
         "help"  : "Get a list with all the people a user played with.",
         "category" : "League Of Legends",
