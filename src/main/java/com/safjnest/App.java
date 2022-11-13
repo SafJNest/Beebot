@@ -9,13 +9,16 @@ package com.safjnest;
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.HashMap;
-
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
@@ -84,6 +87,8 @@ public class App extends ListenerAdapter {
 
     private static int maxPrime ;
 
+    public static HashMap<String, String> guild_prefixes = new HashMap<>();
+
     private static HashMap<String, String> tierOneLink = new HashMap<>();
 
     /**
@@ -91,7 +96,7 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
-        //SafJNest.loadingBee(4);
+        SafJNest.loadingBee(4);
         
         boolean isCanary=(args.length>0)?0>1:1>0;
 
@@ -239,12 +244,12 @@ public class App extends ListenerAdapter {
         builder.addCommand(new FreeChamp());
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
-        builder.addCommand(new PlayedWith(riotApi, sql));
-
-        /*
-        * INSANE SLASH COMMAND DECLARATION
-        */
-
+        builder.addCommand(new LastMatches(riotApi, sql));
+        
+        
+        
+        // INSANE SLASH COMMAND DECLARATION
+        
         //audio
         builder.addSlashCommand(new ConnectSlash());
         builder.addSlashCommand(new DeleteSoundSlash(s3Client, sql));
@@ -272,7 +277,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new FreeChampSlash());
         builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
         builder.addSlashCommand(new SetUserSlash(riotApi, sql));
-        builder.addSlashCommand(new PlayedWithSlash(riotApi, sql));
+        builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
 
         //Manage Member
         builder.addSlashCommand(new BanSlash());
@@ -288,6 +293,7 @@ public class App extends ListenerAdapter {
         //Math
         builder.addSlashCommand(new PrimeSlash(maxPrime));
         builder.addSlashCommand(new DiceSlash());
+        builder.addSlashCommand(new FunctionSlash());
 
         //Misc
         builder.addSlashCommand(new PingSlash());
@@ -299,6 +305,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new MsgSlash());
         builder.addSlashCommand(new InviteBotSlash());
         builder.addSlashCommand(new AnonymSlash());
+
         CommandClient client = builder.build();
         jda.addEventListener(client);
     }
