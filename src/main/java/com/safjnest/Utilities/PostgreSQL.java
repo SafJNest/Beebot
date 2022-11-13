@@ -54,7 +54,7 @@ public class PostgreSQL {
             stmt.close();
             return true;
         }
-        catch (PSQLException e) {return true;}
+        catch (PSQLException e) {e.printStackTrace(); return true;}
         catch (SQLException e1) {return false;}
     }
 
