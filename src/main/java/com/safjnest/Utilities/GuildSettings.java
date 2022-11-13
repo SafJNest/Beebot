@@ -26,11 +26,11 @@ public class GuildSettings {
     }
 
     public static GuildData retrieveServer(String stringId) {
-        String query = "SELECT * FROM guild_settings WHERE guild_id = '" + stringId + "';";
+        String query = "SELECT * FROM guild_settings WHERE guild_id = '" + stringId + "' AND bot_id = '" + App.botId + "';";
         ArrayList<String> guildArrayList = DatabaseHandler.getSql().getRealTuple(query, 0);
         GuildData guild = (guildArrayList == null) 
                     ? new GuildData(Long.parseLong(stringId), App.PREFIX) 
-                    : new GuildData(Long.parseLong(guildArrayList.get(0)), guildArrayList.get(1));
+                    : new GuildData(Long.parseLong(guildArrayList.get(0)), guildArrayList.get(2));
         saveData(guild); //pls be synchronzied
         return guild;
     }

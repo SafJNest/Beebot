@@ -9,16 +9,12 @@ package com.safjnest;
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
@@ -66,6 +62,7 @@ import no.stelar7.api.r4j.basic.APICredentials;
 public class App extends ListenerAdapter {
     private static JDA jda;
     public static String PREFIX;
+    public static String botId;
     private static Activity activity;
     public static String color;
     private static String ownerID;
@@ -87,8 +84,6 @@ public class App extends ListenerAdapter {
 
     private static int maxPrime ;
 
-    public static HashMap<String, String> guild_prefixes = new HashMap<>();
-
     private static HashMap<String, String> tierOneLink = new HashMap<>();
 
     /**
@@ -96,7 +91,7 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
-        SafJNest.loadingBee(4);
+        //SafJNest.loadingBee(4);
         
         boolean isCanary=(args.length>0)?0>1:1>0;
 
@@ -162,7 +157,7 @@ public class App extends ListenerAdapter {
             .setChunkingFilter(ChunkingFilter.ALL)
             .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER)
             .build();
-
+        botId = jda.getSelfUser().getId();
         CommandClientBuilder builder = new CommandClientBuilder();
         //builder.setPrefix(PREFIX); 
         builder.setHelpWord(helpWord);
@@ -247,8 +242,8 @@ public class App extends ListenerAdapter {
         builder.addCommand(new LastMatches(riotApi, sql));
         
         
-        
         // INSANE SLASH COMMAND DECLARATION
+        
         
         //audio
         builder.addSlashCommand(new ConnectSlash());

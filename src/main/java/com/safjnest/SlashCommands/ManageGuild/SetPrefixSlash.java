@@ -35,7 +35,7 @@ public class SetPrefixSlash extends SlashCommand{
             return;
         }
         
-        String query = "INSERT INTO guild_settings(guild_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getOption("prefix").getAsString() +"') ON CONFLICT(guild_id) DO UPDATE SET prefix = '" + event.getOption("prefix").getAsString() + "' RETURNING guild_id;";
+        String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getJDA().getSelfUser().getId()  + "','" + event.getJDA().getSelfUser().getId() + "','" + event.getOption("prefix").getAsString() +"') ON CONFLICT(guild_id, bot_id) DO UPDATE SET prefix = '" + event.getOption("prefix").getAsString() + "' RETURNING guild_id;";
         if(sql.runQuery(query))
             event.deferReply(false).addContent("New Prefix is " + event.getOption("prefix").getAsString()).queue();
         else
