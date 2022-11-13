@@ -49,7 +49,8 @@ public class PostgreSQL {
         Statement stmt;
         try {
             stmt = c.createStatement();
-            stmt.executeQuery(query);
+            ResultSet rs = stmt.executeQuery(query);
+            rs.close();
             stmt.close();
             return true;
         }
@@ -126,6 +127,31 @@ public class PostgreSQL {
             stmt.close();
             return arr;
         } catch (SQLException e) {
+            return null;
+        }
+    }
+    /**
+    * Guma CHI?
+    * 
+    *
+    */
+    public ArrayList<String> getRealTuple(String query, int nRow){
+        Statement stmt;
+        ArrayList<ArrayList<String>> arr = new ArrayList<>();
+        try {
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            while(rs.next()){
+                arr.add(new ArrayList<>());
+                try {
+                    for(int i = 1; 1 > 0; i++) 
+                        arr.get(arr.size()-1).add(rs.getString(i));
+                } catch (Exception e) {}
+            }
+            rs.close();
+            stmt.close();
+            return arr.get(nRow);
+        } catch (Exception e) {
             return null;
         }
     }

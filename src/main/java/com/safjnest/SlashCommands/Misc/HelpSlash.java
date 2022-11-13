@@ -10,6 +10,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.GuildSettings;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -54,7 +55,7 @@ public class HelpSlash extends SlashCommand {
             }
         }
         eb.setTitle("📒INFO AND COMMAND📒", null);
-        eb.setDescription("Current prefix is: **NO PREFIX WITH SLASH COMMAND!**\n"
+        eb.setDescription("Current prefix is: **" + GuildSettings.getServer(event.getGuild().getId()).getPrefix() + "**\n"
         + "You can get more information using: **/help <command>.**");
         eb.setColor(Color.decode(App.color));
         if(command.equals("")){

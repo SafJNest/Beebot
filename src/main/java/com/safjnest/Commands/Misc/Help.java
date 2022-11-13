@@ -9,6 +9,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.GuildSettings;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -49,12 +50,12 @@ public class Help extends Command {
             }
         }
         eb.setTitle("📒INFO AND COMMAND📒", null);
-        eb.setDescription("Current prefix is: **"+event.getClient().getPrefix()+"**"
-        + ", you can get more information using: **"+event.getClient().getPrefix()+"help <nameCommand>.**");
+        eb.setDescription("Current prefix is: **" + GuildSettings.getServer(event.getGuild().getId()).getPrefix() + "**\n"
+        + ", you can get more information using: **"+ GuildSettings.getServer(event.getGuild().getId()).getPrefix() +"help <nameCommand>.**");
         eb.setColor(Color.decode(App.color));
         if(command.equals("")){
             String ss = "```\n";
-            for(String k : commands.keySet()){
+            for(String k : commands.keySet()){ 
                 for(Command c : commands.get(k)){
                     ss+= c.getName() + "\n";
                 }
