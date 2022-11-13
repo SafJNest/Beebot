@@ -40,6 +40,7 @@ import com.safjnest.SlashCommands.Misc.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -61,7 +62,7 @@ import no.stelar7.api.r4j.basic.APICredentials;
  */
 public class App extends ListenerAdapter {
     private static JDA jda;
-    private static String PREFIX;
+    public static String PREFIX;
     private static Activity activity;
     public static String color;
     private static String ownerID;
@@ -90,7 +91,7 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
-        SafJNest.loadingBee(4);
+        //SafJNest.loadingBee(4);
         
         boolean isCanary=(args.length>0)?0>1:1>0;
 
@@ -131,7 +132,11 @@ public class App extends ListenerAdapter {
         System.out.println(discordSettings.get("info"));
 
         TTSHandler tts = new TTSHandler(ttsApiKey);
-        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);   
+        
+        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);
+        
+        DatabaseHandler dbh = new DatabaseHandler(sql);
+        dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket, sql);
         s3Client.initialize();
@@ -154,10 +159,20 @@ public class App extends ListenerAdapter {
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
-        builder.setPrefix(PREFIX);
+        //builder.setPrefix(PREFIX); 
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
+
+        builder.setPrefixFunction(event -> {
+            if (event.getChannelType() == ChannelType.PRIVATE)
+                return "";
+            if (event.isFromGuild()) {
+                GuildData gd = GuildSettings.getServer(event.getGuild().getId());
+                return gd == null ? PREFIX : gd.getPrefix();
+            }
+            return null; 
+        });
                 
         //Audio
         builder.addCommand(new Connect());
@@ -181,6 +196,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new EmojiInfo());
         builder.addCommand(new InviteBot());
         builder.addCommand(new ListGuild());
+        builder.addCommand(new SetPrefix(sql));
 
         //Manage Member
         builder.addCommand(new Ban());
@@ -249,6 +265,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new EmojiInfoSlash());
         builder.addSlashCommand(new SetWelcomeSlash(sql));
         builder.addSlashCommand(new SetVoiceSlash(sql));
+        builder.addSlashCommand(new SetPrefixSlash(sql));
 
         //lol
         builder.addSlashCommand(new SummonerSlash(riotApi, sql));
