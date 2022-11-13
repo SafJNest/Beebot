@@ -43,7 +43,7 @@ import com.safjnest.SlashCommands.Misc.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -65,7 +65,7 @@ import no.stelar7.api.r4j.basic.APICredentials;
  */
 public class App extends ListenerAdapter {
     private static JDA jda;
-    private static String PREFIX;
+    public static String PREFIX;
     private static Activity activity;
     public static String color;
     private static String ownerID;
@@ -96,8 +96,7 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
-
-        //SafJNest.loadingBee(4);
+        SafJNest.loadingBee(4);
         
         boolean isCanary=(args.length>0)?0>1:1>0;
 
@@ -138,7 +137,11 @@ public class App extends ListenerAdapter {
         System.out.println(discordSettings.get("info"));
 
         TTSHandler tts = new TTSHandler(ttsApiKey);
-        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);   
+        
+        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);
+        
+        DatabaseHandler dbh = new DatabaseHandler(sql);
+        dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket, sql);
         s3Client.initialize();
@@ -161,13 +164,21 @@ public class App extends ListenerAdapter {
             .build();
 
         CommandClientBuilder builder = new CommandClientBuilder();
-        //builder.setPrefix(PREFIX);
+        //builder.setPrefix(PREFIX); 
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
 
-        builder.setPrefixes(new String[]{"$", ":"});//prima setti tutti i prefissi possibili al mondo
-        
+        builder.setPrefixFunction(event -> {
+            if (event.getChannelType() == ChannelType.PRIVATE)
+                return "";
+            if (event.isFromGuild()) {
+                GuildData gd = GuildSettings.getServer(event.getGuild().getId());
+                return gd == null ? PREFIX : gd.getPrefix();
+            }
+            return null; 
+        });
+                
         //Audio
         builder.addCommand(new Connect());
         builder.addCommand(new DeleteSound(s3Client, sql));
@@ -190,7 +201,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new EmojiInfo());
         builder.addCommand(new InviteBot());
         builder.addCommand(new ListGuild());
-        builder.addCommand(new ChangePrefix(sql));
+        builder.addCommand(new SetPrefix(sql));
 
         //Manage Member
         builder.addCommand(new Ban());
@@ -234,32 +245,11 @@ public class App extends ListenerAdapter {
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
         builder.addCommand(new LastMatches(riotApi, sql));
-        //"474935164451946506" // id comodo qui
         
-
-        //poi tramite database dovremmo fare tipo:
-        /*
-         * getIdByPrefix(":") -> alveare safj id(o più)
-         * if(msg.getGuild().getId().equals(id))
-         * true
-         */
-        BiFunction<MessageReceivedEvent, Command, Boolean> prefixFunction2 = (msg, command) -> {
-            if(msg.getMessage().getContentRaw().startsWith(":") && msg.getGuild().getId().equals("474935164451946506")) {
-                System.out.println(msg.getMessage().getContentRaw());
-                return true; 
-            }else if(!msg.getMessage().getContentRaw().startsWith(":") && !msg.getGuild().getId().equals("474935164451946506")){
-                System.out.println(msg.getMessage().getContentRaw());
-                return true; 
-            }else{
-                return false;
-            }
-        };
-        builder.setCommandPreProcessBiFunction(prefixFunction2); //
-
-        /*
-        * INSANE SLASH COMMAND DECLARATION
         
-
+        
+        // INSANE SLASH COMMAND DECLARATION
+        
         //audio
         builder.addSlashCommand(new ConnectSlash());
         builder.addSlashCommand(new DeleteSoundSlash(s3Client, sql));
@@ -280,6 +270,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new EmojiInfoSlash());
         builder.addSlashCommand(new SetWelcomeSlash(sql));
         builder.addSlashCommand(new SetVoiceSlash(sql));
+        builder.addSlashCommand(new SetPrefixSlash(sql));
 
         //lol
         builder.addSlashCommand(new SummonerSlash(riotApi, sql));
@@ -314,11 +305,9 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new MsgSlash());
         builder.addSlashCommand(new InviteBotSlash());
         builder.addSlashCommand(new AnonymSlash());
-        */
+
         CommandClient client = builder.build();
         jda.addEventListener(client);
-
-        //TODO fai i prefissi
     }
 }
         
