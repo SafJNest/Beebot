@@ -152,11 +152,11 @@
         "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
     },
 
-    "changeprefix":{
+    "setprefix":{
         "alias" : ["prefix"],
-        "help"  : "Changes the prefix of the guild.",
+        "help"  : "Changes the prefix of the guild",
         "category" : "Server Management",
-        "arguments" : "[CommandName] [#prefix]"
+        "arguments" : "[CommandName] [new Prefix]"
     },
 
 
