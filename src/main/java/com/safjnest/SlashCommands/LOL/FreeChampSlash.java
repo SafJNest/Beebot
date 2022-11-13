@@ -37,8 +37,13 @@ public class FreeChampSlash extends SlashCommand {
     /**
      * This method is called every time a member executes the command.
      */
-	@Override
+    @Override
 	protected void execute(SlashCommandEvent event) {
+        String img = "iconLol.png";
+        File file = new File("rsc" + File.separator + "img" + File.separator + img);
+        event.deferReply()
+            .addFiles(FileUpload.fromData(file))
+            .queue();
         ChampionBuilder builder = new ChampionBuilder().withPlatform(LeagueShard.EUW1);
         ChampionRotationInfo c = builder.getFreeToPlayRotation();
         EmbedBuilder eb = new EmbedBuilder();
@@ -49,13 +54,9 @@ public class FreeChampSlash extends SlashCommand {
         for(StaticChampion ce : c.getFreeChampions()){
             s+=ce.getName()+" | ";
         }
-        
-        String img = "iconLol.png";
-        File file = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setDescription(s);
         eb.setThumbnail("attachment://" + img);
-        event.deferReply(true).addEmbeds(eb.build())
-            .addFiles(FileUpload.fromData(file))
+        event.getHook().editOriginalEmbeds(eb.build())
             .queue();
 	}
 
