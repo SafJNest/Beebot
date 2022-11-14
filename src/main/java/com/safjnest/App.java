@@ -9,6 +9,7 @@ package com.safjnest;
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
+import java.text.MessageFormat;
 import java.util.HashMap;
 
 import org.json.simple.JSONObject;
@@ -87,13 +88,13 @@ public class App extends ListenerAdapter {
     private static HashMap<String, String> tierOneLink = new HashMap<>();
 
     /**
-     * Metodo principale del bot.
+     * Where the magic happens.
      * @param args
      */
     public static void main(String[] args) {
         //SafJNest.loadingBee(4);
         
-        boolean isCanary=(args.length>0)?0>1:1>0;
+        boolean isCanary=(args.length>0)?0>1:1>0;//extreme codegolfing
 
         JSONParser parser = new JSONParser();
         JSONObject settings = null, discordSettings = null, awsSettings = null, postgreSQLSettings = null;
@@ -109,7 +110,7 @@ public class App extends ListenerAdapter {
         }
 
         PREFIX = discordSettings.get("prefix").toString();
-        activity = Activity.playing(discordSettings.get("activity").toString());
+        activity = Activity.playing(MessageFormat.format(discordSettings.get("activity").toString(), PREFIX));
         token = discordSettings.get("discordToken").toString();
         color = discordSettings.get("embedColor").toString();
         ownerID = discordSettings.get("ownerID").toString();
