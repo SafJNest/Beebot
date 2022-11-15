@@ -306,4 +306,4 @@ public class App extends ListenerAdapter {
         jda.addEventListener(client);
     }
 }
-        
+//TODO: lol handler       
