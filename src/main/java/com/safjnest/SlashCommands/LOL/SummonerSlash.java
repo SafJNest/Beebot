@@ -79,7 +79,7 @@ public class SummonerSlash extends SlashCommand {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setAuthor(s.getName());
             builder.setColor(Color.decode(App.color));
-            builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
+            builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.22.1/img/profileicon/"+s.getProfileIconId()+".png");
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
             
             for(int i = 0; i < 2; i++){
