@@ -24,6 +24,7 @@ import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
+
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
