@@ -24,18 +24,43 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
 import org.apache.commons.io.FileUtils;
 
+
+/**
+ * Class that provides the connection between Beebot and Amazon database.
+ * <p>There are just stored all the custom sound.</p>
+ * @see com.safjnest.Commands.Audio.PlaySound PlaySound
+ * @since 1.3
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ */
 public class AwsS3 {
+    /**Credentials to connect into the database. Such as {@code Secret key} and {@code Access Key} */
     private AWSCredentials credentials;
+    /**Name of the bucket */
     private String bucket;
+    /**The effective client that provides the connection */
     private AmazonS3 s3Client;
+    /**Object that provides the connection with the {@code PostgreSQL} database. 
+     * @see com.safjnest.Utilities.PostgreSQL PostgreSQL  
+     */
     private PostgreSQL sql;
 
+    /**
+     * Default constructor
+     * @param credentials
+     * @param bucket
+     * @param sql
+     */
     public AwsS3(AWSCredentials credentials, String bucket, PostgreSQL sql) {
         this.credentials = credentials;
         this.bucket = bucket;
         this.sql = sql;
     }
     
+    /**
+     * Initialize the {@link AwsS3#s3Client s3Client} and try to connect to the database.
+     * <p>If something goes wrong will be thrown an exception and the bot won't start up.
+     */
     public void initialize() {
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.setSignerOverride("AWSS3V4SignerType");

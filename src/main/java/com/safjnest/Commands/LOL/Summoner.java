@@ -24,6 +24,7 @@ import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
+
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
@@ -78,7 +79,7 @@ public class Summoner extends Command {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setAuthor(s.getName());
             builder.setColor(Color.decode(App.color));
-            builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
+            builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.22.1/img/profileicon/"+s.getProfileIconId()+".png");
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
             
             for(int i = 0; i < 2; i++){
