@@ -159,6 +159,13 @@
         "arguments" : "[CommandName] [new Prefix]"
     },
 
+    "customembed":{
+        "alias" : ["embed"],
+        "help"  : "Writes a custom embed",
+        "category" : "Server Management",
+        "arguments" : "[CommandName] [a]"
+    },
+
 
 
 
