@@ -31,7 +31,7 @@ public class GuildSettings {
         GuildData guild = (guildArrayList == null) 
                     ? new GuildData(Long.parseLong(stringId), App.PREFIX) 
                     : new GuildData(Long.parseLong(guildArrayList.get(0)), guildArrayList.get(2));
-        saveData(guild); //pls be synchronzied
+        saveData(guild);
         return guild;
     }
 
