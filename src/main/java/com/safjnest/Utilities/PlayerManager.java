@@ -6,6 +6,10 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeAudioSourceManager;
 
+/**
+ * I really would to know what this class does but i think quantum mechanics its easier to explain.
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ */
 public class PlayerManager {
     private AudioPlayerManager playerManager;
     private AudioPlayer player;
@@ -24,6 +28,9 @@ public class PlayerManager {
       playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
     }
 
+    /**
+     * EXTREME METHOD
+     */
     public void terminator3LeMacchineRibelli(){
       player.destroy();
       playerManager.shutdown();
