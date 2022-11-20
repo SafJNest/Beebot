@@ -1,6 +1,6 @@
 # ***THE BEEBOX***
 
-![ffewfe](/rsc/img/logo.png)
+![ffewfe](/rsc/img/massive.png)
 
 ## ***Panoramica (≧ڡ≦*)***
 Semplice bot di Discord che si occupa di fare tutto ciò che gli admin vogliono fargli fare.
