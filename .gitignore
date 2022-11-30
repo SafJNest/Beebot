@@ -28,7 +28,8 @@ l4j8cache/
 rsc/Upload/*
 rsc/tts/*
 rsc/SoundBoard/*
-
+.fleet/
+.idea/
 
 
 /TODO
