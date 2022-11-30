@@ -92,7 +92,7 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
-        //SafJNest.loadingBee(4);
+        SafJNest.bee();
         
         boolean isCanary=(args.length>0)?0>1:1>0;//extreme codegolfing
 
