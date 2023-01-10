@@ -55,6 +55,13 @@
             "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
         },
 
+        "localextremeDB": {
+            "HostName": "localhost",
+            "database": "df52tpbes6100h",
+            "user": "postgres",
+            "password": "Keria117"
+        },
+
         "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
         "ttsApiKey": "d6199f5911f4493da571729f8127ce37",
         "riotKey": "RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89"
