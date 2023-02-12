@@ -7,7 +7,6 @@
             "activity": "Precisely, outplaying other bots with slash command. Fired up and ready to serve! | /help or {0}help |",
             "ownerID": "938487470339801169",
             "helpWord": "helpme",
-            "maxPrime": "2048",
             "info":"[MAIN] INFO The beast is turning on! As long as it takes."
         },
 
@@ -22,6 +21,13 @@
             "database": "df52tpbes6100h",
             "user": "rtfcxffinekosr",
             "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
+        },
+
+        "MySQL": {
+            "HostName": "na01-sql.pebblehost.com",
+            "database": "customer_444048_beebot",
+            "user": "customer_444048_beebot",
+            "password": "ExtremeSafJDatabase117@"
         },
 
         "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
@@ -53,6 +59,13 @@
             "database": "df52tpbes6100h",
             "user": "rtfcxffinekosr",
             "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
+        },
+
+        "MySQL": {
+            "HostName": "na01-sql.pebblehost.com",
+            "database": "customer_444048_beebot",
+            "user": "customer_444048_beebot",
+            "password": "ExtremeSafJDatabase117@"
         },
 
         "localextremeDB": {
@@ -93,6 +106,13 @@
             "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
         },
 
+        "MySQL": {
+            "HostName": "na01-sql.pebblehost.com",
+            "database": "customer_444048_beebot",
+            "user": "customer_444048_beebot",
+            "password": "ExtremeSafJDatabase117@"
+        },
+
         "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
         "ttsApiKey": "d6199f5911f4493da571729f8127ce37",
         "riotKey": "RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89"
@@ -122,6 +142,51 @@
             "database": "df52tpbes6100h",
             "user": "rtfcxffinekosr",
             "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
+        },
+
+        "MySQL": {
+            "HostName": "na01-sql.pebblehost.com",
+            "database": "customer_444048_beebot",
+            "user": "customer_444048_beebot",
+            "password": "ExtremeSafJDatabase117@"
+        },
+
+        "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
+        "ttsApiKey": "d6199f5911f4493da571729f8127ce37",
+        "riotKey": "RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89"
+    },
+
+    "beebot music": {
+        "DiscordSettings":{
+            "discordToken": "MTA3NDI3NjM5NTY0MDk1NDk0Mg.G38i8j.F6u_scGNtUIztjB8LzjpX3fnSbxkUa03kOUnuQ",
+            "embedColor": "#ff0000",
+            "prefix": "p",
+            "activity": "The Beebot but only for youtube fucking piece of shit give us the old beeby | p help",
+            "ownerID": "939876818465488926",
+            "helpWord": "helpme",
+            "maxPrime": "2048",
+            "info":"[MAIN] INFO Beebot music is turning on to let leon listen to dravon 1v9"
+
+        },
+
+        "AmazonAWS":{
+            "AWSAccesKey": "AKIASJG3D4LS4UT7VPX4",
+            "AWSSecretKey": "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",
+            "AWSbucketName": "thebeebot"
+        },
+
+        "PostgreSQL": {
+            "HostName": "ec2-54-247-137-184.eu-west-1.compute.amazonaws.com",
+            "database": "df52tpbes6100h",
+            "user": "rtfcxffinekosr",
+            "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
+        },
+
+        "MySQL": {
+            "HostName": "na01-sql.pebblehost.com",
+            "database": "customer_444048_beebot",
+            "user": "customer_444048_beebot",
+            "password": "ExtremeSafJDatabase117@"
         },
 
         "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",

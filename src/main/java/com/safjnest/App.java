@@ -198,7 +198,6 @@ public class App extends ListenerAdapter {
         builder.addCommand(new InviteBot());
         builder.addCommand(new ListGuild());
         builder.addCommand(new SetPrefix(sql));
-        builder.addCommand(new CustomEmbed());
 
         //Manage Member
         builder.addCommand(new Ban());

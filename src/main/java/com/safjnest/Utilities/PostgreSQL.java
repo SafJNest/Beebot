@@ -28,9 +28,9 @@ public class PostgreSQL {
      */
     public PostgreSQL(String hostName, String database, String user, String password){
         try {
-            Class.forName("org.postgresql.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
             c = DriverManager
-                .getConnection("jdbc:postgresql://"+hostName+"/"+database,user,password);
+                .getConnection("jdbc:mysql://"+hostName+"/"+database,user,password);
             System.out.println("[SQL] INFO Connection to the extreme db successful!");
         } catch (Exception e) {
             e.printStackTrace();
