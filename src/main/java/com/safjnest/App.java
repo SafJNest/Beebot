@@ -92,19 +92,19 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
-        SafJNest.bee();
+        //SafJNest.bee();
         
         boolean isCanary=(args.length>0)?0>1:1>0;//extreme codegolfing
 
         JSONParser parser = new JSONParser();
-        JSONObject settings = null, discordSettings = null, awsSettings = null, postgreSQLSettings = null;
+        JSONObject settings = null, discordSettings = null, awsSettings = null, SQLSettings = null;
 
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
-            settings = (JSONObject) settings.get((isCanary) ? "canary" : args[0]);
+            settings = (JSONObject) settings.get((isCanary) ? "beebot" : args[0]);
             discordSettings = (JSONObject) settings.get("DiscordSettings");
             awsSettings = (JSONObject) settings.get("AmazonAWS");
-            postgreSQLSettings = (JSONObject) settings.get("PostgreSQL");
+            SQLSettings = (JSONObject) settings.get("MySQL");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -125,10 +125,10 @@ public class App extends ListenerAdapter {
         ttsApiKey = settings.get("ttsApiKey").toString();
         riotKey = settings.get("riotKey").toString();
 
-        hostName = postgreSQLSettings.get("HostName").toString();
-        database = postgreSQLSettings.get("database").toString();
-        user = postgreSQLSettings.get("user").toString();
-        password = postgreSQLSettings.get("password").toString();
+        hostName = SQLSettings.get("HostName").toString();
+        database = SQLSettings.get("database").toString();
+        user = SQLSettings.get("user").toString();
+        password = SQLSettings.get("password").toString();
 
         System.out.println(discordSettings.get("info"));
 

@@ -154,15 +154,14 @@ public class PlaySound extends Command{
         else{
             query = "UPDATE play SET times = times + 1 WHERE id_sound = (" + id + ") AND user_id = '" + event.getAuthor().getId() + "';";
         }
-        
         sql.runQuery(query);
-        query = "SELECT SUM(times) FROM PLAY where id_sound='" + id + "';";
+        
+        query = "SELECT SUM(times) as sum FROM play where id_sound='" + id + "';";
         String timesPlayed = sql.getString(query, "sum");
-        query = "SELECT times FROM PLAY where id_sound='" + id + "' AND user_id='"+event.getAuthor().getId()+"';";
+        query = "SELECT times FROM play where id_sound='" + id + "' AND user_id='"+event.getAuthor().getId()+"';";
         String timesPlayedByUser = sql.getString(query, "times");
         
         EmbedBuilder eb = new EmbedBuilder();
-
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
 
         eb.setTitle("Playing now:");
