@@ -34,7 +34,11 @@ public class ListRoom extends Command {
         ArrayList<String> roomName= sql.getListString(query, "room_name");
         String rooms = "";
         for(int i = 0; i < roomName.size(); i++){
-            rooms+=event.getGuild().getVoiceChannelById(roomId.get(i)).getName() + " = " + roomName.get(i) + "\n";
+            try {
+                rooms+=event.getGuild().getVoiceChannelById(roomId.get(i)).getName() + " = " + roomName.get(i) + "\n";
+            } catch (Exception e) {
+                rooms+= "error with " + roomName.get(i) + " (The channel might have been deleted)\n";
+            }
         }
         
         event.reply(rooms);

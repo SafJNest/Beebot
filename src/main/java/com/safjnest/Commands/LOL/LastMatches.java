@@ -111,7 +111,8 @@ public class LastMatches extends Command {
         String message = "Analyzing last "+gamesNumber+" "+s.getName()+"'s games:\n";
         for(int i = sorted.keySet().size()-1; i>0; i--){
             String key = (String) sorted.keySet().toArray()[i];
-            message+=r.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, key).getName() +" "+ (sorted.get(key)) + " times.\n";
+            if(sorted.get(key) > 1)
+                message+=r.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, key).getName() +" "+ (sorted.get(key)) + " times.\n";
         }
         message+="\nThis command could be bugged, if you see something weird ask to the extreme main sup 1v9 machine to fix";
         

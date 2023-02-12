@@ -100,7 +100,8 @@ public class PostgreSQL {
             rs.close();
             stmt.close();
             return arr;
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
