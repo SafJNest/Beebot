@@ -49,13 +49,12 @@ public class PostgreSQL {
         Statement stmt;
         try {
             stmt = c.createStatement();
-            ResultSet rs = stmt.executeQuery(query);
-            rs.close();
+            stmt.executeUpdate(query);
             stmt.close();
             return true;
         }
         catch (PSQLException e) {e.printStackTrace(); return true;}
-        catch (SQLException e1) {return false;}
+        catch (SQLException e1) {e1.printStackTrace(); return false;}
     }
 
     /**
@@ -76,7 +75,8 @@ public class PostgreSQL {
             rs.close();
             stmt.close();
             return info;
-        } catch (SQLException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
@@ -141,6 +141,7 @@ public class PostgreSQL {
         try {
             stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query);
+            
             while(rs.next()){
                 arr.add(new ArrayList<>());
                 try {
@@ -155,4 +156,4 @@ public class PostgreSQL {
             return null;
         }
     }
-}
+}           

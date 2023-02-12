@@ -97,6 +97,7 @@ public class TrackScheduler extends AudioEventAdapter {
         publicMagister.terminator3LeMacchineRibelli();
       }
       else if(endReason.name().equals("CLEANUP")){
+        System.out.println("The time of thread has come to an end.");
         publicMagister.terminator3LeMacchineRibelli();
       }
     

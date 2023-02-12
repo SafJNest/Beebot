@@ -158,11 +158,11 @@ public class PlaySoundSlash extends SlashCommand{
         }
         
         sql.runQuery(query);
-        query = "SELECT SUM(times) FROM PLAY where id_sound='" + id + "';";
+        query = "SELECT SUM(times) as sum FROM play where id_sound='" + id + "';";
         String timesPlayed = sql.getString(query, "sum");
-        query = "SELECT times FROM PLAY where id_sound='" + id + "' AND user_id='"+event.getMember().getId()+"';";
+        query = "SELECT times FROM play where id_sound='" + id + "' AND user_id='"+event.getMember().getId()+"';";
         String timesPlayedByUser = sql.getString(query, "times");
-        
+
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest", event.getMember().getAvatarUrl());
