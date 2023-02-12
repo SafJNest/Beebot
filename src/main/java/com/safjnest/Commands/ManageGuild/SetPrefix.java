@@ -33,7 +33,7 @@ public class SetPrefix extends Command{
             return;
         }
         
-        String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getSelfUser().getId() + "','" + event.getArgs() +"') ON CONFLICT(guild_id, bot_id) DO UPDATE SET prefix = '" + event.getArgs() + "' RETURNING guild_id;";
+        String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getSelfUser().getId() + "','" + event.getArgs() +"') ON DUPLICATE KEY UPDATE prefix = '" + event.getArgs() + "';";
         if(sql.runQuery(query))
             event.reply("All set correctly");
         else

@@ -51,7 +51,7 @@ public class Help extends Command {
         }
         eb.setTitle("📒INFO AND COMMAND📒", null);
         eb.setDescription("Current prefix is: **" + GuildSettings.getServer(event.getGuild().getId()).getPrefix() + "**\n"
-        + ", you can get more information using: **"+ GuildSettings.getServer(event.getGuild().getId()).getPrefix() +"help <nameCommand>.**");
+        + "You can get more information using: **"+ GuildSettings.getServer(event.getGuild().getId()).getPrefix() +"help <nameCommand>.**");
         eb.setColor(Color.decode(App.color));
         if(command.equals("")){
             String ss = "```\n";
