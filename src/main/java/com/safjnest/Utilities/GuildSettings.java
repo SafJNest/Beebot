@@ -29,7 +29,7 @@ public class GuildSettings {
 
     /**
      * This method checks if a guild is in the cache, otherwise will be called {@link GuildSettings#retrieveServer() retrievServer}
-     * to search for it in the {@link com.safjnest.Utilities.PostgreSQL postgre database}.
+     * to search for it in the {@link com.safjnest.Utilities.SQL postgre database}.
      * @param id Server ID
      * @return
      * The {@link com.safjnest.Utilities.GuildData guildData} if is stored in the cache(or is in the database), otherwise a defult {@link com.safjnest.Utilities.GuildData guildData}.
@@ -54,7 +54,7 @@ public class GuildSettings {
     }
 
     /**
-     * Search the gived guild in the {@link com.safjnest.Utilities.PostgreSQL postgre database}.
+     * Search the gived guild in the {@link com.safjnest.Utilities.SQL postgre database}.
      * If the query found it all the settings will be downloaded and saved in the cache, otherwise will be used
      * the default settings:
      * <ul>

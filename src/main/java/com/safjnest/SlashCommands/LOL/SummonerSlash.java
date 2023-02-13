@@ -16,7 +16,7 @@ import net.rithms.riot.dto.Summoner.Summoner;
 import net.rithms.riot.api.RiotApi;
 import net.rithms.riot.api.RiotApiException;
 */
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -34,11 +34,11 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 public class SummonerSlash extends SlashCommand {
     
     private R4J r;
-    private PostgreSQL sql;
+    private SQL sql;
     /**
      * Constructor
      */
-    public SummonerSlash(R4J r, PostgreSQL sql){
+    public SummonerSlash(R4J r, SQL sql){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");

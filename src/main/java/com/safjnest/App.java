@@ -101,7 +101,7 @@ public class App extends ListenerAdapter {
 
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
-            settings = (JSONObject) settings.get((isCanary) ? "canary" : args[0]);
+            settings = (JSONObject) settings.get((isCanary) ? "beebot" : args[0]);
             discordSettings = (JSONObject) settings.get("DiscordSettings");
             awsSettings = (JSONObject) settings.get("AmazonAWS");
             SQLSettings = (JSONObject) settings.get("MySQL");
@@ -134,7 +134,7 @@ public class App extends ListenerAdapter {
 
         TTSHandler tts = new TTSHandler(ttsApiKey);
         
-        PostgreSQL sql = new PostgreSQL(hostName, database, user, password);
+        SQL sql = new SQL(hostName, database, user, password);
         
         DatabaseHandler dbh = new DatabaseHandler(sql);
         dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();

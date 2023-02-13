@@ -6,7 +6,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -21,11 +21,11 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
  */
 public class RankMatch extends Command {
     private R4J r;
-    private PostgreSQL sql;
+    private SQL sql;
     /**
      * Constructor
      */
-    public RankMatch(R4J r, PostgreSQL sql  ){
+    public RankMatch(R4J r, SQL sql  ){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");

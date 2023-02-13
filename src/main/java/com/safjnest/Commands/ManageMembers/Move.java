@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.entities.Member;
@@ -18,8 +18,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
  */
 public class Move extends Command{
 
-    private PostgreSQL sql;
-    public Move(PostgreSQL sql){
+    private SQL sql;
+    public Move(SQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");

@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -24,11 +24,11 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
  */
 public class RankMatchSlash extends SlashCommand {
     private R4J r;
-    private PostgreSQL sql;
+    private SQL sql;
     /**
      * Constructor
      */
-    public RankMatchSlash(R4J r, PostgreSQL sql  ){
+    public RankMatchSlash(R4J r, SQL sql  ){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");

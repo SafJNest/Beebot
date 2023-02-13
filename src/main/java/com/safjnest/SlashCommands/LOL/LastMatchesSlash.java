@@ -11,7 +11,7 @@ import java.util.Map;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -26,12 +26,12 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
  */
 public class LastMatchesSlash extends SlashCommand {
     private R4J r;
-    private PostgreSQL sql;
+    private SQL sql;
     
     /**
      * Constructor
      */
-    public LastMatchesSlash(R4J r, PostgreSQL sql){
+    public LastMatchesSlash(R4J r, SQL sql){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -100,11 +100,17 @@ public class LastMatchesSlash extends SlashCommand {
             e.printStackTrace();
         }
         Map<String, Integer> sorted = sortByValue(played);
+        boolean aloneLikePanslung = true;
         String message = "Analyzing last "+gamesNumber+" "+s.getName()+"'s games:\n";
         for(int i = sorted.keySet().size()-1; i>0; i--){
             String key = (String) sorted.keySet().toArray()[i];
-            if(sorted.get(key) > 1)
+            if(sorted.get(key) > 1){
                 message+=r.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, key).getName() +" "+ (sorted.get(key)) + " times.\n";
+                aloneLikePanslung = false;
+            }
+        }
+        if(aloneLikePanslung){
+            message = "You have been playing only with randoms in the last 20 games.";
         }
         message+="\nThis command could be bugged, if you see something weird ask to the extreme main sup 1v9 machine to fix";
         

@@ -41,9 +41,9 @@ public class AwsS3 {
     /**The effective client that provides the connection */
     private AmazonS3 s3Client;
     /**Object that provides the connection with the {@code PostgreSQL} database. 
-     * @see com.safjnest.Utilities.PostgreSQL PostgreSQL  
+     * @see com.safjnest.Utilities.SQL PostgreSQL  
      */
-    private PostgreSQL sql;
+    private SQL sql;
 
     /**
      * Default constructor
@@ -51,7 +51,7 @@ public class AwsS3 {
      * @param bucket
      * @param sql
      */
-    public AwsS3(AWSCredentials credentials, String bucket, PostgreSQL sql) {
+    public AwsS3(AWSCredentials credentials, String bucket, SQL sql) {
         this.credentials = credentials;
         this.bucket = bucket;
         this.sql = sql;

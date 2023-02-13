@@ -441,7 +441,7 @@
     },
 
     "rankmatch":{
-        "alias" : ["match", "ranks"],
+        "alias" : ["ranks"],
         "help"  : "Show a list with all the current summoners in a game and their ranks.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName]"
@@ -455,7 +455,7 @@
     },
 
     "lastmatches":{
-        "alias" : ["pw"],
+        "alias" : ["pw", "match"],
         "help"  : "Get a list with all the people a user played with.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName] (n games to analyze)"

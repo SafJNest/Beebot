@@ -2,7 +2,7 @@ package com.safjnest.SlashCommands.ManageGuild;
 
 import com.safjnest.Commands.Audio.TTS;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -18,9 +18,9 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
  * @since 1.3
  */
 public class SetVoiceSlash extends SlashCommand {
-    private PostgreSQL sql;
+    private SQL sql;
 
-    public SetVoiceSlash(PostgreSQL sql) {
+    public SetVoiceSlash(SQL sql) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");

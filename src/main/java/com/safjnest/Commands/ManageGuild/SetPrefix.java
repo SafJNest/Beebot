@@ -5,14 +5,14 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.GuildData;
 import com.safjnest.Utilities.GuildSettings;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.Permission;
 
 public class SetPrefix extends Command{
-    private PostgreSQL sql;
+    private SQL sql;
     
-    public SetPrefix(PostgreSQL sql){
+    public SetPrefix(SQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -35,7 +35,7 @@ public class SetPrefix extends Command{
         
         String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getSelfUser().getId() + "','" + event.getArgs() +"') ON DUPLICATE KEY UPDATE prefix = '" + event.getArgs() + "';";
         if(sql.runQuery(query))
-            event.reply("All set correctly");
+            event.reply("New prefix is: " + event.getArgs());
         else
             event.reply("Error");
         

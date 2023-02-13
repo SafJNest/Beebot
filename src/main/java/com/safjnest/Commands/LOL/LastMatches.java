@@ -10,7 +10,7 @@ import java.util.Map;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -23,12 +23,12 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
  */
 public class LastMatches extends Command {
     private R4J r;
-    private PostgreSQL sql;
+    private SQL sql;
     
     /**
      * Constructor
      */
-    public LastMatches(R4J r, PostgreSQL sql){
+    public LastMatches(R4J r, SQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -48,37 +48,27 @@ public class LastMatches extends Command {
         int gamesToAnalyze = 0;
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        if(event.getMessage().getMentions().getMembers().size() != 0){
+        if(args.equals("")){
+            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
+            try {
+                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
+            } catch (Exception e) {
+               event.reply("You dont have connected your Riot account.");
+               return;
+            }
+        }
+        else if(event.getMessage().getMentions().getMembers().size() != 0){
             String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMessage().getMentions().getMembers().get(0).getId() + "';";
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
-                gamesToAnalyze = (event.getArgs().split(" ").length==1)?20:Integer.parseInt(event.getArgs().split(" ",2)[1]);
             } catch (Exception e) {
                 event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
                 return;
             }
         }else{
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
-                if(s == null){
-                    s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args.split(" ")[0]);
-                    gamesToAnalyze = Integer.parseInt(event.getArgs().split(" ",2)[1]);
-                   if(s == null)
-                    throw new Exception(); 
-                }else{
-                    gamesToAnalyze = 20;
-                }
-            } catch (Exception e) {
-                String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
-                gamesToAnalyze = (event.getArgs().split(" ").length==0)?20:Integer.parseInt(event.getArgs());
-            } catch (Exception e1) {
-               event.reply("You dont have connected your Riot account.");
-               return;
-            }
-            }
+            s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
         }
+        gamesToAnalyze = 20;
         int gamesNumber = gamesToAnalyze;
         try {
             for(int i = 0; i < gamesToAnalyze; i++){
@@ -108,11 +98,17 @@ public class LastMatches extends Command {
             e.printStackTrace();
         }
         Map<String, Integer> sorted = sortByValue(played);
+        boolean aloneLikePanslung = true;
         String message = "Analyzing last "+gamesNumber+" "+s.getName()+"'s games:\n";
         for(int i = sorted.keySet().size()-1; i>0; i--){
             String key = (String) sorted.keySet().toArray()[i];
-            if(sorted.get(key) > 1)
+            if(sorted.get(key) > 1){
                 message+=r.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, key).getName() +" "+ (sorted.get(key)) + " times.\n";
+                aloneLikePanslung = false;
+            }
+        }
+        if(aloneLikePanslung){
+            message = "You have been playing only with randoms in the last 20 games.";
         }
         message+="\nThis command could be bugged, if you see something weird ask to the extreme main sup 1v9 machine to fix";
         
