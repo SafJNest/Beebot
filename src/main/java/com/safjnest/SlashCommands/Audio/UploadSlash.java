@@ -12,7 +12,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
@@ -31,9 +31,9 @@ import net.dv8tion.jda.api.utils.FileProxy;
 public class UploadSlash extends SlashCommand{
     private AwsS3 s3Client;
     private String fileName;
-    private PostgreSQL sql;
+    private SQL sql;
     
-    public UploadSlash(AwsS3 s3Client, PostgreSQL sql){
+    public UploadSlash(AwsS3 s3Client, SQL sql){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -66,9 +66,9 @@ class FileListener extends ListenerAdapter {
     private SlashCommandEvent event;
     private MessageChannel channel;
     private float maxFileSize = 1049000; //in bytes
-    private PostgreSQL sql;
+    private SQL sql;
 
-    public FileListener(SlashCommandEvent event, String name, MessageChannel channel, AmazonS3 s3Client, PostgreSQL sql){
+    public FileListener(SlashCommandEvent event, String name, MessageChannel channel, AmazonS3 s3Client, SQL sql){
         this.name = name;
         this.s3Client = s3Client;
         this.event = event;

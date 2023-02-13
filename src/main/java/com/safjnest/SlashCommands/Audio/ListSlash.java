@@ -8,7 +8,7 @@ import java.util.TreeMap;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -20,9 +20,9 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder;
  * @since 1.1
  */
 public class ListSlash extends SlashCommand{
-    private PostgreSQL sql;
+    private SQL sql;
 
-    public ListSlash(PostgreSQL sql){
+    public ListSlash(SQL sql){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -38,45 +38,17 @@ public class ListSlash extends SlashCommand{
         Button keria2 = Button.primary("idOrder", "ID Order");
         Button keria3 = Button.primary("mostPlayed", "Most played");
         Button keria4 = Button.primary("byUser", "Yours");
-        Button keria5 = Button.primary("global", "Global");
         MessageCreateBuilder message = new MessageCreateBuilder();
         message.setContent(getListLexo(event.getJDA(), sql, event.getGuild().getId()));
-        message.addActionRow(keria1, keria2, keria3, keria4, keria5);
+        message.addActionRow(keria1, keria2, keria3, keria4);
         event.deferReply().applyData(message.build()).queue();
     }
-    /*
-     * 0 id
-     * 1 name
-     * 2 guild
-     * 3 user id
-     * 4 extension
-     */
-    public static String getListLexo(JDA jda, PostgreSQL sql, String serverId){
+   
+    public static String getListLexo(JDA jda, SQL sql, String serverId){
         String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + serverId + "';";
         return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
     }
-
-    public static String getListUser(JDA jda, PostgreSQL sql, String userId){
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + userId + "';";
-        return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
-    }
-    
-    public static String getListGlobal(JDA jda, PostgreSQL sql){
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound;";
-        return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
-    }
-
-    public static String getListMostPlayed(JDA jda, PostgreSQL sql){
-        String query = "SELECT sound.id, sound.name, sound.guild_id, sound.user_id, SUM(times) FROM sound join play on sound.id=play.id_sound GROUP BY sound.id ORDER BY SUM(times)DESC;";
-        return getSoundsName(jda, getMapTimes(sql.getTuple(query, 5)));
-    }  
-    
-    public static String getListId(JDA jda, PostgreSQL sql){
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound ORDER BY id;";
-        return getSoundsName(jda, getMapId(sql.getTuple(query, 5)));
-    } 
-
-    private static String getSoundsName(JDA jda, Map<String, ArrayList<String>> sortedMap){
+     private static String getSoundsName(JDA jda, Map<String, ArrayList<String>> sortedMap){
         String soundNames = "";
         int cont = 0;
         for(String serverId : sortedMap.keySet()) {
@@ -105,25 +77,4 @@ public class ListSlash extends SlashCommand{
         return sortedMap;
     }
 
-    private static Map<String, ArrayList<String>> getMapTimes(ArrayList<ArrayList<String>> arr){
-        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
-        for(int i = 0; i < arr.size(); i++){
-            if(!alpha.containsKey(arr.get(i).get(2)))
-                alpha.put(arr.get(i).get(2), new ArrayList<>());
-            alpha.get(arr.get(i).get(2)).add(arr.get(i).get(1)+" ("+arr.get(i).get(4)+")");
-        }
-        Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
-        return sortedMap;
-    }
-
-    private static Map<String, ArrayList<String>> getMapId(ArrayList<ArrayList<String>> arr){
-        HashMap<String, ArrayList<String>> alpha = new HashMap<>();
-        for(int i = 0; i < arr.size(); i++){
-            if(!alpha.containsKey(arr.get(i).get(2)))
-                alpha.put(arr.get(i).get(2), new ArrayList<>());
-            alpha.get(arr.get(i).get(2)).add(arr.get(i).get(1)+" ("+arr.get(i).get(0)+")");
-        }
-        Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
-        return sortedMap;
-    }
 }

@@ -7,16 +7,16 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.GuildData;
 import com.safjnest.Utilities.GuildSettings;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class SetPrefixSlash extends SlashCommand{
-    private PostgreSQL sql;
+    private SQL sql;
     
-    public SetPrefixSlash(PostgreSQL sql){
+    public SetPrefixSlash(SQL sql){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -34,8 +34,7 @@ public class SetPrefixSlash extends SlashCommand{
             event.deferReply(true).addContent("Only admins can change the prefix of the guild").queue();
             return;
         }
-        
-        String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getJDA().getSelfUser().getId()  + "','" + event.getJDA().getSelfUser().getId() + "','" + event.getOption("prefix").getAsString() +"') ON CONFLICT(guild_id, bot_id) DO UPDATE SET prefix = '" + event.getOption("prefix").getAsString() + "' RETURNING guild_id;";
+        String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getJDA().getSelfUser().getId()  + "','" + event.getOption("prefix").getAsString() +"') ON DUPLICATE KEY UPDATE prefix = '" + event.getOption("prefix").getAsString() + "';";
         if(sql.runQuery(query))
             event.deferReply(false).addContent("New Prefix is " + event.getOption("prefix").getAsString()).queue();
         else

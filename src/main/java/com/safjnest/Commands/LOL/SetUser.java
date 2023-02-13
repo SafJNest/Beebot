@@ -10,7 +10,7 @@ import net.rithms.riot.dto.Summoner.Summoner;
 import net.rithms.riot.api.RiotApi;
 import net.rithms.riot.api.RiotApiException;
 */
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
@@ -22,11 +22,11 @@ import no.stelar7.api.r4j.impl.R4J;
 public class SetUser extends Command {
     
     private R4J r;
-    private PostgreSQL sql;
+    private SQL sql;
     /**
      * Constructor
      */
-    public SetUser(R4J r, PostgreSQL sql){
+    public SetUser(R4J r, SQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");

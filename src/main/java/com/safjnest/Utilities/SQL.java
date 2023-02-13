@@ -10,11 +10,11 @@ import java.util.ArrayList;
 import org.postgresql.util.PSQLException;
 
 /**
- * Contains all the method to comunicate with the postgre heroku's database.
+ * Contains all the method to comunicate with SafJNest Database.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 2.0
  */
-public class PostgreSQL {
+public class SQL {
     /** Object that opens the connection between database and beeby */
     Connection c;
 
@@ -26,7 +26,7 @@ public class PostgreSQL {
      * @param user Username
      * @param password Password
      */
-    public PostgreSQL(String hostName, String database, String user, String password){
+    public SQL(String hostName, String database, String user, String password){
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             c = DriverManager

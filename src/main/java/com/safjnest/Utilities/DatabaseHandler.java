@@ -6,19 +6,19 @@ package com.safjnest.Utilities;
  */
 public class DatabaseHandler {
     /**Object that provides the connection with the {@code PostgreSQL} database. 
-     * @see com.safjnest.Utilities.PostgreSQL PostgreSQL  
+     * @see com.safjnest.Utilities.SQL PostgreSQL  
      */
-    static PostgreSQL sql;
+    static SQL sql;
 
     /**
      * Default constructor
      * @param sql
      */
-    public DatabaseHandler(PostgreSQL sql) {
+    public DatabaseHandler(SQL sql) {
         DatabaseHandler.sql = sql;
     }
 
-    public static PostgreSQL getSql() {
+    public static SQL getSql() {
         return sql;
     }
 

@@ -23,9 +23,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
  * @since 1.2
  */
 public class TheListener extends ListenerAdapter{
-    private PostgreSQL sql;
+    private SQL sql;
 
-    public TheListener(PostgreSQL sql){
+    public TheListener(SQL sql){
         this.sql = sql;
     }
     /**
@@ -79,16 +79,13 @@ public class TheListener extends ListenerAdapter{
             event.getMessage().editMessage(List.getListLexo(event.getJDA(), sql, event.getGuild().getId())).queue();
         }else if(event.getButton().getId().equals("idOrder")){
             event.deferEdit().queue();
-            event.getMessage().editMessage(List.getListId(event.getJDA(), sql)).queue();
+            event.getMessage().editMessage(List.getListId(event.getJDA(), sql, event.getGuild().getId())).queue();
         }else if(event.getButton().getId().equals("mostPlayed")){
             event.deferEdit().queue();
-            event.getMessage().editMessage(List.getListMostPlayed(event.getJDA(), sql)).queue();
+            event.getMessage().editMessage(List.getListMostPlayed(event.getJDA(), sql, event.getGuild().getId())).queue();
         }else if(event.getButton().getId().equals("byUser")){
             event.deferEdit().queue();
             event.getMessage().editMessage(List.getListUser(event.getJDA(), sql, event.getMember().getId())).queue();
-        }else if(event.getButton().getId().equals("global")){
-            event.deferEdit().queue();
-            event.getMessage().editMessage(List.getListGlobal(event.getJDA(), sql)).queue();
         }
     }
 

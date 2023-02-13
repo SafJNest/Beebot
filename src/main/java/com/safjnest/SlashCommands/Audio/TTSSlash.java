@@ -13,7 +13,7 @@ import com.safjnest.Utilities.tts.Voices;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PlayerManager;
-import com.safjnest.Utilities.PostgreSQL;
+import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -32,12 +32,12 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 public class TTSSlash extends SlashCommand{
     private String speech;
     private TTSHandler tts;
-    private PostgreSQL sql;
+    private SQL sql;
     private PlayerManager pm;
     
     public static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
     
-    public TTSSlash(TTSHandler tts, PostgreSQL sql){
+    public TTSSlash(TTSHandler tts, SQL sql){
         voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
         voices.put(Voices.Chinese_China.id, Set.of(Voices.Chinese_China.array));
         voices.put(Voices.Dutch_Netherlands.id, Set.of(Voices.Dutch_Netherlands.array));
@@ -77,6 +77,7 @@ public class TTSSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String language = "it-it";
         String voice = "keria";
+        String defaultVoice = "keria";
         EmbedBuilder eb = null;
 
         speech = event.getOption("text").getAsString();
@@ -88,6 +89,9 @@ public class TTSSlash extends SlashCommand{
 
         //checking the selected voice, otherwise default is used
         String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';";
+        if(sql.getString(query, "name_tts") != null && voice.equals("keria"))
+            defaultVoice = sql.getString(query, "name_tts");
+        
         //if the user chose a voice
         if(event.getOption("voice") != null){
             for(String key : voices.keySet()){ 
@@ -100,15 +104,15 @@ public class TTSSlash extends SlashCommand{
                 event.deferReply(true).addContent("voice not found.").queue();
                 return;
             }
-        }
-        //check if there is a default voice and the user hasnt asked for a specific speaker
-        if(sql.getString(query, "name_tts") != null && voice.equals("keria")){
-            voice = sql.getString(query, "name_tts");
+        }//check if there is a default voice and the user hasnt asked for a specific speaker
+        else if(!defaultVoice.equals("keria")){
+            voice = defaultVoice;
             query = "SELECT language_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';"; 
             language = sql.getString(query, "language_tts");
         //used the default system voice
         }else{
-            voice = "Mia";  
+            voice = "Mia"; 
+            defaultVoice = "Not setted"; 
         }
         tts.makeSpeech(speech, event.getMember().getEffectiveName(), voice, language);
         
@@ -159,7 +163,10 @@ public class TTSSlash extends SlashCommand{
 
         eb.setDescription(speech);
         eb.addField("Language", language, true);
+        eb.addBlankField(true);
         eb.addField("Voice", voice, true);
+        eb.addField("Default voice", defaultVoice, true);
+        eb.addBlankField(true);
         String img = "tts.png";
         eb.setColor(Color.decode(App.color));
             
