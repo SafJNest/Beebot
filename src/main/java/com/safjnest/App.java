@@ -92,6 +92,9 @@ public class App extends ListenerAdapter {
      * @param args
      */
     public static void main(String[] args) {
+        //fastest way to compile
+        //ctrl c ctrl v
+        //assembly:assembly -DdescriptorId=jar-with-dependencies
         SafJNest.bee();
         
         boolean isCanary=(args.length>0)?0>1:1>0;//extreme codegolfing
