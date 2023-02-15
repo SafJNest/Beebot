@@ -139,9 +139,6 @@ public class App extends ListenerAdapter {
         
         SQL sql = new SQL(hostName, database, user, password);
         
-        DatabaseHandler dbh = new DatabaseHandler(sql);
-        dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-        
         AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket, sql);
         s3Client.initialize();
 
@@ -151,8 +148,14 @@ public class App extends ListenerAdapter {
             System.out.println("[R4J] INFO Connection Successful!");
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
-        }  
+        }
         
+        DatabaseHandler dbh = new DatabaseHandler(sql);
+        LOLHandler lolHandler = new LOLHandler(riotApi);
+
+        dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
+        lolHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
+
         TheListener listenerozzo = new TheListener(sql);
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT  ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
@@ -239,7 +242,7 @@ public class App extends ListenerAdapter {
         builder.addCommand(new ThreadCounter());
 
         builder.addCommand(new Champ());
-        builder.addCommand(new Summoner(riotApi, sql));
+        builder.addCommand(new Summoner());
         builder.addCommand(new FreeChamp());
         builder.addCommand(new RankMatch(riotApi, sql));
         builder.addCommand(new SetUser(riotApi, sql));
@@ -272,7 +275,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new SetPrefixSlash(sql));
 
         //lol
-        builder.addSlashCommand(new SummonerSlash(riotApi, sql));
+        builder.addSlashCommand(new SummonerSlash());
         builder.addSlashCommand(new FreeChampSlash());
         builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
         builder.addSlashCommand(new SetUserSlash(riotApi, sql));
