@@ -95,6 +95,7 @@ class FileListener extends ListenerAdapter {
 
         String query = "INSERT INTO sound(name, guild_id, user_id, extension) VALUES('" 
                      + name + "','" + event.getGuild().getId() + "','" + event.getAuthor().getId() + "','" + attachment.getFileExtension() + "');";
+        sql.runQuery(query);
         query = "SELECT id FROM sound WHERE name = '" + name + "' AND guild_id = '" + event.getGuild().getId() + "' AND user_id = '" + event.getAuthor().getId() + "';";
         String id = sql.getString(query, "id");
         if(id == null){
