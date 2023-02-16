@@ -51,12 +51,12 @@ public class List extends Command{
      * 4 extension
      */
     public static String getListLexo(JDA jda, SQL sql, String serverId){
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + serverId + "';";
+        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + serverId + "' ORDER BY name ASC;";
         return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
     }
 
     public static String getListUser(JDA jda, SQL sql, String userId){
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + userId + "';";
+        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + userId + "' ORDER BY name ASC;";
         return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
     }
     
