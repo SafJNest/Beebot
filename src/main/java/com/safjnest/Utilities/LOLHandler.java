@@ -14,7 +14,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 public class LOLHandler {
     
     private static R4J riotApi;
-    private static String dataDragonVersion = "22.1";
+    private static String dataDragonVersion = "13.3.1";
 
     public LOLHandler(R4J riotApi){
         LOLHandler.riotApi = riotApi;
@@ -46,7 +46,6 @@ public class LOLHandler {
     }
 
     public static String getSoloQStats(Summoner s){
-        System.out.println("werfg");
         String stats = "";
         for(int i = 0; i < 2; i++){
             try {
@@ -99,7 +98,7 @@ public class LOLHandler {
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
                 if(partecipant.getSummonerId().equals(s.getSummonerId()))
-                    return "Playing a " + s.getCurrentGame().getGameMode().name()+ " as " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                    return "Playing a " + s.getCurrentGame().getGameMode().prettyName()+ " as " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
             }
         } catch (Exception e) {
             return "Not in a game";
