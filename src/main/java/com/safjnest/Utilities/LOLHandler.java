@@ -27,6 +27,9 @@ public class LOLHandler {
 	public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {
         return;
 	}
+    public static R4J getRiotApi(){
+        return riotApi;
+    }
 
     public static Summoner getSummonerFromDB(String discordId){
         String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + discordId + "';";
