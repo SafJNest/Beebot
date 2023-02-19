@@ -426,6 +426,13 @@
         "arguments" : "[CommandName]"
     },
 
+    "rune":{
+        "alias" : ["runes"],
+        "help"  : "Suggest the most played runes for a specific champion",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [champName] [lane]"
+    },
+
     "summoner":{
         "alias" : ["sum"],
         "help"  : "Show up the statistic for a summoner.",

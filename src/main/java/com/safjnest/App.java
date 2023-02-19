@@ -20,6 +20,7 @@ import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
 import com.safjnest.Utilities.*;
+import com.safjnest.Utilities.LOL.LOLHandler;
 import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Math.*;
@@ -104,7 +105,7 @@ public class App extends ListenerAdapter {
 
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
-            settings = (JSONObject) settings.get((isCanary) ? "canary" : args[0]);
+            settings = (JSONObject) settings.get((isCanary) ? "beebot" : args[0]);
             discordSettings = (JSONObject) settings.get("DiscordSettings");
             awsSettings = (JSONObject) settings.get("AmazonAWS");
             SQLSettings = (JSONObject) settings.get("MySQL");
@@ -280,6 +281,7 @@ public class App extends ListenerAdapter {
         builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
         builder.addSlashCommand(new SetUserSlash(riotApi, sql));
         builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
+        builder.addSlashCommand(new RuneSlash());
 
         //Manage Member
         builder.addSlashCommand(new BanSlash());

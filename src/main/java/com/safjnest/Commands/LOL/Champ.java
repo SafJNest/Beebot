@@ -2,7 +2,6 @@ package com.safjnest.Commands.LOL;
 
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 
 import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
@@ -12,7 +11,7 @@ import org.json.simple.parser.JSONParser;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.LOLHandler;
+import com.safjnest.Utilities.LOL.LOLHandler;
 
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
@@ -34,6 +33,7 @@ public class Champ extends Command {
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.hidden = true;
     }
 
     /**
@@ -51,81 +51,25 @@ public class Champ extends Command {
             if(c.getName().equalsIgnoreCase(champ))
                 champ = String.valueOf(c.getId());
         }
-        String mainRune = "";
-        String secondRune = "";
-        ArrayList<String> mainRunes = new ArrayList<String>();
-        ArrayList<String> secondRunes = new ArrayList<String>();
         URL url;
+        String msg = "";
         try {
             url = new URL("https://axe.lolalytics.com/mega/?ep=rune&p=d&v=1&cid="+champ+"&lane="+lane);
             String json = IOUtils.toString(url, Charset.forName("UTF-8"));
-            int cont = 0;
-            url = new URL("https://ddragon.leagueoflegends.com/cdn/13.3.1/data/en_US/runesReforged.json");
-            String a = IOUtils.toString(url, Charset.forName("UTF-8"));
-            switch(getRunePage(json, "pri")){
-                case "0":
-                    mainRune = "8000";
-                    break;
-                case "1":
-                    mainRune = "8100";
-                    break;
-
-                case "2":
-                    mainRune = "8200";
-                    break;
-                case "3":
-                    mainRune = "8400";
-                    break;
-                case "4":
-                    mainRune = "8300";
-                    break;
-            }
+            String page =  getRunePage(json, "pri");
+            msg = "**" + LOLHandler.getRunesHandler().get(page).getName() + "**\n";
             for(String id : getPrin(json, "pri")){
-                mainRunes.add(getRuneName(a, mainRune, id, cont));
-                cont+=1;
-            }
-            mainRune = getMainRuneName(a, mainRune);
-
-
-            switch(getRunePage(json, "sec")){
-                case "0":
-                    secondRune = "8000";
-                    break;
-                case "1":
-                    secondRune = "8100";
-                    break;
-
-                case "2":
-                    secondRune = "8200";
-                    break;
-                case "3":
-                    secondRune = "8400";
-                    break;
-                case "4":
-                    secondRune = "8300";
-                    break;
+                msg+= LOLHandler.getRunesHandler().get(page).getRune(id).getName() + "\n";
             }
 
+            page =  getRunePage(json, "sec");
+            msg += "\n**" + LOLHandler.getRunesHandler().get(page).getName() + "**\n";
             for(String id : getPrin(json, "sec")){
-                cont = 0;
-                String awg = null;
-                do{
-                    awg = getRuneName(a, secondRune, id, cont);
-                    cont+=1;
-                }while(awg == null);
-                if(awg != null){
-                    secondRunes.add(awg);
-                }
+                msg+= LOLHandler.getRunesHandler().get(page).getRune(id).getName() + "\n";
             }
-            secondRune = getMainRuneName(a, secondRune);
-            String msg = "**" + mainRune + "**\n";
-            System.out.println(mainRune);
-            for(String s : mainRunes){
-                msg+=s+"\n";
-            }
-            msg+="\n**" + secondRune + "**\n";
-            for(String s : secondRunes)
-                msg+=s + "\n";
+
+            
+        
             event.reply(msg);
         } catch (Exception e) {
             e.printStackTrace();
@@ -221,4 +165,3 @@ public class Champ extends Command {
     
 
 }
-//TODO: mettere tutti i dati in una mappa che si carica ad ogni avvio, tra cui campioni, rune e altra merda 
