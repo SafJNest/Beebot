@@ -1,14 +1,7 @@
-package com.safjnest.Utilities;
+package com.safjnest.Utilities.tts;
 
 import java.io.File;
 import java.io.FileOutputStream;
-
-import com.safjnest.Utilities.tts.AudioCodec;
-import com.safjnest.Utilities.tts.AudioFormat;
-import com.safjnest.Utilities.tts.Languages;
-import com.safjnest.Utilities.tts.VoiceParameters;
-import com.safjnest.Utilities.tts.VoiceProvider;
-import com.safjnest.Utilities.tts.Voices;
 
 /**
  * Class that provides to generate {@code .mp3} files using TTS

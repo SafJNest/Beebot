@@ -9,6 +9,7 @@ import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 
 /**
@@ -34,6 +35,11 @@ public class Summoner extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
+        Button left = Button.primary("left", "<-");
+        Button right = Button.primary("right", "->");
+        Button center = Button.primary("center", "f");
+
+        boolean searchByUser = false;
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         if(args.equals("")){
@@ -42,6 +48,10 @@ public class Summoner extends Command {
                 event.reply("You dont have connected a Riot account, for more information /help setUser");
                 return;
             }
+            searchByUser = true;
+            center = Button.primary("center", s.getName());
+            center.asDisabled();
+            
         }
         else if(event.getMessage().getMentions().getMembers().size() != 0){
             s = LOLHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
@@ -58,27 +68,35 @@ public class Summoner extends Command {
         }
         
         
-        try {
-            EmbedBuilder builder = new EmbedBuilder();
-            builder.setAuthor(s.getName());
-            builder.setColor(Color.decode(App.color));
-            builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
-            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
-            
-            builder.addField("5v5 Ranked Solo", LOLHandler.getSoloQStats(s), true);
-            builder.addField("5v5 Ranked Flex Queue", LOLHandler.getFlexStats(s), true);
-            String masteryString = "";
-            for(int i = 1; i < 4; i++)
-                masteryString += LOLHandler.getMastery(s, i) + "\n";
-            
-            builder.addField("Top 3 Champ", masteryString, false); 
-            builder.addField("Activity", LOLHandler.getActivity(s), true);
-            event.reply(builder.build());
-            
-        } catch (Exception e) {
-            e.printStackTrace();
+        EmbedBuilder builder = createEmbed(s);
+        
+        if(searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+            return;
         }
 
+        event.reply(builder.build());
+            
+       
+
 	}
+
+    public static EmbedBuilder createEmbed(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
+        EmbedBuilder builder = new EmbedBuilder();
+        builder.setAuthor(s.getName());
+        builder.setColor(Color.decode(App.color));
+        builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
+        builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
+        
+        builder.addField("5v5 Ranked Solo", LOLHandler.getSoloQStats(s), true);
+        builder.addField("5v5 Ranked Flex Queue", LOLHandler.getFlexStats(s), true);
+        String masteryString = "";
+        for(int i = 1; i < 4; i++)
+            masteryString += LOLHandler.getMastery(s, i) + "\n";
+        
+        builder.addField("Top 3 Champ", masteryString, false); 
+        builder.addField("Activity", LOLHandler.getActivity(s), true);
+        return builder;
+    }
 
 }

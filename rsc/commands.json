@@ -454,9 +454,9 @@
         "arguments" : "[CommandName] [summonerName]"
     },
 
-    "setuser":{
-        "alias" : [],
-        "help"  : "Allow to connect for a user his Riot profile.",
+    "setsummoner":{
+        "alias" : ["setsum", "setuser", "ss"],
+        "help"  : "Allow to connect a riot account to your discord profile.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName]"
     },
