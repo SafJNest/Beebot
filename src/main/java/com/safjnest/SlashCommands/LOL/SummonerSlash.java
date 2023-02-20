@@ -1,17 +1,17 @@
 package com.safjnest.SlashCommands.LOL;
 
-import java.awt.Color;
 import java.util.Arrays;
     
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
+import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -37,6 +37,12 @@ public class SummonerSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
+        Button left = Button.primary("left", "<-");
+        Button right = Button.primary("right", "->");
+        Button center = Button.primary("center", "f");
+
+        boolean searchByUser = false;
+        
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         event.deferReply(true).queue();
         if(event.getOption("user") == null){
@@ -45,6 +51,9 @@ public class SummonerSlash extends SlashCommand {
                 event.reply("You dont have connected a Riot account, for more information /help setUser");
                 return;
             }
+            searchByUser = true;
+            center = Button.primary("center", s.getName());
+            center.asDisabled();
         }else{
             s = LOLHandler.getSummonerByName(event.getOption("user").getAsString());
             if(s == null){
@@ -54,26 +63,15 @@ public class SummonerSlash extends SlashCommand {
             
         }
         
+        EmbedBuilder builder = Summoner.createEmbed(s);
         
-        try {
-            EmbedBuilder builder = new EmbedBuilder();
-            builder.setAuthor(s.getName());
-            builder.setColor(Color.decode(App.color));
-            builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.22.1/img/profileicon/"+s.getProfileIconId()+".png");
-            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
-            builder.addField("5v5 Ranked Solo", LOLHandler.getSoloQStats(s), true);
-            builder.addField("5v5 Ranked Flex Queue", LOLHandler.getFlexStats(s), true);
-            String masteryString = "";
-            for(int i = 1; i < 4; i++)
-                masteryString += LOLHandler.getMastery(s, i) + "\n";
-            
-            builder.addField("Top 3 Champ", masteryString, false); 
-            builder.addField("Activity", LOLHandler.getActivity(s), true);
-            event.getHook().editOriginalEmbeds(builder.build()).queue();
-            
-        } catch (Exception e) {
-            e.printStackTrace();
+        if(searchByUser && LOLHandler.getNumberOfProfile(event.getUser().getId()) > 1){
+            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+            return;
         }
+
+        event.deferReply(false).addEmbeds(builder.build()).queue();
+        
 
 	}
 

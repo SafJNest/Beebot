@@ -119,9 +119,22 @@ public class LOLHandler {
         } catch (Exception e) { return null; }
     }
 
+    public static int getNumberOfProfile(String discordId){
+        String query = "SELECT count(discord_id) as count FROM lol_user WHERE discord_id = '" + discordId + "';";
+        try { 
+            return Integer.valueOf(DatabaseHandler.getSql().getString(query, "count"));
+        } catch (Exception e) { return 0; }
+    }
+
     public static Summoner getSummonerByName(String nameAccount){
         try {
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, nameAccount);
+        } catch (Exception e) { return null; }
+    }
+
+    public static Summoner getSummonerById(String id){
+        try { 
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, id);
         } catch (Exception e) { return null; }
     }
 

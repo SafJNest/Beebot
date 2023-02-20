@@ -8,6 +8,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -15,7 +16,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
 /**
@@ -73,13 +73,8 @@ public class RankMatchSlash extends SlashCommand {
             String redSide = "";
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
                 String sum = partecipant.getSummonerName();
-                String stats = "";
-                try {
-                    LeagueEntry entry = r.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, partecipant.getSummonerId()).getLeagueEntry().get(0);
-                    stats = entry.getTier().toLowerCase() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP | "
-                        + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
-
-                } catch (Exception e) {stats = "unranked";}
+                String stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
                 if(partecipant.getTeam() == TeamType.BLUE)
                     blueSide += "**" + sum + "** " + stats+ "\n";
                 else
