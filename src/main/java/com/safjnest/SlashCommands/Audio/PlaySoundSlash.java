@@ -185,12 +185,12 @@ public class PlaySoundSlash extends SlashCommand{
 
         eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + " (yours: "+timesPlayedByUser+")```", true);
 
-        String img = "idk";
+        String img = App.botId + "-";
         if(extension.equals("opus"))
-            img = "opus.png";
+            img += "opus.png";
         
         else
-            img = "mp3.png"; 
+            img += "mp3.png"; 
            
         eb.setColor(Color.decode(App.color));
         eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)

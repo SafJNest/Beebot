@@ -30,7 +30,7 @@ public class SQL {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             c = DriverManager
-                .getConnection("jdbc:mysql://"+hostName+"/"+database,user,password);
+                .getConnection("jdbc:mysql://"+hostName+"/"+ database + "?autoReconnect=true",user,password);
             System.out.println("[SQL] INFO Connection to the extreme db successful!");
         } catch (Exception e) {
             e.printStackTrace();

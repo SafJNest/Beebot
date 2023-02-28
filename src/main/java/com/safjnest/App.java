@@ -63,6 +63,8 @@ import no.stelar7.api.r4j.basic.APICredentials;
  * @version 2.0
  */
 public class App extends ListenerAdapter {
+
+    
     private static JDA jda;
     public static String PREFIX;
     public static String botId;
@@ -106,7 +108,7 @@ public class App extends ListenerAdapter {
 
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
-            settings = (JSONObject) settings.get((isCanary) ? "canary" : args[0]);
+            settings = (JSONObject) settings.get((isCanary) ? "beebot" : args[0]);
             discordSettings = (JSONObject) settings.get("DiscordSettings");
             awsSettings = (JSONObject) settings.get("AmazonAWS");
             SQLSettings = (JSONObject) settings.get("MySQL");
