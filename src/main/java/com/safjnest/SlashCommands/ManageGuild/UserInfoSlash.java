@@ -7,7 +7,8 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.DateHandler;
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
 
@@ -44,7 +45,9 @@ public class UserInfoSlash extends SlashCommand{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT "+theGuy.getName()+"** :busts_in_silhouette:");
         eb.setThumbnail(theGuy.getAvatarUrl());
-        eb.setColor(Color.decode(App.color));
+        eb.setColor(Color.decode(
+            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+        ));
 
         eb.addField("Name", "```" + theGuy.getAsTag() + "```", true);
         eb.addField("ID", "```" + theGuy.getId() + "```" , true);

@@ -8,7 +8,8 @@ import java.util.ArrayList;
 import com.amazonaws.services.s3.model.S3Object;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PlayerManager;
@@ -182,14 +183,16 @@ public class PlaySound extends Command{
 
         eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + " (yours: "+timesPlayedByUser+")```", true);
 
-        String img = App.botId + "-";
+        String img = event.getJDA().getSelfUser().getId() + "-";
         if(extension.equals("opus"))
             img += "opus.png";
         
         else
             img += "mp3.png"; 
            
-        eb.setColor(Color.decode(App.color));
+        eb.setColor(Color.decode(
+            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+        ));
         eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
             
         File imgFile = new File("rsc" + File.separator + "img" + File.separator + img);

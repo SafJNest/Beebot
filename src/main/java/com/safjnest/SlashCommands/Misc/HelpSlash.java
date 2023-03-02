@@ -8,7 +8,8 @@ import java.util.HashMap;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.GuildSettings;
 
@@ -27,7 +28,8 @@ public class HelpSlash extends SlashCommand {
     /**
      * Default constructor for the class.
      */
-    public HelpSlash() {
+    GuildSettings gs;
+    public HelpSlash(GuildSettings gs) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -36,6 +38,7 @@ public class HelpSlash extends SlashCommand {
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "command", "Name of the command you want the information about", false));
+        this.gs = gs;
     }
     /**
      * This method is called every time a member executes the command.
@@ -55,9 +58,11 @@ public class HelpSlash extends SlashCommand {
             }
         }
         eb.setTitle("📒INFO AND COMMAND📒", null);
-        eb.setDescription("Current prefix is: **" + GuildSettings.getServer(event.getGuild().getId()).getPrefix() + "**\n"
+        eb.setDescription("Current prefix is: **" + gs.getServer(event.getGuild().getId()).getPrefix() + "**\n"
         + "You can get more information using: **/help <command>.**");
-        eb.setColor(Color.decode(App.color));
+        eb.setColor(Color.decode(
+            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+        ));
         if(command.equals("")){
             String ss = "```\n";
             for(String k : commands.keySet()){

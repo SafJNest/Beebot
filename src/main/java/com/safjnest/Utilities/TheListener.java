@@ -117,7 +117,7 @@ public class TheListener extends ListenerAdapter{
             Button left = Button.primary("left", "<-");
             Button right = Button.primary("right", "->");
             Button center = Button.primary("center", LOLHandler.getSummonerById(accounts.get(index).get(0)).getName());
-            event.getMessage().editMessageEmbeds(Summoner.createEmbed(LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
+            event.getMessage().editMessageEmbeds(Summoner.createEmbed(event.getJDA().getSelfUser().getId(), LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
                 .setActionRow(left, center, right)
                 .queue();
         }else if(event.getButton().getId().equals("left")){
@@ -144,7 +144,7 @@ public class TheListener extends ListenerAdapter{
             Button left = Button.primary("left", "<-");
             Button right = Button.primary("right", "->");
             Button center = Button.primary("center", LOLHandler.getSummonerById(accounts.get(index).get(0)).getName());
-            event.getMessage().editMessageEmbeds(Summoner.createEmbed(LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
+            event.getMessage().editMessageEmbeds(Summoner.createEmbed(event.getJDA().getSelfUser().getId(), LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
                 .setActionRow(left, center, right)
                 .queue();
         }

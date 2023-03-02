@@ -15,8 +15,8 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class SetPrefixSlash extends SlashCommand{
     private SQL sql;
-    
-    public SetPrefixSlash(SQL sql){
+    GuildSettings gs;
+    public SetPrefixSlash(SQL sql, GuildSettings gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -26,6 +26,7 @@ public class SetPrefixSlash extends SlashCommand{
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "prefix", "New Prefix", true));
         this.sql = sql;
+        this.gs = gs;
     }
 
     @Override
@@ -40,6 +41,6 @@ public class SetPrefixSlash extends SlashCommand{
         else
             event.deferReply(true).addContent("Error").queue();
         
-        GuildSettings.saveData(new GuildData(event.getGuild().getIdLong(), event.getOption("prefix").getAsString()));
+        gs.saveData(new GuildData(event.getGuild().getIdLong(), event.getOption("prefix").getAsString()));
     }
 }

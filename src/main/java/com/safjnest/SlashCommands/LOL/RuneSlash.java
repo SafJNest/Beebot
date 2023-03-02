@@ -6,7 +6,8 @@ import java.awt.Color;
     
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
@@ -110,7 +111,9 @@ public class RuneSlash extends SlashCommand {
             }
             eb.addField(LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getName(), msg, true);
             
-            eb.setColor(Color.decode(App.color)); 
+            eb.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+            ));
             
             champName = champName.replace(".", "");
             champName = champName.replace("i'S", "is");

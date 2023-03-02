@@ -10,7 +10,8 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.tts.TTSHandler;
 import com.safjnest.Utilities.tts.Voices;
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PlayerManager;
 import com.safjnest.Utilities.SQL;
@@ -182,7 +183,9 @@ public class TTS extends Command{
         eb.addField("Default voice", defaultVoice, true);
         eb.addBlankField(true);
         String img = "tts.png";
-        eb.setColor(Color.decode(App.color));
+        eb.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+        ));
             
 
         File path = new File("rsc" + File.separator + "img" + File.separator + img);
