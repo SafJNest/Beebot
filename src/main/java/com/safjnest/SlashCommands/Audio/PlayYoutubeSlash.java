@@ -14,7 +14,8 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.PlayerManager;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -148,7 +149,9 @@ public class PlayYoutubeSlash extends SlashCommand {
         eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
         eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-        eb.setColor(Color.decode(App.color));
+        eb.setColor(Color.decode(
+            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+        ));
         eb.setDescription("[" + pm.getPlayer().getPlayingTrack().getInfo().title + "](" + pm.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + pm.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
         event.deferReply().addEmbeds(eb.build()).queue();

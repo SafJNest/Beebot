@@ -3,7 +3,8 @@ package com.safjnest.SlashCommands.ManageMembers;
 import java.awt.Color;
 import java.util.Arrays;
 
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -44,7 +45,9 @@ public class UnbanSlash extends SlashCommand{
                 eb.setTitle("List of banned users");
                 for (net.dv8tion.jda.api.entities.Guild.Ban ban : event.getGuild().retrieveBanList().complete())
                     eb.appendDescription(ban.getUser().getAsMention() + " - ");
-                eb.setColor(Color.decode(App.color));
+                    eb.setColor(Color.decode(
+                        BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+                    ));
                 eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
                 eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null);
                 event.deferReply(true).addEmbeds(eb.build()).queue();

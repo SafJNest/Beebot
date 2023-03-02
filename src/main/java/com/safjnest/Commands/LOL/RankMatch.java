@@ -4,7 +4,8 @@ import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.LOL.LOLHandler;
@@ -52,7 +53,9 @@ public class RankMatch extends Command {
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(s.getName() + "'s Game");
-            builder.setColor(Color.decode(App.color));
+            builder.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+            ));
             builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
             String blueSide = "";
             String redSide = "";

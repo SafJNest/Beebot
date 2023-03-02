@@ -5,7 +5,8 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
+import com.safjnest.Bot;
+import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.LOL.LOLHandler;
@@ -67,7 +68,9 @@ public class RankMatchSlash extends SlashCommand {
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle("Partita di: " + s.getName());
-            builder.setColor(Color.decode(App.color));
+            builder.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+            ));
             builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
             String blueSide = "";
             String redSide = "";

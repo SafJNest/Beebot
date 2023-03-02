@@ -84,7 +84,7 @@
     "beebot 2": {
         "DiscordSettings":{
             "discordToken": "OTgzMzE1MzM4ODg2Mjc5MjI5.Gq-wsr.Fdh33wlTAm9xsl73uO8Q4FcPEZbAdP5kbHIYmc",
-            "embedColor": "#ffc400",
+            "embedColor": "#0f0ff5",
             "prefix": "%",
             "activity": "Beebot's little brother | p help",
             "ownerID": "939876818465488926",
