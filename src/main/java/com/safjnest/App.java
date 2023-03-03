@@ -16,6 +16,9 @@ public class App {
         Thread bm = new Thread(new Bot(bs));
         bm.setName("beebot music");
         bm.start();
+        Thread bc = new Thread(new Bot(bs));
+        bc.setName("canary");
+        bc.start();
 
     }
 
