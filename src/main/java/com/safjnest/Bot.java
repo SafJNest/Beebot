@@ -201,7 +201,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             }
             return null; 
         });
-                
+        
         //Audio
         builder.addCommand(new Connect());
         builder.addCommand(new DeleteSound(s3Client, sql));
@@ -214,44 +214,54 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new TTS(tts, sql));
         builder.addCommand(new Stop());
 
-        //Manage Guild
-        builder.addCommand(new Anonym());
-        builder.addCommand(new ChannelInfo());
-        builder.addCommand(new Clear());
-        builder.addCommand(new Msg());
-        builder.addCommand(new ServerInfo());
-        builder.addCommand(new UserInfo());
-        builder.addCommand(new EmojiInfo());
-        builder.addCommand(new InviteBot());
-        builder.addCommand(new ListGuild());
-        builder.addCommand(new SetPrefix(sql, gs));
-
-        //Manage Member
-        builder.addCommand(new Ban());
-        builder.addCommand(new Unban());
-        builder.addCommand(new Kick());
-        builder.addCommand(new Move(sql));
-        builder.addCommand(new Mute());
-        builder.addCommand(new UnMute());      
-        builder.addCommand(new Image());
-        builder.addCommand(new Permissions());
-        builder.addCommand(new ModifyNickname());
-        builder.addCommand(new ListRoom(sql));
-
-        //Advanced
-        builder.addCommand(new SetWelcome(sql));
-        builder.addCommand(new SetRoom(sql));
+        if(!Thread.currentThread().getName().equals("beebot music")){
+            //Manage Guild
+            builder.addCommand(new Anonym());
+            builder.addCommand(new ChannelInfo());
+            builder.addCommand(new Clear());
+            builder.addCommand(new Msg());
+            builder.addCommand(new ServerInfo());
+            builder.addCommand(new UserInfo());
+            builder.addCommand(new EmojiInfo());
+            builder.addCommand(new InviteBot());
+            builder.addCommand(new ListGuild());
+            
+            //Manage Member
+            builder.addCommand(new Ban());
+            builder.addCommand(new Unban());
+            builder.addCommand(new Kick());
+            builder.addCommand(new Move(sql));
+            builder.addCommand(new Mute());
+            builder.addCommand(new UnMute());      
+            builder.addCommand(new Image());
+            builder.addCommand(new Permissions());
+            builder.addCommand(new ModifyNickname());
+            builder.addCommand(new ListRoom(sql));
+    
+            //Advanced
+            builder.addCommand(new SetWelcome(sql));
+            builder.addCommand(new SetRoom(sql));
+            
+            //Math
+            builder.addCommand(new Prime(maxPrime));
+            builder.addCommand(new Calc());
+            builder.addCommand(new Dice());
+            
+            //Dangerous
+            builder.addCommand(new VandalizeServer());
+            builder.addCommand(new RandomMove());
+            
+            builder.addCommand(new Champ());
+            builder.addCommand(new Summoner());
+            builder.addCommand(new FreeChamp());
+            builder.addCommand(new RankMatch(riotApi, sql));
+            builder.addCommand(new SetSummoner(riotApi, sql));
+            builder.addCommand(new LastMatches(riotApi, sql));
+        }
+        
         builder.addCommand(new SetVoice(sql));
-
-        //Math
-        builder.addCommand(new Prime(maxPrime));
-        builder.addCommand(new Calc());
-        builder.addCommand(new Dice());
-
-        //Dangerous
-        builder.addCommand(new VandalizeServer());
-        builder.addCommand(new RandomMove());
-
+        builder.addCommand(new SetPrefix(sql, gs));
+        
         //Misc
         builder.addCommand(new Ping());
         builder.addCommand(new BugsNotifier());
@@ -261,17 +271,10 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
         builder.addCommand(new ThreadCounter());
-
-        builder.addCommand(new Champ());
-        builder.addCommand(new Summoner());
-        builder.addCommand(new FreeChamp());
-        builder.addCommand(new RankMatch(riotApi, sql));
-        builder.addCommand(new SetSummoner(riotApi, sql));
-        builder.addCommand(new LastMatches(riotApi, sql));
+        
         
         
         // INSANE SLASH COMMAND DECLARATION
-        
         
         //audio
         builder.addSlashCommand(new ConnectSlash());
@@ -284,41 +287,46 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addSlashCommand(new UploadSlash(s3Client, sql));
         builder.addSlashCommand(new TTSSlash(tts, sql));
         builder.addSlashCommand(new StopSlash());
+
+
+        if(!Thread.currentThread().getName().equals("beebot music")){
+            //Manage Guild
+            builder.addSlashCommand(new ChannelInfoSlash());
+            builder.addSlashCommand(new ClearSlash());
+            builder.addSlashCommand(new ServerInfoSlash());
+            builder.addSlashCommand(new UserInfoSlash());
+            builder.addSlashCommand(new EmojiInfoSlash());
+            builder.addSlashCommand(new SetWelcomeSlash(sql));
+            
+            //lol
+            builder.addSlashCommand(new SummonerSlash());
+            builder.addSlashCommand(new FreeChampSlash());
+            builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
+            builder.addSlashCommand(new SetSummonerSlash(riotApi, sql));
+            builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
+            builder.addSlashCommand(new RuneSlash());
+            
+            //Manage Member
+            builder.addSlashCommand(new BanSlash());
+            builder.addSlashCommand(new UnbanSlash());
+            builder.addSlashCommand(new KickSlash());
+            builder.addSlashCommand(new MoveSlash());
+            builder.addSlashCommand(new MuteSlash());
+            builder.addSlashCommand(new UnMuteSlash());      
+            builder.addSlashCommand(new ImageSlash());
+            builder.addSlashCommand(new PermissionsSlash());
+            builder.addSlashCommand(new ModifyNicknameSlash());
+    
+            //Math
+            builder.addSlashCommand(new PrimeSlash(maxPrime));
+            builder.addSlashCommand(new DiceSlash());
+            builder.addSlashCommand(new FunctionSlash());
+
+        }
         
-        //Manage Guild
-        builder.addSlashCommand(new ChannelInfoSlash());
-        builder.addSlashCommand(new ClearSlash());
-        builder.addSlashCommand(new ServerInfoSlash());
-        builder.addSlashCommand(new UserInfoSlash());
-        builder.addSlashCommand(new EmojiInfoSlash());
-        builder.addSlashCommand(new SetWelcomeSlash(sql));
         builder.addSlashCommand(new SetVoiceSlash(sql));
         builder.addSlashCommand(new SetPrefixSlash(sql, gs));
-
-        //lol
-        builder.addSlashCommand(new SummonerSlash());
-        builder.addSlashCommand(new FreeChampSlash());
-        builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
-        builder.addSlashCommand(new SetSummonerSlash(riotApi, sql));
-        builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
-        builder.addSlashCommand(new RuneSlash());
-
-        //Manage Member
-        builder.addSlashCommand(new BanSlash());
-        builder.addSlashCommand(new UnbanSlash());
-        builder.addSlashCommand(new KickSlash());
-        builder.addSlashCommand(new MoveSlash());
-        builder.addSlashCommand(new MuteSlash());
-        builder.addSlashCommand(new UnMuteSlash());      
-        builder.addSlashCommand(new ImageSlash());
-        builder.addSlashCommand(new PermissionsSlash());
-        builder.addSlashCommand(new ModifyNicknameSlash());
-
-        //Math
-        builder.addSlashCommand(new PrimeSlash(maxPrime));
-        builder.addSlashCommand(new DiceSlash());
-        builder.addSlashCommand(new FunctionSlash());
-
+        
         //Misc
         builder.addSlashCommand(new PingSlash());
         builder.addSlashCommand(new BugsNotifierSlash());

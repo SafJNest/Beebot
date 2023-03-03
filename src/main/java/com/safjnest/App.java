@@ -13,9 +13,9 @@ public class App {
         Thread b3 = new Thread(new Bot(bs));
         b3.setName("beebot 3");
         b3.start();
-        Thread bc = new Thread(new Bot(bs));
-        bc.setName("canary");
-        bc.start();
+        Thread bm = new Thread(new Bot(bs));
+        bm.setName("beebot music");
+        bm.start();
 
     }
 
