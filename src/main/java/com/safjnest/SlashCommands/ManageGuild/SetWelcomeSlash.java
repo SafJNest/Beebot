@@ -36,16 +36,30 @@ public class SetWelcomeSlash extends SlashCommand {
     }
     @Override
     protected void execute(SlashCommandEvent event) {
-        String channel = event.getOption("channel").getAsChannel().getId();
+        String channel = null;
+        if(event.getOption("channel") == null){
+            try {
+                channel = event.getGuild().getSystemChannel().getId();
+            } catch (Exception e) {
+                event.deferReply(true).addContent("No channel was selected and there isn't a system channel (check your server discord settings). Be sure to select a channel next time.").queue();
+                return;
+            }
+        }else{
+            channel = event.getOption("channel").getAsChannel().getId();
+        }
         String message = event.getOption("msg").getAsString();
+        message = message.replace("'", "''");
         
         String discordId = event.getGuild().getId();
         String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text, bot_id)"
                             + "VALUES('" + discordId + "','" + channel +"','" + message + "','"+event.getJDA().getSelfUser().getId()+"');";
         sql.runQuery(query);
-        query = "INSERT INTO welcome_roles(role_id, discord_id, bot_id)"
-                            + "VALUES('" + event.getOption("role").getAsRole().getId() + "','" + discordId + "','"+event.getJDA().getSelfUser().getId()+"');";
-        sql.runQuery(query);
+        if(event.getOption("role") != null){
+            query = "INSERT INTO welcome_roles(role_id, discord_id, bot_id)"
+                                + "VALUES('" + event.getOption("role").getAsRole().getId() + "','" + discordId + "','"+event.getJDA().getSelfUser().getId()+"');";
+            sql.runQuery(query);
+        }
+
         
         event.deferReply(true).addContent("All set correctly").queue();
     }
