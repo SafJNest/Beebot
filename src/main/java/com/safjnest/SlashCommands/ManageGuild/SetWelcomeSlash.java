@@ -3,6 +3,7 @@ package com.safjnest.SlashCommands.ManageGuild;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
 
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
@@ -28,21 +29,22 @@ public class SetWelcomeSlash extends SlashCommand {
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "msg", "Welcome message", true),
-            new OptionData(OptionType.CHANNEL, "channel", "User to get the information about", false),
+            new OptionData(OptionType.CHANNEL, "channel", "User to get the information about", false)
+                            .setChannelTypes(ChannelType.TEXT),
             new OptionData(OptionType.ROLE, "role", "User to get the information about", false));
         this.sql = sql;
     }
     @Override
     protected void execute(SlashCommandEvent event) {
-        String channel = null;
+        String channel = event.getOption("channel").getAsChannel().getId();
         String message = event.getOption("msg").getAsString();
         
         String discordId = event.getGuild().getId();
-        String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text)"
-                            + "VALUES('" + discordId + "','" + channel +"','" + message + "');";
+        String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text, bot_id)"
+                            + "VALUES('" + discordId + "','" + channel +"','" + message + "','"+event.getJDA().getSelfUser().getId()+"');";
         sql.runQuery(query);
-        query = "INSERT INTO welcome_roles(role_id, discord_id)"
-                            + "VALUES('" + event.getOption("role").getAsRole().getId() + "','" + discordId +"');";
+        query = "INSERT INTO welcome_roles(role_id, discord_id, bot_id)"
+                            + "VALUES('" + event.getOption("role").getAsRole().getId() + "','" + discordId + "','"+event.getJDA().getSelfUser().getId()+"');";
         sql.runQuery(query);
         
         event.deferReply(true).addContent("All set correctly").queue();
