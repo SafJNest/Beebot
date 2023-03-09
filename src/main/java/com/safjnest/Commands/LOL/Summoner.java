@@ -46,7 +46,7 @@ public class Summoner extends Command {
         if(args.equals("")){
             s = LOLHandler.getSummonerFromDB(event.getAuthor().getId());
             if(s == null){
-                event.reply("You dont have connected a Riot account, for more information /help setUser");
+                event.reply("You dont have a Riot account connected, for more information /help setUser");
                 return;
             }
             searchByUser = true;
