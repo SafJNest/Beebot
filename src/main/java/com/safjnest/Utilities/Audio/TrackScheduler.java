@@ -1,4 +1,4 @@
-package com.safjnest.Utilities;
+package com.safjnest.Utilities.Audio;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -46,7 +46,7 @@ public class TrackScheduler extends AudioEventAdapter {
   }
 
   /**
-   * Add the track to the {@link com.safjnest.Utilities.TrackScheduler#queue queue}
+   * Add the track to the {@link com.safjnest.Utilities.Audio.TrackScheduler#queue queue}
    * @param track Comes from {@link com.safjnest.Commands.Audio.PlayYoutube Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
    */
   @OverridingMethodsMustInvokeSuper
@@ -58,7 +58,7 @@ public class TrackScheduler extends AudioEventAdapter {
    * When a new track is required from 
    * {@link com.safjnest.Commands.Audio.PlayYoutube Play} 
    * or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
-   * the method polls the first track in the {@link com.safjnest.Utilities.TrackScheduler#queue queue}
+   * the method polls the first track in the {@link com.safjnest.Utilities.Audio.TrackScheduler#queue queue}
    * @return
    * {@code AudioTrack}
    * @throws InterruptedException

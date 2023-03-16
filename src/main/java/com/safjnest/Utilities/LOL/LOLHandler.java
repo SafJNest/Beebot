@@ -198,8 +198,9 @@ public class LOLHandler {
     public static String getActivity(Summoner s){
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
-                if(partecipant.getSummonerId().equals(s.getSummonerId()))
+                if(partecipant.getSummonerId().equals(s.getSummonerId())){
                     return "Playing a " + s.getCurrentGame().getGameMode().prettyName()+ " as " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                }
             }
         } catch (Exception e) {
             return "Not in a game";

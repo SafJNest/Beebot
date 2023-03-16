@@ -3,16 +3,17 @@ package com.safjnest.Commands.ManageGuild;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.GuildData;
-import com.safjnest.Utilities.GuildSettings;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Guild.GuildData;
+import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.Permission;
 
 public class SetPrefix extends Command{
     private SQL sql;
+    GuildSettings gs;
     
-    public SetPrefix(SQL sql){
+    public SetPrefix(SQL sql, GuildSettings gs){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -20,6 +21,7 @@ public class SetPrefix extends Command{
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.sql = sql;
+        this.gs = gs;
     }
 
     @Override
@@ -39,6 +41,6 @@ public class SetPrefix extends Command{
         else
             event.reply("Error");
         
-        GuildSettings.saveData(new GuildData(event.getGuild().getIdLong(), event.getArgs()));
+        gs.saveData(new GuildData(event.getGuild().getIdLong(), event.getArgs()));
     }
 }

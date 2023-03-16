@@ -239,6 +239,13 @@
         "arguments" : "[CommandName] (here = all the member in the voice channel will be moved) (channel id) | (me = you) (channel id) | (member) (channel id) | (member) (here = the user will be move where you are) | (member) (afk)." 
     },
 
+    "movechannel":{
+        "alias" : [],
+        "help"  : "Move all the members in a room to another on.\nIts possibile to move the members to a specific users",
+        "category" : "Member Management",
+        "arguments" : "only for slash command." 
+    },
+
     "modifynickname":{
         "alias" : ["modnick", "nick"],
         "help"  : "Change the nickname for a member.",

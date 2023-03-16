@@ -48,16 +48,16 @@ public class TheListener extends ListenerAdapter{
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         MessageChannel channel = null;
         User newGuy = event.getUser();
-        String query = "SELECT channel_id FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "';";
+        String query = "SELECT channel_id FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '"+event.getJDA().getSelfUser().getId()+"';";
         String notNullPls = sql.getString(query, "channel_id");
         if(notNullPls == null)
             return;
         channel = event.getGuild().getTextChannelById(notNullPls);
-        query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "';";
+        query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '"+event.getJDA().getSelfUser().getId()+"';";
         String message = sql.getString(query, "message_text");
         message = message.replace("#user", newGuy.getAsMention());
         channel.sendMessage(message).queue();
-        query = "SELECT role_id FROM welcome_roles WHERE discord_id = '" + event.getGuild().getId() + "';";
+        query = "SELECT role_id FROM welcome_roles WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '"+event.getJDA().getSelfUser().getId()+"';";
         ArrayList<String> roles = sql.getListString(query, "role_id");
         if(roles.size() > 0){
             for(String role : roles){
@@ -117,7 +117,7 @@ public class TheListener extends ListenerAdapter{
             Button left = Button.primary("left", "<-");
             Button right = Button.primary("right", "->");
             Button center = Button.primary("center", LOLHandler.getSummonerById(accounts.get(index).get(0)).getName());
-            event.getMessage().editMessageEmbeds(Summoner.createEmbed(LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
+            event.getMessage().editMessageEmbeds(Summoner.createEmbed(event.getJDA().getSelfUser().getId(), LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
                 .setActionRow(left, center, right)
                 .queue();
         }else if(event.getButton().getId().equals("left")){
@@ -144,7 +144,7 @@ public class TheListener extends ListenerAdapter{
             Button left = Button.primary("left", "<-");
             Button right = Button.primary("right", "->");
             Button center = Button.primary("center", LOLHandler.getSummonerById(accounts.get(index).get(0)).getName());
-            event.getMessage().editMessageEmbeds(Summoner.createEmbed(LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
+            event.getMessage().editMessageEmbeds(Summoner.createEmbed(event.getJDA().getSelfUser().getId(), LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
                 .setActionRow(left, center, right)
                 .queue();
         }

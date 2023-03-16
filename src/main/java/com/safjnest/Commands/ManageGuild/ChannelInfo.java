@@ -6,7 +6,7 @@ import java.time.ZoneId;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
-import com.safjnest.App;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -42,7 +42,9 @@ public class ChannelInfo extends Command {
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("**CHANNEL INFO**");
-        eb.setColor(Color.decode(App.color));
+        eb.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+        ));
         if(gc.getType().isAudio()){
             v = event.getGuild().getVoiceChannelById(event.getArgs());
             eb.addField("Channel name", "```" + v.getName() + "```", true);   
