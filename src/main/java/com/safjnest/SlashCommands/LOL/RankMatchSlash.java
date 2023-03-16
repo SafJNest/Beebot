@@ -5,10 +5,9 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -37,6 +36,9 @@ public class RankMatchSlash extends SlashCommand {
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.options = Arrays.asList(
+            new OptionData(OptionType.STRING, "type", "Ranked type", true)
+                            .addChoice("Flex", "flex")
+                            .addChoice("SoloQueue", "soloqueue"),
             new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", false));
         this.r = r;
         this.sql = sql;
@@ -48,7 +50,7 @@ public class RankMatchSlash extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        event.deferReply(true).queue();
+        event.deferReply(false).queue();
         if(event.getOption("user") == null){
             String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
             try {
@@ -67,22 +69,35 @@ public class RankMatchSlash extends SlashCommand {
         }
         try {
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle("Partita di: " + s.getName());
+            builder.setTitle(s.getName() + "'s Game");
             builder.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
             ));
             builder.setThumbnail("https://ddragon.leagueoflegends.com/cdn/12.16.1/img/profileicon/"+s.getProfileIconId()+".png");
             String blueSide = "";
             String redSide = "";
-            for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
-                String sum = partecipant.getSummonerName();
-                String stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
-                stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
-                if(partecipant.getTeam() == TeamType.BLUE)
-                    blueSide += "**" + sum + "** " + stats+ "\n";
-                else
-                    redSide += "**" + sum + "** " + stats+ "\n";
-                
+            if(event.getOption("type").getAsString().equals("soloqueue")){
+                for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
+                    String sum = partecipant.getSummonerName();
+                    String stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                    stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
+                    if(partecipant.getTeam() == TeamType.BLUE)
+                        blueSide += "**" + sum + "** " + stats+ "\n";
+                    else
+                        redSide += "**" + sum + "** " + stats+ "\n";
+                    
+                }
+            }else{
+                for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
+                    String sum = partecipant.getSummonerName();
+                    String stats = LOLHandler.getFlexStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                    stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
+                    if(partecipant.getTeam() == TeamType.BLUE)
+                        blueSide += "**" + sum + "** " + stats+ "\n";
+                    else
+                        redSide += "**" + sum + "** " + stats+ "\n";
+                    
+                }
             }
             builder.addField("**BLUE SIDE**", blueSide, false);
             builder.addField("**RED SIDE**", redSide, true);

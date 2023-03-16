@@ -3,8 +3,7 @@ package com.safjnest.Commands.ManageGuild;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DateHandler;
-import com.safjnest.Bot;
-import com.safjnest.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import java.awt.Color;
 

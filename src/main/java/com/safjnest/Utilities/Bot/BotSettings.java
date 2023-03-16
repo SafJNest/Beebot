@@ -1,4 +1,4 @@
-package com.safjnest;
+package com.safjnest.Utilities.Bot;
 
 public class BotSettings {
     public String botId;
@@ -9,6 +9,5 @@ public class BotSettings {
         this.botId = botId;
         this.prefix = prefix;
         this.color = color;
-        System.out.println(color + prefix + botId);
     }
 }
