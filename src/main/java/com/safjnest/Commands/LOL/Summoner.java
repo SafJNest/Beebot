@@ -4,8 +4,8 @@ import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -45,7 +45,7 @@ public class Summoner extends Command {
         if(args.equals("")){
             s = LOLHandler.getSummonerFromDB(event.getAuthor().getId());
             if(s == null){
-                event.reply("You dont have connected a Riot account, for more information /help setUser");
+                event.reply("You dont have a Riot account connected, for more information /help setUser");
                 return;
             }
             searchByUser = true;
@@ -68,7 +68,7 @@ public class Summoner extends Command {
         }
         
         
-        EmbedBuilder builder = createEmbed(s);
+        EmbedBuilder builder = createEmbed(event.getJDA().getSelfUser().getId(), s);
         
         if(searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
@@ -81,10 +81,12 @@ public class Summoner extends Command {
 
 	}
 
-    public static EmbedBuilder createEmbed(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
+    public static EmbedBuilder createEmbed(String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(s.getName());
-        builder.setColor(Color.decode(App.color));
+        builder.setColor(Color.decode(
+            BotSettingsHandler.map.get(id).color
+        ));
         builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
         builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
         

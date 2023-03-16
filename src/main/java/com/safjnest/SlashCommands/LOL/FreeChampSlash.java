@@ -5,9 +5,8 @@ import java.io.File;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
 import com.safjnest.Utilities.CommandsHandler;
-
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -48,7 +47,9 @@ public class FreeChampSlash extends SlashCommand {
         ChampionRotationInfo c = builder.getFreeToPlayRotation();
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getMember().getEffectiveName());
-        eb.setColor(Color.decode(App.color));
+        eb.setColor(Color.decode(
+            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+        ));
         eb.setTitle("List of free champion:");
         String s = "";
         for(StaticChampion ce : c.getFreeChampions()){
