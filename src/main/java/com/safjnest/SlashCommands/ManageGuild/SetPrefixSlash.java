@@ -5,9 +5,9 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.GuildData;
-import com.safjnest.Utilities.GuildSettings;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Guild.GuildData;
+import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.OptionType;

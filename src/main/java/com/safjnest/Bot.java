@@ -6,8 +6,6 @@ package com.safjnest;
  * 
  */
 
-
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
@@ -17,12 +15,14 @@ import java.util.HashMap;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 
 import com.safjnest.Utilities.*;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.Bot.BotSettings;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Guild.GuildData;
+import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.tts.TTSHandler;
 import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
@@ -39,8 +39,6 @@ import com.safjnest.SlashCommands.ManageMembers.*;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
 
-
-
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -52,10 +50,11 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
 import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.basic.APICredentials;
+
 /**
  * Main class of the bot.
- * <p> The {@code JDA} is instantiated and his parameters are  
+ * <p>
+ * The {@code JDA} is instantiated and his parameters are
  * specified (token, activity, cache, ...). The bot connects to
  * discord and AWS S3. The bot's commands are instantiated.
  * 
@@ -66,60 +65,54 @@ import no.stelar7.api.r4j.basic.APICredentials;
  */
 public class Bot extends ListenerAdapter implements Runnable {
 
-    
     private BotSettingsHandler bs;
 
+    private JDA jda;
+    public String PREFIX;
+    public String botId;
+    private Activity activity;
+    public String color;
+    private String ownerID;
+    private String helpWord;
 
-    private  JDA jda;
-    public  String PREFIX;
-    public  String botId;
-    private  Activity activity;
-    public  String color;
-    private  String ownerID;
-    private  String helpWord;
+    private String token;
+    private String youtubeApiKey;
 
-    private  String token;
-    private  String AWSAccesKey;
-    private  String AWSSecretKey;
-    private  String youtubeApiKey;
-    private  String ttsApiKey;
-    private  String riotKey;
+    private int maxPrime;
 
-    private  String hostName;
-    private  String database;
-    private  String user;
-    private  String password;
+    private HashMap<String, String> tierOneLink = new HashMap<>();
 
-    private  String bucket;
+    private TTSHandler tts;
+    private SQL sql;
+    private AwsS3 s3Client;
+    private R4J riotApi;
 
-    private  int maxPrime ;
-
-    private  HashMap<String, String> tierOneLink = new HashMap<>();
-
-    public Bot(BotSettingsHandler bs){
+    public Bot(BotSettingsHandler bs, TTSHandler tts, SQL sql, AwsS3 s3Client, R4J riotApi) {
+        this.tts = tts;
+        this.sql = sql;
+        this.s3Client = s3Client;
+        this.riotApi = riotApi;
         this.bs = bs;
     }
 
     /**
      * Where the magic happens.
+     * 
      * @param args
      */
     @Override
     public void run() {
-        //fastest way to compile
-        //ctrl c ctrl v
-        //assembly:assembly -DdescriptorId=jar-with-dependencies
-        SafJNest.bee();
-        
+        // fastest way to compile
+        // ctrl c ctrl v
+        // assembly:assembly -DdescriptorId=jar-with-dependencies
+
         JSONParser parser = new JSONParser();
-        JSONObject settings = null, discordSettings = null, awsSettings = null, SQLSettings = null;
+        JSONObject settings = null, discordSettings = null, settingsSettings = null;
 
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
-            settings = (JSONObject) settings.get(Thread.currentThread().getName());
-            discordSettings = (JSONObject) settings.get("DiscordSettings");
-            awsSettings = (JSONObject) settings.get("AmazonAWS");
-            SQLSettings = (JSONObject) settings.get("MySQL");
+            discordSettings = (JSONObject) settings.get(Thread.currentThread().getName());
+            settingsSettings = (JSONObject) settings.get("settings");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -130,63 +123,31 @@ public class Bot extends ListenerAdapter implements Runnable {
         color = discordSettings.get("embedColor").toString();
         ownerID = discordSettings.get("ownerID").toString();
         helpWord = discordSettings.get("helpWord").toString();
-        
-        maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
-        AWSAccesKey = awsSettings.get("AWSAccesKey").toString();
-        AWSSecretKey = awsSettings.get("AWSSecretKey").toString();
-        bucket = awsSettings.get("AWSbucketName").toString();
-        
-        youtubeApiKey = settings.get("youtubeApiKey").toString();
-        ttsApiKey = settings.get("ttsApiKey").toString();
-        riotKey = settings.get("riotKey").toString();
 
-        hostName = SQLSettings.get("HostName").toString();
-        database = SQLSettings.get("database").toString();
-        user = SQLSettings.get("user").toString();
-        password = SQLSettings.get("password").toString();
+        maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
+        youtubeApiKey = settingsSettings.get("youtubeApiKey").toString();
 
         System.out.println(discordSettings.get("info"));
 
-        TTSHandler tts = new TTSHandler(ttsApiKey);
-        
-        SQL sql = new SQL(hostName, database, user, password);
-        
-        AwsS3 s3Client = new AwsS3(new BasicAWSCredentials(AWSAccesKey, AWSSecretKey), bucket, sql);
-        s3Client.initialize();
-
-        R4J riotApi = null;
-        try {
-            riotApi = new R4J(new APICredentials(riotKey));
-            System.out.println("[R4J] INFO Connection Successful!");
-        } catch (Exception e) {
-            System.out.println("[R4J] INFO Annodam Not Successful!");
-        }
-        
-        DatabaseHandler dbh = new DatabaseHandler(sql);
-        LOLHandler lolHandler = new LOLHandler(riotApi);
-
-        dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-        lolHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-
         TheListener listenerozzo = new TheListener(sql);
 
-        
-        
         jda = JDABuilder
-        .createLight(token, GatewayIntent.MESSAGE_CONTENT  ,GatewayIntent.GUILD_MESSAGES, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
-        .addEventListeners(listenerozzo)
-        .setMemberCachePolicy(MemberCachePolicy.ALL)
-        .setChunkingFilter(ChunkingFilter.ALL)
-        .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER)
-        .build();
+                .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
+                        GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
+                        GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
+                .addEventListeners(listenerozzo)
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .setChunkingFilter(ChunkingFilter.ALL)
+                .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER)
+                .build();
+
         botId = jda.getSelfUser().getId();
         bs.setSettings(new BotSettings(
-            botId,
-            PREFIX,
-            color
-        ), botId);
+                botId,
+                PREFIX,
+                color), botId);
+
         CommandClientBuilder builder = new CommandClientBuilder();
-        //builder.setPrefix(PREFIX); 
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
@@ -199,10 +160,10 @@ public class Bot extends ListenerAdapter implements Runnable {
                 GuildData gd = gs.getServer(event.getGuild().getId());
                 return gd == null ? PREFIX : gd.getPrefix();
             }
-            return null; 
+            return null;
         });
-        
-        //Audio
+
+        // Audio
         builder.addCommand(new Connect());
         builder.addCommand(new DeleteSound(s3Client, sql));
         builder.addCommand(new Disconnect());
@@ -214,8 +175,8 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new TTS(tts, sql));
         builder.addCommand(new Stop());
 
-        if(!Thread.currentThread().getName().equals("beebot music")){
-            //Manage Guild
+        if (!Thread.currentThread().getName().equals("beebot music")) {
+            // Manage Guild
             builder.addCommand(new Anonym());
             builder.addCommand(new ChannelInfo());
             builder.addCommand(new Clear());
@@ -225,32 +186,32 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new EmojiInfo());
             builder.addCommand(new InviteBot());
             builder.addCommand(new ListGuild());
-            
-            //Manage Member
+
+            // Manage Member
             builder.addCommand(new Ban());
             builder.addCommand(new Unban());
             builder.addCommand(new Kick());
             builder.addCommand(new Move(sql));
             builder.addCommand(new Mute());
-            builder.addCommand(new UnMute());      
+            builder.addCommand(new UnMute());
             builder.addCommand(new Image());
             builder.addCommand(new Permissions());
             builder.addCommand(new ModifyNickname());
             builder.addCommand(new ListRoom(sql));
-    
-            //Advanced
+
+            // Advanced
             builder.addCommand(new SetWelcome(sql));
             builder.addCommand(new SetRoom(sql));
-            
-            //Math
+
+            // Math
             builder.addCommand(new Prime(maxPrime));
             builder.addCommand(new Calc());
             builder.addCommand(new Dice());
-            
-            //Dangerous
+
+            // Dangerous
             builder.addCommand(new VandalizeServer());
             builder.addCommand(new RandomMove());
-            
+
             builder.addCommand(new Champ());
             builder.addCommand(new Summoner());
             builder.addCommand(new FreeChamp());
@@ -258,11 +219,11 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new SetSummoner(riotApi, sql));
             builder.addCommand(new LastMatches(riotApi, sql));
         }
-        
+
         builder.addCommand(new SetVoice(sql));
         builder.addCommand(new SetPrefix(sql, gs));
-        
-        //Misc
+
+        // Misc
         builder.addCommand(new Ping());
         builder.addCommand(new BugsNotifier());
         builder.addCommand(new Ram());
@@ -271,12 +232,10 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
         builder.addCommand(new ThreadCounter());
-        
-        
-        
+
         // INSANE SLASH COMMAND DECLARATION
-        
-        //audio
+
+        // audio
         builder.addSlashCommand(new ConnectSlash());
         builder.addSlashCommand(new DeleteSoundSlash(s3Client, sql));
         builder.addSlashCommand(new DisconnectSlash());
@@ -288,46 +247,46 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addSlashCommand(new TTSSlash(tts, sql));
         builder.addSlashCommand(new StopSlash());
 
-
-        if(!Thread.currentThread().getName().equals("beebot music")){
-            //Manage Guild
+        if (!Thread.currentThread().getName().equals("beebot music")) {
+            // Manage Guild
             builder.addSlashCommand(new ChannelInfoSlash());
             builder.addSlashCommand(new ClearSlash());
             builder.addSlashCommand(new ServerInfoSlash());
             builder.addSlashCommand(new UserInfoSlash());
             builder.addSlashCommand(new EmojiInfoSlash());
             builder.addSlashCommand(new SetWelcomeSlash(sql));
-            
-            //lol
+
+            // lol
             builder.addSlashCommand(new SummonerSlash());
             builder.addSlashCommand(new FreeChampSlash());
             builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
             builder.addSlashCommand(new SetSummonerSlash(riotApi, sql));
             builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
             builder.addSlashCommand(new RuneSlash());
-            
-            //Manage Member
+
+            // Manage Member
             builder.addSlashCommand(new BanSlash());
             builder.addSlashCommand(new UnbanSlash());
             builder.addSlashCommand(new KickSlash());
             builder.addSlashCommand(new MoveSlash());
+            builder.addSlashCommand(new MoveChannelSlash());
             builder.addSlashCommand(new MuteSlash());
-            builder.addSlashCommand(new UnMuteSlash());      
+            builder.addSlashCommand(new UnMuteSlash());
             builder.addSlashCommand(new ImageSlash());
             builder.addSlashCommand(new PermissionsSlash());
             builder.addSlashCommand(new ModifyNicknameSlash());
-    
-            //Math
+
+            // Math
             builder.addSlashCommand(new PrimeSlash(maxPrime));
             builder.addSlashCommand(new DiceSlash());
             builder.addSlashCommand(new FunctionSlash());
 
         }
-        
+
         builder.addSlashCommand(new SetVoiceSlash(sql));
         builder.addSlashCommand(new SetPrefixSlash(sql, gs));
-        
-        //Misc
+
+        // Misc
         builder.addSlashCommand(new PingSlash());
         builder.addSlashCommand(new BugsNotifierSlash());
         builder.addSlashCommand(new RamSlash());
@@ -337,7 +296,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addSlashCommand(new MsgSlash());
         builder.addSlashCommand(new InviteBotSlash());
         builder.addSlashCommand(new AnonymSlash());
-        
+
         CommandClient client = builder.build();
         jda.addEventListener(client);
     }

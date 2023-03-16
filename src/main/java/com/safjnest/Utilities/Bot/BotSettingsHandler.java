@@ -1,4 +1,4 @@
-package com.safjnest;
+package com.safjnest.Utilities.Bot;
 
 import java.util.HashMap;
 

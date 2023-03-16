@@ -3,10 +3,9 @@ package com.safjnest.Commands.ManageMembers;
 import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
-import com.safjnest.Bot;
-import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.Permission;

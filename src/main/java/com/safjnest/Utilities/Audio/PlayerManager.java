@@ -1,4 +1,4 @@
-package com.safjnest.Utilities;
+package com.safjnest.Utilities.Audio;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;

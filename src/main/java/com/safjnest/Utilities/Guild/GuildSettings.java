@@ -1,9 +1,10 @@
-package com.safjnest.Utilities;
+package com.safjnest.Utilities.Guild;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.safjnest.Bot;
+import com.safjnest.Utilities.DatabaseHandler;
+
 
 
 /**
@@ -13,7 +14,7 @@ import com.safjnest.Bot;
  */
 public class GuildSettings {
     /**
-     * {@code HashMap} that contains all the {@link com.safjnest.Utilities.GuildData settings} of every guild.
+     * {@code HashMap} that contains all the {@link com.safjnest.Utilities.Guild.GuildData settings} of every guild.
      * <p>The key of the map is the guild's id.
      */
     public HashMap<String, GuildData> cache = new HashMap<>();
@@ -36,8 +37,8 @@ public class GuildSettings {
      * to search for it in the {@link com.safjnest.Utilities.SQL postgre database}.
      * @param id Server ID
      * @return
-     * The {@link com.safjnest.Utilities.GuildData guildData} if is stored in the cache(or is in the database), otherwise a defult {@link com.safjnest.Utilities.GuildData guildData}.
-     * @see {@link com.safjnest.Utilities.GuildData guildData and default guildData}
+     * The {@link com.safjnest.Utilities.Guild.GuildData guildData} if is stored in the cache(or is in the database), otherwise a defult {@link com.safjnest.Utilities.Guild.GuildData guildData}.
+     * @see {@link com.safjnest.Utilities.Guild.GuildData guildData and default guildData}
      */
     public GuildData getServer(String id) {
         if(cache.containsKey(id)) {
@@ -67,7 +68,7 @@ public class GuildSettings {
      * </ul>
      * @param stringId guild's ID
      * @return
-     * Always a {@link com.safjnest.Utilities.GuildData guildData}, never {@code null}
+     * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
      */
     public GuildData retrieveServer(String stringId) {
         String query = "SELECT * FROM guild_settings WHERE guild_id = '" + stringId + "' AND bot_id = '" + botId + "';";
@@ -80,7 +81,7 @@ public class GuildSettings {
     }
 
     /**
-     * Saves in the {@link GuildSettings#cache cache} the {@link com.safjnest.Utilities.GuildData guildData}
+     * Saves in the {@link GuildSettings#cache cache} the {@link com.safjnest.Utilities.Guild.GuildData guildData}
      * @param guild guildData
      */
     public void saveData(GuildData guild) {

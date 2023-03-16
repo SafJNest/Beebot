@@ -10,12 +10,11 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.tts.TTSHandler;
 import com.safjnest.Utilities.tts.Voices;
-import com.safjnest.Bot;
-import com.safjnest.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
-import com.safjnest.Utilities.PlayerManager;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
