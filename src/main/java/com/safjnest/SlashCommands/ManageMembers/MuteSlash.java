@@ -47,7 +47,7 @@ public class MuteSlash extends SlashCommand{
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.VOICE_MUTE_OTHERS)) {
                 event.getGuild().mute(surelyTheGuy, true).queue(
-                                                        (e) -> event.deferReply(true).addContent("muted " + surelyTheGuy.getAsMention()).queue(), 
+                                                        (e) -> event.deferReply(false).addContent("muted " + surelyTheGuy.getAsMention()).queue(), 
                                                         new ErrorHandler().handle(
                                                             ErrorResponse.MISSING_PERMISSIONS,
                                                                 (e) -> event.deferReply(true).addContent("sorry, " + e.getMessage()).queue())

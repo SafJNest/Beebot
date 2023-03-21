@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Misc;
+package com.safjnest.Commands.Dangerous;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -23,6 +23,7 @@ public class Jelly extends Command {
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.hidden = true;
     }
 
     @Override
@@ -42,7 +43,7 @@ public class Jelly extends Command {
         else{
             try {
                 theGuy.modifyNickname(((theGuy.getNickname() == null) ? theGuy.getUser().getName() : theGuy.getNickname()) + "WX").queue(
-                (e) -> event.reply("Jellificato  " + theGuy.getAsMention() + " blblblablvblbbla"), 
+                (e) -> event.reply(theGuy.getAsMention() + " has been jellified blblblblblblblbllblblblblbllbblblbllbblblblblblbllbblblblbblblblbbllblblblblblblblblblblbblbllbblbllblbbllblblblblblbblblbllllblblbblblblblblblbllblblblblbllbblblbllbblblblblblbllbblblblbblblblbbllblblblblblblblblblblbblbllbblbllblbbllblblblblblbblblbllllblblbblblblblblblbllblblblblbllbblblbllbblblblblblbllbblblblbblblblbbllblblblblblblblblblblbblbllbblbllblbbllblblblblblbblblbllllblblb"), 
                 new ErrorHandler().handle(
                     ErrorResponse.MISSING_PERMISSIONS,
                         (e) -> event.replyError("Sorry, " + e.getMessage()))

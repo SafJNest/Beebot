@@ -44,7 +44,7 @@ public class PermissionsSlash extends SlashCommand{
                     per+=p.getName() + "\n";
                 msg = theGuy.getAsMention() + " is not an admin\nThese are his permissions: " + per;
             }
-            event.deferReply(true).addContent(msg).queue();
+            event.deferReply(false).addContent(msg).queue();
         } catch (Exception e) {
             event.deferReply(true).addContent("sorry, " + e.getMessage()).queue();
         }

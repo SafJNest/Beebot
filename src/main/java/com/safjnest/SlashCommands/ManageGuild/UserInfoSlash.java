@@ -87,6 +87,6 @@ public class UserInfoSlash extends SlashCommand{
                     + DateHandler.formatDate(theGuy.getTimeCreated())
                     + "```", false);
         
-        event.deferReply(true).addEmbeds(eb.build()).queue();
+        event.deferReply(false).addEmbeds(eb.build()).queue();
     }
 }

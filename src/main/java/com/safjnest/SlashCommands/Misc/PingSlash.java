@@ -25,6 +25,7 @@ public class PingSlash extends SlashCommand{
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.hidden = true;
     }
     /**
      * This method is called every time a member executes the command.
@@ -33,7 +34,7 @@ public class PingSlash extends SlashCommand{
     public void execute(SlashCommandEvent event) {
         
         long time = System.currentTimeMillis();
-        event.deferReply(true).queue(
+        event.deferReply(false).queue(
             hook -> hook.editOriginalFormat("Pong: %d ms ", System.currentTimeMillis() - time).queue()
         );
     }

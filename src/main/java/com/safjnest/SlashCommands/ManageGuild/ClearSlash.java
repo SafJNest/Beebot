@@ -48,6 +48,6 @@ public class ClearSlash extends SlashCommand {
         MessageHistory history = new MessageHistory(event.getChannel());
         List<Message> msgs = history.retrievePast(value + 1).complete();
         event.getTextChannel().deleteMessages(msgs).queue();
-        event.deferReply(true).addContent(value + " messages deleted").queue();
+        event.deferReply(false).addContent(value + " messages deleted").queue();
 	}
 }

@@ -49,6 +49,6 @@ public class BugsNotifierSlash extends SlashCommand {
         eb.setColor(new Color(255, 0, 0));
 
         PermissionHandler.getUntouchables().forEach((id) -> event.getJDA().retrieveUserById(id).complete().openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(eb.build()).queue()));
-        event.deferReply(true).addContent("Message sent successfuly").queue();
+        event.deferReply(false).addContent("Message sent successfuly").queue();
     }
 }

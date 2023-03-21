@@ -31,7 +31,7 @@ public class ImageSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         try {
             User theGuy = event.getOption("user").getAsUser();
-            event.deferReply(true).addContent(theGuy.getAvatarUrl()).queue();
+            event.deferReply(false).addContent(theGuy.getAvatarUrl()).queue();
         } catch (Exception e) {
             event.deferReply(true).addContent("error: " + e.getMessage()).queue();
         }

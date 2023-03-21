@@ -17,7 +17,7 @@ public class InviteBotSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        event.deferReply(true).addContent(event.getJDA().getInviteUrl()).queue();
+        event.deferReply(false).addContent(event.getJDA().getInviteUrl()).queue();
     }
 
 }

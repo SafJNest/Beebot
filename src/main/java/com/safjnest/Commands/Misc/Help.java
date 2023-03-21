@@ -8,6 +8,7 @@ import java.util.HashMap;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
@@ -45,7 +46,7 @@ public class Help extends Command {
         EmbedBuilder eb = new EmbedBuilder();
         HashMap<String, ArrayList<Command>> commands = new HashMap<>();
         for (Command e : event.getClient().getCommands()) {
-            if(!e.getCategory().getName().equals("Dangerous")){
+            if(!e.isHidden() || PermissionHandler.isUntouchable(event.getMember().getId())){
                 if(!commands.containsKey(e.getCategory().getName()))
                     commands.put(e.getCategory().getName(), new ArrayList<Command>());
                 commands.get(e.getCategory().getName()).add(e);

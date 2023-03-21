@@ -60,7 +60,7 @@ public class SetVoiceSlash extends SlashCommand {
             query = "UPDATE tts_guilds SET name_tts = '" + voice + "' WHERE discord_id = '" + event.getGuild().getId() + "';";
             String query2 = "UPDATE tts_guilds SET language_tts = '" + language + "' WHERE discord_id = '" + event.getGuild().getId() + "';";
             if(sql.runQuery(query) && sql.runQuery(query2))
-                event.deferReply(true).addContent("Default voice modified correctly").queue();
+                event.deferReply(false).addContent("Default voice modified correctly").queue();
             else 
                 event.deferReply(true).addContent("Error: wrong voice name probably").queue();
         }

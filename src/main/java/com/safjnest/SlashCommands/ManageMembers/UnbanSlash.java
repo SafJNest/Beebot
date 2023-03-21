@@ -59,7 +59,7 @@ public class UnbanSlash extends SlashCommand{
 
                 else if (PermissionHandler.hasPermission(event.getMember(), Permission.BAN_MEMBERS)) {
                     event.getGuild().unban(surelyTheGuy).queue(
-                                                            (e) -> event.deferReply(true).addContent("Unbanned " + surelyTheGuy.getAsMention()).queue(), 
+                                                            (e) -> event.deferReply(false).addContent("Unbanned " + surelyTheGuy.getAsMention()).queue(), 
                                                             new ErrorHandler().handle(
                                                                 ErrorResponse.MISSING_PERMISSIONS,
                                                                     (e) -> event.deferReply(true).addContent("sorry, " + e.getMessage()).queue())

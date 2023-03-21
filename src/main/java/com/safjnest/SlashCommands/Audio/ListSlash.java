@@ -41,7 +41,7 @@ public class ListSlash extends SlashCommand{
         MessageCreateBuilder message = new MessageCreateBuilder();
         message.setContent(getListLexo(event.getJDA(), sql, event.getGuild().getId()));
         message.addActionRow(keria1, keria2, keria3, keria4);
-        event.deferReply().applyData(message.build()).queue();
+        event.deferReply(false).applyData(message.build()).queue();
     }
    
     public static String getListLexo(JDA jda, SQL sql, String serverId){

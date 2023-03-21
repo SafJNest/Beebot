@@ -117,7 +117,7 @@ public class ServerInfoSlash extends SlashCommand{
                     + DateHandler.formatDate(guild.getTimeCreated()) 
                     + "```", false);
         
-        event.deferReply(true).addEmbeds(eb.build()).queue();
+        event.deferReply(false).addEmbeds(eb.build()).queue();
 
         //event.reply(guild.getCategories().toString())
         //event.reply(guild.getChannels().toString());

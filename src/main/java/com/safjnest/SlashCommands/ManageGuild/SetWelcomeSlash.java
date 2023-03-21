@@ -61,6 +61,6 @@ public class SetWelcomeSlash extends SlashCommand {
         }
 
         
-        event.deferReply(true).addContent("All set correctly").queue();
+        event.deferReply(false).addContent("All set correctly").queue();
     }
 }
