@@ -39,7 +39,7 @@ public class DiceSlash extends SlashCommand {
         for(int i = 0; i < ndice; i++)
             sum+=(int)(Math.random() * nface) + 1;
         
-        event.deferReply(true).addContent((ndice == 1)
+        event.deferReply(false).addContent((ndice == 1)
                     ? "Rolled a " + nface + "-sided dice: " + sum        
                     : "Rolled " + ndice +" "+nface + "-sided dices: " + sum).queue();
 	}

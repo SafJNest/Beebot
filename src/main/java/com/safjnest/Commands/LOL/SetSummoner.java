@@ -48,6 +48,7 @@ public class SetSummoner extends Command {
             String query = "INSERT INTO lol_user(discord_id, summoner_id, account_id)"
                     + "VALUES('"+event.getAuthor().getId()+"','"+s.getSummonerId()+"','"+s.getAccountId()+"');";
             sql.runQuery(query);
+            event.reply("Connected " + s.getName() + " to your profile.");
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -53,7 +53,7 @@ public class SetSummonerSlash extends SlashCommand {
             String query = "INSERT INTO LOL_user(discord_id, summoner_id, account_id, sum_name)"
                     + "VALUES('"+event.getMember().getId()+"','"+s.getSummonerId()+"','"+s.getAccountId()+"','"+s.getName()+"');";
             sql.runQuery(query);
-            event.deferReply(true).addContent("All okay").queue();
+            event.deferReply(false).addContent("Connected " + s.getName() + " to your profile.").queue();
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -46,7 +46,7 @@ public class KickSlash extends SlashCommand{
 
             else if (PermissionHandler.hasPermission(event.getMember(), Permission.KICK_MEMBERS)) {
                 event.getGuild().kick(surelyTheGuy).queue(
-                                                (e) -> event.deferReply(true).addContent("Kicked " + surelyTheGuy.getAsMention()).queue(), 
+                                                (e) -> event.deferReply(false).addContent("Kicked " + surelyTheGuy.getAsMention()).queue(), 
                                                 new ErrorHandler().handle(
                                                     ErrorResponse.MISSING_PERMISSIONS,
                                                         (e) -> event.deferReply(true).addContent("error: " + e.getMessage()).queue())

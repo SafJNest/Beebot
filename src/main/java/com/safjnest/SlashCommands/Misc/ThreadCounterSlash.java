@@ -21,6 +21,7 @@ public class ThreadCounterSlash extends SlashCommand{
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.hidden = true;
     }
     /**
      * This method is called every time a member executes the command.
@@ -32,6 +33,6 @@ public class ThreadCounterSlash extends SlashCommand{
             if(t.getName().startsWith("lava"))
                 cont++;
         }
-        e.deferReply(true).addContent("Active LavaPlayer's Threads: " + cont +"\n").queue();
+        e.deferReply(false).addContent("Active LavaPlayer's Threads: " + cont +"\n").queue();
     }
 }

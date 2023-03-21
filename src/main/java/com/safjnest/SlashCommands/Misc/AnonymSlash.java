@@ -47,6 +47,6 @@ public class AnonymSlash extends SlashCommand {
             eb.build())
             .addFiles(FileUpload.fromData(file))
             .queue());
-        event.deferReply(true).addContent("Message sent successfuly").queue();
+        event.deferReply(false).addContent("Message sent successfuly").queue();
 	}
 }

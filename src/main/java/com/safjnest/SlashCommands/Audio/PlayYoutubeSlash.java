@@ -153,7 +153,7 @@ public class PlayYoutubeSlash extends SlashCommand {
         ));
         eb.setDescription("[" + pm.getPlayer().getPlayingTrack().getInfo().title + "](" + pm.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + pm.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-        event.deferReply().addEmbeds(eb.build()).queue();
+        event.deferReply(false).addEmbeds(eb.build()).queue();
         
         if(tierOneLink.containsKey(pm.getPlayer().getPlayingTrack().getIdentifier()))
             event.deferReply().addContent(tierOneLink.get(pm.getPlayer().getPlayingTrack().getIdentifier())).queue();

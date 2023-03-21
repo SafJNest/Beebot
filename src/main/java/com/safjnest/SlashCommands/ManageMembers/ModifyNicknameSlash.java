@@ -34,7 +34,7 @@ public class ModifyNicknameSlash extends SlashCommand {
         
         try {
             theGuy.modifyNickname(event.getOption("nick").getAsString()).queue(
-            (e) -> event.deferReply(true).addContent("Changed nickname of " + theGuy.getAsMention() + " exectued").queue(), 
+            (e) -> event.deferReply(false).addContent("Changed nickname of " + theGuy.getAsMention() + " exectued").queue(), 
             new ErrorHandler().handle(
                 ErrorResponse.MISSING_PERMISSIONS,
                     (e) -> event.deferReply(true).addContent("Sorry, " + e.getMessage()).queue())

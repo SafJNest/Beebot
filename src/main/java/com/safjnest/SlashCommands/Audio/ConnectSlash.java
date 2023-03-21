@@ -33,7 +33,7 @@ public class ConnectSlash extends SlashCommand implements EventListener{
         }
         else
 		    event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
-        event.deferReply(true).addContent("Im here!").queue();
+        event.deferReply(false).addContent("Im here!").queue();
 	}
 
     public void onMessageReceived(MessageReceivedEvent e){

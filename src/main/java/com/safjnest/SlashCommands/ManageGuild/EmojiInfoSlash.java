@@ -56,6 +56,6 @@ public class EmojiInfoSlash extends SlashCommand {
         , true);
         eb.addField("**Emoji URL**", em.getImageUrl(), false);   
         eb.addField("Emoji created on (dd/mm/yyyy)", "```" + DateHandler.formatDate(em.getTimeCreated()) + "```", false);
-        event.deferReply(true).addEmbeds(eb.build()).queue();
+        event.deferReply(false).addEmbeds(eb.build()).queue();
 	}
 }

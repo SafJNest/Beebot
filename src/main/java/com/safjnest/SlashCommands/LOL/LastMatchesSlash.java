@@ -52,7 +52,7 @@ public class LastMatchesSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        event.deferReply(true).queue();
+        event.deferReply(false).queue();
         HashMap<String, Integer> played = new HashMap<>();
         int gamesToAnalyze = event.getOption("ngames").getAsInt();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;

@@ -81,6 +81,6 @@ public class ChannelInfoSlash extends SlashCommand {
 
             eb.addField("Channel created on", "```" + DateHandler.formatDate(c.getTimeCreated()) + "```", false);
         } 
-        event.deferReply(true).addEmbeds(eb.build()).queue();
+        event.deferReply(false).addEmbeds(eb.build()).queue();
 	}
 }

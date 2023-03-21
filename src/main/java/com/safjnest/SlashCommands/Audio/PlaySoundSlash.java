@@ -200,7 +200,7 @@ public class PlaySoundSlash extends SlashCommand{
         File imgFile = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
 
-        event.deferReply().addEmbeds(eb.build())
+        event.deferReply(false).addEmbeds(eb.build())
             .addFiles(FileUpload.fromData(imgFile))
             .queue();
     }

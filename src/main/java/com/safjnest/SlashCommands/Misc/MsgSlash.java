@@ -40,6 +40,6 @@ public class MsgSlash extends SlashCommand {
         eb.setDescription(event.getOption("msg").getAsString());
         eb.setColor(new Color(3, 252, 169));
         theGuy.openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(eb.build()).queue());
-        event.deferReply(true).addContent("Message sent successfuly").queue();
+        event.deferReply(false).addContent("Message sent successfuly").queue();
 	}
 }

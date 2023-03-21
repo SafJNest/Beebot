@@ -51,7 +51,7 @@ public class PrimeSlash extends SlashCommand {
                     }
                     event.deferReply(true).addContent("Your prime number is too insane for discord, we need a file to hold it").addFiles(FileUpload.fromData(supp)).queue();
                 } else {
-                    event.deferReply(true).addContent(primi).queue();
+                    event.deferReply(false).addContent(primi).queue();
                 }
             
         } catch (Exception e) {

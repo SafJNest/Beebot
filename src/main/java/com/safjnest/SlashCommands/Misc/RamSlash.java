@@ -28,13 +28,14 @@ public class RamSlash extends SlashCommand{
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.hidden = true;
     }
     /**
      * This method is called every time a member executes the command.
     */
      @Override
     protected void execute(SlashCommandEvent e) {
-        e.deferReply(true).addContent("Total: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
+        e.deferReply(false).addContent("Total: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
         + "Usage: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
         + "Free: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
         + "Max: " + String.valueOf(Runtime.getRuntime().maxMemory()/1048576) + "mb").queue();

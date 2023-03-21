@@ -9,6 +9,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
@@ -49,7 +50,7 @@ public class HelpSlash extends SlashCommand {
         EmbedBuilder eb = new EmbedBuilder();
         HashMap<String, ArrayList<SlashCommand>> commands = new HashMap<>();
         for (SlashCommand e : event.getClient().getSlashCommands()) {
-            if(!e.getCategory().getName().equals("Dangerous")){
+            if(!e.isHidden() || PermissionHandler.isUntouchable(event.getMember().getId())){
                 if(!commands.containsKey(e.getCategory().getName()))
                     commands.put(e.getCategory().getName(), new ArrayList<SlashCommand>());
                 commands.get(e.getCategory().getName()).add(e);
@@ -105,8 +106,10 @@ public class HelpSlash extends SlashCommand {
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
 
-        event.replyEmbeds(eb.build()).queue();
-
+        if(PermissionHandler.isUntouchable(event.getMember().getId()))
+            event.replyEmbeds(eb.build()).setEphemeral(true).queue();
+        else
+            event.replyEmbeds(eb.build()).setEphemeral(false).queue();
     }
 
 }

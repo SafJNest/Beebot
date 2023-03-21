@@ -81,6 +81,6 @@ public class DeleteSoundSlash extends SlashCommand{
 
         sql.runQuery(query);
 
-        event.deferReply().addContent(name + " (ID: " + id +  ") has been deleted").queue();
+        event.deferReply(false).addContent(name + " (ID: " + id +  ") has been deleted").queue();
 	}
 }

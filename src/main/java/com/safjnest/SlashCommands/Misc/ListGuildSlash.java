@@ -22,6 +22,7 @@ public class ListGuildSlash extends SlashCommand {
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.hidden = true;
     }
 
 	@Override
@@ -32,6 +33,6 @@ public class ListGuildSlash extends SlashCommand {
             list+="**"+guild.getName()+"("+guild.getId()+")** - ";
         }
         list = list.substring(0, list.length()-3);
-        event.deferReply(true).addContent(list).queue();
+        event.deferReply(false).addContent(list).queue();
     }
 }

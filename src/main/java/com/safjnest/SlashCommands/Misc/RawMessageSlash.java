@@ -24,6 +24,7 @@ public class RawMessageSlash extends SlashCommand{
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.hidden = true;
     }
 
     /**
@@ -33,6 +34,6 @@ public class RawMessageSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         MessageHistory history = new MessageHistory(event.getChannel());
         List<Message> msgs = history.retrievePast(2).complete();
-        event.deferReply(true).addContent(msgs.get(1).getContentRaw()).queue();
+        event.deferReply(false).addContent(msgs.get(1).getContentRaw()).queue();
     }
 }
