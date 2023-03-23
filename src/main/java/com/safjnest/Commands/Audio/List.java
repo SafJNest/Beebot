@@ -52,22 +52,22 @@ public class List extends Command{
      */
     public static String getListLexo(JDA jda, SQL sql, String serverId){
         String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + serverId + "' ORDER BY name ASC;";
-        return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
+        return getSoundsName(jda, getMap(sql.getAllRows(query, 5)));
     }
 
     public static String getListUser(JDA jda, SQL sql, String userId){
         String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '" + userId + "' ORDER BY name ASC;";
-        return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
+        return getSoundsName(jda, getMap(sql.getAllRows(query, 5)));
     }
     
     public static String getListMostPlayed(JDA jda, SQL sql, String serverId){
         String query = "SELECT sound.id, sound.name, sound.guild_id, sound.user_id, SUM(times) FROM sound join play on sound.id=play.id_sound WHERE sound.guild_id = '" + serverId + "'GROUP BY sound.id ORDER BY SUM(times)DESC;";
-        return getSoundsName(jda, getMapTimes(sql.getTuple(query, 5)));
+        return getSoundsName(jda, getMapTimes(sql.getAllRows(query, 5)));
     }  
     
     public static String getListId(JDA jda, SQL sql, String serverId){
         String query = "SELECT id, name, guild_id, user_id, extension FROM sound where guild_id = '" + serverId + "'ORDER BY id;";
-        return getSoundsName(jda, getMapId(sql.getTuple(query, 5)));
+        return getSoundsName(jda, getMapId(sql.getAllRows(query, 5)));
     } 
 
     private static String getSoundsName(JDA jda, Map<String, ArrayList<String>> sortedMap){
