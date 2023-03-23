@@ -49,7 +49,7 @@ public class DeleteSound extends Command{
         else
             query = "SELECT id, name, user_id FROM sound WHERE name = '" + fileName + "' AND (user_id = '" + event.getAuthor().getId() + "' OR guild_id = '" + event.getGuild().getId() + "');";
 
-        if((arr = sql.getTuple(query, 3)) == null || arr.isEmpty()){
+        if((arr = sql.getAllRows(query, 3)) == null || arr.isEmpty()){
             event.reply("There is no sound with that name/id");
             return;
         }

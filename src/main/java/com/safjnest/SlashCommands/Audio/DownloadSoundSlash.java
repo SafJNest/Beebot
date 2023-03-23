@@ -49,7 +49,7 @@ public class DownloadSoundSlash extends SlashCommand{
             query = "SELECT id, guild_id, extension FROM sound WHERE name = '" + fileName + "';";
         }
 
-        if((arr = sql.getTuple(query, 3)).isEmpty()){
+        if((arr = sql.getAllRows(query, 3)).isEmpty()){
             event.deferReply(true).addContent("There is no sound with that name/id").queue();
             return;
         }

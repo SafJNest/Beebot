@@ -26,7 +26,7 @@ public class Dice extends Command {
     private static final Pattern FAILURE_PATTERN = Pattern.compile("f(\\d+)");
     private static final Pattern SETS_PATTERN = Pattern.compile("(\\d+)\\s+(\\d+)d(\\d+)");
     private static final Pattern UNROLL_PATTERN = Pattern.compile("(!\\s*)?(unsort|ul)");
-    private static final Random RANDOM = new Random();
+    private static Random RANDOM = new Random();
 
     public Dice() {
         this.name = this.getClass().getSimpleName();
@@ -49,6 +49,7 @@ public class Dice extends Command {
 
         String[] parts = command.split("\\s+");
         for (int i = 0; i < parts.length; i++) {
+            RANDOM = new Random(System.nanoTime());
             String part = parts[i];
 
             if (DICE_PATTERN.matcher(part).matches()) {
@@ -86,13 +87,14 @@ public class Dice extends Command {
                     // Rolling the dice
                     int rollCount = 0;
                     while (rollCount < diceCount) {
-                        int roll = RANDOM.nextInt(diceSides) + 1;
+                        System.out.println(diceSides);
+                        int roll =  RANDOM.nextInt(diceSides) + 1;
                         if (explode && roll >= explodeValue) {
                             total += roll;
                             rolls.add(roll);
                             diceCount++;
                         } else if (reroll && roll <= rerollValue) {
-                            roll = RANDOM.nextInt(diceSides) + 1;
+                            roll =  RANDOM.nextInt(diceSides) + 1;
                             total += roll;
                             rolls.add(roll);
                         } else {
@@ -167,11 +169,7 @@ public class Dice extends Command {
                 }
             }
         }
-        // Sorting the list of rolls
-        if (!unsort) {
-            rolls.sort(Integer::compareTo);
-        }
-
+        
         // Displaying the result
         if (showTally) {
             event.reply("Rolls: " + rolls.toString());

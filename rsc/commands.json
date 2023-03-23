@@ -389,6 +389,15 @@
         "arguments" : "[msg] [@user/id] [message]"
     },
 
+    "prefixlist":{
+        "alias" : ["preflist"],
+        "help"  : "Send a list with all the prefix for the current bot.",
+        "category" : "Miscellaneous",
+        "arguments" : "[prefixlist]"
+    },
+
+
+
 
 
 

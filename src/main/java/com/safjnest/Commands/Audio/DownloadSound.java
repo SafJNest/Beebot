@@ -47,7 +47,7 @@ public class DownloadSound extends Command{
             query = "SELECT id, guild_id, extension FROM sound WHERE name = '" + fileName + "';";
         }
 
-        if((arr = sql.getTuple(query, 3)).isEmpty()){
+        if((arr = sql.getAllRows(query, 3)).isEmpty()){
             event.reply("There is no sound with that name/id");
             return;
         }

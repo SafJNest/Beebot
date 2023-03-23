@@ -75,7 +75,7 @@ public class PlaySoundSlash extends SlashCommand{
             query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE name = '" + fileName + "';";
         }
 
-        if((arr = sql.getTuple(query, 5)).isEmpty()){
+        if((arr = sql.getAllRows(query, 5)).isEmpty()){
             event.reply("There is no sound with that name/id");
             return;
         }

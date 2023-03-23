@@ -58,7 +58,7 @@ public class TheListener extends ListenerAdapter{
         message = message.replace("#user", newGuy.getAsMention());
         channel.sendMessage(message).queue();
         query = "SELECT role_id FROM welcome_roles WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '"+event.getJDA().getSelfUser().getId()+"';";
-        ArrayList<String> roles = sql.getListString(query, "role_id");
+        ArrayList<String> roles = sql.getAllRowsSpecifiedColumn(query, "role_id");
         if(roles.size() > 0){
             for(String role : roles){
                 event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
@@ -98,7 +98,7 @@ public class TheListener extends ListenerAdapter{
             int index = 0;
             event.deferEdit().queue();
             String query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
-            ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getTuple(query, 1);
+            ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
             for(Button b : event.getMessage().getButtons()){
                 if(!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                     nameSum = b.getLabel();
@@ -125,7 +125,7 @@ public class TheListener extends ListenerAdapter{
             int index = 0;
             event.deferEdit().queue();
             String query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
-            ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getTuple(query, 1);
+            ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
             for(Button b : event.getMessage().getButtons()){
                 if(!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                     nameSum = b.getLabel();

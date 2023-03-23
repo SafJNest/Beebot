@@ -232,6 +232,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
         builder.addCommand(new ThreadCounter());
+        builder.addCommand(new PrefixList());
 
         // INSANE SLASH COMMAND DECLARATION
 

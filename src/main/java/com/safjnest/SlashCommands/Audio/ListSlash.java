@@ -46,7 +46,7 @@ public class ListSlash extends SlashCommand{
    
     public static String getListLexo(JDA jda, SQL sql, String serverId){
         String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + serverId + "';";
-        return getSoundsName(jda, getMap(sql.getTuple(query, 5)));
+        return getSoundsName(jda, getMap(sql.getAllRows(query, 5)));
     }
      private static String getSoundsName(JDA jda, Map<String, ArrayList<String>> sortedMap){
         String soundNames = "";
