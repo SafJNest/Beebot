@@ -24,7 +24,7 @@ public class App {
     public static void main(String args[]) throws InterruptedException{
         
         SafJNest.bee();
-        boolean isExtremeTesting = true;
+        boolean isExtremeTesting = false;
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, awsSettings = null, SQLSettings = null;
