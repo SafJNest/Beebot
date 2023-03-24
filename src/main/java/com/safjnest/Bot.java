@@ -205,7 +205,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
             // Math
             builder.addCommand(new Prime(maxPrime));
-            builder.addCommand(new Calc());
+            builder.addCommand(new Calculator());
             builder.addCommand(new Dice());
 
             // Dangerous
@@ -280,7 +280,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             // Math
             builder.addSlashCommand(new PrimeSlash(maxPrime));
             builder.addSlashCommand(new DiceSlash());
-            builder.addSlashCommand(new FunctionSlash());
+            builder.addSlashCommand(new CalculatorSlash());
 
         }
 
