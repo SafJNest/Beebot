@@ -118,7 +118,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         }
 
         PREFIX = discordSettings.get("prefix").toString();
-        activity = Activity.playing(MessageFormat.format(discordSettings.get("activity").toString(), PREFIX));
+        activity = Activity.playing(MessageFormat.format(discordSettings.get("activity").toString().replace("{0}", PREFIX), PREFIX));
         token = discordSettings.get("discordToken").toString();
         color = discordSettings.get("embedColor").toString();
         ownerID = discordSettings.get("ownerID").toString();
