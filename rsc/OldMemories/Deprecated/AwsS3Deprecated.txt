@@ -1,5 +1,3 @@
-package com.safjnest.Utilities;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,6 +26,7 @@ import org.apache.commons.io.FileUtils;
 /**
  * Class that provides the connection between Beebot and Amazon database.
  * <p>There are just stored all the custom sound.</p>
+ * @deprecated
  * @see com.safjnest.Commands.Audio.PlaySound PlaySound
  * @since 1.3
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -235,6 +234,20 @@ public class AwsS3 {
     }
 
     public S3Object downloadFile(String path, String fileName, SlashCommandEvent event) {
+        try {
+            S3Object fullObject = s3Client.getObject(
+                new GetObjectRequest(bucket, fileName));
+            S3ObjectInputStream s3is = fullObject.getObjectContent();
+            FileUtils.copyInputStreamToFile(s3is, new File(path + fileName + "." + fullObject.getObjectMetadata().getUserMetaDataOf("format")));
+            s3is.close();
+            return fullObject;
+        } catch (AmazonClientException | IOException exception) {
+            exception.printStackTrace();
+            return null;
+        }
+    }
+
+    public S3Object downloadFile(String path, String fileName) {
         try {
             S3Object fullObject = s3Client.getObject(
                 new GetObjectRequest(bucket, fileName));

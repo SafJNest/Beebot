@@ -7,8 +7,6 @@ import java.io.Reader;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
@@ -27,11 +25,10 @@ public class App {
         boolean isExtremeTesting = false;
         
         JSONParser parser = new JSONParser();
-        JSONObject settings = null, awsSettings = null, SQLSettings = null;
+        JSONObject settings = null, SQLSettings = null;
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
             settings = (JSONObject) settings.get("settings");
-            awsSettings = (JSONObject) settings.get("AmazonAWS");
             SQLSettings = (JSONObject) settings.get("MySQL");
         } catch (Exception e) {
             e.printStackTrace();
@@ -46,16 +43,6 @@ public class App {
             SQLSettings.get("password").toString()
         );
         
-        AwsS3 s3Client = new AwsS3(
-            new BasicAWSCredentials(
-                awsSettings.get("AWSAccesKey").toString(), 
-                awsSettings.get("AWSSecretKey").toString()
-            ), 
-            awsSettings.get("AWSbucketName").toString(), 
-            sql
-        );
-        s3Client.initialize();
-
         R4J riotApi = null;
         try {
             riotApi = new R4J(new APICredentials(settings.get("riotKey").toString()));
@@ -74,17 +61,17 @@ public class App {
 
         BotSettingsHandler bs = new BotSettingsHandler();
         if(!isExtremeTesting){
-            Thread b1 = new Thread(new Bot(bs, tts, sql, s3Client, riotApi));
+            Thread b1 = new Thread(new Bot(bs, tts, sql, riotApi));
             b1.setName("beebot");
             b1.start();
-            Thread b2 = new Thread(new Bot(bs, tts, sql, s3Client, riotApi));
+            Thread b2 = new Thread(new Bot(bs, tts, sql, riotApi));
             b2.setName("beebot 2");
             b2.start();
-            Thread bm = new Thread(new Bot(bs, tts, sql, s3Client, riotApi));
+            Thread bm = new Thread(new Bot(bs, tts, sql, riotApi));
             bm.setName("beebot music");
             bm.start();
         }else{
-            Thread bc = new Thread(new Bot(bs, tts, sql, s3Client, riotApi));
+            Thread bc = new Thread(new Bot(bs, tts, sql, riotApi));
             bc.setName("canary");
             bc.start();
 

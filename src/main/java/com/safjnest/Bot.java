@@ -84,13 +84,11 @@ public class Bot extends ListenerAdapter implements Runnable {
 
     private TTSHandler tts;
     private SQL sql;
-    private AwsS3 s3Client;
     private R4J riotApi;
 
-    public Bot(BotSettingsHandler bs, TTSHandler tts, SQL sql, AwsS3 s3Client, R4J riotApi) {
+    public Bot(BotSettingsHandler bs, TTSHandler tts, SQL sql, R4J riotApi) {
         this.tts = tts;
         this.sql = sql;
-        this.s3Client = s3Client;
         this.riotApi = riotApi;
         this.bs = bs;
     }
@@ -165,13 +163,13 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         // Audio
         builder.addCommand(new Connect());
-        builder.addCommand(new DeleteSound(s3Client, sql));
+        builder.addCommand(new DeleteSound(sql));
         builder.addCommand(new Disconnect());
-        builder.addCommand(new DownloadSound(s3Client, sql));
+        builder.addCommand(new DownloadSound(sql));
         builder.addCommand(new List(sql));
         builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
-        builder.addCommand(new PlaySound(s3Client, sql));
-        builder.addCommand(new Upload(s3Client, sql));
+        builder.addCommand(new PlaySound(sql));
+        builder.addCommand(new Upload(sql));
         builder.addCommand(new TTS(tts, sql));
         builder.addCommand(new Stop());
 
@@ -238,13 +236,13 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         // audio
         builder.addSlashCommand(new ConnectSlash());
-        builder.addSlashCommand(new DeleteSoundSlash(s3Client, sql));
+        builder.addSlashCommand(new DeleteSoundSlash(sql));
         builder.addSlashCommand(new DisconnectSlash());
-        builder.addSlashCommand(new DownloadSoundSlash(s3Client, sql));
+        builder.addSlashCommand(new DownloadSoundSlash(sql));
         builder.addSlashCommand(new ListSlash(sql));
         builder.addSlashCommand(new PlayYoutubeSlash(youtubeApiKey, tierOneLink));
-        builder.addSlashCommand(new PlaySoundSlash(s3Client, sql));
-        builder.addSlashCommand(new UploadSlash(s3Client, sql));
+        builder.addSlashCommand(new PlaySoundSlash(sql));
+        builder.addSlashCommand(new UploadSlash(sql));
         builder.addSlashCommand(new TTSSlash(tts, sql));
         builder.addSlashCommand(new StopSlash());
 
