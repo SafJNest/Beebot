@@ -6,10 +6,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.amazonaws.services.s3.model.S3Object;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
@@ -32,20 +30,18 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
 public class PlaySoundSlash extends SlashCommand{
     SQL sql;
-    AwsS3 s3Client;
     String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
     String fileName;
     PlayerManager pm;
 
 
-    public PlaySoundSlash(AwsS3 s3Client, SQL sql){
+    public PlaySoundSlash(SQL sql){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
-        this.s3Client = s3Client;
         this.sql = sql;
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "sound", "Sound to play", true));
@@ -60,9 +56,6 @@ public class PlaySoundSlash extends SlashCommand{
         if(!soundBoard.exists())
             soundBoard.mkdirs();
 
-        //TODO fix | deletare il file vecchio ogni ps bene
-        for (File file : soundBoard.listFiles())
-            file.delete();
 
         String query = null;
         String id = null, name, guildId, userId, extension;
@@ -98,12 +91,7 @@ public class PlaySoundSlash extends SlashCommand{
         userId = arr.get(indexForKeria).get(3);
         extension = arr.get(indexForKeria).get(4);
 
-        S3Object sound = s3Client.downloadFile(path, id, event);
-
-        if(sound == null){
-            event.reply("sound not found in aws s3");
-            return;
-        }
+        
         
         fileName = path + id + "." + extension;
 

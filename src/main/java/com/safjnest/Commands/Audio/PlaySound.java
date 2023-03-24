@@ -5,10 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.amazonaws.services.s3.model.S3Object;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.AwsS3;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
@@ -29,20 +27,18 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
 public class PlaySound extends Command{
     SQL sql;
-    AwsS3 s3Client;
     String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
     String fileName;
     PlayerManager pm;
 
 
-    public PlaySound(AwsS3 s3Client, SQL sql){
+    public PlaySound(SQL sql){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
-        this.s3Client = s3Client;
         this.sql = sql;
     }
 
@@ -57,11 +53,7 @@ public class PlaySound extends Command{
         File soundBoard = new File("rsc" + File.separator + "SoundBoard");
         if(!soundBoard.exists())
             soundBoard.mkdirs();
-
-        //TODO fix | deletare il file vecchio ogni ps bene
-        for (File file : soundBoard.listFiles())
-            file.delete();
-
+        
         String query = null;
         String id = null, name, guildId, userId, extension;
         ArrayList<ArrayList<String>> arr = null;
@@ -96,12 +88,7 @@ public class PlaySound extends Command{
         userId = arr.get(indexForKeria).get(3);
         extension = arr.get(indexForKeria).get(4);
 
-        S3Object sound = s3Client.downloadFile(path, id, event);
-
-        if(sound == null){
-            event.reply("sound not found in aws s3");
-            return;
-        }
+        
         
         fileName = path + id + "." + extension;
 

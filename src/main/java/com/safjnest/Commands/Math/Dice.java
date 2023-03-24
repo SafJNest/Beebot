@@ -43,7 +43,7 @@ public class Dice extends Command {
         List<Integer> rolls = new ArrayList<>();
         int total = 0;
         boolean showTally = true;
-        boolean unsort = false;
+        //boolean unsort = false;
         StringBuilder comment = new StringBuilder();
         int sets = 1;
 
@@ -161,7 +161,7 @@ public class Dice extends Command {
                     // Unsort the list of rolls
                     Matcher unrollMatcher = UNROLL_PATTERN.matcher(part);
                     if (unrollMatcher.matches()) {
-                        unsort = true;
+                        //unsort = true;
                     }
                 } else {
                     // Adding comment
