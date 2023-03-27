@@ -23,6 +23,8 @@ import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.Listeners.TheListener;
+import com.safjnest.Utilities.Listeners.TheListenerBeebot;
 import com.safjnest.Utilities.tts.TTSHandler;
 import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
@@ -128,7 +130,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         System.out.println(discordSettings.get("info"));
 
         TheListener listenerozzo = new TheListener(sql);
-
+        TheListenerBeebot listenerozzobeby = new TheListenerBeebot();
         jda = JDABuilder
                 .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
                         GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
@@ -138,6 +140,9 @@ public class Bot extends ListenerAdapter implements Runnable {
                 .setChunkingFilter(ChunkingFilter.ALL)
                 .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER)
                 .build();
+        if(Thread.currentThread().getName().equals("beebot")){
+            jda.addEventListener(listenerozzobeby);
+        }
 
         botId = jda.getSelfUser().getId();
         bs.setSettings(new BotSettings(
@@ -184,6 +189,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new EmojiInfo());
             builder.addCommand(new InviteBot());
             builder.addCommand(new ListGuild());
+            builder.addCommand(new UserStats());
 
             // Manage Member
             builder.addCommand(new Ban());
@@ -254,6 +260,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new UserInfoSlash());
             builder.addSlashCommand(new EmojiInfoSlash());
             builder.addSlashCommand(new SetWelcomeSlash(sql));
+            builder.addSlashCommand(new UserStatsSlash());
 
             // lol
             builder.addSlashCommand(new SummonerSlash());
