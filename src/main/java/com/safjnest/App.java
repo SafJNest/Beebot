@@ -2,10 +2,12 @@ package com.safjnest;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
-
+import java.net.MalformedURLException;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
@@ -19,7 +21,7 @@ import no.stelar7.api.r4j.impl.R4J;
 
 public class App {
     
-    public static void main(String args[]) throws InterruptedException{
+    public static void main(String args[]) throws InterruptedException, MalformedURLException, IOException, ParseException{
         
         SafJNest.bee();
         boolean isExtremeTesting = false;
