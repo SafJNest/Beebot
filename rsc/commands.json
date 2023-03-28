@@ -125,7 +125,14 @@
     },
 
     "userstats":{
-        "alias" : ["stats"],
+        "alias" : ["stats", "rank", "level", "levels"],
+        "help"  : "Show statistic about the user",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
+    },
+
+    "leaderboard":{
+        "alias" : [],
         "help"  : "Show statistic about the user",
         "category" : "Server Management",
         "arguments" : "[CommandName]"

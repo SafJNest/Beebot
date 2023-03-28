@@ -211,4 +211,66 @@ public class SQL {
             return null;
         }
     }
+
+    /**
+     * Run a query and return an array of strings, so every column with a specified row.
+     * <p>For example, if the query returns 5 row, this method will return a specified row with
+     * all the elements</p>
+     * <table border="1">
+    <tr>
+        <td> Name </td> <td> Guild_id</td> <td> bot_id </td>
+    </tr>
+    <tr>
+        <td> server_1 </td> <td> 123 </td> <td> 123 </td>
+    </tr>
+    <tr>
+        <td> server_2 </td> <td> 345</td> <td> 123 </td>
+    </tr>
+    <tr>
+        <td> server_3 </td> <td> 678</td> <td> 345 </td>
+    </tr>
+    </table>
+    Given this line:
+    <pre>
+    {@code
+    String query = SELECT * from table;
+    Arraylist<String> arr = SQL.getSpecifiedRow(query, 1);
+    }    
+    </pre>
+    The output would be {@code server_2, 345, 123}
+     * @param query query to be run 
+     * @param nRow number of the row to get
+     * @return
+     * An {@code ArrayList<String>} if the query is run correctly, otherwise {@code null}
+     */
+    public ArrayList<ArrayList<String>> getSpecifiedRowBetween(String query, int start, int end){
+        Statement stmt;
+        ArrayList<ArrayList<String>> arr = new ArrayList<>();
+        try {
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            int contStart = 0;
+            int contEnd = 0;
+            while(rs.next()){
+                if(contStart == start){
+                    if(contEnd == end){
+                        break;
+                    }
+                    arr.add(new ArrayList<>());
+                    contEnd++;
+                    try {
+                        for(int i = 1; 1 > 0; i++) 
+                            arr.get(arr.size()-1).add(rs.getString(i));
+                    } catch (Exception e) {}
+                }else{
+                    contStart++;
+                }
+            }
+            rs.close();
+            stmt.close();
+            return arr;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }           

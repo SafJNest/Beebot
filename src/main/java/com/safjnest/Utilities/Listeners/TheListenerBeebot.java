@@ -21,6 +21,9 @@ public class TheListenerBeebot extends ListenerAdapter{
 
     @Override
     public void onMessageReceived(MessageReceivedEvent e){
+        if(e.getAuthor().isBot())
+            return;
+            
         int lvl = farm.receiveMessage(e.getAuthor().getId(), e.getGuild().getId());
         if(lvl != -1)
             e.getChannel().asTextChannel().sendMessage("Congratulations " + e.getAuthor().getAsMention() + ", you have just leveled up to lvl: " + lvl).queue();

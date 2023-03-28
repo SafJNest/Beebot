@@ -190,6 +190,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new InviteBot());
             builder.addCommand(new ListGuild());
             builder.addCommand(new UserStats());
+            builder.addCommand(new Leaderboard());
 
             // Manage Member
             builder.addCommand(new Ban());
@@ -261,6 +262,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new EmojiInfoSlash());
             builder.addSlashCommand(new SetWelcomeSlash(sql));
             builder.addSlashCommand(new UserStatsSlash());
+            builder.addSlashCommand(new LeaderboardSlash());
 
             // lol
             builder.addSlashCommand(new SummonerSlash());
