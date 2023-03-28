@@ -39,7 +39,7 @@ public class UserStatsSlash extends SlashCommand{
         User theGuy = event.getOption("user").getAsUser();
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT "+theGuy.getName()+"** :busts_in_silhouette:");
+        eb.setTitle(":busts_in_silhouette: **STATISTICS ABOUT "+theGuy.getName()+"** :busts_in_silhouette:");
         eb.setThumbnail(theGuy.getAvatarUrl());
         eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
@@ -62,6 +62,14 @@ public class UserStatsSlash extends SlashCommand{
                     + accounts.size() + "]",
                     "```"+lolAccounts+"```", false);
 
+        
+        query = "select exp, level, messages from exp_table where user_id ='"+theGuy.getId()+"' and guild_id = '"+event.getGuild().getId()+"';";
+        ArrayList<String> arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
+        int lvl = Integer.valueOf(arr.get(1));
+        String lvlString = String.valueOf(((int) (5 * (Math.pow(lvl, 2)) + (50 * lvl) + 100) - (int) ((5.0/6.0) * (lvl+1) * (2 * (lvl+1) * (lvl+1) + 27 * (lvl+1) + 91) - Integer.valueOf(arr.get(0)))) + "/" + (int) (5 * (Math.pow(lvl, 2)) + (50 * lvl) + 100));
+        eb.addField("Level", "```"+arr.get(1) + " (" + lvlString +")```", true);
+        eb.addField("Experience gained", "```"+arr.get(0)+" exp```", true);
+        eb.addField("Total messages sent","```"+ arr.get(2)+"```", true);
         
         query = "select count(name) as count from sound where user_id = '"+theGuy.getId()+"';";
         eb.addField("Total Sound Uploaded", "```"+DatabaseHandler.getSql().getString(query, "count")+"```", true);

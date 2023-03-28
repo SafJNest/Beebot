@@ -52,7 +52,7 @@ public class App {
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }
-        
+    
         DatabaseHandler dbh = new DatabaseHandler(sql);
         LOLHandler lolHandler = new LOLHandler(riotApi);
 
