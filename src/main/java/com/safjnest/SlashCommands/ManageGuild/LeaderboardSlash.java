@@ -2,20 +2,15 @@ package com.safjnest.SlashCommands.ManageGuild;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>

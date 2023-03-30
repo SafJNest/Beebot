@@ -45,6 +45,12 @@ public class PlaySound extends Command{
     @Override
     protected void execute(CommandEvent event) {
         
+        if(event.getMember().getVoiceState().getChannel() == null){
+            event.reply("You need to be in a voice channel to use this command");
+            return;
+        }
+
+
         if((fileName = event.getArgs()) == ""){
             event.reply("Missing name");
             return;

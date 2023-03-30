@@ -94,7 +94,7 @@ public class ServerInfo extends Command{
                         ? "NONE"
                         : guild.getBoostRole().getName())
                     + "```", true);
-        String query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "';"; 
+        String query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + guild.getId() + "';"; 
         
                     eb.addField("Welcome Message", "```" 
                     + ((DatabaseHandler.getSql().getString(query, "message_text") == null)
@@ -106,6 +106,8 @@ public class ServerInfo extends Command{
                     +    "Categories: " + guild.getCategories().size() 
                     + " | Text channel: " + guild.getTextChannels().size() 
                     + " | Voice channel: " + guild.getVoiceChannels().size() 
+                    + " | Stage channel: " + guild.getStageChannels().size() 
+                    + " | Announcement channel: " + guild.getForumChannels().size()
                     + "```", false);
         eb.addField("Emojies [" +(guild.getEmojis().size()+guild.getStickers().size()) + "]", "```" 
                     +    "Emojies: " + guild.getEmojis().stream()
@@ -138,7 +140,5 @@ public class ServerInfo extends Command{
         
         event.reply(eb.build());
 
-        //event.reply(guild.getCategories().toString())
-        //event.reply(guild.getChannels().toString());
     }
 }

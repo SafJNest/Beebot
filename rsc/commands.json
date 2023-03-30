@@ -131,6 +131,13 @@
         "arguments" : "[CommandName]"
     },
 
+    "listroom":{
+        "alias" : ["rooms"],
+        "help"  : "List with all the nickname in a server.",
+        "category" : "Server Management",
+        "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
+    },
+    
     "leaderboard":{
         "alias" : [],
         "help"  : "Show statistic about the user",
@@ -138,40 +145,6 @@
         "arguments" : "[CommandName]"
     },
 
-    "setwelcome":{
-        "alias" : [],
-        "help"  : "Allow to set a 'welcome quote' to be sent every time a user join the server. Its necessary to set also a channel otherwise will be used the default system channel. Can also be setted roles to given. Ex: psetwelcome #welcome @role | Hello #user!. Using #user the user will be mentioned.",
-        "category" : "Server Management",
-        "arguments" : "[CommandName] (#canale)(@ruoli) | [messaggio]"
-    },
-
-    "setroom":{
-        "alias" : ["room"],
-        "help"  : "Allow to set a nickname for the channel, for an easier use of 'move'.",
-        "category" : "Server Management",
-        "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
-    },
-
-    "setvoice":{
-        "alias" : ["voice"],
-        "help"  : "Allow to set a default voice for command 'tts'.",
-        "category" : "Server Management",
-        "arguments" : "[CommandName] [nomeVoce]"
-    },
-
-    "listroom":{
-        "alias" : ["rooms"],
-        "help"  : "List with all the nickname in a server.",
-        "category" : "Server Management",
-        "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
-    },
-
-    "setprefix":{
-        "alias" : ["prefix"],
-        "help"  : "Changes the prefix of the guild",
-        "category" : "Server Management",
-        "arguments" : "[CommandName] [new Prefix]"
-    },
 
     "customembed":{
         "alias" : ["embed"],
@@ -187,7 +160,41 @@
 
 
 
+    "setwelcome":{
+        "alias" : [],
+        "help"  : "Allow to set a 'welcome quote' to be sent every time a user join the server. Its necessary to set also a channel otherwise will be used the default system channel. Can also be setted roles to given. Ex: psetwelcome #welcome @role | Hello #user!. Using #user the user will be mentioned.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#canale)(@ruoli) | [messaggio]"
+    },
 
+    "setroom":{
+        "alias" : ["room"],
+        "help"  : "Allow to set a nickname for the channel, for an easier use of 'move'.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
+    },
+
+    "setvoice":{
+        "alias" : ["voice"],
+        "help"  : "Allow to set a default voice for command 'tts'.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] [nomeVoce]"
+    },
+
+
+    "setprefix":{
+        "alias" : ["prefix"],
+        "help"  : "Changes the prefix of the guild",
+        "category" : "Settings",
+        "arguments" : "[CommandName] [new Prefix]"
+    },
+
+    "setsummoner":{
+        "alias" : ["setsum", "setuser", "ss"],
+        "help"  : "Allow to connect a riot account to your discord profile.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] [summonerName]"
+    },
 
 
 
@@ -484,12 +491,6 @@
         "arguments" : "[CommandName] [summonerName]"
     },
 
-    "setsummoner":{
-        "alias" : ["setsum", "setuser", "ss"],
-        "help"  : "Allow to connect a riot account to your discord profile.",
-        "category" : "League Of Legends",
-        "arguments" : "[CommandName] [summonerName]"
-    },
 
     "lastmatches":{
         "alias" : ["pw", "match"],
