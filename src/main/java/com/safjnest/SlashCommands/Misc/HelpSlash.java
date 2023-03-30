@@ -3,7 +3,10 @@ package com.safjnest.SlashCommands.Misc;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -65,7 +68,7 @@ public class HelpSlash extends SlashCommand {
         ));
         if(command.equals("")){
             String ss = "```\n";
-            for(String k : commands.keySet()){
+            for(String k : getKeysInDescendingOrder(commands)){
                 for(Command c : commands.get(k)){
                     ss+= c.getName() + "\n";
                 }
@@ -110,6 +113,17 @@ public class HelpSlash extends SlashCommand {
             event.replyEmbeds(eb.build()).setEphemeral(true).queue();
         else
             event.replyEmbeds(eb.build()).setEphemeral(false).queue();
+    }
+
+    public List<String> getKeysInDescendingOrder(HashMap<String, ArrayList<SlashCommand>> map) {
+        List<String> keys = new ArrayList<>(map.keySet());
+        Collections.sort(keys, new Comparator<String>() {
+            @Override
+            public int compare(String key1, String key2) {
+                return Integer.compare(map.get(key2).size(), map.get(key1).size());
+            }
+        });
+        return keys;
     }
 
 }

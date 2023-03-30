@@ -165,7 +165,6 @@ public class Bot extends ListenerAdapter implements Runnable {
             }
             return null;
         });
-
         // Audio
         builder.addCommand(new Connect());
         builder.addCommand(new DeleteSound(sql));

@@ -83,7 +83,7 @@ public class PlayYoutubeSlash extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         String video = event.getOption("video").getAsString();
         if(event.getMember().getVoiceState().getChannel() == null){
-            event.reply("You need to be in a voice channel to use this command");
+            event.deferReply(false).addContent("You need to be in a voice channel to use this command").queue();
             return;
         }
 

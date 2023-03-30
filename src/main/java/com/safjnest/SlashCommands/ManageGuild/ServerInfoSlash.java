@@ -9,6 +9,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 
@@ -40,7 +41,7 @@ public class ServerInfoSlash extends SlashCommand{
         eb.setTitle(":desktop: **SERVER INFORMATION** :desktop:");
         eb.setThumbnail(guild.getIconUrl());
         eb.setColor(Color.decode(
-            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
         ));
 
         eb.addField("Server name", "```" 
@@ -82,11 +83,20 @@ public class ServerInfoSlash extends SlashCommand{
                         ? "NONE"
                         : guild.getBoostRole().getName())
                     + "```", true);
+        String query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + guild.getId() + "';"; 
+        
+                    eb.addField("Welcome Message", "```" 
+                    + ((DatabaseHandler.getSql().getString(query, "message_text") == null)
+                        ? "There isn't a welcome message setted for this guild, use /help setwelcome for more information"
+                        : DatabaseHandler.getSql().getString(query, "message_text"))
+                    +  "```", true);
 
         eb.addField("Categories and channel [" + guild.getChannels().size() + "]", "```" 
                     +    "Categories: " + guild.getCategories().size() 
                     + " | Text channel: " + guild.getTextChannels().size() 
                     + " | Voice channel: " + guild.getVoiceChannels().size() 
+                    + " | Stage channel: " + guild.getStageChannels().size() 
+                    + " | Announcement channel: " + guild.getForumChannels().size()
                     + "```", false);
         eb.addField("Emojies [" +(guild.getEmojis().size()+guild.getStickers().size()) + "]", "```" 
                     +    "Emojies: " + guild.getEmojis().stream()

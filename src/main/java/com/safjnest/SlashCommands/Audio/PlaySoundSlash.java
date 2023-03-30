@@ -50,6 +50,12 @@ public class PlaySoundSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         
+        if(event.getMember().getVoiceState().getChannel() == null){
+            event.deferReply(false).addContent("You need to be in a voice channel to use this command").queue();
+            return;
+        }
+
+
         fileName = event.getOption("sound").getAsString();
         
         File soundBoard = new File("rsc" + File.separator + "SoundBoard");

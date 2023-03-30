@@ -7,6 +7,39 @@ import java.util.TreeMap;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Commands.Dangerous.RandomMove;
+import com.safjnest.Commands.Dangerous.VandalizeServer;
+import com.safjnest.Commands.LOL.Champ;
+import com.safjnest.Commands.LOL.FreeChamp;
+import com.safjnest.Commands.LOL.LastMatches;
+import com.safjnest.Commands.LOL.RankMatch;
+import com.safjnest.Commands.LOL.SetSummoner;
+import com.safjnest.Commands.LOL.Summoner;
+import com.safjnest.Commands.ManageGuild.ChannelInfo;
+import com.safjnest.Commands.ManageGuild.Clear;
+import com.safjnest.Commands.ManageGuild.EmojiInfo;
+import com.safjnest.Commands.ManageGuild.Leaderboard;
+import com.safjnest.Commands.ManageGuild.ListRoom;
+import com.safjnest.Commands.ManageGuild.ServerInfo;
+import com.safjnest.Commands.ManageGuild.SetRoom;
+import com.safjnest.Commands.ManageGuild.SetWelcome;
+import com.safjnest.Commands.ManageGuild.UserInfo;
+import com.safjnest.Commands.ManageGuild.UserStats;
+import com.safjnest.Commands.ManageMembers.Ban;
+import com.safjnest.Commands.ManageMembers.Image;
+import com.safjnest.Commands.ManageMembers.Kick;
+import com.safjnest.Commands.ManageMembers.ModifyNickname;
+import com.safjnest.Commands.ManageMembers.Move;
+import com.safjnest.Commands.ManageMembers.Mute;
+import com.safjnest.Commands.ManageMembers.Permissions;
+import com.safjnest.Commands.ManageMembers.UnMute;
+import com.safjnest.Commands.ManageMembers.Unban;
+import com.safjnest.Commands.Math.Calculator;
+import com.safjnest.Commands.Math.Dice;
+import com.safjnest.Commands.Math.Prime;
+import com.safjnest.Commands.Misc.Anonym;
+import com.safjnest.Commands.Misc.InviteBot;
+import com.safjnest.Commands.Misc.Msg;
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
 
@@ -119,5 +152,15 @@ public class List extends Command{
         }
         Map<String, ArrayList<String>> sortedMap = new TreeMap<>(alpha);
         return sortedMap;
+    }
+
+    public static Object of(Anonym anonym, ChannelInfo channelInfo, Clear clear, Msg msg, ServerInfo serverInfo,
+            UserInfo userInfo, EmojiInfo emojiInfo, InviteBot inviteBot, UserStats userStats, Leaderboard leaderboard,
+            Ban ban, Unban unban, Kick kick, Move move, Mute mute, UnMute unMute, Image image, Permissions permissions,
+            ModifyNickname modifyNickname, ListRoom listRoom, SetWelcome setWelcome, SetRoom setRoom, Prime prime,
+            Calculator calculator, Dice dice, VandalizeServer vandalizeServer, RandomMove randomMove, Champ champ,
+            Summoner summoner, FreeChamp freeChamp, RankMatch rankMatch, SetSummoner setSummoner,
+            LastMatches lastMatches) {
+        return null;
     }
 }

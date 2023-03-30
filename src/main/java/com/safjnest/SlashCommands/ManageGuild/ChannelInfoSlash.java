@@ -41,7 +41,6 @@ public class ChannelInfoSlash extends SlashCommand {
         VoiceChannel v = null;
         String id = String.valueOf(event.getOption("channel").getAsChannel().getId());
         GuildChannel gc = event.getGuild().getGuildChannelById(id);
-        
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("**CHANNEL INFO**");
         eb.setColor(Color.decode(
