@@ -39,7 +39,8 @@ public class ExpSystem {
         ArrayList<String> arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
         if(arr == null){
             query = "INSERT INTO exp_table (user_id, guild_id, exp, level, messages) VALUES ('"+userId+"','"+guildId+"',"+0+","+1+","+0+");";
-            DatabaseHandler.getSql().runQuery(query);
+            if(!DatabaseHandler.getSql().runQuery(query))
+                return -1;
             exp = calculateExp();
             lvl = 1;
             msg = 1;
