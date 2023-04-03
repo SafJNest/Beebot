@@ -22,7 +22,6 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.managers.AudioManager;
-import net.dv8tion.jda.api.utils.FileUpload;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -171,31 +170,22 @@ public class PlaySoundSlash extends SlashCommand{
             : SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length)) + "```", true);
         } catch (IOException e) {e.printStackTrace();}
         
-        eb.addBlankField(true);
 
         //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
+        eb.addField("Format", "```"+extension.toUpperCase()+"```", true);
 
         eb.addField("Guild", "```" + event.getJDA().getGuildById(guildId).getName() + "```", true);
 
         eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + " (yours: "+timesPlayedByUser+")```", true);
 
-        String img = event.getJDA().getSelfUser().getId() + "-";
-        if(extension.equals("opus"))
-            img += "opus.png";
         
-        else
-            img += "mp3.png"; 
            
         eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
             ));
         eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
             
-        File imgFile = new File("rsc" + File.separator + "img" + File.separator + img);
-        eb.setThumbnail("attachment://" + img);
-
-        event.deferReply(false).addEmbeds(eb.build())
-            .addFiles(FileUpload.fromData(imgFile))
-            .queue();
+        eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
+        event.deferReply(false).addEmbeds(eb.build()).queue();
     }
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
@@ -25,6 +26,7 @@ public class RawMessage extends Command{
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.hidden = true;
     }
 
     /**
@@ -32,6 +34,8 @@ public class RawMessage extends Command{
      */
     @Override
     protected void execute(CommandEvent event) {
+        if(!PermissionHandler.isUntouchable(event.getAuthor().getId()))
+            return;
         MessageHistory history = new MessageHistory(event.getChannel());
         List<Message> msgs = history.retrievePast(2).complete();
         event.reply(msgs.get(1).getContentRaw());

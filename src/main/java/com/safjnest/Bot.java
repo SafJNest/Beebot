@@ -296,10 +296,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         // Misc
         builder.addSlashCommand(new PingSlash());
         builder.addSlashCommand(new BugsNotifierSlash());
-        builder.addSlashCommand(new RamSlash());
         builder.addSlashCommand(new HelpSlash(gs));
-        builder.addSlashCommand(new RawMessageSlash());
-        builder.addSlashCommand(new ThreadCounterSlash());
         builder.addSlashCommand(new MsgSlash());
         builder.addSlashCommand(new InviteBotSlash());
         builder.addSlashCommand(new AnonymSlash());
