@@ -3,6 +3,7 @@ package com.safjnest.Commands.Misc;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.PermissionHandler;
 
 /**
  * The commands sends the information about the ram usage of the bot.
@@ -35,6 +36,8 @@ public class Ram extends Command{
     */
      @Override
     protected void execute(CommandEvent e) {
+        if(!PermissionHandler.isUntouchable(e.getAuthor().getId()))
+            return;
         e.reply("Total: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
         + "Usage: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
         + "Free: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb\n"

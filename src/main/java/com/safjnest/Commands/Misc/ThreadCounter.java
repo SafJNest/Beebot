@@ -5,6 +5,7 @@ import org.apache.commons.lang3.ThreadUtils;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.PermissionHandler;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
@@ -28,6 +29,8 @@ public class ThreadCounter extends Command{
     */
      @Override
     protected void execute(CommandEvent e) {
+        if(!PermissionHandler.isUntouchable(e.getAuthor().getId()))
+            return;
         double cont = 0.0;
         for (Thread t : ThreadUtils.getAllThreads()) {
             if(t.getName().startsWith("lava"))

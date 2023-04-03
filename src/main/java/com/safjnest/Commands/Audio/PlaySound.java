@@ -19,7 +19,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
-import net.dv8tion.jda.api.utils.FileUpload;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -167,7 +166,7 @@ public class PlaySound extends Command{
             : SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length)) + "```", true);
         } catch (IOException e) {e.printStackTrace();}
         
-        eb.addBlankField(true);
+        eb.addField("Format", "```"+extension.toUpperCase()+"```", true);
 
         //Mp3File mp = SoundBoard.getMp3FileByName(player.getPlayingTrack().getInfo().title);
 
@@ -175,23 +174,27 @@ public class PlaySound extends Command{
 
         eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + " (yours: "+timesPlayedByUser+")```", true);
 
+        /*
         String img = event.getJDA().getSelfUser().getId() + "-";
         if(extension.equals("opus"))
             img += "opus.png";
         
         else
             img += "mp3.png"; 
-           
+           */ 
         eb.setColor(Color.decode(
             BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
         ));
         eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
-            
+        /*    
         File imgFile = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
 
         channel.sendMessageEmbeds(eb.build())
             .addFiles(FileUpload.fromData(imgFile))
             .queue();
+         */
+        eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+        event.reply(eb.build());
     }
 }

@@ -21,7 +21,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
-import net.dv8tion.jda.api.utils.FileUpload;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -181,17 +180,20 @@ public class TTS extends Command{
         eb.addField("Voice", voice, true);
         eb.addField("Default voice", defaultVoice, true);
         eb.addBlankField(true);
-        String img = "tts.png";
         eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-        ));
+            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+            ));
             
-
-        File path = new File("rsc" + File.separator + "img" + File.separator + img);
+            /*
+            String img = "tts.png";
+            File path = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
         channel.sendMessageEmbeds(eb.build())
             .addFiles(FileUpload.fromData(path))
             .queue();
+        */
+        eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+        event.reply(eb.build());
         
     }
 }
