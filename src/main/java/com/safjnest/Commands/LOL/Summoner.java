@@ -35,9 +35,9 @@ public class Summoner extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
-        Button left = Button.primary("left", "<-");
-        Button right = Button.primary("right", "->");
-        Button center = Button.primary("center", "f");
+        Button left = Button.primary("lol-left", "<-");
+        Button right = Button.primary("lol-right", "->");
+        Button center = Button.primary("lol-center", "f");
 
         boolean searchByUser = false;
         String args = event.getArgs();
