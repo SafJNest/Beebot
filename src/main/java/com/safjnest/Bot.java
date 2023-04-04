@@ -170,7 +170,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new DeleteSound(sql));
         builder.addCommand(new Disconnect());
         builder.addCommand(new DownloadSound(sql));
-        builder.addCommand(new List(sql));
+        builder.addCommand(new List());
         builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
         builder.addCommand(new PlaySound(sql));
         builder.addCommand(new Upload(sql));
@@ -245,7 +245,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addSlashCommand(new DeleteSoundSlash(sql));
         builder.addSlashCommand(new DisconnectSlash());
         builder.addSlashCommand(new DownloadSoundSlash(sql));
-        builder.addSlashCommand(new ListSlash(sql));
+        builder.addSlashCommand(new ListSlash());
         builder.addSlashCommand(new PlayYoutubeSlash(youtubeApiKey, tierOneLink));
         builder.addSlashCommand(new PlaySoundSlash(sql));
         builder.addSlashCommand(new UploadSlash(sql));

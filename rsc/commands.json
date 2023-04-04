@@ -35,7 +35,7 @@
     },
 
     "playyoutube":{
-        "alias" : ["y", "py", "nuovavita", "yt"],
+        "alias" : ["y", "py", "yt"],
         "help"  : "Play a video from youtube.",
         "category" : "Audio",
         "arguments" : "[CommandName] [link youtube]"

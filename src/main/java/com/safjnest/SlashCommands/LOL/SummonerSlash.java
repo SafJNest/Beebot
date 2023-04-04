@@ -37,9 +37,9 @@ public class SummonerSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        Button left = Button.primary("left", "<-");
-        Button right = Button.primary("right", "->");
-        Button center = Button.primary("center", "f");
+        Button left = Button.primary("lol-left", "<-");
+        Button right = Button.primary("lol-right", "->");
+        Button center = Button.primary("lol-center", "f");
 
         boolean searchByUser = false;
         
@@ -52,7 +52,7 @@ public class SummonerSlash extends SlashCommand {
                 return;
             }
             searchByUser = true;
-            center = Button.primary("center", s.getName());
+            center = Button.primary("lol-center", s.getName());
             center.asDisabled();
         }else{
             s = LOLHandler.getSummonerByName(event.getOption("user").getAsString());
