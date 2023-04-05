@@ -49,7 +49,7 @@ public class ListSlash extends SlashCommand{
         ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 2);
         eb.setDescription("Total Sound: " + sounds.size());
         int cont = 0;
-        while(cont <24){
+        while(cont <24 && cont < sounds.size()){
             eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
             cont++;
         }
