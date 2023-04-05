@@ -162,6 +162,7 @@ public class TheListener extends ListenerAdapter {
             String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
 
             int page = 1;
+            int cont = 0;
             String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '"
                     + event.getGuild().getId() + "' ORDER BY name ASC;";
             ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 2);
@@ -174,6 +175,7 @@ public class TheListener extends ListenerAdapter {
             eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
             ));
+            eb.setDescription("Total Sound: " + sounds.size());
             Button left = Button.primary("list-left", "<-");
             Button right = Button.primary("list-right", "->");
             Button center = null;
@@ -185,10 +187,14 @@ public class TheListener extends ListenerAdapter {
                         if (b.getLabel().startsWith("Page"))
                             page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
                     }
-                    for (int i = (25 * page); i < sounds.size(); i++)
-                        eb.addField("**" + sounds.get(i).get(1) + "**", "ID: " + sounds.get(i).get(0), true);
-
-                    if (25 * (page + 1) >= sounds.size())
+                    
+                    cont = 24 * page;
+                    while(cont < (24*(page+1)) && cont < sounds.size()){
+                        eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
+                        cont++;
+                    }
+                    
+                    if (24 * (page + 1) >= sounds.size())
                         right = right.asDisabled();
                     center = Button.primary("center", "Page: " + (page + 1));
                     center = center.withStyle(ButtonStyle.SUCCESS);
@@ -204,9 +210,14 @@ public class TheListener extends ListenerAdapter {
                         if (b.getLabel().startsWith("Page")) 
                             page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
                     }
-                    int index = (25 * (page - 2) < 0) ? 0 : 25 * (page - 2);
-                    for (int i = index; i < sounds.size(); i++) 
-                        eb.addField("**" + sounds.get(i).get(1) + "**", "ID: " + sounds.get(i).get(0), true);
+                    cont = (25 * (page - 2) < 0) ? 0 : 25 * (page - 2);
+                
+                    while(cont < (24*(page+1)) && cont < sounds.size()){
+                        eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
+                        cont++;
+                    }
+
+
                     
                     if ((page - 1) == 1)
                         left = left.asDisabled();

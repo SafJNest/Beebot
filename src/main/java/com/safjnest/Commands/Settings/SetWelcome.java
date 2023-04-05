@@ -1,4 +1,4 @@
-package com.safjnest.Commands.ManageGuild;
+package com.safjnest.Commands.Settings;
 
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;

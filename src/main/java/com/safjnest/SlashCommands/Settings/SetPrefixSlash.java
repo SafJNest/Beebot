@@ -1,4 +1,4 @@
-package com.safjnest.SlashCommands.ManageGuild;
+package com.safjnest.SlashCommands.Settings;
 
 import java.util.Arrays;
 

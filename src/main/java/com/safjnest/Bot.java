@@ -28,6 +28,12 @@ import com.safjnest.Utilities.Listeners.TheListenerBeebot;
 import com.safjnest.Utilities.tts.TTSHandler;
 import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
+import com.safjnest.Commands.Settings.SetLevelUpMessage;
+import com.safjnest.Commands.Settings.SetPrefix;
+import com.safjnest.Commands.Settings.SetRoom;
+import com.safjnest.Commands.Settings.SetSummoner;
+import com.safjnest.Commands.Settings.SetVoice;
+import com.safjnest.Commands.Settings.SetWelcome;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.*;
@@ -40,6 +46,11 @@ import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
+import com.safjnest.SlashCommands.Settings.SetLevelUpMessageSlash;
+import com.safjnest.SlashCommands.Settings.SetPrefixSlash;
+import com.safjnest.SlashCommands.Settings.SetSummonerSlash;
+import com.safjnest.SlashCommands.Settings.SetVoiceSlash;
+import com.safjnest.SlashCommands.Settings.SetWelcomeSlash;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -206,6 +217,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             // Advanced
             builder.addCommand(new SetWelcome(sql));
             builder.addCommand(new SetRoom(sql));
+            builder.addCommand(new SetLevelUpMessage());
 
             // Math
             builder.addCommand(new Prime(maxPrime));
@@ -260,6 +272,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new UserInfoSlash());
             builder.addSlashCommand(new EmojiInfoSlash());
             builder.addSlashCommand(new SetWelcomeSlash(sql));
+            builder.addSlashCommand(new SetLevelUpMessageSlash());
             builder.addSlashCommand(new UserStatsSlash());
             builder.addSlashCommand(new LeaderboardSlash());
 

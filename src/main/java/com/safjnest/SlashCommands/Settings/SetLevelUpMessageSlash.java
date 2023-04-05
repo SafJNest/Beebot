@@ -1,6 +1,7 @@
-package com.safjnest.SlashCommands.ManageGuild;
+package com.safjnest.SlashCommands.Settings;
 
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -17,10 +18,9 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
  * 
  * @since 1.3
  */
-public class SetWelcomeSlash extends SlashCommand {
-    private SQL sql;
+public class SetLevelUpMessageSlash extends SlashCommand {
 
-    public SetWelcomeSlash(SQL sql) {
+    public SetLevelUpMessageSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         //this.help = new CommandsHandler().getString(this.name, "help");
@@ -30,9 +30,7 @@ public class SetWelcomeSlash extends SlashCommand {
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "msg", "Welcome message", true),
             new OptionData(OptionType.CHANNEL, "channel", "User to get the information about", false)
-                            .setChannelTypes(ChannelType.TEXT),
-            new OptionData(OptionType.ROLE, "role", "User to get the information about", false));
-        this.sql = sql;
+                            .setChannelTypes(ChannelType.TEXT));
     }
     @Override
     protected void execute(SlashCommandEvent event) {
@@ -51,16 +49,14 @@ public class SetWelcomeSlash extends SlashCommand {
         message = message.replace("'", "''");
         
         String discordId = event.getGuild().getId();
-        String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text, bot_id)"
-                            + "VALUES('" + discordId + "','" + channel +"','" + message + "','"+event.getJDA().getSelfUser().getId()+"');";
-        sql.runQuery(query);
-        if(event.getOption("role") != null){
-            query = "INSERT INTO welcome_roles(role_id, discord_id, bot_id)"
-                                + "VALUES('" + event.getOption("role").getAsRole().getId() + "','" + discordId + "','"+event.getJDA().getSelfUser().getId()+"');";
-            sql.runQuery(query);
+        String query = "INSERT INTO levelup_message(discord_id, channel_id, message_text)"
+                            + "VALUES('" + discordId + "','" + channel +"','" + message +"');";
+        if(!DatabaseHandler.getSql().runQuery(query)){
+            query = "UPDATE levelup_message SET channel_id = '" + channel + "', message_text = '" + message + "' WHERE discord_id = '" + discordId + "';"; 
+            DatabaseHandler.getSql().runQuery(query);
+            event.deferReply(false).addContent("Set a new LevelUp message.").queue();
+            return;
         }
-
-        
-        event.deferReply(false).addContent("All set correctly").queue();
+        event.deferReply(false).addContent("All set correctly.").queue();
     }
 }
