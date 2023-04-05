@@ -16,8 +16,7 @@ public class ExpSystem {
     public synchronized int receiveMessage(String userId, String guildId) {
         if(!users.containsKey(userId+"-"+guildId)){
             users.put(userId+"-"+guildId, new UserTime());
-            addExp(userId, guildId);
-            return -1;
+            return addExp(userId, guildId);
         }
         UserTime user =  users.get(userId+"-"+guildId);
         if (user.canReceiveExperience()) {

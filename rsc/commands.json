@@ -196,6 +196,14 @@
         "arguments" : "[CommandName] [summonerName]"
     },
 
+    "setlevelupmessage":{
+        "alias" : [""],
+        "help"  : "Allow to set a 'level up message' to be sent every time a user level up in the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetwelcome #global_chat | WP #user!. Using #user the user will be mentioned.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#canale)(@ruoli) | [messaggio]"
+    },
+
+
 
 
 

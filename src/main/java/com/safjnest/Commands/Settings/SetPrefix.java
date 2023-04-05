@@ -1,4 +1,4 @@
-package com.safjnest.Commands.ManageGuild;
+package com.safjnest.Commands.Settings;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
