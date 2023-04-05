@@ -2,7 +2,6 @@ package com.safjnest.SlashCommands.Settings;
 
 import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
