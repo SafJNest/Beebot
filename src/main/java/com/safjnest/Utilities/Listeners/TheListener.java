@@ -194,8 +194,10 @@ public class TheListener extends ListenerAdapter {
                         cont++;
                     }
                     
-                    if (24 * (page + 1) >= sounds.size())
+                    if (24 * (page + 1) >= sounds.size()){
                         right = right.asDisabled();
+                        right = right.withStyle(ButtonStyle.DANGER);
+                    }
                     center = Button.primary("center", "Page: " + (page + 1));
                     center = center.withStyle(ButtonStyle.SUCCESS);
                     center = center.asDisabled();
@@ -210,17 +212,19 @@ public class TheListener extends ListenerAdapter {
                         if (b.getLabel().startsWith("Page")) 
                             page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
                     }
-                    cont = (25 * (page - 2) < 0) ? 0 : 25 * (page - 2);
+                    cont = (24 * (page - 2) < 0) ? 0 : 24 * (page - 2);
                 
-                    while(cont < (24*(page+1)) && cont < sounds.size()){
+                    while(cont < (24*(page-1)) && cont < sounds.size()){
                         eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
                         cont++;
                     }
 
 
                     
-                    if ((page - 1) == 1)
+                    if ((page - 1) == 1){
                         left = left.asDisabled();
+                        left = left.withStyle(ButtonStyle.DANGER);
+                    }
                     
                     center = Button.primary("center", "Page: " + (page - 1));
                     center = center.withStyle(ButtonStyle.SUCCESS);

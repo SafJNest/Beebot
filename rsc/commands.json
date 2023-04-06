@@ -8,7 +8,7 @@
 
     "customizesound":{
         "alias" : ["custom", "cs", "personalize"],
-        "help"  : "WIP",
+        "help"  : "Allow the user to modify a sound's name. Using slash command you can specify the sound by name.",
         "category" : "Audio",
         "arguments" : "[CommandName]"
     },
