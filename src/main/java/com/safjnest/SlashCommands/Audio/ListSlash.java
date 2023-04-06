@@ -31,7 +31,7 @@ public class ListSlash extends SlashCommand{
 
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        Button left = Button.primary("list-left", "<-");
+        Button left = Button.danger("list-left", "<-");
         left = left.asDisabled();
         Button right = Button.primary("list-right", "->");
         Button center = Button.primary("list-center", "Page: 1");
@@ -42,6 +42,7 @@ public class ListSlash extends SlashCommand{
         EmbedBuilder eb = new  EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest", event.getUser().getAvatarUrl());
         eb.setTitle("List of " + event.getGuild().getName());
+        eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setColor(Color.decode(
             BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
         ));
@@ -54,9 +55,11 @@ public class ListSlash extends SlashCommand{
             cont++;
         }
         
-        if(sounds.size() <= 24)
+        if(sounds.size() <= 24){
+            right = right.withStyle(ButtonStyle.DANGER);
             right = right.asDisabled();
-        event.getChannel().sendMessageEmbeds(eb.build()).addActionRow(left, center, right).queue();
+        }
+        event.deferReply(false).addEmbeds(eb.build()).addActionRow(left, center, right).queue();
     }
    
 }

@@ -40,6 +40,7 @@ public class TheListenerBeebot extends ListenerAdapter {
             String query = "SELECT channel_id, message_text FROM levelup_message WHERE discord_id = '" + e.getGuild().getId() + "';";
             ArrayList<String> arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
             if (arr == null){
+                e.getChannel().asTextChannel().sendMessage("Congratulations, you are now level: " + lvl).queue();
                 return;
             }
             channel = e.getGuild().getTextChannelById(arr.get(0));

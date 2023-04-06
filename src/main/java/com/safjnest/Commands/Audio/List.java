@@ -33,7 +33,7 @@ public class List extends Command{
 	@Override
 	protected void execute(CommandEvent event) {
         
-        Button left = Button.primary("list-left", "<-");
+        Button left = Button.danger("list-left", "<-");
         left = left.asDisabled();
         Button right = Button.primary("list-right", "->");
         Button center = Button.primary("list-center", "Page: 1");
@@ -58,8 +58,10 @@ public class List extends Command{
         }
         
         
-        if(sounds.size() <= 24)
+        if(sounds.size() <= 24){
+            right = right.withStyle(ButtonStyle.DANGER);
             right = right.asDisabled();
+        }
         event.getChannel().sendMessageEmbeds(eb.build()).addActionRow(left, center, right).queue();
     }
     

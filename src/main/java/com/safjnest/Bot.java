@@ -187,6 +187,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new Upload(sql));
         builder.addCommand(new TTS(tts, sql));
         builder.addCommand(new Stop());
+        builder.addCommand(new CustomizeSound());
 
         if (!Thread.currentThread().getName().equals("beebot music")) {
             // Manage Guild
@@ -263,6 +264,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addSlashCommand(new UploadSlash(sql));
         builder.addSlashCommand(new TTSSlash(tts, sql));
         builder.addSlashCommand(new StopSlash());
+        builder.addSlashCommand(new CustomizeSoundSlash());
 
         if (!Thread.currentThread().getName().equals("beebot music")) {
             // Manage Guild
