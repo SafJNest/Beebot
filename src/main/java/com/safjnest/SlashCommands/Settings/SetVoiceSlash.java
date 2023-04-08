@@ -47,18 +47,18 @@ public class SetVoiceSlash extends SlashCommand {
             event.deferReply(true).addContent("Voice not found, use command /t list").queue();
             return;
         }
-        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';";
+        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         if(sql.getString(query, "name_tts") == null){
-            query = "INSERT INTO tts_guilds(discord_id, name_tts, language_tts)"
-                                + "VALUES('" + event.getGuild().getId() + "','" + voice + "','" + language + "');";
+            query = "INSERT INTO tts_guilds(discord_id, bot_id, name_tts, language_tts)"
+                                + "VALUES('" + event.getGuild().getId() + "','" + event.getJDA().getSelfUser().getId() + "','" + voice + "','" + language + "');";
             
             if(sql.runQuery(query))
                 event.deferReply(true).addContent("All set correctly").queue();
             else
                 event.deferReply(true).addContent("Error: wrong voice name probably").queue();
         }else{
-            query = "UPDATE tts_guilds SET name_tts = '" + voice + "' WHERE discord_id = '" + event.getGuild().getId() + "';";
-            String query2 = "UPDATE tts_guilds SET language_tts = '" + language + "' WHERE discord_id = '" + event.getGuild().getId() + "';";
+            query = "UPDATE tts_guilds SET name_tts = '" + voice + "' WHERE discord_id = '" + event.getGuild().getId()  + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+            String query2 = "UPDATE tts_guilds SET language_tts = '" + language + "' WHERE discord_id = '" + event.getGuild().getId()  + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             if(sql.runQuery(query) && sql.runQuery(query2))
                 event.deferReply(false).addContent("Default voice modified correctly").queue();
             else 

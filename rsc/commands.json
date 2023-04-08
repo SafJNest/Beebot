@@ -162,7 +162,7 @@
 
     "setwelcome":{
         "alias" : [],
-        "help"  : "Allow to set a 'welcome quote' to be sent every time a user join the server. Its necessary to set also a channel otherwise will be used the default system channel. Can also be setted roles to given. Ex: psetwelcome #welcome @role | Hello #user!. Using #user the user will be mentioned.",
+        "help"  : "Allow to set a 'welcome quote' that would be sent every time a user join the server. Its necessary to set also a channel otherwise will be used the default system channel. Can also be setted only one role (for now) to be given. Ex: psetwelcome #welcome @role | Hello #user!. Using #user the user will be mentioned.",
         "category" : "Settings",
         "arguments" : "[CommandName] (#canale)(@ruoli) | [messaggio]"
     },
@@ -176,7 +176,7 @@
 
     "setvoice":{
         "alias" : ["voice"],
-        "help"  : "Allow to set a default voice for command 'tts'.",
+        "help"  : "Allow to set a default voice for command 'tts'. Every bot will have a different setted voice.",
         "category" : "Settings",
         "arguments" : "[CommandName] [nomeVoce]"
     },
@@ -184,7 +184,7 @@
 
     "setprefix":{
         "alias" : ["prefix"],
-        "help"  : "Changes the prefix of the guild",
+        "help"  : "Changes the prefix of the guild. Only for a single bot.",
         "category" : "Settings",
         "arguments" : "[CommandName] [new Prefix]"
     },
@@ -198,7 +198,7 @@
 
     "setlevelupmessage":{
         "alias" : [""],
-        "help"  : "Allow to set a 'level up message' to be sent every time a user level up in the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetwelcome #global_chat | WP #user!. Using #user the user will be mentioned.",
+        "help"  : "Allow to set a 'level up message' to be sent every time a user level up in the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetwelcome #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot.",
         "category" : "Settings",
         "arguments" : "[CommandName] (#canale)(@ruoli) | [messaggio]"
     },
