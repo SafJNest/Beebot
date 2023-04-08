@@ -87,7 +87,7 @@ public class TTSSlash extends SlashCommand{
             file.mkdirs();
 
         //checking the selected voice, otherwise default is used
-        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';";
+        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         if(sql.getString(query, "name_tts") != null && voice.equals("keria"))
             defaultVoice = sql.getString(query, "name_tts");
         
@@ -106,7 +106,7 @@ public class TTSSlash extends SlashCommand{
         }//check if there is a default voice and the user hasnt asked for a specific speaker
         else if(!defaultVoice.equals("keria")){
             voice = defaultVoice;
-            query = "SELECT language_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';"; 
+            query = "SELECT language_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             language = sql.getString(query, "language_tts");
         //used the default system voice
         }else{

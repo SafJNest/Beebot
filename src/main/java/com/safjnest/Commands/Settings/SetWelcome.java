@@ -28,16 +28,26 @@ public class SetWelcome extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
+        System.out.println(event.getMessage().getContentRaw());
         String message = event.getMessage().getContentRaw();
         String channel = null;
         ArrayList<String> roles = new ArrayList<>();
         System.out.println(event.getMessage().getContentRaw());
         for (int i = 0; i < message.indexOf("|"); i++) {
             if (message.charAt(i) == '#') {
-                channel = message.substring(i + 1, i + 19);
-                i += 19;
+                System.out.println(message.charAt(i + 20));
+                if(message.charAt(i + 20) == '>'){
+                    channel = message.substring(i + 1, i + 20);
+                    System.out.println(channel);
+                    i += 20;
+                }
+                else{
+                    channel = message.substring(i + 1, i + 19);
+                    i += 19;
+                }
+                
             } else if (message.charAt(i) == '@' && message.charAt(i + 1) == '&') {
-                roles.add(message.substring(i + 2, i + 20));
+                roles.add(message.substring(i + 2, message.lastIndexOf(">")));
                 i += 20;
             }
         }

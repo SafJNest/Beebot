@@ -102,7 +102,7 @@ public class TTS extends Command{
             file.mkdirs();
         
         //check if there is a defualt voice setted in user's guild
-        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';";
+        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         if(sql.getString(query, "name_tts") != null)
             defaultVoice = sql.getString(query, "name_tts");
         
@@ -118,7 +118,7 @@ public class TTS extends Command{
         }
         else if(!defaultVoice.equals("keria")){ //if true means there is a default voice setted so the user wants to use it
             voice = defaultVoice;
-            query = "SELECT language_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';"; 
+            query = "SELECT language_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             language = sql.getString(query, "language_tts");
             speech = event.getArgs();
         }

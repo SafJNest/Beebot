@@ -40,18 +40,18 @@ public class SetVoice extends Command {
             event.reply("Voice not found, use command" + event.getPrefix() + "t list");
             return;
         }
-        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "';";
+        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getSelfUser().getId() + "';";
         if(sql.getString(query, "name_tts") == null){
-            query = "INSERT INTO tts_guilds(discord_id, name_tts, language_tts)"
-                                + "VALUES('" + event.getGuild().getId() + "','" + voice + "','" + language + "');";
+            query = "INSERT INTO tts_guilds(discord_id, bot_id, name_tts, language_tts)"
+                                + "VALUES('" + event.getGuild().getId() + "','" + event.getSelfUser().getId() + "','" + voice + "','" + language + "');";
             
             if(sql.runQuery(query))
                 event.reply("All set correctly");
             else
                 event.reply("Error: wrong voice name probably");
         }else{
-            query = "UPDATE tts_guilds SET name_tts = '" + voice + "' WHERE discord_id = '" + event.getGuild().getId() + "';";
-            String query2 = "UPDATE tts_guilds SET language_tts = '" + language + "' WHERE discord_id = '" + event.getGuild().getId() + "';";
+            query = "UPDATE tts_guilds SET name_tts = '" + voice + "' WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getSelfUser().getId() + "';";
+            String query2 = "UPDATE tts_guilds SET language_tts = '" + language + "' WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getSelfUser().getId() + "';";
             if(sql.runQuery(query) && sql.runQuery(query2))
                 event.reply("Default voice modified correctly");
             else 
