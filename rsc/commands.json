@@ -31,14 +31,14 @@
         "alias" : ["papyrus", "paper", "listoide"],
         "help"  : "Display a list with all the sound in a server.",
         "category" : "Audio",
-        "arguments" : "[CommandName] | [me] | [user @user/IDuser] | [global]"
+        "arguments" : "[CommandName]"
     },
 
     "playyoutube":{
         "alias" : ["y", "py", "yt"],
         "help"  : "Play a video from youtube.",
         "category" : "Audio",
-        "arguments" : "[CommandName] [link youtube]"
+        "arguments" : "[CommandName] [link/name video]"
     },
 
     "playsound":{
@@ -184,7 +184,7 @@
 
     "setprefix":{
         "alias" : ["prefix"],
-        "help"  : "Changes the prefix of the guild. Only for a single bot.",
+        "help"  : "Changes the prefix of the guild",
         "category" : "Settings",
         "arguments" : "[CommandName] [new Prefix]"
     },
@@ -298,9 +298,9 @@
 
     "calculator":{
         "alias" : ["c", "calc","calculate"],
-        "help"  : "Does several mathematical operation.",
+        "help"  : "Does several mathematical operation. Such as [calc 20 +  ln(2) - (3*(cos(pi)+3)]",
         "category" : "Math",
-        "arguments" : "[calc] [(n+n) (n-n) (n*n) (n/n) (n^n) (sqrt n) (sin n) (cos n ) (ln n) (tan n) (asin n) (acos n) (exp n)]"
+        "arguments" : "[calc] [expression] (+, -, *, /, cos, sin, pi, e, ln)"
     },
 
     "function":{

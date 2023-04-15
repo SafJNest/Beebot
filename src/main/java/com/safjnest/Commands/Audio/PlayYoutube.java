@@ -82,6 +82,11 @@ public class PlayYoutube extends Command {
             return;
         }
 
+        if((event.getMember().getVoiceState().getChannel() != event.getSelfMember().getVoiceState().getChannel()) && event.getSelfMember().getVoiceState().getChannel() != null){
+            event.reply("The bot is used by someone else, dont be annoying and use another beebot instance.");
+            return;
+        }
+
         String toPlay = getVideoIdFromYoutubeUrl(event.getArgs());
         if(toPlay == null){
             try {

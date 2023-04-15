@@ -44,8 +44,8 @@ public class TheListener extends ListenerAdapter {
      */
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent e) {
-        if (e.getGuild().getAudioManager().isConnected() && e.getChannelLeft() != null
-                && e.getChannelLeft().getMembers().size() == 1) {
+        if((e.getGuild().getAudioManager().isConnected() && e.getChannelLeft() != null) &&
+            (e.getGuild().getAudioManager().getConnectedChannel().getId().equals(e.getChannelLeft().getId()))){
             e.getGuild().getAudioManager().closeAudioConnection();
         }
     }
