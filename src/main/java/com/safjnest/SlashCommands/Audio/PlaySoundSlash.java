@@ -54,6 +54,11 @@ public class PlaySoundSlash extends SlashCommand{
             return;
         }
 
+        if((event.getMember().getVoiceState().getChannel() != event.getGuild().getSelfMember().getVoiceState().getChannel()) && event.getGuild().getSelfMember().getVoiceState().getChannel() != null){
+            event.deferReply(false).addContent("The bot is used by someone else, dont be annoying and use another beebot instance.").queue();
+            return;
+        }
+
 
         fileName = event.getOption("sound").getAsString();
         

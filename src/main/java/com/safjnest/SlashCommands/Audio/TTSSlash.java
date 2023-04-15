@@ -79,6 +79,13 @@ public class TTSSlash extends SlashCommand{
         String defaultVoice = "keria";
         EmbedBuilder eb = null;
 
+
+        if((event.getMember().getVoiceState().getChannel() != event.getGuild().getSelfMember().getVoiceState().getChannel()) && event.getGuild().getSelfMember().getVoiceState().getChannel() != null){
+            event.deferReply(false).addContent("The bot is used by someone else, dont be annoying and use another beebot instance.").queue();
+            return;
+        }
+
+
         speech = event.getOption("text").getAsString();
 
 
