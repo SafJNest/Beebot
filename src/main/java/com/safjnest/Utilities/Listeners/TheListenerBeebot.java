@@ -6,7 +6,6 @@ import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -35,19 +34,17 @@ public class TheListenerBeebot extends ListenerAdapter {
 
         int lvl = farm.receiveMessage(e.getAuthor().getId(), e.getGuild().getId());
         if (lvl != -1) {
-            MessageChannel channel = null;
             User newGuy = e.getAuthor();
-            String query = "SELECT channel_id, message_text FROM levelup_message WHERE discord_id = '" + e.getGuild().getId() + "';";
+            String query = "SELECT message_text FROM levelup_message WHERE discord_id = '" + e.getGuild().getId() + "';";
             ArrayList<String> arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
             if (arr == null){
                 e.getChannel().asTextChannel().sendMessage("Congratulations, you are now level: " + lvl).queue();
                 return;
             }
-            channel = e.getGuild().getTextChannelById(arr.get(0));
-            String message = arr.get(1);
+            String message = arr.get(0);
             message = message.replace("#user", newGuy.getAsMention());
             message = message.replace("#level", String.valueOf(lvl));
-            channel.sendMessage(message).queue();
+            e.getChannel().asTextChannel().sendMessage(message).queue();
         }
 
     }

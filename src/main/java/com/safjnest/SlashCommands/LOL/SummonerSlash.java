@@ -63,7 +63,7 @@ public class SummonerSlash extends SlashCommand {
             
         }
         
-        EmbedBuilder builder = Summoner.createEmbed(event.getJDA().getSelfUser().getId(), s);
+        EmbedBuilder builder = Summoner.createEmbed(event.getJDA(),event.getJDA().getSelfUser().getId(), s);
         
         if(searchByUser && LOLHandler.getNumberOfProfile(event.getUser().getId()) > 1){
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();

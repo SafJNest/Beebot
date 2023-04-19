@@ -8,6 +8,7 @@ import java.util.Set;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
 
 /**
  * This class handles all matters related to discord permissions.
@@ -151,6 +152,38 @@ public class PermissionHandler {
         }
         return finalRoles;
     }
+
+    public static List<String> getMaxFieldableUserNames(List<Member> users, int charNumber) {
+        if(charNumber > 1024)
+            throw new IllegalArgumentException("il numero dei caratteri non puo' essere maggiore di 1024");
+        List<String> finalUser = new ArrayList<String>();
+        int usersLenght = 0, countSpaces;
+        List<Character> toDelete = Arrays.asList((char)8291, (char)8194, (char)32); //Only deletes them if they are at the very beginning/end of the role name
+        for (int i = 0; i < users.size(); i++) {
+            String user = users.get(i).getEffectiveName();
+
+            countSpaces = 0;
+            while(toDelete.contains(user.charAt(countSpaces)))
+                countSpaces++;
+            if(countSpaces > 0){
+                user = user.substring(countSpaces);
+                countSpaces = 0;
+            }
+            while(toDelete.contains(user.charAt(user.length()-countSpaces-1)))
+                countSpaces++;
+            if(countSpaces > 0)
+                user = user.substring(0, user.length()-countSpaces);
+
+                usersLenght += user.length() + 2; //accounts for the virgule and space put by the toString method of the final List
+            if(usersLenght >= charNumber)
+                break;
+            
+            finalUser.add(user);
+        }
+        return finalUser;
+    }
+
+    
 
     /**
      * Checks if a member has a specific permission.
