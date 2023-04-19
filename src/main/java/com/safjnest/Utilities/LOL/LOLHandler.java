@@ -119,6 +119,15 @@ public class LOLHandler {
         } catch (Exception e) { return null; }
     }
 
+
+    public static String getAccountIdByName(String name){
+        try {
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, name).getAccountId();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static int getNumberOfProfile(String discordId){
         String query = "SELECT count(discord_id) as count FROM lol_user WHERE discord_id = '" + discordId + "';";
         try { 

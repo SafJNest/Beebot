@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
+import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -45,7 +46,8 @@ public class TheListener extends ListenerAdapter {
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent e) {
         if((e.getGuild().getAudioManager().isConnected() && e.getChannelLeft() != null) &&
-            (e.getGuild().getAudioManager().getConnectedChannel().getId().equals(e.getChannelLeft().getId()))){
+            (e.getGuild().getAudioManager().getConnectedChannel().getId().equals(e.getChannelLeft().getId())) &&
+            (e.getChannelLeft().getMembers().size() == 1)){
             e.getGuild().getAudioManager().closeAudioConnection();
         }
     }
@@ -78,6 +80,22 @@ public class TheListener extends ListenerAdapter {
         }
     }
 
+    @Override
+    public void onGuildMemberRemove(GuildMemberRemoveEvent event){
+        MessageChannel channel = null;
+        String query = "SELECT channel_id FROM left_message WHERE discord_id = '" + event.getGuild().getId()
+                + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        String notNullPls = sql.getString(query, "channel_id");
+        if (notNullPls == null)
+            return;
+        channel = event.getGuild().getTextChannelById(notNullPls);
+        query = "SELECT message_text FROM left_message WHERE discord_id = '" + event.getGuild().getId()
+                + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        String message = sql.getString(query, "message_text");
+        message = message.replace("#user", event.getUser().getName());
+        channel.sendMessage(message).queue();
+    }
+
     /**
      * On update of a user's boost time (to make the bot praise the user)
      */
@@ -101,16 +119,17 @@ public class TheListener extends ListenerAdapter {
             String nameSum = "";
             int index = 0;
 
-            String query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
+            for (Button b : event.getMessage().getButtons()) {
+                if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
+                    nameSum = b.getLabel();
+            }
+            String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + LOLHandler.getAccountIdByName(nameSum) + "';";
+            query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + DatabaseHandler.getSql().getString(query, "discord_id") + "';";
             ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
             switch (args) {
 
                 case "right":
 
-                    for (Button b : event.getMessage().getButtons()) {
-                        if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
-                            nameSum = b.getLabel();
-                    }
                     for (int i = 0; i < accounts.size(); i++) {
                         if (LOLHandler.getSummonerById(accounts.get(i).get(0)).getName().equals(nameSum))
                             index = i;
@@ -124,7 +143,7 @@ public class TheListener extends ListenerAdapter {
                     center = Button.primary("lol-center",
                             LOLHandler.getSummonerById(accounts.get(index).get(0)).getName());
                     event.getMessage()
-                            .editMessageEmbeds(Summoner.createEmbed(event.getJDA().getSelfUser().getId(),
+                            .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                     LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
                             .setActionRow(left, center, right)
                             .queue();
@@ -132,10 +151,6 @@ public class TheListener extends ListenerAdapter {
 
                 case "left":
 
-                    for (Button b : event.getMessage().getButtons()) {
-                        if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
-                            nameSum = b.getLabel();
-                    }
                     for (int i = 0; i < accounts.size(); i++) {
                         if (LOLHandler.getSummonerById(accounts.get(i).get(0)).getName().equals(nameSum))
                             index = i;
@@ -150,7 +165,7 @@ public class TheListener extends ListenerAdapter {
                     center = Button.primary("lol-center",
                             LOLHandler.getSummonerById(accounts.get(index).get(0)).getName());
                     event.getMessage()
-                            .editMessageEmbeds(Summoner.createEmbed(event.getJDA().getSelfUser().getId(),
+                            .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                     LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
                             .setActionRow(left, center, right)
                             .queue();

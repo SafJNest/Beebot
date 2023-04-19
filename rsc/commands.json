@@ -197,10 +197,17 @@
     },
 
     "setlevelupmessage":{
-        "alias" : [""],
+        "alias" : [],
         "help"  : "Allow to set a 'level up message' to be sent every time a user level up in the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetwelcome #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot.",
         "category" : "Settings",
-        "arguments" : "[CommandName] (#canale)(@ruoli) | [messaggio]"
+        "arguments" : "[CommandName] (#channel) | [messagge]"
+    },
+
+    "setleft":{
+        "alias" : [],
+        "help"  : "Allow to set a message to be sent every time a user left a guild. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetwelcome #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#channel) | [message]"
     },
 
 

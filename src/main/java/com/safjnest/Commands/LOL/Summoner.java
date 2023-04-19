@@ -5,10 +5,13 @@ import java.awt.Color;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 
@@ -68,7 +71,7 @@ public class Summoner extends Command {
         }
         
         
-        EmbedBuilder builder = createEmbed(event.getJDA().getSelfUser().getId(), s);
+        EmbedBuilder builder = createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s);
         
         if(searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
@@ -81,15 +84,23 @@ public class Summoner extends Command {
 
 	}
 
-    public static EmbedBuilder createEmbed(String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
+    public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(s.getName());
         builder.setColor(Color.decode(
             BotSettingsHandler.map.get(id).color
         ));
         builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
-        builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
-        
+        String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + s.getAccountId() + "';";
+        String userId = DatabaseHandler.getSql().getString(query, "discord_id");
+        if(userId != null){
+            User theGuy = jda.getUserById(userId);
+            builder.addField("User:", theGuy.getName() + "#" + theGuy.getDiscriminator(), true);
+            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
+            builder.addBlankField(true);
+        }else{
+            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
+        }
         builder.addField("5v5 Ranked Solo", LOLHandler.getSoloQStats(s), true);
         builder.addField("5v5 Ranked Flex Queue", LOLHandler.getFlexStats(s), true);
         String masteryString = "";
