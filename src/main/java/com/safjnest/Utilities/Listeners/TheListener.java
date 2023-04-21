@@ -92,7 +92,7 @@ public class TheListener extends ListenerAdapter {
         query = "SELECT message_text FROM left_message WHERE discord_id = '" + event.getGuild().getId()
                 + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String message = sql.getString(query, "message_text");
-        message = message.replace("#user", event.getUser().getName());
+        message = message.replace("#user", event.getUser().getAsMention());
         channel.sendMessage(message).queue();
     }
 
