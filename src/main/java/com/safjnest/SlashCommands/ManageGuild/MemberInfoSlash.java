@@ -22,10 +22,10 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * 
  * @since 1.2.5
  */
-public class UserInfoSlash extends SlashCommand{
+public class MemberInfoSlash extends SlashCommand{
     private final int defaultRoleCharNumber = 200;
 
-    public UserInfoSlash() {
+    public MemberInfoSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");

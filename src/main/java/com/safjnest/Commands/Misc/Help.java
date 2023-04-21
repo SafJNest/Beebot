@@ -64,7 +64,8 @@ public class Help extends Command {
         ));
         if(command.equals("")){
             String ss = "```\n";
-            for(String k : getKeysInDescendingOrder(commands)){ 
+            for(String k : getKeysInDescendingOrder(commands)){
+                Collections.sort(commands.get(k), Comparator.comparing(Command::getName));
                 for(Command c : commands.get(k)){
                     ss+= c.getName() + "\n";
                 }
@@ -120,5 +121,4 @@ public class Help extends Command {
         });
         return keys;
     }
-
 }

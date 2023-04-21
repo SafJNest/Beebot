@@ -117,9 +117,9 @@
         "arguments" : "[CommandName]"
     },
 
-    "userinfo":{
-        "alias" : ["usinf", "uinfo"],
-        "help"  : "Show the information aboit a user.",
+    "memberinfo":{
+        "alias" : ["usinf", "uinfo", "userinfo"],
+        "help"  : "Show the information about a member",
         "category" : "Server Management",
         "arguments" : "[userinfo] [@user]"
     },
@@ -198,14 +198,14 @@
 
     "setlevelupmessage":{
         "alias" : [],
-        "help"  : "Allow to set a 'level up message' to be sent every time a user level up in the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetwelcome #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot.",
+        "help"  : "Allow to set a 'level up message' to be sent every time a user level up in the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetlevelupmessage #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot.",
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [messagge]"
     },
 
     "setleft":{
         "alias" : [],
-        "help"  : "Allow to set a message to be sent every time a user left a guild. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetwelcome #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot.",
+        "help"  : "Allow to set a message to be sent every time a user left a guild. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetleft #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot.",
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [message]"
     },
