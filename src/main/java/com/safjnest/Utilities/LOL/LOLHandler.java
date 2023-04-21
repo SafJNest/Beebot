@@ -28,7 +28,7 @@ public class LOLHandler {
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
 
 
-    private static String dataDragonVersion = "13.6.1";
+    private static String dataDragonVersion = "13.8.1";
 
     private static String runesURL = "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/data/en_US/runesReforged.json";
 
