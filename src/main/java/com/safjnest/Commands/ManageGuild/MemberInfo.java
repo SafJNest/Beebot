@@ -20,10 +20,10 @@ import net.dv8tion.jda.api.entities.User;
  * 
  * @since 1.2.5
  */
-public class UserInfo extends Command{
+public class MemberInfo extends Command{
     private final int defaultRoleCharNumber = 200;
 
-    public UserInfo() {
+    public MemberInfo() {
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");

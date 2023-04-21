@@ -198,7 +198,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new Clear());
             builder.addCommand(new Msg());
             builder.addCommand(new ServerInfo());
-            builder.addCommand(new UserInfo());
+            builder.addCommand(new MemberInfo());
             builder.addCommand(new EmojiInfo());
             builder.addCommand(new InviteBot());
             builder.addCommand(new ListGuild());
@@ -274,7 +274,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new ChannelInfoSlash());
             builder.addSlashCommand(new ClearSlash());
             builder.addSlashCommand(new ServerInfoSlash());
-            builder.addSlashCommand(new UserInfoSlash());
+            builder.addSlashCommand(new MemberInfoSlash());
             builder.addSlashCommand(new EmojiInfoSlash());
             builder.addSlashCommand(new SetWelcomeSlash(sql));
             builder.addSlashCommand(new SetLeftSlash(sql));

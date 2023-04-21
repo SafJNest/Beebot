@@ -69,6 +69,7 @@ public class HelpSlash extends SlashCommand {
         if(command.equals("")){
             String ss = "```\n";
             for(String k : getKeysInDescendingOrder(commands)){
+                Collections.sort(commands.get(k), Comparator.comparing(Command::getName));
                 for(Command c : commands.get(k)){
                     ss+= c.getName() + "\n";
                 }
