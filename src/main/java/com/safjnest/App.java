@@ -72,6 +72,9 @@ public class App {
             Thread bmt = new Thread(new Bot(bs, tts, sql, riotApi));
             bmt.setName("moderation");
             bmt.start();
+            Thread bc = new Thread(new Bot(bs, tts, sql, riotApi));
+            bc.setName("canary");
+            bc.start();
         }else{
             Thread bc = new Thread(new Bot(bs, tts, sql, riotApi));
             bc.setName("canary");
