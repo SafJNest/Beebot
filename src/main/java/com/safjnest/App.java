@@ -69,11 +69,13 @@ public class App {
             Thread bm = new Thread(new Bot(bs, tts, sql, riotApi));
             bm.setName("beebot music");
             bm.start();
+            Thread bmt = new Thread(new Bot(bs, tts, sql, riotApi));
+            bmt.setName("moderation");
+            bmt.start();
         }else{
             Thread bc = new Thread(new Bot(bs, tts, sql, riotApi));
             bc.setName("canary");
             bc.start();
-
         }
         /* 
         Thread b3 = new Thread(new Bot(bs));

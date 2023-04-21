@@ -1,6 +1,7 @@
 package com.safjnest.SlashCommands.Settings;
 
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -35,6 +36,13 @@ public class SetLeftSlash extends SlashCommand {
     }
     @Override
     protected void execute(SlashCommandEvent event) {
+        if(event.getOption("msg").getAsString().equalsIgnoreCase("disable")){
+            String query = "DELETE from left_message WHERE discord_id = '" + event.getGuild().getId()
+                           + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+            DatabaseHandler.getSql().runQuery(query);
+            event.deferReply(false).addContent("Left message disable successfully").queue();
+            return;
+        }
         String channel = null;
         if(event.getOption("channel") == null){
             try {

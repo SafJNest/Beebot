@@ -110,8 +110,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
     /**
      * Where the magic happens.
-     * 
-     * @param args
+     *
      */
     @Override
     public void run() {
@@ -178,18 +177,21 @@ public class Bot extends ListenerAdapter implements Runnable {
             }
             return null;
         });
-        // Audio
-        builder.addCommand(new Connect());
-        builder.addCommand(new DeleteSound(sql));
-        builder.addCommand(new Disconnect());
-        builder.addCommand(new DownloadSound(sql));
-        builder.addCommand(new List());
-        builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
-        builder.addCommand(new PlaySound(sql));
-        builder.addCommand(new Upload(sql));
-        builder.addCommand(new TTS(tts, sql));
-        builder.addCommand(new Stop());
-        builder.addCommand(new CustomizeSound());
+
+        if(!Thread.currentThread().getName().equals("moderation")){
+            // Audio
+            builder.addCommand(new Connect());
+            builder.addCommand(new DeleteSound(sql));
+            builder.addCommand(new Disconnect());
+            builder.addCommand(new DownloadSound(sql));
+            builder.addCommand(new List());
+            builder.addCommand(new PlayYoutube(youtubeApiKey, tierOneLink));
+            builder.addCommand(new PlaySound(sql));
+            builder.addCommand(new Upload(sql));
+            builder.addCommand(new TTS(tts, sql));
+            builder.addCommand(new Stop());
+            builder.addCommand(new CustomizeSound());
+        }
 
         if (!Thread.currentThread().getName().equals("beebot music")) {
             // Manage Guild
@@ -221,26 +223,33 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new SetWelcome(sql));
             builder.addCommand(new SetRoom(sql));
             builder.addCommand(new SetLeft(sql));
-            builder.addCommand(new SetLevelUpMessage());
-
-            // Math
-            builder.addCommand(new Prime(maxPrime));
-            builder.addCommand(new Calculator());
-            builder.addCommand(new Dice());
 
             // Dangerous
             builder.addCommand(new VandalizeServer());
             builder.addCommand(new RandomMove());
+        }
 
+        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("moderation")){
             builder.addCommand(new Champ());
             builder.addCommand(new Summoner());
             builder.addCommand(new FreeChamp());
             builder.addCommand(new RankMatch(riotApi, sql));
             builder.addCommand(new SetSummoner(riotApi, sql));
             builder.addCommand(new LastMatches(riotApi, sql));
+
+            // Math
+            builder.addCommand(new Prime(maxPrime));
+            builder.addCommand(new Calculator());
+            builder.addCommand(new Dice());
+
+            builder.addCommand(new ThreadCounter());
+
+            builder.addCommand(new SetVoice(sql));
+
+            builder.addCommand(new SetLevelUpMessage());
         }
 
-        builder.addCommand(new SetVoice(sql));
+
         builder.addCommand(new SetPrefix(sql, gs));
 
         // Misc
@@ -251,23 +260,24 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
         builder.addCommand(new Jelly());
-        builder.addCommand(new ThreadCounter());
         builder.addCommand(new PrefixList());
 
         // INSANE SLASH COMMAND DECLARATION
+        if(!Thread.currentThread().getName().equals("moderation")){
+            // audio
+            builder.addSlashCommand(new ConnectSlash());
+            builder.addSlashCommand(new DeleteSoundSlash(sql));
+            builder.addSlashCommand(new DisconnectSlash());
+            builder.addSlashCommand(new DownloadSoundSlash(sql));
+            builder.addSlashCommand(new ListSlash());
+            builder.addSlashCommand(new PlayYoutubeSlash(youtubeApiKey, tierOneLink));
+            builder.addSlashCommand(new PlaySoundSlash(sql));
+            builder.addSlashCommand(new UploadSlash(sql));
+            builder.addSlashCommand(new TTSSlash(tts, sql));
+            builder.addSlashCommand(new StopSlash());
+            builder.addSlashCommand(new CustomizeSoundSlash());
+        }
 
-        // audio
-        builder.addSlashCommand(new ConnectSlash());
-        builder.addSlashCommand(new DeleteSoundSlash(sql));
-        builder.addSlashCommand(new DisconnectSlash());
-        builder.addSlashCommand(new DownloadSoundSlash(sql));
-        builder.addSlashCommand(new ListSlash());
-        builder.addSlashCommand(new PlayYoutubeSlash(youtubeApiKey, tierOneLink));
-        builder.addSlashCommand(new PlaySoundSlash(sql));
-        builder.addSlashCommand(new UploadSlash(sql));
-        builder.addSlashCommand(new TTSSlash(tts, sql));
-        builder.addSlashCommand(new StopSlash());
-        builder.addSlashCommand(new CustomizeSoundSlash());
 
         if (!Thread.currentThread().getName().equals("beebot music")) {
             // Manage Guild
@@ -282,13 +292,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new UserStatsSlash());
             builder.addSlashCommand(new LeaderboardSlash());
 
-            // lol
-            builder.addSlashCommand(new SummonerSlash());
-            builder.addSlashCommand(new FreeChampSlash());
-            builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
-            builder.addSlashCommand(new SetSummonerSlash(riotApi, sql));
-            builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
-            builder.addSlashCommand(new RuneSlash());
+
 
             // Manage Member
             builder.addSlashCommand(new BanSlash());
@@ -302,14 +306,29 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new PermissionsSlash());
             builder.addSlashCommand(new ModifyNicknameSlash());
 
+
+
+        }
+
+        if(!Thread.currentThread().getName().equals("beebot music") || !Thread.currentThread().getName().equals("moderation")){
+            // lol
+            builder.addSlashCommand(new SummonerSlash());
+            builder.addSlashCommand(new FreeChampSlash());
+            builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
+            builder.addSlashCommand(new SetSummonerSlash(riotApi, sql));
+            builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
+            builder.addSlashCommand(new RuneSlash());
+
             // Math
             builder.addSlashCommand(new PrimeSlash(maxPrime));
             builder.addSlashCommand(new DiceSlash());
             builder.addSlashCommand(new CalculatorSlash());
 
+            builder.addSlashCommand(new SetVoiceSlash(sql));
+
         }
 
-        builder.addSlashCommand(new SetVoiceSlash(sql));
+
         builder.addSlashCommand(new SetPrefixSlash(sql, gs));
 
         // Misc

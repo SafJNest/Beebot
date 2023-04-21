@@ -84,5 +84,17 @@
         "helpWord": "helpme",
         "maxPrime": "2048",
         "info":"[MAIN] INFO Beebot music is turning on to let leon listen to dravon 1v9"
+    },
+
+    "moderation": {
+
+        "discordToken": "MTA5ODkwNjc5ODAxNjE4NDQyMg.GDQnBj.kpUJIoq5P9YMBFapan6v0Oo0ZkCBW_1t00UeGM",
+        "embedColor": "#52EDCB",
+        "prefix": "&",
+        "activity": "Your personal assistant | No distractions, just focus on create and manage the best server ever | /help or {0}help |",
+        "ownerID": "939876818465488926",
+        "helpWord": "helpme",
+        "maxPrime": "2048",
+        "info":"[MAIN] INFO Beebot Moderation is turning on to ban panslung"
     }
 }
