@@ -1,6 +1,7 @@
 package com.safjnest.Commands.Settings;
 
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -28,6 +29,13 @@ public class SetLeft extends Command {
     protected void execute(CommandEvent event) {
         String message = event.getMessage().getContentRaw();
         String channel = null;
+        if(event.getArgs().equalsIgnoreCase("disable")){
+            String query = "DELETE from left_message WHERE discord_id = '" + event.getGuild().getId()
+                           + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+            DatabaseHandler.getSql().runQuery(query);
+            event.reply("Left message disable successfully");
+            return;
+        }
         for (int i = 0; i < message.indexOf("|"); i++) {
             if (message.charAt(i) == '#') {
                 if(message.charAt(i + 20) == '>'){

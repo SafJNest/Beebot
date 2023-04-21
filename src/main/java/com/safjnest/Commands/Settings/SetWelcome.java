@@ -1,6 +1,7 @@
 package com.safjnest.Commands.Settings;
 
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 
 import java.util.ArrayList;
@@ -28,9 +29,15 @@ public class SetWelcome extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        System.out.println(event.getMessage().getContentRaw());
         String message = event.getMessage().getContentRaw();
         String channel = null;
+        if(event.getArgs().equalsIgnoreCase("disable")){
+            String query = "DELETE from welcome_message WHERE discord_id = '" + event.getGuild().getId()
+                           + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+            DatabaseHandler.getSql().runQuery(query);
+            event.reply("Welcome message disable successfully");
+            return;
+        }
         ArrayList<String> roles = new ArrayList<>();
         System.out.println(event.getMessage().getContentRaw());
         for (int i = 0; i < message.indexOf("|"); i++) {
