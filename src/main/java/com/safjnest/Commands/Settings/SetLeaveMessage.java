@@ -12,10 +12,10 @@ import com.jagrosh.jdautilities.command.CommandEvent;
  * 
  * @since 1.3
  */
-public class SetLeft extends Command {
+public class SetLeaveMessage extends Command {
     private SQL sql;
 
-    public SetLeft(SQL sql) {
+    public SetLeaveMessage(SQL sql) {
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
