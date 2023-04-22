@@ -38,7 +38,7 @@ public class ChatGPT extends Command {
         CompletionRequest completionRequest = CompletionRequest.builder()
             .prompt(event.getArgs())
             .model("text-curie-001")
-            .maxTokens(200)
+            .maxTokens(100)
             .topP(1.0)
             .echo(true)
             .build();
