@@ -28,13 +28,13 @@ import com.safjnest.Utilities.Listeners.TheListenerBeebot;
 import com.safjnest.Utilities.tts.TTSHandler;
 import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
-import com.safjnest.Commands.Settings.SetLeft;
+import com.safjnest.Commands.Settings.SetLeaveMessage;
 import com.safjnest.Commands.Settings.SetLevelUpMessage;
 import com.safjnest.Commands.Settings.SetPrefix;
 import com.safjnest.Commands.Settings.SetRoom;
 import com.safjnest.Commands.Settings.SetSummoner;
 import com.safjnest.Commands.Settings.SetVoice;
-import com.safjnest.Commands.Settings.SetWelcome;
+import com.safjnest.Commands.Settings.SetWelcomeMessage;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.*;
@@ -47,12 +47,12 @@ import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
-import com.safjnest.SlashCommands.Settings.SetLeftSlash;
+import com.safjnest.SlashCommands.Settings.SetLeaveMessageSlash;
 import com.safjnest.SlashCommands.Settings.SetLevelUpMessageSlash;
 import com.safjnest.SlashCommands.Settings.SetPrefixSlash;
 import com.safjnest.SlashCommands.Settings.SetSummonerSlash;
 import com.safjnest.SlashCommands.Settings.SetVoiceSlash;
-import com.safjnest.SlashCommands.Settings.SetWelcomeSlash;
+import com.safjnest.SlashCommands.Settings.SetWelcomeMessageSlash;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -191,6 +191,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new TTS(tts, sql));
             builder.addCommand(new Stop());
             builder.addCommand(new CustomizeSound());
+            builder.addCommand(new SetVoice(sql));
         }
 
         if (!Thread.currentThread().getName().equals("beebot music")) {
@@ -220,12 +221,11 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new ListRoom(sql));
 
             // Advanced
-            builder.addCommand(new SetWelcome(sql));
+            builder.addCommand(new SetWelcomeMessage(sql));
             builder.addCommand(new SetRoom(sql));
-            builder.addCommand(new SetLeft(sql));
+            builder.addCommand(new SetLeaveMessage(sql));
 
             // Dangerous
-            builder.addCommand(new VandalizeServer());
             builder.addCommand(new RandomMove());
         }
 
@@ -243,10 +243,10 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new Dice());
 
             builder.addCommand(new ThreadCounter());
-
-            builder.addCommand(new SetVoice(sql));
-
             builder.addCommand(new SetLevelUpMessage());
+            builder.addCommand(new VandalizeServer());
+            builder.addCommand(new Jelly());
+            builder.addCommand(new ChatGPT());
         }
 
 
@@ -259,7 +259,6 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new Help(gs));
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
-        builder.addCommand(new Jelly());
         builder.addCommand(new PrefixList());
 
         // INSANE SLASH COMMAND DECLARATION
@@ -286,8 +285,8 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new ServerInfoSlash());
             builder.addSlashCommand(new MemberInfoSlash());
             builder.addSlashCommand(new EmojiInfoSlash());
-            builder.addSlashCommand(new SetWelcomeSlash(sql));
-            builder.addSlashCommand(new SetLeftSlash(sql));
+            builder.addSlashCommand(new SetWelcomeMessageSlash(sql));
+            builder.addSlashCommand(new SetLeaveMessageSlash(sql));
             builder.addSlashCommand(new SetLevelUpMessageSlash());
             builder.addSlashCommand(new UserStatsSlash());
             builder.addSlashCommand(new LeaderboardSlash());

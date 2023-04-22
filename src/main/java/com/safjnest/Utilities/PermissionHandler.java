@@ -8,7 +8,6 @@ import java.util.Set;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
-import net.dv8tion.jda.api.entities.User;
 
 /**
  * This class handles all matters related to discord permissions.

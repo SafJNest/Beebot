@@ -18,10 +18,10 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
  * 
  * @since 1.3
  */
-public class SetWelcomeSlash extends SlashCommand {
+public class SetWelcomeMessageSlash extends SlashCommand {
     private SQL sql;
 
-    public SetWelcomeSlash(SQL sql) {
+    public SetWelcomeMessageSlash(SQL sql) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         //this.help = new CommandsHandler().getString(this.name, "help");
