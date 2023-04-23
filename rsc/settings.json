@@ -62,18 +62,6 @@
         "info":"[MAIN] INFO Beebot 2 is turning on to help the elder brother in case he dies!"
     },
 
-    "beebot 3": {
-        
-        "discordToken": "MTAyODY4MTU4MDU0NzQyODM1Mg.GVPTGg.4E6YhvsrkrQQbCFGccche33AMQtOb3GAp4x-Yc",
-        "embedColor": "#11ff00",
-        "prefix": "#",
-        "activity": "The Beebot but with slash command, and green | p help",
-        "ownerID": "939876818465488926",
-        "helpWord": "helpme",
-        "maxPrime": "2048",
-        "info":"[MAIN] INFO Beebot 2 is turning on to help the elder brother in case he dies!"
-    },
-
     "beebot music": {
 
         "discordToken": "MTA3NDI3NjM5NTY0MDk1NDk0Mg.G38i8j.F6u_scGNtUIztjB8LzjpX3fnSbxkUa03kOUnuQ",
@@ -90,7 +78,7 @@
 
         "discordToken": "MTA5ODkwNjc5ODAxNjE4NDQyMg.GDQnBj.kpUJIoq5P9YMBFapan6v0Oo0ZkCBW_1t00UeGM",
         "embedColor": "#52EDCB",
-        "prefix": "&",
+        "prefix": "!",
         "activity": "Your personal assistant | No distractions, just focus on create and manage the best server ever | /help or {0}help |",
         "ownerID": "939876818465488926",
         "helpWord": "helpme",
