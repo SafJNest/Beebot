@@ -4,8 +4,7 @@ package com.safjnest.Commands.Misc;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
-import com.theokanning.openai.completion.CompletionRequest;
-import com.theokanning.openai.service.OpenAiService;
+import com.safjnest.Utilities.OpenAIHandler;
 
 
 /**
@@ -33,17 +32,7 @@ public class ChatGPT extends Command {
      */
     @Override
     protected void execute(CommandEvent event) {
-        
-        OpenAiService service = new OpenAiService("***REMOVED***");
-        CompletionRequest completionRequest = CompletionRequest.builder()
-            .prompt(event.getArgs())
-            .model("text-curie-001")
-            .maxTokens(100)
-            .topP(1.0)
-            .echo(true)
-            .build();
-        event.reply(service.createCompletion(completionRequest).getChoices().get(0).getText());
-
+        event.reply(OpenAIHandler.getAiService().createCompletion(OpenAIHandler.getCompletionRequest(event.getArgs())).getChoices().get(0).getText());
     }
 
 }
