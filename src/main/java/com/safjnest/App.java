@@ -7,6 +7,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import com.safjnest.Utilities.DatabaseHandler;
+import com.safjnest.Utilities.OpenAIHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
@@ -24,11 +25,12 @@ public class App {
         boolean isExtremeTesting = false;
         
         JSONParser parser = new JSONParser();
-        JSONObject settings = null, SQLSettings = null;
+        JSONObject settings = null, SQLSettings = null, openAISettins = null;
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
             settings = (JSONObject) settings.get("settings");
             SQLSettings = (JSONObject) settings.get("MySQL");
+            openAISettins = (JSONObject) settings.get("OpenAI");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -49,14 +51,21 @@ public class App {
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }
-    
+        
+        OpenAIHandler openAIHandler = new OpenAIHandler(
+            openAISettins.get("key").toString(), 
+            openAISettins.get("maxTokens").toString(), 
+            openAISettins.get("model").toString()
+        );
+        
+        
+        
         DatabaseHandler dbh = new DatabaseHandler(sql);
         LOLHandler lolHandler = new LOLHandler(riotApi);
 
         dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         lolHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-
-        
+        openAIHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
 
         BotSettingsHandler bs = new BotSettingsHandler();
         if(!isExtremeTesting){
