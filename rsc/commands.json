@@ -34,6 +34,13 @@
         "arguments" : "[CommandName]"
     },
 
+    "listuser":{
+        "alias" : ["papyrususer", "paperuser", "listoideuser"],
+        "help"  : "Display a list with all the sound uploaded by a user",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
     "playyoutube":{
         "alias" : ["y", "py", "yt"],
         "help"  : "Play a video from youtube.",

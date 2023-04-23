@@ -249,6 +249,82 @@ public class TheListener extends ListenerAdapter {
                             .queue();
                     break;
             }
+        }else if(event.getButton().getId().startsWith("listuser-")){
+            event.deferEdit().queue();
+            String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+
+            int page = 1;
+            int cont = 0;
+            String userId = "";
+
+            for (Button b : event.getMessage().getButtons()) {
+                if (b.getLabel().startsWith("Page")){
+                    page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
+                    userId = b.getId().split("-")[2];
+                }
+            }
+            
+            String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '"
+                    + userId + "' ORDER BY name ASC;";
+            ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 2);
+
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
+                    event.getUser().getAvatarUrl());
+            eb.setTitle("List of " + event.getJDA().getUserById(userId).getName());
+            eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
+            eb.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+            ));
+            eb.setDescription("Total Sound: " + sounds.size());
+            Button left = Button.primary("listuser-left", "<-");
+            Button right = Button.primary("listuser-right", "->");
+            Button center = null;
+
+            switch (args) {
+
+                case "right":
+                    cont = 24 * page;
+                    while(cont < (24*(page+1)) && cont < sounds.size()){
+                        eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
+                        cont++;
+                    }
+                    
+                    if (24 * (page + 1) >= sounds.size()){
+                        right = right.asDisabled();
+                        right = right.withStyle(ButtonStyle.DANGER);
+                    }
+                    center = Button.primary("listuser-center-" + userId, "Page: " + (page + 1));
+                    center = center.withStyle(ButtonStyle.SUCCESS);
+                    center = center.asDisabled();
+                    event.getMessage().editMessageEmbeds(eb.build())
+                            .setActionRow(left, center, right)
+                            .queue();
+                    break;
+
+                case "left":
+                    cont = (24 * (page - 2) < 0) ? 0 : 24 * (page - 2);
+                
+                    while(cont < (24*(page-1)) && cont < sounds.size()){
+                        eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
+                        cont++;
+                    }
+
+
+                    
+                    if ((page - 1) == 1){
+                        left = left.asDisabled();
+                        left = left.withStyle(ButtonStyle.DANGER);
+                    }
+                    
+                    center = Button.primary("listuser-center-" + userId, "Page: " + (page - 1));
+                    center = center.withStyle(ButtonStyle.SUCCESS);
+                    center = center.asDisabled();
+                    event.getMessage().editMessageEmbeds(eb.build())
+                            .setActionRow(left, center, right)
+                            .queue();
+                    break;
+            }
         }
     }
 

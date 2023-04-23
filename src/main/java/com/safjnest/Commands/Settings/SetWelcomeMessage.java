@@ -35,11 +35,13 @@ public class SetWelcomeMessage extends Command {
             String query = "DELETE from welcome_message WHERE discord_id = '" + event.getGuild().getId()
                            + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             DatabaseHandler.getSql().runQuery(query);
+            query = "DELETE from welcome_roles WHERE discord_id = '" + event.getGuild().getId()
+                           + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+            DatabaseHandler.getSql().runQuery(query);
             event.reply("Welcome message disable successfully");
             return;
         }
         ArrayList<String> roles = new ArrayList<>();
-        System.out.println(event.getMessage().getContentRaw());
         for (int i = 0; i < message.indexOf("|"); i++) {
             if (message.charAt(i) == '#') {
                 System.out.println(message.charAt(i + 20));

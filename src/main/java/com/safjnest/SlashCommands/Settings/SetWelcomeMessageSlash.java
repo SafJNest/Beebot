@@ -41,6 +41,9 @@ public class SetWelcomeMessageSlash extends SlashCommand {
             String query = "DELETE from welcome_message WHERE discord_id = '" + event.getGuild().getId()
                            + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             DatabaseHandler.getSql().runQuery(query);
+            query = "DELETE from welcome_roles WHERE discord_id = '" + event.getGuild().getId()
+                           + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+            DatabaseHandler.getSql().runQuery(query);
             event.deferReply(false).addContent("Welcome message disable successfully").queue();
             return;
         }
