@@ -17,8 +17,10 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
+import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
@@ -49,6 +51,26 @@ public class TheListener extends ListenerAdapter {
             (e.getGuild().getAudioManager().getConnectedChannel().getId().equals(e.getChannelLeft().getId())) &&
             (e.getChannelLeft().getMembers().size() == 1)){
             e.getGuild().getAudioManager().closeAudioConnection();
+        }
+    }
+
+    @Override
+    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
+        if (e.getName().equals("playsound")) {
+            if(e.getFocusedOption().getValue().equals("")){
+                String query = "SELECT name, id FROM sound WHERE guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
+                ArrayList<Choice> choices = new ArrayList<>();
+                for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                    choices.add(new Choice(arr.get(0), arr.get(1)));
+                e.replyChoices(choices).queue();
+            }else{
+                String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
+                ArrayList<Choice> choices = new ArrayList<>();
+                for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                    choices.add(new Choice(arr.get(0), arr.get(1)));
+                e.replyChoices(choices).queue();
+            }
+            
         }
     }
 
