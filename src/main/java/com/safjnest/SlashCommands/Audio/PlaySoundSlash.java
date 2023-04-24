@@ -43,7 +43,8 @@ public class PlaySoundSlash extends SlashCommand{
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.sql = sql;
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sound", "Sound to play", true));
+            new OptionData(OptionType.STRING, "sound", "Sound to play", true)
+                            .setAutoComplete(true));
     }
 
     @Override
