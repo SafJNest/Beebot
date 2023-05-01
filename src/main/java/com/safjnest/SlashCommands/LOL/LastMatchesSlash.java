@@ -61,14 +61,14 @@ public class LastMatchesSlash extends SlashCommand {
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
             } catch (Exception e) {
-               event.deferReply().addContent("You dont have connected your Riot account.").queue();
+               event.getHook().editOriginal("You dont have connected your Riot account.").queue();
                return;
             }
         }else{
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("user").getAsString());
             } catch (Exception e) {
-                event.deferReply().addContent("Didn't found the user you asked for").queue();
+                event.getHook().editOriginal("Didn't found the user you asked for").queue();
                 return;
             }
         }

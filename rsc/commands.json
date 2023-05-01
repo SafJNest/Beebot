@@ -376,44 +376,9 @@
         "arguments" : "[help][nome comando]"
     },
 
-    "ping":{
-        "alias" : ["pingpong", "latency"],
-        "help"  : "Get the bot ping.",
-        "category" : "Miscellaneous",
-        "arguments" : "[CommandName]"
-    },
-
-    "ram":{
-        "alias" : ["usage"],
-        "help"  : "Show up the ram usage of the bot.",
-        "category" : "Miscellaneous",
-        "arguments" : "[CommandName]"
-    },
-
-    "rawmessage":{
-        "alias" : ["rawmsg"],
-        "help"  : "Useless.",
-        "category" : "Miscellaneous",
-        "arguments" : "[CommandName][id msg]"
-    },
-
     "invitebot":{
         "alias" : ["invite", "inbot"],
         "help"  : "Get invite for the bot.",
-        "category" : "Miscellaneous",
-        "arguments" : "[CommandName]"
-    },
-
-    "listguild":{
-        "alias" : ["lg", "guilds"],
-        "help"  : "Show up a list with the server the bot is in.",
-        "category" : "Miscellaneous",
-        "arguments" : "[CommandName]"
-    },
-
-    "threadcounter":{
-        "alias" : ["countt", "thread", "dbmr"],
-        "help"  : "Show up how many threads are alive.",
         "category" : "Miscellaneous",
         "arguments" : "[CommandName]"
     },
@@ -432,19 +397,83 @@
         "arguments" : "[msg] [@user/id] [message]"
     },
 
-    "prefixlist":{
-        "alias" : ["preflist"],
-        "help"  : "Send a list with all the prefix for the current bot.",
-        "category" : "Miscellaneous",
-        "arguments" : "[prefixlist]"
-    },
-
     "chatgpt":{
         "alias" : ["gpt"],
         "help"  : "Chatgpt.",
         "category" : "Miscellaneous",
         "arguments" : "[prefixlist]"
     },
+
+    
+
+
+
+    "prefixlist":{
+        "alias" : ["preflist"],
+        "help"  : "Send a list with all the prefix for the current bot.",
+        "category" : "Only For Admin",
+        "arguments" : "[prefixlist]"
+    },
+
+
+    "shutdown":{
+        "alias" : ["kill"],
+        "help"  : "Shutdown a bot.",
+        "category" : "Only For Admin",
+        "arguments" : "[prefixlist]"
+    },
+
+    "restart":{
+        "alias" : ["reboot"],
+        "help"  : "Restart a bot.",
+        "category" : "Only For Admin",
+        "arguments" : "[prefixlist]"
+    },
+
+    "query":{
+        "alias" : ["sql", "queroide", "dib", "esqel"],
+        "help"  : "Allow the user to run a query",
+        "category" : "Only For Admin",
+        "arguments" : "[prefixlist]"
+    },
+
+    "listguild":{
+        "alias" : ["lg", "guilds"],
+        "help"  : "Show up a list with the server the bot is in.",
+        "category" : "Only For Admin",
+        "arguments" : "[CommandName]"
+    },
+
+    "threadcounter":{
+        "alias" : ["countt", "thread", "dbmr"],
+        "help"  : "Show up how many threads are alive.",
+        "category" : "Only For Admin",
+        "arguments" : "[CommandName]"
+    },
+
+    "ping":{
+        "alias" : ["pingpong", "latency"],
+        "help"  : "Get the bot ping.",
+        "category" : "Only For Admin",
+        "arguments" : "[CommandName]"
+    },
+
+    "ram":{
+        "alias" : ["usage"],
+        "help"  : "Show up the ram usage of the bot.",
+        "category" : "Only For Admin",
+        "arguments" : "[CommandName]"
+    },
+
+    "rawmessage":{
+        "alias" : ["rawmsg"],
+        "help"  : "Useless.",
+        "category" : "Only For Admin",
+        "arguments" : "[CommandName][id msg]"
+    },
+
+
+
 
 
 
@@ -513,7 +542,7 @@
         "arguments" : "[CommandName]"
     },
 
-    "rankmatch":{
+    "gamerank":{
         "alias" : ["ranks"],
         "help"  : "Show a list with all the current summoners in a game and their ranks.",
         "category" : "League Of Legends",

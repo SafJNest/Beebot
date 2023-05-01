@@ -3,6 +3,9 @@ package com.safjnest;
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.ArrayList;
+
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -18,7 +21,15 @@ import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
 
 public class App {
-    
+    private static ArrayList<Thread> botsArr = new ArrayList<>(); 
+    private static TTSHandler tts;
+    private static SQL sql;
+    private static R4J riotApi;
+    private static OpenAIHandler openAIHandler;
+    private static LOLHandler lolHandler;
+    private static DatabaseHandler dbh;
+    private static BotSettingsHandler bs;
+
     public static void main(String args[]) {
         
         SafJNest.bee();
@@ -26,8 +37,10 @@ public class App {
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, openAISettins = null;
+        JSONArray bots = null;
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
+            bots = (JSONArray) settings.get("startup");
             settings = (JSONObject) settings.get("settings");
             SQLSettings = (JSONObject) settings.get("MySQL");
             openAISettins = (JSONObject) settings.get("OpenAI");
@@ -35,16 +48,16 @@ public class App {
             e.printStackTrace();
         }
 
-        TTSHandler tts = new TTSHandler(settings.get("ttsApiKey").toString());
+        tts = new TTSHandler(settings.get("ttsApiKey").toString());
         
-        SQL sql = new SQL(
+        sql = new SQL(
             SQLSettings.get("HostName").toString(), 
             SQLSettings.get("database").toString(), 
             SQLSettings.get("user").toString(), 
             SQLSettings.get("password").toString()
         );
         
-        R4J riotApi = null;
+        riotApi = null;
         try {
             riotApi = new R4J(new APICredentials(settings.get("riotKey").toString()));
             System.out.println("[R4J] INFO Connection Successful!");
@@ -52,7 +65,7 @@ public class App {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }
         
-        OpenAIHandler openAIHandler = new OpenAIHandler(
+        openAIHandler = new OpenAIHandler(
             openAISettins.get("key").toString(), 
             openAISettins.get("maxTokens").toString(), 
             openAISettins.get("model").toString()
@@ -60,38 +73,63 @@ public class App {
         
         
         
-        DatabaseHandler dbh = new DatabaseHandler(sql);
-        LOLHandler lolHandler = new LOLHandler(riotApi);
+        dbh = new DatabaseHandler(sql);
+        lolHandler = new LOLHandler(riotApi);
 
         dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         lolHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         openAIHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
 
-        BotSettingsHandler bs = new BotSettingsHandler();
+        bs = new BotSettingsHandler();
+
+        
         if(!isExtremeTesting){
-            Thread b1 = new Thread(new Bot(bs, tts, sql, riotApi));
-            b1.setName("beebot");
-            b1.start();
-            Thread b2 = new Thread(new Bot(bs, tts, sql, riotApi));
-            b2.setName("beebot 2");
-            b2.start();
-            Thread bm = new Thread(new Bot(bs, tts, sql, riotApi));
-            bm.setName("beebot music");
-            bm.start();
-            Thread bmt = new Thread(new Bot(bs, tts, sql, riotApi));
-            bmt.setName("moderation");
-            bmt.start();
+            try {
+                for (int i = 0; i < bots.size(); i++) {
+                    Thread t = new Thread(new Bot(bs, tts, sql, riotApi));
+                    t.setName((String)bots.get(i));
+                    botsArr.add(t);
+                }
+            } catch (Exception e) {e.printStackTrace(); return;}
+            for(Thread t : botsArr)
+                t.start();
         }else{
             Thread bc = new Thread(new Bot(bs, tts, sql, riotApi));
             bc.setName("canary");
             bc.start();
         }
-        /* 
-        Thread b3 = new Thread(new Bot(bs));
-        b3.setName("beebot 3");
-        b3.start();
-        */
     }
 
+    public static void shutdown(String bot){
+        System.out.println("Shutting down " + bot);
+        
+        for(int i = 0; i < botsArr.size(); i++){
+            if(botsArr.get(i).getName().equals(bot)){
+                botsArr.get(i).interrupt();
+                botsArr.remove(i);
+            }
+        }
+    }
+
+    public static void restart(String bot){
+        System.out.println("Shutting down " + bot);
+        
+        for(int i = 0; i < botsArr.size(); i++){
+            if(botsArr.get(i).getName().equals(bot)){
+                botsArr.get(i).interrupt();
+                botsArr.remove(i);
+                Thread t = new Thread(new Bot(bs, tts, sql, riotApi));
+                t.setName(bot);
+                t.start();
+                botsArr.add(t);
+                return;
+            }
+        }
+        Thread t = new Thread(new Bot(bs, tts, sql, riotApi));
+        t.setName(bot);
+        t.start();
+        botsArr.add(t);
+        return;
+    }
    
 }

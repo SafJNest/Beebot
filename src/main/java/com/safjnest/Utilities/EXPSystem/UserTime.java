@@ -14,8 +14,7 @@ public class UserTime {
         if (now.isAfter(lastMessageTime.plusMinutes(1))) {
             lastMessageTime = now;
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 }

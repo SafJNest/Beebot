@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
@@ -126,6 +127,16 @@ public class TheListener extends ListenerAdapter {
         TextChannel welcome = event.getGuild().getSystemChannel();
         welcome.sendMessage("NO FUCKING WAY " + newguy.getAsMention() + " HA BOOSTATO IL SERVER!!\n"
                 + event.getGuild().getBoostCount()).queue();
+    }
+
+
+    @Override
+    public void onChannelDelete(ChannelDeleteEvent event){
+        if(event.getChannelType().isAudio()){
+            String query = "DELETE from rooms_nickname WHERE discord_id = '" + event.getGuild().getId()
+                           + "' AND room_id = '" + event.getChannel().getId() + "';";
+            DatabaseHandler.getSql().runQuery(query);
+        }
     }
 
     @Override

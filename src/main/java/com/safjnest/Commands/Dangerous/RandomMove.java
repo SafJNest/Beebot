@@ -73,6 +73,7 @@ public class RandomMove extends Command{
             event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), channel).queue();
         }
         event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), startChannel).queue();
+        event.getMessage().delete().queue();
         return;
             
 

@@ -3,6 +3,7 @@ package com.safjnest.Utilities;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -149,6 +150,30 @@ public class SQL {
                 for(int i = 1; i <= nCol; i++){
                     arr.get(arr.size()-1).add(rs.getString(i));
                 }
+            }
+            rs.close();
+            stmt.close();
+            return arr;
+        } catch (SQLException e) {
+            return null;
+        }
+    }
+
+    public ArrayList<ArrayList<String>> getAllRows(String query){
+        Statement stmt;
+        ArrayList<ArrayList<String>> arr = new ArrayList<>();
+        
+        try {
+            stmt = c.createStatement();
+            ResultSet rs = stmt.executeQuery(query);
+            ResultSetMetaData rsmd = rs.getMetaData();
+            arr.add(new ArrayList<>());
+            for(int i = 1; i <= rsmd.getColumnCount(); i++)
+                arr.get(arr.size()-1).add(rsmd.getColumnName(i));
+            while(rs.next()){
+                arr.add(new ArrayList<>());
+                for(int i = 0; i < rsmd.getColumnCount(); i++)
+                    arr.get(arr.size()-1).add(rs.getString(i + 1));
             }
             rs.close();
             stmt.close();
