@@ -6,13 +6,35 @@ import java.util.Random;
 
 import com.safjnest.Utilities.DatabaseHandler;
 
-public class ExpSystem {
-    private HashMap<String, UserTime> users;
 
+/**
+ * This class is used to manage the experience system of the bot.
+ * <p>
+ * The experience system is used to give experience to the users of the bot when they send a message in a server every one minute.
+ */
+public class ExpSystem {
+
+    /**
+     * This HashMap is used to store the users and the time they sent a message.
+     * The key is {@code userId-guildId} and the value is {@link com.safjnest.Utilities.EXPSystem.UserTime UserTime.
+     */
+    private HashMap<String, UserTime> users;
+    
+
+    /**
+     * Constructor for the ExpSystem class.
+     */
     public ExpSystem() {
         users = new HashMap<>();
     }
 
+    /**
+     * This method is used to check if the user can receive experience.
+     * <p>If the user is not cached, it will be added to the cache and will return true.
+     * @param userId
+     * @param guildId
+     * @return
+     */
     public synchronized int receiveMessage(String userId, String guildId) {
         if(!users.containsKey(userId+"-"+guildId)){
             users.put(userId+"-"+guildId, new UserTime());
@@ -28,10 +50,24 @@ public class ExpSystem {
         
     }
 
+    /**
+     * This method is used to calculate the experience that the user will receive.
+     * <p> The experience is calculated randomly between 15 and 25.
+     * @return
+     */
     public int calculateExp(){
         return new Random().nextInt((25 - 15) + 1) + 15;
     }
 
+    /**
+     * This method is used to add the experience to the user.
+     * <p> If the user is not in the database, it will be added. If the user has enough experience to level up, it will be leveled up and the method will
+     * return the new level. If the user is not leveled up, it will return -1.
+     * @param userId
+     * @param guildId
+     * @return
+     * int
+     */
     public int addExp(String userId, String guildId){
         int exp, lvl, msg;
         String query = "select exp, level, messages from exp_table where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
@@ -53,11 +89,12 @@ public class ExpSystem {
             query = "update exp_table set exp = " + exp + ", level = " + (lvl+1) + ", messages = "+msg+" where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
             DatabaseHandler.getSql().runQuery(query);
             return lvl+1;
-        }else{
-            query = "update exp_table set exp = " + exp + ", messages = "+msg+" where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
-            DatabaseHandler.getSql().runQuery(query);
-            return -1;
         }
+        
+        query = "update exp_table set exp = " + exp + ", messages = "+msg+" where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
+        DatabaseHandler.getSql().runQuery(query);
+        return -1;
+        
 
     }   
 }

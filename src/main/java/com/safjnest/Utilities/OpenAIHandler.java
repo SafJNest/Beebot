@@ -3,11 +3,32 @@ package com.safjnest.Utilities;
 import com.theokanning.openai.completion.CompletionRequest;
 import com.theokanning.openai.service.OpenAiService;
 
+
+/**
+ * This class contains all the methods to use the OpenAI API and to get the response from it.
+ * @see <a href="https://beta.openai.com/docs/api-reference/completions/create">OpenAI API</a>
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ */
 public class OpenAIHandler {
+    /**
+     * The main object for make requests and get responses from the OpenAI API.
+     */
     private static OpenAiService service;
+    /**
+     * The maximum number of tokens to generate.
+     */
     private static String maxTokens;
+    /**
+     * The model to use for completion.
+     */
     private static String model;
 
+    /**
+     * Constructor of the class.
+     * @param key the key to use the API
+     * @param maxTokens the maximum number of tokens to generate
+     * @param model the model to use for completion
+     */
     public OpenAIHandler(String key, String maxTokens, String model){
         OpenAIHandler.service = new OpenAiService(key);
         OpenAIHandler.maxTokens = maxTokens;

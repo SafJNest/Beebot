@@ -48,7 +48,7 @@ public class SummonerSlash extends SlashCommand {
         if(event.getOption("user") == null){
             s = LOLHandler.getSummonerFromDB(event.getUser().getId());
             if(s == null){
-                event.reply("You dont have connected a Riot account, for more information /help setUser");
+                event.getHook().editOriginal("You dont have connected a Riot account, for more information /help setUser").queue();
                 return;
             }
             searchByUser = true;
@@ -57,7 +57,7 @@ public class SummonerSlash extends SlashCommand {
         }else{
             s = LOLHandler.getSummonerByName(event.getOption("user").getAsString());
             if(s == null){
-                event.reply("Didn't find this user. ");
+                event.getHook().editOriginal("Didn't find this user. ").queue();
                 return;
             }
             

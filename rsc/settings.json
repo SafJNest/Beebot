@@ -1,4 +1,14 @@
 {
+    "startup" : [
+        "beebot",
+        "beebot 2",
+        "beebot music",
+        "moderation",
+        "beebot 3",
+        "beebot 117",
+        "canary"
+    ],
+
     "settings": {
 
         "AmazonAWS":{
@@ -37,7 +47,7 @@
         "discordToken": "OTM4NDg3NDcwMzM5ODAxMTY5.GgeqCi.1fHPBYNb2GplXm5kVrNAt2pZI8JidXeJ70uzb4",
         "embedColor": "#ffc400",
         "prefix": "!",
-        "activity": "Beebot - the ultimate command center for your server needs! | /help or {0}help |",
+        "activity": "Beebot - the ultimate machine for your server needs! | /help or {0}help |",
         "ownerID": "938487470339801169",
         "helpWord": "helpme",
         "maxPrime":"2048",
@@ -61,11 +71,35 @@
         "discordToken": "OTgzMzE1MzM4ODg2Mjc5MjI5.Gq-wsr.Fdh33wlTAm9xsl73uO8Q4FcPEZbAdP5kbHIYmc",
         "embedColor": "#1262F7",
         "prefix": "%",
-        "activity": "The dynamic duo of Discord - Beebot and his brother! | /help or {0}help |",
+        "activity": "The dynamic clan of Discord - Beebot and his brother! | /help or {0}help |",
         "ownerID": "939876818465488926",
         "helpWord": "helpme",
         "maxPrime": "11700",
         "info":"[MAIN] INFO Beebot 2 is turning on to help the elder brother in case he dies!"
+    },
+
+     "beebot 3": {
+
+        "discordToken": "MTEwMjE5NjY0OTcyOTcyODU0Mg.GRpLQH.UvmDx2874vaNk0ocStZOLiDG4d0pK9WrixXQcg",
+        "embedColor": "#24FF33",
+        "prefix": "+",
+        "activity": "The dynamic clan of Discord - Beebot and his brothers! | /help or {0}help |",
+        "ownerID": "939876818465488926",
+        "helpWord": "helpme",
+        "maxPrime": "11700",
+        "info":"[MAIN] INFO Beebot 3 is turning on to help the elder brother in case he dies!"
+    },
+
+    "beebot 117": {
+
+        "discordToken": "MTEwMjIwODcyMzE5MzE3NjA2NA.G2bmzG.XKp6PEvskbXU1bMQClG0tRmazOwzQlL08WMHu0",
+        "embedColor": "#4A5F36",
+        "prefix": "px",
+        "activity": "Just Master Chief | /help or {0}help |",
+        "ownerID": "939876818465488926",
+        "helpWord": "helpme",
+        "maxPrime": "11700",        
+        "info":"[MAIN] INFO Beebot 117 is turning on to help the elder brother in case he dies!"
     },
 
     "beebot music": {

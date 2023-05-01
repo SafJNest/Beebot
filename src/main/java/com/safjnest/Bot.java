@@ -36,11 +36,21 @@ import com.safjnest.Commands.Settings.SetSummoner;
 import com.safjnest.Commands.Settings.SetVoice;
 import com.safjnest.Commands.Settings.SetWelcomeMessage;
 import com.safjnest.Commands.Math.*;
+import com.safjnest.Commands.Admin.ListGuild;
+import com.safjnest.Commands.Admin.Ping;
+import com.safjnest.Commands.Admin.PrefixList;
+import com.safjnest.Commands.Admin.Query;
+import com.safjnest.Commands.Admin.Ram;
+import com.safjnest.Commands.Admin.RawMessage;
+import com.safjnest.Commands.Admin.Restart;
+import com.safjnest.Commands.Admin.Shutdown;
+import com.safjnest.Commands.Admin.ThreadCounter;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 import com.safjnest.Commands.ManageMembers.Move;
+import com.safjnest.SlashCommands.Admin.PingSlash;
 import com.safjnest.SlashCommands.Audio.*;
 import com.safjnest.SlashCommands.LOL.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
@@ -223,8 +233,8 @@ public class Bot extends ListenerAdapter implements Runnable {
 
             // Advanced
             builder.addCommand(new SetWelcomeMessage(sql));
-            builder.addCommand(new SetRoom(sql));
             builder.addCommand(new SetLeaveMessage(sql));
+            builder.addCommand(new SetRoom(sql));
 
             // Dangerous
             builder.addCommand(new RandomMove());
@@ -234,7 +244,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new Champ());
             builder.addCommand(new Summoner());
             builder.addCommand(new FreeChamp());
-            builder.addCommand(new RankMatch(riotApi, sql));
+            builder.addCommand(new GameRank(riotApi, sql));
             builder.addCommand(new SetSummoner(riotApi, sql));
             builder.addCommand(new LastMatches(riotApi, sql));
 
@@ -248,6 +258,9 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new VandalizeServer());
             builder.addCommand(new Jelly());
             builder.addCommand(new ChatGPT());
+            builder.addCommand(new Shutdown());
+            builder.addCommand(new Restart());
+            builder.addCommand(new Query());
         }
 
 
@@ -277,6 +290,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new TTSSlash(tts, sql));
             builder.addSlashCommand(new StopSlash());
             builder.addSlashCommand(new CustomizeSoundSlash());
+            builder.addSlashCommand(new SetVoiceSlash(sql));
         }
 
 
@@ -311,11 +325,11 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         }
 
-        if(!Thread.currentThread().getName().equals("beebot music") || !Thread.currentThread().getName().equals("moderation")){
+        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("moderation")){
             // lol
             builder.addSlashCommand(new SummonerSlash());
             builder.addSlashCommand(new FreeChampSlash());
-            builder.addSlashCommand(new RankMatchSlash(riotApi, sql));
+            builder.addSlashCommand(new GameRankSlash(riotApi, sql));
             builder.addSlashCommand(new SetSummonerSlash(riotApi, sql));
             builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
             builder.addSlashCommand(new RuneSlash());
@@ -325,7 +339,6 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new DiceSlash());
             builder.addSlashCommand(new CalculatorSlash());
 
-            builder.addSlashCommand(new SetVoiceSlash(sql));
 
         }
 
@@ -342,5 +355,13 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         CommandClient client = builder.build();
         jda.addEventListener(client);
+        synchronized (this){
+            try {wait();} 
+            catch (InterruptedException e) {
+                System.out.println("[" + Thread.currentThread().getName() + "] bot has been shutdown");
+                jda.shutdown();
+                return;
+            }
+        }
     }
 }

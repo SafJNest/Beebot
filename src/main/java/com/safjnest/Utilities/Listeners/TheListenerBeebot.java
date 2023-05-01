@@ -10,19 +10,24 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 /**
- * This class handles all events that could occur during the listening:
+ * This class handles a few events that are only used by Beebot. These events:
  * <ul>
- * <li>On update of a voice channel (to make the bot leave an empty voice
- * channel)</li>
- * <li>On join of a user (to make the bot welcome the new member)</li>
+ * <li>On Message Received (for gaining exp)</li>
+ * </ul>
  * 
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
- * @since 1.2
+ * @since 2.1
  */
 public class TheListenerBeebot extends ListenerAdapter {
+    /**
+     * The ExpSystem object that handles the exp system.
+     */
     private ExpSystem farm;
 
+    /**
+     * Constructor for the TheListenerBeebot class.
+     */
     public TheListenerBeebot() {
         farm = new ExpSystem();
     }

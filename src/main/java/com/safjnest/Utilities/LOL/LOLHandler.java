@@ -21,15 +21,34 @@ import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
-public class LOLHandler {
-    
 
+/**
+ * This class is used to handle all the League of Legends related stuff
+ * 
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ */
+
+ public class LOLHandler {
+    
+    /**
+     * The main object for make requests and get responses from the Riot API.
+     */
     private static R4J riotApi;
+    /**
+     * An hashmap that contains all the runes ids and names.
+     */
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
 
-
+    /**
+     * The current data dragon version.
+     */
     private static String dataDragonVersion = "13.8.1";
 
+    /**
+     * url for get the suggested runes from lolanalytics.
+     * fammi il coso per linakre una pagina.
+     * @see {@link <a href="https://lolanalytics.com/">lolanalytics</a>}
+     */
     private static String runesURL = "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/data/en_US/runesReforged.json";
 
     public LOLHandler(R4J riotApi){
@@ -46,6 +65,10 @@ public class LOLHandler {
         return;
 	}
 
+
+    /**
+     * Load all the runes data into {@link #runesHandler runesHandler}
+     */
     public void loadRunes(){
         try {
             URL url = new URL(runesURL);
@@ -104,6 +127,7 @@ public class LOLHandler {
         }
     }
 
+
     public static HashMap<String, PageRunes> getRunesHandler() {
         return runesHandler;
     } 
@@ -111,6 +135,7 @@ public class LOLHandler {
     public static R4J getRiotApi(){
         return riotApi;
     }
+
 
     public static Summoner getSummonerFromDB(String discordId){
         String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + discordId + "';";
@@ -208,7 +233,7 @@ public class LOLHandler {
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
                 if(partecipant.getSummonerId().equals(s.getSummonerId())){
-                    return "Playing a " + s.getCurrentGame().getGameMode().prettyName()+ " as " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                    return "Playing a " + s.getCurrentGame().getGameQueueConfig().commonName()+ " as " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
                 }
             }
         } catch (Exception e) {
