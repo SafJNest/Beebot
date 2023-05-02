@@ -2,7 +2,6 @@ package com.safjnest.SlashCommands.ManageGuild;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.CommandsHandler;
 import java.awt.Color;
@@ -53,34 +52,40 @@ public class EmojiInfoSlash extends SlashCommand {
             }
         }
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-        if (isSticker) {
-            eb.setTitle(":laughing: " + "**STICKER INFO**" + " :laughing:");
+
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+
+        if(isSticker){
+            eb.setTitle(":laughing: "+"**STICKER INFO**"+" :laughing:");
             eb.setThumbnail(sticker.getIconUrl());
-            eb.addField("**Name**", "```" + sticker.getName() + "```", true);
+            eb.addField("**Name**", "```" + sticker.getName() + "```", true);   
             eb.addField("**Emoji ID**", "```" + sticker.getId() + "```", true);
             eb.addField("**APNG?**",
-                    (sticker.getFormatType().name().equals("APNG"))
-                            ? "```✅ Yes```"
-                            : "```❌ No - " + sticker.getFormatType().name() + "```",
-                    true);
-            eb.addField("**Emoji URL**", sticker.getIconUrl(), false);
-            eb.addField("Emoji created on (dd/mm/yyyy)",
-                    "```" + DateHandler.formatDate(sticker.getTimeCreated()) + "```", false);
-        } else {
-            eb.setTitle(":laughing: " + "**EMOJI INFO**" + " :laughing:");
+            (sticker.getFormatType().name().equals("APNG"))
+                ?"```✅ Yes```"
+                :"```❌ No - "+sticker.getFormatType().name()+"```"
+            , true);
+            eb.addField("**Emoji URL**", sticker.getIconUrl(), false);   
+            eb.addField("Emoji created on", 
+                          "<t:" + sticker.getTimeCreated().toEpochSecond() + ":f> | "
+                        + "<t:" + sticker.getTimeCreated().toEpochSecond() + ":R>",
+                        false);
+        }
+        else{
+            eb.setTitle(":laughing: "+"**EMOJI INFO**"+" :laughing:");
             eb.setThumbnail(em.getImageUrl());
-            eb.addField("**Name**", "```" + em.getName() + "```", true);
-            eb.addField("**Emoji ID**", "```" + em.getId() + "```", true);
+            eb.addField("**Name**", "```" + em.getName() + "```", true);   
+            eb.addField("**Emoji ID**", "```" + em.getId() + "```", true); 
             eb.addField("**GIF?**",
-                    (em.isAnimated())
-                            ? "```✅ Yes```"
-                            : "```❌ No```",
-                    true);
-            eb.addField("**Emoji URL**", em.getImageUrl(), false);
-            eb.addField("Emoji created on (dd/mm/yyyy)", "```" + DateHandler.formatDate(em.getTimeCreated()) + "```",
-                    false);
+            (em.isAnimated())
+                ?"```✅ Yes```"
+                :"```❌ No```"
+            , true);
+            eb.addField("**Emoji URL**", em.getImageUrl(), false);   
+            eb.addField("Emoji created on", 
+                          "<t:" + em.getTimeCreated().toEpochSecond() + ":f> | "
+                        + "<t:" + em.getTimeCreated().toEpochSecond() + ":R>",
+                        false);
         }
         eb.setFooter("Remembert to write the emoji in the correct format :emojiname:.");
         event.deferReply(false).addEmbeds(eb.build()).queue();

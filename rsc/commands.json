@@ -125,17 +125,10 @@
     },
 
     "memberinfo":{
-        "alias" : ["usinf", "uinfo", "userinfo"],
+        "alias" : ["usinf", "uinfo", "userinfo", "userstats", "stats"],
         "help"  : "Show the information about a member",
         "category" : "Server Management",
         "arguments" : "[userinfo] [@user]"
-    },
-
-    "userstats":{
-        "alias" : ["stats", "rank", "level", "levels"],
-        "help"  : "Show statistic about the user",
-        "category" : "Server Management",
-        "arguments" : "[CommandName]"
     },
 
     "listroom":{
