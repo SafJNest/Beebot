@@ -156,11 +156,11 @@ public class Bot extends ListenerAdapter implements Runnable {
         jda = JDABuilder
                 .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
                         GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
-                        GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
+                        GatewayIntent.GUILD_EMOJIS_AND_STICKERS, GatewayIntent.GUILD_PRESENCES)
                 .addEventListeners(listenerozzo)
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .setChunkingFilter(ChunkingFilter.ALL)
-                .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER)
+                .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
                 .build();
         if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(listenerozzobeby);
@@ -176,6 +176,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
+        //builder.forceGuildOnly("474935164451946506");
 
         GuildSettings gs = new GuildSettings(null, botId, PREFIX);
         builder.setPrefixFunction(event -> {
@@ -216,7 +217,6 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new EmojiInfo());
             builder.addCommand(new InviteBot());
             builder.addCommand(new ListGuild());
-            builder.addCommand(new UserStats());
             builder.addCommand(new Leaderboard());
 
             // Manage Member
@@ -304,7 +304,6 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new SetWelcomeMessageSlash(sql));
             builder.addSlashCommand(new SetLeaveMessageSlash(sql));
             builder.addSlashCommand(new SetLevelUpMessageSlash());
-            builder.addSlashCommand(new UserStatsSlash());
             builder.addSlashCommand(new LeaderboardSlash());
 
 

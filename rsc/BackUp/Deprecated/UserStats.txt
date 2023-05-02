@@ -80,9 +80,7 @@ public class UserStats extends Command{
         eb.addField("Sound Uploaded in this server", "```"+DatabaseHandler.getSql().getString(query, "count")+"```", true);
         query = "select sum(times) as sum from play where user_id = '"+theGuy.getId()+"';";
         eb.addField("Total Sound played (global)","```"+ DatabaseHandler.getSql().getString(query, "sum")+"```", true);
-        
-        
-        
+
         event.reply(eb.build());
     }
 }

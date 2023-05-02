@@ -77,7 +77,7 @@ public class SQL {
             stmt.close();
             return info;
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return null;
         }
     }

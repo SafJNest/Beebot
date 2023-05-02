@@ -59,6 +59,14 @@ public class ExpSystem {
         return new Random().nextInt((25 - 15) + 1) + 15;
     }
 
+    public static int totalExpToLvlUp(int lvl){
+        return (int) ((5 * (Math.pow(lvl, 2)) + (50 * lvl) + 100));
+    }
+
+    public static int expToLvlUp(int lvl, int exp){
+        return (totalExpToLvlUp(lvl) - (int) ((5.0/6.0) * (lvl+1) * (2 * (lvl+1) * (lvl+1) + 27 * (lvl+1) + 91) - exp));
+    }  
+
     /**
      * This method is used to add the experience to the user.
      * <p> If the user is not in the database, it will be added. If the user has enough experience to level up, it will be leveled up and the method will
