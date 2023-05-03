@@ -26,7 +26,7 @@ public class ConnectSlash extends SlashCommand implements EventListener{
     }
 
 	@Override
-	protected void execute(SlashCommandEvent event) {
+	public void execute(SlashCommandEvent event) {
         if(event.getMember().getVoiceState().getChannel() == null){
             event.deferReply(true).addContent("You need to be in a voice channel to use this command").queue();
             return;
