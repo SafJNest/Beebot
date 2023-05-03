@@ -13,7 +13,6 @@ import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.OpenAIHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.SlashCommandsHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 import com.safjnest.Utilities.tts.TTSHandler;
@@ -30,12 +29,11 @@ public class App {
     private static LOLHandler lolHandler;
     private static DatabaseHandler dbh;
     private static BotSettingsHandler bs;
-    private static SlashCommandsHandler sch;
 
     public static void main(String args[]) {
         
         SafJNest.bee();
-        boolean isExtremeTesting = true;
+        boolean isExtremeTesting = false;
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, openAISettins = null;
@@ -73,7 +71,6 @@ public class App {
             openAISettins.get("model").toString()
         );
 
-        sch = new SlashCommandsHandler();
         
         
         

@@ -2,6 +2,7 @@ package com.safjnest.SlashCommands.Settings;
 
 import com.safjnest.Commands.Audio.TTS;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -20,7 +21,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 public class SetVoiceSlash extends SlashCommand {
     private SQL sql;
 
-    public SetVoiceSlash(SQL sql) {
+    public SetVoiceSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -29,7 +30,7 @@ public class SetVoiceSlash extends SlashCommand {
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "voice", "Speaker name's voice", true));
-        this.sql = sql;
+        this.sql = DatabaseHandler.getSql();
     }
 
     @Override
