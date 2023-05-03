@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.json.simple.JSONObject;
@@ -17,7 +19,7 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
-
+import com.jagrosh.jdautilities.command.SlashCommand;
 import com.safjnest.Utilities.*;
 import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
@@ -67,10 +69,13 @@ import com.safjnest.SlashCommands.Settings.SetWelcomeMessageSlash;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
@@ -162,10 +167,20 @@ public class Bot extends ListenerAdapter implements Runnable {
                 .setChunkingFilter(ChunkingFilter.ALL)
                 .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
                 .build();
-        if(Thread.currentThread().getName().equals("beebot")){
+                if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(listenerozzobeby);
         }
-
+        jda.addEventListener(new ListenerAdapter() {
+            @Override
+            public void onReady(ReadyEvent event) {
+                java.util.List<Guild> guilds = jda.getGuilds();
+                Collection<CommandData> commandDataList = SlashCommandsHandler.getCommandData();
+                System.out.println(commandDataList.size());
+                for(Guild g : guilds){
+                    g.updateCommands().addCommands(commandDataList).queue(); 
+                }
+            }
+        });
         botId = jda.getSelfUser().getId();
         bs.setSettings(new BotSettings(
                 botId,
@@ -240,6 +255,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new RandomMove());
         }
 
+
         if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("moderation")){
             builder.addCommand(new Champ());
             builder.addCommand(new Summoner());
@@ -274,84 +290,87 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
         builder.addCommand(new PrefixList());
+        builder.addCommand(new DisableSlash());
+        builder.addCommand(new EnableSlash());
 
         // INSANE SLASH COMMAND DECLARATION
-        if(!Thread.currentThread().getName().equals("moderation")){
-            // audio
-            builder.addSlashCommand(new ConnectSlash());
-            builder.addSlashCommand(new DeleteSoundSlash(sql));
-            builder.addSlashCommand(new DisconnectSlash());
-            builder.addSlashCommand(new DownloadSoundSlash(sql));
-            builder.addSlashCommand(new ListSlash());
-            builder.addSlashCommand(new ListUserSlash());
-            builder.addSlashCommand(new PlayYoutubeSlash(youtubeApiKey, tierOneLink));
-            builder.addSlashCommand(new PlaySoundSlash(sql));
-            builder.addSlashCommand(new UploadSlash(sql));
-            builder.addSlashCommand(new TTSSlash(tts, sql));
-            builder.addSlashCommand(new StopSlash());
-            builder.addSlashCommand(new CustomizeSoundSlash());
-            builder.addSlashCommand(new SetVoiceSlash(sql));
+        if(!Thread.currentThread().getName().equals("canary")){
+            if(!Thread.currentThread().getName().equals("moderation")){
+                // audio
+                builder.addSlashCommand(new ConnectSlash());
+                builder.addSlashCommand(new DeleteSoundSlash(sql));
+                builder.addSlashCommand(new DisconnectSlash());
+                builder.addSlashCommand(new DownloadSoundSlash(sql));
+                builder.addSlashCommand(new ListSlash());
+                builder.addSlashCommand(new ListUserSlash());
+                builder.addSlashCommand(new PlayYoutubeSlash(youtubeApiKey, tierOneLink));
+                builder.addSlashCommand(new PlaySoundSlash());
+                builder.addSlashCommand(new UploadSlash(sql));
+                builder.addSlashCommand(new TTSSlash(tts, sql));
+                builder.addSlashCommand(new StopSlash());
+                builder.addSlashCommand(new CustomizeSoundSlash());
+                builder.addSlashCommand(new SetVoiceSlash(sql));
+            }
+    
+    
+            if (!Thread.currentThread().getName().equals("beebot music")) {
+                // Manage Guild
+                builder.addSlashCommand(new ChannelInfoSlash());
+                builder.addSlashCommand(new ClearSlash());
+                builder.addSlashCommand(new ServerInfoSlash());
+                builder.addSlashCommand(new MemberInfoSlash());
+                builder.addSlashCommand(new EmojiInfoSlash());
+                builder.addSlashCommand(new SetWelcomeMessageSlash(sql));
+                builder.addSlashCommand(new SetLeaveMessageSlash(sql));
+                builder.addSlashCommand(new SetLevelUpMessageSlash());
+                builder.addSlashCommand(new LeaderboardSlash());
+    
+    
+    
+                // Manage Member
+                builder.addSlashCommand(new BanSlash());
+                builder.addSlashCommand(new UnbanSlash());
+                builder.addSlashCommand(new KickSlash());
+                builder.addSlashCommand(new MoveSlash());
+                builder.addSlashCommand(new MoveChannelSlash());
+                builder.addSlashCommand(new MuteSlash());
+                builder.addSlashCommand(new UnMuteSlash());
+                builder.addSlashCommand(new ImageSlash());
+                builder.addSlashCommand(new PermissionsSlash());
+                builder.addSlashCommand(new ModifyNicknameSlash());
+    
+    
+    
+            }
+    
+            if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("moderation")){
+                // lol
+                builder.addSlashCommand(new SummonerSlash());
+                builder.addSlashCommand(new FreeChampSlash());
+                builder.addSlashCommand(new GameRankSlash(riotApi, sql));
+                builder.addSlashCommand(new SetSummonerSlash(riotApi, sql));
+                builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
+                builder.addSlashCommand(new RuneSlash());
+    
+                // Math
+                builder.addSlashCommand(new PrimeSlash(maxPrime));
+                builder.addSlashCommand(new DiceSlash());
+                builder.addSlashCommand(new CalculatorSlash());
+    
+    
+            }
+    
+    
+            builder.addSlashCommand(new SetPrefixSlash(sql, gs));
+    
+            // Misc
+            builder.addSlashCommand(new PingSlash());
+            builder.addSlashCommand(new BugsNotifierSlash());
+            builder.addSlashCommand(new HelpSlash(gs));
+            builder.addSlashCommand(new MsgSlash());
+            builder.addSlashCommand(new InviteBotSlash());
+            builder.addSlashCommand(new AnonymSlash());
         }
-
-
-        if (!Thread.currentThread().getName().equals("beebot music")) {
-            // Manage Guild
-            builder.addSlashCommand(new ChannelInfoSlash());
-            builder.addSlashCommand(new ClearSlash());
-            builder.addSlashCommand(new ServerInfoSlash());
-            builder.addSlashCommand(new MemberInfoSlash());
-            builder.addSlashCommand(new EmojiInfoSlash());
-            builder.addSlashCommand(new SetWelcomeMessageSlash(sql));
-            builder.addSlashCommand(new SetLeaveMessageSlash(sql));
-            builder.addSlashCommand(new SetLevelUpMessageSlash());
-            builder.addSlashCommand(new LeaderboardSlash());
-
-
-
-            // Manage Member
-            builder.addSlashCommand(new BanSlash());
-            builder.addSlashCommand(new UnbanSlash());
-            builder.addSlashCommand(new KickSlash());
-            builder.addSlashCommand(new MoveSlash());
-            builder.addSlashCommand(new MoveChannelSlash());
-            builder.addSlashCommand(new MuteSlash());
-            builder.addSlashCommand(new UnMuteSlash());
-            builder.addSlashCommand(new ImageSlash());
-            builder.addSlashCommand(new PermissionsSlash());
-            builder.addSlashCommand(new ModifyNicknameSlash());
-
-
-
-        }
-
-        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("moderation")){
-            // lol
-            builder.addSlashCommand(new SummonerSlash());
-            builder.addSlashCommand(new FreeChampSlash());
-            builder.addSlashCommand(new GameRankSlash(riotApi, sql));
-            builder.addSlashCommand(new SetSummonerSlash(riotApi, sql));
-            builder.addSlashCommand(new LastMatchesSlash(riotApi, sql));
-            builder.addSlashCommand(new RuneSlash());
-
-            // Math
-            builder.addSlashCommand(new PrimeSlash(maxPrime));
-            builder.addSlashCommand(new DiceSlash());
-            builder.addSlashCommand(new CalculatorSlash());
-
-
-        }
-
-
-        builder.addSlashCommand(new SetPrefixSlash(sql, gs));
-
-        // Misc
-        builder.addSlashCommand(new PingSlash());
-        builder.addSlashCommand(new BugsNotifierSlash());
-        builder.addSlashCommand(new HelpSlash(gs));
-        builder.addSlashCommand(new MsgSlash());
-        builder.addSlashCommand(new InviteBotSlash());
-        builder.addSlashCommand(new AnonymSlash());
-
         CommandClient client = builder.build();
         jda.addEventListener(client);
         synchronized (this){

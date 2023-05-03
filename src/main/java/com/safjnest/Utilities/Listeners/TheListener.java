@@ -1,11 +1,17 @@
 package com.safjnest.Utilities.Listeners;
 
 import java.awt.Color;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Commands.LOL.Summoner;
+import com.safjnest.SlashCommands.Audio.ListSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.SlashCommandsHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
@@ -19,6 +25,7 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
@@ -54,6 +61,28 @@ public class TheListener extends ListenerAdapter {
             e.getGuild().getAudioManager().closeAudioConnection();
         }
     }
+
+
+    @Override
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        SlashCommandEvent e = new SlashCommandEvent(event, null);
+        
+        SlashCommand sc = SlashCommandsHandler.getCommand(e.getName());
+        try {
+            // Ottenere il metodo execute della classe SlashCommand
+            Method executeMethod = SlashCommand.class.getDeclaredMethod("execute", SlashCommandEvent.class);
+
+            // Abilitare l'accesso al metodo execute (che è protected di default)
+            executeMethod.setAccessible(true);
+
+            // Chiamare il metodo execute sull'oggetto command passando l'evento
+                executeMethod.invoke(sc, e);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException exp) {
+            exp.printStackTrace();
+        }
+    }
+    
+
 
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {

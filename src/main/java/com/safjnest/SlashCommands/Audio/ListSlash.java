@@ -10,6 +10,7 @@ import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
@@ -30,7 +31,7 @@ public class ListSlash extends SlashCommand{
     }
 
 	@Override
-	protected void execute(SlashCommandEvent event) {
+	public void execute(SlashCommandEvent event) {
         Button left = Button.danger("list-left", "<-");
         left = left.asDisabled();
         Button right = Button.primary("list-right", "->");
@@ -61,5 +62,11 @@ public class ListSlash extends SlashCommand{
         }
         event.deferReply(false).addEmbeds(eb.build()).addActionRow(left, center, right).queue();
     }
+
+    
+
+    
+
+    
    
 }
