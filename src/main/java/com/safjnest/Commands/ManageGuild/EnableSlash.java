@@ -2,6 +2,7 @@ package com.safjnest.Commands.ManageGuild;
 
 import java.util.Collection;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SlashCommandsHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -26,6 +27,8 @@ public class EnableSlash extends Command {
 	protected void execute(CommandEvent event) {
             Collection<CommandData> commandDataList = sch.getCommandData();
             event.getGuild().updateCommands().addCommands(commandDataList).queue();
+            String query = "INSERT INTO guild_settings (guild_id, bot_id, has_slash) VALUES (" + event.getGuild().getId() + ", " + event.getJDA().getSelfUser().getId() + ", true) ON DUPLICATE KEY UPDATE has_slash = true";
+            DatabaseHandler.getSql().runQuery(query);
             event.reply("Slash command are fired up and ready to serve!");
         }
 	}

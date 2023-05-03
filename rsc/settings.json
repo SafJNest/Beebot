@@ -1,12 +1,6 @@
 {
     "startup" : [
-        "beebot",
-        "beebot 2",
-        "beebot music",
-        "moderation",
-        "beebot 3",
-        "beebot 117",
-        "canary"
+        "beebot"
     ],
 
     "settings": {

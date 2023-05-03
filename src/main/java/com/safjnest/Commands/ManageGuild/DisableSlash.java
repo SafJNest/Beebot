@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.safjnest.Utilities.CommandsHandler;
-
+import com.safjnest.Utilities.DatabaseHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -27,14 +27,17 @@ public class DisableSlash extends Command {
 	protected void execute(CommandEvent event) {
         //disable all the slash commands
         List<String> commandIds = new ArrayList<>();
+        event.reply("May takes time");
         Guild guild = event.getGuild();
         for (net.dv8tion.jda.api.interactions.commands.Command command : guild.retrieveCommands().complete()) {
             commandIds.add(command.getId());
         }
         //delete commands
         for(String commandId : commandIds){
-            guild.deleteCommandById(commandId).queue();
+            guild.deleteCommandById(commandId).complete();
         }
         event.reply("Default commands are a poor alternative");
+        String query = "INSERT INTO guild_settings (guild_id, bot_id, has_slash) VALUES (" + event.getGuild().getId() + ", " + event.getJDA().getSelfUser().getId() + ", true) ON DUPLICATE KEY UPDATE has_slash = false";
+        DatabaseHandler.getSql().runQuery(query);
 	}
 }

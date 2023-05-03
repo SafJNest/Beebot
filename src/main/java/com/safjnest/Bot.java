@@ -374,14 +374,28 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new AnonymSlash());
         }
         */
+        String name = Thread.currentThread().getName();
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
                 java.util.List<Guild> guilds = jda.getGuilds();
                 Collection<CommandData> commandDataList = sch.getCommandData();
-                for(Guild g : guilds){
-                    g.updateCommands().addCommands(commandDataList).queue(); 
+                /*
+                 * 
+                 for(Guild g : guilds){
+                     if(hasSlash(g.getId(), botId)){
+                         System.out.println(name);
+                         g.updateCommands().addCommands(commandDataList).queue();
+                     }
+                     g.updateCommands().queue();
+                 }
+                 */
+                Guild g = jda.getGuildById("608967318789160970");
+                if(hasSlash(g.getId(), botId)){
+                    System.out.println(name);
+                    g.updateCommands().addCommands(commandDataList).queue();
                 }
+                g.updateCommands().queue();
             }
         });
         CommandClient client = builder.build();
@@ -395,5 +409,12 @@ public class Bot extends ListenerAdapter implements Runnable {
                 return;
             }
         }
+    }
+
+    public static boolean hasSlash(String guildId, String botId){
+        String query = "select has_slash from guild_settings where guild_id = '" + guildId + "' and bot_id = '" + botId + "';";
+        String res = DatabaseHandler.getSql().getString(query, "has_slash");
+        if(res == null) return true;
+        return res.equals("1");
     }
 }
