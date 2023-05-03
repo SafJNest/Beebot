@@ -45,9 +45,11 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
  */
 public class TheListener extends ListenerAdapter {
     private SQL sql;
+    private SlashCommandsHandler sch;
 
-    public TheListener(SQL sql) {
+    public TheListener(SQL sql, SlashCommandsHandler sch) {
         this.sql = sql;
+        this.sch = sch;
     }
 
     /**
@@ -65,21 +67,14 @@ public class TheListener extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        SlashCommandEvent e = new SlashCommandEvent(event, null);
-        
-        SlashCommand sc = SlashCommandsHandler.getCommand(e.getName());
+        SlashCommandEvent e = new SlashCommandEvent(event, null);    
+        SlashCommand sc = sch.getCommand(e.getName());
         try {
-            // Ottenere il metodo execute della classe SlashCommand
             Method executeMethod = SlashCommand.class.getDeclaredMethod("execute", SlashCommandEvent.class);
-
-            // Abilitare l'accesso al metodo execute (che è protected di default)
             executeMethod.setAccessible(true);
-
-            // Chiamare il metodo execute sull'oggetto command passando l'evento
-                executeMethod.invoke(sc, e);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException exp) {
-            exp.printStackTrace();
-        }
+            executeMethod.invoke(sc, e);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException exp) {}
+    
     }
     
 

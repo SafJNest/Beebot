@@ -6,6 +6,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SQL;
 
@@ -27,7 +28,7 @@ public class UploadSlash extends SlashCommand{
     private String fileName;
     private SQL sql;
     
-    public UploadSlash(SQL sql){
+    public UploadSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -36,7 +37,7 @@ public class UploadSlash extends SlashCommand{
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "name", "Soundn name", true));
-        this.sql = sql;
+        this.sql = DatabaseHandler.getSql();
     }
     
 	@Override

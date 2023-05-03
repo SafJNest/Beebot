@@ -7,6 +7,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -19,14 +20,14 @@ public class DownloadSoundSlash extends SlashCommand{
     String path = "rsc" + File.separator + "SoundBoard" + File.separator;
     SQL sql;
 
-    public DownloadSoundSlash(SQL sql){
+    public DownloadSoundSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
-        this.sql = sql;
+        this.sql = DatabaseHandler.getSql();
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "sound", "Sound to download", true));
     }

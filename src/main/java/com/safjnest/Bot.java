@@ -115,6 +115,7 @@ public class Bot extends ListenerAdapter implements Runnable {
     private TTSHandler tts;
     private SQL sql;
     private R4J riotApi;
+    private SlashCommandsHandler sch;
 
     public Bot(BotSettingsHandler bs, TTSHandler tts, SQL sql, R4J riotApi) {
         this.tts = tts;
@@ -156,13 +157,11 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         System.out.println(discordSettings.get("info"));
 
-        TheListener listenerozzo = new TheListener(sql);
         TheListenerBeebot listenerozzobeby = new TheListenerBeebot();
         jda = JDABuilder
                 .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
                         GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
                         GatewayIntent.GUILD_EMOJIS_AND_STICKERS, GatewayIntent.GUILD_PRESENCES)
-                .addEventListeners(listenerozzo)
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .setChunkingFilter(ChunkingFilter.ALL)
                 .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
@@ -170,17 +169,6 @@ public class Bot extends ListenerAdapter implements Runnable {
                 if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(listenerozzobeby);
         }
-        jda.addEventListener(new ListenerAdapter() {
-            @Override
-            public void onReady(ReadyEvent event) {
-                java.util.List<Guild> guilds = jda.getGuilds();
-                Collection<CommandData> commandDataList = SlashCommandsHandler.getCommandData();
-                System.out.println(commandDataList.size());
-                for(Guild g : guilds){
-                    g.updateCommands().addCommands(commandDataList).queue(); 
-                }
-            }
-        });
         botId = jda.getSelfUser().getId();
         bs.setSettings(new BotSettings(
                 botId,
@@ -203,6 +191,17 @@ public class Bot extends ListenerAdapter implements Runnable {
             }
             return null;
         });
+
+        sch = new SlashCommandsHandler(
+            Thread.currentThread().getName(),
+            youtubeApiKey,
+            tierOneLink,
+            tts,
+            riotApi,
+            sql,
+            gs,
+            maxPrime
+        );
 
         if(!Thread.currentThread().getName().equals("moderation")){
             // Audio
@@ -291,14 +290,17 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new RawMessage());
         builder.addCommand(new PrefixList());
         builder.addCommand(new DisableSlash());
-        builder.addCommand(new EnableSlash());
+        builder.addCommand(new EnableSlash(sch));
 
+
+        
         // INSANE SLASH COMMAND DECLARATION
+        /* 
         if(!Thread.currentThread().getName().equals("canary")){
             if(!Thread.currentThread().getName().equals("moderation")){
                 // audio
                 builder.addSlashCommand(new ConnectSlash());
-                builder.addSlashCommand(new DeleteSoundSlash(sql));
+                builder.addSlashCommand(new DeleteSoundSlash());
                 builder.addSlashCommand(new DisconnectSlash());
                 builder.addSlashCommand(new DownloadSoundSlash(sql));
                 builder.addSlashCommand(new ListSlash());
@@ -371,8 +373,20 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addSlashCommand(new InviteBotSlash());
             builder.addSlashCommand(new AnonymSlash());
         }
+        */
+        jda.addEventListener(new ListenerAdapter() {
+            @Override
+            public void onReady(ReadyEvent event) {
+                java.util.List<Guild> guilds = jda.getGuilds();
+                Collection<CommandData> commandDataList = sch.getCommandData();
+                for(Guild g : guilds){
+                    g.updateCommands().addCommands(commandDataList).queue(); 
+                }
+            }
+        });
         CommandClient client = builder.build();
         jda.addEventListener(client);
+        jda.addEventListener(new TheListener(sql, sch));
         synchronized (this){
             try {wait();} 
             catch (InterruptedException e) {

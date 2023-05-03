@@ -12,6 +12,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.tts.TTSHandler;
 import com.safjnest.Utilities.tts.Voices;
 import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
@@ -36,7 +37,7 @@ public class TTSSlash extends SlashCommand{
     
     public static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
     
-    public TTSSlash(TTSHandler tts, SQL sql){
+    public TTSSlash(TTSHandler tts){
         voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
         voices.put(Voices.Chinese_China.id, Set.of(Voices.Chinese_China.array));
         voices.put(Voices.Dutch_Netherlands.id, Set.of(Voices.Dutch_Netherlands.array));
@@ -67,7 +68,7 @@ public class TTSSlash extends SlashCommand{
             new OptionData(OptionType.STRING, "text", "Text to be read", true),
             new OptionData(OptionType.STRING, "voice", "Change the reader's voice", false));
         this.tts = tts;
-        this.sql = sql;
+        this.sql = DatabaseHandler.getSql();
 
     
     }
