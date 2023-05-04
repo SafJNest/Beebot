@@ -1,8 +1,8 @@
 package com.safjnest.Commands.Settings;
 
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 import java.util.ArrayList;
 

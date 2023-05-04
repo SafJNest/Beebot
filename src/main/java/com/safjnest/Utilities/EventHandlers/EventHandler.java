@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Listeners;
+package com.safjnest.Utilities.EventHandlers;
 
 import java.awt.Color;
 import java.lang.reflect.InvocationTargetException;
@@ -8,11 +8,10 @@ import java.util.ArrayList;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Commands.LOL.Summoner;
-import com.safjnest.SlashCommands.Audio.ListSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.SlashCommandsHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Commands.SlashCommandsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -43,11 +42,11 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
  * 
  * @since 1.2
  */
-public class TheListener extends ListenerAdapter {
+public class EventHandler extends ListenerAdapter {
     private SQL sql;
     private SlashCommandsHandler sch;
 
-    public TheListener(SQL sql, SlashCommandsHandler sch) {
+    public EventHandler(SQL sql, SlashCommandsHandler sch) {
         this.sql = sql;
         this.sch = sch;
     }

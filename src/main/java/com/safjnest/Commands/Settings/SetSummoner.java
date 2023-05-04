@@ -3,7 +3,6 @@ package com.safjnest.Commands.Settings;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
 /* 
 import net.rithms.riot.constant.Region;
 import net.rithms.riot.dto.Summoner.Summoner;
@@ -11,6 +10,7 @@ import net.rithms.riot.api.RiotApi;
 import net.rithms.riot.api.RiotApiException;
 */
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;

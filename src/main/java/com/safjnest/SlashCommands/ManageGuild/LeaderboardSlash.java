@@ -3,9 +3,9 @@ package com.safjnest.SlashCommands.ManageGuild;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.TableHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -12,9 +12,9 @@ import java.util.regex.Pattern;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import org.json.simple.JSONArray;

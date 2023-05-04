@@ -1,4 +1,4 @@
-package com.safjnest.Utilities;
+package com.safjnest.Utilities.Commands;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
+import com.safjnest.SlashCommands.Admin.ListGuildSlash;
 import com.safjnest.SlashCommands.Admin.PingSlash;
 import com.safjnest.SlashCommands.Audio.*;
 import com.safjnest.SlashCommands.LOL.*;
@@ -19,22 +20,20 @@ import com.safjnest.SlashCommands.Settings.SetPrefixSlash;
 import com.safjnest.SlashCommands.Settings.SetSummonerSlash;
 import com.safjnest.SlashCommands.Settings.SetVoiceSlash;
 import com.safjnest.SlashCommands.Settings.SetWelcomeMessageSlash;
+import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.tts.TTSHandler;
 
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import no.stelar7.api.r4j.impl.R4J;
 
-//TODO fare sta classe di merda carina, fixare tjelistner, fixare in bot, provare a fare tutto in maniera intelligente
-//magare fare la dichiarazione dei comandi direttamente in app
-//come cazzo gli passo ai comandi gli oggetti da qui se ho le robe in bot.java?
-//dai panslung aiutami a trovare un modo figo per dichiaare tutti gli slash command da qui
 public class SlashCommandsHandler {
 
     private Map<String, SlashCommand> slashCommands = new HashMap<>();
 
     public SlashCommandsHandler(String threadName, String youtubeApiKey, HashMap<String,String> tierOneLink, TTSHandler tts, R4J riotApi, SQL sql, GuildSettings gs, int maxPrime) {
         if(!threadName.equals("moderation")){
+            slashCommands.put(new ConnectSlash().getName(), new ConnectSlash());
             slashCommands.put(new DeleteSoundSlash().getName(), new DeleteSoundSlash());
             slashCommands.put(new DisconnectSlash().getName(), new DisconnectSlash());
             slashCommands.put(new DownloadSoundSlash().getName(), new DownloadSoundSlash());
@@ -45,7 +44,6 @@ public class SlashCommandsHandler {
             slashCommands.put(new UploadSlash().getName(), new UploadSlash());
             slashCommands.put(new TTSSlash(tts).getName(), new TTSSlash(tts));
             slashCommands.put(new StopSlash().getName(), new StopSlash());
-            slashCommands.put(new CustomizeSoundSlash().getName(), new CustomizeSoundSlash());
             slashCommands.put(new SetVoiceSlash().getName(), new SetVoiceSlash());
         }
         
@@ -86,6 +84,7 @@ public class SlashCommandsHandler {
 
         slashCommands.put(new SetPrefixSlash(sql, gs).getName(), new SetPrefixSlash(sql, gs));
         slashCommands.put(new PingSlash().getName(), new PingSlash());
+        slashCommands.put(new ListGuildSlash().getName(), new ListGuildSlash());
         slashCommands.put(new BugsNotifierSlash().getName(), new BugsNotifierSlash());
         slashCommands.put(new HelpSlash(gs, slashCommands).getName(), new HelpSlash(gs, slashCommands));
         slashCommands.put(new MsgSlash().getName(), new MsgSlash());
