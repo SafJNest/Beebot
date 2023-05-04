@@ -91,9 +91,11 @@ public class App {
                     t.setName((String)bots.get(i));
                     botsArr.add(t);
                 }
+                for(Thread t : botsArr){
+                    t.start();
+                    Thread.sleep(3117);
+                }
             } catch (Exception e) {e.printStackTrace(); return;}
-            for(Thread t : botsArr)
-                t.start();
         }else{
             Thread bc = new Thread(new Bot(bs, tts, sql, riotApi));
             bc.setName("canary");
@@ -103,7 +105,7 @@ public class App {
 
     public static void shutdown(String bot){
         System.out.println("Shutting down " + bot);
-        
+    
         for(int i = 0; i < botsArr.size(); i++){
             if(botsArr.get(i).getName().equals(bot)){
                 botsArr.get(i).interrupt();

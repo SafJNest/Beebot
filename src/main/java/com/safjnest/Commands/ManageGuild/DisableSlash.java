@@ -1,16 +1,9 @@
 package com.safjnest.Commands.ManageGuild;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-
-import net.dv8tion.jda.api.entities.Guild;
-
-
 
 public class DisableSlash extends Command {
 
@@ -25,17 +18,7 @@ public class DisableSlash extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        //disable all the slash commands
-        List<String> commandIds = new ArrayList<>();
-        event.reply("May takes time");
-        Guild guild = event.getGuild();
-        for (net.dv8tion.jda.api.interactions.commands.Command command : guild.retrieveCommands().complete()) {
-            commandIds.add(command.getId());
-        }
-        //delete commands
-        for(String commandId : commandIds){
-            guild.deleteCommandById(commandId).complete();
-        }
+        event.getGuild().updateCommands().queue();
         event.reply("Default commands are a poor alternative");
         String query = "INSERT INTO guild_settings (guild_id, bot_id, has_slash) VALUES (" + event.getGuild().getId() + ", " + event.getJDA().getSelfUser().getId() + ", true) ON DUPLICATE KEY UPDATE has_slash = false";
         DatabaseHandler.getSql().runQuery(query);

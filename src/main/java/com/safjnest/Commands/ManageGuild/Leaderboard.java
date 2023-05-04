@@ -1,9 +1,9 @@
 package com.safjnest.Commands.ManageGuild;
 
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TableHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 
 import java.util.ArrayList;
