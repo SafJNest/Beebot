@@ -54,7 +54,7 @@
         "info":"[MAIN] INFO The beast is turning on! As long as it takes."
     },
 
-    "canary": {
+    "beebot canary": {
 
         "discordToken": "OTM5ODc2ODE4NDY1NDg4OTI2.GXocIQ.IBIgxiPcrzQgQTaVtVi18AbVUElUHlwVKkp_1g",
         "embedColor": "#f25216",
@@ -114,7 +114,7 @@
         "info":"[MAIN] INFO Beebot music is turning on to let leon listen to dravon 1v9"
     },
 
-    "moderation": {
+    "beebot moderation": {
 
         "discordToken": "MTA5ODkwNjc5ODAxNjE4NDQyMg.GDQnBj.kpUJIoq5P9YMBFapan6v0Oo0ZkCBW_1t00UeGM",
         "embedColor": "#52EDCB",

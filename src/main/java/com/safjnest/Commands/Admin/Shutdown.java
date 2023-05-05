@@ -1,5 +1,13 @@
 package com.safjnest.Commands.Admin;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
@@ -25,13 +33,37 @@ public class Shutdown extends Command{
      @Override
     protected void execute(CommandEvent e) {
         String bot = e.getArgs();
+
+        JSONParser parser = new JSONParser();
+        JSONObject settings = null;
+        JSONArray bots = null;
+        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
+            settings = (JSONObject) parser.parse(reader);
+            bots = (JSONArray) settings.get("startup");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
         if(bot.equals("")){
             e.reply("Please specify a bot to shutdown.");
             return;
         }
-        if(!PermissionHandler.isUntouchable(e.getAuthor().getId()))
+
+        if(!PermissionHandler.isUntouchable(e.getAuthor().getId())){
+            e.reply("Swear to god next time you dare to try this again I'll ban you from discord");
             return;
-        e.reply("Shutting down " + bot + "...");
-        App.shutdown(bot);
+        }
+        
+        for (int i = 0; i < bots.size(); i++) {
+            if(bot.equalsIgnoreCase((String)bots.get(i))){
+                App.shutdown(bot);
+                e.reply("Shutting down " + bot);
+                return;
+            }
+        }
+        e.reply(e.getAuthor().getAsMention() + " bro its your bot, how can you not know the name?");
+
+
+        
     }
 }
