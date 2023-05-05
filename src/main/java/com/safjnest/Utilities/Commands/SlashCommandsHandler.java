@@ -32,7 +32,7 @@ public class SlashCommandsHandler {
     private Map<String, SlashCommand> slashCommands = new HashMap<>();
 
     public SlashCommandsHandler(String threadName, String youtubeApiKey, HashMap<String,String> tierOneLink, TTSHandler tts, R4J riotApi, SQL sql, GuildSettings gs, int maxPrime) {
-        if(!threadName.equals("moderation")){
+        if(!threadName.equals("beebot moderation")){
             slashCommands.put(new ConnectSlash().getName(), new ConnectSlash());
             slashCommands.put(new DeleteSoundSlash().getName(), new DeleteSoundSlash());
             slashCommands.put(new DisconnectSlash().getName(), new DisconnectSlash());
@@ -70,7 +70,7 @@ public class SlashCommandsHandler {
             slashCommands.put(new ModifyNicknameSlash().getName(), new ModifyNicknameSlash());
         }
 
-        if(!threadName.equals("beebot music") && !threadName.equals("moderation")){
+        if(!threadName.equals("beebot music") && !threadName.equals("beebot moderation")){
             slashCommands.put(new SummonerSlash().getName(), new SummonerSlash());
             slashCommands.put(new FreeChampSlash().getName(), new FreeChampSlash());
             slashCommands.put(new GameRankSlash(riotApi, sql).getName(), new GameRankSlash(riotApi, sql));

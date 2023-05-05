@@ -143,6 +143,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
 
         EventHandlerBeebot listenerozzobeby = new EventHandlerBeebot();
+        
         jda = JDABuilder
                 .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
                         GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
@@ -164,7 +165,6 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
-        //builder.forceGuildOnly("474935164451946506");
 
         GuildSettings gs = new GuildSettings(null, botId, PREFIX);
         builder.setPrefixFunction(event -> {
@@ -293,6 +293,7 @@ public class Bot extends ListenerAdapter implements Runnable {
                 System.out.println("[" + name + "] INFO Slash commands loaded");
             }
         });
+
         CommandClient client = builder.build();
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler(sql, sch));
@@ -301,7 +302,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         synchronized (this){
             try {wait();} 
             catch (InterruptedException e) {
-                System.out.println("[" + Thread.currentThread().getName() + "] INFO Bot has been shutdown");
+                System.out.println("[" + Thread.currentThread().getName() + "] INFO Bot has been shutdown or something went wrong.");
                 jda.shutdown();
                 return;
             }
@@ -311,7 +312,6 @@ public class Bot extends ListenerAdapter implements Runnable {
     public static boolean hasSlash(String guildId, String botId){
         String query = "select has_slash from guild_settings where guild_id = '" + guildId + "' and bot_id = '" + botId + "';";
         String res = DatabaseHandler.getSql().getString(query, "has_slash");
-        if(res == null) return true;
-        return res.equals("1");
+        return (res == null) ? true : res.equals("1");
     }
 }
