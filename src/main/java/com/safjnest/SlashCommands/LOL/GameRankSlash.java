@@ -77,11 +77,11 @@ public class GameRankSlash extends SlashCommand {
                 String sum = partecipant.getSummonerName();
                 String stats = "";
                 if(s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")){
-                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
                     stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
 
                 }else{
-                    stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                    stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
                     stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
                 }
                 if(partecipant.getTeam() == TeamType.BLUE)

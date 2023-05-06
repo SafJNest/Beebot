@@ -69,7 +69,7 @@ public class MemberInfoSlash extends SlashCommand{
             lolAccounts = user.getName() + " has not connected a riot account.";
         }else{
             for(String s : accounts)
-                lolAccounts += LOLHandler.getSummonerById(s).getName() + " - ";
+                lolAccounts += LOLHandler.getSummonerBySummonerId(s).getName() + " - ";
             lolAccounts = lolAccounts.substring(0, lolAccounts.length() - 3);
         }
 

@@ -166,9 +166,15 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         } catch (Exception e) { return null; }
     }
 
-    public static Summoner getSummonerById(String id){
+    public static Summoner getSummonerBySummonerId(String id){
         try { 
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, id);
+        } catch (Exception e) { return null; }
+    }
+    
+    public static Summoner getSummonerByAccountId(String id){
+        try { 
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, id);
         } catch (Exception e) { return null; }
     }
 

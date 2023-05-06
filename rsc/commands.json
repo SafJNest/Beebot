@@ -205,7 +205,7 @@
 
     "setsummoner":{
         "alias" : ["setsum", "setuser", "ss"],
-        "help"  : "Allow to connect a riot account to your discord profile.",
+        "help"  : "Allow to connect a riot account. You can also remove a summoner using 'setsummoner remove:name'.",
         "category" : "Settings",
         "arguments" : "[CommandName] [summonerName]"
     },

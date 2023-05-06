@@ -4,15 +4,14 @@ import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
 /**
@@ -20,20 +19,16 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
  * @since 1.3
  */
 public class GameRank extends Command {
-    private R4J r;
-    private SQL sql;
     /**
      * Constructor
      */
-    public GameRank(R4J r, SQL sql  ){
+    public GameRank(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
         this.cooldown = new CommandsHandler().getCooldown(this.name);
         this.category = new Category(new CommandsHandler().getString(this.name, "category"));
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
-        this.r = r;
-        this.sql = sql;
     }
 
     /**
@@ -41,19 +36,57 @@ public class GameRank extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
+
+        Button left = Button.primary("rank-left", "<-");
+        Button right = Button.primary("rank-right", "->");
+        Button center = Button.primary("rank-center", "f");
+
+        boolean searchByUser = false;
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        if(!args.equals("")){
-            s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
-        }else{
-            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
-            s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
+        
+        if(args.equals("")){
+            s = LOLHandler.getSummonerFromDB(event.getAuthor().getId());
+            if(s == null){
+                event.reply("You dont have a Riot account connected, for more information /help setUser");
+                return;
+            }
+            searchByUser = true;
+            center = Button.primary("center", s.getName());
+            center.asDisabled();
+            
         }
+        else if(event.getMessage().getMentions().getMembers().size() != 0){
+            s = LOLHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
+            if(s == null){
+                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
+                return;
+            }
+        }else{
+            s = LOLHandler.getSummonerByName(args);
+            if(s == null){
+                event.reply("Didn't find this user. ");
+                return;
+            }
+        }
+
+        EmbedBuilder builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s);  
+
+        if(searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+            return;
+        }
+
+        event.reply(builder.build());
+
+	}
+
+    public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(s.getName() + "'s Game");
             builder.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+                BotSettingsHandler.map.get(jda.getSelfUser().getId()).color
             ));
             builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
             String blueSide = "";
@@ -62,11 +95,11 @@ public class GameRank extends Command {
                 String sum = partecipant.getSummonerName();
                 String stats = "";
                 if(s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")){
-                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
                     stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
 
                 }else{
-                    stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                    stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
                     stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
                 }
                 if(partecipant.getTeam() == TeamType.BLUE)
@@ -84,11 +117,20 @@ public class GameRank extends Command {
             
             builder.addField("**BLUE SIDE**", blueSide, false);
             builder.addField("**RED SIDE**", redSide, true);
-            event.reply(builder.build());
+
+           return builder;
+            
             
         } catch (Exception e) {
-            event.reply(s.getName() + " is not in a match.");
+            EmbedBuilder builder = new EmbedBuilder();
+            builder.setTitle(s.getName() + "'s Game");
+            builder.setColor(Color.decode(
+                BotSettingsHandler.map.get(jda.getSelfUser().getId()).color
+            ));
+            builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
+            builder.setDescription("This user is not in a game.");
+            return builder;
         }
-	}
+    }
 
 }

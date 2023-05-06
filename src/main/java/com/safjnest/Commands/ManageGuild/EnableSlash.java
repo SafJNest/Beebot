@@ -1,13 +1,10 @@
 package com.safjnest.Commands.ManageGuild;
 
-import java.util.Collection;
-
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.safjnest.Utilities.Commands.SlashCommandsHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 
 public class EnableSlash extends Command {
     private SlashCommandsHandler sch;

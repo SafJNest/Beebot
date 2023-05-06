@@ -244,7 +244,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             builder.addCommand(new Champ());
             builder.addCommand(new Summoner());
             builder.addCommand(new FreeChamp());
-            builder.addCommand(new GameRank(riotApi, sql));
+            builder.addCommand(new GameRank());
             builder.addCommand(new SetSummoner(riotApi, sql));
             builder.addCommand(new LastMatches(riotApi, sql));
 
@@ -282,6 +282,8 @@ public class Bot extends ListenerAdapter implements Runnable {
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
+                if(name.equals("beebot canary"))
+                    return;
                 java.util.List<Guild> guilds = jda.getGuilds();
                 Collection<CommandData> commandDataList = sch.getCommandData();
                 for(Guild g : guilds){
