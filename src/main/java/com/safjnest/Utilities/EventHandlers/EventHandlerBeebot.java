@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Listeners;
+package com.safjnest.Utilities.EventHandlers;
 
 import java.util.ArrayList;
 
@@ -19,7 +19,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
  * 
  * @since 2.1
  */
-public class TheListenerBeebot extends ListenerAdapter {
+public class EventHandlerBeebot extends ListenerAdapter {
     /**
      * The ExpSystem object that handles the exp system.
      */
@@ -28,7 +28,7 @@ public class TheListenerBeebot extends ListenerAdapter {
     /**
      * Constructor for the TheListenerBeebot class.
      */
-    public TheListenerBeebot() {
+    public EventHandlerBeebot() {
         farm = new ExpSystem();
     }
 

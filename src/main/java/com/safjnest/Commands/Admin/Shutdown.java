@@ -1,10 +1,17 @@
 package com.safjnest.Commands.Admin;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 public class Shutdown extends Command{
     /**
@@ -22,16 +29,35 @@ public class Shutdown extends Command{
     /**
      * This method is called every time a member executes the command.
     */
-     @Override
+    @Override
     protected void execute(CommandEvent e) {
         String bot = e.getArgs();
+        
+        JSONParser parser = new JSONParser();
+        JSONObject settings = null;
+
+        if(!PermissionHandler.isUntouchable(e.getAuthor().getId())){
+            e.reply("Swear to god next time you dare to try this again I'll ban you from discord");
+            return;
+        }
+
         if(bot.equals("")){
             e.reply("Please specify a bot to shutdown.");
             return;
         }
-        if(!PermissionHandler.isUntouchable(e.getAuthor().getId()))
+
+        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
+            settings = (JSONObject) parser.parse(reader);
+            if(settings.get(bot) == null)
+                throw new Exception("sei un mongoloide");
+        } catch (Exception ex) {
+            e.reply(e.getAuthor().getAsMention() + " bro its your bot, how can you not know the name?");
             return;
-        e.reply("Shutting down " + bot + "...");
+        }
+
+        
         App.shutdown(bot);
+        e.reply("Shutting down " + bot);
+
     }
 }

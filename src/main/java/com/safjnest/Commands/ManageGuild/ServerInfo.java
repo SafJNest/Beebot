@@ -9,11 +9,11 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 
@@ -136,19 +136,19 @@ public class ServerInfo extends Command{
         
         eb.addField("Welcome Message(s)", "```" 
                     + ((welcomeMessageString == "")
-                        ? "No welcome message set for this guild, use /help setwelcome for more information"
+                        ? "No welcome message set for this guild, use /help setwelcomemessage for more information"
                         : welcomeMessageString)
                     +  "```", false);
         
         eb.addField("Leave Message(s)", "```" 
                     + ((leaveMessageString == "")
-                        ? "No leave message set for this guild, use /help setwelcome for more information"
+                        ? "No leave message set for this guild, use /help setleavemessage for more information"
                         : leaveMessageString)
                     +  "```", false);
         
         eb.addField("Level Up Message", "```" 
                     + ((lvlUpMsg == null)
-                        ? "No levelup message set for this guild, use /help setwelcome for more information"
+                        ? "No levelup message set for this guild, use /help setlevelupmessage for more information"
                         : lvlUpMsg)
                     +  "```", false);
 

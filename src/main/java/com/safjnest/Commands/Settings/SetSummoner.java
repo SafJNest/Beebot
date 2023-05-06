@@ -1,9 +1,10 @@
 package com.safjnest.Commands.Settings;
 
 
+import java.util.ArrayList;
+
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
 /* 
 import net.rithms.riot.constant.Region;
 import net.rithms.riot.dto.Summoner.Summoner;
@@ -11,6 +12,8 @@ import net.rithms.riot.api.RiotApi;
 import net.rithms.riot.api.RiotApiException;
 */
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Commands.CommandsHandler;
+import com.safjnest.Utilities.LOL.LOLHandler;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
@@ -42,6 +45,29 @@ public class SetSummoner extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
+        if(event.getArgs().equals("")){
+            event.reply("You need to specify a summoner name");
+            return;
+        }
+        if(event.getArgs().startsWith("remove:")){
+            String summonerName = event.getArgs().replace("remove:", "");
+            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
+            ArrayList<String> accountIds = sql.getAllRowsSpecifiedColumn(query, "account_id");
+            if(accountIds == null){
+                event.reply("You dont have a Riot account connected, for more information /help setsummoner");
+                return;
+            }
+            for(String id : accountIds){
+                if(LOLHandler.getSummonerByAccountId(id).getName().equalsIgnoreCase(summonerName)){
+                    query = "DELETE FROM lol_user WHERE account_id = '" + id + "' and discord_id = '" + event.getMember().getId() + "';";
+                    sql.runQuery(query);
+                    event.reply("Summoner removed");
+                    return;
+                }
+            }
+            event.reply("Summoner not found");
+            return;
+        }
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
         try {
@@ -52,6 +78,7 @@ public class SetSummoner extends Command {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
 
 	}
 

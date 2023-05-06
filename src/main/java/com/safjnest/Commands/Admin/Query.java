@@ -4,10 +4,10 @@ import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.TableHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 
 public class Query extends Command{

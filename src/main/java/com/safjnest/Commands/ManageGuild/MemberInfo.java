@@ -6,11 +6,11 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
@@ -74,7 +74,7 @@ public class MemberInfo extends Command{
             lolAccounts = user.getName() + " has not connected a riot account.";
         }else{
             for(String s : accounts)
-                lolAccounts += LOLHandler.getSummonerById(s).getName() + " - ";
+                lolAccounts += LOLHandler.getSummonerBySummonerId(s).getName() + " - ";
             lolAccounts = lolAccounts.substring(0, lolAccounts.length() - 3);
         }
 

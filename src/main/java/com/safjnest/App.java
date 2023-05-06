@@ -21,7 +21,8 @@ import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
 
 public class App {
-    private static ArrayList<Thread> botsArr = new ArrayList<>(); 
+
+    public static ArrayList<Thread> botsArr = new ArrayList<>(); 
     private static TTSHandler tts;
     private static SQL sql;
     private static R4J riotApi;
@@ -70,6 +71,7 @@ public class App {
             openAISettins.get("maxTokens").toString(), 
             openAISettins.get("model").toString()
         );
+
         
         
         
@@ -82,7 +84,6 @@ public class App {
 
         bs = new BotSettingsHandler();
 
-        
         if(!isExtremeTesting){
             try {
                 for (int i = 0; i < bots.size(); i++) {
@@ -90,19 +91,20 @@ public class App {
                     t.setName((String)bots.get(i));
                     botsArr.add(t);
                 }
+                for(Thread t : botsArr){
+                    t.start();
+                    Thread.sleep(4117); //pebble non riesce a gestire più di un bot che si loada contemporaneamente
+                }
             } catch (Exception e) {e.printStackTrace(); return;}
-            for(Thread t : botsArr)
-                t.start();
         }else{
             Thread bc = new Thread(new Bot(bs, tts, sql, riotApi));
-            bc.setName("canary");
+            bc.setName("beebot canary");
             bc.start();
         }
     }
 
     public static void shutdown(String bot){
         System.out.println("Shutting down " + bot);
-        
         for(int i = 0; i < botsArr.size(); i++){
             if(botsArr.get(i).getName().equals(bot)){
                 botsArr.get(i).interrupt();
@@ -113,16 +115,10 @@ public class App {
 
     public static void restart(String bot){
         System.out.println("Shutting down " + bot);
-        
         for(int i = 0; i < botsArr.size(); i++){
             if(botsArr.get(i).getName().equals(bot)){
                 botsArr.get(i).interrupt();
                 botsArr.remove(i);
-                Thread t = new Thread(new Bot(bs, tts, sql, riotApi));
-                t.setName(bot);
-                t.start();
-                botsArr.add(t);
-                return;
             }
         }
         Thread t = new Thread(new Bot(bs, tts, sql, riotApi));

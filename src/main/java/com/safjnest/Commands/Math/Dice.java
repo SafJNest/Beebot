@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>

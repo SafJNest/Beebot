@@ -11,6 +11,7 @@ public class TableHandler {
     public static void replaceIdsWithNames(String[][] data, JDA jda) {
         for(int i = 0; i < data.length; i++){
             for(int j = 0; j < data[i].length; j++){
+                if(data[i][j] == null) data[i][j] = "";
                 if(data[i][j].matches("\\d+")) {
                     if(jda.getUserById(data[i][j]) != null){
                         data[i][j] = jda.getUserById(data[i][j]).getName(); 

@@ -5,9 +5,9 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -77,11 +77,11 @@ public class GameRankSlash extends SlashCommand {
                 String sum = partecipant.getSummonerName();
                 String stats = "";
                 if(s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")){
-                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
                     stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
 
                 }else{
-                    stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerById(partecipant.getSummonerId()));
+                    stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
                     stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
                 }
                 if(partecipant.getTeam() == TeamType.BLUE)
