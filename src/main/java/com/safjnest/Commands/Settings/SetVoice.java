@@ -1,9 +1,8 @@
 package com.safjnest.Commands.Settings;
 
 import com.safjnest.Commands.Audio.TTS;
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.SQL;
-
+import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -40,22 +39,13 @@ public class SetVoice extends Command {
             event.reply("Voice not found, use command" + event.getPrefix() + "t list");
             return;
         }
-        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getSelfUser().getId() + "';";
-        if(sql.getString(query, "name_tts") == null){
-            query = "INSERT INTO tts_guilds(discord_id, bot_id, name_tts, language_tts)"
-                                + "VALUES('" + event.getGuild().getId() + "','" + event.getSelfUser().getId() + "','" + voice + "','" + language + "');";
-            
-            if(sql.runQuery(query))
-                event.reply("All set correctly");
-            else
-                event.reply("Error: wrong voice name probably");
-        }else{
-            query = "UPDATE tts_guilds SET name_tts = '" + voice + "' WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getSelfUser().getId() + "';";
-            String query2 = "UPDATE tts_guilds SET language_tts = '" + language + "' WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getSelfUser().getId() + "';";
-            if(sql.runQuery(query) && sql.runQuery(query2))
-                event.reply("Default voice modified correctly");
-            else 
-                event.reply("Error: wrong voice name probably");
-        }
+        //do on conflict updatge
+        String query = "INSERT INTO guild_settings (guild_id, bot_id, language_tts, name_tts) VALUES ('" + event.getGuild().getId() + "', '" + event.getJDA().getSelfUser().getId() + "', '" + language + "', '" + voice + "') ON DUPLICATE KEY UPDATE language_tts = '" + language + "', name_tts = '" + voice + "'";
+        sql.runQuery(query);
+        event.reply("Voice set to " + voice);
+        
+
+
+        
     }
 }

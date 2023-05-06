@@ -153,6 +153,20 @@
         "arguments" : "[CommandName] [a]"
     },
 
+    "disableslash":{
+        "alias" : [],
+        "help"  : "disable all the slash command in a guild",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
+    },
+
+    "enableslash":{
+        "alias" : [],
+        "help"  : "enable all the slash command in a guild",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
+    },
+
 
 
 
@@ -191,7 +205,7 @@
 
     "setsummoner":{
         "alias" : ["setsum", "setuser", "ss"],
-        "help"  : "Allow to connect a riot account to your discord profile.",
+        "help"  : "Allow to connect a riot account. You can also remove a summoner using 'setsummoner remove:name'.",
         "category" : "Settings",
         "arguments" : "[CommandName] [summonerName]"
     },

@@ -5,8 +5,9 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -22,7 +23,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 public class DeleteSoundSlash extends SlashCommand{
     private SQL sql;
     
-    public DeleteSoundSlash(SQL sql){
+    public DeleteSoundSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -31,7 +32,7 @@ public class DeleteSoundSlash extends SlashCommand{
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "sound", "Sound to delete", true));
-        this.sql = sql;
+        this.sql = DatabaseHandler.getSql();
     }
     
 	@Override

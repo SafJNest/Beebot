@@ -1,8 +1,9 @@
 package com.safjnest.SlashCommands.Settings;
 
 import com.safjnest.Commands.Audio.TTS;
-import com.safjnest.Utilities.CommandsHandler;
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -20,7 +21,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 public class SetVoiceSlash extends SlashCommand {
     private SQL sql;
 
-    public SetVoiceSlash(SQL sql) {
+    public SetVoiceSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -29,7 +30,7 @@ public class SetVoiceSlash extends SlashCommand {
         this.arguments = new CommandsHandler().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "voice", "Speaker name's voice", true));
-        this.sql = sql;
+        this.sql = DatabaseHandler.getSql();
     }
 
     @Override
@@ -47,22 +48,8 @@ public class SetVoiceSlash extends SlashCommand {
             event.deferReply(true).addContent("Voice not found, use command /t list").queue();
             return;
         }
-        String query = "SELECT name_tts FROM tts_guilds WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-        if(sql.getString(query, "name_tts") == null){
-            query = "INSERT INTO tts_guilds(discord_id, bot_id, name_tts, language_tts)"
-                                + "VALUES('" + event.getGuild().getId() + "','" + event.getJDA().getSelfUser().getId() + "','" + voice + "','" + language + "');";
-            
-            if(sql.runQuery(query))
-                event.deferReply(true).addContent("All set correctly").queue();
-            else
-                event.deferReply(true).addContent("Error: wrong voice name probably").queue();
-        }else{
-            query = "UPDATE tts_guilds SET name_tts = '" + voice + "' WHERE discord_id = '" + event.getGuild().getId()  + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-            String query2 = "UPDATE tts_guilds SET language_tts = '" + language + "' WHERE discord_id = '" + event.getGuild().getId()  + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-            if(sql.runQuery(query) && sql.runQuery(query2))
-                event.deferReply(false).addContent("Default voice modified correctly").queue();
-            else 
-                event.deferReply(true).addContent("Error: wrong voice name probably").queue();
-        }
+        String query = "INSERT INTO guild_settings (guild_id, bot_id, language_tts, name_tts) VALUES ('" + event.getGuild().getId() + "', '" + event.getJDA().getSelfUser().getId() + "', '" + language + "', '" + voice + "') ON DUPLICATE KEY UPDATE language_tts = '" + language + "', name_tts = '" + voice + "'";
+        sql.runQuery(query);
+        event.deferReply(true).addContent("Voice set to " + voice).queue();
     }
 }

@@ -4,8 +4,8 @@ import org.apache.commons.lang3.ThreadUtils;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsHandler;
 import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.Commands.CommandsHandler;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
