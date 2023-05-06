@@ -136,19 +136,19 @@ public class ServerInfo extends Command{
         
         eb.addField("Welcome Message(s)", "```" 
                     + ((welcomeMessageString == "")
-                        ? "No welcome message set for this guild, use /help setwelcome for more information"
+                        ? "No welcome message set for this guild, use /help setwelcomemessage for more information"
                         : welcomeMessageString)
                     +  "```", false);
         
         eb.addField("Leave Message(s)", "```" 
                     + ((leaveMessageString == "")
-                        ? "No leave message set for this guild, use /help setwelcome for more information"
+                        ? "No leave message set for this guild, use /help setleavemessage for more information"
                         : leaveMessageString)
                     +  "```", false);
         
         eb.addField("Level Up Message", "```" 
                     + ((lvlUpMsg == null)
-                        ? "No levelup message set for this guild, use /help setwelcome for more information"
+                        ? "No levelup message set for this guild, use /help setlevelupmessage for more information"
                         : lvlUpMsg)
                     +  "```", false);
 

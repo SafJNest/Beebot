@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -30,18 +29,16 @@ public class Shutdown extends Command{
     /**
      * This method is called every time a member executes the command.
     */
-     @Override
+    @Override
     protected void execute(CommandEvent e) {
         String bot = e.getArgs();
-
+        
         JSONParser parser = new JSONParser();
         JSONObject settings = null;
-        JSONArray bots = null;
-        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
-            settings = (JSONObject) parser.parse(reader);
-            bots = (JSONArray) settings.get("startup");
-        } catch (Exception ex) {
-            ex.printStackTrace();
+
+        if(!PermissionHandler.isUntouchable(e.getAuthor().getId())){
+            e.reply("Swear to god next time you dare to try this again I'll ban you from discord");
+            return;
         }
 
         if(bot.equals("")){
@@ -49,21 +46,18 @@ public class Shutdown extends Command{
             return;
         }
 
-        if(!PermissionHandler.isUntouchable(e.getAuthor().getId())){
-            e.reply("Swear to god next time you dare to try this again I'll ban you from discord");
+        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
+            settings = (JSONObject) parser.parse(reader);
+            if(settings.get(bot) == null)
+                throw new Exception("sei un mongoloide");
+        } catch (Exception ex) {
+            e.reply(e.getAuthor().getAsMention() + " bro its your bot, how can you not know the name?");
             return;
         }
-        
-        for (int i = 0; i < bots.size(); i++) {
-            if(bot.equalsIgnoreCase((String)bots.get(i))){
-                App.shutdown(bot);
-                e.reply("Shutting down " + bot);
-                return;
-            }
-        }
-        e.reply(e.getAuthor().getAsMention() + " bro its your bot, how can you not know the name?");
-
 
         
+        App.shutdown(bot);
+        e.reply("Shutting down " + bot);
+
     }
 }

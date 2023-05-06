@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -35,30 +34,28 @@ public class Restart extends Command{
         String bot = e.getArgs();
         JSONParser parser = new JSONParser();
         JSONObject settings = null;
-        JSONArray bots = null;
-        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
-            settings = (JSONObject) parser.parse(reader);
-            bots = (JSONArray) settings.get("startup");
-        } catch (Exception ex) { ex.printStackTrace();}
-
-        if(bot.equals("")){
-            e.reply("Please specify a bot to restart.");
-            return;
-        }
 
         if(!PermissionHandler.isUntouchable(e.getAuthor().getId())){
             e.reply("Swear to god next time you dare to try this again I'll ban you from discord");
             return;
         }
 
-        for (int i = 0; i < bots.size(); i++) {
-            if(bot.equalsIgnoreCase((String)bots.get(i))){
-                App.restart(bot);
-                e.reply("Shutting down " + bot);
-                return;
-            }
+        if(bot.equals("")){
+            e.reply("Please specify a bot to restart.");
+            return;
         }
 
-        e.reply(e.getAuthor().getAsMention() + " bro its your bot, how can you not know the name?");
+        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
+            settings = (JSONObject) parser.parse(reader);
+            if(settings.get(bot) == null)
+                throw new Exception("sei un mongoloide");
+        } catch (Exception ex) {
+            e.reply(e.getAuthor().getAsMention() + " bro its your bot, how can you not know the name?");
+            return;
+        }
+
+
+        App.restart(bot);
+        e.reply("Shutting down " + bot);
     }
 }

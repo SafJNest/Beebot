@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Commands.LOL.GameRank;
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
@@ -187,7 +188,7 @@ public class EventHandler extends ListenerAdapter {
                 case "right":
 
                     for (int i = 0; i < accounts.size(); i++) {
-                        if (LOLHandler.getSummonerById(accounts.get(i).get(0)).getName().equals(nameSum))
+                        if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
                             index = i;
                     }
 
@@ -197,10 +198,10 @@ public class EventHandler extends ListenerAdapter {
                         index += 1;
 
                     center = Button.primary("lol-center",
-                            LOLHandler.getSummonerById(accounts.get(index).get(0)).getName());
+                            LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
                     event.getMessage()
                             .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                    LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
+                                    LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
                             .setActionRow(left, center, right)
                             .queue();
                     break;
@@ -208,7 +209,7 @@ public class EventHandler extends ListenerAdapter {
                 case "left":
 
                     for (int i = 0; i < accounts.size(); i++) {
-                        if (LOLHandler.getSummonerById(accounts.get(i).get(0)).getName().equals(nameSum))
+                        if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
                             index = i;
 
                     }
@@ -219,14 +220,77 @@ public class EventHandler extends ListenerAdapter {
                         index -= 1;
 
                     center = Button.primary("lol-center",
-                            LOLHandler.getSummonerById(accounts.get(index).get(0)).getName());
+                            LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
                     event.getMessage()
                             .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                    LOLHandler.getSummonerById(accounts.get(index).get(0))).build())
+                                    LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
                             .setActionRow(left, center, right)
                             .queue();
                     break;
             }
+        } else if (event.getButton().getId().startsWith("rank-")) {
+            event.deferEdit().queue();
+
+            String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+            Button left = Button.primary("rank-left", "<-");
+            Button right = Button.primary("rank-right", "->");
+            Button center = null;
+            String nameSum = "";
+            int index = 0;
+
+            for (Button b : event.getMessage().getButtons()) {
+                if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
+                    nameSum = b.getLabel();
+            }
+            String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + LOLHandler.getAccountIdByName(nameSum) + "';";
+            query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + DatabaseHandler.getSql().getString(query, "discord_id") + "';";
+            ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
+            switch (args) {
+
+                case "right":
+
+                    for (int i = 0; i < accounts.size(); i++) {
+                        if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                            index = i;
+                    }
+
+                    if ((index + 1) == accounts.size())
+                        index = 0;
+                    else
+                        index += 1;
+
+                    center = Button.primary("lol-center",
+                            LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                    event.getMessage()
+                            .editMessageEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                                    LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
+                            .setActionRow(left, center, right)
+                            .queue();
+                    break;
+
+                case "left":
+
+                    for (int i = 0; i < accounts.size(); i++) {
+                        if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                            index = i;
+
+                    }
+
+                    if (index == 0)
+                        index = accounts.size() - 1;
+                    else
+                        index -= 1;
+
+                    center = Button.primary("lol-center",
+                            LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                    event.getMessage()
+                            .editMessageEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                                    LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
+                            .setActionRow(left, center, right)
+                            .queue();
+                    break;
+            }
+
         } else if (event.getButton().getId().startsWith("list-")) {
             event.deferEdit().queue();
 

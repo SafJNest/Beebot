@@ -34,7 +34,7 @@ public class App {
     public static void main(String args[]) {
         
         SafJNest.bee();
-        boolean isExtremeTesting = true;
+        boolean isExtremeTesting = false;
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, openAISettins = null;
@@ -93,7 +93,7 @@ public class App {
                 }
                 for(Thread t : botsArr){
                     t.start();
-                    Thread.sleep(3117);
+                    Thread.sleep(4117); //pebble non riesce a gestire più di un bot che si loada contemporaneamente
                 }
             } catch (Exception e) {e.printStackTrace(); return;}
         }else{
