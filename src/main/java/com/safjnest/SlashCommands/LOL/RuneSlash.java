@@ -100,13 +100,14 @@ public class RuneSlash extends SlashCommand {
             
             msg = "";
             for(String id : getPrin(json, "pri")){
-                msg+= LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
+                msg+= LOLHandler.getRuneEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
             }
-            eb.addField(LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getName(), msg, true);
+            String support = LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getName();
+            eb.addField(LOLHandler.getRuneEmojiId(event.getJDA(), support) + " " + support, msg, true);
 
             msg = "";
             for(String id : getPrin(json, "sec")){
-                msg+= LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
+                msg+= LOLHandler.getRuneEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
             }
             eb.addField(LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getName(), msg, true);
             

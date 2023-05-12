@@ -71,7 +71,7 @@ public class PermissionHandler {
     public static long getImportantPermissionsValue(){ 
         return Permission.getRaw(Permission.MANAGE_CHANNEL, Permission.NICKNAME_CHANGE, 
         Permission.MANAGE_SERVER, Permission.MANAGE_ROLES, Permission.MANAGE_PERMISSIONS, 
-        Permission.MANAGE_WEBHOOKS, Permission.MANAGE_EMOJIS_AND_STICKERS,
+        Permission.MANAGE_WEBHOOKS, Permission.VIEW_AUDIT_LOGS,
         Permission.MODERATE_MEMBERS, Permission.MESSAGE_MANAGE, Permission.MESSAGE_MENTION_EVERYONE, 
         Permission.PRIORITY_SPEAKER, Permission.ADMINISTRATOR);
     }

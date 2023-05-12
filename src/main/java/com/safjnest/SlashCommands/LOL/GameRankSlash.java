@@ -1,22 +1,18 @@
 package com.safjnest.SlashCommands.LOL;
 
-import java.awt.Color;
 import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Commands.LOL.GameRank;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.CommandsHandler;
-import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -65,40 +61,7 @@ public class GameRankSlash extends SlashCommand {
             }
         }
         try {
-            EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(s.getName() + "'s Game");
-            builder.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-            ));
-            builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
-            String blueSide = "";
-            String redSide = "";
-            for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
-                String sum = partecipant.getSummonerName();
-                String stats = "";
-                if(s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")){
-                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
-                    stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
-
-                }else{
-                    stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
-                    stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
-                }
-                if(partecipant.getTeam() == TeamType.BLUE)
-                    blueSide += "**" + sum + "** " + stats+ "\n";
-                else
-                    redSide += "**" + sum + "** " + stats+ "\n";
-                
-            }
-            if(s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue"))
-                builder.addField("Ranked stats", "FLEX", false);
-
-            else
-                builder.addField("Ranked stats", "SOLOQ", false);
-            
-            
-            builder.addField("**BLUE SIDE**", blueSide, false);
-            builder.addField("**RED SIDE**", redSide, true);
+            EmbedBuilder builder = GameRank.createEmbed(event.getJDA(), event.getMember().getId(), s);
             event.getHook().editOriginalEmbeds(builder.build()).queue();
             
         } catch (Exception e) {
