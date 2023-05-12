@@ -22,7 +22,7 @@ public class GameRank extends Command {
     /**
      * Constructor
      */
-    public GameRank(){
+    public GameRank() {
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsHandler().getArray(this.name, "alias");
         this.help = new CommandsHandler().getString(this.name, "help");
@@ -34,8 +34,8 @@ public class GameRank extends Command {
     /**
      * This method is called every time a member executes the command.
      */
-	@Override
-	protected void execute(CommandEvent event) {
+    @Override
+    protected void execute(CommandEvent event) {
 
         Button left = Button.primary("rank-left", "<-");
         Button right = Button.primary("rank-right", "->");
@@ -44,89 +44,91 @@ public class GameRank extends Command {
         boolean searchByUser = false;
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        
-        if(args.equals("")){
+
+        if (args.equals("")) {
             s = LOLHandler.getSummonerFromDB(event.getAuthor().getId());
-            if(s == null){
+            if (s == null) {
                 event.reply("You dont have a Riot account connected, for more information /help setUser");
                 return;
             }
             searchByUser = true;
             center = Button.primary("center", s.getName());
             center.asDisabled();
-            
-        }
-        else if(event.getMessage().getMentions().getMembers().size() != 0){
+
+        } else if (event.getMessage().getMentions().getMembers().size() != 0) {
             s = LOLHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
-            if(s == null){
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
+            if (s == null) {
+                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName()
+                        + " has not connected his Riot account.");
                 return;
             }
-        }else{
+        } else {
             s = LOLHandler.getSummonerByName(args);
-            if(s == null){
+            if (s == null) {
                 event.reply("Didn't find this user. ");
                 return;
             }
         }
 
-        EmbedBuilder builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s);  
+        EmbedBuilder builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s);
 
-        if(searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+        if (searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
             return;
         }
 
         event.reply(builder.build());
 
-	}
+    }
 
-    public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
+    public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s) {
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(s.getName() + "'s Game");
             builder.setColor(Color.decode(
-                BotSettingsHandler.map.get(jda.getSelfUser().getId()).color
-            ));
+                    BotSettingsHandler.map.get(jda.getSelfUser().getId()).color));
             builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
             String blueSide = "";
             String redSide = "";
-            for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
-                String sum = partecipant.getSummonerName();
+            for (SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()) {
+                String sum = LOLHandler.getEmojiId(
+                        jda,
+                        LOLHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
+                        + " " + partecipant.getSummonerName();
                 String stats = "";
-                if(s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")){
-                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
-                    stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
+                if (s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) {
 
-                }else{
+                    stats = LOLHandler.getFlexStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
+                    stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "
+                            + stats.substring(stats.lastIndexOf(":") + 1);
+
+                } else {
                     stats = LOLHandler.getSoloQStats(LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
-                    stats = stats.substring(0, stats.lastIndexOf("P")+1) + " | " +stats.substring(stats.lastIndexOf(":")+1);
+                    stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "
+                            + stats.substring(stats.lastIndexOf(":") + 1);
                 }
-                if(partecipant.getTeam() == TeamType.BLUE)
-                    blueSide += "**" + sum + "** " + stats+ "\n";
+                if (partecipant.getTeam() == TeamType.BLUE)
+                    blueSide += "**" + sum + "** " + stats + "\n";
                 else
-                    redSide += "**" + sum + "** " + stats+ "\n";
-                
+                    redSide += "**" + sum + "** " + stats + "\n";
+
             }
-            if(s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue"))
+            if (s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue"))
                 builder.addField("Ranked stats", "FLEX", false);
 
             else
                 builder.addField("Ranked stats", "SOLOQ", false);
-            
-            
+
             builder.addField("**BLUE SIDE**", blueSide, false);
             builder.addField("**RED SIDE**", redSide, true);
 
-           return builder;
-            
-            
+            return builder;
+
         } catch (Exception e) {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(s.getName() + "'s Game");
             builder.setColor(Color.decode(
-                BotSettingsHandler.map.get(jda.getSelfUser().getId()).color
-            ));
+                    BotSettingsHandler.map.get(jda.getSelfUser().getId()).color));
             builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
             builder.setDescription("This user is not in a game.");
             return builder;

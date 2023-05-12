@@ -183,7 +183,6 @@ public class ServerInfo extends Command{
                       "<t:" + guild.getTimeCreated().toEpochSecond() + ":f> | "
                     + "<t:" + guild.getTimeCreated().toEpochSecond() + ":R>",
                      false);
-        
         event.reply(eb.build());
     }
 }

@@ -105,10 +105,10 @@ public class Summoner extends Command {
         builder.addField("5v5 Ranked Flex Queue", LOLHandler.getFlexStats(s), true);
         String masteryString = "";
         for(int i = 1; i < 4; i++)
-            masteryString += LOLHandler.getMastery(s, i) + "\n";
+            masteryString += LOLHandler.getMastery(jda, s, i) + "\n";
         
         builder.addField("Top 3 Champ", masteryString, false); 
-        builder.addField("Activity", LOLHandler.getActivity(s), true);
+        builder.addField("Activity", LOLHandler.getActivity(jda, s), true);
         return builder;
     }
 
