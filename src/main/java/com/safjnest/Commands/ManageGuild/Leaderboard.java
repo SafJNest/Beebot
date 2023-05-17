@@ -1,9 +1,9 @@
 package com.safjnest.Commands.ManageGuild;
 
+import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TableHandler;
-import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 
 import java.util.ArrayList;
@@ -37,9 +37,9 @@ public class Leaderboard extends Command {
         for(int i = 1; i < res.size(); i++)
             databaseData[i-1] = res.get(i).toArray(new String[0]);
         int rows = databaseData.length;
-        int columns = databaseData[0].length;
+        int columns = databaseData[0].length + 1;
         String[][] data = new String[rows][columns];
-        String[] headers = {"#", "user", "level", "messages"};
+        String[] headers = {"#", "user", "level", "progress", "messages"};
         int lvl, exp;
 
         for(int i = 0; i < rows; i++) {
@@ -49,9 +49,10 @@ public class Leaderboard extends Command {
 
             lvl = Integer.parseInt(databaseData[i][2]);
             exp = Integer.parseInt(databaseData[i][3]);
-            data[i][2] = String.valueOf(ExpSystem.expToLvlUp(lvl, exp) + "/" + ExpSystem.totalExpToLvlUp(lvl + 1));
+            data[i][2] = String.valueOf(lvl);
+            data[i][3] = Math.round((float)ExpSystem.expToLvlUp(lvl, exp)/(float)ExpSystem.totalExpToLvlUp(lvl + 1)*100) + "% (" + ExpSystem.expToLvlUp(lvl, exp) + "/" + ExpSystem.totalExpToLvlUp(lvl + 1) + ") ";
 
-            data[i][3] = databaseData[i][1];
+            data[i][4] = databaseData[i][1];
         }
 
         TableHandler.replaceIdsWithNames(data, event.getJDA());
@@ -62,6 +63,5 @@ public class Leaderboard extends Command {
 
         for(int i = 0; i < splitTable.length; i++)
             event.reply("```" + splitTable[i] + "```");
-    
     }
 }

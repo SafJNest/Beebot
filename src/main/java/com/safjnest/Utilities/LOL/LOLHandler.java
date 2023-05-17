@@ -47,9 +47,9 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
      */
     private static String dataDragonVersion = "13.9.1";
 
+    //fammi il coso per likrare una pagina
     /**
      * url for get the suggested runes from lolanalytics.
-     * fammi il coso per linakre una pagina.
      * @see {@link <a href="https://lolanalytics.com/">lolanalytics</a>}
      */
     private static String runesURL = "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/data/en_US/runesReforged.json";
@@ -89,7 +89,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
                     case "8100":
                         nPage = "1";
                         break;
-    
                     case "8200":
                         nPage = "2";
                         break;
@@ -252,15 +251,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
     public static String getEmojiId(JDA jda, String champName){
         String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991"};
-        champName = champName.replace(".", "");
-        champName = champName.replace("i'S", "is");
-        champName = champName.replace("a'Z", "az");
-        champName = champName.replace("l'K", "lk");
-        champName = champName.replace("o'G", "og");
-        champName = champName.replace("g'M", "gm");
-        champName = champName.replace("'", "");
-        champName = champName.replace(" & Willump", "");
-        champName = champName.replace(" ", "");
+        champName = transposeChampionNameForDataDragon(champName);
         try {    
             for(String id : ids){
                 Guild g = jda.getGuildById(id);
@@ -289,8 +280,16 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         }
     }
 
-    
-
-      
-      
+    public static String transposeChampionNameForDataDragon(String champName) {
+        champName = champName.replace(".", "");
+        champName = champName.replace("i'S", "is");
+        champName = champName.replace("a'Z", "az");
+        champName = champName.replace("l'K", "lk");
+        champName = champName.replace("o'G", "og");
+        champName = champName.replace("g'M", "gm");
+        champName = champName.replace("'", "");
+        champName = champName.replace(" & Willump", "");
+        champName = champName.replace(" ", "");
+        return champName;
+    }
 }
