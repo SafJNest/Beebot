@@ -98,33 +98,26 @@ public class RuneSlash extends SlashCommand {
             eb.setDescription("**Highest Win Rate** info for " + champName + " **" + lane + "**");
             eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
             
-            msg = "";
+            msg = "​\n"; //!!there is a 0 width character before the /n
             for(String id : getPrin(json, "pri")){
-                msg+= LOLHandler.getRuneEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
+                msg += LOLHandler.getRuneEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
             }
             String support = LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getName();
             eb.addField(LOLHandler.getRuneEmojiId(event.getJDA(), support) + " " + support, msg, true);
 
-            msg = "";
+            msg = "​\n"; //!!there is a 0 width character before the /n
             for(String id : getPrin(json, "sec")){
-                msg+= LOLHandler.getRuneEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
+                msg += LOLHandler.getRuneEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
             }
-            eb.addField(LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getName(), msg, true);
+            support = LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getName();
+            eb.addField(LOLHandler.getRuneEmojiId(event.getJDA(), support) + " " + support, msg, true);
             
             eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
             ));
             
-            champName = champName.replace(".", "");
-            champName = champName.replace("i'S", "is");
-            champName = champName.replace("a'Z", "az");
-            champName = champName.replace("l'K", "lk");
-            champName = champName.replace("o'G", "og");
-            champName = champName.replace("g'M", "gm");
-            champName = champName.replace("'", "");
-            champName = champName.replace(" & Willump", "");
-            champName = champName.replace(" ", "");
-            eb.setThumbnail(LOLHandler.getChampionProfilePic(champName));  
+            champName = LOLHandler.transposeChampionNameForDataDragon(champName);
+            eb.setThumbnail(LOLHandler.getChampionProfilePic(champName));
             eb.setFooter("There could be some issues with champions name, like Dr. Mundo, Aurelion Sol...Be careful when you digit it.", null); 
 
             
@@ -137,8 +130,7 @@ public class RuneSlash extends SlashCommand {
 
     public String[] getPrin(String json, String thing){ 
         JSONParser parser = new JSONParser(); 
-        try { 
-            
+        try {
             JSONObject file = (JSONObject) parser.parse(json); 
             JSONObject summary = (JSONObject) file.get("summary"); 
             JSONObject runes = (JSONObject) summary.get("runes"); 
