@@ -101,8 +101,8 @@ public class Summoner extends Command {
         }else{
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
         }
-        builder.addField("5v5 Ranked Solo", LOLHandler.getSoloQStats(s), true);
-        builder.addField("5v5 Ranked Flex Queue", LOLHandler.getFlexStats(s), true);
+        builder.addField("5v5 Ranked Solo", LOLHandler.getSoloQStats(jda, s), true);
+        builder.addField("5v5 Ranked Flex Queue", LOLHandler.getFlexStats(jda, s), true);
         String masteryString = "";
         for(int i = 1; i < 4; i++)
             masteryString += LOLHandler.getMastery(jda, s, i) + "\n";
