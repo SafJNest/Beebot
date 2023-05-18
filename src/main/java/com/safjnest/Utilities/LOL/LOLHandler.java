@@ -188,33 +188,33 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         return "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/img/champion/"+champ+".png";
     }
 
-    public static String getSoloQStats(Summoner s){
+    public static String getSoloQStats(JDA jda, Summoner s){
         String stats = "";
         for(int i = 0; i < 2; i++){
             try {
                 LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
-                    stats = getStatsByEntry(entry);
+                    stats = getStatsByEntry(jda, entry);
 
             } catch (Exception e) { }
         }
         return (stats.equals("")) ? "Unranked" : stats;
     }
 
-    public static String getFlexStats(Summoner s){
+    public static String getFlexStats(JDA jda, Summoner s){
         String stats = "";
         for(int i = 0; i < 2; i++){
             try {
                 LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
-                    stats = getStatsByEntry(entry);
+                    stats = getStatsByEntry(jda, entry);
             } catch (Exception e) { }
         }
         return (stats.equals("")) ? "Unranked" : stats;
     }
 
-    private static String getStatsByEntry(LeagueEntry entry){
-        return entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
+    private static String getStatsByEntry(JDA jda, LeagueEntry entry){
+        return getEmojiId(jda, entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
         + entry.getWins() + "W/"+entry.getLosses()+"L\n"
         + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
     }
@@ -227,7 +227,12 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         try {
             for(ChampionMastery mastery : s.getChampionMasteries()){
                 if(cont == nChamp){
-                    masteryString = LOLHandler.getEmojiId(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) + " **[" + mastery.getChampionLevel()+ "]** " + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName() + " " + df.format(mastery.getChampionPoints()) + " points";
+                    masteryString += (mastery.getChampionLevel() > 4) ? LOLHandler.getEmojiId(jda, "mastery" + mastery.getChampionLevel()) + " " : "";
+                    masteryString +=  LOLHandler.getEmojiId(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
+                                    + " **[" + mastery.getChampionLevel()+ "]** " 
+                                    + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName() 
+                                    + " " + df.format(mastery.getChampionPoints()) 
+                                    + " points";
                     break;
                 }
                 cont++;
@@ -249,29 +254,14 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         return "Not in a game";
     }
 
-    public static String getEmojiId(JDA jda, String champName){
-        String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991"};
-        champName = transposeChampionNameForDataDragon(champName);
+    public static String getEmojiId(JDA jda, String name){
+        String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106632568561991690", "1106648439221133354", "1106648490911739975", "1106648568489594990", "1106648612039041064", "1108673762708172811"};
+        name = transposeChampionNameForDataDragon(name);
         try {    
             for(String id : ids){
                 Guild g = jda.getGuildById(id);
-                for(RichCustomEmoji em: g.getEmojisByName(champName, true))
-                    return "<:"+champName+":"+em.getId()+">";
-                
-            }   
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public static String getRuneEmojiId(JDA jda, String runeId){
-        String[] ids = {"1106632568561991690", "1106648439221133354", "1106648490911739975", "1106648568489594990", "1106648612039041064"};
-        try {    
-            for(String id : ids){
-                Guild g = jda.getGuildById(id);
-                for(RichCustomEmoji em: g.getEmojisByName(runeId, true))
-                    return "<:"+runeId+":"+em.getId()+">";
+                for(RichCustomEmoji em: g.getEmojisByName(name, true))
+                    return "<:"+name+":"+em.getId()+">";
                 
             }   
             return null;
