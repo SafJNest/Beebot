@@ -60,6 +60,24 @@ public class RuneSlash extends SlashCommand {
         String champ = "";
         String champName = event.getOption("champ").getAsString();
         String lane = event.getOption("lane").getAsString();
+        String laneFormatName =  "";
+        switch(lane){
+            case "top":
+                laneFormatName = "Top Lane";
+                break;
+            case "jungle":
+                laneFormatName = "Jungle";
+                break;
+            case "middle":
+                laneFormatName = "Mid Lane";
+                break;
+            case "bottom":
+                laneFormatName = "ADC";
+                break;
+            case "sup":
+                laneFormatName = "Support";
+                break;
+        }
         
         if(champName.equalsIgnoreCase("nunu"))
             champName+="willump";
@@ -91,26 +109,27 @@ public class RuneSlash extends SlashCommand {
         String msg = "";
         try {
             url = new URL("https://axe.lolalytics.com/mega/?ep=rune&p=d&v=1&cid="+champ+"&lane="+lane);
+            System.out.println(url);
             String json = IOUtils.toString(url, Charset.forName("UTF-8"));
             EmbedBuilder eb = new EmbedBuilder(); 
             eb = new EmbedBuilder(); 
             eb.setTitle(":sparkles:Beebot Rune Command"); 
-            eb.setDescription("**Highest Win Rate** info for " + champName + " **" + lane + "**");
+            eb.setDescription("**Highest Win Rate** info for " + LOLHandler.getEmojiId(event.getJDA(), champName) + " " + champName + " " + LOLHandler.getEmojiId(event.getJDA(), laneFormatName) + " **" + laneFormatName + "**");
             eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
             
             msg = "​\n"; //!!there is a 0 width character before the /n
             for(String id : getPrin(json, "pri")){
-                msg += LOLHandler.getRuneEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
+                msg += LOLHandler.getEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
             }
             String support = LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getName();
-            eb.addField(LOLHandler.getRuneEmojiId(event.getJDA(), support) + " " + support, msg, true);
+            eb.addField(LOLHandler.getEmojiId(event.getJDA(), support) + " " + support, msg, true);
 
             msg = "​\n"; //!!there is a 0 width character before the /n
             for(String id : getPrin(json, "sec")){
-                msg += LOLHandler.getRuneEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
+                msg += LOLHandler.getEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
             }
             support = LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getName();
-            eb.addField(LOLHandler.getRuneEmojiId(event.getJDA(), support) + " " + support, msg, true);
+            eb.addField(LOLHandler.getEmojiId(event.getJDA(), support) + " " + support, msg, true);
             
             eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
@@ -123,7 +142,7 @@ public class RuneSlash extends SlashCommand {
             
             event.getHook().editOriginalEmbeds(eb.build()).queue();
         } catch (Exception e) { 
-            e.printStackTrace(); 
+            event.getHook().editOriginal("Could be some problem with our database or lack of data due to new patch. Try again later.").queue();
         } 
 
 	}
