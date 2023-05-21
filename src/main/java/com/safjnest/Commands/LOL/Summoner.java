@@ -53,7 +53,7 @@ public class Summoner extends Command {
             }
             searchByUser = true;
             center = Button.primary("center", s.getName());
-            center.asDisabled();
+            center = center.asDisabled();
             
         }
         else if(event.getMessage().getMentions().getMembers().size() != 0){

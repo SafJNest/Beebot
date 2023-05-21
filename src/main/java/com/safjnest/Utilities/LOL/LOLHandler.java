@@ -45,7 +45,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     /**
      * The current data dragon version.
      */
-    private static String dataDragonVersion = "13.9.1";
+    private static String dataDragonVersion = "13.10.1";
 
     //fammi il coso per likrare una pagina
     /**
@@ -214,7 +214,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
     private static String getStatsByEntry(JDA jda, LeagueEntry entry){
-        return getEmojiId(jda, entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
+        return getFormattedEmoji(jda, entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
         + entry.getWins() + "W/"+entry.getLosses()+"L\n"
         + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
     }
@@ -227,8 +227,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         try {
             for(ChampionMastery mastery : s.getChampionMasteries()){
                 if(cont == nChamp){
-                    masteryString += (mastery.getChampionLevel() > 4) ? LOLHandler.getEmojiId(jda, "mastery" + mastery.getChampionLevel()) + " " : "";
-                    masteryString +=  LOLHandler.getEmojiId(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
+                    masteryString += (mastery.getChampionLevel() > 4) ? LOLHandler.getFormattedEmoji(jda, "mastery" + mastery.getChampionLevel()) + " " : "";
+                    masteryString +=  LOLHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
                                     + " **[" + mastery.getChampionLevel()+ "]** " 
                                     + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName() 
                                     + " " + df.format(mastery.getChampionPoints()) 
@@ -246,12 +246,28 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
                 if(partecipant.getSummonerId().equals(s.getSummonerId()))
-                    return "Playing a " + s.getCurrentGame().getGameQueueConfig().commonName()+ " as " + getEmojiId(jda, riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                    return "Playing a " + s.getCurrentGame().getGameQueueConfig().commonName()+ " as " + getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
             }
         } catch (Exception e) {
             return "Not in a game";
         }
         return "Not in a game";
+    }
+
+    public static String getFormattedEmoji(JDA jda, String name){
+        String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106632568561991690", "1106648439221133354", "1106648490911739975", "1106648568489594990", "1106648612039041064", "1108673762708172811"};
+        name = transposeChampionNameForDataDragon(name);
+        try {    
+            for(String id : ids){
+                Guild g = jda.getGuildById(id);
+                for(RichCustomEmoji em: g.getEmojisByName(name, true))
+                    return "<:"+name+":"+em.getId()+">";
+                
+            }   
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static String getEmojiId(JDA jda, String name){
@@ -261,7 +277,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             for(String id : ids){
                 Guild g = jda.getGuildById(id);
                 for(RichCustomEmoji em: g.getEmojisByName(name, true))
-                    return "<:"+name+":"+em.getId()+">";
+                    return em.getId();
                 
             }   
             return null;

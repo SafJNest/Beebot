@@ -1,6 +1,8 @@
 package com.safjnest.Commands.LOL;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -10,7 +12,12 @@ import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
@@ -53,7 +60,7 @@ public class GameRank extends Command {
             }
             searchByUser = true;
             center = Button.primary("center", s.getName());
-            center.asDisabled();
+            center = center.asDisabled();
 
         } else if (event.getMessage().getMentions().getMembers().size() != 0) {
             s = LOLHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
@@ -69,19 +76,51 @@ public class GameRank extends Command {
                 return;
             }
         }
+        List<SpectatorParticipant> users = null;
+        EmbedBuilder builder = null;
+        try {
+            users = s.getCurrentGame().getParticipants();
+            builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users);
+        
+            ArrayList<SelectOption> options = new ArrayList<>();
+            for(SpectatorParticipant p : users){
+                Emoji icon = Emoji.fromCustom(
+                    LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
+                    Long.parseLong(LOLHandler.getEmojiId(event.getJDA(), LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
+                    false);
+                if(!p.getSummonerId().equals(s.getSummonerId()))
+                    options.add(SelectOption.of(
+                                    p.getSummonerName().toUpperCase(), 
+                                    p.getSummonerId()).withEmoji(icon));
+            }
 
-        EmbedBuilder builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s);
+            StringSelectMenu menu = StringSelectMenu.create("rank-select")
+                .setPlaceholder("Select a summoner")
+                .setMaxValues(1)
+                .addOptions(options)
+                .build();
 
-        if (searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
-            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
-            return;
+            if (searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
+                MessageCreateAction action = event.getChannel().sendMessageEmbeds(builder.build());
+                action.addComponents(ActionRow.of(menu));
+                action.addComponents(ActionRow.of(left, center, right));
+                action.queue();
+                return;
+            }
+            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(menu).queue();
+                
+        } catch (Exception e) {
+            builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users);
+            if (searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
+                event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+                return;
+            }
+            event.getChannel().sendMessageEmbeds(builder.build()).queue();
         }
-
-        event.reply(builder.build());
 
     }
 
-    public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s) {
+    public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s, List<SpectatorParticipant> users) {
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(s.getName() + "'s Game");
@@ -90,8 +129,8 @@ public class GameRank extends Command {
             builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
             String blueSide = "";
             String redSide = "";
-            for (SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()) {
-                String sum = LOLHandler.getEmojiId(
+            for (SpectatorParticipant partecipant : users) {
+                String sum = LOLHandler.getFormattedEmoji(
                         jda,
                         LOLHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
                         + " " + partecipant.getSummonerName();
@@ -121,7 +160,6 @@ public class GameRank extends Command {
 
             builder.addField("**BLUE SIDE**", blueSide, false);
             builder.addField("**RED SIDE**", redSide, true);
-
             return builder;
 
         } catch (Exception e) {

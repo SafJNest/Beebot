@@ -50,7 +50,7 @@ public class FreeChamp extends Command {
 
         String s = "";
         for(StaticChampion ce : c.getFreeChampions())
-            s+=LOLHandler.getEmojiId(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
+            s+=LOLHandler.getFormattedEmoji(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
         
              
         String img = "iconLol.png";
