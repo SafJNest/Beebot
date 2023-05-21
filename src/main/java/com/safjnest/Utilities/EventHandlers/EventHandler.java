@@ -1,21 +1,17 @@
 package com.safjnest.Utilities.EventHandlers;
 
-import java.awt.Color;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Commands.LOL.GameRank;
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.SlashCommandsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
@@ -26,11 +22,9 @@ import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTime
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -164,287 +158,10 @@ public class EventHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onButtonInteraction(ButtonInteractionEvent event) {
-
-        if (event.getButton().getId().startsWith("lol-")) {
-            event.deferEdit().queue();
-
-            String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-            Button left = Button.primary("lol-left", "<-");
-            Button right = Button.primary("lol-right", "->");
-            Button center = null;
-            String nameSum = "";
-            int index = 0;
-
-            for (Button b : event.getMessage().getButtons()) {
-                if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
-                    nameSum = b.getLabel();
-            }
-            String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + LOLHandler.getAccountIdByName(nameSum) + "';";
-            query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + DatabaseHandler.getSql().getString(query, "discord_id") + "';";
-            ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
-            switch (args) {
-
-                case "right":
-
-                    for (int i = 0; i < accounts.size(); i++) {
-                        if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
-                            index = i;
-                    }
-
-                    if ((index + 1) == accounts.size())
-                        index = 0;
-                    else
-                        index += 1;
-
-                    center = Button.primary("lol-center",
-                            LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
-                    event.getMessage()
-                            .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                    LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
-                            .setActionRow(left, center, right)
-                            .queue();
-                    break;
-
-                case "left":
-
-                    for (int i = 0; i < accounts.size(); i++) {
-                        if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
-                            index = i;
-
-                    }
-
-                    if (index == 0)
-                        index = accounts.size() - 1;
-                    else
-                        index -= 1;
-
-                    center = Button.primary("lol-center",
-                            LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
-                    event.getMessage()
-                            .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                    LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
-                            .setActionRow(left, center, right)
-                            .queue();
-                    break;
-            }
-        } else if (event.getButton().getId().startsWith("rank-")) {
-            event.deferEdit().queue();
-
-            String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-            Button left = Button.primary("rank-left", "<-");
-            Button right = Button.primary("rank-right", "->");
-            Button center = null;
-            String nameSum = "";
-            int index = 0;
-
-            for (Button b : event.getMessage().getButtons()) {
-                if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
-                    nameSum = b.getLabel();
-            }
-            String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + LOLHandler.getAccountIdByName(nameSum) + "';";
-            query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + DatabaseHandler.getSql().getString(query, "discord_id") + "';";
-            ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
-            switch (args) {
-
-                case "right":
-
-                    for (int i = 0; i < accounts.size(); i++) {
-                        if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
-                            index = i;
-                    }
-
-                    if ((index + 1) == accounts.size())
-                        index = 0;
-                    else
-                        index += 1;
-
-                    center = Button.primary("lol-center",
-                            LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
-                    event.getMessage()
-                            .editMessageEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                    LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
-                            .setActionRow(left, center, right)
-                            .queue();
-                    break;
-
-                case "left":
-
-                    for (int i = 0; i < accounts.size(); i++) {
-                        if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
-                            index = i;
-
-                    }
-
-                    if (index == 0)
-                        index = accounts.size() - 1;
-                    else
-                        index -= 1;
-
-                    center = Button.primary("lol-center",
-                            LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
-                    event.getMessage()
-                            .editMessageEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                    LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
-                            .setActionRow(left, center, right)
-                            .queue();
-                    break;
-            }
-
-        } else if (event.getButton().getId().startsWith("list-")) {
-            event.deferEdit().queue();
-
-            String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-
-            int page = 1;
-            int cont = 0;
-            String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '"
-                    + event.getGuild().getId() + "' ORDER BY name ASC;";
-            ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 2);
-
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
-                    event.getUser().getAvatarUrl());
-            eb.setTitle("List of " + event.getGuild().getName());
-            eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-            eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-            ));
-            eb.setDescription("Total Sound: " + sounds.size());
-            Button left = Button.primary("list-left", "<-");
-            Button right = Button.primary("list-right", "->");
-            Button center = null;
-
-            switch (args) {
-
-                case "right":
-                    for (Button b : event.getMessage().getButtons()) {
-                        if (b.getLabel().startsWith("Page"))
-                            page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
-                    }
-                    
-                    cont = 24 * page;
-                    while(cont < (24*(page+1)) && cont < sounds.size()){
-                        eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
-                        cont++;
-                    }
-                    
-                    if (24 * (page + 1) >= sounds.size()){
-                        right = right.asDisabled();
-                        right = right.withStyle(ButtonStyle.DANGER);
-                    }
-                    center = Button.primary("center", "Page: " + (page + 1));
-                    center = center.withStyle(ButtonStyle.SUCCESS);
-                    center = center.asDisabled();
-                    event.getMessage().editMessageEmbeds(eb.build())
-                            .setActionRow(left, center, right)
-                            .queue();
-                    break;
-
-                case "left":
-                    
-                    for (Button b : event.getMessage().getButtons()) {
-                        if (b.getLabel().startsWith("Page")) 
-                            page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
-                    }
-                    cont = (24 * (page - 2) < 0) ? 0 : 24 * (page - 2);
-                
-                    while(cont < (24*(page-1)) && cont < sounds.size()){
-                        eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
-                        cont++;
-                    }
-
-
-                    
-                    if ((page - 1) == 1){
-                        left = left.asDisabled();
-                        left = left.withStyle(ButtonStyle.DANGER);
-                    }
-                    
-                    center = Button.primary("center", "Page: " + (page - 1));
-                    center = center.withStyle(ButtonStyle.SUCCESS);
-                    center = center.asDisabled();
-                    event.getMessage().editMessageEmbeds(eb.build())
-                            .setActionRow(left, center, right)
-                            .queue();
-                    break;
-            }
-        }else if(event.getButton().getId().startsWith("listuser-")){
-            event.deferEdit().queue();
-            String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-
-            int page = 1;
-            int cont = 0;
-            String userId = "";
-
-            for (Button b : event.getMessage().getButtons()) {
-                if (b.getLabel().startsWith("Page")){
-                    page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
-                    userId = b.getId().split("-")[2];
-                }
-            }
-            
-            String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '"
-                    + userId + "' ORDER BY name ASC;";
-            ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 2);
-
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
-                    event.getUser().getAvatarUrl());
-            eb.setTitle("List of " + event.getJDA().getUserById(userId).getName());
-            eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-            eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-            ));
-            eb.setDescription("Total Sound: " + sounds.size());
-            Button left = Button.primary("listuser-left", "<-");
-            Button right = Button.primary("listuser-right", "->");
-            Button center = null;
-
-            switch (args) {
-
-                case "right":
-                    cont = 24 * page;
-                    while(cont < (24*(page+1)) && cont < sounds.size()){
-                        eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
-                        cont++;
-                    }
-                    
-                    if (24 * (page + 1) >= sounds.size()){
-                        right = right.asDisabled();
-                        right = right.withStyle(ButtonStyle.DANGER);
-                    }
-                    center = Button.primary("listuser-center-" + userId, "Page: " + (page + 1));
-                    center = center.withStyle(ButtonStyle.SUCCESS);
-                    center = center.asDisabled();
-                    event.getMessage().editMessageEmbeds(eb.build())
-                            .setActionRow(left, center, right)
-                            .queue();
-                    break;
-
-                case "left":
-                    cont = (24 * (page - 2) < 0) ? 0 : 24 * (page - 2);
-                
-                    while(cont < (24*(page-1)) && cont < sounds.size()){
-                        eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
-                        cont++;
-                    }
-
-
-                    
-                    if ((page - 1) == 1){
-                        left = left.asDisabled();
-                        left = left.withStyle(ButtonStyle.DANGER);
-                    }
-                    
-                    center = Button.primary("listuser-center-" + userId, "Page: " + (page - 1));
-                    center = center.withStyle(ButtonStyle.SUCCESS);
-                    center = center.asDisabled();
-                    event.getMessage().editMessageEmbeds(eb.build())
-                            .setActionRow(left, center, right)
-                            .queue();
-                    break;
-            }
+    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
+        if (event.getComponentId().equals("rank-select")) {
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LOLHandler.getSummonerBySummonerId(event.getValues().get(0));
+            event.deferReply().addEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build()).queue();
         }
     }
 

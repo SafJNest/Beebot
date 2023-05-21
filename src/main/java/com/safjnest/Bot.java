@@ -22,6 +22,7 @@ import com.safjnest.Utilities.*;
 import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.SlashCommandsHandler;
+import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
 import com.safjnest.Utilities.Guild.GuildData;
@@ -152,9 +153,9 @@ public class Bot extends ListenerAdapter implements Runnable {
                 .setChunkingFilter(ChunkingFilter.ALL)
                 .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
                 .build();
-                if(Thread.currentThread().getName().equals("beebot")){
-            jda.addEventListener(listenerozzobeby);
-        }
+                if(Thread.currentThread().getName().equals("beebot"))
+                    jda.addEventListener(listenerozzobeby);
+                
         botId = jda.getSelfUser().getId();
         bs.setSettings(new BotSettings(
                 botId,
@@ -188,7 +189,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             maxPrime
         );
 
-        if(!Thread.currentThread().getName().equals("moderation")){
+        if(!Thread.currentThread().getName().equals("beebot moderation")){
             // Audio
             builder.addCommand(new Connect());
             builder.addCommand(new DeleteSound(sql));
@@ -240,7 +241,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         }
 
 
-        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("moderation")){
+        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("beebot moderation")){
             builder.addCommand(new Champ());
             builder.addCommand(new Summoner());
             builder.addCommand(new FreeChamp());
@@ -299,6 +300,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         CommandClient client = builder.build();
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler(sql, sch));
+        jda.addEventListener(new EventButtonHandler());
 
         
         synchronized (this){

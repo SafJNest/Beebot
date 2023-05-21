@@ -114,22 +114,22 @@ public class RuneSlash extends SlashCommand {
             EmbedBuilder eb = new EmbedBuilder(); 
             eb = new EmbedBuilder(); 
             eb.setTitle(":sparkles:Beebot Rune Command"); 
-            eb.setDescription("**Highest Win Rate** info for " + LOLHandler.getEmojiId(event.getJDA(), champName) + " " + champName + " " + LOLHandler.getEmojiId(event.getJDA(), laneFormatName) + " **" + laneFormatName + "**");
+            eb.setDescription("**Highest Win Rate** info for " + LOLHandler.getFormattedEmoji(event.getJDA(), champName) + " " + champName + " " + LOLHandler.getFormattedEmoji(event.getJDA(), laneFormatName) + " **" + laneFormatName + "**");
             eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
             
             msg = "​\n"; //!!there is a 0 width character before the /n
             for(String id : getPrin(json, "pri")){
-                msg += LOLHandler.getEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
+                msg += LOLHandler.getFormattedEmoji(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
             }
             String support = LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getName();
-            eb.addField(LOLHandler.getEmojiId(event.getJDA(), support) + " " + support, msg, true);
+            eb.addField(LOLHandler.getFormattedEmoji(event.getJDA(), support) + " " + support, msg, true);
 
             msg = "​\n"; //!!there is a 0 width character before the /n
             for(String id : getPrin(json, "sec")){
-                msg += LOLHandler.getEmojiId(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
+                msg += LOLHandler.getFormattedEmoji(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
             }
             support = LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getName();
-            eb.addField(LOLHandler.getEmojiId(event.getJDA(), support) + " " + support, msg, true);
+            eb.addField(LOLHandler.getFormattedEmoji(event.getJDA(), support) + " " + support, msg, true);
             
             eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color

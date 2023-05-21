@@ -9,9 +9,12 @@ import com.safjnest.Utilities.Commands.CommandsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -44,7 +47,7 @@ public class SummonerSlash extends SlashCommand {
         boolean searchByUser = false;
         
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        event.deferReply(true).queue();
+        event.deferReply(false).queue();
         if(event.getOption("user") == null){
             s = LOLHandler.getSummonerFromDB(event.getUser().getId());
             if(s == null){
@@ -53,7 +56,7 @@ public class SummonerSlash extends SlashCommand {
             }
             searchByUser = true;
             center = Button.primary("lol-center", s.getName());
-            center.asDisabled();
+            center = center.asDisabled();
         }else{
             s = LOLHandler.getSummonerByName(event.getOption("user").getAsString());
             if(s == null){
@@ -66,11 +69,12 @@ public class SummonerSlash extends SlashCommand {
         EmbedBuilder builder = Summoner.createEmbed(event.getJDA(),event.getJDA().getSelfUser().getId(), s);
         
         if(searchByUser && LOLHandler.getNumberOfProfile(event.getUser().getId()) > 1){
-            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),s).build());
+            action.setComponents(ActionRow.of(left, center, right)).queue();
             return;
         }
 
-        event.deferReply(false).addEmbeds(builder.build()).queue();
+        event.getHook().editOriginalEmbeds(builder.build()).queue();
         
 
 	}
