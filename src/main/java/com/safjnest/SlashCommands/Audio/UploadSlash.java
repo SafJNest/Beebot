@@ -76,7 +76,7 @@ class FileListener extends ListenerAdapter {
             return;
         }
         if(e.getMessage().getAttachments().size() <= 0){
-            event.deferReply(true).addContent("You have to upload the sound, you can try again by reusing the command").queue();
+            channel.sendMessage("You have to upload the sound, you can try again by reusing the command").queue();
             e.getJDA().removeEventListener(this);
             return;
         }
@@ -84,7 +84,7 @@ class FileListener extends ListenerAdapter {
         Attachment attachment = e.getMessage().getAttachments().get(0);
 
         if(attachment.getSize() > maxFileSize && !PermissionHandler.isUntouchable(event.getMember().getId())){
-            event.deferReply(true).addContent("The file is too big (" + maxFileSize/1048576 + "mb max)").queue();
+            channel.sendMessage("The file is too big (" + maxFileSize/1048576 + "mb max)").queue();
             e.getJDA().removeEventListener(this);
             return;
         }
@@ -103,7 +103,7 @@ class FileListener extends ListenerAdapter {
         File saveFile = new File("rsc" + File.separator + "SoundBoard" + File.separator + (id + "." + attachment.getFileExtension()));
 
         new FileProxy(attachment.getUrl()).downloadToFile(saveFile);
-        event.deferReply(false).addContent("File uploaded succesfully").queue();
+        channel.sendMessage("File uploaded succesfully").queue();
         
         e.getJDA().removeEventListener(this);
     }
