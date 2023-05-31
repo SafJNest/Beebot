@@ -68,7 +68,6 @@ public class EventHandler extends ListenerAdapter {
             executeMethod.setAccessible(true);
             executeMethod.invoke(sc, e);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException exp) {}
-    
     }
     
 

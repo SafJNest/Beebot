@@ -80,6 +80,7 @@ public class SlashCommandsHandler {
             slashCommands.put(new PrimeSlash(maxPrime).getName(), new PrimeSlash(maxPrime));
             slashCommands.put(new DiceSlash().getName(), new DiceSlash());
             slashCommands.put(new CalculatorSlash().getName(), new CalculatorSlash());
+            slashCommands.put(new TalkSlash().getName(), new TalkSlash());
         }
 
         slashCommands.put(new SetPrefixSlash(sql, gs).getName(), new SetPrefixSlash(sql, gs));

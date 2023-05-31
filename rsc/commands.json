@@ -56,7 +56,7 @@
     },
 
     "tts":{
-        "alias" : ["t", "talk"],
+        "alias" : ["t"],
         "help"  : "Read what you write.",
         "category" : "Audio",
         "arguments" : "[CommandName] [text]"
@@ -562,6 +562,13 @@
         "help"  : "Get a list with all the people a user played with.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName] (n games to analyze)"
+    },
+
+    "talk":{
+        "alias" : ["stranger", "omegle"],
+        "help"  : "Talk to a stranger on omegle with support for different languages and common interests and the ability to let everyone in the channel talk with they're names shown to the person on omegle. Use quit to quit.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName] (language) (interests) (party mode)"
     }
 
 }
