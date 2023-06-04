@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.tts;
+package org.voicerss.tts.Speech;
 
 public class SpeechErrorEventListener {
   public void handleSpeechErrorEvent(SpeechErrorEvent e) {}

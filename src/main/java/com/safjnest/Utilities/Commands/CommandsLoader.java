@@ -16,7 +16,7 @@ import org.json.simple.parser.ParseException;
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * @since 1.3
  */
-public class CommandsHandler {
+public class CommandsLoader {
     private String path = "rsc" + File.separator + "commands.json";
     private FileReader reader;
     private JSONParser jsonParser;
@@ -24,7 +24,7 @@ public class CommandsHandler {
     /**
      * default constructor
      */
-    public CommandsHandler(){
+    public CommandsLoader(){
         jsonParser = new JSONParser();
         try {
             reader = new FileReader(path);

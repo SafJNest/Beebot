@@ -27,7 +27,6 @@ import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.tts.TTSHandler;
 import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Settings.SetLeaveMessage;
@@ -37,7 +36,6 @@ import com.safjnest.Commands.Settings.SetRoom;
 import com.safjnest.Commands.Settings.SetSummoner;
 import com.safjnest.Commands.Settings.SetVoice;
 import com.safjnest.Commands.Settings.SetWelcomeMessage;
-import com.safjnest.SlashCommands.Misc.TalkSlash;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Admin.ListGuild;
 import com.safjnest.Commands.Admin.Ping;
@@ -277,6 +275,8 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new Aliases());
         builder.addCommand(new RawMessage());
         builder.addCommand(new PrefixList());
+        builder.addCommand(new EnableSlash(sch));
+        builder.addCommand(new DisableSlash());
         
 
         String name = Thread.currentThread().getName();

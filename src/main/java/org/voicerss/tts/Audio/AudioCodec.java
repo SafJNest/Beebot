@@ -1,4 +1,4 @@
-/*   */ package com.safjnest.Utilities.tts;
+/*   */ package org.voicerss.tts.Audio;
 /*   */ 
 /*   */ public class AudioCodec {
 /* 4 */   public static String MP3 = "MP3";

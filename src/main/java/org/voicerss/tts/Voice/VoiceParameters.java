@@ -1,4 +1,4 @@
-/*    */ package com.safjnest.Utilities.tts;
+/*    */ package org.voicerss.tts.Voice;
 /*    */ 
 /*    */ public class VoiceParameters {
 /*    */   private String _text;

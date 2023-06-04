@@ -1,4 +1,4 @@
-/*     */ package com.safjnest.Utilities.tts;
+/*     */ package org.voicerss.tts.Voice;
 /*     */ 
 /*     */ import java.io.BufferedWriter;
 /*     */ import java.io.ByteArrayOutputStream;
@@ -8,6 +8,11 @@
 /*     */ import java.net.HttpURLConnection;
 /*     */ import java.net.URL;
 /*     */ import java.util.ArrayList;
+
+import org.voicerss.tts.Speech.SpeechDataEvent;
+import org.voicerss.tts.Speech.SpeechDataEventListener;
+import org.voicerss.tts.Speech.SpeechErrorEvent;
+import org.voicerss.tts.Speech.SpeechErrorEventListener;
 /*     */ 
 /*     */ public class VoiceProvider
 /*     */ {
