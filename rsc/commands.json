@@ -566,7 +566,7 @@
 
     "talk":{
         "alias" : ["stranger", "omegle"],
-        "help"  : "Talk to a stranger on omegle with support for different languages and common interests and the ability to let everyone in the channel talk with they're names shown to the person on omegle. Use quit to quit.",
+        "help"  : "Talk to a stranger on omegle. Use quit to quit. Use partymode to let everyone write.",
         "category" : "Miscellaneous",
         "arguments" : "[CommandName] (language) (interests) (party mode)"
     }

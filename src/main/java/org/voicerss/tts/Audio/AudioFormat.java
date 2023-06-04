@@ -1,4 +1,4 @@
-/*    */ package com.safjnest.Utilities.tts;
+/*    */ package org.voicerss.tts.Audio;
 /*    */ 
 /*    */ public class AudioFormat {
 /*    */   public static class Format_8KHZ {

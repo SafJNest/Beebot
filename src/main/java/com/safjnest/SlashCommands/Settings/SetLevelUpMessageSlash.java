@@ -1,7 +1,7 @@
 package com.safjnest.SlashCommands.Settings;
 
 import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.Commands.CommandsHandler;
+import com.safjnest.Utilities.Commands.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -20,10 +20,10 @@ public class SetLevelUpMessageSlash extends SlashCommand {
 
     public SetLevelUpMessageSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsHandler().getArray(this.name, "alias");
-        this.cooldown = new CommandsHandler().getCooldown(this.name);
-        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
-        this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.aliases = new CommandsLoader().getArray(this.name, "alias");
+        this.cooldown = new CommandsLoader().getCooldown(this.name);
+        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
+        this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "msg", "Welcome message", true));
     }

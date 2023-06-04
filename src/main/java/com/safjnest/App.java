@@ -13,9 +13,9 @@ import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.OpenAIHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.LOLHandler;
-import com.safjnest.Utilities.tts.TTSHandler;
 
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
@@ -34,7 +34,7 @@ public class App {
     public static void main(String args[]) {
         
         SafJNest.bee();
-        boolean isExtremeTesting = false;
+        boolean isExtremeTesting = true;
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, openAISettins = null;

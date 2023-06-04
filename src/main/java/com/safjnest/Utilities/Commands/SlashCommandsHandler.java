@@ -21,8 +21,8 @@ import com.safjnest.SlashCommands.Settings.SetSummonerSlash;
 import com.safjnest.SlashCommands.Settings.SetVoiceSlash;
 import com.safjnest.SlashCommands.Settings.SetWelcomeMessageSlash;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.tts.TTSHandler;
 
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import no.stelar7.api.r4j.impl.R4J;
@@ -80,7 +80,6 @@ public class SlashCommandsHandler {
             slashCommands.put(new PrimeSlash(maxPrime).getName(), new PrimeSlash(maxPrime));
             slashCommands.put(new DiceSlash().getName(), new DiceSlash());
             slashCommands.put(new CalculatorSlash().getName(), new CalculatorSlash());
-            slashCommands.put(new TalkSlash().getName(), new TalkSlash());
         }
 
         slashCommands.put(new SetPrefixSlash(sql, gs).getName(), new SetPrefixSlash(sql, gs));
@@ -91,6 +90,9 @@ public class SlashCommandsHandler {
         slashCommands.put(new MsgSlash().getName(), new MsgSlash());
         slashCommands.put(new InviteBotSlash().getName(), new InviteBotSlash());
         slashCommands.put(new AnonymSlash().getName(), new AnonymSlash());
+
+        if(threadName.equals("beebot canary"))
+            slashCommands.put(new TalkSlash().getName(), new TalkSlash());
     }
 
     /**

@@ -2,9 +2,15 @@ package com.safjnest.SlashCommands.Misc;
 
 import java.util.Arrays;
 
+import org.nikki.omegle.Omegle;
+import org.nikki.omegle.core.OmegleException;
+import org.nikki.omegle.core.OmegleMode;
+import org.nikki.omegle.core.OmegleSession;
+import org.nikki.omegle.event.OmegleEventAdaptor;
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.Commands.CommandsHandler;
+import com.safjnest.Utilities.Commands.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
@@ -13,21 +19,15 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-import org.nikki.omegle.Omegle;
-import org.nikki.omegle.core.OmegleException;
-import org.nikki.omegle.core.OmegleMode;
-import org.nikki.omegle.core.OmegleSession;
-import org.nikki.omegle.event.OmegleEventAdaptor;
-
 public class TalkSlash extends SlashCommand {
 
     public TalkSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsHandler().getArray(this.name, "alias");
-        this.help = new CommandsHandler().getString(this.name, "help");
-        this.cooldown = new CommandsHandler().getCooldown(this.name);
-        this.category = new Category(new CommandsHandler().getString(this.name, "category"));
-        this.arguments = new CommandsHandler().getString(this.name, "arguments");
+        this.aliases = new CommandsLoader().getArray(this.name, "alias");
+        this.help = new CommandsLoader().getString(this.name, "help");
+        this.cooldown = new CommandsLoader().getCooldown(this.name);
+        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
+        this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "lang", "language (english by default)", false)
                     .addChoice("Deutsch", "de")

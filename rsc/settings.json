@@ -3,7 +3,7 @@
         "beebot",
         "beebot 2",
         "beebot 3",
-        "moderation",
+        "beebot moderation",
         "beebot music"
     ],
 
@@ -86,18 +86,6 @@
         "helpWord": "helpme",
         "maxPrime": "11700",
         "info":"[MAIN] INFO Beebot 3 is turning on to help the elder brother in case he dies!"
-    },
-
-    "beebot 117": {
-
-        "discordToken": "MTEwMjIwODcyMzE5MzE3NjA2NA.GcnUzr.utNr0Had3bjcAX_E03AWnXWNd5wLui04mTI6bc",
-        "embedColor": "#4A5F36",
-        "prefix": "px",
-        "activity": "Just Master Chief | /help or {0}help |",
-        "ownerID": "939876818465488926",
-        "helpWord": "helpme",
-        "maxPrime": "11700",        
-        "info":"[MAIN] INFO Beebot 117 is turning on to help the elder brother in case he dies!"
     },
 
     "beebot music": {

@@ -367,6 +367,8 @@ public class OmegleSession {
 				}
 				active = false;
 				break;
+				default:
+					break;
 			}
 		} catch (Exception e) {
 			// Nothing

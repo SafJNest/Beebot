@@ -45,7 +45,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     /**
      * The current data dragon version.
      */
-    private static String dataDragonVersion = "13.10.1";
+    private static String dataDragonVersion = "13.11.1";
 
     //fammi il coso per likrare una pagina
     /**
