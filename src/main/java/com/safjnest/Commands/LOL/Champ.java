@@ -41,7 +41,7 @@ public class Champ extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
-
+        
         R4J r = LOLHandler.getRiotApi();
         
         String champ = event.getArgs().split(" ")[0]; //samira
