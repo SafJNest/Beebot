@@ -36,6 +36,7 @@ import com.safjnest.Commands.Settings.SetRoom;
 import com.safjnest.Commands.Settings.SetSummoner;
 import com.safjnest.Commands.Settings.SetVoice;
 import com.safjnest.Commands.Settings.SetWelcomeMessage;
+import com.safjnest.SlashCommands.LOL.ChampionSlash;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Admin.ListGuild;
 import com.safjnest.Commands.Admin.Ping;
@@ -165,7 +166,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
-        //builder.forceGuildOnly("474935164451946506");
+        builder.forceGuildOnly("474935164451946506");
 
         GuildSettings gs = new GuildSettings(null, botId, PREFIX);
         builder.setPrefixFunction(event -> {
@@ -241,8 +242,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         }
 
 
-        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("beebot moderation")){
-            builder.addCommand(new Champ());
+        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("beebot moderation")){  
             builder.addCommand(new Summoner());
             builder.addCommand(new FreeChamp());
             builder.addCommand(new GameRank());
@@ -278,7 +278,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new EnableSlash(sch));
         builder.addCommand(new DisableSlash());
         
-
+        builder.addSlashCommand(new ChampionSlash());
         String name = Thread.currentThread().getName();
         jda.addEventListener(new ListenerAdapter() {
             @Override

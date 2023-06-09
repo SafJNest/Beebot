@@ -80,27 +80,9 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             JSONArray file = (JSONArray) parser.parse(json);
 
             for(int i = 0; i < 5; i++){
-                String nPage = "";
                 JSONObject page = (JSONObject)file.get(i);
-                switch(String.valueOf(page.get("id"))){
-                    case "8000":
-                        nPage = "0";
-                        break;
-                    case "8100":
-                        nPage = "1";
-                        break;
-                    case "8200":
-                        nPage = "2";
-                        break;
-                    case "8400":
-                        nPage = "3";
-                        break;
-                    case "8300":;
-                        nPage = "4";
-                        break;
-                }
-                runesHandler.put(nPage, new PageRunes(
-                    nPage,
+                runesHandler.put(String.valueOf(page.get("id")), new PageRunes(
+                    String.valueOf(page.get("id")),
                     String.valueOf(page.get("id")),
                     String.valueOf(page.get("key")),
                     String.valueOf(page.get("icon")),
@@ -120,7 +102,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
                             String.valueOf(rune.get("shortDesc")),
                             String.valueOf(rune.get("longDesc"))
                         );
-                        runesHandler.get(nPage).insertRune(r.getId(), r);
+                        runesHandler.get(String.valueOf(page.get("id"))).insertRune(r.getId(), r);
                     }
                 }
             }
