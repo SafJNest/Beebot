@@ -75,7 +75,7 @@ public class SlashCommandsHandler {
             slashCommands.put(new FreeChampSlash().getName(), new FreeChampSlash());
             slashCommands.put(new GameRankSlash(riotApi, sql).getName(), new GameRankSlash(riotApi, sql));
             slashCommands.put(new LastMatchesSlash(riotApi, sql).getName(), new LastMatchesSlash(riotApi, sql));
-            slashCommands.put(new RuneSlash().getName(), new RuneSlash());
+            slashCommands.put(new ChampionSlash().getName(), new ChampionSlash());
             slashCommands.put(new SetSummonerSlash(riotApi, sql).getName(), new SetSummonerSlash(riotApi, sql));
             slashCommands.put(new PrimeSlash(maxPrime).getName(), new PrimeSlash(maxPrime));
             slashCommands.put(new DiceSlash().getName(), new DiceSlash());

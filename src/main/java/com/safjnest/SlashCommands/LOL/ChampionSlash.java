@@ -19,15 +19,10 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.Charset;
-
-import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
 /**
@@ -67,26 +62,24 @@ public class ChampionSlash extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
-        R4J r = LOLHandler.getRiotApi();
         
-        String champ = "";
         String champName = event.getOption("champ").getAsString();
         String lane = event.getOption("lane").getAsString();
         String laneFormatName =  "";
         switch(lane){
-            case "top":
+            case "TOP":
                 laneFormatName = "Top Lane";
                 break;
-            case "jungle":
+            case "JUNGLE":
                 laneFormatName = "Jungle";
                 break;
-            case "middle":
+            case "MID":
                 laneFormatName = "Mid Lane";
                 break;
-            case "bottom":
+            case "ADC":
                 laneFormatName = "ADC";
                 break;
-            case "sup":
+            case "SUPPORT":
                 laneFormatName = "Support";
                 break;
         }
@@ -107,15 +100,11 @@ public class ChampionSlash extends SlashCommand {
             "Rumble", "Ryze", "Samira", "Sejuani", "Senna", "Seraphine", "Sett", "Shaco", "Shen", "Shyvana", "Singed",
             "Sion", "Sivir", "Skarner", "Sona", "Soraka", "Swain", "Sylas", "Syndra", "Tahm Kench", "Taliyah", "Talon",
             "Taric", "Teemo", "Thresh", "Tristana", "Trundle", "Tryndamere", "Twisted Fate", "Twitch", "Udyr", "Urgot",
-            "Varus", "Vayne", "Veigar", "Vel'Koz", "Vi", "Viktor", "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah",
+            "Varus", "Vayne", "Veigar", "Vel'Koz", "Vi", "Viego","Viktor", "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah",
             "Xerath", "Xin Zhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Ziggs", "Zilean", "Zoe", "Zyra"};
         
         champName = findChampion(champName, champions);
-        for(StaticChampion c : r.getDDragonAPI().getChampions().values()){
-            if(c.getName().equalsIgnoreCase(champName))
-                champ = String.valueOf(c.getId());
-            
-        }
+    
 
         String msg = "";
         try {
@@ -142,13 +131,9 @@ public class ChampionSlash extends SlashCommand {
                     while ((responseLine = br.readLine()) != null) {
                         response.append(responseLine.trim());
                     }
-                    System.out.println(response.toString());
                     json = response.toString();
                 }
                 
-            for(String s : getRunes(json)){
-                System.out.println(s);
-            }
             
             EmbedBuilder eb = new EmbedBuilder(); 
             eb = new EmbedBuilder(); 
@@ -156,40 +141,119 @@ public class ChampionSlash extends SlashCommand {
             eb.setDescription("**Highest Win Rate** info for " + LOLHandler.getFormattedEmoji(event.getJDA(), champName) + " " + champName + " " + LOLHandler.getFormattedEmoji(event.getJDA(), laneFormatName) + " **" + laneFormatName + "**");
             eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
             
-
-            /*8010
-            9111
-            9103
-            8299
-            8139
-            8135
-            5005
-            5008
-            5002
+            String runes[] = getRunes(json);
+            String roots[] = getRunesRoot(json);
+            String skills[] = getSkillsOrder(json);
+            String spells[] = getSummonerSpell(json);
+            String[] starter = getBuild(json, 0);
+            String[] core = getBuild(json, 2);
+            String[] fullBuild = getBuild(json, 3);
+            String[] situational = getBuild(json, 4);
             
 
-            
+
+            /*
+             *  Skill Order
+             */
+            msg = "​";
+            for(int i = 0; i < 18; i++){
+                switch (skills[i]){
+                    case "1":
+                        msg += "Q -> ";
+                        break;
+                    case "2":
+                        msg += "W -> ";
+                        break;
+                    case "3":  
+                        msg +=  "E -> ";
+                        break;
+                    case "4":      
+                        msg += " R -> ";
+                        break;
+
+                }
+            }
+            /*
+             *  Summoner Spells
+             */
+
+            eb.addField("**Summoner Spells**", LOLHandler.getFormattedEmoji(event.getJDA(), spells[0] + "_") + " " + LOLHandler.getFormattedEmoji(event.getJDA(), spells[1] + "_"), false);
+
+
+            eb.addField("**Skills Order**", msg.substring(0, msg.length()-4), false);
+            /*
+             * First Runes Root
+             */
             msg = "​\n";
             for(int i = 0; i < 4; i++){
-                msg += LOLHandler.getFormattedEmoji(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
+                msg += LOLHandler.getFormattedEmoji(event.getJDA(), runes[i]) + " " + LOLHandler.getRunesHandler().get(roots[0]).getRune(runes[i]).getName() + "\n";
             }
-            for(String id : getPrin(json, "pri")){
-                msg += LOLHandler.getFormattedEmoji(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getRune(id).getName() + "\n";
-            }
-            String support = LOLHandler.getRunesHandler().get(getRunePage(json, "pri")).getName();
+            String support = LOLHandler.getRunesHandler().get(roots[0]).getName();
             eb.addField(LOLHandler.getFormattedEmoji(event.getJDA(), support) + " " + support, msg, true);
 
-            msg = "​\n"; //!!there is a 0 width character before the /n
-            for(String id : getPrin(json, "sec")){
-                msg += LOLHandler.getFormattedEmoji(event.getJDA(), id) + " " + LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getRune(id).getName() + "\n";
+            /*
+             * Second Runes Root
+             */
+            msg = "​\n";
+            for(int i = 4; i < 6; i++){
+                msg += LOLHandler.getFormattedEmoji(event.getJDA(), runes[i]) + " " + LOLHandler.getRunesHandler().get(roots[1]).getRune(runes[i]).getName() + "\n";
             }
-            support = LOLHandler.getRunesHandler().get(getRunePage(json, "sec")).getName();
+            support = LOLHandler.getRunesHandler().get(roots[1]).getName();
             eb.addField(LOLHandler.getFormattedEmoji(event.getJDA(), support) + " " + support, msg, true);
-            
+
+            /*
+             * Stats
+             */
+            msg = "​\n";
+            msg += LOLHandler.getFormattedEmoji(event.getJDA(), runes[6]) + " Offense\n";
+            msg += LOLHandler.getFormattedEmoji(event.getJDA(), runes[7]) + " Flex\n";
+            msg += LOLHandler.getFormattedEmoji(event.getJDA(), runes[8]) + " Defense\n";
+            eb.addField("**Shard**", msg, true);
+
+
+            /*
+             * Starter Items
+             */
+            msg = "​";
+            for(int i = 0; i < starter.length; i++){
+                msg += LOLHandler.getFormattedEmoji(event.getJDA(), starter[i]) + " " + LOLHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(starter[i])).getName() + "\n";
+            }
+            eb.addField("**Starter Items**", msg, true);
+
+            /*
+             * Core Items
+             */
+            msg = "​";
+            for(int i = 0; i < core.length; i++){
+                msg += LOLHandler.getFormattedEmoji(event.getJDA(), core[i])  + " " + LOLHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(core[i])).getName() + "\n";
+            }
+            eb.addField("**Core Items**", msg, true);
+
+            /*
+             * Full Build
+             */
+
+            msg = "​";
+            for(int i = 0; i < fullBuild.length; i++){
+                msg += LOLHandler.getFormattedEmoji(event.getJDA(), fullBuild[i])  + " " + LOLHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(fullBuild[i])).getName() + "\n";
+            }
+
+            eb.addField("**Full Build**", msg, true);
+
+            /*
+             * Situational Items
+             */
+            msg = "​";
+            for(int i = 0; i < situational.length; i++){
+                msg += LOLHandler.getFormattedEmoji(event.getJDA(), situational[i])  + " " + LOLHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
+            }
+            eb.addField("**Situational Items**", msg, true);
+
+
             eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
             ));
-            */
+            
             
             champName = LOLHandler.transposeChampionNameForDataDragon(champName);
             eb.setThumbnail(LOLHandler.getChampionProfilePic(champName));
@@ -199,6 +263,7 @@ public class ChampionSlash extends SlashCommand {
             event.getHook().editOriginalEmbeds(eb.build()).queue();
             
         } catch (Exception e) { 
+            e.printStackTrace();
             event.getHook().editOriginal("Could be some problem with our database or lack of data due to new patch. Try again later.").queue();
         } 
 
@@ -220,6 +285,87 @@ public class ChampionSlash extends SlashCommand {
                 result[i] = String.valueOf(runes.get(i)); 
             } 
             return result;       
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            return null; 
+        }
+    }
+
+    public String[] getRunesRoot(String json){
+        String[] roots = new String[2];
+        JSONParser parser = new JSONParser(); 
+        try {
+            JSONObject file = (JSONObject) parser.parse(json); 
+            JSONObject summary = (JSONObject) file.get("data"); 
+            JSONObject keria = (JSONObject) summary.get("lol"); 
+            JSONObject win = (JSONObject) keria.get("champion"); 
+            JSONObject set = (JSONObject) win.get("build"); 
+            JSONObject perks = (JSONObject) set.get("perks"); 
+            roots[0] = perks.get("style").toString(); 
+            roots[1] = perks.get("subStyle").toString(); 
+            return roots;       
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            return null; 
+        }
+    }
+
+    public String[] getSummonerSpell(String json){
+        String[] spells = new String[2];
+        JSONParser parser = new JSONParser(); 
+        try {
+            JSONObject file = (JSONObject) parser.parse(json); 
+            JSONObject summary = (JSONObject) file.get("data"); 
+            JSONObject keria = (JSONObject) summary.get("lol"); 
+            JSONObject win = (JSONObject) keria.get("champion"); 
+            JSONObject set = (JSONObject) win.get("build"); 
+            JSONArray spellsJson = (JSONArray) set.get("spells"); 
+            for (int i = 0; i < spellsJson.size(); i++) { 
+                spells[i] = String.valueOf(spellsJson.get(i)); 
+            } 
+            return spells;
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            return null; 
+        }
+    }
+
+     public String[] getSkillsOrder(String json){
+        String[] skills = new String[18];
+        JSONParser parser = new JSONParser(); 
+        try {
+            JSONObject file = (JSONObject) parser.parse(json); 
+            JSONObject summary = (JSONObject) file.get("data"); 
+            JSONObject keria = (JSONObject) summary.get("lol"); 
+            JSONObject win = (JSONObject) keria.get("champion"); 
+            JSONObject set = (JSONObject) win.get("build"); 
+            JSONArray skillsJson = (JSONArray) set.get("skillOrder"); 
+            for (int i = 0; i < skillsJson.size(); i++) { 
+                skills[i] = String.valueOf(skillsJson.get(i)); 
+            } 
+            return skills;
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            return null; 
+        }
+    }
+
+    public String[] getBuild(String json, int index){
+        JSONParser parser = new JSONParser(); 
+        try {
+            JSONObject file = (JSONObject) parser.parse(json); 
+            JSONObject summary = (JSONObject) file.get("data"); 
+            JSONObject keria = (JSONObject) summary.get("lol"); 
+            JSONObject win = (JSONObject) keria.get("champion"); 
+            JSONObject set = (JSONObject) win.get("build"); 
+            JSONArray items = (JSONArray) set.get("items"); 
+            JSONObject build = (JSONObject) items.get(index); 
+            JSONArray starter = (JSONArray) build.get("items");
+            String[] result = new String[starter.size()];
+            for (int i = 0; i < starter.size(); i++) { 
+                result[i] = String.valueOf(starter.get(i)); 
+            }
+            return result;
         } catch (Exception e) { 
             e.printStackTrace(); 
             return null; 

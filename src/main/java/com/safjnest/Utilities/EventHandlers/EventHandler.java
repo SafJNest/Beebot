@@ -61,7 +61,6 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        /*
         SlashCommandEvent e = new SlashCommandEvent(event, null);    
         SlashCommand sc = sch.getCommand(e.getName());
         try {
@@ -69,7 +68,6 @@ public class EventHandler extends ListenerAdapter {
             executeMethod.setAccessible(true);
             executeMethod.invoke(sc, e);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException exp) {}
-        */
     }
     
 
