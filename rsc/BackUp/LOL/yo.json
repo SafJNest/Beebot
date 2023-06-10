@@ -40,7 +40,7 @@
             "patch": "13.11",
             "perks": {
               "IDs": [8010, 9111, 9103, 8299, 8139, 8135, 5005, 5008, 5002],
-              "style": 8000,
+              "style": 8000, 
               "subStyle": 8100,
               "__typename": "LolChampionBuildPerk"
             },
