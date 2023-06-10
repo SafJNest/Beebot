@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -46,7 +46,7 @@ public class Summoner extends Command {
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         if(args.equals("")){
-            s = LOLHandler.getSummonerFromDB(event.getAuthor().getId());
+            s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
             if(s == null){
                 event.reply("You dont have a Riot account connected, for more information /help setUser");
                 return;
@@ -57,13 +57,13 @@ public class Summoner extends Command {
             
         }
         else if(event.getMessage().getMentions().getMembers().size() != 0){
-            s = LOLHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
+            s = RiotHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
             if(s == null){
                 event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
                 return;
             }
         }else{
-            s = LOLHandler.getSummonerByName(args);
+            s = RiotHandler.getSummonerByName(args);
             if(s == null){
                 event.reply("Didn't find this user. ");
                 return;
@@ -73,7 +73,7 @@ public class Summoner extends Command {
         
         EmbedBuilder builder = createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s);
         
-        if(searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+        if(searchByUser && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
             return;
         }
@@ -90,7 +90,7 @@ public class Summoner extends Command {
         builder.setColor(Color.decode(
             BotSettingsHandler.map.get(id).color
         ));
-        builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
+        builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
         String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + s.getAccountId() + "';";
         String userId = DatabaseHandler.getSql().getString(query, "discord_id");
         if(userId != null){
@@ -101,14 +101,14 @@ public class Summoner extends Command {
         }else{
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
         }
-        builder.addField("5v5 Ranked Solo", LOLHandler.getSoloQStats(jda, s), true);
-        builder.addField("5v5 Ranked Flex Queue", LOLHandler.getFlexStats(jda, s), true);
+        builder.addField("5v5 Ranked Solo", RiotHandler.getSoloQStats(jda, s), true);
+        builder.addField("5v5 Ranked Flex Queue", RiotHandler.getFlexStats(jda, s), true);
         String masteryString = "";
         for(int i = 1; i < 4; i++)
-            masteryString += LOLHandler.getMastery(jda, s, i) + "\n";
+            masteryString += RiotHandler.getMastery(jda, s, i) + "\n";
         
         builder.addField("Top 3 Champ", masteryString, false); 
-        builder.addField("Activity", LOLHandler.getActivity(jda, s), true);
+        builder.addField("Activity", RiotHandler.getActivity(jda, s), true);
         return builder;
     }
 

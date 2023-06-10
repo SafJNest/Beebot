@@ -12,7 +12,7 @@ import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -69,7 +69,7 @@ public class MemberInfoSlash extends SlashCommand{
             lolAccounts = user.getName() + " has not connected a riot account.";
         }else{
             for(String s : accounts)
-                lolAccounts += LOLHandler.getSummonerBySummonerId(s).getName() + " - ";
+                lolAccounts += RiotHandler.getSummonerBySummonerId(s).getName() + " - ";
             lolAccounts = lolAccounts.substring(0, lolAccounts.length() - 3);
         }
 

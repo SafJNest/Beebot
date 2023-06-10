@@ -13,6 +13,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import com.safjnest.Utilities.DatabaseHandler;
+import com.safjnest.Utilities.LOL.Runes.PageRunes;
+import com.safjnest.Utilities.LOL.Runes.Rune;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -31,7 +33,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  */
 
- public class LOLHandler {
+ public class RiotHandler {
     
     /**
      * The main object for make requests and get responses from the Riot API.
@@ -54,8 +56,28 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
      */
     private static String runesURL = "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/data/en_US/runesReforged.json";
 
-    public LOLHandler(R4J riotApi){
-        LOLHandler.riotApi = riotApi;
+    /*
+     * All the champions name in the game.
+     */
+    private static String[] champions = {"Aatrox", "Ahri", "Akali", "Alistar", "Amumu", "Anivia", "Annie", "Aphelios", "Ashe",
+            "Aurelion Sol", "Azir", "Bard", "Blitzcrank", "Brand", "Braum", "Caitlyn", "Camille", "Cassiopeia",
+            "Cho'Gath", "Corki", "Darius", "Diana", "Dr. Mundo", "Draven", "Ekko", "Elise", "Evelynn", "Ezreal",
+            "Fiddlesticks", "Fiora", "Fizz", "Galio", "Gangplank", "Garen", "Gnar", "Gragas", "Graves", "Hecarim",
+            "Heimerdinger", "Illaoi", "Irelia", "Ivern", "Janna", "Jarvan IV", "Jax", "Jayce", "Jhin", "Jinx",
+            "Kai'Sa", "Kalista", "Karma", "Karthus", "Kassadin", "Katarina", "Kayle", "Kayn", "Kennen", "Kha'Zix",
+            "Kindred", "Kled", "Kog'Maw", "LeBlanc", "Lee Sin", "Leona", "Lillia", "Lissandra", "Lucian", "Lulu",
+            "Lux", "Malphite", "Malzahar", "Maokai", "Master Yi", "Milio","Miss Fortune", "Mordekaiser", "Morgana", "Nami",
+            "Nasus", "Nautilus", "Neeko", "Nidalee", "Nocturne", "Nunu & Willump", "Olaf", "Orianna", "Ornn", "Pantheon",
+            "Poppy", "Pyke", "Qiyana", "Quinn", "Rakan", "Rammus", "Rek'Sai", "Rell", "Renekton", "Rengar", "Riven",
+            "Rumble", "Ryze", "Samira", "Sejuani", "Senna", "Seraphine", "Sett", "Shaco", "Shen", "Shyvana", "Singed",
+            "Sion", "Sivir", "Skarner", "Sona", "Soraka", "Swain", "Sylas", "Syndra", "Tahm Kench", "Taliyah", "Talon",
+            "Taric", "Teemo", "Thresh", "Tristana", "Trundle", "Tryndamere", "Twisted Fate", "Twitch", "Udyr", "Urgot",
+            "Varus", "Vayne", "Veigar", "Vel'Koz", "Vi", "Viego","Viktor", "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah",
+            "Xerath", "Xin Zhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Ziggs", "Zilean", "Zoe", "Zyra"};
+
+
+    public RiotHandler(R4J riotApi){
+        RiotHandler.riotApi = riotApi;
         loadRunes();
         System.out.println("[R4J-Runes] INFO Runes Successful! Ryze is happy :)");
     }
@@ -209,8 +231,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         try {
             for(ChampionMastery mastery : s.getChampionMasteries()){
                 if(cont == nChamp){
-                    masteryString += (mastery.getChampionLevel() > 4) ? LOLHandler.getFormattedEmoji(jda, "mastery" + mastery.getChampionLevel()) + " " : "";
-                    masteryString +=  LOLHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
+                    masteryString += (mastery.getChampionLevel() > 4) ? RiotHandler.getFormattedEmoji(jda, "mastery" + mastery.getChampionLevel()) + " " : "";
+                    masteryString +=  RiotHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
                                     + " **[" + mastery.getChampionLevel()+ "]** " 
                                     + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName() 
                                     + " " + df.format(mastery.getChampionPoints()) 
@@ -269,6 +291,11 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         }
     }
 
+    /**
+     * Get the champion name that is more similar to the input such as "Kha'Zix" -> "Khazix"
+     * @param champName
+     * @return
+     */
     public static String transposeChampionNameForDataDragon(String champName) {
         champName = champName.replace(".", "");
         champName = champName.replace("i'S", "is");
@@ -280,5 +307,66 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         champName = champName.replace(" & Willump", "");
         champName = champName.replace(" ", "");
         return champName;
+    }
+
+    /**
+     * Get the champion name that is more similar to the input such as "mundo" -> "Dr. Mundo"
+     * @param input
+     * @return String
+     */
+    public static String findChampion(String input) {
+        double maxSimilarity = 0;
+        String championName = "";
+        
+        for (String champion : champions) {
+            double similarity = calculateSimilarity(input, champion);
+            if (similarity > maxSimilarity) {
+                maxSimilarity = similarity;
+                championName = champion;
+            }
+        }
+        
+        return championName;
+    }
+    
+    private static double calculateSimilarity(String s1, String s2) {
+        String longer = s1, shorter = s2;
+        if (s1.length() < s2.length()) {
+            longer = s2;
+            shorter = s1;
+        }
+        int longerLength = longer.length();
+        if (longerLength == 0) {
+            return 1.0;
+        }
+        return (longerLength - editDistance(longer, shorter)) / (double) longerLength;
+    }
+    
+    private static int editDistance(String s1, String s2) {
+        s1 = s1.toLowerCase();
+        s2 = s2.toLowerCase();
+    
+        int[] costs = new int[s2.length() + 1];
+        for (int i = 0; i <= s1.length(); i++) {
+            int lastValue = i;
+            for (int j = 0; j <= s2.length(); j++) {
+                if (i == 0) {
+                    costs[j] = j;
+                } else {
+                    if (j > 0) {
+                        int newValue = costs[j - 1];
+                        if (s1.charAt(i - 1) != s2.charAt(j - 1)) {
+                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                        }
+                        costs[j - 1] = lastValue;
+                        lastValue = newValue;
+                    }
+                }
+            }
+            if (i > 0) {
+                costs[s2.length()] = lastValue;
+            }
+        }
+        return costs[s2.length()];
     }
 }

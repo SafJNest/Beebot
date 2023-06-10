@@ -15,7 +15,7 @@ import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
@@ -27,7 +27,7 @@ public class App {
     private static SQL sql;
     private static R4J riotApi;
     private static OpenAIHandler openAIHandler;
-    private static LOLHandler lolHandler;
+    private static RiotHandler lolHandler;
     private static DatabaseHandler dbh;
     private static BotSettingsHandler bs;
 
@@ -76,7 +76,7 @@ public class App {
         
         
         dbh = new DatabaseHandler(sql);
-        lolHandler = new LOLHandler(riotApi);
+        lolHandler = new RiotHandler(riotApi);
 
         dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         lolHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();

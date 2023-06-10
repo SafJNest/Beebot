@@ -10,7 +10,7 @@ import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Commands.SlashCommandsHandler;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -159,7 +159,7 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
         if (event.getComponentId().equals("rank-select")) {
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LOLHandler.getSummonerBySummonerId(event.getValues().get(0));
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerBySummonerId(event.getValues().get(0));
             event.deferReply().addEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build()).queue();
         }
     }

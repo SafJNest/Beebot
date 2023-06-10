@@ -8,7 +8,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -53,7 +53,7 @@ public class GameRank extends Command {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
 
         if (args.equals("")) {
-            s = LOLHandler.getSummonerFromDB(event.getAuthor().getId());
+            s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
             if (s == null) {
                 event.reply("You dont have a Riot account connected, for more information /help setUser");
                 return;
@@ -63,14 +63,14 @@ public class GameRank extends Command {
             center = center.asDisabled();
 
         } else if (event.getMessage().getMentions().getMembers().size() != 0) {
-            s = LOLHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
+            s = RiotHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
             if (s == null) {
                 event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName()
                         + " has not connected his Riot account.");
                 return;
             }
         } else {
-            s = LOLHandler.getSummonerByName(args);
+            s = RiotHandler.getSummonerByName(args);
             if (s == null) {
                 event.reply("Didn't find this user. ");
                 return;
@@ -85,8 +85,8 @@ public class GameRank extends Command {
             ArrayList<SelectOption> options = new ArrayList<>();
             for(SpectatorParticipant p : users){
                 Emoji icon = Emoji.fromCustom(
-                    LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
-                    Long.parseLong(LOLHandler.getEmojiId(event.getJDA(), LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
+                    RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
+                    Long.parseLong(RiotHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
                     false);
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(
@@ -100,7 +100,7 @@ public class GameRank extends Command {
                 .addOptions(options)
                 .build();
 
-            if (searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
+            if (searchByUser && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
                 MessageCreateAction action = event.getChannel().sendMessageEmbeds(builder.build());
                 action.addComponents(ActionRow.of(menu));
                 action.addComponents(ActionRow.of(left, center, right));
@@ -111,7 +111,7 @@ public class GameRank extends Command {
                 
         } catch (Exception e) {
             builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users);
-            if (searchByUser && LOLHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
+            if (searchByUser && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
                 event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
                 return;
             }
@@ -126,23 +126,23 @@ public class GameRank extends Command {
             builder.setTitle(s.getName() + "'s Game");
             builder.setColor(Color.decode(
                     BotSettingsHandler.map.get(jda.getSelfUser().getId()).color));
-            builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
+            builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             String blueSide = "";
             String redSide = "";
             for (SpectatorParticipant partecipant : users) {
-                String sum = LOLHandler.getFormattedEmoji(
+                String sum = RiotHandler.getFormattedEmoji(
                         jda,
-                        LOLHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
+                        RiotHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
                         + " " + partecipant.getSummonerName();
                 String stats = "";
                 if (s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) {
 
-                    stats = LOLHandler.getFlexStats(jda, LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
+                    stats = RiotHandler.getFlexStats(jda, RiotHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
                     stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "
                             + stats.substring(stats.lastIndexOf(":") + 1);
 
                 } else {
-                    stats = LOLHandler.getSoloQStats(jda, LOLHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
+                    stats = RiotHandler.getSoloQStats(jda, RiotHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
                     stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "
                             + stats.substring(stats.lastIndexOf(":") + 1);
                 }
@@ -167,7 +167,7 @@ public class GameRank extends Command {
             builder.setTitle(s.getName() + "'s Game");
             builder.setColor(Color.decode(
                     BotSettingsHandler.map.get(jda.getSelfUser().getId()).color));
-            builder.setThumbnail(LOLHandler.getSummonerProfilePic(s));
+            builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             builder.setDescription("This user is not in a game.");
             return builder;
         }

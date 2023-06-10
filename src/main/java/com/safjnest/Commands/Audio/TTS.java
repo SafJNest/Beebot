@@ -1,4 +1,3 @@
-//TODO RIFARE QUESTA CLASSE DI MERDA INGUARADFBILE :D | tu sei inguardabile
 package com.safjnest.Commands.Audio;
 
 import java.awt.Color;

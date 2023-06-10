@@ -6,7 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -49,7 +49,7 @@ public class SummonerSlash extends SlashCommand {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         event.deferReply(false).queue();
         if(event.getOption("user") == null){
-            s = LOLHandler.getSummonerFromDB(event.getUser().getId());
+            s = RiotHandler.getSummonerFromDB(event.getUser().getId());
             if(s == null){
                 event.getHook().editOriginal("You dont have connected a Riot account, for more information /help setUser").queue();
                 return;
@@ -58,7 +58,7 @@ public class SummonerSlash extends SlashCommand {
             center = Button.primary("lol-center", s.getName());
             center = center.asDisabled();
         }else{
-            s = LOLHandler.getSummonerByName(event.getOption("user").getAsString());
+            s = RiotHandler.getSummonerByName(event.getOption("user").getAsString());
             if(s == null){
                 event.getHook().editOriginal("Didn't find this user. ").queue();
                 return;
@@ -68,7 +68,7 @@ public class SummonerSlash extends SlashCommand {
         
         EmbedBuilder builder = Summoner.createEmbed(event.getJDA(),event.getJDA().getSelfUser().getId(), s);
         
-        if(searchByUser && LOLHandler.getNumberOfProfile(event.getUser().getId()) > 1){
+        if(searchByUser && RiotHandler.getNumberOfProfile(event.getUser().getId()) > 1){
             WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),s).build());
             action.setComponents(ActionRow.of(left, center, right)).queue();
             return;
