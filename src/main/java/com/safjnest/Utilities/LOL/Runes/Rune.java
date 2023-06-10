@@ -1,11 +1,10 @@
-package com.safjnest.Utilities.LOL;
-
+package com.safjnest.Utilities.LOL.Runes;
 
 /**
  * This class is used to store the data of a rune and all of its attributes.
  * 
  * 
- * <p>The runes are loaded from Riot's API and stored in a {@link com.safjnest.Utilities.LOL.LOLHandler#runesHandler list of Rune objects.}</p>
+ * <p>The runes are loaded from Riot's API and stored in a {@link com.safjnest.Utilities.LOL.RiotHandler#runesHandler list of Rune objects.}</p>
  */
 public class Rune {
     /**
