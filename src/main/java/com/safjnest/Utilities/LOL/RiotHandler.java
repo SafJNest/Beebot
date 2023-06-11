@@ -73,7 +73,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             "Sion", "Sivir", "Skarner", "Sona", "Soraka", "Swain", "Sylas", "Syndra", "Tahm Kench", "Taliyah", "Talon",
             "Taric", "Teemo", "Thresh", "Tristana", "Trundle", "Tryndamere", "Twisted Fate", "Twitch", "Udyr", "Urgot",
             "Varus", "Vayne", "Veigar", "Vel'Koz", "Vi", "Viego","Viktor", "Vladimir", "Volibear", "Warwick", "Wukong", "Xayah",
-            "Xerath", "Xin Zhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Ziggs", "Zilean", "Zoe", "Zyra"};
+            "Xerath", "Xin Zhao", "Yasuo", "Yone", "Yorick", "Yuumi", "Zac", "Zed", "Zeri","Ziggs", "Zilean", "Zoe", "Zyra"};
 
 
     public RiotHandler(R4J riotApi){
