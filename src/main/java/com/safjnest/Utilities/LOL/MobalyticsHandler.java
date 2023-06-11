@@ -203,4 +203,57 @@ public class MobalyticsHandler {
         }
     }
 
+
+    public static String getPatch(String json){
+        JSONParser parser = new JSONParser();
+        try {
+            JSONObject file = (JSONObject) parser.parse(json);
+            JSONObject summary = (JSONObject) file.get("data");
+            JSONObject keria = (JSONObject) summary.get("lol");
+            JSONObject win = (JSONObject) keria.get("champion");
+            JSONObject stats = (JSONObject) win.get("stats");
+            JSONArray items = (JSONArray) stats.get("winRateHistory");
+            JSONObject build = (JSONObject) items.get(1);
+            return build.get("x").toString();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String getWinRate(String json){
+        JSONParser parser = new JSONParser();
+        try {
+            JSONObject file = (JSONObject) parser.parse(json);
+            JSONObject summary = (JSONObject) file.get("data");
+            JSONObject keria = (JSONObject) summary.get("lol");
+            JSONObject win = (JSONObject) keria.get("champion");
+            JSONObject stats = (JSONObject) win.get("stats");
+            JSONArray items = (JSONArray) stats.get("winRateHistory");
+            JSONObject build = (JSONObject) items.get(1);
+            return build.get("value").toString();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String getMatchCount(String json){
+        JSONParser parser = new JSONParser();
+        try {
+            JSONObject file = (JSONObject) parser.parse(json);
+            JSONObject summary = (JSONObject) file.get("data");
+            JSONObject keria = (JSONObject) summary.get("lol");
+            JSONObject win = (JSONObject) keria.get("champion");
+            JSONObject set = (JSONObject) win.get("build");
+            JSONObject stats = (JSONObject) set.get("stats");
+            return stats.get("matchCount").toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }

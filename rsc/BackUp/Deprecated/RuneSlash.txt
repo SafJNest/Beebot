@@ -1,3 +1,12 @@
+    "rune":{
+        "alias" : ["runes"],
+        "help"  : "Suggest the most played runes for a specific champion",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [champName] [lane]"
+    },
+
+
+
 package com.safjnest.SlashCommands.LOL;
 
 import java.util.Arrays;
