@@ -11,7 +11,7 @@ import org.json.simple.parser.JSONParser;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
@@ -41,8 +41,8 @@ public class Champ extends Command {
      */
 	@Override
 	protected void execute(CommandEvent event) {
-
-        R4J r = LOLHandler.getRiotApi();
+        
+        R4J r = RiotHandler.getRiotApi();
         
         String champ = event.getArgs().split(" ")[0]; //samira
         String lane = event.getArgs().split(" ")[0];
@@ -57,15 +57,15 @@ public class Champ extends Command {
             url = new URL("https://axe.lolalytics.com/mega/?ep=rune&p=d&v=1&cid="+champ+"&lane="+lane);
             String json = IOUtils.toString(url, Charset.forName("UTF-8"));
             String page =  getRunePage(json, "pri");
-            msg = "**" + LOLHandler.getRunesHandler().get(page).getName() + "**\n";
+            msg = "**" + RiotHandler.getRunesHandler().get(page).getName() + "**\n";
             for(String id : getPrin(json, "pri")){
-                msg+= LOLHandler.getRunesHandler().get(page).getRune(id).getName() + "\n";
+                msg+= RiotHandler.getRunesHandler().get(page).getRune(id).getName() + "\n";
             }
 
             page =  getRunePage(json, "sec");
-            msg += "\n**" + LOLHandler.getRunesHandler().get(page).getName() + "**\n";
+            msg += "\n**" + RiotHandler.getRunesHandler().get(page).getName() + "**\n";
             for(String id : getPrin(json, "sec")){
-                msg+= LOLHandler.getRunesHandler().get(page).getRune(id).getName() + "\n";
+                msg+= RiotHandler.getRunesHandler().get(page).getRune(id).getName() + "\n";
             }
 
             

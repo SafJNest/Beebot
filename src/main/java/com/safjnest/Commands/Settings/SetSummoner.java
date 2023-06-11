@@ -13,7 +13,7 @@ import net.rithms.riot.api.RiotApiException;
 */
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
@@ -58,7 +58,7 @@ public class SetSummoner extends Command {
                 return;
             }
             for(String id : accountIds){
-                if(LOLHandler.getSummonerByAccountId(id).getName().equalsIgnoreCase(summonerName)){
+                if(RiotHandler.getSummonerByAccountId(id).getName().equalsIgnoreCase(summonerName)){
                     query = "DELETE FROM lol_user WHERE account_id = '" + id + "' and discord_id = '" + event.getMember().getId() + "';";
                     sql.runQuery(query);
                     event.reply("Summoner removed");
