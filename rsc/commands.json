@@ -521,18 +521,11 @@
 
 
 
-    "champ":{
-        "alias" : [],
-        "help"  : "WIP",
+    "champion":{
+        "alias" : ["rune", "runes", "champ", "champion", "champs"],
+        "help"  : "Suggests the best build and runes for a champion in a given position.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName]"
-    },
-
-    "rune":{
-        "alias" : ["runes"],
-        "help"  : "Suggest the most played runes for a specific champion",
-        "category" : "League Of Legends",
-        "arguments" : "[CommandName] [champName] [lane]"
     },
 
     "summoner":{

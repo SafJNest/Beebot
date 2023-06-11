@@ -241,8 +241,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         }
 
 
-        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("beebot moderation")){
-            builder.addCommand(new Champ());
+        if(!Thread.currentThread().getName().equals("beebot music") && !Thread.currentThread().getName().equals("beebot moderation")){  
             builder.addCommand(new Summoner());
             builder.addCommand(new FreeChamp());
             builder.addCommand(new GameRank());
@@ -277,7 +276,6 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommand(new PrefixList());
         builder.addCommand(new EnableSlash(sch));
         builder.addCommand(new DisableSlash());
-        
 
         String name = Thread.currentThread().getName();
         jda.addEventListener(new ListenerAdapter() {

@@ -14,7 +14,7 @@ import net.rithms.riot.api.RiotApiException;
 */
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -60,7 +60,7 @@ public class SetSummonerSlash extends SlashCommand {
                     return;
                 }
                 for(String id : accountIds){
-                    if(LOLHandler.getSummonerByAccountId(id).getName().equalsIgnoreCase(event.getOption("sum").getAsString())){
+                    if(RiotHandler.getSummonerByAccountId(id).getName().equalsIgnoreCase(event.getOption("sum").getAsString())){
                         query = "DELETE FROM lol_user WHERE account_id = '" + id + "' and discord_id = '" + event.getMember().getId() + "';";
                         sql.runQuery(query);
                         event.deferReply(false).addContent("Summoner removed").queue();

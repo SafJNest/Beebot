@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -50,7 +50,7 @@ public class FreeChamp extends Command {
 
         String s = "";
         for(StaticChampion ce : c.getFreeChampions())
-            s+=LOLHandler.getFormattedEmoji(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
+            s+=RiotHandler.getFormattedEmoji(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
         
              
         String img = "iconLol.png";

@@ -8,7 +8,7 @@ import com.safjnest.Commands.LOL.GameRank;
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -54,7 +54,7 @@ public class EventButtonHandler extends ListenerAdapter {
             if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                 nameSum = b.getLabel();
         }
-        String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + LOLHandler.getAccountIdByName(nameSum)
+        String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
                 + "';";
         query = "SELECT summoner_id FROM lol_user WHERE discord_id = '"
                 + DatabaseHandler.getSql().getString(query, "discord_id") + "';";
@@ -64,7 +64,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "right":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
                         index = i;
                 }
 
@@ -74,12 +74,12 @@ public class EventButtonHandler extends ListenerAdapter {
                     index += 1;
 
                 center = Button.primary("lol-center",
-                        LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
                 center = center.asDisabled();
                 
                 event.getMessage()
                         .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
+                                RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
                         .setActionRow(left, center, right)
                         .queue();
                 break;
@@ -87,7 +87,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "left":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
                         index = i;
 
                 }
@@ -98,12 +98,12 @@ public class EventButtonHandler extends ListenerAdapter {
                     index -= 1;
 
                 center = Button.primary("lol-center",
-                        LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
                 center = center.asDisabled();
                 
                 event.getMessage()
                         .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
+                                RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
                         .setActionRow(left, center, right)
                         .queue();
                 break;
@@ -122,7 +122,7 @@ public class EventButtonHandler extends ListenerAdapter {
             if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                 nameSum = b.getLabel();
         }
-        String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + LOLHandler.getAccountIdByName(nameSum)
+        String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
                 + "';";
         query = "SELECT summoner_id FROM lol_user WHERE discord_id = '"
                 + DatabaseHandler.getSql().getString(query, "discord_id") + "';";
@@ -136,7 +136,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "right":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
                         index = i;
                 }
 
@@ -146,9 +146,9 @@ public class EventButtonHandler extends ListenerAdapter {
 
                     index += 1;
 
-                s = LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0));
+                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0));
                 center = Button.primary("lol-center",
-                        LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
                 center = center.asDisabled();
 
                 try {
@@ -157,9 +157,9 @@ public class EventButtonHandler extends ListenerAdapter {
                     ArrayList<SelectOption> options = new ArrayList<>();
                     for (SpectatorParticipant p : users) {
                         Emoji icon = Emoji.fromCustom(
-                                LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
-                                Long.parseLong(LOLHandler.getEmojiId(event.getJDA(),
-                                        LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId())
+                                RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
+                                Long.parseLong(RiotHandler.getEmojiId(event.getJDA(),
+                                        RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId())
                                                 .getName())),
                                 false);
                         if (!p.getSummonerId().equals(s.getSummonerId()))
@@ -193,7 +193,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "left":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (LOLHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
                         index = i;
                 }
 
@@ -202,9 +202,9 @@ public class EventButtonHandler extends ListenerAdapter {
                 else
                     index -= 1;
 
-                s = LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0));
+                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0));
                 center = Button.primary("lol-center",
-                        LOLHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
                 center = center.asDisabled();
                 
                 try {
@@ -213,9 +213,9 @@ public class EventButtonHandler extends ListenerAdapter {
                     ArrayList<SelectOption> options = new ArrayList<>();
                     for (SpectatorParticipant p : users) {
                         Emoji icon = Emoji.fromCustom(
-                                LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
-                                Long.parseLong(LOLHandler.getEmojiId(event.getJDA(),
-                                        LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId())
+                                RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
+                                Long.parseLong(RiotHandler.getEmojiId(event.getJDA(),
+                                        RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId())
                                                 .getName())),
                                 false);
                         if (!p.getSummonerId().equals(s.getSummonerId()))

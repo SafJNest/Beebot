@@ -9,7 +9,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Commands.LOL.GameRank;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.LOL.LOLHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -105,8 +105,8 @@ public class GameRankSlash extends SlashCommand {
             ArrayList<SelectOption> options = new ArrayList<>();
             for(SpectatorParticipant p : users){
                 Emoji icon = Emoji.fromCustom(
-                    LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
-                    Long.parseLong(LOLHandler.getEmojiId(event.getJDA(), LOLHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
+                    RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
+                    Long.parseLong(RiotHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
                     false);
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(
@@ -120,7 +120,7 @@ public class GameRankSlash extends SlashCommand {
                 .addOptions(options)
                 .build();
 
-            if (searchByUser && LOLHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
+            if (searchByUser && RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
                 WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                         s, users).build());
                         action.setComponents(ActionRow.of(menu),
@@ -134,7 +134,7 @@ public class GameRankSlash extends SlashCommand {
         } catch (Exception e) {
 
             builder = GameRank.createEmbed(event.getJDA(), event.getMember().getId(), s, users);
-            if (searchByUser && LOLHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
+            if (searchByUser && RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
                 WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                         s, users).build());
                         action.setComponents(ActionRow.of(left, center, right))
