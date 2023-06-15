@@ -99,7 +99,7 @@ public class MemberInfo extends Command{
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
 
-        eb.addField("Name", "```" + user.getAsTag() + "```", true);
+        eb.addField("Name", "```" + user.getName() + "```", true);
 
         eb.addField("Nickname", "```"
                     + (member.getNickname() == null

@@ -95,7 +95,7 @@ public class Summoner extends Command {
         String userId = DatabaseHandler.getSql().getString(query, "discord_id");
         if(userId != null){
             User theGuy = jda.getUserById(userId);
-            builder.addField("User:", theGuy.getName() + "#" + theGuy.getDiscriminator(), true);
+            builder.addField("User:", theGuy.getName(), true);
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
             builder.addBlankField(true);
         }else{

@@ -73,8 +73,6 @@ public class App {
         );
 
         
-        
-        
         dbh = new DatabaseHandler(sql);
         lolHandler = new RiotHandler(riotApi);
 
