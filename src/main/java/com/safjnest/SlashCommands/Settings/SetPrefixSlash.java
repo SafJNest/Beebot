@@ -6,7 +6,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.Permission;
@@ -41,6 +40,6 @@ public class SetPrefixSlash extends SlashCommand{
         else
             event.deferReply(true).addContent("Error").queue();
         
-        gs.saveData(new GuildData(event.getGuild().getIdLong(), event.getOption("prefix").getAsString()));
+        gs.getServer(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString());
     }
 }

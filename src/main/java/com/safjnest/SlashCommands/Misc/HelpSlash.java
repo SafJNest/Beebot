@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -33,8 +32,7 @@ public class HelpSlash extends SlashCommand {
      * Default constructor for the class.
      */
     GuildSettings gs;
-    private Map<String, SlashCommand> commands2;
-    public HelpSlash(GuildSettings gs, Map<String, SlashCommand> commands2) {
+    public HelpSlash(GuildSettings gs) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -44,8 +42,6 @@ public class HelpSlash extends SlashCommand {
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "command", "Name of the command you want the information about", false));
         this.gs = gs;
-        this.commands2 = commands2;
-        
     }
     /**
      * This method is called every time a member executes the command.
@@ -56,7 +52,7 @@ public class HelpSlash extends SlashCommand {
         String command = (event.getOption("command") == null)? "" : event.getOption("command").getAsString();
         EmbedBuilder eb = new EmbedBuilder();
         HashMap<String, ArrayList<SlashCommand>> commands = new HashMap<>();
-        for (SlashCommand e : commands2.values()) {
+        for (SlashCommand e : event.getClient().getSlashCommands()) {
             if(!e.isHidden() || PermissionHandler.isUntouchable(event.getMember().getId())){
                 if(!commands.containsKey(e.getCategory().getName()))
                     commands.put(e.getCategory().getName(), new ArrayList<SlashCommand>());

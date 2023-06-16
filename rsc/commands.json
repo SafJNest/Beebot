@@ -224,6 +224,13 @@
         "arguments" : "[CommandName] (#channel) | [message]"
     },
 
+    "toggleexpsystem":{
+        "alias" : ["delete", "ds", "forget"],
+        "help"  : "Toggle the exp system ON or OFF",
+        "category" : "Settings",
+        "arguments" : "[CommandName]"
+    },
+
 
 
 
