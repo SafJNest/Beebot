@@ -13,15 +13,17 @@ public class GuildData {
     private Long id;
     /**Prefix Server */
     private String prefix;
-
+    /**Exp System */
+    private boolean expSystem;
     /**
      * default constructor
      * @param id
      * @param prefix
      */
-    public GuildData(Long id, String prefix) {
+    public GuildData(Long id, String prefix, boolean expSystem) {
         this.id = id;
         this.prefix = prefix;
+        this.expSystem = expSystem;
     }
 
     public Long getId() {
@@ -31,4 +33,18 @@ public class GuildData {
     public String getPrefix() {
         return prefix;
     }
+
+    public boolean getExpSystem() {
+        return expSystem;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
+
+    public void setExpSystem(boolean expSystem) {
+        this.expSystem = expSystem;
+    }
+
+    
 }

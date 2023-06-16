@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,10 +40,9 @@ import net.dv8tion.jda.api.managers.AudioManager;
  */
 public class PlayYoutubeSlash extends SlashCommand {
     private String youtubeApiKey;
-    private HashMap<String,String> tierOneLink;
     private PlayerManager pm;
 
-    public PlayYoutubeSlash(String youtubeApiKey, HashMap<String,String> tierOneLink){
+    public PlayYoutubeSlash(String youtubeApiKey){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -54,7 +52,6 @@ public class PlayYoutubeSlash extends SlashCommand {
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "video", "Link or video name", true));
         this.youtubeApiKey = youtubeApiKey;
-        this.tierOneLink = tierOneLink;
     }
 
     public static String getVideoIdFromYoutubeUrl(String youtubeUrl) {
@@ -159,9 +156,6 @@ public class PlayYoutubeSlash extends SlashCommand {
         eb.setDescription("[" + pm.getPlayer().getPlayingTrack().getInfo().title + "](" + pm.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + pm.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
         event.deferReply(false).addEmbeds(eb.build()).queue();
-        
-        if(tierOneLink.containsKey(pm.getPlayer().getPlayingTrack().getIdentifier()))
-            event.deferReply().addContent(tierOneLink.get(pm.getPlayer().getPlayingTrack().getIdentifier())).queue();
 	
     }
 }

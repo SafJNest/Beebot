@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
+import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -24,12 +25,15 @@ public class EventHandlerBeebot extends ListenerAdapter {
      * The ExpSystem object that handles the exp system.
      */
     private ExpSystem farm;
+    
+    private GuildSettings settings;
 
     /**
      * Constructor for the TheListenerBeebot class.
      */
-    public EventHandlerBeebot() {
+    public EventHandlerBeebot(GuildSettings settings) {
         farm = new ExpSystem();
+        this.settings = settings;
     }
 
     @Override
@@ -37,6 +41,9 @@ public class EventHandlerBeebot extends ListenerAdapter {
         if (e.getAuthor().isBot())
             return;
 
+        if (!settings.getServer(e.getGuild().getId()).getExpSystem())
+            return;	
+        
         int lvl = farm.receiveMessage(e.getAuthor().getId(), e.getGuild().getId());
         if (lvl != -1) {
             User newGuy = e.getAuthor();

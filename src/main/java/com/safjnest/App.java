@@ -21,7 +21,6 @@ import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
 
 public class App {
-
     public static ArrayList<Thread> botsArr = new ArrayList<>(); 
     private static TTSHandler tts;
     private static SQL sql;

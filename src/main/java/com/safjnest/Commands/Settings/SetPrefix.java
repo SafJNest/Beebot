@@ -4,7 +4,6 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Commands.CommandsLoader;
-import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.Permission;
@@ -41,6 +40,6 @@ public class SetPrefix extends Command{
         else
             event.reply("Error");
         
-        gs.saveData(new GuildData(event.getGuild().getIdLong(), event.getArgs()));
+        gs.getServer(event.getGuild().getId()).setPrefix(event.getArgs());
     }
 }

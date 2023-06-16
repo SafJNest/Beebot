@@ -1,15 +1,10 @@
 package com.safjnest.Utilities.EventHandlers;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-import com.jagrosh.jdautilities.command.SlashCommand;
-import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Commands.SlashCommandsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.entities.User;
@@ -21,7 +16,6 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
@@ -39,11 +33,9 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
  */
 public class EventHandler extends ListenerAdapter {
     private SQL sql;
-    private SlashCommandsHandler sch;
 
-    public EventHandler(SQL sql, SlashCommandsHandler sch) {
+    public EventHandler(SQL sql) {
         this.sql = sql;
-        this.sch = sch;
     }
 
     /**
@@ -57,19 +49,6 @@ public class EventHandler extends ListenerAdapter {
             e.getGuild().getAudioManager().closeAudioConnection();
         }
     }
-
-
-    @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        SlashCommandEvent e = new SlashCommandEvent(event, null);    
-        SlashCommand sc = sch.getCommand(e.getName());
-        try {
-            Method executeMethod = SlashCommand.class.getDeclaredMethod("execute", SlashCommandEvent.class);
-            executeMethod.setAccessible(true);
-            executeMethod.invoke(sc, e);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException exp) {}
-    }
-    
 
 
     @Override
