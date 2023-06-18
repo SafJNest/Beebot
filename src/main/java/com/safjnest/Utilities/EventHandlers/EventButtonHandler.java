@@ -4,13 +4,16 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import com.safjnest.Commands.LOL.GameRank;
 import com.safjnest.Commands.LOL.Summoner;
+import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -19,6 +22,9 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
@@ -26,8 +32,14 @@ public class EventButtonHandler extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
-        event.deferEdit().queue();
 
+        if(event.getButton().getId().startsWith("rewards-")){
+            rewardsButtonEvent(event);
+            return;
+        }
+
+
+        event.deferEdit().queue();
         if (event.getButton().getId().startsWith("lol-")) 
             lolButtonEvent(event);
 
@@ -41,6 +53,7 @@ public class EventButtonHandler extends ListenerAdapter {
             listUserButtonEvent(event);
         
     }
+
 
     public void lolButtonEvent(ButtonInteractionEvent event) {
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
@@ -399,6 +412,60 @@ public class EventButtonHandler extends ListenerAdapter {
                         .setActionRow(left, center, right)
                         .queue();
                 break;
+        }
+    }
+
+    private void rewardsButtonEvent(ButtonInteractionEvent event) {
+        if(!event.getMember().hasPermission(Permission.ADMINISTRATOR)){
+            event.deferReply().addContent("You don't have the permission to do that.").queue();
+            return;
+        }
+        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        
+        switch (args){
+            
+            case "add":
+                TextInput subject = TextInput.create("rewards-lvl", "Level", TextInputStyle.SHORT)
+                    .setPlaceholder("1")
+                    .setMinLength(1)
+                    .setMaxLength(100) // or setRequiredRange(10, 100)
+                    .build();
+
+                TextInput body = TextInput.create("rewards-message", "Message (write // for no message)", TextInputStyle.PARAGRAPH)
+                        .setPlaceholder("Contratulation #user you have reached level #level so you gain the role: #role")
+                        .setMinLength(2)
+                        .setMaxLength(1000)
+                        .build();
+                
+                TextInput role = TextInput.create("rewards-role", "Role (@rolename)", TextInputStyle.SHORT)
+                        .setPlaceholder("@king")
+                        .setMinLength(2)
+                        .setMaxLength(20)
+                        .build();
+
+                Modal modal = Modal.create("rewards", "Set a new Reward")
+                        .addComponents(ActionRow.of(subject), ActionRow.of(body), ActionRow.of(role))
+                        .build();
+                event.replyModal(modal).queue();
+                break;
+
+            default:
+                if(event.getButton().getId().startsWith("rewards-role-")){
+                    if(event.getButton().getStyle() == ButtonStyle.DANGER){
+                        String roleString = event.getButton().getId().split("-")[2];
+                        String query = "DELETE FROM rewards_table WHERE role_id = '" + roleString + "';";
+                        DatabaseHandler.getSql().runQuery(query);
+                        event.deferEdit().queue();
+                        RewardsSlash.createEmbed(event.getMessage(), event.getGuild()).queue();
+                        return;
+                    }
+                    //modify button style into danger
+                    
+                    event.editButton(event.getButton().withStyle(ButtonStyle.DANGER)).queue();
+                    
+                }
+                break;
+
         }
     }
 

@@ -145,6 +145,13 @@
         "arguments" : "[CommandName]"
     },
 
+    "rewards":{
+        "alias" : [],
+        "help"  : "Show all the rewards for leveling up",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
+    },
+
 
     "customembed":{
         "alias" : ["embed"],
@@ -152,23 +159,6 @@
         "category" : "Server Management",
         "arguments" : "[CommandName] [a]"
     },
-
-    "disableslash":{
-        "alias" : [],
-        "help"  : "disable all the slash command in a guild",
-        "category" : "Server Management",
-        "arguments" : "[CommandName]"
-    },
-
-    "enableslash":{
-        "alias" : [],
-        "help"  : "enable all the slash command in a guild",
-        "category" : "Server Management",
-        "arguments" : "[CommandName]"
-    },
-
-
-
 
 
 
