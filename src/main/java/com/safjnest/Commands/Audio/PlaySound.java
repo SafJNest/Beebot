@@ -144,18 +144,18 @@ public class PlaySound extends Command{
         pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
         
 
-        query = "SELECT times FROM play where play.id_sound = '" + id + "' and play.user_id = '" + event.getAuthor().getId() + "';";
+        query = "SELECT times FROM play where play.sound_id = '" + id + "' and play.user_id = '" + event.getAuthor().getId() + "';";
         if(sql.getString(query, "times") == null){
-            query = "INSERT INTO play(user_id, id_sound, times) VALUES('" + event.getAuthor().getId() + "','" + id + "', 1);";
+            query = "INSERT INTO play(user_id, sound_id, times) VALUES('" + event.getAuthor().getId() + "','" + id + "', 1);";
         }
         else{
-            query = "UPDATE play SET times = times + 1 WHERE id_sound = (" + id + ") AND user_id = '" + event.getAuthor().getId() + "';";
+            query = "UPDATE play SET times = times + 1 WHERE sound_id = (" + id + ") AND user_id = '" + event.getAuthor().getId() + "';";
         }
         sql.runQuery(query);
         
-        query = "SELECT SUM(times) as sum FROM play where id_sound='" + id + "';";
+        query = "SELECT SUM(times) as sum FROM play where sound_id='" + id + "';";
         String timesPlayed = sql.getString(query, "sum");
-        query = "SELECT times FROM play where id_sound='" + id + "' AND user_id='"+event.getAuthor().getId()+"';";
+        query = "SELECT times FROM play where sound_id='" + id + "' AND user_id='"+event.getAuthor().getId()+"';";
         String timesPlayedByUser = sql.getString(query, "times");
         
         EmbedBuilder eb = new EmbedBuilder();
