@@ -73,8 +73,7 @@ public class GuildSettings {
     public GuildData retrieveServer(String stringId) {
         String query = "SELECT guild_id, prefix, exp_enabled FROM guild_settings WHERE guild_id = '" + stringId + "' AND bot_id = '" + botId + "';";
         ArrayList<String> guildArrayList = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
-        
-        GuildData guild = (guildArrayList == null || guildArrayList.get(2) == null) 
+        GuildData guild = (guildArrayList == null || guildArrayList.get(1) == null) 
                     ? new GuildData(Long.parseLong(stringId), prefix, false) 
                     : new GuildData(Long.parseLong(guildArrayList.get(0)), guildArrayList.get(1), (guildArrayList.get(2).equals("1")));
         saveData(guild);

@@ -110,10 +110,7 @@ public class HelpSlash extends SlashCommand {
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());
 
-        if(PermissionHandler.isUntouchable(event.getMember().getId()))
-            event.replyEmbeds(eb.build()).setEphemeral(true).queue();
-        else
-            event.replyEmbeds(eb.build()).setEphemeral(false).queue();
+        event.replyEmbeds(eb.build()).setEphemeral(false).queue();
     }
 
     public List<String> getKeysInDescendingOrder(HashMap<String, ArrayList<SlashCommand>> map) {
