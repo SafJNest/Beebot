@@ -200,7 +200,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(commandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new SetPrefixSlash(sql, gs));
+        Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new SetPrefixSlash(sql, gs));
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new FreeChampSlash(), new GameRankSlash(riotApi, sql), new SetSummonerSlash(riotApi, sql), new LastMatchesSlash(riotApi, sql), new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), 
@@ -221,8 +221,8 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(threadName.equals("beebot canary"))
             Collections.addAll(slashCommandsList, new TalkSlash(), new ToggleExpSystemSlash(gs), new RewardsSlash());
 
-        builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
 
+        builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         CommandClient client = builder.build();
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler(sql));
