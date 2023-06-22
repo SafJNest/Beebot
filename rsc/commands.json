@@ -559,6 +559,20 @@
         "help"  : "Talk to a stranger on omegle. Use quit to quit. Use partymode to let everyone write.",
         "category" : "Miscellaneous",
         "arguments" : "[CommandName] (language) (interests) (party mode)"
+    },
+
+    "set":{
+        "alias" : [],
+        "help"  : "Show all the rewards for leveling up",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
+    },
+
+    "helpcommand":{
+        "alias" : [],
+        "help"  : "Show all the rewards for leveling up",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
     }
 
 }

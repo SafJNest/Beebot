@@ -33,7 +33,7 @@ public class App {
     public static void main(String args[]) {
         
         SafJNest.bee();
-        boolean isExtremeTesting = false;
+        boolean isExtremeTesting = true;
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, openAISettins = null;

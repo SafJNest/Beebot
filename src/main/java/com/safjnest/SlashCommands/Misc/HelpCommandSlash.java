@@ -11,9 +11,6 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
-import com.safjnest.SlashCommands.Settings.SetSlash;
-import com.safjnest.SlashCommands.Settings.ToggleExpSystemSlash;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.CommandsLoader;
@@ -30,23 +27,21 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * 
  * @since 1.1.01
  */
-public class HelpSlash extends SlashCommand {
+public class HelpCommandSlash extends SlashCommand {
     /**
      * Default constructor for the class.
      */
     GuildSettings gs;
-    public HelpSlash(GuildSettings gs) {
+    public HelpCommandSlash(GuildSettings gs) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.options = Arrays.asList(
+            new OptionData(OptionType.STRING, "command", "Name of the command you want the information about", false));
         this.gs = gs;
-        ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new HelpCommandSlash(gs));
-        this.children =  slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
-        
     }
     /**
      * This method is called every time a member executes the command.
@@ -71,6 +66,7 @@ public class HelpSlash extends SlashCommand {
         eb.setColor(Color.decode(
             BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
         ));
+        if(command.equals("")){
             String ss = "```\n";
             for(String k : getKeysInDescendingOrder(commands)){
                 Collections.sort(commands.get(k), Comparator.comparing(Command::getName));
@@ -83,6 +79,33 @@ public class HelpSlash extends SlashCommand {
             }
             eb.addField("Number of commands avaible:", "```"+nCom+"```", false);
             eb.setFooter("Beebot is continuously updated by the two KINGS ;D", null);
+        }else{
+            SlashCommand e = null;
+            for(String k : commands.keySet()){
+                for(SlashCommand c : commands.get(k)){
+                    if(c.getName().equalsIgnoreCase(command) || Arrays.asList(c.getAliases()).contains(command) ){
+                        e = c;
+                        break;
+                    }
+                }
+            }
+            eb.setDescription("**COMMAND " + e.getName().toUpperCase() + "**");
+            eb.addField("**DESCRIPTION**","```"+e.getHelp()+"```", false);
+            eb.addField("**CATEGORY**","```"+e.getCategory().getName()+"```", false);
+            eb.addField("**ARG**","```"+e.getArguments()+"```", true);
+            eb.addField("**COOLDOWN**","```"+e.getCooldown()+"```", true);
+            if(e.getAliases().length > 0){
+                String aliases = "";
+                for(String a : e.getAliases())
+                    aliases+=a+" - ";
+                eb.addField("**ALIASES**","```"+aliases+"```", false);
+            }else{
+                eb.addField("**ALIASES**","```"+"NULL"+"```", false);
+            }
+
+            
+            eb.setFooter("IN CASE ARGS IS NULL ITS ENOUGH WRITE JUST THE COMMAND, [] MEANS A REQUIRED FIELD WHITE () DONT ", null);
+        }
         eb.addField("**OTHER INFORMATION**", "Beebot has been developed by only two people, so dont break the balls", false);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",
                 event.getJDA().getSelfUser().getAvatarUrl());

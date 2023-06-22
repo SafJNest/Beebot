@@ -60,6 +60,9 @@ import com.safjnest.SlashCommands.ManageMembers.*;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
 import com.safjnest.SlashCommands.Settings.*;
+import com.safjnest.SlashCommands.Settings.Leave.LeaveSlash;
+import com.safjnest.SlashCommands.Settings.LevelUp.LevelUpSlash;
+import com.safjnest.SlashCommands.Settings.Welcome.WelcomeSlash;
 
 import no.stelar7.api.r4j.impl.R4J;
 
@@ -163,8 +166,10 @@ public class Bot extends ListenerAdapter implements Runnable {
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
-                for(Guild g : event.getJDA().getGuilds())
+                for(Guild g : event.getJDA().getGuilds()){
                     gs.retrieveServer(g.getId());
+                    //g.updateCommands().queue();
+                }
                 System.out.println("[" + threadName + "] INFO Guild cached correctly");
             }
         });
@@ -204,25 +209,25 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new FreeChampSlash(), new GameRankSlash(riotApi, sql), new SetSummonerSlash(riotApi, sql), new LastMatchesSlash(riotApi, sql), new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), 
-                                             new SetLevelUpMessageSlash(), new ChampionSlash());
+                                             new ChampionSlash());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new ListGuildSlash(), new LeaderboardSlash(), new BanSlash(),
-                                             new UnbanSlash(), new KickSlash(), new MoveSlash(), new MoveChannelSlash(), new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash(), new SetWelcomeMessageSlash(sql),
-                                             new SetLeaveMessageSlash(sql));
+                                             new UnbanSlash(), new KickSlash(), new MoveSlash(), new MoveChannelSlash(), new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
-            Collections.addAll(slashCommandsList, new ConnectSlash(), new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new ListUserSlash(), new PlayYoutubeSlash(youtubeApiKey), new PlaySoundSlash(), 
+            Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new ListUserSlash(), new PlayYoutubeSlash(youtubeApiKey), new PlaySoundSlash(), 
                                              new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash());
 
         if(threadName.equals("beebot"))
             Collections.addAll(slashCommandsList, new ToggleExpSystemSlash(gs), new RewardsSlash());
 
         if(threadName.equals("beebot canary"))
-            Collections.addAll(slashCommandsList, new TalkSlash(), new ToggleExpSystemSlash(gs), new RewardsSlash());
+            Collections.addAll(slashCommandsList, new TalkSlash(), new WelcomeSlash(sql, gs), new LevelUpSlash(sql, gs), new LeaveSlash(sql, gs), new  ToggleExpSystemSlash(gs), new RewardsSlash());
 
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
+        
         CommandClient client = builder.build();
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler(sql));
