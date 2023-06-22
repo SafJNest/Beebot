@@ -12,7 +12,6 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
-import com.safjnest.SlashCommands.Settings.SetSlash;
 import com.safjnest.SlashCommands.Settings.ToggleExpSystemSlash;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
