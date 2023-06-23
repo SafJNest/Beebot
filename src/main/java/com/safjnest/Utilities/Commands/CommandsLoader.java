@@ -52,6 +52,27 @@ public class CommandsLoader {
             return null;
         }
     }
+
+    /**
+     * Gets a string with a specific arguments of the command.
+     * @param nameCommand name of the command
+     * @param thing name of the argument
+     * @return a string with the argument, otherwise {@code null}
+     */
+    public String getString(String nameCommand, String thing, String father){
+        nameCommand = nameCommand.toLowerCase();
+        thing = thing.toLowerCase();
+        Object obj;
+        try {
+            obj = jsonParser.parse(getChildren(father));
+            JSONObject commands = (JSONObject) obj;
+            JSONObject command = (JSONObject) commands.get(nameCommand);
+            return (String) command.get(thing);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
      * Gets an array of the arguments of a command.
      * @param nameCommand name of the command
@@ -92,6 +113,42 @@ public class CommandsLoader {
             return (command.get("cooldown") == null) ? 0 : Integer.valueOf((String)command.get("cooldown"));
         } catch (IOException | ParseException e) {
             return 0;
+        }
+    }
+
+    /**
+     * Gets the cooldown of a command.
+     * @param nameCommand name of the command
+     * @return a int with the cooldown, otherwise {@code null}
+     */
+    public int getCooldown(String nameCommand, String father){
+        nameCommand = nameCommand.toLowerCase();
+        Object obj;
+        try {
+            obj = jsonParser.parse(getChildren(father));
+            JSONObject commands = (JSONObject) obj;
+            JSONObject command = (JSONObject) commands.get(nameCommand);
+            return (command.get("cooldown") == null) ? 0 : Integer.valueOf((String)command.get("cooldown"));
+        } catch (ParseException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Gets the cooldown of a command.
+     * @param father name of the father command
+     * @return a string that rappresent the command, otherwise {@code null}
+     */
+    private String getChildren(String father){
+        Object obj;
+        try {
+            obj = jsonParser.parse(reader);
+            JSONObject commands = (JSONObject) obj;
+            JSONObject command = (JSONObject) commands.get(father);
+            JSONObject children = (JSONObject) command.get("children");
+            return children.toJSONString();
+        } catch (IOException | ParseException e) {
+            return null;
         }
     }
 }

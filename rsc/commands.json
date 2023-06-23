@@ -573,6 +573,35 @@
         "help"  : "Show all the rewards for leveling up",
         "category" : "Server Management",
         "arguments" : "[CommandName]"
-    }
+    },
 
+    "welcome": {
+        "alias" : [],
+        "help"  : "Faker guma",
+        "category" : "Settings",
+        "arguments" : "[CommandName]",
+        "children": {
+            "delete": {
+                "alias" : [],
+                "help"  : "delete all the pantslung",
+                "arguments" : "[CommandName]"
+            }, 
+            "move": {
+                "alias" : [],
+                "help"  : "move all the pantslung",
+                "arguments" : "[CommandName]"
+            },
+            "preview": {
+                "alias" : [],
+                "help"  : "preview all the pantslung",
+                "arguments" : "[CommandName]"
+            },
+            "text": {
+                "alias" : [],
+                "help"  : "add all the pantslung",
+                "arguments" : "[CommandName]"
+            }
+        }
+    }
+    
 }
