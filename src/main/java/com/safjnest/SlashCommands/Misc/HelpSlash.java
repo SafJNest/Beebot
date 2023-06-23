@@ -2,7 +2,6 @@ package com.safjnest.SlashCommands.Misc;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -11,16 +10,12 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
-import com.safjnest.SlashCommands.Settings.ToggleExpSystemSlash;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  * This commands once is called sends a message with a full list of all commands, grouped by category.
@@ -42,9 +37,6 @@ public class HelpSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.gs = gs;
-        ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new HelpCommandSlash(gs));
-        this.children =  slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
         
     }
     /**
@@ -53,7 +45,6 @@ public class HelpSlash extends SlashCommand {
     @Override
     protected void execute(SlashCommandEvent event) {
         int nCom = 0;
-        String command = (event.getOption("command") == null)? "" : event.getOption("command").getAsString();
         EmbedBuilder eb = new EmbedBuilder();
         HashMap<String, ArrayList<SlashCommand>> commands = new HashMap<>();
         for (SlashCommand e : event.getClient().getSlashCommands()) {
