@@ -16,6 +16,7 @@ public class WelcomeSlash extends SlashCommand{
         //this.help = new CommandsLoader().getString(this.name, "help");
         //this.cooldown = new CommandsLoader().getCooldown(this.name);
         //this.category = new Category(new CommandsLoader().getString(this.name, "category"));
+        this.category = new Category("Settings");
         //this.arguments = new CommandsLoader().getString(this.name, "arguments");
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
         Collections.addAll(slashCommandsList, new WelcomeMoveSlash(), new WelcomePreviewSlash(), new WelcomeTextSlash(), new WelcomeDeleteSlash());

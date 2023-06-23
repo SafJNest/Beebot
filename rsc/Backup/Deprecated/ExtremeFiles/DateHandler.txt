@@ -1,3 +1,10 @@
+//THIS CLASS WAS JUST TOO INSANE TO BE USED.
+
+
+
+
+
+
 package com.safjnest.Utilities;
 
 import java.time.OffsetDateTime;
