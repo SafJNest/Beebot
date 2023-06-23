@@ -6,6 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Commands.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -13,13 +14,16 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class WelcomeTextSlash extends SlashCommand{
     
-    public WelcomeTextSlash(){
-        this.name = "text";
-         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "msg", "Welcome message", true),
-            new OptionData(OptionType.CHANNEL, "channel", "Channel where the message will be sent. Null to use default channel.", false)
-                            .setChannelTypes(ChannelType.TEXT),
-            new OptionData(OptionType.ROLE, "role", "Role that will be given to new members.", false));
+    public WelcomeTextSlash(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
+        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
+        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+        this.options = Arrays.asList(
+        new OptionData(OptionType.STRING, "msg", "Welcome message", true),
+        new OptionData(OptionType.CHANNEL, "channel", "Channel where the message will be sent. Null to use default channel.", false)
+                        .setChannelTypes(ChannelType.TEXT),
+        new OptionData(OptionType.ROLE, "role", "Role that will be given to new members.", false));
     }
 
     @Override

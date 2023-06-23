@@ -6,11 +6,15 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Commands.CommandsLoader;
 
 public class WelcomePreviewSlash extends SlashCommand{
 
-    public WelcomePreviewSlash(){
-        this.name = "preview";
+    public WelcomePreviewSlash(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
+        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
+        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
     }
 
     @Override
