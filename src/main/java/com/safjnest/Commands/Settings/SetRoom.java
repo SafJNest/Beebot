@@ -1,7 +1,7 @@
 package com.safjnest.Commands.Settings;
 
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -39,15 +39,15 @@ public class SetRoom extends Command {
             channel = argsArr[0];
         }
         name = argsArr[1];
-        String query = "SELECT room_name FROM rooms_nickname WHERE discord_id = '" + event.getGuild().getId() + "' AND room_id = '" + argsArr[0] +"';";
+        String query = "SELECT room_name FROM rooms_nickname WHERE guild_id = '" + event.getGuild().getId() + "' AND room_id = '" + argsArr[0] +"';";
         if(sql.getString(query, "room_name") == null){
-            query = "INSERT INTO rooms_nickname(discord_id, room_id, room_name)" + "VALUES('" + event.getGuild().getId() + "','" + channel +"','" + name + "');";
+            query = "INSERT INTO rooms_nickname(guild_id, room_id, room_name)" + "VALUES('" + event.getGuild().getId() + "','" + channel +"','" + name + "');";
             if(sql.runQuery(query))
                 event.reply("All set correctly");
             else
                 event.reply("Error: wrong id probably");
         }else{
-            query = "UPDATE rooms_nickname SET room_name = '" + argsArr[1] + "' WHERE discord_id = '" + event.getGuild().getId() + "' AND room_id = '" + argsArr[0] +"';";
+            query = "UPDATE rooms_nickname SET room_name = '" + argsArr[1] + "' WHERE guild_id = '" + event.getGuild().getId() + "' AND room_id = '" + argsArr[0] +"';";
             if(sql.runQuery(query))
                 event.reply("Channel nickname changed correctly");
             else 

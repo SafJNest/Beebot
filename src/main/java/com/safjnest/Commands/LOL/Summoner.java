@@ -4,9 +4,9 @@ import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -91,8 +91,8 @@ public class Summoner extends Command {
             BotSettingsHandler.map.get(id).color
         ));
         builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
-        String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + s.getAccountId() + "';";
-        String userId = DatabaseHandler.getSql().getString(query, "discord_id");
+        String query = "SELECT guild_id FROM lol_user WHERE account_id = '" + s.getAccountId() + "';";
+        String userId = DatabaseHandler.getSql().getString(query, "guild_id");
         if(userId != null){
             User theGuy = jda.getUserById(userId);
             builder.addField("User:", theGuy.getName(), true);

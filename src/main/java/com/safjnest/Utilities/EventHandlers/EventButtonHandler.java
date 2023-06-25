@@ -67,10 +67,10 @@ public class EventButtonHandler extends ListenerAdapter {
             if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                 nameSum = b.getLabel();
         }
-        String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
+        String query = "SELECT guild_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
                 + "';";
-        query = "SELECT summoner_id FROM lol_user WHERE discord_id = '"
-                + DatabaseHandler.getSql().getString(query, "discord_id") + "';";
+        query = "SELECT summoner_id FROM lol_user WHERE guild_id = '"
+                + DatabaseHandler.getSql().getString(query, "guild_id") + "';";
         ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
         switch (args) {
 
@@ -135,10 +135,10 @@ public class EventButtonHandler extends ListenerAdapter {
             if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                 nameSum = b.getLabel();
         }
-        String query = "SELECT discord_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
+        String query = "SELECT guild_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
                 + "';";
-        query = "SELECT summoner_id FROM lol_user WHERE discord_id = '"
-                + DatabaseHandler.getSql().getString(query, "discord_id") + "';";
+        query = "SELECT summoner_id FROM lol_user WHERE guild_id = '"
+                + DatabaseHandler.getSql().getString(query, "guild_id") + "';";
         ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
         List<SpectatorParticipant> users = null;
 

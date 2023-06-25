@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 

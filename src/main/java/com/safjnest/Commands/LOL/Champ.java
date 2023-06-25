@@ -10,7 +10,7 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.Commands.CommandsLoader;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import no.stelar7.api.r4j.impl.R4J;

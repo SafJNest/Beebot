@@ -7,10 +7,10 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -62,7 +62,7 @@ public class MemberInfoSlash extends SlashCommand{
 
         String permissionNames = PermissionHandler.getFilteredPermissionNames(member).toString();
 
-        String query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + user.getId() + "';";
+        String query = "SELECT summoner_id FROM lol_user WHERE guild_id = '" + user.getId() + "';";
         ArrayList<String> accounts = DatabaseHandler.getSql().getAllRowsSpecifiedColumn(query, "summoner_id");
         String lolAccounts = "";
         if(accounts.size() == 0){
