@@ -39,7 +39,7 @@ public class WelcomeMoveSlash extends SlashCommand{
             channel = event.getOption("channel").getAsChannel().getId();
         }
 
-        String query = "SELECT channel_id FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        String query = "SELECT channel_id FROM welcome_message WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String id = sql.getString(query, "channel_id");
 
         if(id == null){
@@ -52,7 +52,7 @@ public class WelcomeMoveSlash extends SlashCommand{
             return;
         }
 
-        query = "UPDATE welcome_message SET channel_id = '" + channel + "' WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        query = "UPDATE welcome_message SET channel_id = '" + channel + "' WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         sql.runQuery(query);
         event.deferReply(false).addContent("All set correctly").queue();
     }

@@ -32,10 +32,10 @@ public class Welcome extends Command {
         String message = event.getMessage().getContentRaw();
         String channel = null;
         if(event.getArgs().equalsIgnoreCase("disable")){
-            String query = "DELETE from welcome_message WHERE discord_id = '" + event.getGuild().getId()
+            String query = "DELETE from welcome_message WHERE guild_id = '" + event.getGuild().getId()
                            + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             DatabaseHandler.getSql().runQuery(query);
-            query = "DELETE from welcome_roles WHERE discord_id = '" + event.getGuild().getId()
+            query = "DELETE from welcome_roles WHERE guild_id = '" + event.getGuild().getId()
                            + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             DatabaseHandler.getSql().runQuery(query);
             event.reply("Welcome message disable successfully");
@@ -70,11 +70,11 @@ public class Welcome extends Command {
         }
         String discordId = event.getGuild().getId();
         message = message.substring(message.indexOf("|")+1);
-        String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text, bot_id)"
+        String query = "INSERT INTO welcome_message(guild_id, channel_id, message_text, bot_id)"
                             + "VALUES('" + discordId + "','" + channel +"','" + message + "','"+event.getJDA().getSelfUser().getId()+"');";
         sql.runQuery(query);
         for(String role : roles){
-            query = "INSERT INTO welcome_roles(role_id, discord_id, bot_id)"
+            query = "INSERT INTO welcome_roles(role_id, guild_id, bot_id)"
                             + "VALUES('" + role + "','" + discordId + "','"+event.getJDA().getSelfUser().getId()+"');";
             sql.runQuery(query);
         }

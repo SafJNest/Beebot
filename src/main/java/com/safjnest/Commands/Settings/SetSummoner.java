@@ -51,7 +51,7 @@ public class SetSummoner extends Command {
         }
         if(event.getArgs().startsWith("remove:")){
             String summonerName = event.getArgs().replace("remove:", "");
-            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getAuthor().getId() + "';";
+            String query = "SELECT account_id FROM lol_user WHERE guild_id = '" + event.getAuthor().getId() + "';";
             ArrayList<String> accountIds = sql.getAllRowsSpecifiedColumn(query, "account_id");
             if(accountIds == null){
                 event.reply("You dont have a Riot account connected, for more information /help setsummoner");
@@ -59,7 +59,7 @@ public class SetSummoner extends Command {
             }
             for(String id : accountIds){
                 if(RiotHandler.getSummonerByAccountId(id).getName().equalsIgnoreCase(summonerName)){
-                    query = "DELETE FROM lol_user WHERE account_id = '" + id + "' and discord_id = '" + event.getMember().getId() + "';";
+                    query = "DELETE FROM lol_user WHERE account_id = '" + id + "' and guild_id = '" + event.getMember().getId() + "';";
                     sql.runQuery(query);
                     event.reply("Summoner removed");
                     return;
@@ -71,7 +71,7 @@ public class SetSummoner extends Command {
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
         try {
-            String query = "INSERT INTO lol_user(discord_id, summoner_id, account_id)"
+            String query = "INSERT INTO lol_user(guild_id, summoner_id, account_id)"
                     + "VALUES('"+event.getAuthor().getId()+"','"+s.getSummonerId()+"','"+s.getAccountId()+"');";
             sql.runQuery(query);
             event.reply("Connected " + s.getName() + " to your profile.");

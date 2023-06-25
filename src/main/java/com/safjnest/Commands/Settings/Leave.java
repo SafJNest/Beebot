@@ -29,7 +29,7 @@ public class Leave extends Command {
         String message = event.getMessage().getContentRaw();
         String channel = null;
         if(event.getArgs().equalsIgnoreCase("disable")){
-            String query = "DELETE from left_message WHERE discord_id = '" + event.getGuild().getId()
+            String query = "DELETE from left_message WHERE guild_id = '" + event.getGuild().getId()
                            + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             DatabaseHandler.getSql().runQuery(query);
             event.reply("Left message disable successfully");
@@ -58,7 +58,7 @@ public class Leave extends Command {
         }
         String discordId = event.getGuild().getId();
         message = message.substring(message.indexOf("|")+1);
-        String query = "INSERT INTO left_message(discord_id, channel_id, message_text, bot_id)"
+        String query = "INSERT INTO left_message(guild_id, channel_id, message_text, bot_id)"
                             + "VALUES('" + discordId + "','" + channel +"','" + message + "','"+event.getJDA().getSelfUser().getId()+"');";
         sql.runQuery(query);
         event.reply("All set correctly");

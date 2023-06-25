@@ -16,7 +16,7 @@ public class LeavePreviewSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String query = "SELECT message_text FROM left_message WHERE discord_id = '" + event.getGuild().getId()
+        String query = "SELECT message_text FROM left_message WHERE guild_id = '" + event.getGuild().getId()
                             + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String message = DatabaseHandler.getSql().getString(query, "message_text");
         if(message == null){
@@ -24,7 +24,7 @@ public class LeavePreviewSlash extends SlashCommand{
             return;
         }
 
-        query = "SELECT channel_id FROM left_message WHERE discord_id = '" + event.getGuild().getId()
+        query = "SELECT channel_id FROM left_message WHERE guild_id = '" + event.getGuild().getId()
                             + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String channel = DatabaseHandler.getSql().getString(query, "channel_id");
 

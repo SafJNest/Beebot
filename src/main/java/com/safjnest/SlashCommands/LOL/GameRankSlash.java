@@ -62,7 +62,7 @@ public class GameRankSlash extends SlashCommand {
 
 
         if(event.getOption("user") == null){
-            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
+            String query = "SELECT account_id FROM lol_user WHERE guild_id = '" + event.getMember().getId() + "';";
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
                 searchByUser = true;

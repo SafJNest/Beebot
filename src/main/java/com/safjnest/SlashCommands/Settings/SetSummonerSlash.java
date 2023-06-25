@@ -53,7 +53,7 @@ public class SetSummonerSlash extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         try {
             if(event.getOption("remove").getAsBoolean()){
-                String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
+                String query = "SELECT account_id FROM lol_user WHERE guild_id = '" + event.getMember().getId() + "';";
                 ArrayList<String> accountIds = sql.getAllRowsSpecifiedColumn(query, "account_id");
                 if(accountIds == null){
                     event.deferReply(false).addContent("You dont have a Riot account connected, for more information /help setsummoner").queue();
@@ -61,7 +61,7 @@ public class SetSummonerSlash extends SlashCommand {
                 }
                 for(String id : accountIds){
                     if(RiotHandler.getSummonerByAccountId(id).getName().equalsIgnoreCase(event.getOption("sum").getAsString())){
-                        query = "DELETE FROM lol_user WHERE account_id = '" + id + "' and discord_id = '" + event.getMember().getId() + "';";
+                        query = "DELETE FROM lol_user WHERE account_id = '" + id + "' and guild_id = '" + event.getMember().getId() + "';";
                         sql.runQuery(query);
                         event.deferReply(false).addContent("Summoner removed").queue();
                         return;
@@ -71,7 +71,7 @@ public class SetSummonerSlash extends SlashCommand {
                 return;
             }
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("sum").getAsString());
-            String query = "INSERT INTO lol_user(discord_id, summoner_id, account_id)"
+            String query = "INSERT INTO lol_user(guild_id, summoner_id, account_id)"
                     + "VALUES('"+event.getMember().getId()+"','"+s.getSummonerId()+"','"+s.getAccountId()+"');";
             sql.runQuery(query);
             event.deferReply(false).addContent("Connected " + s.getName() + " to your profile.").queue();

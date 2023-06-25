@@ -58,7 +58,7 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
-        if (e.getName().equals("playsound")) {
+        if (e.getName().equals("play")) {
             ArrayList<Choice> choices = new ArrayList<>();
 
             if(e.getFocusedOption().getValue().equals("")){
@@ -119,18 +119,18 @@ public class EventHandler extends ListenerAdapter {
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         MessageChannel channel = null;
         User newGuy = event.getUser();
-        String query = "SELECT channel_id FROM welcome_message WHERE discord_id = '" + event.getGuild().getId()
+        String query = "SELECT channel_id FROM welcome_message WHERE guild_id = '" + event.getGuild().getId()
                 + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String notNullPls = sql.getString(query, "channel_id");
         if (notNullPls == null)
             return;
         channel = event.getGuild().getTextChannelById(notNullPls);
-        query = "SELECT message_text FROM welcome_message WHERE discord_id = '" + event.getGuild().getId()
+        query = "SELECT message_text FROM welcome_message WHERE guild_id = '" + event.getGuild().getId()
                 + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String message = sql.getString(query, "message_text");
         message = message.replace("#user", newGuy.getAsMention());
         channel.sendMessage(message).queue();
-        query = "SELECT role_id FROM welcome_roles WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '"
+        query = "SELECT role_id FROM welcome_roles WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '"
                 + event.getJDA().getSelfUser().getId() + "';";
         ArrayList<String> roles = sql.getAllRowsSpecifiedColumn(query, "role_id");
         if (roles.size() > 0) {
@@ -143,13 +143,13 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onGuildMemberRemove(GuildMemberRemoveEvent event){
         MessageChannel channel = null;
-        String query = "SELECT channel_id FROM left_message WHERE discord_id = '" + event.getGuild().getId()
+        String query = "SELECT channel_id FROM left_message WHERE guild_id = '" + event.getGuild().getId()
                 + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String notNullPls = sql.getString(query, "channel_id");
         if (notNullPls == null)
             return;
         channel = event.getGuild().getTextChannelById(notNullPls);
-        query = "SELECT message_text FROM left_message WHERE discord_id = '" + event.getGuild().getId()
+        query = "SELECT message_text FROM left_message WHERE guild_id = '" + event.getGuild().getId()
                 + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String message = sql.getString(query, "message_text");
         message = message.replace("#user", event.getUser().getAsMention());
@@ -170,7 +170,7 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onChannelDelete(ChannelDeleteEvent event){
         if(event.getChannelType().isAudio()){
-            String query = "DELETE from rooms_nickname WHERE discord_id = '" + event.getGuild().getId()
+            String query = "DELETE from rooms_nickname WHERE guild_id = '" + event.getGuild().getId()
                            + "' AND room_id = '" + event.getChannel().getId() + "';";
             DatabaseHandler.getSql().runQuery(query);
         }
