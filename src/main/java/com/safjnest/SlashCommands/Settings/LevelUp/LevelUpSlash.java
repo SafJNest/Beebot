@@ -5,6 +5,7 @@ import java.util.Collections;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
 public class LevelUpSlash extends SlashCommand {
@@ -12,17 +13,19 @@ public class LevelUpSlash extends SlashCommand {
     private GuildSettings gs;
 
     public LevelUpSlash(GuildSettings gs){
-        this.gs = gs;
-        this.name = "levelup";//this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        //this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        //this.help = new CommandsLoader().getString(this.name, "help");
-        //this.cooldown = new CommandsLoader().getCooldown(this.name);
-        //this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        //this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
+        String father = this.getClass().getSimpleName().replace("Slash", "");
+
+        this.cooldown = new CommandsLoader().getCooldown(this.name);
+        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.category = new Category("Settings");
+        this.help = "json";
+        
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new LevelUpPreviewSlash(), new LevelUpTextSlash(), new LevelUpToggleSlash(gs));
+        Collections.addAll(slashCommandsList, new LevelUpPreviewSlash(father), new LevelUpTextSlash(father), new LevelUpToggleSlash(gs, father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);                                 
+        
+        this.gs = gs;
     }
 
     @Override

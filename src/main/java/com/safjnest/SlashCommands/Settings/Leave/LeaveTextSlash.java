@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -12,8 +13,12 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class LeaveTextSlash extends SlashCommand{
 
-    public LeaveTextSlash(){
-        this.name = "text";this.options = Arrays.asList(
+    public LeaveTextSlash(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
+        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
+        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+        this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "msg", "Welcome message", true),
             new OptionData(OptionType.CHANNEL, "channel", "User to get the information about", false)
                             .setChannelTypes(ChannelType.TEXT));

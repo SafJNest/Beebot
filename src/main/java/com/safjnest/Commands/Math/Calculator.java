@@ -5,7 +5,7 @@ import java.util.Stack;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.Commands.CommandsLoader;
+import com.safjnest.Utilities.CommandsLoader;
 
 /**
  * This class is used to calculate the result of a mathematical expression.

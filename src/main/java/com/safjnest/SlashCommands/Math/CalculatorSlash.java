@@ -3,7 +3,7 @@ package com.safjnest.SlashCommands.Math;
 import java.util.Arrays;
 
 import com.safjnest.Commands.Math.Calculator;
-import com.safjnest.Utilities.Commands.CommandsLoader;
+import com.safjnest.Utilities.CommandsLoader;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 

@@ -1,11 +1,11 @@
-package com.safjnest.SlashCommands.ManageMembers;
+package com.safjnest.SlashCommands.ManageMembers.Move;
 
 import java.util.Arrays;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.Commands.CommandsLoader;
+import com.safjnest.Utilities.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -20,13 +20,11 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  */
 public class MoveChannelSlash extends SlashCommand{
 
-    public MoveChannelSlash(){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+    public MoveChannelSlash(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
+        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
+        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
             new OptionData(OptionType.CHANNEL, "room", "Room to move", true)
                 .setChannelTypes(ChannelType.VOICE),

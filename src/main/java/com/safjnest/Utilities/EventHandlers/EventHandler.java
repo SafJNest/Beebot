@@ -1,6 +1,8 @@
 package com.safjnest.Utilities.EventHandlers;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
@@ -20,6 +22,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 
 /**
@@ -56,20 +59,34 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
         if (e.getName().equals("playsound")) {
+            ArrayList<Choice> choices = new ArrayList<>();
+
             if(e.getFocusedOption().getValue().equals("")){
                 String query = "SELECT name, id FROM sound WHERE guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
-                ArrayList<Choice> choices = new ArrayList<>();
                 for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                     choices.add(new Choice(arr.get(0), arr.get(1)));
-                e.replyChoices(choices).queue();
             }else{
                 String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
-                ArrayList<Choice> choices = new ArrayList<>();
                 for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                     choices.add(new Choice(arr.get(0), arr.get(1)));
-                e.replyChoices(choices).queue();
             }
+            e.replyChoices(choices).queue();
             
+        } else if (e.getName().equals("help")){
+            ArrayList<Choice> choices = new ArrayList<>();
+            List<Command> allCommands = e.getJDA().retrieveCommands().complete();
+
+            if(e.getFocusedOption().getValue().equals("")){
+                Collections.shuffle(allCommands);
+                for(int i = 0; i < 10; i++)
+                    choices.add(new Choice(allCommands.get(i).getName(), allCommands.get(i).getName()));
+            }else{
+                for(Command c : allCommands){
+                    if(c.getName().startsWith(e.getFocusedOption().getValue()))
+                        choices.add(new Choice(c.getName(), c.getName()));
+                }
+            }
+            e.replyChoices(choices).queue(); 
         }
     }
 

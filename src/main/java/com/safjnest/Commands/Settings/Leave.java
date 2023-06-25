@@ -1,8 +1,8 @@
 package com.safjnest.Commands.Settings;
 
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -11,10 +11,10 @@ import com.jagrosh.jdautilities.command.CommandEvent;
  * 
  * @since 1.3
  */
-public class SetLeaveMessage extends Command {
+public class Leave extends Command {
     private SQL sql;
 
-    public SetLeaveMessage(SQL sql) {
+    public Leave(SQL sql) {
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
