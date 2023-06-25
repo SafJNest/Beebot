@@ -57,6 +57,7 @@ import com.safjnest.SlashCommands.Audio.*;
 import com.safjnest.SlashCommands.LOL.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
+import com.safjnest.SlashCommands.ManageMembers.Move.MoveSlash;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
 import com.safjnest.SlashCommands.Settings.*;
@@ -187,16 +188,16 @@ public class Bot extends ListenerAdapter implements Runnable {
         ArrayList<String> beebotsAll = new ArrayList<String>(Arrays.asList("beebot", "beebot 2", "beebot 3", "beebot canary"));
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new Ping(), new BugsNotifier(), new Ram(), new Help(gs), new Aliases(), new RawMessage(), new SetPrefix(sql, gs), new PrefixList());
+        Collections.addAll(commandsList, new Ping(), new BugsNotifier(), new Ram(), new Help(gs), new Aliases(), new RawMessage(), new Prefix(sql, gs), new PrefixList());
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(commandsList, new Summoner(), new FreeChamp(), new GameRank(), new SetSummoner(riotApi, sql), new LastMatches(riotApi, sql), new Prime(maxPrime), new Calculator(), new Dice(), 
-                                             new ThreadCounter(), new SetLevelUpMessage(), new VandalizeServer(), new Jelly(), new ChatGPT(), new Shutdown(), new Restart(), new Query());
+                                             new ThreadCounter(), new LevelUp(), new VandalizeServer(), new Jelly(), new ChatGPT(), new Shutdown(), new Restart(), new Query());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(commandsList, new Anonym(), new ChannelInfo(), new Clear(), new Msg(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new ListGuild(), new Leaderboard(), new Ban(),
-                                             new Unban(), new Kick(), new Move(sql), new Mute(), new UnMute(), new Image(), new Permissions(), new ModifyNickname(), new ListRoom(sql), new SetWelcomeMessage(sql),
-                                             new SetLeaveMessage(sql), new SetRoom(sql), new RandomMove());
+                                             new Unban(), new Kick(), new Move(sql), new Mute(), new UnMute(), new Image(), new Permissions(), new ModifyNickname(), new ListRoom(sql), new Welcome(sql),
+                                             new Leave(sql), new SetRoom(sql), new RandomMove());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(commandsList, new Connect(), new DeleteSound(sql), new Disconnect(), new DownloadSound(sql), new List(), new ListUser(), new PlayYoutube(youtubeApiKey), new PlaySound(sql), 
@@ -205,7 +206,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new SetPrefixSlash(sql, gs));
+        Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new PrefixSlash(sql, gs));
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new FreeChampSlash(), new GameRankSlash(riotApi, sql), new SetSummonerSlash(riotApi, sql), new LastMatchesSlash(riotApi, sql), new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), 
@@ -213,7 +214,8 @@ public class Bot extends ListenerAdapter implements Runnable {
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new ListGuildSlash(), new LeaderboardSlash(), new BanSlash(),
-                                             new UnbanSlash(), new KickSlash(), new MoveSlash(), new MoveChannelSlash(), new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash());
+                                             new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash(),
+                                             new WelcomeSlash(sql, gs), new LevelUpSlash(gs), new LeaveSlash());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new ListUserSlash(), new PlayYoutubeSlash(youtubeApiKey), new PlaySoundSlash(), 
@@ -223,7 +225,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             Collections.addAll(slashCommandsList, new RewardsSlash());
 
         if(threadName.equals("beebot canary"))
-            Collections.addAll(slashCommandsList, new TalkSlash(), new WelcomeSlash(sql, gs), new LevelUpSlash(gs), new LeaveSlash(), new RewardsSlash());
+            Collections.addAll(slashCommandsList, new TalkSlash());
 
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));

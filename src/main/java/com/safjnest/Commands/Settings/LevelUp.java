@@ -1,14 +1,14 @@
 package com.safjnest.Commands.Settings;
 
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 
-public class SetLevelUpMessage extends Command {
+public class LevelUp extends Command {
 
-    public SetLevelUpMessage() {
+    public LevelUp() {
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

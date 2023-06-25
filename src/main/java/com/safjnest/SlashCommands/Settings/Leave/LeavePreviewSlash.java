@@ -2,12 +2,16 @@ package com.safjnest.SlashCommands.Settings.Leave;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 
 public class LeavePreviewSlash extends SlashCommand{
 
-    public LeavePreviewSlash(){
-        this.name = "preview";
+    public LeavePreviewSlash(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
+        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
+        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
     }
 
     @Override

@@ -1,9 +1,9 @@
 package com.safjnest.SlashCommands.Settings;
 
 import com.safjnest.Commands.Audio.TTS;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;

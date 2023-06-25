@@ -4,18 +4,18 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-public class SetPrefixSlash extends SlashCommand{
+public class PrefixSlash extends SlashCommand{
     private SQL sql;
     GuildSettings gs;
-    public SetPrefixSlash(SQL sql, GuildSettings gs){
+    public PrefixSlash(SQL sql, GuildSettings gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

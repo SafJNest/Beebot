@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Commands;
+package com.safjnest.Utilities;
 
 import java.io.File;
 import java.io.FileNotFoundException;

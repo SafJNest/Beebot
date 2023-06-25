@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 /* 
 import net.rithms.riot.constant.Region;
 import net.rithms.riot.dto.Summoner.Summoner;
@@ -13,7 +14,6 @@ import net.rithms.riot.api.RiotApi;
 import net.rithms.riot.api.RiotApiException;
 */
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;

@@ -3,9 +3,9 @@ package com.safjnest.SlashCommands.ManageGuild;
 import java.awt.Color;
 import java.util.ArrayList;
 
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 

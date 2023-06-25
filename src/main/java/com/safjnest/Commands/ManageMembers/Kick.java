@@ -1,8 +1,8 @@
 package com.safjnest.Commands.ManageMembers;
 
 import com.jagrosh.jdautilities.command.Command;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.Permission;

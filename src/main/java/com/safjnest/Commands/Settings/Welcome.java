@@ -1,8 +1,8 @@
 package com.safjnest.Commands.Settings;
 
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 
 import java.util.ArrayList;
 
@@ -14,10 +14,10 @@ import com.jagrosh.jdautilities.command.CommandEvent;
  * 
  * @since 1.3
  */
-public class SetWelcomeMessage extends Command {
+public class Welcome extends Command {
     private SQL sql;
 
-    public SetWelcomeMessage(SQL sql) {
+    public Welcome(SQL sql) {
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

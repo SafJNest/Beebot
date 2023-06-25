@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
@@ -14,8 +15,11 @@ public class LevelUpToggleSlash extends SlashCommand{
 
     private GuildSettings gs;
 
-    public LevelUpToggleSlash(GuildSettings gs){
-        this.name = "toggle";
+    public LevelUpToggleSlash(GuildSettings gs, String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
+        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
+        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.gs = gs;
         this.options = Arrays.asList(
             new OptionData(OptionType.BOOLEAN, "toggle", "True to enable and False to disable", true));

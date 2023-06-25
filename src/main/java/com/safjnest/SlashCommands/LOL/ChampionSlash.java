@@ -6,8 +6,8 @@ import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.LOL.MobalyticsHandler;
 

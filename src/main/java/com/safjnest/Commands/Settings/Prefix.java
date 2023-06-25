@@ -2,17 +2,17 @@ package com.safjnest.Commands.Settings;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SQL;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.Permission;
 
-public class SetPrefix extends Command{
+public class Prefix extends Command{
     private SQL sql;
     GuildSettings gs;
     
-    public SetPrefix(SQL sql, GuildSettings gs){
+    public Prefix(SQL sql, GuildSettings gs){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
