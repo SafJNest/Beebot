@@ -2,7 +2,7 @@ package com.safjnest.SlashCommands.Misc;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.Commands.CommandsLoader;
+import com.safjnest.Utilities.CommandsLoader;
 
 public class InviteBotSlash extends SlashCommand{
 

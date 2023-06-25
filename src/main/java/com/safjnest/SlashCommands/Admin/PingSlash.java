@@ -4,7 +4,7 @@ package com.safjnest.SlashCommands.Admin;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Utilities.Commands.CommandsLoader;
+import com.safjnest.Utilities.CommandsLoader;
 
 /**
  * The commands shows the ping of the bot.

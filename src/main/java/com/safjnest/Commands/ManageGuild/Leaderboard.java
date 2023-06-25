@@ -1,6 +1,6 @@
 package com.safjnest.Commands.ManageGuild;
 
-import com.safjnest.Utilities.Commands.CommandsLoader;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TableHandler;

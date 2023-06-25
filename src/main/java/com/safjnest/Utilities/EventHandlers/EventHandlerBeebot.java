@@ -62,7 +62,7 @@ public class EventHandlerBeebot extends ListenerAdapter {
                 e.getChannel().asTextChannel().sendMessage(message).queue();
                 return;
             }
-            query = "SELECT message_text FROM levelup_message WHERE discord_id = '" + e.getGuild().getId() + "';";
+            query = "SELECT message_text FROM levelup_message WHERE guild_id = '" + e.getGuild().getId() + "';";
             arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
             if (arr != null){
                 String message = arr.get(0);

@@ -3,8 +3,8 @@ package com.safjnest.Commands.Admin;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Commands.CommandsLoader;
 
 import java.io.File;
 import java.io.FileReader;
