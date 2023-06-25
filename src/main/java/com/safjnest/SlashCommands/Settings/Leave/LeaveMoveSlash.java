@@ -41,7 +41,7 @@ public class LeaveMoveSlash extends SlashCommand {
         }
 
         String discordId = event.getGuild().getId();
-        String query = "UPDATE left_message SET channel_id = '" + channel + "' WHERE discord_id = '" + discordId
+        String query = "UPDATE left_message SET channel_id = '" + channel + "' WHERE guild_id = '" + discordId
                 + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         DatabaseHandler.getSql().runQuery(query);
         event.deferReply(false).addContent("All set correctly").queue();

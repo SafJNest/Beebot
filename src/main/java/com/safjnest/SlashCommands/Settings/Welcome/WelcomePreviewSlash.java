@@ -21,14 +21,14 @@ public class WelcomePreviewSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         SQL sql = DatabaseHandler.getSql();
         
-        String query = "SELECT message_text, channel_id FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';"; 
+        String query = "SELECT message_text, channel_id FROM welcome_message WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';"; 
         ArrayList<String> list = sql.getSpecifiedRow(query, 0);
         if(list == null){
             event.deferReply(false).addContent("You need to set a welcome message first.").queue();
             return;
         }
 
-        query = "SELECT role_id FROM welcome_roles WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        query = "SELECT role_id FROM welcome_roles WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         ArrayList<String> roles = sql.getAllRowsSpecifiedColumn(query, "role_id");
 
         String message = list.get(0).replace("#user", event.getUser().getAsMention());

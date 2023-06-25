@@ -44,11 +44,11 @@ public class WelcomeTextSlash extends SlashCommand{
         message = message.replace("'", "''");
         
         String discordId = event.getGuild().getId();
-        String query = "INSERT INTO welcome_message(discord_id, channel_id, message_text, bot_id)"
+        String query = "INSERT INTO welcome_message(guild_id, channel_id, message_text, bot_id)"
                             + "VALUES('" + discordId + "','" + channel +"','" + message + "','"+event.getJDA().getSelfUser().getId()+"');";
         sql.runQuery(query);
         if(event.getOption("role") != null){
-            query = "INSERT INTO welcome_roles(role_id, discord_id, bot_id)"
+            query = "INSERT INTO welcome_roles(role_id, guild_id, bot_id)"
                                 + "VALUES('" + event.getOption("role").getAsRole().getId() + "','" + discordId + "','"+event.getJDA().getSelfUser().getId()+"');";
             sql.runQuery(query);
         }

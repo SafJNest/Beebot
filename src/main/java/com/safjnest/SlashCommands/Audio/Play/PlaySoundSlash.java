@@ -1,4 +1,4 @@
-package com.safjnest.SlashCommands.Audio;
+package com.safjnest.SlashCommands.Audio.Play;
 
 import java.awt.Color;
 import java.io.File;
@@ -35,13 +35,11 @@ public class PlaySoundSlash extends SlashCommand{
     PlayerManager pm;
 
 
-    public PlaySoundSlash(){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+    public PlaySoundSlash(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
+        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
+        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.sql = DatabaseHandler.getSql();
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "sound", "Sound to play", true)

@@ -42,7 +42,7 @@ public class LeaveTextSlash extends SlashCommand{
         message = message.replace("'", "''");
         
         String discordId = event.getGuild().getId();
-        String query = "INSERT INTO left_message(discord_id, channel_id, message_text, bot_id)"
+        String query = "INSERT INTO left_message(guild_id, channel_id, message_text, bot_id)"
                             + "VALUES('" + discordId + "','" + channel +"','" + message + "','"+event.getJDA().getSelfUser().getId()+"');";
         DatabaseHandler.getSql().runQuery(query);
         event.deferReply(false).addContent("All set correctly").queue();

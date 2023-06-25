@@ -57,7 +57,7 @@ public class LastMatchesSlash extends SlashCommand {
         int gamesToAnalyze = event.getOption("ngames").getAsInt();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         if(event.getOption("user") == null){
-            String query = "SELECT account_id FROM lol_user WHERE discord_id = '" + event.getMember().getId() + "';";
+            String query = "SELECT account_id FROM lol_user WHERE guild_id = '" + event.getMember().getId() + "';";
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
             } catch (Exception e) {

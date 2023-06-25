@@ -67,7 +67,7 @@ public class MemberInfo extends Command{
 
         String permissionNames = PermissionHandler.getFilteredPermissionNames(member).toString();
 
-        String query = "SELECT summoner_id FROM lol_user WHERE discord_id = '" + user.getId() + "';";
+        String query = "SELECT summoner_id FROM lol_user WHERE guild_id = '" + user.getId() + "';";
         ArrayList<String> accounts = DatabaseHandler.getSql().getAllRowsSpecifiedColumn(query, "summoner_id");
         String lolAccounts = "";
         if(accounts.size() == 0){

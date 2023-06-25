@@ -28,9 +28,9 @@ public class ListRoom extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        String query = "SELECT room_id FROM rooms_nickname WHERE discord_id = '" + event.getGuild().getId() + "';";
+        String query = "SELECT room_id FROM rooms_nickname WHERE guild_id = '" + event.getGuild().getId() + "';";
         ArrayList<String> roomId= sql.getAllRowsSpecifiedColumn(query, "room_id");
-        query = "SELECT room_name FROM rooms_nickname WHERE discord_id = '" + event.getGuild().getId() + "';";
+        query = "SELECT room_name FROM rooms_nickname WHERE guild_id = '" + event.getGuild().getId() + "';";
         ArrayList<String> roomName= sql.getAllRowsSpecifiedColumn(query, "room_name");
         String rooms = "";
         for(int i = 0; i < roomName.size(); i++){

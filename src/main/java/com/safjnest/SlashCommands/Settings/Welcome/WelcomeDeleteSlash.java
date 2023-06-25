@@ -19,9 +19,9 @@ public class WelcomeDeleteSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         SQL sql = DatabaseHandler.getSql();
-        String query = "DELETE FROM welcome_message WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        String query = "DELETE FROM welcome_message WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         sql.runQuery(query);
-        query = "DELETE FROM welcome_roles WHERE discord_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        query = "DELETE FROM welcome_roles WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         sql.runQuery(query);
         event.deferReply(false).addContent("All deleted correctly").queue();
     }

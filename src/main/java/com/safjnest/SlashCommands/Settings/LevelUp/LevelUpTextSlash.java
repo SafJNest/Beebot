@@ -32,10 +32,10 @@ public class LevelUpTextSlash extends SlashCommand{
             event.deferReply(false).addContent("You have not enabled the exp system yet.").queue();
             return;
         }
-        query = "INSERT INTO levelup_message(discord_id, message_text)"
+        query = "INSERT INTO levelup_message(guild_id, message_text)"
                             + "VALUES('" + discordId + "','" + message +"');";
         if(!DatabaseHandler.getSql().runQuery(query)){
-            query = "UPDATE levelup_message SET message_text = '" + message + "' WHERE discord_id = '" + discordId + "';"; 
+            query = "UPDATE levelup_message SET message_text = '" + message + "' WHERE guild_id = '" + discordId + "';"; 
             DatabaseHandler.getSql().runQuery(query);
             event.deferReply(false).addContent("Set a new LevelUp message.").queue();
             return;

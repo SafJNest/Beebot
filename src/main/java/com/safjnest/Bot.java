@@ -54,6 +54,8 @@ import com.safjnest.Commands.ManageMembers.*;
 
 import com.safjnest.SlashCommands.Admin.*;
 import com.safjnest.SlashCommands.Audio.*;
+import com.safjnest.SlashCommands.Audio.List.ListSlash;
+import com.safjnest.SlashCommands.Audio.Play.PlaySlash;
 import com.safjnest.SlashCommands.LOL.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
@@ -218,7 +220,7 @@ public class Bot extends ListenerAdapter implements Runnable {
                                              new WelcomeSlash(sql, gs), new LevelUpSlash(gs), new LeaveSlash());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
-            Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new ListUserSlash(), new PlayYoutubeSlash(youtubeApiKey), new PlaySoundSlash(), 
+            Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new PlaySlash(youtubeApiKey), 
                                              new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash());
 
         if(threadName.equals("beebot"))

@@ -22,10 +22,10 @@ public class LevelUp extends Command {
         String message = event.getMessage().getContentRaw();
         String discordId = event.getGuild().getId();
         message = message.substring(message.indexOf("|")+1);
-        String query = "INSERT INTO levelup_message(discord_id, message_text)"
+        String query = "INSERT INTO levelup_message(guild_id, message_text)"
                             + "VALUES('" + discordId + "','" + message +"');";
         if(!DatabaseHandler.getSql().runQuery(query)){
-            query = "UPDATE levelup_message SET message_text = '" + message + "' WHERE discord_id = '" + discordId + "';"; 
+            query = "UPDATE levelup_message SET message_text = '" + message + "' WHERE guild_id = '" + discordId + "';"; 
             DatabaseHandler.getSql().runQuery(query);
             event.reply("Set a new LevelUp message.");
             return;

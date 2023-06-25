@@ -27,18 +27,49 @@
         "arguments" : "[CommandName]"
     },
 
-    "list":{
+    "list": {
         "alias" : ["papyrus", "paper", "listoide"],
         "help"  : "Display a list with all the sound in a server.",
         "category" : "Audio",
-        "arguments" : "[CommandName]"
+        "arguments" : "[CommandName]",
+        "children": {
+            "user": {
+                "alias" : [],
+                "help"  : "Display a list with all the sound in a server.",
+                "arguments" : "[CommandName]"
+            }, 
+            "guild": {
+                "alias" : [],
+                "help"  : "Display a list with all the sound uploaded by a user.",
+                "arguments" : "[CommandName]"
+            }
+        }
     },
 
     "listuser":{
         "alias" : ["papyrususer", "paperuser", "listoideuser"],
-        "help"  : "Display a list with all the sound uploaded by a user",
+        "help"  : "Display a list with all the sound uploaded by a user.",
         "category" : "Audio",
         "arguments" : "[CommandName]"
+    },
+
+    "play": {
+        "alias" : ["papyrus", "paper", "listoide"],
+        "help"  : "Can play a sound from youtube or a custum ome from the database.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "youtube": {
+                "alias" : [],
+                "help"  : "Play a video from youtube.",
+                "arguments" : "[CommandName]"
+            }, 
+            "sound": {
+                "alias" : [],
+                "help"  : "Play a custom sound from the database.",
+                "arguments" : "[CommandName]"
+            }
+        }
     },
 
     "playyoutube":{
