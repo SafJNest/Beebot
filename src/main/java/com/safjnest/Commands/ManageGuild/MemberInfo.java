@@ -86,7 +86,7 @@ public class MemberInfo extends Command{
             lvl = Integer.valueOf(arr.get(1));
             msg = Integer.valueOf(arr.get(2));
         }
-        String lvlString = String.valueOf(ExpSystem.expToLvlUp(lvl, exp) + "/" + ExpSystem.totalExpToLvlUp(lvl + 1));
+        String lvlString = String.valueOf(ExpSystem.expToLvlUp(lvl, exp) + "/" + (ExpSystem.totalExpToLvlUp(lvl + 1) - ExpSystem.totalExpToLvlUp(lvl)));
 
         List<String> activityNames = new ArrayList<String>();
         member.getActivities().forEach(activity -> activityNames.add(activity.getName()));

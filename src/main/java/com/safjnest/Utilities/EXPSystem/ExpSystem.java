@@ -59,12 +59,46 @@ public class ExpSystem {
         return new Random().nextInt((25 - 15) + 1) + 15;
     }
 
+
+    /**
+     * This method is used to calculate the total experience that the user needs to
+     * get to be level {@code lvl} from zero.
+     * <p>
+     * The experience is calculated using the following formula:
+     * {@code (5/6) * (lvl) * (2 * (lvl) * (lvl) + 27 * (lvl) + 91)}.
+     * <table border="2">
+     * <tr>
+     * <td>LVL EXP</td>
+     * </tr>
+     * <tr>
+     * <td>1 100</td>
+     * </tr>
+     * <tr>
+     * <td>2 255</td>
+     * </tr>
+     * <tr>
+     * <td>3 475</td>
+     * </table>
+     * @param lvl
+     * @return
+     */
     public static int totalExpToLvlUp(int lvl){
-        return (int) ((5 * (Math.pow(lvl, 2)) + (50 * lvl) + 100));
+        return (int) ((5.0/6.0) * (lvl) * (2 * (lvl) * (lvl) + 27 * (lvl) + 91));
     }
 
+
+    /**
+     * This method is used to calculate the experience that the user needs to get level up.
+     * <p>
+     * So if the user is level 1 with 175 exp and to get level 2 needs a total of 255 experience, this method will return 80.
+     * @param lvl
+     * @param exp
+     * @return 
+     */
     public static int expToLvlUp(int lvl, int exp){
-        return (totalExpToLvlUp(lvl) - (int) ((5.0/6.0) * (lvl+1) * (2 * (lvl+1) * (lvl+1) + 27 * (lvl+1) + 91) - exp));
+        if(lvl == 1 && exp < 100)
+            lvl = 0;
+        return (exp - totalExpToLvlUp(lvl));
     }  
 
     /**
@@ -92,7 +126,7 @@ public class ExpSystem {
             lvl = Integer.valueOf(arr.get(1));
             msg = Integer.valueOf(arr.get(2)) + 1;
         }
-        int expNeeded = (int) ((5.0/6.0) * (lvl+1) * (2 * (lvl+1) * (lvl+1) + 27 * (lvl+1) + 91) - exp);
+        int expNeeded = totalExpToLvlUp(lvl + 1) - exp;
         if(expNeeded <= 0){
             query = "update exp_table set exp = " + exp + ", level = " + (lvl+1) + ", messages = "+msg+" where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
             DatabaseHandler.getSql().runQuery(query);
