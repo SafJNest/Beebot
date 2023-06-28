@@ -47,6 +47,7 @@ import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Settings.*;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Admin.*;
+import com.safjnest.Commands.Admin.Shutdown;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.ManageGuild.*;
@@ -220,17 +221,17 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new ListGuildSlash(), new BanSlash(),
                                              new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash(),
-                                             new WelcomeSlash(sql, gs), new LevelUpSlash(gs), new LeaveSlash());
+                                             new WelcomeSlash(sql, gs), new LeaveSlash());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new PlaySlash(youtubeApiKey), 
                                              new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash());
 
         if(threadName.equals("beebot"))
-            Collections.addAll(slashCommandsList, new RewardsSlash(), new LeaderboardSlash());
+            Collections.addAll(slashCommandsList, new RewardsSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
 
         if(threadName.equals("beebot canary"))
-            Collections.addAll(slashCommandsList, new TalkSlash(), new LeaderboardSlash());
+            Collections.addAll(slashCommandsList, new TalkSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
 
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
