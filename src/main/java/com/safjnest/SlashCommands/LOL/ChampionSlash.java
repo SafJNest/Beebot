@@ -203,12 +203,14 @@ public class ChampionSlash extends SlashCommand {
             msg += RiotHandler.getFormattedEmoji(event.getJDA(), situational[i])  + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
         }
         eb.addField("**Situational Items**", msg, true);
-
-         msg = "";
-        for(int i = 3; i < 6; i++){
-            msg += RiotHandler.getFormattedEmoji(event.getJDA(), situational[i])  + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
+        if(situational.length > 6){
+            msg = "";
+            for(int i = 3; i < 6; i++){
+                msg += RiotHandler.getFormattedEmoji(event.getJDA(), situational[i])  + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
+            }   
+            eb.addField(" ", msg, true);
         }
-        eb.addField(" ", msg, true);
+        
 
 
         eb.setColor(Color.decode(

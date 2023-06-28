@@ -213,7 +213,11 @@ public class MobalyticsHandler {
             JSONObject win = (JSONObject) keria.get("champion");
             JSONObject stats = (JSONObject) win.get("stats");
             JSONArray items = (JSONArray) stats.get("winRateHistory");
-            JSONObject build = (JSONObject) items.get(1);
+            JSONObject build;
+            if(items.size() > 1)
+                build = (JSONObject) items.get(1);
+            else 
+                build = (JSONObject) items.get(0);
             return build.get("x").toString();
             
         } catch (Exception e) {
@@ -231,7 +235,11 @@ public class MobalyticsHandler {
             JSONObject win = (JSONObject) keria.get("champion");
             JSONObject stats = (JSONObject) win.get("stats");
             JSONArray items = (JSONArray) stats.get("winRateHistory");
-            JSONObject build = (JSONObject) items.get(1);
+            JSONObject build;
+             if(items.size() > 1)
+                build = (JSONObject) items.get(1);
+            else 
+                build = (JSONObject) items.get(0);
             return build.get("value").toString();
             
         } catch (Exception e) {
