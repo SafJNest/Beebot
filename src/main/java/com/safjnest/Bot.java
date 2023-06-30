@@ -64,6 +64,7 @@ import com.safjnest.SlashCommands.ManageMembers.Move.MoveSlash;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
 import com.safjnest.SlashCommands.Settings.*;
+import com.safjnest.SlashCommands.Settings.Boost.BoostSlash;
 import com.safjnest.SlashCommands.Settings.Leave.LeaveSlash;
 import com.safjnest.SlashCommands.Settings.LevelUp.LevelUpSlash;
 import com.safjnest.SlashCommands.Settings.Welcome.WelcomeSlash;
@@ -200,7 +201,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(commandsList, new Anonym(), new ChannelInfo(), new Clear(), new Msg(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new ListGuild(), new Ban(),
                                              new Unban(), new Kick(), new Move(sql), new Mute(), new UnMute(), new Image(), new Permissions(), new ModifyNickname(), new ListRoom(sql), new Welcome(sql),
-                                             new Leave(sql), new SetRoom(sql), new RandomMove());
+                                             new Leave(sql), new SetRoom(sql), new RandomMove(), new Boost(sql));
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(commandsList, new Connect(), new DeleteSound(sql), new Disconnect(), new DownloadSound(sql), new List(), new ListUser(), new PlayYoutube(youtubeApiKey), new PlaySound(sql), 
@@ -221,7 +222,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new ListGuildSlash(), new BanSlash(),
                                              new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash(),
-                                             new WelcomeSlash(sql, gs), new LeaveSlash());
+                                             new WelcomeSlash(sql, gs), new LeaveSlash(), new BoostSlash());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new PlaySlash(youtubeApiKey), 
