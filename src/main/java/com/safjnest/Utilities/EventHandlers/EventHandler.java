@@ -11,7 +11,6 @@ import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
@@ -160,10 +159,18 @@ public class EventHandler extends ListenerAdapter {
      * On update of a user's boost time (to make the bot praise the user)
      */
     public void onGuildMemberUpdateBoostTime​(GuildMemberUpdateBoostTimeEvent event) {
-        User newguy = event.getUser();
-        TextChannel welcome = event.getGuild().getSystemChannel();
-        welcome.sendMessage("NO FUCKING WAY " + newguy.getAsMention() + " HA BOOSTATO IL SERVER!!\n"
-                + event.getGuild().getBoostCount()).queue();
+        MessageChannel channel = null;
+        String query = "SELECT channel_id FROM boost_message WHERE guild_id = '" + event.getGuild().getId()
+                + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        String notNullPls = sql.getString(query, "channel_id");
+        if (notNullPls == null)
+            return;
+        channel = event.getGuild().getTextChannelById(notNullPls);
+        query = "SELECT message_text FROM boost_message WHERE guild_id = '" + event.getGuild().getId()
+                + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
+        String message = sql.getString(query, "message_text");
+        message = message.replace("#user", event.getUser().getAsMention());
+        channel.sendMessage(message).queue();
     }
 
 

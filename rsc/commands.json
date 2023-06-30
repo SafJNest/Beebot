@@ -309,6 +309,35 @@
         }
     },
 
+    "boost": {
+        "alias" : ["nitro", "setboost", "boosts"],
+        "help"  : "Allow to set a 'boost server message' to be sent every time a user boost the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: !boost #global_chat | Thx #user!. Using #user the user will be mentioned. - Write disable to cancel the function.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#channel) | [messagge]",
+        "children": {
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete the current boost message.",
+                "arguments" : "[CommandName]"
+            }, 
+            "preview": {
+                "alias" : [],
+                "help"  : "Show a preview of the current boost message.",
+                "arguments" : "[CommandName]"
+            },
+            "text": {
+                "alias" : [],
+                "help"  : "Modify or set the boost message.",
+                "arguments" : "[CommandName]"
+            },
+            "move": {
+                "alias" : [],
+                "help"  : "Move the boost channel to another existing channel.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
 
 
 
