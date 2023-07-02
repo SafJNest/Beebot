@@ -47,14 +47,14 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     /**
      * The current data dragon version.
      */
-    private static String dataDragonVersion = "13.12.1";
+    private static String dataDragonVersion;
 
     //fammi il coso per likrare una pagina
     /**
      * url for get the suggested runes from lolanalytics.
      * @see {@link <a href="https://lolanalytics.com/">lolanalytics</a>}
      */
-    private static String runesURL = "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/data/en_US/runesReforged.json";
+    private static String runesURL;
 
     /*
      * All the champions name in the game.
@@ -63,9 +63,14 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
     private static String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106648612039041064", "1108673762708172811", "1117059269901164636", "1117060300592664677", "1117060763182452746", "1123678509693423738"};
     
-    public RiotHandler(R4J riotApi){
+    public RiotHandler(R4J riotApi, String dataDragonVersion){
         RiotHandler.riotApi = riotApi;
-        champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
+        RiotHandler.dataDragonVersion = dataDragonVersion;
+        RiotHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + RiotHandler.dataDragonVersion + "/data/en_US/runesReforged.json";
+        
+        loadChampions();
+        System.out.println("[R4J-Runes] INFO Champions Successful! Thresh is ready to grab :)");
+
         loadRunes();
         System.out.println("[R4J-Runes] INFO Runes Successful! Ryze is happy :)");
     }
@@ -78,6 +83,10 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         return;
 	}
 
+
+    private void loadChampions(){
+        champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
+    }
 
     /**
      * Load all the runes data into {@link #runesHandler runesHandler}

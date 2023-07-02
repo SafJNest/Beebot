@@ -36,6 +36,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.safjnest.Utilities.*;
 import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
@@ -154,7 +155,8 @@ public class Bot extends ListenerAdapter implements Runnable {
         botId = jda.getSelfUser().getId();
 
         GuildSettings gs = new GuildSettings(null, botId, PREFIX);
-        EventHandlerBeebot listenerozzobeby = new EventHandlerBeebot(gs);
+        ExpSystem farm = new ExpSystem();
+        EventHandlerBeebot listenerozzobeby = new EventHandlerBeebot(gs, farm);
            
 
         if(Thread.currentThread().getName().equals("beebot"))
@@ -208,7 +210,7 @@ public class Bot extends ListenerAdapter implements Runnable {
                                              new Upload(sql), new TTS(tts, sql), new Stop(), new CustomizeSound(), new SetVoice(sql));
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
-            Collections.addAll(commandsList, new Leaderboard());
+            Collections.addAll(commandsList, new Leaderboard(), new PrintCache(gs, farm));
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 

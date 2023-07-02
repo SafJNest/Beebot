@@ -46,5 +46,9 @@ public class GuildData {
         this.expSystem = expSystem;
     }
 
+    public String toString(){
+        return "ID: " + id + "| Prefix: " + prefix + " |ExpSystem: " + expSystem;
+    }
+
     
 }

@@ -2,7 +2,6 @@
     "startup" : [
         "beebot",
         "beebot 2",
-        "beebot 3",
         "beebot moderation",
         "beebot music"
     ],
@@ -35,9 +34,13 @@
             "model" : "text-davinci-003"
         },
 
+        "Riot" :{
+            "riotKey": "RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89",
+            "lolVersion": "13.13.1"
+        },
+
         "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
-        "ttsApiKey": "d6199f5911f4493da571729f8127ce37",
-        "riotKey": "RGAPI-ab87ab75-c005-43ac-9ec6-b783f37cee89"
+        "ttsApiKey": "d6199f5911f4493da571729f8127ce37"
     },
 
     "beebot": {
