@@ -34,8 +34,8 @@ public class EventHandlerBeebot extends ListenerAdapter {
     /**
      * Constructor for the TheListenerBeebot class.
      */
-    public EventHandlerBeebot(GuildSettings settings) {
-        farm = new ExpSystem();
+    public EventHandlerBeebot(GuildSettings settings, ExpSystem farm) {
+        this.farm = farm;
         this.settings = settings;
     }
 

@@ -36,7 +36,7 @@ public class App {
         boolean isExtremeTesting = false;
         
         JSONParser parser = new JSONParser();
-        JSONObject settings = null, SQLSettings = null, openAISettins = null;
+        JSONObject settings = null, SQLSettings = null, openAISettins = null, riotSettings = null;
         JSONArray bots = null;
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
@@ -44,6 +44,7 @@ public class App {
             settings = (JSONObject) settings.get("settings");
             SQLSettings = (JSONObject) settings.get("MySQL");
             openAISettins = (JSONObject) settings.get("OpenAI");
+            riotSettings = (JSONObject) settings.get("Riot");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -59,7 +60,8 @@ public class App {
         
         riotApi = null;
         try {
-            riotApi = new R4J(new APICredentials(settings.get("riotKey").toString()));
+            riotApi = new R4J(new APICredentials(
+                riotSettings.get("riotKey").toString()));
             System.out.println("[R4J] INFO Connection Successful!");
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
@@ -73,7 +75,7 @@ public class App {
 
         
         dbh = new DatabaseHandler(sql);
-        lolHandler = new RiotHandler(riotApi);
+        lolHandler = new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
 
         dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         lolHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();

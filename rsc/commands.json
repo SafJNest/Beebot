@@ -532,7 +532,12 @@
 
     
 
-
+    "printcache":{
+        "alias" : ["cache"],
+        "help"  : "",
+        "category" : "Only For Admin",
+        "arguments" : "[prefixlist]"
+    },
 
     "prefixlist":{
         "alias" : ["preflist"],

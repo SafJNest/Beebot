@@ -28,6 +28,11 @@ public class ExpSystem {
         users = new HashMap<>();
     }
 
+
+    public HashMap<String, UserTime> getUsers() {
+        return users;
+    }
+
     /**
      * This method is used to check if the user can receive experience.
      * <p>If the user is not cached, it will be added to the cache and will return true.
