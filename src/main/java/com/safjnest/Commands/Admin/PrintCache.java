@@ -47,8 +47,13 @@ public class PrintCache extends Command {
             return;
         String msg = "";
         for(GuildData gd : gs.cache.values()){
-            if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot"))
+            try {
+                if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot"))
                 msg += "SERVER: " + event.getJDA().getGuildById(gd.getId()).getName() + " | PREFIX: " + gd.getPrefix() + " | EXP: " + gd.getExpSystem() + "\n";
+            } catch (Exception e) {
+               continue;
+            }
+            
         }
         
         
@@ -60,9 +65,13 @@ public class PrintCache extends Command {
         }
 
         for(String s : users.keySet()){
-            msg += "Guild: " + event.getJDA().getGuildById(s).getName() + "\n";
-            for(User u : users.get(s))
-                msg += u.getName() + "\n";
+            try {
+                msg += "Guild: " + event.getJDA().getGuildById(s).getName() + "\n";
+                for(User u : users.get(s))
+                    msg += u.getName() + "\n";
+            } catch (Exception e) {
+                continue;
+            }
         }
             
 

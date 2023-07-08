@@ -1,6 +1,7 @@
 package com.safjnest.Utilities.EventHandlers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -54,39 +55,57 @@ public class EventHandler extends ListenerAdapter {
         }
     }
 
-
+    
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
-        if (e.getName().equals("play")) {
-            ArrayList<Choice> choices = new ArrayList<>();
-
-            if(e.getFocusedOption().getValue().equals("")){
-                String query = "SELECT name, id FROM sound WHERE guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
-                for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
-                    choices.add(new Choice(arr.get(0), arr.get(1)));
-            }else{
-                String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
-                for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
-                    choices.add(new Choice(arr.get(0), arr.get(1)));
-            }
-            e.replyChoices(choices).queue();
+        ArrayList<Choice> choices = new ArrayList<>();
+        switch (e.getName()){
             
-        } else if (e.getName().equals("help")){
-            ArrayList<Choice> choices = new ArrayList<>();
-            List<Command> allCommands = e.getJDA().retrieveCommands().complete();
-
-            if(e.getFocusedOption().getValue().equals("")){
-                Collections.shuffle(allCommands);
-                for(int i = 0; i < 10; i++)
-                    choices.add(new Choice(allCommands.get(i).getName(), allCommands.get(i).getName()));
-            }else{
-                for(Command c : allCommands){
-                    if(c.getName().startsWith(e.getFocusedOption().getValue()))
-                        choices.add(new Choice(c.getName(), c.getName()));
+            case "play":
+                if(e.getFocusedOption().getValue().equals("")){
+                    String query = "SELECT name, id FROM sound WHERE guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0), arr.get(1)));
+                }else{
+                    String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0), arr.get(1)));
                 }
-            }
-            e.replyChoices(choices).queue(); 
+                break;
+
+            case "help":
+
+                List<Command> allCommands = e.getJDA().retrieveCommands().complete();
+                if(e.getFocusedOption().getValue().equals("")){
+                    Collections.shuffle(allCommands);
+                    for(int i = 0; i < 10; i++)
+                        choices.add(new Choice(allCommands.get(i).getName(), allCommands.get(i).getName()));
+                }else{
+                    for(Command c : allCommands){
+                        if(c.getName().startsWith(e.getFocusedOption().getValue()))
+                            choices.add(new Choice(c.getName(), c.getName()));
+                    }
+                }
+                break;
+
+            case "champion":
+                List<String> champions = Arrays.asList(RiotHandler.getChampions());
+                if(e.getFocusedOption().getValue().equals("")){
+                    Collections.shuffle(champions);
+                    for(int i = 0; i < 10; i++)
+                        choices.add(new Choice(champions.get(i), champions.get(i)));
+                }else{
+                    int max = 0;
+                    for(int i = 0; i < champions.size() && max < 10; i++){
+                        if(champions.get(i).toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())){
+                            choices.add(new Choice(champions.get(i), champions.get(i)));
+                            max++;
+                        }
+                    }
+                }
+                break; 
         }
+        e.replyChoices(choices).queue();
     }
 
     @Override

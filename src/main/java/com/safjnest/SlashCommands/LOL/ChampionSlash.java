@@ -35,7 +35,7 @@ public class ChampionSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "champ", "Champion Name", true),
+            new OptionData(OptionType.STRING, "champ", "Champion Name", true).setAutoComplete(true),
             new OptionData(OptionType.STRING, "lane", "Champion Lane", true)
                 .addChoice("Top Lane", "TOP")
                 .addChoice("Jungle", "JUNGLE")
@@ -69,9 +69,6 @@ public class ChampionSlash extends SlashCommand {
                 break;
         }
         
-        if(champName.equalsIgnoreCase("nunu"))
-            champName+="willump";
-
         champName = RiotHandler.findChampion(champName);
     
         
