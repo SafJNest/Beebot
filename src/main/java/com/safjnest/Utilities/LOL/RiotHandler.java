@@ -88,6 +88,10 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
     }
 
+    public static String[] getChampions(){
+        return champions;
+    }
+
     /**
      * Load all the runes data into {@link #runesHandler runesHandler}
      */
