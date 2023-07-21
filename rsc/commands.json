@@ -681,6 +681,24 @@
         "arguments" : "[CommandName] [summonerName] (n games to analyze)"
     },
 
+    "infomatches":{
+        "alias" : ["im", "match"],
+        "help"  : "Get a list with all the people a user played with.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [summonerName] (n games to analyze)"
+    },
+
+
+
+
+
+
+
+
+
+
+
+
     "talk":{
         "alias" : ["stranger", "omegle"],
         "help"  : "Talk to a stranger on omegle. Use quit to quit. Use partymode to let everyone write.",
