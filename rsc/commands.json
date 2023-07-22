@@ -682,7 +682,7 @@
     },
 
     "infomatches":{
-        "alias" : ["im", "match"],
+        "alias" : ["im", "opgg"],
         "help"  : "Get a list with all the people a user played with.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName] (n games to analyze)"

@@ -61,7 +61,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
      */
     private static String[] champions;
 
-    private static String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106648612039041064", "1108673762708172811", "1117059269901164636", "1117060300592664677", "1117060763182452746", "1123678509693423738", "1131573980944416768"};
+    private static String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106648612039041064", "1108673762708172811", "1117059269901164636", "1117060300592664677", "1117060763182452746", "1123678509693423738", "1131573980944416768", "1132405368119627869"};
     
     public RiotHandler(R4J riotApi, String dataDragonVersion){
         RiotHandler.riotApi = riotApi;
@@ -189,6 +189,10 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         return "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/img/profileicon/"+s.getProfileIconId()+".png";
     }
 
+    public static String getSummonerProfilePic(int id){
+        return "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/img/profileicon/"+id+".png";
+    }
+
     public static String getChampionProfilePic(String champ){
         return "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/img/champion/"+champ+".png";
     }
@@ -272,6 +276,23 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             if(name.equals("0"))
                 return ":black_large_square:";
             return name;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static String getFormattedEmoji(JDA jda, int name){
+        
+        try {    
+            for(String id : ids){
+                Guild g = jda.getGuildById(id);
+                for(RichCustomEmoji em: g.getEmojisByName(String.valueOf(name), true))
+                    return "<:"+name+":"+em.getId()+">";
+                
+            } 
+            if(name == 0)
+                return ":black_large_square:";
+            return String.valueOf(name);
         } catch (Exception e) {
             return null;
         }
@@ -375,6 +396,16 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         for(PageRunes page : runesHandler.values()){
             for(String id : page.getRunes().keySet()){
                 if(id.equals(son))
+                    return page.getName();
+            }
+        }
+        return null;
+    }
+
+    public static String getFatherRune(int son){
+        for(PageRunes page : runesHandler.values()){
+            for(String id : page.getRunes().keySet()){
+                if(id.equals(String.valueOf(son)))
                     return page.getName();
             }
         }
