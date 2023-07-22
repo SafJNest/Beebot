@@ -1,17 +1,15 @@
-package com.safjnest.SlashCommands.LOL;
+package com.safjnest.Commands.LOL;
+
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import com.jagrosh.jdautilities.command.SlashCommand;
-import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
@@ -24,38 +22,39 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class InfoMatchesSlash extends SlashCommand {
- 
+public class InfoMatches extends Command {
     /**
      * Constructor
      */
-    public InfoMatchesSlash(){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
+    public InfoMatches() {
+        this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.options = Arrays.asList(new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", true));
     }
 
     /**
      * This method is called every time a member executes the command.
      */
-	@Override
-	protected void execute(SlashCommandEvent event) {
-        event.deferReply(false).queue();
+    @Override
+    protected void execute(CommandEvent event) {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        s = RiotHandler.getSummonerByName(event.getOption("user").getAsString());
+        String args = event.getArgs();
         MatchParticipant me = null;
         LOLMatch match = null;
         R4J r4j = RiotHandler.getRiotApi();
-        if(s == null){
-            event.getHook().editOriginal("Didn't find this user. ").queue();
+        
+        s = RiotHandler.getSummonerByName(args);
+        if (s == null) {
+            event.reply("Didn't find this user. ");
             return;
         }
+        
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(s.getName());
+        
         for(int i = 0; i < 5; i++){
             try {
                 
@@ -102,11 +101,11 @@ public class InfoMatchesSlash extends SlashCommand {
                 continue;
             }
         }
+        event.reply(eb.build());
 
-        event.getHook().editOriginalEmbeds(eb.build()).queue();
-	}
+    }
 
-    private String getFormattedDuration(int seconds){
+   private String getFormattedDuration(int seconds){
         int S = seconds % 60;
         int H = seconds / 60;
         int M = H % 60;
@@ -124,6 +123,5 @@ public class InfoMatchesSlash extends SlashCommand {
         return prova;
         
     }
-
 
 }
