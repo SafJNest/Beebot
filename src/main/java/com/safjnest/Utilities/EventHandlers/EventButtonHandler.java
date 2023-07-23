@@ -6,6 +6,7 @@ import java.util.List;
 
 
 import com.safjnest.Commands.LOL.GameRank;
+import com.safjnest.Commands.LOL.InfoMatches;
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
@@ -38,10 +39,12 @@ public class EventButtonHandler extends ListenerAdapter {
             return;
         }
 
-
         event.deferEdit().queue();
         if (event.getButton().getId().startsWith("lol-")) 
             lolButtonEvent(event);
+        
+        else if (event.getButton().getId().startsWith("match-")) 
+            matchButtonEvent(event);
 
         else if (event.getButton().getId().startsWith("rank-")) 
             rankButtonEvent(event);
@@ -117,6 +120,74 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.getMessage()
                         .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                 RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
+                        .setActionRow(left, center, right)
+                        .queue();
+                break;
+        }
+    }
+
+    public void matchButtonEvent(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        Button left = Button.primary("match-left", "<-");
+        Button right = Button.primary("match-right", "->");
+        Button center = null;
+        String nameSum = "";
+        int index = 0;
+
+        for (Button b : event.getMessage().getButtons()) {
+            if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
+                nameSum = b.getLabel();
+        }
+        String query = "SELECT guild_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
+                + "';";
+        query = "SELECT summoner_id FROM lol_user WHERE guild_id = '"
+                + DatabaseHandler.getSql().getString(query, "guild_id") + "';";
+        ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
+        switch (args) {
+
+            case "right":
+
+                for (int i = 0; i < accounts.size(); i++) {
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                        index = i;
+                }
+
+                if ((index + 1) == accounts.size())
+                    index = 0;
+                else
+                    index += 1;
+
+                center = Button.primary("match-center",
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                center = center.asDisabled();
+                
+                event.getMessage()
+                        .editMessageEmbeds(InfoMatches.createEmbed(
+                            RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)), event.getJDA()).build())
+                        .setActionRow(left, center, right)
+                        .queue();
+                break;
+
+            case "left":
+
+                for (int i = 0; i < accounts.size(); i++) {
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                        index = i;
+
+                }
+
+                if (index == 0)
+                    index = accounts.size() - 1;
+                else
+                    index -= 1;
+
+                center = Button.primary("match-center",
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                center = center.asDisabled();
+                
+               event.getMessage()
+                        .editMessageEmbeds(InfoMatches.createEmbed(
+                            RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)), event.getJDA()).build())
                         .setActionRow(left, center, right)
                         .queue();
                 break;

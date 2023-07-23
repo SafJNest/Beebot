@@ -1,15 +1,21 @@
 package com.safjnest.Commands.LOL;
 
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
@@ -40,26 +46,63 @@ public class InfoMatches extends Command {
      */
     @Override
     protected void execute(CommandEvent event) {
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        Button left = Button.primary("match-left", "<-");
+        Button right = Button.primary("match-right", "->");
+        Button center = Button.primary("match-center", "f");
+
+        boolean searchByUser = false;
         String args = event.getArgs();
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        if(args.equals("")){
+            s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
+            if(s == null){
+                event.reply("You dont have a Riot account connected, for more information /help setUser");
+                return;
+            }
+            searchByUser = true;
+            center = Button.primary("center", s.getName());
+            center = center.asDisabled();
+            
+        }
+        else if(event.getMessage().getMentions().getMembers().size() != 0){
+            s = RiotHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
+            if(s == null){
+                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
+                return;
+            }
+        }else{
+            s = RiotHandler.getSummonerByName(args);
+            if(s == null){
+                event.reply("Didn't find this user. ");
+                return;
+            }
+        }
+        
+        
+        EmbedBuilder builder = createEmbed(s, event.getJDA());
+        
+        if(searchByUser && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+            return;
+        }
+
+        event.reply(builder.build());
+        
+    }
+    
+    
+    
+    public static EmbedBuilder createEmbed(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s , JDA jda){
+        EmbedBuilder eb = new EmbedBuilder();
         MatchParticipant me = null;
         LOLMatch match = null;
         R4J r4j = RiotHandler.getRiotApi();
-        
-        s = RiotHandler.getSummonerByName(args);
-        if (s == null) {
-            event.reply("Didn't find this user. ");
-            return;
-        }
-        
-        EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(s.getName());
         
         for(int i = 0; i < 5; i++){
             try {
                 
                 match = r4j.getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, s.getLeagueGames().get().get(i));
-    
                 for(MatchParticipant mp : match.getParticipants()){
                     if(mp.getSummonerId().equals(s.getSummonerId())){
                         me = mp;
@@ -70,7 +113,7 @@ public class InfoMatches extends Command {
                 for(MatchParticipant searchMe : match.getParticipants()){
                     if(searchMe.getSummonerId().equals(s.getSummonerId()))
                         me = searchMe;
-                    String supp = RiotHandler.getFormattedEmoji(event.getJDA(), searchMe.getChampionName()) 
+                    String supp = RiotHandler.getFormattedEmoji(jda, searchMe.getChampionName()) 
                                     + " " 
                                     + (searchMe.getSummonerName().equals(me.getSummonerName()) 
                                         ? "**" + me.getSummonerName() + "**" 
@@ -83,45 +126,110 @@ public class InfoMatches extends Command {
                 }
     
                 String kda = me.getKills() + "/" + me.getDeaths()+ "/" + me.getAssists();
-                String content = RiotHandler.getFormattedEmoji(event.getJDA(), me.getChampionName()) + kda + " | **Ward:** " + me.getWardsPlaced()+"\n"
-                            + "**"+ getFormattedDuration((match.getGameDuration()))  + "** | **Vision:** " + me.getVisionScore() + "\n"
-                            + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, event.getJDA(), 0) + "\n"
-                            + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, event.getJDA(), 1) + "\n"
-                            + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem0())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem1())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem2())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem3())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem4())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem5())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem6()));
-                eb.addField(
-                    match.getQueue().commonName() + ": " + (me.didWin() ? "WIN" : "LOSE") , content, true);
-                
-                String people = "";
-                for(int j = 0; j < 5; j++)
-                    people += blue.get(j) + " "+ red.get(j) + "\n";
-    
-                eb.addField("Participant", people, true);
-                eb.addBlankField(true);
+                String content = "";
+                Instant instant = Instant.ofEpochMilli(match.getGameCreation() + match.getGameDurationAsDuration().toMillis() + 3600000*2);
+                ZoneOffset offset = ZoneOffset.UTC;
+                OffsetDateTime offsetDateTime = instant.atOffset(offset);
+                String date = DateHandler.formatDate(offsetDateTime);
+                date = date.substring(date.indexOf("(")+1, date.indexOf(")"));
+                switch (match.getQueue()){
+
+                    case CHERRY:
+                        
+                        content = RiotHandler.getFormattedEmoji(jda, me.getChampionName()) + kda +"\n"
+                        + date + " | **"+ getFormattedDuration((match.getGameDuration()))  + "**\n"
+                        + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner1Id()) + "_") + RiotHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment1())) + " " + RiotHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment2())) + "\n"
+                        + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner2Id()) + "_") + RiotHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment3())) + " " + RiotHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment4())) + "\n"
+                        + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem0())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem1())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem2())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem3())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem4())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem5())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem6()));
+                       
+                        eb.addField(
+                            "ARENA: " + (me.didWin() ? "WIN" : "LOSE") , content, true);
+
+                        HashMap<String, ArrayList<String>> prova = new HashMap<>();
+                        prova.put("teamscuttles", new ArrayList<>());
+                        prova.put("teamporos", new ArrayList<>());
+                        prova.put("teamkrugs", new ArrayList<>());
+                        prova.put("teamminions", new ArrayList<>());
+                        int cont = 0;
+                        for(MatchParticipant mt : match.getParticipants()){
+                            String name = ((mt.getSummonerName().equals(s.getName())) ? "**" + mt.getSummonerName() + "**" : mt.getSummonerName());
+                            if(cont < 2){
+                                prova.get("teamscuttles").add(RiotHandler.getFormattedEmoji(jda, "teamscuttles") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
+                            }
+                            if(cont >= 2 && cont < 4){
+                                prova.get("teamporos").add(RiotHandler.getFormattedEmoji(jda, "teamporos") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
+                            }
+                            if(cont >= 4 && cont < 6){
+                                prova.get("teamkrugs").add(RiotHandler.getFormattedEmoji(jda, "teamkrugs") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
+                            }
+                            if(cont >= 6 ){
+                                prova.get("teamminions").add(RiotHandler.getFormattedEmoji(jda, "teamminions") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
+                            }
+                            cont++;
+                        }
+                        String blueTeam = "";
+                        String redTeam = "";
+                        blueTeam = ""
+                                    + prova.get("teamminions").get(0)  + "\n"
+                                    + prova.get("teamminions").get(1)+ "\n\n"
+                                    + prova.get("teamkrugs").get(0) + "\n"
+                                    + prova.get("teamkrugs").get(1) + "\n";
+                        redTeam = ""
+                                + prova.get("teamporos").get(0) + "\n"
+                                + prova.get("teamporos").get(1) + "\n\n"
+                                + prova.get("teamscuttles").get(0) + "\n"
+                                + prova.get("teamscuttles").get(1) + "\n";
+                        eb.addField("Participant", blueTeam, true);
+                        eb.addField("Participant", redTeam, true);
+                    break;
+
+                    default:
+                     content = RiotHandler.getFormattedEmoji(jda, me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
+                                + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
+                                + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, jda, 0) + "\n"
+                                + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, jda, 1) + "\n"
+                                + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem0())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem1())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem2())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem3())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem4())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem5())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem6()));
+                                eb.addField(
+                                    match.getQueue().commonName() + ": " + (me.didWin() ? "WIN" : "LOSE") , content, true);
+                                String blueS = "";
+                                String redS = "";
+                                for(int j = 0; j < 5; j++)
+                                    blueS += blue.get(j) + "\n";
+                                 for(int j = 0; j < 5; j++)
+                                    redS += red.get(j) + "\n";
+                                eb.addField("Blue Side", blueS, true);
+                                eb.addField("Red Side", redS, true);
+                    break;
+
+
+                }
+
             } catch (Exception e) {
+                e.printStackTrace();
                 continue;
             }
         }
-        event.reply(eb.build());
-
+        return eb;
     }
 
-   private String getFormattedDuration(int seconds){
+    private static String getFormattedDuration(int seconds) {
         int S = seconds % 60;
         int H = seconds / 60;
         int M = H % 60;
         return M + "m: " + S + "s";
-    } 
+    }
 
-    private String getFormattedRunes(MatchParticipant me, JDA jda, int row){
+    private static String getFormattedRunes(MatchParticipant me, JDA jda, int row) {
         String prova = "";
         PerkStyle perkS = me.getPerks().getPerkStyles().get(row);
-        
+
         prova += RiotHandler.getFormattedEmoji(jda, RiotHandler.getFatherRune(perkS.getSelections().get(0).getPerk()));
-        for(PerkSelection perk: perkS.getSelections()){
+        for (PerkSelection perk : perkS.getSelections()) {
             prova += RiotHandler.getFormattedEmoji(jda, perk.getPerk());
         }
         return prova;
-        
+
     }
 
+   
 }

@@ -1,24 +1,21 @@
 package com.safjnest.SlashCommands.LOL;
 
-import java.util.ArrayList;
+
 import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Commands.LOL.InfoMatches;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.impl.R4J;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
-import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
-import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
-import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -36,7 +33,7 @@ public class InfoMatchesSlash extends SlashCommand {
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.options = Arrays.asList(new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", true));
+        this.options = Arrays.asList(new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", false));
     }
 
     /**
@@ -44,86 +41,43 @@ public class InfoMatchesSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        event.deferReply(false).queue();
+        Button left = Button.primary("match-left", "<-");
+        Button right = Button.primary("match-right", "->");
+        Button center = Button.primary("match-center", "f");
+
+        boolean searchByUser = false;
+        
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        s = RiotHandler.getSummonerByName(event.getOption("user").getAsString());
-        MatchParticipant me = null;
-        LOLMatch match = null;
-        R4J r4j = RiotHandler.getRiotApi();
-        if(s == null){
-            event.getHook().editOriginal("Didn't find this user. ").queue();
+        event.deferReply(false).queue();
+        if(event.getOption("user") == null){
+            s = RiotHandler.getSummonerFromDB(event.getUser().getId());
+            if(s == null){
+                event.getHook().editOriginal("You dont have connected a Riot account, for more information /help setSummoner").queue();
+                return;
+            }
+            searchByUser = true;
+            center = Button.primary("match-center", s.getName());
+            center = center.asDisabled();
+        }else{
+            s = RiotHandler.getSummonerByName(event.getOption("user").getAsString());
+            if(s == null){
+                event.getHook().editOriginal("Didn't find this user. ").queue();
+                return;
+            }
+            
+        }
+        
+        EmbedBuilder builder = InfoMatches.createEmbed(s, event.getJDA());
+        
+        if(searchByUser && RiotHandler.getNumberOfProfile(event.getUser().getId()) > 1){
+            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
+            action.setComponents(ActionRow.of(left, center, right)).queue();
             return;
         }
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(s.getName());
-        for(int i = 0; i < 5; i++){
-            try {
-                
-                match = r4j.getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, s.getLeagueGames().get().get(i));
-    
-                for(MatchParticipant mp : match.getParticipants()){
-                    if(mp.getSummonerId().equals(s.getSummonerId())){
-                        me = mp;
-                    }
-                }
-                ArrayList<String> blue = new ArrayList<>();
-                ArrayList<String> red = new ArrayList<>();
-                for(MatchParticipant searchMe : match.getParticipants()){
-                    if(searchMe.getSummonerId().equals(s.getSummonerId()))
-                        me = searchMe;
-                    String supp = RiotHandler.getFormattedEmoji(event.getJDA(), searchMe.getChampionName()) 
-                                    + " " 
-                                    + (searchMe.getSummonerName().equals(me.getSummonerName()) 
-                                        ? "**" + me.getSummonerName() + "**" 
-                                        : searchMe.getSummonerName());
-    
-                    if(searchMe.getTeam() == TeamType.BLUE)
-                        blue.add(supp);
-                    else
-                        red.add(supp);
-                }
-    
-                String kda = me.getKills() + "/" + me.getDeaths()+ "/" + me.getAssists();
-                String content = RiotHandler.getFormattedEmoji(event.getJDA(), me.getChampionName()) + kda + " | **Ward:** " + me.getWardsPlaced()+"\n"
-                            + "**"+ getFormattedDuration((match.getGameDuration()))  + "** | **Vision:** " + me.getVisionScore() + "\n"
-                            + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, event.getJDA(), 0) + "\n"
-                            + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, event.getJDA(), 1) + "\n"
-                            + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem0())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem1())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem2())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem3())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem4())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem5())) + " " + RiotHandler.getFormattedEmoji(event.getJDA(), String.valueOf(me.getItem6()));
-                eb.addField(
-                    match.getQueue().commonName() + ": " + (me.didWin() ? "WIN" : "LOSE") , content, true);
-                
-                String people = "";
-                for(int j = 0; j < 5; j++)
-                    people += blue.get(j) + " "+ red.get(j) + "\n";
-    
-                eb.addField("Participant", people, true);
-                eb.addBlankField(true);
-            } catch (Exception e) {
-                continue;
-            }
-        }
 
-        event.getHook().editOriginalEmbeds(eb.build()).queue();
+        event.getHook().editOriginalEmbeds(builder.build()).queue();
 	}
 
-    private String getFormattedDuration(int seconds){
-        int S = seconds % 60;
-        int H = seconds / 60;
-        int M = H % 60;
-        return M + "m: " + S + "s";
-    } 
-
-    private String getFormattedRunes(MatchParticipant me, JDA jda, int row){
-        String prova = "";
-        PerkStyle perkS = me.getPerks().getPerkStyles().get(row);
-        
-        prova += RiotHandler.getFormattedEmoji(jda, RiotHandler.getFatherRune(perkS.getSelections().get(0).getPerk()));
-        for(PerkSelection perk: perkS.getSelections()){
-            prova += RiotHandler.getFormattedEmoji(jda, perk.getPerk());
-        }
-        return prova;
-        
-    }
 
 
 }
