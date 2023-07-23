@@ -61,7 +61,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
      */
     private static String[] champions;
 
-    private static String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106648612039041064", "1108673762708172811", "1117059269901164636", "1117060300592664677", "1117060763182452746", "1123678509693423738", "1131573980944416768", "1132405368119627869"};
+    private static String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106648612039041064", "1108673762708172811", "1117059269901164636", "1117060300592664677", "1117060763182452746", "1123678509693423738", "1131573980944416768", "1132405368119627869", "1132694780703416410", "1132694832305934439","1132636113568280636", "1132636703883014154"};
     
     public RiotHandler(R4J riotApi, String dataDragonVersion){
         RiotHandler.riotApi = riotApi;
@@ -265,6 +265,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 
     public static String getFormattedEmoji(JDA jda, String name){
+        if(name.equals("2201_"))
+            name = "4_";
         name = transposeChampionNameForDataDragon(name);
         try {    
             for(String id : ids){
@@ -273,7 +275,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
                     return "<:"+name+":"+em.getId()+">";
                 
             } 
-            if(name.equals("0"))
+            if(name.equals("0") || name.equals("a0") || name.equals("2202_"))
                 return ":black_large_square:";
             return name;
         } catch (Exception e) {
@@ -282,7 +284,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
     public static String getFormattedEmoji(JDA jda, int name){
-        
         try {    
             for(String id : ids){
                 Guild g = jda.getGuildById(id);

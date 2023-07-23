@@ -170,10 +170,10 @@
       <version>v3-rev222-1.25.0</version>
     </dependency>
     <dependency>
-      <groupId>com.github.stelar7</groupId>
-      <artifactId>R4J</artifactId>
-      <version>2.2.9</version>
-    </dependency>
+	    <groupId>com.github.stelar7</groupId>
+	    <artifactId>R4J</artifactId>
+	    <version>2.2.20</version>
+	</dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>

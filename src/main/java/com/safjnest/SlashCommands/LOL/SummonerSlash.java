@@ -51,7 +51,7 @@ public class SummonerSlash extends SlashCommand {
         if(event.getOption("user") == null){
             s = RiotHandler.getSummonerFromDB(event.getUser().getId());
             if(s == null){
-                event.getHook().editOriginal("You dont have connected a Riot account, for more information /help setUser").queue();
+                event.getHook().editOriginal("You dont have connected a Riot account, for more information /help setSummoner").queue();
                 return;
             }
             searchByUser = true;
