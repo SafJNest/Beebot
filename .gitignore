@@ -23,7 +23,6 @@ hs_err_pid*
 
 target/
 .vscode/
-l4j8cache/
 index/
 
 rsc/Upload/*
