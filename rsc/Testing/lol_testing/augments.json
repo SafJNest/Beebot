@@ -67,7 +67,7 @@
         "spellDataValues": {
             "TotalHits": 8.0
         },
-        "tooltip": "<rules>Makes you untargetable while you dash at and deal @Damage@ damage to enemies @TotalHits@ times (deals 50% on-hit damage).</rules><br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@<br>"
+        "tooltip": "<rules>Makes you untargetable while you dash at and deal @Damage@ damage to enemies @TotalHits@ times (deals 50% on-hit damage).</rules>"
     },
     "7": {
         "description": "Gain <scaleAD>10% Attack Damage</scaleAD>.",
@@ -102,7 +102,7 @@
         "name": "BuffBuddies",
         "rarity": 0,
         "spellDataValues": {},
-        "tooltip": "You gain permanent Red and Blue Buffs.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "You gain permanent Red and Blue Buffs."
     },
     "10": {
         "description": "You enter combat launching from a cannon.",
@@ -127,7 +127,7 @@
             "Cooldown": 8.0,
             "InvulnDuration": 2.0
         },
-        "tooltip": "Casting your Ultimate also makes you <status>Invulnerable</status> for @InvulnDuration@s. @Cooldown@s cooldown."
+        "tooltip": "Casting your Ultimate also makes you <status>Invulnerable</status> for @InvulnDuration@s. \n@Cooldown@s cooldown."
     },
     "12": {
         "description": "Gain the <spellName>Castle</spellName> Summoner Spell<br><br><rules><spellName>Castle</spellName> allows you to swap places with your ally.</rules>",
@@ -183,7 +183,7 @@
             "DamageRange": 1000.0,
             "HealToDamageConversion": 0.4000000059604645
         },
-        "tooltip": "<health>Healing</health> and Regen you do deals <magicDamage>@HealToDamageConversion*100@% of that value in magic damage</magicDamage> to the nearest enemy champion.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "<health>Healing</health> and Regen you do deals <magicDamage>@HealToDamageConversion*100@% of that value in magic damage</magicDamage> to the nearest enemy champion."
     },
     "16": {
         "description": "Gain the <spellName>Electrocute</spellName> and <spellName>Phase Rush</spellName> Keystone Runes.",
@@ -204,7 +204,7 @@
             "SlowResist": 0.75,
             "WindowDuration": 4.0
         },
-        "tooltip": "Gain the <spellName>Electrocute</spellName> and <spellName>Phase Rush</spellName> Keystone Runes.<br><br>Electrocute Damage This Round: @f1@<br>Electrocute Damage Total: @f2@"
+        "tooltip": "Gain the <spellName>Electrocute</spellName> and <spellName>Phase Rush</spellName> Keystone Runes."
     },
     "17": {
         "description": "Each round, mark an opponent to take @DamageAmp*100@% more damage and grant an extra @Gold@ gold on death.",
@@ -218,7 +218,7 @@
             "DamageAmp": 0.15000000596046448,
             "Gold": 350.0
         },
-        "tooltip": "Each round, mark an opposing champion. That champion takes @DamageAmp*100@% extra damage and grants an @Gold@ gold to you and your teammate when killed.<br><br>Bonus Damage This Round: @f1@<br>Bonus Damage Total: @f2@<br>Total Gold Gained per Teammate: @f3@"
+        "tooltip": "Each round, mark an opposing champion. That champion takes @DamageAmp*100@% extra damage and grants an @Gold@ gold to you and your teammate when killed."
     },
     "18": {
         "description": "Gain a <shield>Shield</shield> scaling with max Health after <status>Immobilizing</status> an enemy champion.",
@@ -232,7 +232,7 @@
             "HealthScalar": 0.05999999865889549,
             "ShieldBase": 200.0
         },
-        "tooltip": "Gain <shield>@TotalShield@ max Health Shield</shield> after <status>Immobilizing</status> an enemy champion.<br><br>Shields Generated This Round: @f1@<br>Shields Generated Total: @f2@"
+        "tooltip": "Gain <shield>@TotalShield@ max Health Shield</shield> after <status>Immobilizing</status> an enemy champion."
     },
     "19": {
         "description": "Your dash, leap, blink, or teleport Abilities gain <scaleLevel>@Haste@ Ability Haste</scaleLevel>.",
@@ -260,7 +260,7 @@
             "HealAmount": 0.30000001192092896,
             "HealthThreshold": 0.5
         },
-        "tooltip": "Upon dropping below @HealthThreshold*100@% Health, heal for @HealAmount*100@% max Health over 3 seconds.<br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "Upon dropping below @HealthThreshold*100@% Health, heal for @HealAmount*100@% max Health over 3 seconds."
     },
     "21": {
         "description": "Gain the <spellName>Defensive Maneuvers</spellName> Summoner Spell<br><br><rules><spellName>Defensive Maneuvers</spellName> Casts both Summoner <spellName>Barrier</spellName> and <spellName>Heal</spellName> on you and your teammate.</rules>",
@@ -271,7 +271,7 @@
         "name": "DefensiveManeuvers",
         "rarity": 4,
         "spellDataValues": {},
-        "tooltip": "Cast Summoner <abilityName>Barrier</abilityName> and <abilityName>Heal</abilityName> on you and your ally. Grants <shield>@BarrierAmount@ Shield</shield>, restores <healing>@HealAmount@ Health</healing>, and gives <speed>30% Move Speed</speed> for 1 second.<br><br>Healing Done Total: @f1@<br>Shields Created Total: @f2@"
+        "tooltip": "Cast Summoner <abilityName>Barrier</abilityName> and <abilityName>Heal</abilityName> on you and your ally. Grants <shield>@BarrierAmount@ Shield</shield>, restores <healing>@HealAmount@ Health</healing>, and gives <speed>30% Move Speed</speed> for 1 second."
     },
     "22": {
         "description": "Gain @AttackSpeed*100@% Attack Speed.",
@@ -311,7 +311,7 @@
             "GRTriggerTime": 4.0,
             "GRWindow": 5.0
         },
-        "tooltip": "Gain the <spellName>Fleet Footwork</spellName> and <spellName>Grasp of the Undying</spellName> Keystone Runes.<br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@<br>Max Health Gained: @f3@"
+        "tooltip": "Gain the <spellName>Fleet Footwork</spellName> and <spellName>Grasp of the Undying</spellName> Keystone Runes."
     },
     "24": {
         "description": "Gain the <spellName>Die Another Day</spellName> Summoner Spell<br><br><rules><spellName>Die Another Day</spellName> creates a zone where no unit can die for 4 seconds.</rules>",
@@ -338,7 +338,7 @@
             "ExplosionRadius": 500.0,
             "PercentMaxHPDamage": 0.20000000298023224
         },
-        "tooltip": "Your team's first death each round explodes, dealing <trueDamage>@PercentMaxHPDamage*100@% of the targets max health as true damage</trueDamage> to nearby enemies.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealth Total: @f2@"
+        "tooltip": "Your team's first death each round explodes, dealing <trueDamage>@PercentMaxHPDamage*100@% of the targets max health as true damage</trueDamage> to nearby enemies."
     },
     "26": {
         "description": "Deal more damage to enemies the faster you are than them.",
@@ -351,7 +351,7 @@
         "spellDataValues": {
             "BonusDamagePerMSDifference": 0.0010000000474974513
         },
-        "tooltip": "Gain @BonusDamagePerMSDifference*1000@% bonus damage per <moveSpeed>10 Move Speed</moveSpeed> you have more than the target.<br><br>Bonus Damage This Round: @f1@<br>Bonus Damage Total: @f2@"
+        "tooltip": "Gain @BonusDamagePerMSDifference*1000@% bonus damage per <moveSpeed>10 Move Speed</moveSpeed> you have more than the target."
     },
     "27": {
         "description": "Your dash, leap, blink, or teleport Abilities leave behind a trail that detonates after 1 second.",
@@ -365,7 +365,7 @@
             "ExplosionDelayTime": 1.0,
             "ExplosionRadius": 300.0
         },
-        "tooltip": "Your dash, leap, blink, or teleport Abilities leave behind a trail that detonates after 1 second, dealing @Damage@ physical damage.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "Your dash, leap, blink, or teleport Abilities leave behind a trail that detonates after 1 second, dealing @Damage@ physical damage."
     },
     "28": {
         "description": "Damaging enemies adds a stacking <scaleArmor>Armor</scaleArmor> and <scaleMR>Magic Resist</scaleMR> shred for @ShredDuration@s. ",
@@ -391,7 +391,7 @@
         "name": "EtherealWeapon",
         "rarity": 4,
         "spellDataValues": {},
-        "tooltip": "Your Abilities apply on-hit effects. 1 second cooldown per target.<br><br>Times Triggered This Round: @f1@<br>Times Triggered Total: @f2@"
+        "tooltip": "Your Abilities apply on-hit effects. 1 second cooldown per target."
     },
     "30": {
         "description": "Gain Ability Haste equal to <scaleAP>@APToHasteConversion*100@% of your Ability Power</scaleAP>",
@@ -420,7 +420,7 @@
             "MSBuffDuration": 2.0,
             "TotalHealAmount": 0.6000000238418579
         },
-        "tooltip": "<rules> Lets you channel to restore <healing>Health</healing> and <scaleMana>Mana</scaleMana>. You then gain @MSBuffAmount*100@% Move Speed for @MSBuffDuration@ seconds.</rules><br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "<rules> Lets you channel to restore <healing>Health</healing> and <scaleMana>Mana</scaleMana>. You then gain @MSBuffAmount*100@% Move Speed for @MSBuffDuration@ seconds.</rules>"
     },
     "32": {
         "description": "Deal @BonusDamage*100@% more damage to enemies below @HealthThreshold*100@% health. Reset your basic abilities on takedown.",
@@ -434,7 +434,7 @@
             "BonusDamage": 0.15000000596046448,
             "HealthThreshold": 0.5
         },
-        "tooltip": "Deal @BonusDamage*100@% more damage to enemies below @HealthThreshold*100@% health. Reset your basic abilities on takedown.<br><br>Bonus Damage This Round: @f1@<br>Bonus Damage Total: @f2@"
+        "tooltip": "Deal @BonusDamage*100@% more damage to enemies below @HealthThreshold*100@% health. Reset your basic abilities on takedown."
     },
     "33": {
         "description": "<keywordMajor>Automatically</keywordMajor> fire a Blitzcrank hook every 12 seconds at a nearby enemy champion.",
@@ -447,7 +447,7 @@
         "spellDataValues": {
             "Cooldown": 12.0
         },
-        "tooltip": "<keywordMajor>Automatically</keywordMajor> fire a Blitzcrank hook every 12 seconds at a nearby enemy champion.<br><br>Hooks Landed: @f1@"
+        "tooltip": "<keywordMajor>Automatically</keywordMajor> fire a Blitzcrank hook every 12 seconds at a nearby enemy champion."
     },
     "34": {
         "description": "Start combat with a <abilityName>Black Shield</abilityName> for @ShieldDuration@s.<br><br><rules><abilityName>Black Shield</abilityName> blocks Magic Damage and <status>Immobilizing</status> effects.</rules>",
@@ -460,7 +460,7 @@
         "spellDataValues": {
             "ShieldDuration": 12.0
         },
-        "tooltip": "Start combat with a <abilityName>Black Shield</abilityName> that blocks @ShieldAmount@ magic damage for @ShieldDuration@s.<br><br><rules><abilityName>Black Shield</abilityName> blocks Magic Damage and <status>Immobilizing</status> effects.</rules><br><br>Shields Generated Total: @f1@<br>Immobilizing Spells Blocked Total: @f2@"
+        "tooltip": "Start combat with a <abilityName>Black Shield</abilityName> that blocks @ShieldAmount@ magic damage for @ShieldDuration@s.<br><br><rules><abilityName>Black Shield</abilityName> blocks Magic Damage and <status>Immobilizing</status> effects.</rules>"
     },
     "35": {
         "description": "Gain the <spellName>Feel the Burn</spellName> Summoner Spell.<br><br><rules><spellName>Feel the Burn</spellName> casts <spellName>Ignite</spellName> and <spellName>Exhaust</spellName> on all nearby enemy champions.</rules>",
@@ -476,7 +476,7 @@
             "Range": 1000.0,
             "SlowAmount": 0.30000001192092896
         },
-        "tooltip": "<rules>Casts <spellName>Ignite</spellName> and <spellName>Exhaust</spellName> on all nearby enemy champions.</rules><br><br>Damage Dealt Total: @f1@<br>Damage Reduced Total: @f2@"
+        "tooltip": "<rules>Casts <spellName>Ignite</spellName> and <spellName>Exhaust</spellName> on all nearby enemy champions.</rules>"
     },
     "36": {
         "description": "Your Attacks apply an infinitely stacking <keywordMajor>Burn</keywordMajor>, dealing damage over time.",
@@ -490,7 +490,7 @@
             "BleedDuration": 5.0,
             "PercentMaxHPDamagePer5Seconds": 0.029999999329447746
         },
-        "tooltip": "Your Attacks also <keywordMajor>Burn</keywordMajor> enemies, dealing <scaleAP>@PercentMaxHPDamagePer5Seconds*20@% max Health Magic Damage</scaleAP> damage per second over @BleedDuration@ seconds. The <keywordMajor>Burn</keywordMajor> stacks infinitely.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "Your Attacks also <keywordMajor>Burn</keywordMajor> enemies, dealing <scaleAP>@PercentMaxHPDamagePer5Seconds*20@% max Health Magic Damage</scaleAP> damage per second over @BleedDuration@ seconds. The <keywordMajor>Burn</keywordMajor> stacks infinitely."
     },
     "37": {
         "description": "Gain <healing>@HealShieldAmp*100@% Heal and Shield Power</healing>.",
@@ -533,7 +533,7 @@
             "ModesCooldownReduction": 1.0,
             "OOCTimer": 10.0
         },
-        "tooltip": "Gain the <spellName>First Strike</spellName> and <spellName>Dark Harvest</spellName> Keystone Runes.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@<br>Gold Gained Total: @f3@"
+        "tooltip": "Gain the <spellName>First Strike</spellName> and <spellName>Dark Harvest</spellName> Keystone Runes."
     },
     "39": {
         "description": "Every @Cooldown@ seconds, <keywordMajor>Automatically</keywordMajor> <status>Root</status> nearby enemies for @RootDuration@ second.<br>",
@@ -548,7 +548,7 @@
             "Radius": 450.0,
             "RootDuration": 1.0
         },
-        "tooltip": "Every @Cooldown@ seconds, <keywordMajor>Automatically</keywordMajor> <status>Root</status> nearby enemies for @RootDuration@ second.<br><br>Enemies Rooted This Round: @f1@<br>Enemies Rooted Total: @f2@"
+        "tooltip": "Every @Cooldown@ seconds, <keywordMajor>Automatically</keywordMajor> <status>Root</status> nearby enemies for @RootDuration@ second."
     },
     "40": {
         "description": "Gain the <spellName>Frozen Foundations</spellName> Summoner Spell<br><br><rules><spellName>Frozen Foundations</spellName> summons a wall of ice at a location.</rules>",
@@ -593,7 +593,7 @@
         "spellDataValues": {
             "HealPercentage": 0.03999999910593033
         },
-        "tooltip": "<status>Immobilizing</status> enemy champions <healing>restores @HealPercentage*100@% max Health</healing>.<br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "<status>Immobilizing</status> enemy champions <healing>restores @HealPercentage*100@% max Health</healing>."
     },
     "43": {
         "description": "Gain the <spellName>Now You See Me</spellName> Summoner Spell<br><br><rules><spellName>Now You See Me</spellName> teleports you back to the starting position of your last Movement Ability.</rules>",
@@ -635,7 +635,7 @@
             "FlatCooldownRefundPerTick": 0.029999999329447746,
             "ProcCooldown": 1.0
         },
-        "tooltip": "Your Abilities apply a stacking <keywordMajor>Burn</keywordMajor>, dealing <scaleAP>@BleedDamageTooltip@ Magic Damage</scaleAP> per second for @BleedDuration@ seconds. The <keywordMajor>Burn</keywordMajor> stacks infinitely.<br><br>All your <keywordMajor>Burn</keywordMajor> effects lower your remaining Basic Ability Cooldowns by @FlatCooldownRefundPerTick@s when they damage enemies.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@<br>"
+        "tooltip": "Your Abilities apply a stacking <keywordMajor>Burn</keywordMajor>, dealing <scaleAP>@BleedDamageTooltip@ Magic Damage</scaleAP> per second for @BleedDuration@ seconds. The <keywordMajor>Burn</keywordMajor> stacks infinitely.<br><br>All your <keywordMajor>Burn</keywordMajor> effects lower your remaining Basic Ability Cooldowns by @FlatCooldownRefundPerTick@s when they damage enemies."
     },
     "46": {
         "description": "You gain the Infernal Soul, dealing bonus damage when you hit enemies with Abilities or Attacks.",
@@ -646,7 +646,7 @@
         "name": "InfernalSoul",
         "rarity": 0,
         "spellDataValues": {},
-        "tooltip": "You gain the Infernal Soul, dealing bonus damage when you hit enemies with Abilities or Attacks.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "You gain the Infernal Soul, dealing bonus damage when you hit enemies with Abilities or Attacks."
     },
     "47": {
         "description": "Gain <crit>@CritChance*100@% Crit Chance</crit>.",
@@ -673,7 +673,7 @@
             "CritChance": 0.20000000298023224,
             "CritDamage": 1.5
         },
-        "tooltip": "Your Abilities can Critically Strike for 140% total damage. Gain 20% Crit Chance. Gain an additional @APToCritConversion@ Crit Chance scaling with your AP.<br><br>Bonus Damage This Round: @f1@<br>Bonus Damage Total: @f2@"
+        "tooltip": "Your Abilities can Critically Strike for 140% total damage. Gain 20% Crit Chance. Gain an additional @APToCritConversion@ Crit Chance scaling with your AP."
     },
     "49": {
         "description": "Each round, you and your teammate get an additional Juice for free.",
@@ -711,7 +711,7 @@
             "ShieldRatio": 0.22499999403953552,
             "ShieldRatioAD": 0.3499999940395355
         },
-        "tooltip": "Gain the <spellName>Summon Aery</spellName> and <spellName>Arcane Comet</spellName> Keystone Runes.<br><br>Damage Dealt Total: @f1@<br>Shields Generated Total: @f2@"
+        "tooltip": "Gain the <spellName>Summon Aery</spellName> and <spellName>Arcane Comet</spellName> Keystone Runes."
     },
     "51": {
         "description": "Every 4th Attack deals additional <scaleMagic>magic damage</scaleMagic>.",
@@ -722,7 +722,7 @@
         "name": "LightemUp",
         "rarity": 0,
         "spellDataValues": {},
-        "tooltip": "Every 4th Attack deals additional <scaleMagic>@Damage@ magic damage</scaleMagic>.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "Every 4th Attack deals additional <scaleMagic>@Damage@ magic damage</scaleMagic>."
     },
     "52": {
         "description": "Gain <scaleAD>Attack Damage</scaleAD> scaling with your <attackSpeed>Attack Speed</attackSpeed>.",
@@ -799,7 +799,7 @@
         "name": "MountainSoul",
         "rarity": 0,
         "spellDataValues": {},
-        "tooltip": "You gain the Mountain Soul, gaining <shield>Shield</shield> after being out of combat for a short time.<br><br>Shields Generated Total: @f1@"
+        "tooltip": "You gain the Mountain Soul, gaining <shield>Shield</shield> after being out of combat for a short time."
     },
     "58": {
         "description": "Your Attacks reduce your cooldowns by @CooldownRefund@ second.",
@@ -834,7 +834,7 @@
         "name": "OceanSoul",
         "rarity": 0,
         "spellDataValues": {},
-        "tooltip": "Gain the Ocean Soul, granting high <healing>Health</healing> and <scaleMana>Mana</scaleMana> regen after damaging enemies.<br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "Gain the Ocean Soul, granting high <healing>Health</healing> and <scaleMana>Mana</scaleMana> regen after damaging enemies."
     },
     "61": {
         "description": "<keywordMajor>Automatically</keywordMajor> fire a boomerang at a nearby enemy every 7s.",
@@ -845,7 +845,7 @@
         "name": "OkBoomerang",
         "rarity": 4,
         "spellDataValues": {},
-        "tooltip": "<keywordMajor>Automatically</keywordMajor> fire a boomerang at a nearby enemy every 7s, dealing @Damage@ adaptive damage to enemies hit.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "<keywordMajor>Automatically</keywordMajor> fire a boomerang at a nearby enemy every 7s, dealing @Damage@ adaptive damage to enemies hit."
     },
     "62": {
         "description": "Gain 3 random Dragon Souls.",
@@ -885,7 +885,7 @@
             "AmpedRegen": 10.0,
             "BaseRegen": 5.0
         },
-        "tooltip": "Gain <healing>@BaseRegen*100@% base Health Regen</healing>, increased to <healing>@AmpedRegen*100@% base Health Regen</healing> while below 25% Health.<br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "Gain <healing>@BaseRegen*100@% base Health Regen</healing>, increased to <healing>@AmpedRegen*100@% base Health Regen</healing> while below 25% Health."
     },
     "65": {
         "description": "Permanently gain <scaleAP>1 Ability Power</scaleAP> when you hit enemies with Abilities.",
@@ -911,7 +911,7 @@
         "spellDataValues": {
             "AutoCastCooldown": 15.0
         },
-        "tooltip": "<keywordMajor>Automatically</keywordMajor> slash in a circle around you, dealing bonus damage on the outer edge every 15 seconds.<br><br>Your <keywordMajor>Automatic</keywordMajor> Augments are affected by Ability Haste.<br><br>Damage Dealt Total: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "<keywordMajor>Automatically</keywordMajor> slash in a circle around you, dealing bonus damage on the outer edge every 15 seconds.<br><br>Your <keywordMajor>Automatic</keywordMajor> Augments are affected by Ability Haste."
     },
     "67": {
         "description": "Using an Ability heals you for <healing>@MaxHealthPercentageHeal*100@% max Health</healing>.",
@@ -924,7 +924,7 @@
         "spellDataValues": {
             "MaxHealthPercentageHeal": 0.019999999552965164
         },
-        "tooltip": "Using an Ability heals you for <healing>@MaxHealthPercentageHeal*100@% max Health</healing>.<br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "Using an Ability heals you for <healing>@MaxHealthPercentageHeal*100@% max Health</healing>."
     },
     "68": {
         "description": "Gain <scaleLevel>@AbilityHaste@ Ability Haste</scaleLevel>.",
@@ -966,7 +966,7 @@
         "spellDataValues": {
             "HealthRatioPer1000Units": 0.02500000037252903
         },
-        "tooltip": "You heal for @HealCalcPer1000Units@ per 1000 distance traveled.<br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "You heal for @HealCalcPer1000Units@ per 1000 distance traveled."
     },
     "71": {
         "description": "Gain @MeleeRangeIncrease@ Attack Range, reduced to @RangedRangeIncrease@ for ranged characters.",
@@ -993,7 +993,7 @@
         "spellDataValues": {
             "ProcCooldown": 0.75
         },
-        "tooltip": "Your Abilities mark enemies, causing them to take an additional <magicDamage>@Damage@ magic damage</magicDamage> from your ally's next Attack or Ability.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "Your Abilities mark enemies, causing them to take an additional <magicDamage>@Damage@ magic damage</magicDamage> from your ally's next Attack or Ability."
     },
     "73": {
         "description": "After using a dash, leap, blink, or teleport Ability or exiting <stealth>Stealth</stealth>, gain @MSAmount@ Move Speed for @BuffDuration@ seconds.",
@@ -1020,7 +1020,7 @@
         "spellDataValues": {
             "DamageReduction": 0.15000000596046448
         },
-        "tooltip": "Your Attacks reduce an enemy's damage by @DamageReduction*100@% for 3 seconds.<br><br>Damage Reduced This Round: @f1@<br>Damage Reduced Total: @f2@"
+        "tooltip": "Your Attacks reduce an enemy's damage by @DamageReduction*100@% for 3 seconds."
     },
     "75": {
         "description": "Every second, apply a stacking <keywordMajor>Burn</keywordMajor> to nearby enemy champions scaling with your <health>Max Health</health>. The <keywordMajor>Burn</keywordMajor> stacks infinitely.",
@@ -1034,7 +1034,7 @@
             "BleedDuration": 5.0,
             "Range": 500.0
         },
-        "tooltip": "Every second, apply a stacking <keywordMajor>Burn</keywordMajor>, dealing <health>@BleedDamageTooltip@ per second as <scaleAP>Magic Damage</scaleAP> for @BleedDuration@ seconds</health> to enemy champions within @Range@ range. The <keywordMajor>Burn</keywordMajor> stacks infinitely.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "Every second, apply a stacking <keywordMajor>Burn</keywordMajor>, dealing <health>@BleedDamageTooltip@ per second as <scaleAP>Magic Damage</scaleAP> for @BleedDuration@ seconds</health> to enemy champions within @Range@ range. The <keywordMajor>Burn</keywordMajor> stacks infinitely."
     },
     "76": {
         "description": "Buffing, <healing>Healing</healing>, or <shield>Shielding</shield> your ally deals damage and <status>Slows</status> enemies surrounding them.",
@@ -1048,7 +1048,7 @@
             "ProcCooldown": 2.0,
             "Radius": 450.0
         },
-        "tooltip": "Buffing, <healing>Healing</healing>, or <shield>Shielding</shield> your ally deals <trueDamage>@Damage@ true damage</trueDamage> and <status>Slows</status> enemies surrounding them by 30% for 2 seconds.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "Buffing, <healing>Healing</healing>, or <shield>Shielding</shield> your ally deals <trueDamage>@Damage@ true damage</trueDamage> and <status>Slows</status> enemies surrounding them by 30% for 2 seconds."
     },
     "77": {
         "description": "Gain <crit>@CritChance*100@% Crit Chance</crit> and @HealPercentage*100@% Lifesteal on <crit>Critical Strikes</crit>.",
@@ -1062,7 +1062,7 @@
             "CritChance": 0.20000000298023224,
             "HealPercentage": 0.30000001192092896
         },
-        "tooltip": "Gain <crit>@CritChance*100@% Crit Chance</crit> and @HealPercentage*100@% Lifesteal on <crit>Critical Strikes</crit>.<br><br>Healing Done This Round: @f1@<br>Healing Done Total: @f2@"
+        "tooltip": "Gain <crit>@CritChance*100@% Crit Chance</crit> and @HealPercentage*100@% Lifesteal on <crit>Critical Strikes</crit>."
     },
     "78": {
         "description": "40% of damage dealt to your ally is redirected to you, and 40% of <healing>healing</healing> they recieve is given to you as well.",
@@ -1076,7 +1076,7 @@
             "DamageRedirectPercentage": 0.30000001192092896,
             "HealCopyPercentage": 0.4000000059604645
         },
-        "tooltip": "40% of damage dealt to your ally is redirected to you, and 40% of <healing>healing</healing> they recieve is given to you as well.<br><br>Damage Redirected Total: @f1@<br>Healing Done Total: @f2@<br>"
+        "tooltip": "40% of damage dealt to your ally is redirected to you, and 40% of <healing>healing</healing> they recieve is given to you as well."
     },
     "79": {
         "description": "Gain the <spellName>Lethal Tempo</spellName> and <spellName>Conqueror</spellName> Keystone Runes.",
@@ -1115,7 +1115,7 @@
             "DamageReduction": 0.4000000059604645,
             "MaxChance": 0.6000000238418579
         },
-        "tooltip": "You can <crit>Critically Defend</crit> using your Crit Chance (max @MaxChance*100@% chance), giving you a chance to reduce damage taken by @DamageReduction*100@%. Gain @CritChance*100@% Crit Chance.<br><br>Damage Reduced This Round: @f1@<br>Damage Reduced Total: @f2@"
+        "tooltip": "You can <crit>Critically Defend</crit> using your Crit Chance (max @MaxChance*100@% chance), giving you a chance to reduce damage taken by @DamageReduction*100@%. Gain @CritChance*100@% Crit Chance."
     },
     "81": {
         "description": "Your Attacks grant you <moveSpeed>@MSPerHit@ Move Speed</moveSpeed>, stacking infinitely. Gain AS equal to @MSToASConversion*10000@% of your MS.",
@@ -1185,7 +1185,7 @@
             "BleedDuration": 5.0,
             "PercentMaxHPDamagePer5Seconds": 0.03999999910593033
         },
-        "tooltip": "<status>Immobilizing</status> enemy champions applies a <keywordMajor>Burn</keywordMajor>, dealing <scaleAP>@PercentMaxHPDamagePer5Seconds*20@% max Health Magic Damage</scaleAP> per second for @BleedDuration@ seconds. The <keywordMajor>Burn</keywordMajor> stacks infinitely.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "<status>Immobilizing</status> enemy champions applies a <keywordMajor>Burn</keywordMajor>, dealing <scaleAP>@PercentMaxHPDamagePer5Seconds*20@% max Health Magic Damage</scaleAP> per second for @BleedDuration@ seconds. The <keywordMajor>Burn</keywordMajor> stacks infinitely."
     },
     "86": {
         "description": "When you damage a champion from far away, <keywordMajor>automatically</keywordMajor> fire a <abilityName>Trueshot Barrage</abilityName> at them.",
@@ -1199,7 +1199,7 @@
             "Cooldown": 5.0,
             "SnipeDistance": 700.0
         },
-        "tooltip": "When you damage someone from over @SnipeDistance@ units away, <keywordMajor>automatically</keywordMajor> fire a <abilityName>Trueshot Barrage</abilityName> at them, dealing @Damage@ damage at global range. @Cooldown@s cooldown.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "When you damage someone from over @SnipeDistance@ units away, <keywordMajor>automatically</keywordMajor> fire a <abilityName>Trueshot Barrage</abilityName> at them, dealing @Damage@ damage at global range. @Cooldown@s cooldown."
     },
     "87": {
         "description": "Your Attacks fire a bolt at an additional target dealing reduced damage and applying on-hits.",
@@ -1250,7 +1250,7 @@
             "DamageAmp": 0.30000001192092896,
             "Omnivamp": 0.30000001192092896
         },
-        "tooltip": "Gain @DamageAmp*100@% increased damage and @Omnivamp*100@% Omnivamp while your partner is dead.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "Gain @DamageAmp*100@% increased damage and @Omnivamp*100@% Omnivamp while your partner is dead."
     },
     "91": {
         "description": "Your <healing>Heals</healing> grant extra <shield>Shield</shield> and your <shield>Shields</shield> grant extra <healing>Healing</healing>.",
@@ -1266,7 +1266,7 @@
             "ShieldDuration": 5.0,
             "ShieldFromHealPercentage": 0.20000000298023224
         },
-        "tooltip": "Your <healing>Heals</healing> grans an extra <shield>@ShieldFromHealPercentage*100@% Shield</shield> and your <shield>Shields</shield> grant an extra <healing>@HealFromShieldPercentage@% Healing</healing>.<br><br>Healing Done Total: @f1@<br>Shields Generated Total: @f2@"
+        "tooltip": "Your <healing>Heals</healing> grans an extra <shield>@ShieldFromHealPercentage*100@% Shield</shield> and your <shield>Shields</shield> grant an extra <healing>@HealFromShieldPercentage@% Healing</healing>."
     },
     "92": {
         "description": "Your Item and damage over time effects can Critically Strike. Gain @CritChance*100@% Crit chance.",
@@ -1280,7 +1280,7 @@
             "CritChance": 0.20000000298023224,
             "CritDamage": 0.5
         },
-        "tooltip": "Your Item and damage over time effects can Critically Strike for @CritDamage*100@% extra damage. Gain 20% Crit chance.<br><br>Damage Dealt This Round: @f1@<br>Damage Dealt Total: @f2@"
+        "tooltip": "Your Item and damage over time effects can Critically Strike for @CritDamage*100@% extra damage. Gain 20% Crit chance."
     },
     "93": {
         "description": "Gain the <spellName>Warmup Routine</spellName> Summoner Spell<br><br><rules><spellName>Warmup Routine</spellName> allows you to channel to increase your damage for the rest of the round.</rules>",
@@ -1294,7 +1294,7 @@
             "DamagePerStack": 0.009999999776482582,
             "MaxStacks": 24.0
         },
-        "tooltip": "Channel to increase your damage by 2% per second, up to 24% max.<br><br>Bonus Damage This Round: @f1@<br>Bonus Damage Total: @f2@"
+        "tooltip": "Channel to increase your damage by 2% per second, up to 24% max."
     },
     "94": {
         "description": "When your ally drops below <health>@AllyHealthThreshold*100@% Health</health>, trade some of your health for a <shield>Shield</shield> on your ally.",
@@ -1308,7 +1308,7 @@
             "AllyHealthThreshold": 0.30000001192092896,
             "CurrentHealthToDrain": 0.30000001192092896
         },
-        "tooltip": "When your ally drops below <health>@AllyHealthThreshold*100@% Health</health>, trade <health>@CurrentHealthToDrain*100@% of your current Health</health> for that much <shield>Shield</shield> on your ally.<br><br>Shields Generated This Round: @f1@<br>Shields Generated Total: @f2@"
+        "tooltip": "When your ally drops below <health>@AllyHealthThreshold*100@% Health</health>, trade <health>@CurrentHealthToDrain*100@% of your current Health</health> for that much <shield>Shield</shield> on your ally."
     },
     "95": {
         "description": "Your <healing>Healing</healing> and <shield>Shielding</shield> also increases the target's <scaleArmor>Armor</scaleArmor> and <scaleMR>Magic Resist</scaleMR> for 3 seconds.",

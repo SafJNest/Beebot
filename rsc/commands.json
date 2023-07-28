@@ -652,6 +652,13 @@
         "arguments" : "[CommandName]"
     },
 
+    "infoaugment":{
+        "alias" : ["aug"],
+        "help"  : "Suggests the best build and runes for a champion in a given position.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName]"
+    },
+
     "summoner":{
         "alias" : ["sum"],
         "help"  : "Show up the statistic for a summoner.",

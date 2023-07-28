@@ -1,5 +1,6 @@
 package com.safjnest.SlashCommands.LOL;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import java.awt.Color;
@@ -7,6 +8,7 @@ import java.awt.Color;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.LOL.MobalyticsHandler;
@@ -68,8 +70,11 @@ public class ChampionSlash extends SlashCommand {
                 laneFormatName = "Support";
                 break;
         }
-        
-        champName = RiotHandler.findChampion(champName);
+        ArrayList<String> championsName = new ArrayList<>();
+        for (String champion : RiotHandler.getChampions()) {
+            championsName.add(champion);
+        }
+        champName = SafJNest.findSimilarWord(champName, championsName);
     
         
         EmbedBuilder eb = new EmbedBuilder(); 

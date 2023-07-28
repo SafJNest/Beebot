@@ -9,6 +9,7 @@ import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.LOL.Augment;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.entities.User;
@@ -104,6 +105,32 @@ public class EventHandler extends ListenerAdapter {
                     }
                 }
                 break; 
+            
+            case "infoaugment":
+                List<Augment> augments = RiotHandler.getAugments();
+                if(e.getFocusedOption().getValue().equals("")){
+                    Collections.shuffle(augments);
+                    for(int i = 0; i < 10; i++)
+                        choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
+                }else{
+                    int max = 0;
+                    if(e.getFocusedOption().getValue().matches("\\d+")){
+                        for(int i = 0; i < augments.size() && max < 10; i++){
+                            if(augments.get(i).getId().startsWith(e.getFocusedOption().getValue())){
+                                choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
+                                max++;
+                            }
+                        }
+                        }else{
+                            for(int i = 0; i < augments.size() && max < 10; i++){
+                                if(augments.get(i).getName().toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())){
+                                    choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
+                                    max++;
+                                }
+                            }
+                    }
+                }
+            break; 
         }
         e.replyChoices(choices).queue();
     }

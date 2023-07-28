@@ -1,9 +1,12 @@
 package com.safjnest.Utilities.LOL;
 
+import java.io.File;
+import java.io.FileReader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -11,6 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.LOL.Runes.PageRunes;
@@ -63,16 +67,23 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
     private static String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106648612039041064", "1108673762708172811", "1117059269901164636", "1117060300592664677", "1117060763182452746", "1123678509693423738", "1131573980944416768", "1132405368119627869", "1132694780703416410", "1132694832305934439","1132636113568280636", "1132636703883014154"};
     
+
+    private static ArrayList<Augment> augments = new ArrayList<>();
+
+
     public RiotHandler(R4J riotApi, String dataDragonVersion){
         RiotHandler.riotApi = riotApi;
         RiotHandler.dataDragonVersion = dataDragonVersion;
         RiotHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + RiotHandler.dataDragonVersion + "/data/en_US/runesReforged.json";
         
         loadChampions();
-        System.out.println("[R4J-Runes] INFO Champions Successful! Thresh is ready to grab :)");
+        System.out.println("[R4J-Champions] INFO Champions Successful! Thresh is ready to grab :)");
 
         loadRunes();
         System.out.println("[R4J-Runes] INFO Runes Successful! Ryze is happy :)");
+
+        loadAguments();
+        System.out.println("[R4J-Augments] INFO Augments Successful! Viktor is proud :)");
     }
 
     /**
@@ -134,10 +145,41 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         }
     }
 
+    private void loadAguments(){
+        try {
+            FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "augments.json");
+            JSONParser parser = new JSONParser();
+            JSONObject file = (JSONObject) parser.parse(reader);
+            for(int i = 1; i < 99; i++){
+                if(i == 3) continue;
+
+                JSONObject augment = (JSONObject)file.get(String.valueOf(i));
+
+                HashMap<String, String> spellDataValues = new HashMap<>();
+                JSONObject spellData = (JSONObject)augment.get("spellDataValues");
+                for(Object key : spellData.keySet()){
+                    spellDataValues.put(String.valueOf(key), String.valueOf(spellData.get(key)));
+                }
+                augments.add(new Augment(
+                    String.valueOf(augment.get("id")),
+                    String.valueOf(augment.get("displayName")),
+                    String.valueOf(augment.get("tooltip")),
+                    spellDataValues
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public static HashMap<String, PageRunes> getRunesHandler() {
         return runesHandler;
     } 
+
+    public static ArrayList<Augment> getAugments() {
+        return augments;
+    }
 
     public static R4J getRiotApi(){
         return riotApi;
@@ -283,6 +325,23 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         }
     }
 
+    public static RichCustomEmoji getRichEmoji(JDA jda, String name){
+        if(name.equals("2201_"))
+            name = "4_";
+        name = transposeChampionNameForDataDragon(name);
+        try {    
+            for(String id : ids){
+                Guild g = jda.getGuildById(id);
+                for(RichCustomEmoji em: g.getEmojisByName(name, true))
+                    return em;
+                
+            } 
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static String getFormattedEmoji(JDA jda, int name){
         try {    
             for(String id : ids){
@@ -330,67 +389,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         champName = champName.replace(" & Willump", "");
         champName = champName.replace(" ", "");
         return champName;
-    }
-
-    /**
-     * Get the champion name that is more similar to the input such as "mundo" -> "Dr. Mundo"
-     * @param input
-     * @return String
-     */
-    public static String findChampion(String input) {
-        double maxSimilarity = 0;
-        String championName = "";
-        
-        for (String champion : champions) {
-            double similarity = calculateSimilarity(input, champion);
-            if (similarity > maxSimilarity) {
-                maxSimilarity = similarity;
-                championName = champion;
-            }
-        }
-        
-        return championName;
-    }
-    
-    private static double calculateSimilarity(String s1, String s2) {
-        String longer = s1, shorter = s2;
-        if (s1.length() < s2.length()) {
-            longer = s2;
-            shorter = s1;
-        }
-        int longerLength = longer.length();
-        if (longerLength == 0) {
-            return 1.0;
-        }
-        return (longerLength - editDistance(longer, shorter)) / (double) longerLength;
-    }
-    
-    private static int editDistance(String s1, String s2) {
-        s1 = s1.toLowerCase();
-        s2 = s2.toLowerCase();
-    
-        int[] costs = new int[s2.length() + 1];
-        for (int i = 0; i <= s1.length(); i++) {
-            int lastValue = i;
-            for (int j = 0; j <= s2.length(); j++) {
-                if (i == 0) {
-                    costs[j] = j;
-                } else {
-                    if (j > 0) {
-                        int newValue = costs[j - 1];
-                        if (s1.charAt(i - 1) != s2.charAt(j - 1)) {
-                            newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                        }
-                        costs[j - 1] = lastValue;
-                        lastValue = newValue;
-                    }
-                }
-            }
-            if (i > 0) {
-                costs[s2.length()] = lastValue;
-            }
-        }
-        return costs[s2.length()];
     }
 
     public static String getFatherRune(String son){
