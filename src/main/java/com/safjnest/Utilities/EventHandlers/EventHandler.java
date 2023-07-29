@@ -1,9 +1,11 @@
 package com.safjnest.Utilities.EventHandlers;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
 
 import com.safjnest.Commands.LOL.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
@@ -21,6 +23,7 @@ import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTime
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.Command;
@@ -39,7 +42,6 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
  */
 public class EventHandler extends ListenerAdapter {
     private SQL sql;
-
     public EventHandler(SQL sql) {
         this.sql = sql;
     }
@@ -56,7 +58,17 @@ public class EventHandler extends ListenerAdapter {
         }
     }
 
-    
+
+ 
+
+    @Override
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        String commandName = event.getName() + "Slash";
+        String query = "INSERT INTO command_analytic(name, time, user_id) VALUES ('" + commandName + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + event.getUser().getId() + "');";
+        sql.runQuery(query);
+    }
+
+
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
