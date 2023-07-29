@@ -37,6 +37,7 @@ import com.safjnest.Utilities.*;
 import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
+import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
@@ -240,9 +241,11 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         
         CommandClient client = builder.build();
+        client.setListener(new CommandEventHandler());
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler(sql));
         jda.addEventListener(new EventButtonHandler());
+        //jda.addEventListener(new CommandEventHandler());
         
         synchronized (this){
             try {wait();} 
