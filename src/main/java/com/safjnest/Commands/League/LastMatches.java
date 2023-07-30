@@ -1,4 +1,4 @@
-package com.safjnest.Commands.LOL;
+package com.safjnest.Commands.League;
 
 import java.util.Collections;
 import java.util.HashMap;

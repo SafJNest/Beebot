@@ -1,16 +1,16 @@
-package com.safjnest.SlashCommands.LOL;
-
+package com.safjnest.SlashCommands.League;
 
 import java.util.Arrays;
-
+    
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Commands.LOL.InfoMatches;
+import com.safjnest.Commands.League.Summoner;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -21,19 +21,21 @@ import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class InfoMatchesSlash extends SlashCommand {
+public class SummonerSlash extends SlashCommand {
  
     /**
      * Constructor
      */
-    public InfoMatchesSlash(){
+    public SummonerSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.options = Arrays.asList(new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", false));
+        this.options = Arrays.asList(
+            new OptionData(OptionType.STRING, "summoner", "Summoner name you want to get data", false),
+            new OptionData(OptionType.USER, "user", "User you want to get data", false));
     }
 
     /**
@@ -41,25 +43,33 @@ public class InfoMatchesSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        Button left = Button.primary("match-left", "<-");
-        Button right = Button.primary("match-right", "->");
-        Button center = Button.primary("match-center", "f");
+        Button left = Button.primary("lol-left", "<-");
+        Button right = Button.primary("lol-right", "->");
+        Button center = Button.primary("lol-center", "f");
 
         boolean searchByUser = false;
         
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+
+        User theGuy = null;
         event.deferReply(false).queue();
-        if(event.getOption("user") == null){
+        if(event.getOption("summoner") == null && event.getOption("user") == null){
             s = RiotHandler.getSummonerFromDB(event.getUser().getId());
+            theGuy = event.getUser();
             if(s == null){
                 event.getHook().editOriginal("You dont have connected a Riot account, for more information /help setSummoner").queue();
                 return;
             }
+        }else if(event.getOption("user") != null){
+            theGuy = event.getOption("user").getAsUser();
+            s = RiotHandler.getSummonerFromDB(theGuy.getId());
             searchByUser = true;
-            center = Button.primary("match-center", s.getName());
-            center = center.asDisabled();
+            if(s == null){
+                 event.getHook().editOriginal(theGuy.getEffectiveName() + " has not connected his Riot account.").queue();
+                return;
+            }
         }else{
-            s = RiotHandler.getSummonerByName(event.getOption("user").getAsString());
+            s = RiotHandler.getSummonerByName(event.getOption("summoner").getAsString());
             if(s == null){
                 event.getHook().editOriginal("Didn't find this user. ").queue();
                 return;
@@ -67,17 +77,21 @@ public class InfoMatchesSlash extends SlashCommand {
             
         }
         
-        EmbedBuilder builder = InfoMatches.createEmbed(s, event.getJDA());
+        EmbedBuilder builder = Summoner.createEmbed(event.getJDA(),event.getJDA().getSelfUser().getId(), s);
         
-        if(searchByUser && RiotHandler.getNumberOfProfile(event.getUser().getId()) > 1){
-            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
+        if(searchByUser && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
+            searchByUser = true;
+            center = Button.primary("lol-center", s.getName());
+            center = center.asDisabled();
+
+            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),s).build());
             action.setComponents(ActionRow.of(left, center, right)).queue();
             return;
         }
 
         event.getHook().editOriginalEmbeds(builder.build()).queue();
+        
+
 	}
-
-
 
 }

@@ -1,10 +1,11 @@
-package com.safjnest.SlashCommands.LOL;
+package com.safjnest.SlashCommands.League;
+
 
 import java.util.Arrays;
-    
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Commands.LOL.Summoner;
+import com.safjnest.Commands.League.InfoMatches;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -20,12 +21,12 @@ import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class SummonerSlash extends SlashCommand {
+public class InfoMatchesSlash extends SlashCommand {
  
     /**
      * Constructor
      */
-    public SummonerSlash(){
+    public InfoMatchesSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -40,9 +41,9 @@ public class SummonerSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        Button left = Button.primary("lol-left", "<-");
-        Button right = Button.primary("lol-right", "->");
-        Button center = Button.primary("lol-center", "f");
+        Button left = Button.primary("match-left", "<-");
+        Button right = Button.primary("match-right", "->");
+        Button center = Button.primary("match-center", "f");
 
         boolean searchByUser = false;
         
@@ -55,7 +56,7 @@ public class SummonerSlash extends SlashCommand {
                 return;
             }
             searchByUser = true;
-            center = Button.primary("lol-center", s.getName());
+            center = Button.primary("match-center", s.getName());
             center = center.asDisabled();
         }else{
             s = RiotHandler.getSummonerByName(event.getOption("user").getAsString());
@@ -66,17 +67,17 @@ public class SummonerSlash extends SlashCommand {
             
         }
         
-        EmbedBuilder builder = Summoner.createEmbed(event.getJDA(),event.getJDA().getSelfUser().getId(), s);
+        EmbedBuilder builder = InfoMatches.createEmbed(s, event.getJDA());
         
         if(searchByUser && RiotHandler.getNumberOfProfile(event.getUser().getId()) > 1){
-            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),s).build());
+            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
             action.setComponents(ActionRow.of(left, center, right)).queue();
             return;
         }
 
         event.getHook().editOriginalEmbeds(builder.build()).queue();
-        
-
 	}
+
+
 
 }

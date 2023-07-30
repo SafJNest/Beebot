@@ -4,10 +4,9 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-
-import com.safjnest.Commands.LOL.GameRank;
-import com.safjnest.Commands.LOL.InfoMatches;
-import com.safjnest.Commands.LOL.Summoner;
+import com.safjnest.Commands.League.GameRank;
+import com.safjnest.Commands.League.InfoMatches;
+import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;

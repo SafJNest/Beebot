@@ -1,4 +1,4 @@
-package com.safjnest.SlashCommands.LOL;
+package com.safjnest.SlashCommands.League;
 
 import java.util.Arrays;
 import java.util.Collections;
