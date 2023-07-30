@@ -1,4 +1,4 @@
-package com.safjnest.Commands.LOL;
+package com.safjnest.Commands.League;
 
 import java.net.URL;
 import java.nio.charset.Charset;

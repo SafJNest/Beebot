@@ -1,4 +1,4 @@
-package com.safjnest.SlashCommands.LOL;
+package com.safjnest.SlashCommands.League;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Commands.LOL.GameRank;
+import com.safjnest.Commands.League.GameRank;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.LOL.RiotHandler;

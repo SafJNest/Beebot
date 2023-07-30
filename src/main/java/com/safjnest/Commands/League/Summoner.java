@@ -1,4 +1,4 @@
-package com.safjnest.Commands.LOL;
+package com.safjnest.Commands.League;
 
 import java.awt.Color;
 
@@ -45,19 +45,19 @@ public class Summoner extends Command {
         boolean searchByUser = false;
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        User theGuy = null;
         if(args.equals("")){
             s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
             if(s == null){
                 event.reply("You dont have a Riot account connected, for more information /help setUser");
                 return;
             }
-            searchByUser = true;
-            center = Button.primary("center", s.getName());
-            center = center.asDisabled();
-            
+            theGuy = event.getAuthor();
         }
         else if(event.getMessage().getMentions().getMembers().size() != 0){
             s = RiotHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
+            searchByUser = true;
+            theGuy = event.getMessage().getMentions().getUsers().get(0);
             if(s == null){
                 event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
                 return;
@@ -73,7 +73,10 @@ public class Summoner extends Command {
         
         EmbedBuilder builder = createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s);
         
-        if(searchByUser && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+        if(searchByUser && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
+            searchByUser = true;
+            center = Button.primary("center", s.getName());
+            center = center.asDisabled();
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
             return;
         }

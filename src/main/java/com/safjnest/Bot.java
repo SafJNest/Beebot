@@ -43,8 +43,6 @@ import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
-
-import com.safjnest.Commands.LOL.*;
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Settings.*;
 import com.safjnest.Commands.Math.*;
@@ -52,6 +50,7 @@ import com.safjnest.Commands.Admin.*;
 import com.safjnest.Commands.Admin.Shutdown;
 import com.safjnest.Commands.Audio.*;
 import com.safjnest.Commands.Dangerous.*;
+import com.safjnest.Commands.League.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 
@@ -59,7 +58,7 @@ import com.safjnest.SlashCommands.Admin.*;
 import com.safjnest.SlashCommands.Audio.*;
 import com.safjnest.SlashCommands.Audio.List.ListSlash;
 import com.safjnest.SlashCommands.Audio.Play.PlaySlash;
-import com.safjnest.SlashCommands.LOL.*;
+import com.safjnest.SlashCommands.League.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
 import com.safjnest.SlashCommands.ManageMembers.Move.MoveSlash;
@@ -241,11 +240,12 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         
         CommandClient client = builder.build();
-        client.setListener(new CommandEventHandler());
+        if(!threadName.equals("beebot canary"))
+            client.setListener(new CommandEventHandler());
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler(sql));
         jda.addEventListener(new EventButtonHandler());
-        //jda.addEventListener(new CommandEventHandler());
+        
         
         synchronized (this){
             try {wait();} 

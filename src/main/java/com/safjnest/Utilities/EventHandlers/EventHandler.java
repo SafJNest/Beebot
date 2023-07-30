@@ -6,8 +6,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-
-import com.safjnest.Commands.LOL.Summoner;
+import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;

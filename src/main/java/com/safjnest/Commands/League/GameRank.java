@@ -1,4 +1,4 @@
-package com.safjnest.Commands.LOL;
+package com.safjnest.Commands.League;
 
 import java.awt.Color;
 import java.util.ArrayList;
