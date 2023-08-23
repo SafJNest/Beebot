@@ -156,11 +156,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         GuildSettings gs = new GuildSettings(null, botId, PREFIX);
         ExpSystem farm = new ExpSystem();
-        EventHandlerBeebot listenerozzobeby = new EventHandlerBeebot(gs, farm);
-           
-
-        if(Thread.currentThread().getName().equals("beebot"))
-            jda.addEventListener(listenerozzobeby);
+        
 
         bs.setSettings(new BotSettings(botId, PREFIX, color), botId);
 
@@ -203,7 +199,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(commandsList, new Anonym(), new ChannelInfo(), new Clear(), new Msg(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new ListGuild(), new Ban(),
                                              new Unban(), new Kick(), new Move(sql), new Mute(), new UnMute(), new Image(), new Permissions(), new ModifyNickname(), new ListRoom(sql), new Welcome(sql),
-                                             new Leave(sql), new SetRoom(sql), new RandomMove(), new Boost(sql));
+                                             new Leave(sql), new SetRoom(sql, gs), new RandomMove(), new Boost(sql));
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(commandsList, new Connect(), new DeleteSound(sql), new Disconnect(), new DownloadSound(sql), new List(), new ListUser(), new PlayYoutube(youtubeApiKey), new PlaySound(sql), 
@@ -241,10 +237,13 @@ public class Bot extends ListenerAdapter implements Runnable {
         
         CommandClient client = builder.build();
         if(!threadName.equals("beebot canary"))
-            client.setListener(new CommandEventHandler());
+            client.setListener(new CommandEventHandler(gs));
         jda.addEventListener(client);
-        jda.addEventListener(new EventHandler(sql));
-        jda.addEventListener(new EventButtonHandler());
+        jda.addEventListener(new EventHandler(sql, gs));
+        jda.addEventListener(new EventButtonHandler());;
+
+        if(Thread.currentThread().getName().equals("beebot"))
+            jda.addEventListener(new EventHandlerBeebot(gs, farm));
         
         
         synchronized (this){

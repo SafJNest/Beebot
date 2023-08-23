@@ -77,7 +77,7 @@ public class Move extends Command{
         else{
             try {channel = event.getGuild().getVoiceChannelById(args[1]);} 
             catch (Exception e) {
-                String query = "SELECT room_id FROM rooms_nickname WHERE guild_id = '" + event.getGuild().getId() + "' AND room_name = '" + args[1] +"';";
+                String query = "SELECT room_id FROM rooms_settings WHERE guild_id = '" + event.getGuild().getId() + "' AND room_name = '" + args[1] +"';";
                 String idRoom = (sql.getString(query, "room_id") == null) 
                                 ? "" 
                                 : sql.getString(query, "room_id");

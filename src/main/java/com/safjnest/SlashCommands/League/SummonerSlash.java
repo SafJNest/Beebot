@@ -54,6 +54,7 @@ public class SummonerSlash extends SlashCommand {
         User theGuy = null;
         event.deferReply(false).queue();
         if(event.getOption("summoner") == null && event.getOption("user") == null){
+            searchByUser = true;
             s = RiotHandler.getSummonerFromDB(event.getUser().getId());
             theGuy = event.getUser();
             if(s == null){

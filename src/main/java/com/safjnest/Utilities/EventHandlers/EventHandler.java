@@ -10,6 +10,7 @@ import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.LOL.Augment;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -41,8 +42,10 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
  */
 public class EventHandler extends ListenerAdapter {
     private SQL sql;
-    public EventHandler(SQL sql) {
+    private GuildSettings gs;
+    public EventHandler(SQL sql, GuildSettings gs) {
         this.sql = sql;
+        this.gs = gs;
     }
 
     /**
@@ -62,6 +65,8 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        if(!gs.getServer(event.getGuild().getId()).getCommandStatsRoom(event.getChannel().getIdLong()))
+            return;
         String commandName = event.getName() + "Slash";
         String query = "INSERT INTO command_analytic(name, time, user_id) VALUES ('" + commandName + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + event.getUser().getId() + "');";
         sql.runQuery(query);
@@ -215,7 +220,7 @@ public class EventHandler extends ListenerAdapter {
     /**
      * On update of a user's boost time (to make the bot praise the user)
      */
-    public void onGuildMemberUpdateBoostTime​(GuildMemberUpdateBoostTimeEvent event) {
+    public void onGuildMemberUpdateBoostTime(GuildMemberUpdateBoostTimeEvent event) {
         MessageChannel channel = null;
         String query = "SELECT channel_id FROM boost_message WHERE guild_id = '" + event.getGuild().getId()
                 + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
@@ -234,7 +239,7 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onChannelDelete(ChannelDeleteEvent event){
         if(event.getChannelType().isAudio()){
-            String query = "DELETE from rooms_nickname WHERE guild_id = '" + event.getGuild().getId()
+            String query = "DELETE from rooms_settings WHERE guild_id = '" + event.getGuild().getId()
                            + "' AND room_id = '" + event.getChannel().getId() + "';";
             DatabaseHandler.getSql().runQuery(query);
         }
