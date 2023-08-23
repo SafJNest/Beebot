@@ -1,5 +1,7 @@
 package com.safjnest.SlashCommands.Settings.LevelUp;
 
+import java.util.ArrayList;
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
@@ -24,7 +26,27 @@ public class LevelUpPreviewSlash extends SlashCommand{
         }
         message = message.replace("#user", event.getUser().getAsMention());
         message = message.replace("#level", String.valueOf(117));
-        event.deferReply(false).addContent(message).queue();
+        String msg = "Level Up message:\n" + message;
+        
+        query = "SELECT room_id, has_exp, exp_value from rooms_settings WHERE guild_id = '"+ event.getGuild().getId() +"' AND exp_value > 1;";
+        ArrayList<ArrayList<String>> rooms = DatabaseHandler.getSql().getAllRows(query, 3);
+        if(rooms.size() != 0){
+            msg += "\n\nChannel with exp Modifier:\n";
+            for(ArrayList<String> room : rooms){
+                msg+= event.getGuild().getTextChannelById(room.get(0)).getAsMention() + " exp: " + room.get(2) + "\n";
+            }
+        }
+
+        query = "SELECT room_id, has_exp, exp_value from rooms_settings WHERE guild_id = '"+ event.getGuild().getId() +"' AND has_exp = 0;";
+        rooms = DatabaseHandler.getSql().getAllRows(query, 3);
+        if(rooms.size() != 0){
+            msg += "\n\nChannel with exp system disabled:\n";
+            for(ArrayList<String> room : rooms){
+                msg+= event.getGuild().getTextChannelById(room.get(0)).getAsMention() + "\n";
+            }
+        }
+
+        event.deferReply(false).addContent(msg).queue();
         
     }
     

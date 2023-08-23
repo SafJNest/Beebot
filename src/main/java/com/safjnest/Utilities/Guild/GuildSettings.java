@@ -95,4 +95,8 @@ public class GuildSettings {
     public String getPrefix() {
         return data.getPrefix();
     }
+
+    public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {
+        return;
+	}
 }

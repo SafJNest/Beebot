@@ -43,11 +43,17 @@ public class EventHandlerBeebot extends ListenerAdapter {
     public void onMessageReceived(MessageReceivedEvent e) {
         if (e.getAuthor().isBot())
             return;
-
+            
+        
         if (!settings.getServer(e.getGuild().getId()).getExpSystem())
             return;	
+
         
-        int lvl = farm.receiveMessage(e.getAuthor().getId(), e.getGuild().getId());
+        if(!settings.getServer(e.getGuild().getId()).getExpSystemRoom(e.getChannel().getIdLong()))
+            return;
+
+        double modifier = Double.parseDouble(settings.getServer(e.getGuild().getId()).getExpValueRoom(e.getChannel().getIdLong()));
+        int lvl = farm.receiveMessage(e.getAuthor().getId(), e.getGuild().getId(), modifier);
         if (lvl != -1) {
             User newGuy = e.getAuthor();
             String query = "SELECT role_id, message_text FROM rewards_table WHERE guild_id = '" + e.getGuild().getId() + "' AND level = '" + lvl + "';";

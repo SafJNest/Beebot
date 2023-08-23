@@ -40,14 +40,14 @@ public class ExpSystem {
      * @param guildId
      * @return
      */
-    public synchronized int receiveMessage(String userId, String guildId) {
+    public synchronized int receiveMessage(String userId, String guildId, double modifier) {
         if(!users.containsKey(userId+"-"+guildId)){
             users.put(userId+"-"+guildId, new UserTime());
-            return addExp(userId, guildId);
+            return addExp(userId, guildId, modifier);
         }
         UserTime user =  users.get(userId+"-"+guildId);
         if (user.canReceiveExperience()) {
-           return addExp(userId, guildId);
+           return addExp(userId, guildId, modifier);
            
         }else{
            return -1;
@@ -115,7 +115,7 @@ public class ExpSystem {
      * @return
      * int
      */
-    public int addExp(String userId, String guildId){
+    public int addExp(String userId, String guildId, double modifer){
         int exp, lvl, msg;
         String query = "select exp, level, messages from exp_table where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
         ArrayList<String> arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
@@ -123,11 +123,13 @@ public class ExpSystem {
             query = "INSERT INTO exp_table (user_id, guild_id, exp, level, messages) VALUES ('"+userId+"','"+guildId+"',"+0+","+1+","+0+");";
             if(!DatabaseHandler.getSql().runQuery(query))
                 return -1;
-            exp = calculateExp();
+            exp = Math.round(Float.parseFloat(String.valueOf(Double.parseDouble(String.valueOf(calculateExp()))*modifer)));
             lvl = 1;
             msg = 1;
         }else{
-            exp = Integer.valueOf(arr.get(0)) + calculateExp();
+
+            int newExp = Math.round(Float.parseFloat(String.valueOf(Double.parseDouble(String.valueOf(calculateExp()))*modifer)));
+            exp = Integer.valueOf(arr.get(0)) + newExp;
             lvl = Integer.valueOf(arr.get(1));
             msg = Integer.valueOf(arr.get(2)) + 1;
         }

@@ -305,7 +305,18 @@
                 "alias" : [],
                 "help"  : "Modify or set the levelup message.",
                 "arguments" : "[CommandName]"
-            }
+            },
+            "channel": {
+                "alias" : [],
+                "help"  : "Turn the exp system ON or OFF for a specific channel.",
+                "arguments" : "[CommandName]"
+            },
+            "modifier": {
+                "alias" : [],
+                "help"  : "Turn the exp system ON or OFF for a specific channel.",
+                "arguments" : "[CommandName]"
+            } 
+            
         }
     },
 
@@ -334,7 +345,7 @@
                 "alias" : [],
                 "help"  : "Move the boost channel to another existing channel.",
                 "arguments" : "[CommandName]"
-            }
+            } 
         }
     },
 
