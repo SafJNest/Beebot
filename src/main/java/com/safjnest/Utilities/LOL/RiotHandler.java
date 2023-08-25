@@ -187,7 +187,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 
     public static Summoner getSummonerFromDB(String discordId){
-        String query = "SELECT account_id FROM lol_user WHERE guild_id = '" + discordId + "';";
+        String query = "SELECT account_id FROM lol_user WHERE user_id = '" + discordId + "';";
         try { 
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, DatabaseHandler.getSql().getString(query, "account_id")); 
         } catch (Exception e) { return null; }
@@ -203,7 +203,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
     public static int getNumberOfProfile(String discordId){
-        String query = "SELECT count(guild_id) as count FROM lol_user WHERE guild_id = '" + discordId + "';";
+        String query = "SELECT count(user_id) as count FROM lol_user WHERE user_id = '" + discordId + "';";
         try { 
             return Integer.valueOf(DatabaseHandler.getSql().getString(query, "count"));
         } catch (Exception e) { return 0; }
