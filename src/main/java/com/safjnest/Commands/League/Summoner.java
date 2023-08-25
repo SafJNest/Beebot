@@ -95,8 +95,8 @@ public class Summoner extends Command {
             BotSettingsHandler.map.get(id).color
         ));
         builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
-        String query = "SELECT guild_id FROM lol_user WHERE account_id = '" + s.getAccountId() + "';";
-        String userId = DatabaseHandler.getSql().getString(query, "guild_id");
+        String query = "SELECT user_id FROM lol_user WHERE account_id = '" + s.getAccountId() + "';";
+        String userId = DatabaseHandler.getSql().getString(query, "user_id");
         if(userId != null){
             User theGuy = jda.getUserById(userId);
             builder.addField("User:", theGuy.getName(), true);
