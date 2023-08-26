@@ -67,7 +67,7 @@ public class MemberInfo extends Command{
 
         String permissionNames = PermissionHandler.getFilteredPermissionNames(member).toString();
 
-        String query = "SELECT summoner_id FROM lol_user WHERE guild_id = '" + user.getId() + "';";
+        String query = "SELECT summoner_id FROM lol_user WHERE user_id = '" + user.getId() + "';";
         ArrayList<String> accounts = DatabaseHandler.getSql().getAllRowsSpecifiedColumn(query, "summoner_id");
         String lolAccounts = "";
         if(accounts.size() == 0){
@@ -134,7 +134,7 @@ public class MemberInfo extends Command{
         eb.addField("Permissions", "```"
                     + (member.hasPermission(Permission.ADMINISTRATOR)
                         ? "👑 Admin"
-                        : permissionNames.substring(1, permissionNames.length() - 1))
+                        : permissionNames.substring(1, permissionNames.length() - 1)) + " "
                     + "```", false);
         
         eb.addField("League Of Legends Account [" + accounts.size() + "]", "```" 
