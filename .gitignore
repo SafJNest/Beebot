@@ -24,6 +24,7 @@ hs_err_pid*
 target/
 .vscode/
 index/
+node_modules/
 
 rsc/Upload/*
 rsc/tts/*

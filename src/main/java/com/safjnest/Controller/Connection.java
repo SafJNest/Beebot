@@ -14,6 +14,7 @@ public class Connection extends WebSocketServer {
     private static int TCP_PORT = 8096;
     
     public Connection(JDA jda){
+        
         super(new InetSocketAddress(TCP_PORT));
         this.jda = jda;
     }
