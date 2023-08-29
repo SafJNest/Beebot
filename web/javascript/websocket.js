@@ -6,7 +6,7 @@ let id;
 function openSocket(id){
     socket = new WebSocket("ws://192.99.45.100:8096/ws");
     id = id;
-    console.log("connected?");
+    console.log("dio cane?");
     
     socket.addEventListener("open", (event) => {
         socket.send("connected-" + id); 
@@ -38,7 +38,7 @@ function openSocket(id){
                 }
 
                 $('.guilds').append('' +
-                    '<div class="guild">' +
+                    '<div class="guild" onclick="loadGuild(\''+String(json[i].id).trim()+'\')">' +
                         '<div>' +
                             '<table>' +
                                 '<tbody>' +
