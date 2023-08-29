@@ -1,11 +1,18 @@
 package com.safjnest.Controller;
 
+import java.io.FileInputStream;
 import java.net.InetSocketAddress;
+import java.security.KeyStore;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 
 import org.java_websocket.handshake.ClientHandshake;
+import org.java_websocket.server.DefaultSSLWebSocketServerFactory;
 import org.java_websocket.server.WebSocketServer;
 
 public class Connection extends WebSocketServer {
@@ -14,9 +21,28 @@ public class Connection extends WebSocketServer {
     private static int TCP_PORT = 8096;
     
     public Connection(JDA jda){
-        
         super(new InetSocketAddress(TCP_PORT));
         this.jda = jda;
+        setupSSL();
+    }
+
+    private void setupSSL() {
+        try {
+            char[] passphrase = App.key.toCharArray(); // Keystore password
+            KeyStore ks = KeyStore.getInstance("JKS");
+            FileInputStream ksInputStream = new FileInputStream("path/to/keystore.jks"); // Path to your keystore
+            ks.load(ksInputStream, passphrase);
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+            kmf.init(ks, passphrase);
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(kmf.getKeyManagers(), null, null);
+
+            setWebSocketFactory(new DefaultSSLWebSocketServerFactory(sslContext));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     
     @Override

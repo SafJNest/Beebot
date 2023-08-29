@@ -8,9 +8,9 @@ session_start();
 <head>
     <meta charset="UTF-8">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-    <script src="javascript/websocket.js"></script>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
+    <script src="../javascript/websocket.js"></script>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Beebot</title>
 </head>
@@ -19,7 +19,7 @@ session_start();
     <div class="header">
         <div class="logo">
                 <div class="beebot-icon">
-                    <img class="beebot-logo" src="beebot-removebg-preview.png"></img>
+                    <img class="beebot-logo" src="../beebot-removebg-preview.png"></img>
                 </div>
                 <div class="beebot-name">
                     Beebot
@@ -63,6 +63,18 @@ session_start();
                 })
                 .catch(console.error);
         }
+
+        function loadGuild(id){
+            window.location.href =id;
+        }
+
+        function base_url(){
+                let url = document.location.origin;
+                if(url.includes('localhost')){
+                    url += '/phpmyadmin/safjweb';
+                }
+                return url;
+            }
     </script>
     <?php
         require __DIR__ . '/database.php';
