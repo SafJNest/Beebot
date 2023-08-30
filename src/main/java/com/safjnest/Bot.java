@@ -36,6 +36,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.safjnest.Utilities.*;
 import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Controller.Connection;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
@@ -45,7 +46,6 @@ import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Settings.*;
-import com.safjnest.Controller.Connection;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Admin.*;
 import com.safjnest.Commands.Admin.Shutdown;
@@ -245,11 +245,10 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(new EventHandlerBeebot(gs, farm));
-            new Connection(jda).start();
+            new Connection(jda, gs, bs).start();
             
         }
         
-        System.out.println("[" + threadName + "] INFO Connection thread started");
         synchronized (this){
             try {wait();} 
             catch (InterruptedException e) {
