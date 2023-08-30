@@ -2,7 +2,6 @@ package com.safjnest.Utilities.Controller;
 
 import java.net.InetSocketAddress;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.Guild;
 
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -27,6 +26,15 @@ public class Connection extends WebSocketServer {
 
 
     }
+
+    public void willBeRemovedSoon(){
+        /**
+       * Smurfing
+       */
+      jda.getClass();
+      gs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
+      bs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
+  }
     
     @Override
     public void onStart() {
@@ -45,26 +53,22 @@ public class Connection extends WebSocketServer {
 
     @Override
     public void onMessage(org.java_websocket.WebSocket conn, String message) {
+        System.out.println("RECEIVED: " + message);
         String args[] = message.split("-", 2);
         String server = "";
         switch (args[0]){
-            case "connected":
-                conn.send("connected-"+jda.getUserById(args[1]).getName());
-                break;
-            case "server_name":
-                String serverName = jda.getGuildById(args[1]).getName();
-                conn.send(serverName);
-                break;
             case "checkBeebot":
-                conn.send("server_list-" + postman.getServerList(message.split("-", 3)[1], message.split("-", 3)[2]));
+                server = "server_list-" + postman.getServerList(message.split("-", 3)[1], message.split("-", 3)[2]);
                 break;
             case "getHomeStats":
-                conn.send("getHomeStats-" + postman.getHomeStats(args[1]));
+                server = "getHomeStats-" + postman.getHomeStats(args[1]);
                 break;
             default:
-                conn.send("idk");
+                server = "UNKNOWN COMMAND";
                 break;
         }
+        System.out.println("SENT: " + server);
+        conn.send(server);
     }
 
     @Override

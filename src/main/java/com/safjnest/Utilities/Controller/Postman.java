@@ -20,12 +20,15 @@ public class Postman {
         this.gs = gs;
         this.bs = bs;
 
-        /**
+
+    }
+
+    public void willBeRemovedSoon(){
+          /**
          * Smurfing
          */
         gs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         bs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-
     }
 
     public String getServerList(String userId, String ids){
