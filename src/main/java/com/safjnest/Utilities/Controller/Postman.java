@@ -52,7 +52,7 @@ public class Postman {
             cont_guilds++;
         }
         
-        String list = "{'cont_guilds':'"+  cont_guilds + "', 'cont_user':'"+cont_user+"', 'cont_command':'60'}";
+        String list = "{\"cont_guilds\":"+  cont_guilds + ", \"cont_user\":"+cont_user+", \"cont_command\":60}";
         return list;
     }
     
