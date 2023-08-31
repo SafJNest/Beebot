@@ -45,7 +45,7 @@ public class Postman {
         return list + "]";
     }
 
-    public String getHomeStats(String userId){
+    public String getHomeStats(){
         int cont_guilds = 0;
         int cont_user = 0;
         for(Guild g : jda.getGuilds()){
@@ -54,7 +54,6 @@ public class Postman {
             cont_user += g.getMemberCount();
             cont_guilds++;
         }
-        
         String list = "{\"cont_guilds\":"+  cont_guilds + ", \"cont_user\":"+cont_user+", \"cont_command\":60}";
         return list;
     }
