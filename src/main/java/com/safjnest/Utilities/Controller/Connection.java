@@ -5,6 +5,9 @@ import net.dv8tion.jda.api.JDA;
 
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
@@ -54,24 +57,23 @@ public class Connection extends WebSocketServer {
     @Override
     public void onMessage(org.java_websocket.WebSocket conn, String message) {
         System.out.println("RECEIVED: " + message);
-        String args[] = message.split("-", 2);
+        String request = parseRequest(message, "request");
+        String guildId = parseRequest(message, "guildId");
+        String userId = parseRequest(message, "userId");
         String server = "";
-        switch (args[0]){
-            case "checkBeebot":
-                server = "server_list-" + postman.getServerList(message.split("-", 3)[1], message.split("-", 3)[2]);
+        switch (request){
+            case "server_list":
+                server = "server_list-" + postman.getServerList(userId, parseRequest(message, "ids"));
                 break;
             case "getHomeStats":
-                server = "getHomeStats-" + postman.getHomeStats(args[1]);
+                server = "getHomeStats-" + postman.getHomeStats();
                 break;
             case "getPrefix":
-                server = "getPrefix-" + postman.getPrefix(message.split("-", 3)[1], message.split("-", 3)[2]);
+                server = "getPrefix-" + postman.getPrefix(guildId, userId);
                 break;
             case "newPrefix":
                 try {
-                    System.out.println(message.split("-", 4)[1] + " " + message.split("-", 4)[2]);
-                    System.out.println(gs.getServer(message.split("-", 4)[1]).getPrefix());
-                    gs.getServer(message.split("-", 4)[1]).setPrefix(message.split("-", 4)[2]);
-                    System.out.println(gs.getServer(message.split("-", 4)[1]).getPrefix());
+                    gs.getServer(guildId).setPrefix(parseRequest(message, "prefix"));
                     server = "newPrefix-ok"; 
                 } catch (Exception e) {
                     server = "newPrefix-!ok"; 
@@ -89,6 +91,20 @@ public class Connection extends WebSocketServer {
     public void onError(org.java_websocket.WebSocket conn, Exception ex) {
         System.out.println("Error from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
         ex.printStackTrace();
+    }
+
+
+    public String parseRequest(String json, String obj) {
+        JSONParser jsonParser = new JSONParser();
+        Object object= null;
+        try {
+            object = jsonParser.parse(json);
+            JSONObject jsonObject = (JSONObject) object;
+            return (String) jsonObject.get(obj);
+        } catch (ParseException e) {
+            return "?";
+        }
+ 
     }
     
 }

@@ -156,7 +156,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         botId = jda.getSelfUser().getId();
 
-        this.gs = new GuildSettings(null, botId, PREFIX);
+        gs = new GuildSettings(null, botId, PREFIX);
         ExpSystem farm = new ExpSystem();
         
 
@@ -213,7 +213,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new PrefixSlash(sql, this.gs));
+        Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new PrefixSlash(sql, gs));
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), new GameRankSlash(riotApi, sql), new SetSummonerSlash(riotApi, sql), new LastMatchesSlash(riotApi, sql), new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), 
@@ -248,7 +248,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             jda.addEventListener(new EventHandlerBeebot(gs, farm));
             
         }
-        Connection c = new Connection(jda, this.gs, bs);
+        Connection c = new Connection(jda, gs, bs);
         c.start();
         
         synchronized (this){
