@@ -104,6 +104,7 @@ public class Bot extends ListenerAdapter implements Runnable {
     private TTSHandler tts;
     private SQL sql;
     private R4J riotApi;
+    private GuildSettings gs;
 
     public Bot(BotSettingsHandler bs, TTSHandler tts, SQL sql, R4J riotApi) {
         this.tts = tts;
@@ -155,7 +156,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         botId = jda.getSelfUser().getId();
 
-        GuildSettings gs = new GuildSettings(null, botId, PREFIX);
+        this.gs = new GuildSettings(null, botId, PREFIX);
         ExpSystem farm = new ExpSystem();
         
 
@@ -212,7 +213,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new PrefixSlash(sql, gs));
+        Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new PrefixSlash(sql, this.gs));
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), new GameRankSlash(riotApi, sql), new SetSummonerSlash(riotApi, sql), new LastMatchesSlash(riotApi, sql), new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), 
@@ -245,9 +246,10 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(new EventHandlerBeebot(gs, farm));
-            new Connection(jda, gs, bs).start();
             
         }
+        Connection c = new Connection(jda, this.gs, bs);
+        c.start();
         
         synchronized (this){
             try {wait();} 

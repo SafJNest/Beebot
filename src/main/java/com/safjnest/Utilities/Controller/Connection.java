@@ -63,6 +63,20 @@ public class Connection extends WebSocketServer {
             case "getHomeStats":
                 server = "getHomeStats-" + postman.getHomeStats(args[1]);
                 break;
+            case "getPrefix":
+                server = "getPrefix-" + postman.getPrefix(message.split("-", 3)[1], message.split("-", 3)[2]);
+                break;
+            case "newPrefix":
+                try {
+                    System.out.println(message.split("-", 4)[1] + " " + message.split("-", 4)[2]);
+                    System.out.println(gs.getServer(message.split("-", 4)[1]).getPrefix());
+                    gs.getServer(message.split("-", 4)[1]).setPrefix(message.split("-", 4)[2]);
+                    System.out.println(gs.getServer(message.split("-", 4)[1]).getPrefix());
+                    server = "newPrefix-ok"; 
+                } catch (Exception e) {
+                    server = "newPrefix-!ok"; 
+                }
+                break;
             default:
                 server = "UNKNOWN COMMAND";
                 break;

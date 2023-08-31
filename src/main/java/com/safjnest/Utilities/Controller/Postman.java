@@ -58,6 +58,12 @@ public class Postman {
         String list = "{\"cont_guilds\":"+  cont_guilds + ", \"cont_user\":"+cont_user+", \"cont_command\":60}";
         return list;
     }
+
+    public String getPrefix(String userId, String guilId){
+        
+        String list = "{\"prefix\":" + "\"" + gs.getServer(userId).getPrefix() + "\"" + "}";
+        return list;
+    }
     
 
     

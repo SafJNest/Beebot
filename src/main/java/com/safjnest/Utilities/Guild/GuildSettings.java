@@ -41,10 +41,15 @@ public class GuildSettings {
      * @see {@link com.safjnest.Utilities.Guild.GuildData guildData and default guildData}
      */
     public GuildData getServer(String id) {
-        if(cache.containsKey(id)) 
+        System.out.println(cache.size());
+        if(cache.containsKey(id)) {
+            System.out.println("Cache hit");
             return cache.get(id);
-         else 
-            return retrieveServer(id);
+        }
+         else {
+            System.out.println("!Cache hit");
+             return retrieveServer(id);
+         }
         
     }
 
