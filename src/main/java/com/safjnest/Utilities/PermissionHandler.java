@@ -5,9 +5,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import com.jagrosh.jdautilities.command.CommandEvent;
+
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.User;
 
 /**
  * This class handles all matters related to discord permissions.
@@ -189,6 +192,17 @@ public class PermissionHandler {
         if (theGuy.hasPermission(permission) || untouchables.contains(theGuy.getId()))
             return true;
         return false;
+    }
+
+    public static User getMentionedUser(CommandEvent event, String arg) throws Exception {
+        User theGuy = null;
+        if(event.getMessage().getMentions().getMembers().size() > 0)
+            theGuy = event.getMessage().getMentions().getMembers().get(0).getUser();
+        else
+            try {
+                theGuy = event.getJDA().retrieveUserById(arg).complete();
+            } catch (Exception e) {}
+        return theGuy;
     }
 
 }
