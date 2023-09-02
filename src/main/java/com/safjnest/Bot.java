@@ -246,10 +246,9 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(new EventHandlerBeebot(gs, farm));
-            
+            Connection c = new Connection(jda, gs, bs);
+            c.start();
         }
-        Connection c = new Connection(jda, gs, bs);
-        c.start();
         
         synchronized (this){
             try {wait();} 
