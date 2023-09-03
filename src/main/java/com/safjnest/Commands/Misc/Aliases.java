@@ -34,6 +34,8 @@ public class Aliases extends Command {
         
         String aliases = "";
         for(Command e : event.getClient().getCommands()) {
+            if(e.isHidden())
+                continue;
             aliases+="**"+e.getName()+"**\n";
             for(String alias : e.getAliases())
                 aliases += "- " + alias;
