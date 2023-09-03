@@ -166,7 +166,7 @@ public class TTSSlash extends SlashCommand{
         eb.setTitle("Playing now:");
         eb.addField("Lenght",SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length),true);
         eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest",event.getMember().getAvatarUrl());
-        eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
+        //eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
 
         eb.setDescription(speech);
         eb.addField("Language", language, true);

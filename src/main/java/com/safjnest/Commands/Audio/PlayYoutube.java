@@ -145,7 +145,7 @@ public class PlayYoutube extends Command {
         eb.setTitle("Playing now:");
         eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
+        //eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
         eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
         ));

@@ -188,7 +188,7 @@ public class PlaySoundSlash extends SlashCommand{
         eb.setColor(Color.decode(
                 BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
             ));
-        eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
+        //eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
             
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         event.deferReply(false).addEmbeds(eb.build()).queue();

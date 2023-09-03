@@ -34,17 +34,19 @@ public class GuildSettings {
 
     /**
      * This method checks if a guild is in the cache, otherwise will be called {@link GuildSettings#retrieveServer() retrievServer}
-     * to search for it in the {@link com.safjnest.Utilities.SQL postgre database}.
+     * to search for it in the {@link com.safjnest.Utilities.SQL mysql database}.
      * @param id Server ID
      * @return
      * The {@link com.safjnest.Utilities.Guild.GuildData guildData} if is stored in the cache(or is in the database), otherwise a defult {@link com.safjnest.Utilities.Guild.GuildData guildData}.
      * @see {@link com.safjnest.Utilities.Guild.GuildData guildData and default guildData}
      */
     public GuildData getServer(String id) {
+        System.out.println(cache.size());
         if(cache.containsKey(id)) 
             return cache.get(id);
          else 
             return retrieveServer(id);
+         
         
     }
 
