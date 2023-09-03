@@ -190,7 +190,7 @@ public class PlaySound extends Command{
         eb.setColor(Color.decode(
             BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
         ));
-        eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
+        //eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
         /*    
         File imgFile = new File("rsc" + File.separator + "img" + File.separator + img);
         eb.setThumbnail("attachment://" + img);

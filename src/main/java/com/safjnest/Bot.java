@@ -36,6 +36,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.safjnest.Utilities.*;
 import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Controller.Connection;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
@@ -103,6 +104,7 @@ public class Bot extends ListenerAdapter implements Runnable {
     private TTSHandler tts;
     private SQL sql;
     private R4J riotApi;
+    private GuildSettings gs;
 
     public Bot(BotSettingsHandler bs, TTSHandler tts, SQL sql, R4J riotApi) {
         this.tts = tts;
@@ -154,7 +156,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         botId = jda.getSelfUser().getId();
 
-        GuildSettings gs = new GuildSettings(null, botId, PREFIX);
+        gs = new GuildSettings(null, botId, PREFIX);
         ExpSystem farm = new ExpSystem();
         
 
@@ -218,7 +220,7 @@ public class Bot extends ListenerAdapter implements Runnable {
                                              new ChampionSlash(), new InfoMatchesSlash());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
-            Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new ListGuildSlash(), new BanSlash(),
+            Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(),
                                              new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash(),
                                              new WelcomeSlash(sql, gs), new LeaveSlash(), new BoostSlash());
 
@@ -242,9 +244,11 @@ public class Bot extends ListenerAdapter implements Runnable {
         jda.addEventListener(new EventHandler(sql, gs));
         jda.addEventListener(new EventButtonHandler());;
 
-        if(Thread.currentThread().getName().equals("beebot"))
+        if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(new EventHandlerBeebot(gs, farm));
-        
+            Connection c = new Connection(jda, gs, bs);
+            c.start();
+        }
         
         synchronized (this){
             try {wait();} 

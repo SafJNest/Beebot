@@ -29,6 +29,7 @@ public class App {
     private static RiotHandler lolHandler;
     private static DatabaseHandler dbh;
     private static BotSettingsHandler bs;
+    public static String key;
 
     public static void main(String args[]) {
         
@@ -48,7 +49,7 @@ public class App {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+        key = settings.get("2048_key").toString();
         tts = new TTSHandler(settings.get("ttsApiKey").toString());
         
         sql = new SQL(

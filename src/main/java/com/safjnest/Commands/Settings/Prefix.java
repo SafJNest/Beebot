@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.Permission;
 
 public class Prefix extends Command{
     private SQL sql;
-    GuildSettings gs;
+    private GuildSettings gs;
     
     public Prefix(SQL sql, GuildSettings gs){
         this.name = this.getClass().getSimpleName();
