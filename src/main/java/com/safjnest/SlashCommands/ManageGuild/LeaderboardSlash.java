@@ -39,6 +39,10 @@ public class LeaderboardSlash extends SlashCommand {
 
         String query = "SELECT user_id, messages, level, exp from exp_table WHERE guild_id = '" + event.getGuild().getId() + "' order by exp DESC limit " + limit + ";";
         ArrayList<ArrayList<String>> res = DatabaseHandler.getSql().getAllRows(query);
+        if(res.size() == 1){
+            event.getChannel().sendMessage("```No Result```").queue();
+            return;
+        }
         String[][] databaseData = new String[res.size()-1][res.get(0).size()];
         for(int i = 1; i < res.size(); i++)
             databaseData[i-1] = res.get(i).toArray(new String[0]);
