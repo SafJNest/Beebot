@@ -49,7 +49,6 @@ public class App {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        key = settings.get("2048_key").toString();
         tts = new TTSHandler(settings.get("ttsApiKey").toString());
         
         sql = new SQL(

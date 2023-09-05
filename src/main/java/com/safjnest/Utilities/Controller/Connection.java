@@ -9,6 +9,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
 
@@ -74,6 +75,8 @@ public class Connection extends WebSocketServer {
             case "newPrefix":
                 try {
                     gs.getServer(guildId).setPrefix(parseRequest(message, "prefix"));
+                    String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" +guildId + "','" + jda.getSelfUser().getId() + "','" + parseRequest(message, "prefix") +"') ON DUPLICATE KEY UPDATE prefix = '" + parseRequest(message, "prefix") + "';";
+                    DatabaseHandler.getSql().runQuery(query);
                     server = "newPrefix-ok"; 
                 } catch (Exception e) {
                     server = "newPrefix-!ok"; 

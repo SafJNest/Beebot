@@ -41,7 +41,6 @@ public class GuildSettings {
      * @see {@link com.safjnest.Utilities.Guild.GuildData guildData and default guildData}
      */
     public GuildData getServer(String id) {
-        System.out.println(cache.size());
         if(cache.containsKey(id)) 
             return cache.get(id);
          else 
