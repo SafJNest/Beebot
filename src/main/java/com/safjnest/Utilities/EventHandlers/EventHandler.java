@@ -16,7 +16,6 @@ import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
@@ -235,15 +234,6 @@ public class EventHandler extends ListenerAdapter {
         channel.sendMessage(message).queue();
     }
 
-
-    @Override
-    public void onChannelDelete(ChannelDeleteEvent event){
-        if(event.getChannelType().isAudio()){
-            String query = "DELETE from rooms_settings WHERE guild_id = '" + event.getGuild().getId()
-                           + "' AND room_id = '" + event.getChannel().getId() + "';";
-            DatabaseHandler.getSql().runQuery(query);
-        }
-    }
 
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {

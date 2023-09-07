@@ -36,20 +36,27 @@ public class UploadSlash extends SlashCommand{
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "name", "Soundn name", true));
+            new OptionData(OptionType.STRING, "name", "Sound name", true),
+            new OptionData(OptionType.BOOLEAN, "public", "TRUE OR FALSE", true));
         this.sql = DatabaseHandler.getSql();
     }
     
 	@Override
 	protected void execute(SlashCommandEvent event) {
         fileName = event.getOption("name").getAsString();
+        boolean isPublic = true;
+        if(event.getOption("public") != null){
+            isPublic = event.getOption("public").getAsBoolean();
+        }
+        
         if(fileName.matches("[0123456789]*")){
             event.reply("You can't use a name that only contains numbers");
             return;
         }
 
+
         event.deferReply(false).addContent("Ok, now upload the sound here in mp3 or **opus** format").queue();
-        FileListener fileListener = new FileListener(event, fileName, event.getChannel(),sql);
+        FileListener fileListener = new FileListener(event, fileName, isPublic, event.getChannel(),sql);
         event.getJDA().addEventListener(fileListener);
 	}
 }
@@ -58,14 +65,16 @@ class FileListener extends ListenerAdapter {
     private String name;
     private SlashCommandEvent event;
     private MessageChannel channel;
+    private boolean isPublic;
     private float maxFileSize = 1049000; //in bytes
     private SQL sql;
 
-    public FileListener(SlashCommandEvent event, String name, MessageChannel channel, SQL sql){
+    public FileListener(SlashCommandEvent event, String name,boolean isPublic, MessageChannel channel, SQL sql){
         this.name = name;
         this.event = event;
         this. channel = channel;
         this.sql = sql;
+        this.isPublic = isPublic;
     }
 
     
@@ -88,10 +97,10 @@ class FileListener extends ListenerAdapter {
             e.getJDA().removeEventListener(this);
             return;
         }
-
-        String query = "INSERT INTO sound(name, guild_id, user_id, extension) VALUES('" 
-                     + name + "','" + event.getGuild().getId() + "','" + event.getMember().getId() + "','" + attachment.getFileExtension() + "');";
-        query = "SELECT id FROM sound WHERE name = '" + name + "' AND guild_id = '" + event.getGuild().getId() + "' AND user_id = '" + event.getMember().getId() + "';";
+        String query = "INSERT INTO sound(name, guild_id, user_id, extension, public) VALUES('" 
+                     + name + "','" + event.getGuild().getId() + "','" + event.getMember().getId() + "','" + attachment.getFileExtension() + "', '" + ((isPublic == true) ? "1" : "0") + "');";
+        sql.runQuery(query);           
+        query = "SELECT id FROM sound WHERE name = '" + name + "' AND guild_id = '" + event.getGuild().getId() + "' AND user_id = '" + event.getMember().getId() + "' ORDER BY id DESC LIMIT 1;";
         String id = sql.getString(query, "id");
 
         if(id.equals(null)){

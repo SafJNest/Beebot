@@ -9,6 +9,7 @@ import com.safjnest.Utilities.Guild.GuildSettings;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.UserSnowflake;
+import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -85,6 +86,15 @@ public class EventHandlerBeebot extends ListenerAdapter {
     public void onRoleDelete(RoleDeleteEvent event){
         String query = "DELETE FROM rewards_table WHERE role_id = '" + event.getRole().getId() + "';";
         DatabaseHandler.getSql().runQuery(query);
+    }
+
+    @Override
+    public void onChannelDelete(ChannelDeleteEvent event){
+        if(event.getChannelType().isAudio()){
+            String query = "DELETE from rooms_settings WHERE guild_id = '" + event.getGuild().getId()
+                           + "' AND room_id = '" + event.getChannel().getId() + "';";
+            DatabaseHandler.getSql().runQuery(query);
+        }
     }
 
 

@@ -66,16 +66,17 @@ public class PlaySound extends Command{
         
         String query = null;
         String id = null, name, guildId, userId, extension;
+        boolean isPublic = true;
         ArrayList<ArrayList<String>> arr = null;
 
         if(fileName.matches("[0123456789]*")){
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE id = '" + fileName + "';";
+            query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + fileName + "' AND  (guild_id = '" + event.getGuild().getId() + "'  OR public = 1 OR user_id = '" + event.getAuthor().getId() + "')";
         }
         else{
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE name = '" + fileName + "';";
+            query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + fileName + "' AND (guild_id = '" + event.getGuild().getId() + "'  OR public = 1 OR user_id = '" + event.getAuthor().getId() + "')";
         }
 
-        if((arr = sql.getAllRows(query, 5)).isEmpty()){
+        if((arr = sql.getAllRows(query, 6)).isEmpty()){
             event.reply("There is no sound with that name/id");
             return;
         }
@@ -97,7 +98,7 @@ public class PlaySound extends Command{
         guildId = arr.get(indexForKeria).get(2);
         userId = arr.get(indexForKeria).get(3);
         extension = arr.get(indexForKeria).get(4);
-
+        isPublic = arr.get(indexForKeria).get(5).equals("1");
         
         
         fileName = path + id + "." + extension;
@@ -162,7 +163,8 @@ public class PlaySound extends Command{
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
 
         eb.setTitle("Playing now:");
-        eb.setDescription("```" + name + " (ID: " + id + ")" + "```");
+        String locket = (isPublic) ? ":public:" : ":private:";
+        eb.setDescription("```" + name + " (ID: " + id + ") "+ locket + "```");
 
         eb.addField("Author", "```" + event.getJDA().getUserById(userId).getName() + "```", true);
         try {

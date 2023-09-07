@@ -12,6 +12,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
 
+import net.dv8tion.jda.api.entities.Member;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -46,7 +47,7 @@ public class Test extends Command{
         if(!PermissionHandler.isUntouchable(e.getAuthor().getId()))
             return;
 
-        switch (2){
+        switch (3){
             case 1:
                 Timer timer = new Timer();
                 /* 
@@ -77,6 +78,10 @@ public class Test extends Command{
                 case 2:
                     createAndSaveChartAsPNG();
                     break;
+                case 3:
+                    for(Member m : e.getJDA().getGuildById("943974473370062948").getMembers()){
+                        System.out.println(m.getEffectiveName() + " " + m.getId());
+                    }
         }
         
     }  

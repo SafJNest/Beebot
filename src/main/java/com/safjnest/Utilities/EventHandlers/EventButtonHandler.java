@@ -427,9 +427,14 @@ public class EventButtonHandler extends ListenerAdapter {
             }
         }
 
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE user_id = '"
-                + userId + "' ORDER BY name ASC;";
-        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 2);
+        String queryAdd = "";
+        if(!userId.equals(event.getMember().getId()))
+            queryAdd = "AND (guild_id = '" + event.getGuild().getId() + "'  OR public = 1 OR user_id = '" + event.getMember().getId() + "')";
+
+
+        String query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '"
+                + userId + "' " + queryAdd + " ORDER BY name ASC;";
+        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 6);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
@@ -446,7 +451,8 @@ public class EventButtonHandler extends ListenerAdapter {
             case "right":
                 cont = 24 * page;
                 while (cont < (24 * (page + 1)) && cont < sounds.size()) {
-                    eb.addField("**" + sounds.get(cont).get(1) + "**", "ID: " + sounds.get(cont).get(0), true);
+                    String locket = (sounds.get(cont).get(5).equals("1")) ? ":unlock:" : ":lock:";
+                    eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
                     cont++;
                 }
 
@@ -466,7 +472,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 cont = (24 * (page - 2) < 0) ? 0 : 24 * (page - 2);
 
                 while (cont < (24 * (page - 1)) && cont < sounds.size()) {
-                    eb.addField("**" + sounds.get(cont).get(1) + "**", "ID: " + sounds.get(cont).get(0), true);
+                    String locket = (sounds.get(cont).get(5).equals("1")) ? ":lock:" : "unlock";
+                    eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
                     cont++;
                 }
 
