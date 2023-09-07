@@ -33,6 +33,8 @@ public class ListGuild extends Command {
         List<Guild> guilds = event.getJDA().getGuilds();
         String list = "Here the list where the bot is in: \n";
         for(Guild guild : guilds){
+            if(guild.getName().startsWith("BeebotLOL"))
+                continue;
             list+="**"+guild.getName()+"("+guild.getId()+")** - ";
         }
         list = list.substring(0, list.length()-3);

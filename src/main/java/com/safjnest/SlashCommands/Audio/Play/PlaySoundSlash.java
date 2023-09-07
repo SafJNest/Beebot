@@ -71,14 +71,16 @@ public class PlaySoundSlash extends SlashCommand{
         String id = null, name, guildId, userId, extension;
         ArrayList<ArrayList<String>> arr = null;
 
+        
         if(fileName.matches("[0123456789]*")){
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE id = '" + fileName + "';";
+            query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + fileName + "' AND  (guild_id = '" + event.getGuild().getId() + "'  OR public = 1 OR user_id = '" + event.getMember().getId() + "')";
         }
         else{
-            query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE name = '" + fileName + "';";
+            query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + fileName + "' AND (guild_id = '" + event.getGuild().getId() + "'  OR public = 1 OR user_id = '" + event.getMember().getId() + "')";
         }
 
-        if((arr = sql.getAllRows(query, 5)).isEmpty()){
+
+        if((arr = sql.getAllRows(query, 6)).isEmpty()){
             event.reply("There is no sound with that name/id");
             return;
         }
@@ -166,7 +168,9 @@ public class PlaySoundSlash extends SlashCommand{
         eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest", event.getMember().getAvatarUrl());
 
         eb.setTitle("Playing now:");
-        eb.setDescription("```" + name + " (ID: " + id + ")" + "```");
+        
+        String locket = (arr.get(indexForKeria).get(5).equals("1")) ? ":public:" : ":private:";
+        eb.setDescription("```" + name + " (ID: " + id + ") "+ locket + "```");
 
         eb.addField("Author", "```" + event.getJDA().getUserById(userId).getName() + "```", true);
         try {
