@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 
 /**
- * Classe officiale del <a href="https://github.com/SafJNest">SafJNest Team.</a>
+ * Classe ufficiale della <a href="https://github.com/SafJNest">SafJNest Corporation</a>
  * <p>
  * Nella classe sono presenti alcuni dei metodi piu' importanti e significativi.
  */
@@ -231,17 +231,17 @@ public class SafJNest extends Thread {
 
     public static String findSimilarWord(String input, ArrayList<String> arr) {
         double maxSimilarity = 0;
-        String championName = "";
+        String s = "";
         
-        for (String champion : arr) {
-            double similarity = calculateSimilarity(input, champion);
+        for (String ss : arr) {
+            double similarity = calculateSimilarity(input, ss);
             if (similarity > maxSimilarity) {
                 maxSimilarity = similarity;
-                championName = champion;
+                s = ss;
             }
         }
         
-        return championName;
+        return s;
     }
     
     private static double calculateSimilarity(String s1, String s2) {
