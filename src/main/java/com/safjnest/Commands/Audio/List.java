@@ -47,14 +47,15 @@ public class List extends Command{
         eb.setTitle("List of " + event.getGuild().getName());
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + event.getGuild().getId() + "' ORDER BY name ASC;";
-        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 2);
+        String query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + event.getGuild().getId() + "' ORDER BY name ASC;";
+        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 6);
 
         eb.setDescription("Total Sound: " + sounds.size());
 
         int cont = 0;
         while(cont <24 && cont < sounds.size()){
-            eb.addField("**"+sounds.get(cont).get(1)+"**", "ID: " + sounds.get(cont).get(0), true);
+            String locket = (sounds.get(cont).get(5).equals("0")) ? ":lock:" : "";
+            eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
             cont++;
         }
         
