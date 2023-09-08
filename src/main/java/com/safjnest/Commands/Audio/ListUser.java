@@ -70,7 +70,7 @@ public class ListUser extends Command{
         eb.setDescription("Total Sound: " + sounds.size());
         int cont = 0;
         while(cont <24 && cont < sounds.size()){
-            String locket = (sounds.get(cont).get(5).equals("1")) ? ":unlock:" : ":lock:";
+            String locket = (sounds.get(cont).get(5).equals("0")) ? ":lock:" : "";
             eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
             cont++;
         }
