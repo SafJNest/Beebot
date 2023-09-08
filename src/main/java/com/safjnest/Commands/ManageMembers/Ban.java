@@ -10,8 +10,6 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 
@@ -45,29 +43,24 @@ public class Ban extends Command{
             String mentionedName = args[0];
             String reason = (args.length < 2) ? "unspecified reason" : args[1];
 
-            SelfUser selfuser = event.getJDA().getSelfUser();
-            Member selfMember = event.getGuild().getMember(selfuser);
+            Member selfMember = event.getGuild().getSelfMember();
             Member author = event.getMember();
-            User mentionedUser = PermissionHandler.getMentionedUser(event, mentionedName);
-            Member mentionedMember = null;
-            try {
-                mentionedMember = event.getGuild().getMember(mentionedUser);
-            } catch (Exception e) {}
+            Member mentionedMember = PermissionHandler.getMentionedMember(event, mentionedName);
             
             if(mentionedMember == null) { 
                 event.reply("Couldn't find the specified member, please mention or write the id of a member. After that you can also add a reaseon for the ban.");
             }// if you mention a user not in the guild or write a wrong id
 
             else if(!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-                event.reply(selfuser.getAsMention() + " doesn't have the permission to ban members, give the bot a role that can do that.");
+                event.reply(selfMember.getAsMention() + " doesn't have the permission to ban members, give the bot a role that can do that.");
             }// if the bot doesnt have the BAN_MEMBERS permission
 
-            else if(PermissionHandler.isUntouchable(mentionedUser.getId())) {
+            else if(PermissionHandler.isUntouchable(mentionedMember.getId())) {
                 event.reply("Don't you dare touch my creators.");
             }// well...
 
             else if(!selfMember.canInteract(mentionedMember)) {
-                event.reply(selfuser.getAsMention() + " can't ban a member with higher or equal highest role than itself.");
+                event.reply(selfMember.getAsMention() + " can't ban a member with higher or equal highest role than itself.");
             }// if the bot doesnt have a high enough role to ban the member
 
             else if(!author.hasPermission(Permission.BAN_MEMBERS)) {
@@ -79,8 +72,8 @@ public class Ban extends Command{
             }// if the author doesnt have a high enough role to ban the member and if its not yourself!
             
             else{
-                event.getGuild().ban(mentionedUser,  0, TimeUnit.SECONDS).reason(reason).queue(
-                    (e) -> event.reply(mentionedUser.getAsMention() + " has been banned"), 
+                event.getGuild().ban(mentionedMember,  0, TimeUnit.SECONDS).reason(reason).queue(
+                    (e) -> event.reply(mentionedMember.getAsMention() + " has been banned"), 
                     new ErrorHandler().handle(
                         ErrorResponse.MISSING_PERMISSIONS,
                         (e) -> event.replyError("Error. " + e.getMessage()))

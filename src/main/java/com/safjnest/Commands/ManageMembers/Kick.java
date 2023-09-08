@@ -7,8 +7,6 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 
@@ -30,37 +28,35 @@ public class Kick extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
-        String mentionedName = event.getArgs();
+        String[] args = event.getArgs().split(" ", 2);
 
-        if(mentionedName == ""){
-            event.reply("Member missing, please mention or write the id of a member");
+        if(args[0] == ""){
+            event.reply("Member missing, please mention or write the id of a member. After that you can also add a reaseon for the ban.");
             return;
         }
 
         try {
-            SelfUser selfuser = event.getJDA().getSelfUser();
-            Member selfMember = event.getGuild().getMember(selfuser);
+            String mentionedName = args[0];
+            String reason = (args.length < 2) ? "unspecified reason" : args[1];
+            
+            Member selfMember = event.getGuild().getSelfMember();
             Member author = event.getMember();
-            User mentionedUser = PermissionHandler.getMentionedUser(event, mentionedName);
-            Member mentionedMember = null;
-            try {
-                mentionedMember = event.getGuild().getMember(mentionedUser);
-            } catch (Exception e) {}
+            Member mentionedMember = PermissionHandler.getMentionedMember(event, mentionedName);
             
             if(mentionedMember == null) { 
                 event.reply("Couldn't find the specified member, please mention or write the id of a member.");
             }// if you mention a user not in the guild or write a wrong id
 
             else if(!selfMember.hasPermission(Permission.KICK_MEMBERS)) {
-                event.reply(selfuser.getAsMention() + " doesn't have the permission to kick members, give the bot a role that can do that.");
+                event.reply(selfMember.getAsMention() + " doesn't have the permission to kick members, give the bot a role that can do that.");
             }// if the bot doesnt have the KICK_MEMBERS permission
 
-            else if(PermissionHandler.isUntouchable(mentionedUser.getId())) {
+            else if(PermissionHandler.isUntouchable(mentionedMember.getId())) {
                 event.reply("Don't you dare touch my creators.");
             }// well...
 
             else if(!selfMember.canInteract(mentionedMember)) {
-                event.reply(selfuser.getAsMention() + " can't kick a member with higher or equal highest role than itself.");
+                event.reply(selfMember.getAsMention() + " can't kick a member with higher or equal highest role than itself.");
             }// if the bot doesnt have a high enough role to kick the member
 
             else if(!author.hasPermission(Permission.KICK_MEMBERS)) {
@@ -72,8 +68,8 @@ public class Kick extends Command{
             }// if the author doesnt have a high enough role to kick the member and if its not yourself!
             
             else {
-                event.getGuild().kick(mentionedUser).queue(
-                    (e) -> event.reply(mentionedUser.getAsMention() + " has been kicked"), 
+                event.getGuild().kick(mentionedMember).reason(reason).queue(
+                    (e) -> event.reply(mentionedMember.getAsMention() + " has been kicked"), 
                     new ErrorHandler().handle(
                         ErrorResponse.MISSING_PERMISSIONS,
                         (e) -> event.replyError("Error. " + e.getMessage()))

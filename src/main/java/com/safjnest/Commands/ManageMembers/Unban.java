@@ -6,14 +6,10 @@ import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.SelfUser;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
-import net.dv8tion.jda.api.exceptions.ErrorResponseException;
-import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -32,57 +28,34 @@ public class Unban extends Command{
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
     }
 
-    public static boolean isUserBanned(Guild guild, User user) throws InsufficientPermissionException{
-        try {
-            guild.retrieveBan(user).complete();
-            return true;
-        } catch (ErrorResponseException e) {
-            return false;
-        }
-    }
-
     @Override
     protected void execute(CommandEvent event) {
         try {
+            Member selfMember = event.getGuild().getSelfMember();
+            if(!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
+                event.reply(selfMember.getAsMention() + " doesn't have the permission to unban users, give the bot a role that can do that.");
+                return;
+            }// if the bot doesnt have the BAN_MEMBERS permission it cant see or unban the banned users
+            
             if(event.getArgs().length() == 0) {
-                SelfUser selfuser = event.getJDA().getSelfUser();
-                Member selfMember = event.getGuild().getMember(selfuser);
+                StringBuilder unbans = new StringBuilder();
 
-                if(!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-                    event.reply(selfuser.getAsMention() + " doesn't have the permission to unban users so it cant see the banned users, give the bot a role that can do that.");
-                }// if the bot doesnt have the BAN_MEMBERS permission it cant see the banned users
+                unbans.append("**List of banned users:**\n");
+                for (net.dv8tion.jda.api.entities.Guild.Ban ban : event.getGuild().retrieveBanList().complete())
+                    unbans.append(ban.getUser().getAsMention() + " - ");
+                unbans.delete(unbans.length() - 3, unbans.length());
 
-                else {
-                    StringBuilder unbans = new StringBuilder();
-
-                    unbans.append("**List of banned users:**\n");
-                    for (net.dv8tion.jda.api.entities.Guild.Ban ban : event.getGuild().retrieveBanList().complete())
-                        unbans.append(ban.getUser().getAsMention() + " - ");
-                    unbans.delete(unbans.length() - 3, unbans.length());
-
-                    event.reply(unbans.toString());
-                }
+                event.reply(unbans.toString());
             }
             else {
-                SelfUser selfuser = event.getJDA().getSelfUser();
-                Member selfMember = event.getGuild().getMember(selfuser);
                 Member author = event.getMember();
                 User mentionedUser = PermissionHandler.getMentionedUser(event, event.getArgs());
-                
-                Member mentionedMember = null;
-                try {
-                    mentionedMember = event.getGuild().getMember(mentionedUser);
-                } catch (Exception e) {}
 
-                if(mentionedMember == null) { 
-                    event.reply("Couldn't find the specified member, please write the id of a banned user. You can also use unban without parameters to get a list of banned members.");
+                if(mentionedUser == null) { 
+                    event.reply("Couldn't find the specified user, please write the id of a banned user. You can also use unban without parameters to get a list of banned members.");
                 }// if you mention a user not in the guild or write a wrong id
 
-                else if(!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-                    event.reply(selfuser.getAsMention() + " doesn't have the permission to unban users, give the bot a role that can do that.");
-                }// if the bot doesnt have the BAN_MEMBERS permission
-
-                else if(!isUserBanned(event.getGuild(), mentionedUser)) {
+                else if(!PermissionHandler.isUserBanned(event.getGuild(), mentionedUser)) {
                     event.reply("The user is not banned from this guild.");
                 }// if the user is not banned from the guild
 

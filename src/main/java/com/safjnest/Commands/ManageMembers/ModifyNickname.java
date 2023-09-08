@@ -7,8 +7,6 @@ import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.SelfUser;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 
@@ -29,23 +27,22 @@ public class ModifyNickname extends Command {
     protected void execute(CommandEvent event) {
         String[] args = event.getArgs().split(" ", 2);
 
-        if(args[0] == ""){
+        if(args[0] == "") {
             event.reply("Member missing, please mention or write the id of a member");
+            return;
+        }
+        if(args.length < 2) {
+            event.reply("New nickname missing, please write the new nickname after the user.");
             return;
         }
 
         try {
             String mentionedName = args[0];
-            String newNickname = (args.length < 2) ? "unspecified reason" : args[1];
+            String newNickname = args[1];
 
-            SelfUser selfuser = event.getJDA().getSelfUser();
-            Member selfMember = event.getGuild().getMember(selfuser);
+            Member selfMember = event.getGuild().getSelfMember();
             Member author = event.getMember();
-            User mentionedUser = PermissionHandler.getMentionedUser(event, mentionedName);
-            Member mentionedMember = null;
-            try {
-                mentionedMember = event.getGuild().getMember(mentionedUser);
-            } catch (Exception e) {}
+            Member mentionedMember = PermissionHandler.getMentionedMember(event, mentionedName);
             
             if(mentionedMember == null) { 
                 event.reply("Couldn't find the specified member, please mention or write the id of a member.");
@@ -56,11 +53,11 @@ public class ModifyNickname extends Command {
             }// if the nickname is longer than 32 characters
 
             else if(!selfMember.hasPermission(Permission.NICKNAME_MANAGE)) {
-                event.reply(selfuser.getAsMention() + " doesn't have the permission to change nicknames, give the bot a role that can do that.");
+                event.reply(selfMember.getAsMention() + " doesn't have the permission to change nicknames, give the bot a role that can do that.");
             }// if the bot doesnt have the NICKNAME_MANAGE permission
 
             else if(!selfMember.canInteract(mentionedMember)) {
-                event.reply(selfuser.getAsMention() + " can't change the nickname of a member with higher or equal highest role than itself.");
+                event.reply(selfMember.getAsMention() + " can't change the nickname of a member with higher or equal highest role than itself.");
             }// if the bot doesnt have a high enough role to change the nickname of the member
 
             else if(!author.hasPermission(Permission.NICKNAME_MANAGE)) {
@@ -73,7 +70,7 @@ public class ModifyNickname extends Command {
             
             else {
                 mentionedMember.modifyNickname(newNickname).queue(
-                    (e) -> event.reply("Changed nickname of " + mentionedUser.getAsMention()), 
+                    (e) -> event.reply("Changed nickname of " + mentionedMember.getAsMention()), 
                     new ErrorHandler()
                         .handle(
                             ErrorResponse.MISSING_PERMISSIONS, 

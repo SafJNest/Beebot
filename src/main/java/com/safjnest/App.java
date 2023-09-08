@@ -30,11 +30,15 @@ public class App {
     private static DatabaseHandler dbh;
     private static BotSettingsHandler bs;
     public static String key;
+    private static final boolean extremeTesting = false;
+
+    public static boolean isExtremeTesting() {
+        return extremeTesting;
+    }
 
     public static void main(String args[]) {
         
         SafJNest.bee();
-        boolean isExtremeTesting = true;
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, openAISettins = null, riotSettings = null;
@@ -83,7 +87,7 @@ public class App {
 
         bs = new BotSettingsHandler();
 
-        if(!isExtremeTesting){
+        if(!isExtremeTesting()){
             try {
                 for (int i = 0; i < bots.size(); i++) {
                     Thread t = new Thread(new Bot(bs, tts, sql, riotApi));

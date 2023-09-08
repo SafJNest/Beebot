@@ -7,7 +7,6 @@ import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.User;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -27,34 +26,29 @@ public class Permissions extends Command{
     @Override
     protected void execute(CommandEvent event) {
         try {
-            User mentionedUser;
+            Member mentionedMember;
             if(event.getArgs() == "")
-                mentionedUser = event.getAuthor();
+                mentionedMember = event.getMember();
             else
-                mentionedUser = PermissionHandler.getMentionedUser(event, event.getArgs());
-
-            Member mentionedMember = null;
-            try {
-                mentionedMember = event.getGuild().getMember(mentionedUser);
-            } catch (Exception e) {}
+                mentionedMember = PermissionHandler.getMentionedMember(event, event.getArgs());
 
             if(mentionedMember == null) {
                 event.reply("Couldn't find the specified member, please mention or write the id of a member.");
+                return;
+            }
+
+            if (mentionedMember.isOwner()) {
+                event.reply(mentionedMember.getAsMention() + " is the owner of the guild.");
+            }
+            else if (mentionedMember.hasPermission(Permission.ADMINISTRATOR)) {
+                event.reply(mentionedMember.getAsMention() + " is an admin.");
             }
             else {
-                if (mentionedMember.isOwner()) {
-                    event.reply(mentionedMember.getAsMention() + " is the owner of the guild.");
-                }
-                else if (mentionedMember.hasPermission(Permission.ADMINISTRATOR)) {
-                    event.reply(mentionedMember.getAsMention() + " is an admin.");
-                }
-                else {
-                    StringBuilder permissionsString = new StringBuilder();
-                    for(Permission permission :  mentionedMember.getPermissions())
-                        permissionsString.append(permission.getName() + " - ");
-                    permissionsString.delete(permissionsString.length() - 3, permissionsString.length());
-                    event.reply(mentionedMember.getAsMention() + " **is not an admin and these are his permissions:** \n" + permissionsString.toString());
-                }
+                StringBuilder permissionsString = new StringBuilder();
+                for(Permission permission :  mentionedMember.getPermissions())
+                    permissionsString.append(permission.getName() + " - ");
+                permissionsString.delete(permissionsString.length() - 3, permissionsString.length());
+                event.reply(mentionedMember.getAsMention() + " **is not an admin and these are his permissions:** \n" + permissionsString.toString());
             }
         } catch (Exception e) {
             event.reply("Error: " + e.getMessage());
