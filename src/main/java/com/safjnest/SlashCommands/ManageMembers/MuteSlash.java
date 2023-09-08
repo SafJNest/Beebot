@@ -1,7 +1,6 @@
 package com.safjnest.SlashCommands.ManageMembers;
 
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
 
 import java.util.Arrays;
 
@@ -30,32 +29,52 @@ public class MuteSlash extends SlashCommand{
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.USER, "user", "User to mute", true));
+            new OptionData(OptionType.USER, "member", "Member to mute", true));
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        Member theGuy = event.getOption("user").getAsMember();
         try {
-            final Member surelyTheGuy = theGuy;
+            Member mentionedMember = event.getOption("member").getAsMember();
 
-            if (!event.getGuild().getMember(event.getJDA().getSelfUser()).hasPermission(Permission.VOICE_MUTE_OTHERS))
-                event.deferReply(true).addContent(event.getJDA().getSelfUser().getAsMention() + " you dont have permission to mute").queue();
+            Member selfMember = event.getGuild().getSelfMember();
+            Member author = event.getMember();
 
-            else if (PermissionHandler.isUntouchable(theGuy.getId()))
-                event.deferReply(false).addContent("Dont dare touch my creators.").queue(); //di proposito false così tutti lo vedono wsto pezzo di merdafigli od tiroai annodam iedi
+            if(mentionedMember == null) { 
+                event.deferReply(true).addContent("Couldn't find the specified member, please mention or write the id of a member.").queue();
+            }// if you mention a user not in the guild or write a wrong id
 
-            else if (PermissionHandler.hasPermission(event.getMember(), Permission.VOICE_MUTE_OTHERS)) {
-                event.getGuild().mute(surelyTheGuy, true).queue(
-                                                        (e) -> event.deferReply(false).addContent("muted " + surelyTheGuy.getAsMention()).queue(), 
-                                                        new ErrorHandler().handle(
-                                                            ErrorResponse.MISSING_PERMISSIONS,
-                                                                (e) -> event.deferReply(true).addContent("sorry, " + e.getMessage()).queue())
+            else if(!selfMember.hasPermission(Permission.VOICE_MUTE_OTHERS)) {
+                event.deferReply(true).addContent(selfMember.getAsMention() + " doesn't have the permission to mute members, give the bot a role that can do that.").queue();
+            }// if the bot doesnt have the VOICE_MUTE_OTHERS permission
+
+            else if(!selfMember.canInteract(mentionedMember)) {
+                event.deferReply(true).addContent(selfMember.getAsMention() + " can't mute a member with higher or equal highest role than itself.").queue();
+            }// if the bot doesnt have a high enough role to mute the member 
+
+            else if(!author.hasPermission(Permission.VOICE_MUTE_OTHERS)) {
+                event.deferReply(true).addContent("You don't have the permission to mute.").queue();
+            }// if the author doesnt have the VOICE_MUTE_OTHERS permission
+
+            else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
+                event.deferReply(true).addContent("You can't mute a member with higher or equal highest role than yourself.").queue();
+            }// if the author doesnt have a high enough role to mute the member and if its not yourself!
+
+            else if(mentionedMember.getVoiceState().isMuted()) {
+                event.deferReply(true).addContent("Member is already muted.").queue();
+            }// if the member is already muted
+
+            else {
+                event.getGuild().mute(mentionedMember, true).queue(
+                    (e) -> event.deferReply(false).addContent(mentionedMember.getAsMention() + " has been muted").queue(), 
+                    new ErrorHandler().handle(
+                        ErrorResponse.MISSING_PERMISSIONS,
+                        (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
                 );
-            } else
-                event.deferReply(true).addContent("Dont mute if you are not an admin UwU.").queue();
+            }
         } catch (Exception e) {
-            event.deferReply(true).addContent("error: " + e.getMessage()).queue();
+            event.deferReply(true).addContent("Error: " + e.getMessage()).queue();
+            e.printStackTrace();
         }
     }
 }
