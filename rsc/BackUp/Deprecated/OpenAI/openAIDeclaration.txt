@@ -1,0 +1,6 @@
+openAIHandler = new OpenAIHandler(
+    openAISettins.get("key").toString(), 
+    openAISettins.get("maxTokens").toString(), 
+    openAISettins.get("model").toString()
+);
+openAIHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();

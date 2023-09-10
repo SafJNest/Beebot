@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import com.safjnest.Utilities.DatabaseHandler;
 
+
 /**
  * Class that stores all the settings for a guild.
  * <ul>
@@ -28,10 +29,16 @@ public class GuildData {
 
     private HashMap<Long, Room> rooms;
 
-    public GuildData(Long id, String prefix, boolean expSystem) {
+    private int threshold;
+
+    private String blackChannelId;
+
+    public GuildData(Long id, String prefix, boolean expSystem, int threshold, String channel) {
         this.id = id;
         this.prefix = prefix;
         this.expSystem = expSystem;
+        this.threshold = threshold;
+        this.blackChannelId = channel;
         loadRooms();
     }
 
@@ -45,6 +52,22 @@ public class GuildData {
 
     public boolean getExpSystem() {
         return expSystem;
+    }
+
+    public int getThreshold() {
+        return threshold;
+    }
+
+    public String getBlackChannelId() {
+        return blackChannelId;
+    }
+
+    public synchronized void setBlackChannel(String blackChannel) {
+        this.blackChannelId = blackChannel;
+    }
+
+    public synchronized void setThreshold(int threshold) {
+        this.threshold = threshold;
     }
 
     public synchronized void setPrefix(String prefix) {

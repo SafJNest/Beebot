@@ -46,10 +46,12 @@ public class PrintCache extends Command {
         if(!PermissionHandler.isUntouchable(event.getAuthor().getId()))
             return;
         String msg = "";
+        msg += "Beebot v3.0\n";
+        msg += "Guilds cached: " + gs.cache.size() + "\n";
         for(GuildData gd : gs.cache.values()){
             try {
                 if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot"))
-                msg += "SERVER: " + event.getJDA().getGuildById(gd.getId()).getName() + " | PREFIX: " + gd.getPrefix() + " | EXP: " + gd.getExpSystem() + "\n";
+                msg += "SERVER: " + event.getJDA().getGuildById(gd.getId()).getName() + " | PREFIX: " + gd.getPrefix() + " | EXP: " + gd.getExpSystem() + " | Thresharil: " + gd.getThreshold() + "\n";
             } catch (Exception e) {
                continue;
             }

@@ -29,6 +29,8 @@ public class UnMuteSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.botPermissions = new Permission[]{Permission.VOICE_MUTE_OTHERS};
+        this.userPermissions = new Permission[]{Permission.VOICE_MUTE_OTHERS};
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "member", "Member to unmute", true));
     }
@@ -38,28 +40,9 @@ public class UnMuteSlash extends SlashCommand{
         try {
             Member mentionedMember = event.getOption("member").getAsMember();
 
-            Member selfMember = event.getGuild().getSelfMember();
-            Member author = event.getMember();
-
             if(mentionedMember == null) { 
                 event.deferReply(true).addContent("Couldn't find the specified member, please mention or write the id of a member.").queue();
             }// if you mention a user not in the guild or write a wrong id
-
-            else if(!selfMember.hasPermission(Permission.VOICE_MUTE_OTHERS)) {
-                event.deferReply(true).addContent(selfMember.getAsMention() + " doesn't have the permission to unmute members, give the bot a role that can do that.").queue();
-            }// if the bot doesnt have the VOICE_MUTE_OTHERS permission
-
-            else if(!selfMember.canInteract(mentionedMember)) {
-                event.deferReply(true).addContent(selfMember.getAsMention() + " can't unmute a member with higher or equal highest role than itself.").queue();
-            }// if the bot doesnt have a high enough role to unmute the member 
-
-            else if(!author.hasPermission(Permission.VOICE_MUTE_OTHERS)) {
-                event.deferReply(true).addContent("You don't have the permission to unmute.").queue();
-            }// if the author doesnt have the VOICE_MUTE_OTHERS permission
-
-            else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
-                event.deferReply(true).addContent("You can't unmute a member with higher or equal highest role than yourself.").queue();
-            }// if the author doesnt have a high enough role to unmute the member and if its not yourself!
 
             else if(!mentionedMember.getVoiceState().isMuted()) {
                 event.deferReply(true).addContent("Member is already unmuted.").queue();
@@ -75,7 +58,6 @@ public class UnMuteSlash extends SlashCommand{
             }
         } catch (Exception e) {
             event.deferReply(true).addContent("Error: " + e.getMessage()).queue();
-            e.printStackTrace();
         }
     }
 }

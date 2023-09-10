@@ -8,7 +8,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
@@ -30,6 +29,8 @@ public class UnbanSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.botPermissions = new Permission[]{Permission.BAN_MEMBERS};
+        this.userPermissions = new Permission[]{Permission.BAN_MEMBERS};
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "user", "User (ID) to ban , omit to get the ban list", false));
     }
@@ -37,12 +38,6 @@ public class UnbanSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         try {
-            Member selfMember = event.getGuild().getSelfMember();
-            if(!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-                event.deferReply(true).addContent(selfMember.getAsMention() + " doesn't have the permission to unban users, give the bot a role that can do that.").queue();
-                return;
-            }// if the bot doesnt have the BAN_MEMBERS permission it cant see or unban the banned users
-
             if(event.getOption("user") == null) {
                 StringBuilder unbans = new StringBuilder();
 
@@ -55,8 +50,6 @@ public class UnbanSlash extends SlashCommand{
             }
             else {
                 User mentionedUser = event.getOption("user").getAsUser();
-
-                Member author = event.getMember();
                 
                 if(mentionedUser == null) { 
                     event.deferReply(true).addContent("Couldn't find the specified user, please write the id of a banned user.").queue();
@@ -65,10 +58,6 @@ public class UnbanSlash extends SlashCommand{
                 else if(!PermissionHandler.isUserBanned(event.getGuild(), mentionedUser)) {
                     event.deferReply(true).addContent("The user is not banned from this guild.").queue();
                 }// if the user is not banned from the guild
-
-                else if(!author.hasPermission(Permission.BAN_MEMBERS)) {
-                    event.deferReply(true).addContent("You don't have the permission to unban.").queue();
-                }// if the author doesnt have the BAN_MEMBERS permission
 
                 else {
                     event.getGuild().unban(mentionedUser).queue(
@@ -81,7 +70,6 @@ public class UnbanSlash extends SlashCommand{
             }
         } catch (Exception e) {
             event.deferReply(true).addContent("Error: " + e.getMessage()).queue();
-            e.printStackTrace();
         }
     }
 }

@@ -26,6 +26,7 @@ public class ImageSlash extends SlashCommand{
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "user", "User from which to take the profile picture", true)
         );
+            
     }
 
     @Override
@@ -35,7 +36,6 @@ public class ImageSlash extends SlashCommand{
             event.deferReply(false).addContent(mentionedUser.getAvatarUrl() + "?size=4096").queue();
         } catch (Exception e) {
             event.deferReply(true).addContent("Error: " + e.getMessage()).queue();
-            e.printStackTrace();
         }
     }
 }

@@ -24,6 +24,8 @@ public class ModifyNicknameSlash extends SlashCommand {
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.botPermissions = new Permission[]{Permission.NICKNAME_MANAGE};
+        this.userPermissions = new Permission[]{Permission.NICKNAME_MANAGE};
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "member", "Member to change the nickname of", true),
             new OptionData(OptionType.STRING, "nickname","New nickname", true)
@@ -44,17 +46,9 @@ public class ModifyNicknameSlash extends SlashCommand {
                 event.deferReply(true).addContent("Couldn't find the specified member, please mention or write the id of a member.").queue();
             }// if you mention a user not in the guild or write a wrong id
 
-            else if(!selfMember.hasPermission(Permission.NICKNAME_MANAGE)) {
-                event.deferReply(true).addContent(selfMember.getAsMention() + " doesn't have the permission to change nicknames, give the bot a role that can do that.").queue();
-            }// if the bot doesnt have the NICKNAME_MANAGE permission
-
             else if(!selfMember.canInteract(mentionedMember)) {
                 event.deferReply(true).addContent(selfMember.getAsMention() + " can't change the nickname of a member with higher or equal highest role than itself.").queue();
             }// if the bot doesnt have a high enough role to change the nickname of the member
-
-            else if(!author.hasPermission(Permission.NICKNAME_MANAGE)) {
-                event.deferReply(true).addContent("You don't have the permission to change nicknames.").queue();
-            }// if the author doesnt have the NICKNAME_MANAGE permission
 
             else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
                 event.deferReply(true).addContent("You can't change the nickname of a member with higher or equal highest role than yourself.").queue();
@@ -70,7 +64,6 @@ public class ModifyNicknameSlash extends SlashCommand {
             }
         } catch (Exception e) {
             event.deferReply(true).addContent("Error: " + e.getMessage()).queue();
-            e.printStackTrace();
         }
     }
 }

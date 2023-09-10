@@ -26,6 +26,8 @@ public class Unban extends Command{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.botPermissions = new Permission[]{Permission.BAN_MEMBERS};
+        this.userPermissions = new Permission[]{Permission.BAN_MEMBERS};
     }
 
     @Override
@@ -48,8 +50,10 @@ public class Unban extends Command{
                 event.reply(unbans.toString());
             }
             else {
+                String mentionedName = event.getArgs();
+                
+                User mentionedUser = PermissionHandler.getMentionedUser(event, mentionedName);
                 Member author = event.getMember();
-                User mentionedUser = PermissionHandler.getMentionedUser(event, event.getArgs());
 
                 if(mentionedUser == null) { 
                     event.reply("Couldn't find the specified user, please write the id of a banned user. You can also use unban without parameters to get a list of banned members.");

@@ -6,5 +6,7 @@ CREATE TABLE
     `name_tts` varchar(19) DEFAULT NULL,
     `language_tts` varchar(19) DEFAULT NULL,
     `exp_enabled` tinyint(1) DEFAULT 0,
+    `threshold` tinyint(4) DEFAULT 0,
+    `blacklist_channel` varchar(19) DEFAULT NULL,
     PRIMARY KEY (`guild_id`, `bot_id`)
   ) ENGINE = InnoDB DEFAULT CHARSET = latin1

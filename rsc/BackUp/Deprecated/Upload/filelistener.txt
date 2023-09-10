@@ -1,0 +1,51 @@
+class FileListener extends ListenerAdapter {
+    private String name;
+    private CommandEvent event;
+    private MessageChannel channel;
+    private float maxFileSize = 1049000; //in bytes
+    private SQL sql;
+
+    public FileListener(CommandEvent event, String name, MessageChannel channel, SQL sql){
+        this.name = name;
+        this.event = event;
+        this. channel = channel;
+        this.sql = sql;
+    }
+    
+    @Override
+    public void onMessageReceived(MessageReceivedEvent e){
+        if(!e.getChannel().equals(channel) || e.getAuthor().isBot()){
+            return;
+        }
+        if(e.getMessage().getAttachments().size() <= 0){
+            event.reply("You have to upload the sound, you can try again by reusing the command");
+            e.getJDA().removeEventListener(this);
+            return;
+        }
+
+        Attachment attachment = e.getMessage().getAttachments().get(0);
+
+        if(attachment.getSize() > maxFileSize && !PermissionHandler.isUntouchable(event.getAuthor().getId())){
+            event.reply("The file is too big (" + maxFileSize/1048576 + "mb max)");
+            e.getJDA().removeEventListener(this);
+            return;
+        }
+
+        String query = "INSERT INTO sound(name, guild_id, user_id, extension) VALUES('" 
+                     + name + "','" + event.getGuild().getId() + "','" + event.getAuthor().getId() + "','" + attachment.getFileExtension() + "');";
+        sql.runQuery(query);
+        query = "SELECT id FROM sound WHERE name = '" + name + "' AND guild_id = '" + event.getGuild().getId() + "' AND user_id = '" + event.getAuthor().getId() + "';";
+        String id = sql.getString(query, "id");
+        if(id == null){
+            event.reply("An error with the SQL database occured");
+            e.getJDA().removeEventListener(this);
+            return;
+        }
+
+        File saveFile = new File("rsc" + File.separator + "SoundBoard" + File.separator + (id + "." + attachment.getFileExtension()));
+        new FileProxy(attachment.getUrl()).downloadToFile(saveFile);
+        event.reply("File uploaded succesfully");
+        
+        e.getJDA().removeEventListener(this);
+    }
+}

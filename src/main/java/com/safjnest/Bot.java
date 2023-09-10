@@ -19,7 +19,6 @@ import org.json.simple.parser.JSONParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
@@ -62,6 +61,7 @@ import com.safjnest.SlashCommands.Audio.Play.PlaySlash;
 import com.safjnest.SlashCommands.League.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
+import com.safjnest.SlashCommands.ManageMembers.Blacklist.BlacklistSlash;
 import com.safjnest.SlashCommands.ManageMembers.Move.MoveSlash;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
@@ -148,7 +148,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         jda = JDABuilder
                 .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
                     GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
-                    GatewayIntent.GUILD_EMOJIS_AND_STICKERS, GatewayIntent.GUILD_PRESENCES)
+                    GatewayIntent.GUILD_EMOJIS_AND_STICKERS, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MODERATION)
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .setChunkingFilter(ChunkingFilter.ALL)
                 .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
@@ -172,10 +172,9 @@ public class Bot extends ListenerAdapter implements Runnable {
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
-                for(Guild g : event.getJDA().getGuilds()){
-                    gs.retrieveServer(g.getId());
-                    //g.updateCommands().queue();
-                }
+                gs.retrieveAllServers();
+                //g.updateCommands().queue();
+                
                 System.out.println("[" + threadName + "] INFO Guild cached correctly");
             }
         });
@@ -193,11 +192,11 @@ public class Bot extends ListenerAdapter implements Runnable {
         ArrayList<String> beebotsAll = new ArrayList<String>(Arrays.asList("beebot", "beebot 2", "beebot 3", "beebot canary"));
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new Ping(), new BugsNotifier(), new Ram(), new Help(gs), new Aliases(), new RawMessage(), new Prefix(sql, gs), new PrefixList());
+        Collections.addAll(commandsList, new PrintCache(gs, farm), new Ping(), new BugsNotifier(), new Ram(), new Help(gs), new Aliases(), new RawMessage(), new Prefix(sql, gs), new PrefixList());
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(commandsList, new Summoner(), new InfoAugment(), new FreeChamp(), new GameRank(), new SetSummoner(riotApi, sql), new LastMatches(riotApi, sql), new InfoMatches(),new Prime(maxPrime), new Calculator(), new Dice(), 
-                                             new ThreadCounter(), new LevelUp(), new VandalizeServer(), new Jelly(), new ChatGPT(), new Shutdown(), new Restart(), new Query());
+                                             new ThreadCounter(), new LevelUp(), new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(commandsList, new Anonym(), new ChannelInfo(), new Clear(), new Msg(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new ListGuild(), new Ban(),
@@ -209,7 +208,7 @@ public class Bot extends ListenerAdapter implements Runnable {
                                              new TTS(tts, sql), new Stop(), new CustomizeSound(), new SetVoice(sql));
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
-            Collections.addAll(commandsList, new Leaderboard(), new PrintCache(gs, farm));
+            Collections.addAll(commandsList, new Leaderboard());
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
@@ -223,7 +222,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(),
                                              new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash(),
-                                             new WelcomeSlash(sql, gs), new LeaveSlash(), new BoostSlash());
+                                             new WelcomeSlash(sql, gs), new LeaveSlash(), new BoostSlash(), new BlacklistSlash(gs));
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new PlaySlash(youtubeApiKey), 
@@ -242,7 +241,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(!threadName.equals("beebot canary"))
             client.setListener(new CommandEventHandler(gs));
         jda.addEventListener(client);
-        jda.addEventListener(new EventHandler(sql, gs));
+        jda.addEventListener(new EventHandler(sql, gs, PREFIX));
         jda.addEventListener(new EventButtonHandler());;
 
         if(Thread.currentThread().getName().equals("beebot")){

@@ -24,18 +24,14 @@ public class Kick extends Command{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.botPermissions = new Permission[]{Permission.KICK_MEMBERS};
+        this.userPermissions = new Permission[]{Permission.KICK_MEMBERS};
     }
 
     @Override
     protected void execute(CommandEvent event) {
-        String[] args = event.getArgs().split(" ", 2);
-
-        if(args[0] == ""){
-            event.reply("Member missing, please mention or write the id of a member. After that you can also add a reaseon for the ban.");
-            return;
-        }
-
         try {
+            String[] args = event.getArgs().split(" ", 2);
             String mentionedName = args[0];
             String reason = (args.length < 2) ? "unspecified reason" : args[1];
             
@@ -47,21 +43,9 @@ public class Kick extends Command{
                 event.reply("Couldn't find the specified member, please mention or write the id of a member.");
             }// if you mention a user not in the guild or write a wrong id
 
-            else if(!selfMember.hasPermission(Permission.KICK_MEMBERS)) {
-                event.reply(selfMember.getAsMention() + " doesn't have the permission to kick members, give the bot a role that can do that.");
-            }// if the bot doesnt have the KICK_MEMBERS permission
-
-            else if(PermissionHandler.isUntouchable(mentionedMember.getId())) {
-                event.reply("Don't you dare touch my creators.");
-            }// well...
-
             else if(!selfMember.canInteract(mentionedMember)) {
                 event.reply(selfMember.getAsMention() + " can't kick a member with higher or equal highest role than itself.");
             }// if the bot doesnt have a high enough role to kick the member
-
-            else if(!author.hasPermission(Permission.KICK_MEMBERS)) {
-                event.reply("You don't have the permission to kick.");
-            }// if the author doesnt have the KICK_MEMBERS permission
 
             else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
                 event.reply("You can't kick a member with higher or equal highest role than yourself.");
@@ -77,7 +61,6 @@ public class Kick extends Command{
             }
         } catch (Exception e) {
             event.replyError("Error: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 }

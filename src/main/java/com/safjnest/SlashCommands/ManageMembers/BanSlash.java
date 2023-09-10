@@ -1,7 +1,6 @@
 package com.safjnest.SlashCommands.ManageMembers;
 
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +30,8 @@ public class BanSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.botPermissions = new Permission[]{Permission.BAN_MEMBERS};
+        this.userPermissions = new Permission[]{Permission.BAN_MEMBERS};
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "member", "Member to ban", true),
             new OptionData(OptionType.STRING, "reason", "Reason of the ban", false)
@@ -51,21 +52,9 @@ public class BanSlash extends SlashCommand{
                 event.deferReply(true).addContent("Couldn't find the specified member, please mention or write the id of a member").queue();
             }// if you mention a user not in the guild or write a wrong id
 
-            else if(!selfMember.hasPermission(Permission.BAN_MEMBERS)) {
-                event.deferReply(true).addContent(selfMember.getAsMention() + " doesn't have the permission to ban members, give the bot a role that can do that.").queue();
-            }// if the bot doesnt have the BAN_MEMBERS permission
-
-            else if(PermissionHandler.isUntouchable(mentionedMember.getId())) {
-                event.deferReply(true).addContent("Don't you dare touch my creators.").queue();
-            }// well...
-
             else if(!selfMember.canInteract(mentionedMember)) {
                 event.deferReply(true).addContent(selfMember.getAsMention() + " can't ban a member with higher or equal highest role than itself.").queue();
             }// if the bot doesnt have a high enough role to ban the member
-
-            else if(!author.hasPermission(Permission.BAN_MEMBERS)) {
-                event.deferReply(true).addContent("You don't have the permission to ban.").queue();
-            }// if the author doesnt have the BAN_MEMBERS permission
 
             else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
                 event.deferReply(true).addContent("You can't ban a member with higher or equal highest role than yourself.").queue();
@@ -82,7 +71,6 @@ public class BanSlash extends SlashCommand{
             } 
         } catch (Exception e) {
             event.deferReply(true).addContent("Error: " + e.getMessage()).queue();
-            e.printStackTrace();
         }
     }
 }
