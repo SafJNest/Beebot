@@ -19,6 +19,7 @@ import org.json.simple.parser.JSONParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
@@ -58,6 +59,7 @@ import com.safjnest.SlashCommands.Admin.*;
 import com.safjnest.SlashCommands.Audio.*;
 import com.safjnest.SlashCommands.Audio.List.ListSlash;
 import com.safjnest.SlashCommands.Audio.Play.PlaySlash;
+import com.safjnest.SlashCommands.Audio.Soundboard.SoundboardSlash;
 import com.safjnest.SlashCommands.League.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
@@ -166,15 +168,18 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
         builder.setActivity(activity);
-        if(App.isExtremeTesting())
-            builder.forceGuildOnly("474935164451946506");
+
+        
         
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
                 gs.retrieveAllServers();
-                //g.updateCommands().queue();
-                
+                /* 
+                for(Guild g : event.getJDA().getGuilds()){
+                    g.updateCommands().queue();
+                }
+                */
                 System.out.println("[" + threadName + "] INFO Guild cached correctly");
             }
         });
@@ -226,7 +231,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new PlaySlash(youtubeApiKey), 
-                                             new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash());
+                                             new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash());
 
         if(threadName.equals("beebot"))
             Collections.addAll(slashCommandsList, new RewardsSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));

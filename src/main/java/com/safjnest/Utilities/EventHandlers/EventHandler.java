@@ -93,7 +93,21 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
-        switch (e.getName()){
+        String name = e.getName();
+
+        if(e.getFullCommandName().equals("soundboard create"))
+            name = "play";
+        
+        else if(e.getFocusedOption().getName().equals("sound_add"))
+            name = "play";
+
+        else if(e.getFocusedOption().getName().equals("sound_remove"))
+            name = "sound_remove";
+
+        else if(e.getFullCommandName().equals("soundboard select") || e.getFullCommandName().equals("soundboard add") || e.getFullCommandName().equals("soundboard remove"))
+            name = "soundboard_select";
+        
+        switch (name){
             
             case "play":
                 if(e.getFocusedOption().getValue().equals("")){
@@ -164,7 +178,34 @@ public class EventHandler extends ListenerAdapter {
                     }
                 }
             break; 
+
+            case "soundboard_select":
+                if(e.getFocusedOption().getValue().equals("")){
+                    String query = "SELECT name, id FROM soundboard WHERE guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0), arr.get(1)));
+                }else{
+                    String query = "SELECT name, id FROM soundboard WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0), arr.get(1)));
+                }
+                break;
+            case "sound_remove":
+                if(e.getOption("name") == null)
+                    return;
+                String soundboardId = e.getOption("name").getAsString();
+                if(e.getFocusedOption().getValue().equals("")){
+                    String query = "SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE ss.id = '" + soundboardId + "' ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0), arr.get(1)));
+                }else{
+                    String query = "SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '"+e.getFocusedOption().getValue()+"%' AND ss.id = '" + soundboardId + "' ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0), arr.get(1)));
+                }
+                break;
         }
+        
         e.replyChoices(choices).queue();
     }
 
