@@ -10,7 +10,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.OpenAIHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
@@ -25,11 +24,14 @@ public class App {
     private static TTSHandler tts;
     private static SQL sql;
     private static R4J riotApi;
-    private static OpenAIHandler openAIHandler;
     private static RiotHandler lolHandler;
     private static DatabaseHandler dbh;
     private static BotSettingsHandler bs;
     public static String key;
+
+    /**
+     * Insane beebot core
+     */
     private static final boolean extremeTesting = false;
 
     public static boolean isExtremeTesting() {
@@ -41,14 +43,13 @@ public class App {
         SafJNest.bee();
         
         JSONParser parser = new JSONParser();
-        JSONObject settings = null, SQLSettings = null, openAISettins = null, riotSettings = null;
+        JSONObject settings = null, SQLSettings = null, riotSettings = null;
         JSONArray bots = null;
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
             bots = (JSONArray) settings.get("startup");
             settings = (JSONObject) settings.get("settings");
             SQLSettings = (JSONObject) settings.get("MySQL");
-            openAISettins = (JSONObject) settings.get("OpenAI");
             riotSettings = (JSONObject) settings.get("Riot");
         } catch (Exception e) {
             e.printStackTrace();
@@ -71,19 +72,11 @@ public class App {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }
         
-        openAIHandler = new OpenAIHandler(
-            openAISettins.get("key").toString(), 
-            openAISettins.get("maxTokens").toString(), 
-            openAISettins.get("model").toString()
-        );
-
-        
         dbh = new DatabaseHandler(sql);
         lolHandler = new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
 
         dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
         lolHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-        openAIHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
 
         bs = new BotSettingsHandler();
 
@@ -96,7 +89,7 @@ public class App {
                 }
                 for(Thread t : botsArr){
                     t.start();
-                    Thread.sleep(6117); //pebble non riesce a gestire più di un bot che si loada contemporaneamente
+                    Thread.sleep(8117); //pebble non riesce a gestire più di un bot che si loada contemporaneamente
                 }
             } catch (Exception e) {e.printStackTrace(); return;}
         }else{

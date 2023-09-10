@@ -3,6 +3,7 @@ package com.safjnest.Utilities.EventHandlers;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.safjnest.Commands.League.GameRank;
 import com.safjnest.Commands.League.InfoMatches;
@@ -14,8 +15,11 @@ import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -25,6 +29,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
@@ -53,6 +58,18 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if (event.getButton().getId().startsWith("listuser-")) 
             listUserButtonEvent(event);
+
+        else if(event.getButton().getId().startsWith("ban-"))
+            banUserEvent(event);
+
+        else if(event.getButton().getId().startsWith("kick-"))
+            kickUserEvent(event);
+
+        else if(event.getButton().getId().startsWith("ignore-"))
+            ignoreUserEvent(event);
+
+        else if(event.getButton().getId().startsWith("unban-"))
+            pardonUserEvent(event);
         
     }
 
@@ -546,6 +563,95 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
 
         }
+    }
+
+    private void banUserEvent(ButtonInteractionEvent event) {
+        if(!event.getMember().hasPermission(Permission.BAN_MEMBERS)){
+            event.deferReply().addContent("You don't have the permission to do that.").queue();
+            return;
+        }
+
+        if(event.getButton().getStyle() != ButtonStyle.DANGER){
+            event.editButton(event.getButton().withStyle(ButtonStyle.DANGER)).queue();
+            return;
+        }
+
+        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        Member theGuy = event.getGuild().getMemberById(args);
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(event.getUser().getName());
+        eb.setTitle(theGuy.getUser().getName() + " has been banned");
+        eb.setThumbnail(theGuy.getUser().getAvatarUrl());
+        eb.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        Button pardon = Button.primary("unban-" + theGuy.getId(), "Pardon");
+        event.getGuild().ban(theGuy, 0, TimeUnit.SECONDS).reason("Entered the blacklist").queue(
+                    (e) -> event.getMessage().editMessageEmbeds(eb.build()).setActionRow(pardon).queue(),
+                    new ErrorHandler().handle(
+                        ErrorResponse.MISSING_PERMISSIONS,
+                        (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
+                );
+        
+    }
+
+    private void kickUserEvent(ButtonInteractionEvent event) {
+        if(!event.getMember().hasPermission(Permission.KICK_MEMBERS)){
+            event.deferReply().addContent("You don't have the permission to do that.").queue();
+            return;
+        }
+
+        if(event.getButton().getStyle() != ButtonStyle.DANGER){
+            event.editButton(event.getButton().withStyle(ButtonStyle.DANGER)).queue();
+            return;
+        }
+
+        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        Member theGuy = event.getGuild().getMemberById(args);
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(event.getUser().getName());
+        eb.setTitle(theGuy.getUser().getName() + " has been kicked");
+        eb.setThumbnail(theGuy.getUser().getAvatarUrl());
+        eb.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        event.getGuild().kick(theGuy).reason("Entered the blacklist").queue(
+            (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(),
+            new ErrorHandler().handle(
+                ErrorResponse.MISSING_PERMISSIONS,
+                (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
+        );
+        
+    }
+
+    private void ignoreUserEvent(ButtonInteractionEvent event) {
+        if(!event.getMember().hasPermission(Permission.KICK_MEMBERS)){
+            event.deferReply().addContent("You don't have the permission to do that.").queue();
+            return;
+        }
+        event.getMessage().editMessageEmbeds(event.getMessage().getEmbeds().get(0)).setComponents().queue();
+        
+    }
+
+
+    private void pardonUserEvent(ButtonInteractionEvent event) {
+
+        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        User theGuy = event.getJDA().getUserById(args);
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(event.getUser().getName());
+        eb.setTitle(theGuy.getName() + " has been unbanned");
+        eb.setThumbnail(theGuy.getAvatarUrl());
+        eb.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+
+        event.getGuild().unban(theGuy).queue(
+            (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(), 
+            new ErrorHandler().handle(
+                ErrorResponse.MISSING_PERMISSIONS,
+                (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
+        );
     }
 
 }

@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-import org.postgresql.util.PSQLException;
+
 
 /**
  * Contains all the method to comunicate with SafJNest Database.
@@ -54,7 +54,6 @@ public class SQL {
             stmt.close();
             return true;
         }
-        catch (PSQLException e) {e.printStackTrace(); return true;}
         catch (SQLException e1) {e1.printStackTrace(); return false;}
     }
 

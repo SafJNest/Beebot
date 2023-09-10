@@ -72,13 +72,46 @@ public class GuildSettings {
      * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
      */
     public GuildData retrieveServer(String stringId) {
-        String query = "SELECT guild_id, prefix, exp_enabled FROM guild_settings WHERE guild_id = '" + stringId + "' AND bot_id = '" + botId + "';";
+        String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild_settings WHERE guild_id = '" + stringId + "' AND bot_id = '" + botId + "';";
         ArrayList<String> guildArrayList = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
-        GuildData guild = (guildArrayList == null || guildArrayList.get(1) == null) 
-                    ? new GuildData(Long.parseLong(stringId), prefix, false) 
-                    : new GuildData(Long.parseLong(guildArrayList.get(0)), guildArrayList.get(1), (guildArrayList.get(2).equals("1")));
+        
+        Long guildId = Long.parseLong(guildArrayList.get(0));
+        String prefix = guildArrayList.get(1);
+        boolean expEnabled = (guildArrayList.get(2).equals("1"));
+        int threshold = Integer.parseInt(guildArrayList.get(3));
+        String blacklistChannel = guildArrayList.get(4);
+
+        GuildData guild = new GuildData(guildId, prefix, expEnabled, threshold, blacklistChannel);
         saveData(guild);
         return guild;
+    }
+
+    /**
+     * Search the gived guild in the {@link com.safjnest.Utilities.SQL postgre database}.
+     * If the query found it all the settings will be downloaded and saved in the cache, otherwise will be used
+     * the default settings:
+     * <ul>
+     * <li>Guild ID</li>
+     * <li>Default prefix, depends on the bot ($, %, P)</li>
+     * </ul>
+     * @param stringId guild's ID
+     * @return
+     * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
+     */
+    public void retrieveAllServers() {
+        String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild_settings WHERE bot_id = '" + botId + "';";
+        ArrayList<ArrayList<String>> guildsArrayList = DatabaseHandler.getSql().getAllRows(query, 5);
+        
+        for(ArrayList<String> guildArrayList : guildsArrayList){
+            Long guildId = Long.parseLong(guildArrayList.get(0));
+            String prefix = guildArrayList.get(1);
+            boolean expEnabled = (guildArrayList.get(2).equals("1"));
+            int threshold = Integer.parseInt(guildArrayList.get(3));
+            String blacklistChannel = guildArrayList.get(4);
+    
+            GuildData guild = new GuildData(guildId, prefix, expEnabled, threshold, blacklistChannel);
+            saveData(guild);
+        }
     }
 
     /**

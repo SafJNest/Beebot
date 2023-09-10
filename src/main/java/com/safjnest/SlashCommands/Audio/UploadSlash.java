@@ -57,9 +57,9 @@ public class UploadSlash extends SlashCommand{
         }
         
         String query = "INSERT INTO sound(name, guild_id, user_id, extension, public) VALUES('" 
-                     + name + "','" + event.getGuild().getId() + "','" + event.getMember().getId() + "','" + attachment.getFileExtension() + "', '" + ((isPublic == true) ? "1" : "0") + "');";
+                     + fileName + "','" + event.getGuild().getId() + "','" + event.getMember().getId() + "','" + attachment.getFileExtension() + "', '" + ((isPublic == true) ? "1" : "0") + "');";
         sql.runQuery(query);           
-        query = "SELECT id FROM sound WHERE name = '" + name + "' AND guild_id = '" + event.getGuild().getId() + "' AND user_id = '" + event.getMember().getId() + "' ORDER BY id DESC LIMIT 1;";
+        query = "SELECT id FROM sound WHERE name = '" + fileName + "' AND guild_id = '" + event.getGuild().getId() + "' AND user_id = '" + event.getMember().getId() + "' ORDER BY id DESC LIMIT 1;";
         String id = sql.getString(query, "id");
 
         if(id.equals(null)){

@@ -3,7 +3,6 @@ package com.safjnest.SlashCommands.ManageMembers;
 import java.util.Arrays;
 
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
@@ -28,6 +27,8 @@ public class KickSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.botPermissions = new Permission[]{Permission.KICK_MEMBERS};
+        this.userPermissions = new Permission[]{Permission.KICK_MEMBERS};
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "member", "Member to kick", true),
             new OptionData(OptionType.STRING, "reason", "Reason of the kick", false)
@@ -48,21 +49,9 @@ public class KickSlash extends SlashCommand{
                 event.deferReply(true).addContent("Couldn't find the specified member, please mention or write the id of a member.").queue();
             }// if you mention a user not in the guild or write a wrong id
 
-            else if(!selfMember.hasPermission(Permission.KICK_MEMBERS)) {
-                event.deferReply(true).addContent(selfMember.getAsMention() + " doesn't have the permission to kick members, give the bot a role that can do that.").queue();
-            }// if the bot doesnt have the KICK_MEMBERS permission
-
-            else if(PermissionHandler.isUntouchable(mentionedMember.getId())) {
-                event.deferReply(true).addContent("Don't you dare touch my creators.").queue();
-            }// well...
-
             else if(!selfMember.canInteract(mentionedMember)) {
                 event.deferReply(true).addContent(selfMember.getAsMention() + " can't kick a member with higher or equal highest role than itself.").queue();
             }// if the bot doesnt have a high enough role to kick the member
-
-            else if(!author.hasPermission(Permission.KICK_MEMBERS)) {
-                event.deferReply(true).addContent("You don't have the permission to kick.").queue();
-            }// if the author doesnt have the KICK_MEMBERS permission
 
             else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
                 event.deferReply(true).addContent("You can't kick a member with higher or equal highest role than yourself.").queue();
@@ -78,7 +67,6 @@ public class KickSlash extends SlashCommand{
             }
         } catch (Exception e) {
             event.deferReply(true).addContent("Error: " + e.getMessage()).queue();
-            e.printStackTrace();
         }
     }
 }
