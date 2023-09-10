@@ -93,6 +93,40 @@
         "arguments" : "[CommandName] [text]"
     },
 
+    "soundboard": {
+        "alias" : [],
+        "help"  : "e function.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#channel)(@role) | [message]",
+        "children": {
+            "create": {
+                "alias" : [],
+                "help"  : "Delete the current welcome message.",
+                "arguments" : "[CommandName]"
+            }, 
+            "select": {
+                "alias" : [],
+                "help"  : "Move the welcome channel to another existing channel.",
+                "arguments" : "[CommandName]"
+            },
+            "add": {
+                "alias" : [],
+                "help"  : "Delete the current welcome message.",
+                "arguments" : "[CommandName]"
+            }, 
+            "remove": {
+                "alias" : [],
+                "help"  : "Move the welcome channel to another existing channel.",
+                "arguments" : "[CommandName]"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Move the welcome channel to another existing channel.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
     "stop":{
         "alias" : ["stp", "donteventhinkaboutit"],
         "help"  : "Stop a song.",
