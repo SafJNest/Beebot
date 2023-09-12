@@ -6,8 +6,6 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -27,14 +25,11 @@ public class Connect extends Command implements EventListener{
 
 	@Override
 	protected void execute(CommandEvent event) {
-        if(event.getMember().getVoiceState().getChannel() == null)
+        if(event.getMember().getVoiceState().getChannel() == null) {
             event.reply("You need to be in a voice channel to use this command");
-        else
-		    event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
+            return;
+        }
 
+		event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
 	}
-
-    public void onMessageReceived(MessageReceivedEvent e){
-        System.out.println(e.getMessage().getAttachments().get(0).getFileExtension());
-    }
 }

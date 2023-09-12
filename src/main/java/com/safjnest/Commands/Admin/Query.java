@@ -27,7 +27,7 @@ public class Query extends Command{
     @Override
     protected void execute(CommandEvent e) {
         if(!PermissionHandler.isUntouchable(e.getAuthor().getId())){
-            e.getAuthor().openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessage("figlio di troia non mi fai sql injectohnbjn ").queue());
+            e.getAuthor().openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessage("You will not do sql injection on my bot (what, did you excpect an insult? we here at safjnest are family friendly, also we want to stay on top.gg).").queue());
             return;
         }
 

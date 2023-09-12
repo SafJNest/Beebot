@@ -197,7 +197,7 @@ public class PermissionHandler {
         return false;
     }
 
-    public static User getMentionedUser(CommandEvent event, String name) throws Exception {
+    public static User getMentionedUser(CommandEvent event, String name){
         User user = null;
         if(event.getMessage().getMentions().getMembers().size() > 0)
             user = event.getMessage().getMentions().getMembers().get(0).getUser();
@@ -208,7 +208,7 @@ public class PermissionHandler {
         return user;
     }
 
-    public static Member getMentionedMember(CommandEvent event, String name) throws Exception {
+    public static Member getMentionedMember(CommandEvent event, String name){
         Member member = null;
         if(event.getMessage().getMentions().getMembers().size() > 0)
             member = event.getMessage().getMentions().getMembers().get(0);
