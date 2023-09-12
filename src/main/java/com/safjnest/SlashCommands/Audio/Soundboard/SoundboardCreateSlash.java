@@ -4,11 +4,13 @@ package com.safjnest.SlashCommands.Audio.Soundboard;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -76,7 +78,9 @@ public class SoundboardCreateSlash extends SlashCommand{
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setTitle("Soundboard: " + name);
         eb.setDescription("Press a button to play a sound");
-        
+        eb.setColor(Color.decode(
+            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+        ));
         List<Button> buttonsRowOne = new ArrayList<>();
         List<Button> buttonsRowTwo = new ArrayList<>();
         int cont = 0;
