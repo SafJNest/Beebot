@@ -1,46 +1,53 @@
 {
     "connect":{
         "alias" : ["join", "comeherebroda"],
-        "help"  : "Connect the bot to the voice channel.",
+        "help"  : "Connect the bot to your current voice channel.",
+        "longhelp": "Connect the bot to your current voice channel.",
         "category" : "Audio",
         "arguments" : "[CommandName]"
     },
 
     "customizesound":{
         "alias" : ["custom", "cs", "personalize"],
-        "help"  : "Allow the user to modify a sound's name. Using slash command you can specify the sound by name.",
+        "help"  : "Modify the name of a sound in the soundboard.",
+        "longhelp": "Modify the name of a sound in the soundboard.",
         "category" : "Audio",
         "arguments" : "[CommandName]"
     },
 
     "deletesound":{
         "alias" : ["delete", "ds", "forget"],
-        "help"  : "Remove a sound from the database.",
+        "help"  : "Delete a sound from the soundboard.",
+        "longhelp": "Delete a sound from the soundboard.",
         "category" : "Audio",
         "arguments" : "[CommandName]"
     },
 
     "disconnect":{
         "alias" : ["bye", "fuckoff"],
-        "help"  : "Disconnect the bot or a user from the voice channel.",
+        "help"  : "Disconnect the bot from it's current voice channel (or mention user).",
+        "longhelp": "Disconnect the bot from it's current voice channel (or mention user).",
         "category" : "Audio",
         "arguments" : "[CommandName]"
     },
 
     "list": {
         "alias" : ["papyrus", "paper", "listoide"],
-        "help"  : "Display a list with all the sound in a server.",
+        "help"  : "Show the sounds uploaded to the soundboard.",
+        "longinfo": "Show the sounds uploaded to the soundboard.",
         "category" : "Audio",
         "arguments" : "[CommandName]",
         "children": {
             "user": {
                 "alias" : [],
-                "help"  : "Display a list with all the sound in a server.",
+                "help"  : "Show all the sounds of a user.",
+                "longinfo": "Show all the sounds of a user.",
                 "arguments" : "[CommandName]"
             }, 
             "guild": {
                 "alias" : [],
-                "help"  : "Display a list with all the sound uploaded by a user.",
+                "help"  : "Show all the sounds uploaded to your guild.",
+                "longinfo": "Show all the sounds uploaded to your guild.",
                 "arguments" : "[CommandName]"
             }
         }
@@ -48,25 +55,29 @@
 
     "listuser":{
         "alias" : ["papyrususer", "paperuser", "listoideuser"],
-        "help"  : "Display a list with all the sound uploaded by a user.",
+        "help"  : "Show all the sounds of a user (or yourself if left blank).",
+        "longhelp"  : "Show all the sounds of a user (or yourself if left blank).",
         "category" : "Audio",
         "arguments" : "[CommandName]"
     },
 
     "play": {
         "alias" : ["papyrus", "paper", "listoide"],
-        "help"  : "Can play a sound from youtube or a custum ome from the database.",
+        "help"  : "Play a sound from the soundboard or a video from youtube.",
+        "longhelp"  : "Play a sound from the soundboard or a video from youtube.",
         "category" : "Audio",
         "arguments" : "[CommandName]",
         "children": {
             "youtube": {
                 "alias" : [],
                 "help"  : "Play a video from youtube.",
+                "longhelp"  : "Play a video from youtube.",
                 "arguments" : "[CommandName]"
             }, 
             "sound": {
                 "alias" : [],
-                "help"  : "Play a custom sound from the database.",
+                "help"  : "Play a sound from the soundboard.",
+                "longhelp"  : "Play a sound from the soundboard.",
                 "arguments" : "[CommandName]"
             }
         }
@@ -75,20 +86,23 @@
     "playyoutube":{
         "alias" : ["y", "py", "yt"],
         "help"  : "Play a video from youtube.",
+        "longhelp"  : "Play a video from youtube.",
         "category" : "Audio",
-        "arguments" : "[CommandName] [link/name video]"
+        "arguments" : "[link/name video]"
     },
 
     "playsound":{
         "alias" : ["p", "ps"],
-        "help"  : "Play a custom sound from the database.",
+        "help"  : "Play a sound from the soundboard.",
+        "longhelp"  : "Play a sound from the soundboard.",
         "category" : "Audio",
         "arguments" : "[CommandName] [soundName]"
     },
 
     "tts":{
         "alias" : ["t"],
-        "help"  : "Read what you write.",
+        "help"  : "Text to speech.",
+        "longhelp"  : "Text to speech.",
         "category" : "Audio",
         "arguments" : "[CommandName] [text]"
     },
@@ -129,21 +143,24 @@
 
     "stop":{
         "alias" : ["stp", "donteventhinkaboutit"],
-        "help"  : "Stop a song.",
+        "help"  : "Stop the bot from playing.",
+        "longhelp"  : "Stop the bot from playing.",
         "category" : "Audio",
         "arguments" : "[CommandName]"
     },
 
     "upload":{
         "alias" : ["up", "add"],
-        "help"  :"Upload a custom sound to the database.",
+        "help"  :"Upload a sound to the soundboard.",
+        "longhelp"  : "Upload a sound to the soundboard.",
         "category" : "Audio",
         "arguments" : "[CommandName] [soundName]"
     },
 
     "downloadsound":{
         "alias" : ["download"],
-        "help"  : "Download a sound.",
+        "help"  : "Download a sound from the soundboard.",
+        "longhelp"  : "Download a sound from the soundboard.",
         "category" : "Audio",
         "arguments" : "[CommandName] [soundName]"
     },
@@ -163,56 +180,64 @@
 
     "channelinfo":{
         "alias" : ["infochannel", "ci","ic","channel"],
-        "help"  : "Show the information about a channel.",
+        "help"  : "Show information of a channel.",
+        "longhelp"  : "Show information of a channel.",
         "category" : "Server Management",
         "arguments" : "[channelinfo] [#channel/channel ID]"
     },
 
     "clear":{
         "alias" : [],
-        "help"  : "Delete the message in a channel (max 99).",
+        "help"  : "Delete messages in a channel (max 99).",
+        "longhelp"  : "Delete messages in a channel (max 99).",
         "category" : "Server Management",
         "arguments" : "[clear] [numberMessages]"
     },
 
     "emojiinfo":{
         "alias" : ["em", "eminf"],
-        "help"  : "Show the information about an emoji.",
+        "help"  : "Show information of an emoji.",
+        "longhelp"  : "Show information of an emoji.",
         "category" : "Server Management",
         "arguments" : "[emoji] [emojiName, emoji]"
     },
     
     "serverinfo":{
         "alias" : ["servinfo", "serinf"],
-        "help"  : "Show the information about the server.",
+        "help"  : "Show information of the server.",
+        "longhelp"  : "Show information of a member.",
         "category" : "Server Management",
         "arguments" : "[CommandName]"
     },
 
     "memberinfo":{
         "alias" : ["usinf", "uinfo", "userinfo", "userstats", "stats"],
-        "help"  : "Show the information about a member",
+        "help"  : "Show information of a member.",
+        "longhelp"  : "Show information of a member.",
         "category" : "Server Management",
         "arguments" : "[userinfo] [@user]"
     },
 
     "listroom":{
         "alias" : ["rooms"],
-        "help"  : "List with all the nickname in a server.",
+        "help"  : "Show the nicknames of the voice channels.",
+        "longhelp"  : "Show the nicknames of the voice channels.",
         "category" : "Server Management",
         "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
     },
     
     "leaderboard":{
         "alias" : [],
-        "help"  : "Show statistic about the user",
+        "help"  : "Show the server's leaderboard.",
+        "longhelp"  : "Show the server's leaderboard.",
         "category" : "Server Management",
         "arguments" : "[CommandName]"
     },
 
     "rewards":{
         "alias" : [],
-        "help"  : "Show all the rewards for leveling up",
+        "help"  : "Show the leveling up rewards.",
+        "longhelp"  : "Show the leveling up rewards.",
         "category" : "Server Management",
         "arguments" : "[CommandName]"
     },
@@ -220,21 +245,24 @@
 
     "customembed":{
         "alias" : ["embed"],
-        "help"  : "Writes a custom embed",
+        "help"  : "Write a custom embed.",
+        "longhelp"  : "Write a custom embed.",
         "category" : "Server Management",
         "arguments" : "[CommandName] [a]"
     },
 
     "setroom":{
         "alias" : ["room"],
-        "help"  : "Allow to set a nickname for the channel, for an easier use of 'move'.",
+        "help"  : "Set a nickname for a voice channel (to use 'move').",
+        "longhelp"  : "Set a nickname for a voice channel (to use 'move').",
         "category" : "Settings",
         "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
     },
 
     "setvoice":{
         "alias" : ["voice"],
-        "help"  : "Allow to set a default voice for command 'tts'. Every bot will have a different setted voice.",
+        "help"  : "Set a default tts voice.",
+        "longhelp"  : "Set a default tts voice.",
         "category" : "Settings",
         "arguments" : "[CommandName] [nomeVoce]"
     },
@@ -242,21 +270,24 @@
 
     "prefix":{
         "alias" : ["prefix"],
-        "help"  : "Changes the prefix of the guild",
+        "help"  : "Change the prefix",
+        "longhelp"  : "Change the prefix",
         "category" : "Settings",
         "arguments" : "[CommandName] [new Prefix]"
     },
 
     "setsummoner":{
         "alias" : ["setsum", "setuser", "ss"],
-        "help"  : "Allow to connect a riot account. You can also remove a summoner using 'setsummoner remove:name'.",
+        "help"  : "Coonect/Disconnect a riot account ('setsummoner remove:name' to disconnect).",
+        "longhelp"  : "Coonect/Disconnect a riot account ('setsummoner remove:name' to disconnect).",
         "category" : "Settings",
         "arguments" : "[CommandName] [summonerName]"
     },
 
     "toggleexpsystem":{
         "alias" : ["delete", "ds", "forget"],
-        "help"  : "Toggle the exp system ON or OFF",
+        "help"  : "Toggle the exp system on and off.",
+        "longhelp"  : "Toggle the exp system on and off.",
         "category" : "Settings",
         "arguments" : "[CommandName]"
     },

@@ -31,7 +31,6 @@ public class Aliases extends Command {
      */
     @Override
     protected void execute(CommandEvent event) {
-        
         String aliases = "";
         for(Command e : event.getClient().getCommands()) {
             if(e.isHidden())
