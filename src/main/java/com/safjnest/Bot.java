@@ -196,20 +196,21 @@ public class Bot extends ListenerAdapter implements Runnable {
         ArrayList<String> beebotsAll = new ArrayList<String>(Arrays.asList("beebot", "beebot 2", "beebot 3", "beebot canary"));
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new PrintCache(gs, farm), new Ping(), new BugsNotifier(), new Ram(), new Help(gs), new Aliases(), new RawMessage(), new Prefix(sql, gs), new PrefixList());
+        Collections.addAll(commandsList, new PrintCache(gs, farm), new Ping(), new Ram(), new Help(gs), new Prefix(sql, gs));
 
         if(beebotsAll.contains(threadName))
-            Collections.addAll(commandsList, new Summoner(), new InfoAugment(), new FreeChamp(), new GameRank(), new SetSummoner(riotApi, sql), new LastMatches(riotApi, sql), new InfoMatches(),new Prime(maxPrime), new Calculator(), new Dice(), 
-                                             new ThreadCounter(), new LevelUp(), new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
+            Collections.addAll(commandsList, new Summoner(), new InfoAugment(), new FreeChamp(), new GameRank(), 
+                new LastMatches(riotApi, sql), new InfoMatches(),new Prime(maxPrime), new Calculator(), new Dice(), 
+                new ThreadCounter(), new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
-            Collections.addAll(commandsList, new Anonym(), new ChannelInfo(), new Clear(), new Msg(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new ListGuild(), new Ban(),
-                                             new Unban(), new Kick(), new Move(sql), new Mute(), new UnMute(), new Image(), new Permissions(), new ModifyNickname(), new ListRoom(sql), new Welcome(sql),
-                                             new Leave(sql), new SetRoom(sql, gs), new RandomMove(), new Boost(sql));
+            Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
+                new InviteBot(), new ListGuild(), new Ban(), new Unban(), new Kick(), new Move(sql), new Mute(), new UnMute(), new Image(), 
+                new Permissions(), new ModifyNickname(), new ListRoom(sql), new SetRoom(sql, gs), new RandomMove());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
-            Collections.addAll(commandsList, new Connect(), new DeleteSound(sql), new Disconnect(), new DownloadSound(sql), new List(), new ListUser(), new PlayYoutube(youtubeApiKey), new PlaySound(sql), 
-                                             new TTS(tts, sql), new Stop(), new CustomizeSound(), new SetVoice(sql));
+            Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), new PlayYoutube(youtubeApiKey), 
+            new PlaySound(sql), new TTS(tts, sql), new Stop());
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
             Collections.addAll(commandsList, new Leaderboard());

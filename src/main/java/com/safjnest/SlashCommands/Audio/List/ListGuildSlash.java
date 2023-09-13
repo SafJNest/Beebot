@@ -44,8 +44,8 @@ public class ListGuildSlash extends SlashCommand{
         eb.setColor(Color.decode(
             BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
         ));
-        String query = "SELECT id, name, guild_id, user_id, extension FROM sound WHERE guild_id = '" + event.getGuild().getId() + "' ORDER BY name ASC;";
-        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 2);
+        String query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + event.getGuild().getId() + "' ORDER BY name ASC;";
+        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 6);
         eb.setDescription("Total Sound: " + sounds.size());
         int cont = 0;
         while(cont <24 && cont < sounds.size()){
