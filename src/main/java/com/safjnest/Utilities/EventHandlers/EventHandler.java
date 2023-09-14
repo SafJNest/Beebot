@@ -94,7 +94,6 @@ public class EventHandler extends ListenerAdapter {
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         String name = e.getName();
-
         if(e.getFullCommandName().equals("soundboard create"))
             name = "play";
         
@@ -104,7 +103,7 @@ public class EventHandler extends ListenerAdapter {
         else if(e.getFocusedOption().getName().equals("sound_remove"))
             name = "sound_remove";
 
-        else if(e.getFullCommandName().equals("soundboard select") || e.getFullCommandName().equals("soundboard add") || e.getFullCommandName().equals("soundboard remove"))
+        else if(e.getFullCommandName().equals("soundboard select") || e.getFullCommandName().equals("soundboard add") || e.getFullCommandName().equals("soundboard remove") || e.getFullCommandName().equals("soundboard delete"))
             name = "soundboard_select";
         
         switch (name){

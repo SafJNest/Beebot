@@ -32,17 +32,17 @@ public class SoundboardCreateSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sound-1", "a", true).setAutoComplete(true),
             new OptionData(OptionType.STRING, "name", "Without a name the soundboard would not be saved.", false),
-            new OptionData(OptionType.STRING, "sound-2", "a", false).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "sound-3", "a", false).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "sound-4", "a", false).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "sound-5", "a", false).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "sound-6", "a", false).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "sound-7", "a", false).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "sound-8", "a", false).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "sound-9", "a", false).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "sound-10", "a", false).setAutoComplete(true));
+            new OptionData(OptionType.STRING, "sound-1", "Sound 1", true).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-2", "Sound 2", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-3", "Sound 3", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-4", "Sound 4", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-5", "Sound 5", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-6", "Sound 6", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-7", "Sound 7", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-8", "Sound 8", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-9", "Sound 9", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-10", "Sound 10", false).setAutoComplete(true));
     }
 
 	@Override
