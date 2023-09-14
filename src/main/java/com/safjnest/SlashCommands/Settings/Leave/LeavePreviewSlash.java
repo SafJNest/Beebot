@@ -20,7 +20,7 @@ public class LeavePreviewSlash extends SlashCommand{
                             + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         String message = DatabaseHandler.getSql().getString(query, "message_text");
         if(message == null){
-            event.deferReply(false).addContent("You have not set a leave message yet.").queue();
+            event.deferReply(true).addContent("Set a leave message first.").queue();
             return;
         }
 
@@ -29,7 +29,7 @@ public class LeavePreviewSlash extends SlashCommand{
         String channel = DatabaseHandler.getSql().getString(query, "channel_id");
 
         message = message.replace("#user", event.getMember().getAsMention());
-        message += "\n\nThis is a preview of the message that will be sent to the channel <#" + channel + ">.";
+        message += "\n\nThis is a preview of the message that will be sent to <#" + channel + ">.";
         event.deferReply(false).addContent(message).queue();
     }
     

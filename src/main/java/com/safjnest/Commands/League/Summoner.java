@@ -20,10 +20,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
  * @since 1.3
  */
 public class Summoner extends Command {
-    
-    /**
-     * Constructor
-     */
+
     public Summoner(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
@@ -33,9 +30,6 @@ public class Summoner extends Command {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
     }
 
-    /**
-     * This method is called every time a member executes the command.
-     */
 	@Override
 	protected void execute(CommandEvent event) {
         Button left = Button.primary("lol-left", "<-");
@@ -50,7 +44,7 @@ public class Summoner extends Command {
             s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
             searchByUser = true;
             if(s == null){
-                event.reply("You dont have a Riot account connected, for more information /help setUser");
+                event.reply("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).");
                 return;
             }
             theGuy = event.getAuthor();
@@ -60,13 +54,13 @@ public class Summoner extends Command {
             searchByUser = true;
             theGuy = event.getMessage().getMentions().getUsers().get(0);
             if(s == null){
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
+                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " doesn't have a Riot account connected.");
                 return;
             }
         }else{
             s = RiotHandler.getSummonerByName(args);
             if(s == null){
-                event.reply("Didn't find this user. ");
+                event.reply("Couldn't find the specified summoner.");
                 return;
             }
         }
@@ -105,13 +99,13 @@ public class Summoner extends Command {
         }else{
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
         }
-        builder.addField("5v5 Ranked Solo", RiotHandler.getSoloQStats(jda, s), true);
-        builder.addField("5v5 Ranked Flex Queue", RiotHandler.getFlexStats(jda, s), true);
+        builder.addField("Solo/duo Queue", RiotHandler.getSoloQStats(jda, s), true);
+        builder.addField("Flex Queue", RiotHandler.getFlexStats(jda, s), true);
         String masteryString = "";
         for(int i = 1; i < 4; i++)
             masteryString += RiotHandler.getMastery(jda, s, i) + "\n";
         
-        builder.addField("Top 3 Champ", masteryString, false); 
+        builder.addField("Top 3 Champs", masteryString, false); 
         builder.addField("Activity", RiotHandler.getActivity(jda, s), true);
         return builder;
     }

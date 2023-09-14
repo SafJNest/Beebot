@@ -36,8 +36,8 @@ public class ServerInfoSlash extends SlashCommand{
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "guild_id", "Guild to get the information about (the bot must be in the guild)", false),
-            new OptionData(OptionType.INTEGER, "rolecharnumber", "max number of charachters to print roles (0 to 1024)", false)
+            new OptionData(OptionType.STRING, "guild", "Guild (ID) to get information on (this guild if left blank).", false),
+            new OptionData(OptionType.INTEGER, "rolecharnumber", "Max number of charachters the roles filed can be (1 to 1024)", false)
                 .setMinValue(1)
                 .setMaxValue(1024)
         );
@@ -46,12 +46,12 @@ public class ServerInfoSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         Guild guild;
-        if(event.getOption("guild_id") == null)
+        if(event.getOption("guild") == null)
             guild = event.getGuild();
         else if(SafJNest.longIsParsable(event.getOption("guild_id").getAsString()) && event.getJDA().getGuildById(event.getOption("guild_id").getAsLong()) != null)
             guild = event.getJDA().getGuildById(event.getOption("guild_id").getAsLong());
         else {
-            event.deferReply(false).setContent("Invalid id or the bot is not in the guild").queue();
+            event.deferReply(true).setContent("Couldn't find the guild.").queue();
             return;
         }
 

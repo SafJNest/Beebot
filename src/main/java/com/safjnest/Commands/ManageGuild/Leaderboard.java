@@ -34,7 +34,7 @@ public class Leaderboard extends Command {
         String query = "SELECT user_id, messages, level, exp from exp_table WHERE guild_id = '" + event.getGuild().getId() + "' order by exp DESC limit " + limit + ";";
         ArrayList<ArrayList<String>> res = DatabaseHandler.getSql().getAllRows(query);
         if(res.size() == 1){
-            event.reply("```No Result```");
+            event.reply("```No Results```");
             return;
         }
         String[][] databaseData = new String[res.size()-1][res.get(0).size()];
@@ -64,6 +64,8 @@ public class Leaderboard extends Command {
         String table = TableHandler.constructTable(data, headers);
 
         String[] splitTable = TableHandler.splitTable(table);
+
+        event.reply(event.getGuild().getName() + " leaderboard:");
 
         for(int i = 0; i < splitTable.length; i++)
             event.reply("```" + splitTable[i] + "```");

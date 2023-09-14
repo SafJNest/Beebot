@@ -51,18 +51,20 @@ public class RewardsSlash extends SlashCommand {
         eb.setTitle("Rewards");
         eb.setThumbnail(g.getIconUrl());
         eb.setColor(Color.decode(BotSettingsHandler.map.get(hook.getJDA().getSelfUser().getId()).color));
-        eb.setDescription("Rack up those levels and score awesome rewards! Leveling up in this server unlocks a treasure trove of cool perks and surprises. Keep grinding!\n**This is just for admin: click on + to add a reward or click on a reward to delete it.**");
+        eb.setDescription("Create custom rewards for your guild.\n" 
+            + "Just prepare a role that you want to give to people that reach a certain level in this guild and click the \"+\" button\n" 
+            + "You have to have the Exp System enabled to be able to level up. You can enable it with /levelup toggle:true.");
         String query = "SELECT role_id, level FROM rewards_table WHERE guild_id = '" + g.getId() + "';";
         ArrayList<ArrayList<String>> rewards = DatabaseHandler.getSql().getAllRows(query, 2);
         if(rewards.size() == 0) {
-            eb.addField("No rewards", "There are no rewards set up for this server. You can set up rewards with the /addreward command.", false);
+            eb.addField("No rewards", "There are no rewards set up for this guild yet.", false);
         }else{
             for(ArrayList<String> reward : rewards) {
                 buttons.add(Button.primary("rewards-role-" + reward.get(0), reward.get(1)));
                 eb.addField(g.getRoleById(reward.get(0)).getName(), "Level: " + reward.get(1), false);
             }
         }
-        eb.setFooter("If you delete a role the reward will be deleted in our database too.");
+        eb.setFooter("You have to click on a reward twice to delete it!");
         return hook.editOriginalEmbeds(eb.build()).setActionRow(buttons);
         //return event.replyEmbeds(eb.build()).addComponents(ActionRow.of(buttons));
     }
@@ -76,18 +78,20 @@ public class RewardsSlash extends SlashCommand {
         eb.setTitle("Rewards");
         eb.setThumbnail(g.getIconUrl());
         eb.setColor(Color.decode(BotSettingsHandler.map.get(message.getJDA().getSelfUser().getId()).color));
-        eb.setDescription("Rack up those levels and score awesome rewards! Leveling up in this server unlocks a treasure trove of cool perks and surprises. Keep grinding!\n**This is just for admin: click on + to add a reward or click on a reward to delete it.**");
+        eb.setDescription("Create custom rewards for your guild.\n" 
+            + "Just prepare a role that you want to give to people that reach a certain level in this guild and click the \"+\" button\n" 
+            + "You have to have the Exp System enabled to be able to level up. You can enable it with /levelup toggle:true.");
         String query = "SELECT role_id, level FROM rewards_table WHERE guild_id = '" + g.getId() + "';";
         ArrayList<ArrayList<String>> rewards = DatabaseHandler.getSql().getAllRows(query, 2);
         if(rewards.size() == 0) {
-            eb.addField("No rewards", "There are no rewards set up for this server. You can set up rewards with the /addreward command.", false);
+            eb.addField("No rewards", "There are no rewards set up for this guild yet.", false);
         }else{
             for(ArrayList<String> reward : rewards) {
                 buttons.add(Button.primary("rewards-role-" + reward.get(0), reward.get(1)));
                 eb.addField(g.getRoleById(reward.get(0)).getName(), "Level: " + reward.get(1), false);
             }
         }
-        eb.setFooter("If you delete a role the reward will be deleted in our database too.");  
+        eb.setFooter("You have to click on a reward twice to delete it!");  
         return message.editMessageEmbeds(eb.build()).setActionRow(buttons);
     }
 }

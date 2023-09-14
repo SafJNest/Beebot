@@ -43,20 +43,16 @@ public class PlaySound extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
+        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
         
-        if(event.getMember().getVoiceState().getChannel() == null){
-            event.reply("You need to be in a voice channel to use this command");
+        if(myChannel == null){
+            event.reply("You need to be in a voice channel to use this command.");
             return;
         }
 
-        if(event.getSelfMember().getVoiceState().getChannel() != null && (event.getMember().getVoiceState().getChannel() != event.getSelfMember().getVoiceState().getChannel())){
-            event.reply("The bot is used by someone else, dont be annoying and use another beebot instance.");
-            return;
-        }
-
-
-        if((fileName = event.getArgs()) == ""){
-            event.reply("Missing name");
+        if(botChannel != null && (myChannel != botChannel)){
+            event.reply("The bot is already being used in another voice channel.");
             return;
         }
         
@@ -77,7 +73,7 @@ public class PlaySound extends Command{
         }
 
         if((arr = sql.getAllRows(query, 6)).isEmpty()){
-            event.reply("There is no sound with that name/id");
+            event.reply("Couldn't find a sound with that name/id.");
             return;
         }
 
@@ -106,7 +102,6 @@ public class PlaySound extends Command{
         pm = new PlayerManager();
         
         MessageChannel channel = event.getChannel();
-        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
         audioManager.openAudioConnection(myChannel);
@@ -143,7 +138,9 @@ public class PlaySound extends Command{
         });
 
         pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
-        
+        if(pm.getPlayer().getPlayingTrack() == null) {
+            return;
+        }
 
         query = "SELECT times FROM play where play.sound_id = '" + id + "' and play.user_id = '" + event.getAuthor().getId() + "';";
         if(sql.getString(query, "times") == null){

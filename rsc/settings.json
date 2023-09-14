@@ -51,6 +51,7 @@
         "prefix": "!",
         "activity": "Beebot - the ultimate machine for your server needs! | /help or {0}help |",
         "ownerID": "938487470339801169",
+        "coOwnersIDs": ["440489230968553472", "383358222972616705"],
         "helpWord": "helpme",
         "maxPrime":"2048",
         "info":"[MAIN] INFO The beast is turning on! As long as it takes."
@@ -61,8 +62,9 @@
         "discordToken": "OTM5ODc2ODE4NDY1NDg4OTI2.GpwN6L.-joAelLyYtYzrKrztCCjKQVjFOflc9byog2iw4",
         "embedColor": "#f25216",
         "prefix": "$",
-        "activity": "Testing the most incredible features that jelly could have never thought about bc is a piece of shit :D. | /help or {0}help |",
+        "activity": "Testing the most incredible features | /help or {0}help |",
         "ownerID": "939876818465488926",
+        "coOwnersIDs": ["440489230968553472", "383358222972616705"],
         "helpWord": "helpme",
         "maxPrime": "2048",
         "info":"[MAIN] INFO Canary is turning on to implements extreme features!"
@@ -75,6 +77,7 @@
         "prefix": "%",
         "activity": "The dynamic clan of Discord - Beebot and his brother! | /help or {0}help |",
         "ownerID": "939876818465488926",
+        "coOwnersIDs": ["440489230968553472", "383358222972616705"],
         "helpWord": "helpme",
         "maxPrime": "11700",
         "info":"[MAIN] INFO Beebot 2 is turning on to help the elder brother in case he dies!"
@@ -87,6 +90,7 @@
         "prefix": "+",
         "activity": "The dynamic clan of Discord - Beebot and his brothers! | /help or {0}help |",
         "ownerID": "939876818465488926",
+        "coOwnersIDs": ["440489230968553472", "383358222972616705"],
         "helpWord": "helpme",
         "maxPrime": "11700",
         "info":"[MAIN] INFO Beebot 3 is turning on to help the elder brother in case he dies!"
@@ -99,6 +103,7 @@
         "prefix": "!",
         "activity": "Your personal DJ | No distractions, just music by Beebot | /help or {0}help |",
         "ownerID": "939876818465488926",
+        "coOwnersIDs": ["440489230968553472", "383358222972616705"],
         "helpWord": "helpme",
         "maxPrime": "2048",
         "info":"[MAIN] INFO Beebot music is turning on to let leon listen to dravon 1v9"
@@ -109,8 +114,9 @@
         "discordToken": "MTA5ODkwNjc5ODAxNjE4NDQyMg.G9R6QB.V3iKuS82mT9H9b6rzYLGROmKmtz1dlCDVMiMrg",
         "embedColor": "#52EDCB",
         "prefix": "!",
-        "activity": "Your personal assistant | No distractions, just focus on create and manage the best server ever | /help or {0}help |",
+        "activity": "Your personal assistant | No distractions, just focus on creating and managing your server. | /help or {0}help |",
         "ownerID": "939876818465488926",
+        "coOwnersIDs": ["440489230968553472", "383358222972616705"],
         "helpWord": "helpme",
         "maxPrime": "2048",
         "info":"[MAIN] INFO Beebot Moderation is turning on to ban panslung"

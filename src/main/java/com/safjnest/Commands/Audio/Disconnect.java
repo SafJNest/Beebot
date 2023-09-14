@@ -37,6 +37,6 @@ public class Disconnect extends Command {
             return;
         }
         
-        event.getGuild().kickVoiceMember(event.getGuild().getMember(mentionedMember)).queue();
+        event.getGuild().kickVoiceMember(mentionedMember).queue();
 	}
 }

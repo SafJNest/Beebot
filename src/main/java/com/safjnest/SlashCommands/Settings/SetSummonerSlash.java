@@ -40,8 +40,8 @@ public class SetSummonerSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sum", "Summoner name you want to connect to your profile", true),
-            new OptionData(OptionType.BOOLEAN, "remove", "If you want to remove a summoner", true));
+            new OptionData(OptionType.STRING, "sum", "Name of the summoner you want to connect to the bot", true),
+            new OptionData(OptionType.BOOLEAN, "remove", "If you want to remove a summoner instead of adding it", true));
         this.r = r;
         this.sql = sql;
     }
@@ -56,7 +56,7 @@ public class SetSummonerSlash extends SlashCommand {
                 String query = "SELECT account_id FROM lol_user WHERE user_id = '" + event.getMember().getId() + "';";
                 ArrayList<String> accountIds = sql.getAllRowsSpecifiedColumn(query, "account_id");
                 if(accountIds == null){
-                    event.deferReply(false).addContent("You dont have a Riot account connected, for more information /help setsummoner").queue();
+                    event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help setsummoner").queue();
                     return;
                 }
                 for(String id : accountIds){

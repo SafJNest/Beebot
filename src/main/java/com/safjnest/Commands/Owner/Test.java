@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Admin;
+package com.safjnest.Commands.Owner;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -37,6 +37,7 @@ public class Test extends Command{
         this.cooldown = 0;
         this.category = new Category("Admin");
         this.arguments = "faker";
+        this.ownerCommand = true;
         this.hidden = true;
     }
     /**

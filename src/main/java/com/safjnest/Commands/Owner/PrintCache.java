@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Admin;
+package com.safjnest.Commands.Owner;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -9,7 +9,6 @@ import java.util.HashMap;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
@@ -35,6 +34,7 @@ public class PrintCache extends Command {
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.ownerCommand = true;
         this.hidden = true;
 
         this.gs = gs;
@@ -43,8 +43,6 @@ public class PrintCache extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        if(!PermissionHandler.isUntouchable(event.getAuthor().getId()))
-            return;
         String msg = "";
         msg += "Beebot v3.0\n";
         msg += "Guilds cached: " + gs.cache.size() + "\n";
@@ -90,7 +88,7 @@ public class PrintCache extends Command {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                channel.sendMessage("Too many prefixes to be sent.").queue();
+                channel.sendMessage("Too many prefixes to send.").queue();
                 channel.sendFiles(FileUpload.fromData(supp)).queue();
             } else {
                 channel.sendMessage(msg).queue();

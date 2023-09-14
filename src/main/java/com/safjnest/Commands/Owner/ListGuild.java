@@ -1,11 +1,10 @@
-package com.safjnest.Commands.Admin;
+package com.safjnest.Commands.Owner;
 
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.entities.Guild;
 
@@ -23,13 +22,13 @@ public class ListGuild extends Command {
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.ownerCommand = true;
         this.hidden = true;
+        
     }
 
 	@Override
 	protected void execute(CommandEvent event) {
-        if(!PermissionHandler.isUntouchable(event.getAuthor().getId()))
-            return;
         List<Guild> guilds = event.getJDA().getGuilds();
         String list = "Here the list where the bot is in: \n";
         for(Guild guild : guilds){

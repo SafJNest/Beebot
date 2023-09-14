@@ -1,4 +1,9 @@
-package com.safjnest.Commands.Admin;
+package com.safjnest.Commands.Owner;
+
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.App;
+import com.safjnest.Utilities.CommandsLoader;
 
 import java.io.File;
 import java.io.FileReader;
@@ -7,42 +12,31 @@ import java.io.Reader;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.App;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
-
-public class Shutdown extends Command{
+public class Restart extends Command{
     /**
      * Default constructor for the class.
      */
-    public Shutdown(){
+    public Restart(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.ownerCommand = true;
         this.hidden = true;
     }
     /**
      * This method is called every time a member executes the command.
     */
-    @Override
+     @Override
     protected void execute(CommandEvent e) {
         String bot = e.getArgs();
-        
         JSONParser parser = new JSONParser();
         JSONObject settings = null;
 
-        if(!PermissionHandler.isUntouchable(e.getAuthor().getId())){
-            e.reply("Swear to god next time you dare to try this again I'll ban you from discord");
-            return;
-        }
-
         if(bot.equals("")){
-            e.reply("Please specify a bot to shutdown.");
+            e.reply("Please specify a bot to restart.");
             return;
         }
 
@@ -55,9 +49,8 @@ public class Shutdown extends Command{
             return;
         }
 
-        
-        App.shutdown(bot);
-        e.reply("Shutting down " + bot);
 
+        App.restart(bot);
+        e.reply("Shutting down " + bot);
     }
 }

@@ -25,10 +25,10 @@ public class BlacklistEnableSlash extends SlashCommand{
         this.userPermissions = new Permission[]{Permission.BAN_MEMBERS};
         this.botPermissions = new Permission[]{Permission.BAN_MEMBERS};
         this.options = Arrays.asList(
-            new OptionData(OptionType.INTEGER, "threshold", "Minimum ban threshold", true)
+            new OptionData(OptionType.INTEGER, "threshold", "Ban threshold", true)
                 .setMinValue(3)    
                 .setMaxValue(100),
-            new OptionData(OptionType.CHANNEL, "channel", "Channel to sent ban notifications", true));
+            new OptionData(OptionType.CHANNEL, "channel", "Notification channel", true));
         
         this.gs = gs;
     }
@@ -44,7 +44,7 @@ public class BlacklistEnableSlash extends SlashCommand{
             event.deferReply(false).addContent("Something went wrong.").queue();
             return;            
         }
-        event.deferReply(false).addContent("Blacklist enabled with a threshold ban of " + threshold + ".\nNotification for bans will be sent in " + event.getGuild().getTextChannelById(channelId).getAsMention() + ".").queue();
+        event.deferReply(false).addContent("Blacklist enabled with a ban threshold of " + threshold + ".\nNotification will be sent in " + event.getGuild().getTextChannelById(channelId).getAsMention() + ".").queue();
         gs.getServer(event.getGuild().getId()).setThreshold(Integer.parseInt(threshold));
         gs.getServer(event.getGuild().getId()).setBlackChannel(channelId);
     }

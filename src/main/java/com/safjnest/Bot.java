@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -44,17 +45,15 @@ import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Commands.Misc.*;
+import com.safjnest.Commands.Owner.*;
+import com.safjnest.Commands.Owner.Shutdown;
 import com.safjnest.Commands.Settings.*;
 import com.safjnest.Commands.Math.*;
-import com.safjnest.Commands.Admin.*;
-import com.safjnest.Commands.Admin.Shutdown;
 import com.safjnest.Commands.Audio.*;
-import com.safjnest.Commands.Dangerous.*;
 import com.safjnest.Commands.League.*;
 import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 
-import com.safjnest.SlashCommands.Admin.*;
 import com.safjnest.SlashCommands.Audio.*;
 import com.safjnest.SlashCommands.Audio.List.ListSlash;
 import com.safjnest.SlashCommands.Audio.Play.PlaySlash;
@@ -94,6 +93,7 @@ public class Bot extends ListenerAdapter implements Runnable {
     private Activity activity;
     public String color;
     private String ownerID;
+    private String[] coOwnersIDs;
     private String helpWord;
 
     private String token;
@@ -111,6 +111,16 @@ public class Bot extends ListenerAdapter implements Runnable {
         this.sql = sql;
         this.riotApi = riotApi;
         this.bs = bs;
+    }
+
+    public static String[] toStringArray(JSONArray array) {
+        if(array==null)
+            return new String[0];
+        
+        String[] arr = new String[array.size()];
+        for(int i = 0; i < arr.length; i++)
+            arr[i] = (String) array.get(i);
+        return arr;
     }
 
     /**
@@ -140,6 +150,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         token = discordSettings.get("discordToken").toString();
         color = discordSettings.get("embedColor").toString();
         ownerID = discordSettings.get("ownerID").toString();
+        coOwnersIDs = toStringArray((JSONArray) discordSettings.get("coOwnersIDs"));
         helpWord = discordSettings.get("helpWord").toString();
 
         maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
@@ -165,6 +176,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(helpWord);
         builder.setOwnerId(ownerID);
+        builder.setCoOwnerIds(coOwnersIDs);
         builder.setActivity(activity);
         if(App.isExtremeTesting())
             builder.forceGuildOnly("474935164451946506");
@@ -217,17 +229,19 @@ public class Bot extends ListenerAdapter implements Runnable {
         Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new PrefixSlash(sql, gs));
 
         if(beebotsAll.contains(threadName))
-            Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), new GameRankSlash(riotApi, sql), new SetSummonerSlash(riotApi, sql), new LastMatchesSlash(riotApi, sql), new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), 
-                                             new ChampionSlash(), new InfoMatchesSlash());
+            Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), 
+                new GameRankSlash(riotApi, sql), new SetSummonerSlash(riotApi, sql), new LastMatchesSlash(riotApi, sql), 
+                new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new InfoMatchesSlash());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
-            Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(),
-                                             new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), new ModifyNicknameSlash(),
-                                             new WelcomeSlash(sql, gs), new LeaveSlash(), new BoostSlash(), new BlacklistSlash(gs));
+            Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), 
+                new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(), new UnbanSlash(), 
+                new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), 
+                new ModifyNicknameSlash(), new WelcomeSlash(sql, gs), new LeaveSlash(), new BoostSlash(), new BlacklistSlash(gs));
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
-            Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), new PlaySlash(youtubeApiKey), 
-                                             new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash());
+            Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), 
+                new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash());
 
         if(threadName.equals("beebot"))
             Collections.addAll(slashCommandsList, new RewardsSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
@@ -239,6 +253,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         
         CommandClient client = builder.build();
+        
         if(!threadName.equals("beebot canary"))
             client.setListener(new CommandEventHandler(gs));
         jda.addEventListener(client);

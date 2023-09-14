@@ -32,8 +32,9 @@ public class UploadSlash extends SlashCommand{
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "name", "Sound name", true),
-            new OptionData(OptionType.ATTACHMENT, "file", "Sound", true),
-            new OptionData(OptionType.BOOLEAN, "public", "TRUE OR FALSE", false));
+            new OptionData(OptionType.ATTACHMENT, "file", "Sound file (mp3 or opus)", true),
+            new OptionData(OptionType.BOOLEAN, "public", "true or false", false)
+        );
         this.sql = DatabaseHandler.getSql();
     }
     
@@ -47,12 +48,12 @@ public class UploadSlash extends SlashCommand{
         }
         
         if(fileName.matches("[0123456789]*")){
-            event.reply("You can't use a name that only contains numbers");
+            event.reply("You can't use a name that only contains numbers.");
             return;
         }
 
         if(!attachment.getFileExtension().equals("mp3") && !attachment.getFileExtension().equals("opus")){
-            event.deferReply(false).addContent("Only upload the sound in **mp3** or **opus** format").queue();
+            event.deferReply(true).addContent("Only upload the sound in **mp3** or **opus** format.").queue();
             return;
         }
         
@@ -63,7 +64,7 @@ public class UploadSlash extends SlashCommand{
         String id = sql.getString(query, "id");
 
         if(id.equals(null)){
-            event.deferReply(true).addContent("An error with the MySQL database occured").queue();
+            event.deferReply(true).addContent("An error with the database occured.").queue();
             return;
         }
 
@@ -71,7 +72,5 @@ public class UploadSlash extends SlashCommand{
 
         attachment.getProxy().downloadToFile(saveFile);
         event.deferReply(false).addContent("File uploaded succesfully").queue();
-       
-        return;
 	}
 }

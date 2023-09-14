@@ -38,8 +38,8 @@ public class MemberInfoSlash extends SlashCommand{
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.USER, "user", "User to get the information about", false),
-            new OptionData(OptionType.INTEGER, "rolecharnumber", "max number of charachters to print roles (0 to 1024)", false)
+            new OptionData(OptionType.USER, "user", "User to get information on", false),
+            new OptionData(OptionType.INTEGER, "rolecharnumber", "Max number of charachters the roles filed can be (1 to 1024)", false)
                 .setMinValue(1)
                 .setMaxValue(1024)
         );
@@ -51,7 +51,7 @@ public class MemberInfoSlash extends SlashCommand{
         User user = event.getOption("user") == null ? event.getUser() : event.getOption("user").getAsUser();
 
         if(!event.getGuild().isMember(user)){
-            event.reply("The user is not in this server");
+            event.reply("The specified user is not in this guild.");
             return;
         }
 

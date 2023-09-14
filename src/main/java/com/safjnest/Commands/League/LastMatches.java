@@ -53,7 +53,7 @@ public class LastMatches extends Command {
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
             } catch (Exception e) {
-               event.reply("You dont have connected your Riot account.");
+               event.reply("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).");
                return;
             }
         }
@@ -99,18 +99,17 @@ public class LastMatches extends Command {
         }
         Map<String, Integer> sorted = sortByValue(played);
         boolean aloneLikePanslung = true;
-        String message = "Analyzing last "+gamesNumber+" "+s.getName()+"'s games:\n";
+        String message = "Analyzing the last " + gamesNumber + " " + s.getName() + "'s games:\n";
         for(int i = sorted.keySet().size()-1; i>0; i--){
             String key = (String) sorted.keySet().toArray()[i];
             if(sorted.get(key) > 1){
-                message+=r.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, key).getName() +" "+ (sorted.get(key)) + " times.\n";
+                message += r.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, key).getName() +" "+ (sorted.get(key)) + " times.\n";
                 aloneLikePanslung = false;
             }
         }
         if(aloneLikePanslung){
-            message = "You have been playing only with randoms in the last 20 games.";
+            message = "No summoners they played more than one game with.";
         }
-        message+="\nThis command could be bugged, if you see something weird ask to the extreme main sup 1v9 machine to fix";
         
         event.reply(message);
 	}
@@ -126,8 +125,8 @@ public class LastMatches extends Command {
         // Sort the list using lambda expression
         Collections.sort(
             list,
-            (i1,
-             i2) -> i1.getValue().compareTo(i2.getValue()));
+            (i1, i2) -> i1.getValue().compareTo(i2.getValue())
+        );
  
         // put data from sorted list to hashmap
         HashMap<String, Integer> temp

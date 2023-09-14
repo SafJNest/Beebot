@@ -24,9 +24,9 @@ public class LevelUpModifierSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.CHANNEL, "channel", "Channel to active/disable exp gain", true)
-                            .setChannelTypes(ChannelType.TEXT),
-            new OptionData(OptionType.NUMBER, "value", "Its suggested a value not higher than 1.5/2.0", true));
+            new OptionData(OptionType.CHANNEL, "channel", "Channel to change the level up modifier", true)
+                .setChannelTypes(ChannelType.TEXT),
+            new OptionData(OptionType.NUMBER, "value", "The modifier (Its suggested to not go higher than 1.5/2.0).", true));
     }
 
     @Override
