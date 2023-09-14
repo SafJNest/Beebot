@@ -106,6 +106,11 @@ public class EventHandler extends ListenerAdapter {
         else if(e.getFullCommandName().equals("soundboard select") || e.getFullCommandName().equals("soundboard add") || e.getFullCommandName().equals("soundboard remove") || e.getFullCommandName().equals("soundboard delete"))
             name = "soundboard_select";
         
+        else if(e.getFullCommandName().equals("customizesound"))
+            name = "user_sound";
+        else if(e.getFullCommandName().equals("bugsnotifier"))
+            name = "help";
+        
         switch (name){
             
             case "play":
@@ -117,6 +122,17 @@ public class EventHandler extends ListenerAdapter {
                     String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
                     for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0), arr.get(1)));
+                }
+                break;
+             case "user_sound":
+                if(e.getFocusedOption().getValue().equals("")){
+                    String query = "SELECT name, id FROM sound WHERE user_id = '" + e.getMember().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0) + " (" + arr.get(1) + ")", arr.get(1)));
+                }else{
+                    String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' OR id LIKE '"+e.getFocusedOption().getValue()+ "%' AND user_id = '" + e.getMember().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0) + " (" + arr.get(1) + ")", arr.get(1)));
                 }
                 break;
 

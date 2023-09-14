@@ -13,6 +13,7 @@ import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -21,7 +22,6 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
@@ -30,8 +30,7 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
  * @since 1.3
  */
 public class GameRankSlash extends SlashCommand {
-    private R4J r;
-    private SQL sql;
+
 
     public GameRankSlash(R4J r, SQL sql  ){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -41,9 +40,8 @@ public class GameRankSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "user", "Name of the summoner you want to get information on", false));
-        this.r = r;
-        this.sql = sql;
+            new OptionData(OptionType.STRING, "summoner", "Name of the summoner you want to get information on", false),
+            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false));
     }
 
 	@Override
@@ -56,27 +54,37 @@ public class GameRankSlash extends SlashCommand {
         event.deferReply(false).queue();
 
 
-        if(event.getOption("user") == null){
-            String query = "SELECT account_id FROM lol_user WHERE guild_id = '" + event.getMember().getId() + "';";
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
-                searchByUser = true;
-                center = Button.primary("center", s.getName());
-                center = center.asDisabled();
-
-            } catch (Exception e) {
+        User theGuy = null;
+        if(event.getOption("summoner") == null && event.getOption("user") == null){
+            searchByUser = true;
+            s = RiotHandler.getSummonerFromDB(event.getUser().getId());
+            theGuy = event.getUser();
+            if(s == null){
                 event.getHook().editOriginal("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).").queue();
-               return;
+                return;
+            }
+        }else if(event.getOption("user") != null){
+            theGuy = event.getOption("user").getAsUser();
+            s = RiotHandler.getSummonerFromDB(theGuy.getId());
+            searchByUser = true;
+            if(s == null){
+                 event.getHook().editOriginal(theGuy.getEffectiveName() + " doesn't have a Riot account connected.").queue();
+                return;
             }
         }else{
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("user").getAsString());
-            } catch (Exception e) {
+            s = RiotHandler.getSummonerByName(event.getOption("summoner").getAsString());
+            if(s == null){
                 event.getHook().editOriginal("Couldn't find the specified summoner.").queue();
                 return;
             }
+            
         }
 
+        if(searchByUser && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
+            searchByUser = true;
+            center = Button.primary("lol-center", s.getName());
+            center = center.asDisabled();
+        }
 
         try {
             List<SpectatorParticipant> users = null;

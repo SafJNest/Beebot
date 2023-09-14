@@ -48,12 +48,18 @@ public class FreeChamp extends Command {
         eb.setTitle("Current free champion rotation:");
 
         String s = "";
-        for(StaticChampion ce : c.getFreeChampions())
+        int cont = 1;
+        for(StaticChampion ce : c.getFreeChampions()){
             s += RiotHandler.getFormattedEmoji(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
-        
+            if(cont % 10 == 0){
+                eb.addField("", s, true);
+                cont = 0;
+                s = "";
+            }
+            cont++;
+        }
         String img = "iconLol.png";
         File file = new File("rsc" + File.separator + "img" + File.separator + img);
-        eb.setDescription(s);
         eb.setThumbnail("attachment://" + img);
         event.getChannel().sendMessageEmbeds(eb.build())
             .addFiles(FileUpload.fromData(file))

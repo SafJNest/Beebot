@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -32,27 +33,29 @@ public class FreeChampSlash extends SlashCommand {
 
     @Override
 	protected void execute(SlashCommandEvent event) {
-        String img = "iconLol.png";
-        File file = new File("rsc" + File.separator + "img" + File.separator + img);
-
-        event.deferReply().addFiles(FileUpload.fromData(file)).queue();
-
         ChampionBuilder builder = new ChampionBuilder().withPlatform(LeagueShard.EUW1);
         ChampionRotationInfo c = builder.getFreeToPlayRotation();
-
+            
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getMember().getEffectiveName());
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setTitle("Current free champion rotation:");
 
         String s = "";
+        int cont = 1;
         for(StaticChampion ce : c.getFreeChampions()){
-            s += ce.getName() + " | ";
+            s += RiotHandler.getFormattedEmoji(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
+            if(cont % 10 == 0){
+                eb.addField("", s, true);
+                cont = 0;
+                s = "";
+            }
+            cont++;
         }
-
-        eb.setDescription(s);
-        eb.setThumbnail("attachment://" + img);
         
-        event.getHook().editOriginalEmbeds(eb.build()).queue();
+        String img = "iconLol.png";
+        File file = new File("rsc" + File.separator + "img" + File.separator + img);
+        eb.setThumbnail("attachment://" + img);
+        event.deferReply(false).addEmbeds(eb.build()).addFiles(FileUpload.fromData(file)).queue();
 	}
 }

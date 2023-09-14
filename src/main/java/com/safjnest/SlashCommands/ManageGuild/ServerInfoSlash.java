@@ -48,8 +48,8 @@ public class ServerInfoSlash extends SlashCommand{
         Guild guild;
         if(event.getOption("guild") == null)
             guild = event.getGuild();
-        else if(SafJNest.longIsParsable(event.getOption("guild_id").getAsString()) && event.getJDA().getGuildById(event.getOption("guild_id").getAsLong()) != null)
-            guild = event.getJDA().getGuildById(event.getOption("guild_id").getAsLong());
+        else if(SafJNest.longIsParsable(event.getOption("guild").getAsString()) && event.getJDA().getGuildById(event.getOption("guild").getAsLong()) != null)
+            guild = event.getJDA().getGuildById(event.getOption("guild").getAsLong());
         else {
             event.deferReply(true).setContent("Couldn't find the guild.").queue();
             return;
@@ -63,7 +63,7 @@ public class ServerInfoSlash extends SlashCommand{
         for(int i = 1; i < welcomeMessages.size(); i++) {
             welcomeMessageString += event.getJDA().getUserById(welcomeMessages.get(i).get(0)).getName()
                                     + ": " + welcomeMessages.get(i).get(1)
-                                    + " [" + event.getGuild().getChannelById(TextChannel.class, welcomeMessages.get(i).get(2)).getName()  
+                                    + " [" + event.getJDA().getChannelById(TextChannel.class, welcomeMessages.get(i).get(2)).getName()  
                                     +  "]" + "\n\n";
         }
 
@@ -72,7 +72,7 @@ public class ServerInfoSlash extends SlashCommand{
         for(int i = 1; i < leaveMessages.size(); i++) {
             leaveMessageString += event.getJDA().getUserById(leaveMessages.get(i).get(0)).getName()
                                     + ": " + leaveMessages.get(i).get(1)
-                                    + " [" + event.getGuild().getChannelById(TextChannel.class, leaveMessages.get(i).get(2)).getName()  
+                                    + " [" + event.getJDA().getChannelById(TextChannel.class, leaveMessages.get(i).get(2)).getName()  
                                     +  "]" + "\n\n";
         }
 

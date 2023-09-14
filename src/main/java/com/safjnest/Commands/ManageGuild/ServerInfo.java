@@ -79,7 +79,7 @@ public class ServerInfo extends Command{
         for(int i = 1; i < welcomeMessages.size(); i++) {
             welcomeMessageString += event.getJDA().getUserById(welcomeMessages.get(i).get(0)).getName()
                                     + ": " + welcomeMessages.get(i).get(1)
-                                    + " [" + event.getGuild().getChannelById(TextChannel.class, welcomeMessages.get(i).get(2)).getName()  
+                                    + " [" + event.getJDA().getTextChannelById(welcomeMessages.get(i).get(2)).getName() 
                                     +  "]" + "\n\n";
         }
 
@@ -88,7 +88,7 @@ public class ServerInfo extends Command{
         for(int i = 1; i < leaveMessages.size(); i++) {
             leaveMessageString += event.getJDA().getUserById(leaveMessages.get(i).get(0)).getName()
                                     + ": " + leaveMessages.get(i).get(1)
-                                    + " [" + event.getGuild().getChannelById(TextChannel.class, leaveMessages.get(i).get(2)).getName()  
+                                    + " [" + event.getJDA().getChannelById(TextChannel.class, leaveMessages.get(i).get(2)).getName()  
                                     +  "]" + "\n\n";
         }
 

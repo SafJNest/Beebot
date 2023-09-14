@@ -238,7 +238,7 @@ public class Bot extends ListenerAdapter implements Runnable {
                 new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new InfoMatchesSlash());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
-            Collections.addAll(slashCommandsList, new AnonymSlash(), new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), 
+            Collections.addAll(slashCommandsList, new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), 
                 new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(), new UnbanSlash(), 
                 new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), 
                 new ModifyNicknameSlash(), new WelcomeSlash(sql, gs), new LeaveSlash(), new BoostSlash(), new BlacklistSlash(gs));
