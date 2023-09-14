@@ -33,7 +33,7 @@ public class SoundboardCreateSlash extends SlashCommand{
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "name", "Without a name the soundboard would not be saved.", false),
-            new OptionData(OptionType.STRING, "sound-1", "Sound 1", true).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "sound-1", "Sound 1", false).setAutoComplete(true),
             new OptionData(OptionType.STRING, "sound-2", "Sound 2", false).setAutoComplete(true),
             new OptionData(OptionType.STRING, "sound-3", "Sound 3", false).setAutoComplete(true),
             new OptionData(OptionType.STRING, "sound-4", "Sound 4", false).setAutoComplete(true),

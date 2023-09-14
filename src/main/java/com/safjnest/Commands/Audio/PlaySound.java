@@ -46,6 +46,11 @@ public class PlaySound extends Command{
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
         
+        if((fileName = event.getArgs()) == ""){
+            event.reply("You need to specify a sound name or id.");
+            return;
+        }
+
         if(myChannel == null){
             event.reply("You need to be in a voice channel to use this command.");
             return;
