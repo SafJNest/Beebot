@@ -39,10 +39,11 @@ public class LastMatchesSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.INTEGER, "ngames", "Number of games to analyze", true)
-                .setMaxValue(20)
-                .setMinValue(1),
-            new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", false));
+            new OptionData(OptionType.INTEGER, "games", "Number of games to analyze", true)
+                .setMinValue(1)
+                .setMaxValue(20),
+            new OptionData(OptionType.STRING, "user", "Name of the summoner you want to get information on", false)
+        );
         this.r = r;
         this.sql = sql;
     }
@@ -54,21 +55,21 @@ public class LastMatchesSlash extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
         HashMap<String, Integer> played = new HashMap<>();
-        int gamesToAnalyze = event.getOption("ngames").getAsInt();
+        int gamesToAnalyze = event.getOption("games").getAsInt();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         if(event.getOption("user") == null){
             String query = "SELECT account_id FROM lol_user WHERE guild_id = '" + event.getMember().getId() + "';";
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
             } catch (Exception e) {
-               event.getHook().editOriginal("You dont have connected your Riot account.").queue();
+               event.getHook().editOriginal("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).").queue();
                return;
             }
         }else{
             try {
                 s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("user").getAsString());
             } catch (Exception e) {
-                event.getHook().editOriginal("Didn't found the user you asked for").queue();
+                event.getHook().editOriginal("Couldn't find the specified summoner.").queue();
                 return;
             }
         }
@@ -110,10 +111,9 @@ public class LastMatchesSlash extends SlashCommand {
             }
         }
         if(aloneLikePanslung){
-            message = "You have been playing only with randoms in the last 20 games.";
+            message = "No summoners they played more than one game with.";
         }
-        message+="\nThis command could be bugged, if you see something weird ask to the extreme main sup 1v9 machine to fix";
-        
+
         event.getHook().editOriginal(message).queue();
 	}
 
@@ -128,8 +128,8 @@ public class LastMatchesSlash extends SlashCommand {
         // Sort the list using lambda expression
         Collections.sort(
             list,
-            (i1,
-             i2) -> i1.getValue().compareTo(i2.getValue()));
+            (i1, i2) -> i1.getValue().compareTo(i2.getValue())
+        );
  
         // put data from sorted list to hashmap
         HashMap<String, Integer> temp

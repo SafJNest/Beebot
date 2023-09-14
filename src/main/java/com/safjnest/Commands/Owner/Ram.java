@@ -1,9 +1,8 @@
-package com.safjnest.Commands.Admin;
+package com.safjnest.Commands.Owner;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
 
 /**
  * The commands sends the information about the ram usage of the bot.
@@ -29,6 +28,7 @@ public class Ram extends Command{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.ownerCommand = true;
         this.hidden = true;
     }
     /**
@@ -36,11 +36,9 @@ public class Ram extends Command{
     */
      @Override
     protected void execute(CommandEvent e) {
-        if(!PermissionHandler.isUntouchable(e.getAuthor().getId()))
-            return;
         e.reply("Total: " + String.valueOf((Runtime.getRuntime().totalMemory())/1048576) + "mb\n"
-        + "Usage: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
-        + "Free: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
-        + "Max: " + String.valueOf(Runtime.getRuntime().maxMemory()/1048576) + "mb");
+            + "Usage: " + String.valueOf((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
+            + "Free: " + String.valueOf((Runtime.getRuntime().freeMemory())/1048576) + "mb\n"
+            + "Max: " + String.valueOf(Runtime.getRuntime().maxMemory()/1048576) + "mb");
     }
 }

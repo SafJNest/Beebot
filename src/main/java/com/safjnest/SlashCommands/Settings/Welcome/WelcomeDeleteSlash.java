@@ -23,7 +23,7 @@ public class WelcomeDeleteSlash extends SlashCommand{
         sql.runQuery(query);
         query = "DELETE FROM welcome_roles WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         sql.runQuery(query);
-        event.deferReply(false).addContent("All deleted correctly").queue();
+        event.deferReply(false).addContent("Welcom message deleted.").queue();
     }
     
 }

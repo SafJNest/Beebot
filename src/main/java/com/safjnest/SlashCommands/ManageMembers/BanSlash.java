@@ -56,9 +56,9 @@ public class BanSlash extends SlashCommand{
                 event.deferReply(true).addContent(selfMember.getAsMention() + " can't ban a member with higher or equal highest role than itself.").queue();
             }// if the bot doesnt have a high enough role to ban the member
 
-            else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
+            else if(!author.canInteract(mentionedMember) || author == mentionedMember) {
                 event.deferReply(true).addContent("You can't ban a member with higher or equal highest role than yourself.").queue();
-            }// if the author doesnt have a high enough role to ban the member and if its not yourself!
+            }// if the author doesnt have a high enough role to ban the member
 
             else {
                 event.getGuild().ban(mentionedMember, 0, TimeUnit.SECONDS).reason(reason).queue(
@@ -67,7 +67,6 @@ public class BanSlash extends SlashCommand{
                         ErrorResponse.MISSING_PERMISSIONS,
                         (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
                 );
-                //TODO maybe add the thing that deletes the messages after you ban
             } 
         } catch (Exception e) {
             event.deferReply(true).addContent("Error: " + e.getMessage()).queue();

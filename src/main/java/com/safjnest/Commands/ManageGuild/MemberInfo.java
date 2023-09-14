@@ -40,7 +40,7 @@ public class MemberInfo extends Command{
     @Override
     protected void execute(CommandEvent event) {
         int roleCharNumber;
-        if(!SafJNest.intIsParsable(event.getArgs()) || !SafJNest.isInteger(event.getArgs()) || (Integer.parseInt(event.getArgs())) > 1024 || (Integer.parseInt(event.getArgs())) < 1)
+        if(!SafJNest.intIsParsable(event.getArgs()) || !SafJNest.isInteger(event.getArgs()) || (Integer.parseInt(event.getArgs())) > 1024 || (Integer.parseInt(event.getArgs())) <= 1)
             roleCharNumber = defaultRoleCharNumber;
         else
             roleCharNumber = Integer.parseInt(event.getArgs());
@@ -56,7 +56,7 @@ public class MemberInfo extends Command{
             }
         }
         if(!event.getGuild().isMember(user)){
-            event.reply("The user is not in this server");
+            event.reply("The specified user is not in this guild.");
             return;
         }
 

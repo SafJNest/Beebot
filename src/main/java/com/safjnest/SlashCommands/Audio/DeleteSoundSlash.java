@@ -49,12 +49,12 @@ public class DeleteSoundSlash extends SlashCommand{
             query = "SELECT id, name, user_id FROM sound WHERE name = '" + fileName + "' AND (user_id = '" + event.getUser().getId() + "' OR guild_id = '" + event.getGuild().getId() + "');";
 
         if((arr = sql.getAllRows(query, 3)) == null || arr.isEmpty()){
-            event.deferReply(true).addContent("There is no sound with that name/id").queue();
+            event.deferReply(true).addContent("Couldn't find a sound with that name/id.").queue();
             return;
         }
 
         if(arr.size() > 1){
-            event.deferReply(true).addContent("There is more than one sound with that name in this server, please use IDs to choose the sound you want to delete").queue();
+            event.deferReply(true).addContent("You have uploaded more than one sound with that name in this server, please use IDs to choose the sound you want to delete.").queue();
             return;
         }
 
@@ -63,16 +63,14 @@ public class DeleteSoundSlash extends SlashCommand{
         userId = arr.get(0).get(2);
 
         if(!event.getUser().getId().equals(userId) && !event.getMember().hasPermission(Permission.ADMINISTRATOR)){
-            event.deferReply(true).addContent("You don't have permission to delete this sound").queue();
+            event.deferReply(true).addContent("You don't have permission to delete this sound.").queue();
             return;
         }
-
-       
 
         query = "DELETE FROM sound WHERE id = " + id + ";";
 
         sql.runQuery(query);
 
-        event.deferReply(false).addContent(name + " (ID: " + id +  ") has been deleted").queue();
+        event.deferReply(false).addContent(name + " (ID: " + id +  ") has been deleted.").queue();
 	}
 }

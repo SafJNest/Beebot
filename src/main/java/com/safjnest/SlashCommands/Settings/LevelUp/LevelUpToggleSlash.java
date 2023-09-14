@@ -22,7 +22,8 @@ public class LevelUpToggleSlash extends SlashCommand{
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.gs = gs;
         this.options = Arrays.asList(
-            new OptionData(OptionType.BOOLEAN, "toggle", "True to enable and False to disable", true));
+            new OptionData(OptionType.BOOLEAN, "toggle", "True to enable and False to disable", true)
+        );
     }
 
     @Override
@@ -31,11 +32,11 @@ public class LevelUpToggleSlash extends SlashCommand{
         int toggleInt = toggle ? 1 : 0;
         String query = "INSERT INTO guild_settings(guild_id, bot_id, exp_enabled) VALUES ('" + event.getGuild().getId() + "', '" + event.getJDA().getSelfUser().getId() + "', '" + toggleInt + "') ON DUPLICATE KEY UPDATE exp_enabled = '" + toggleInt + "';";
         if(DatabaseHandler.getSql().runQuery(query)){
-            event.deferReply(false).addContent("All set correctly.").queue();
+            event.deferReply(false).addContent("Level up message toggled.").queue();
             gs.getServer(event.getGuild().getId()).setExpSystem(toggle);
             return;
         }
-        event.deferReply(false).addContent("Something went wrong, contact the admin /bug").queue();
+        event.deferReply(true).addContent("Something went wrong.").queue();
         return;
     }
     

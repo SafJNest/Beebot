@@ -64,7 +64,6 @@ public class PlayYoutube extends Command {
         */
         String pattern = "(?<=watch\\?v=|/videos/|embed\\/|youtu.be\\/|\\/v\\/|\\/e\\/|watch\\?v%3D|watch\\?feature=player_embedded&v=|%2Fvideos%2F|embed%\u200C\u200B2F|youtu.be%2F|%2Fv%2F)[^#\\&\\?\\n]*";
         Pattern compiledPattern = Pattern.compile(pattern);
-        //url is youtube url for which you want to extract the id.
         Matcher matcher = compiledPattern.matcher(youtubeUrl);
         if (matcher.find()) {
             return matcher.group();
@@ -74,17 +73,21 @@ public class PlayYoutube extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        if(event.getMember().getVoiceState().getChannel() == null){
-            event.reply("You need to be in a voice channel to use this command");
+        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
+        
+        if(myChannel == null){
+            event.reply("You need to be in a voice channel to use this command.");
             return;
         }
 
-        if(event.getSelfMember().getVoiceState().getChannel() != null && (event.getMember().getVoiceState().getChannel() != event.getSelfMember().getVoiceState().getChannel())){
-            event.reply("The bot is used by someone else, dont be annoying and use another beebot instance.");
+        if(botChannel != null && (myChannel != botChannel)){
+            event.reply("The bot is already being used in another voice channel.");
             return;
         }
 
         String toPlay = getVideoIdFromYoutubeUrl(event.getArgs());
+
         if(toPlay == null){
             try {
                 URL theUrl = new URL("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=" + event.getArgs().replace(" ", "+") + "&key=" + youtubeApiKey);
@@ -98,7 +101,7 @@ public class PlayYoutube extends Command {
                 JSONObject id = (JSONObject) item.get("id");
                 toPlay = (String) id.get("videoId");
             } catch (Exception e) {
-                event.reply("No video found");
+                event.reply("Couldn't find a video for the given search.");
                 return;
             }
         }
@@ -106,7 +109,6 @@ public class PlayYoutube extends Command {
         pm = new PlayerManager();
         
         MessageChannel channel = event.getChannel();
-        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
         audioManager.openAudioConnection(myChannel);
@@ -139,6 +141,9 @@ public class PlayYoutube extends Command {
         });
 
         pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        if(pm.getPlayer().getPlayingTrack() == null) {
+            return;
+        }
 
         EmbedBuilder eb = new EmbedBuilder();
         eb = new EmbedBuilder();

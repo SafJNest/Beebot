@@ -1,40 +1,39 @@
-package com.safjnest.Commands.Admin;
+package com.safjnest.Commands.Owner;
+
+import org.apache.commons.lang3.ThreadUtils;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-
 /**
- * The commands shows the ping of the bot.
- * <p>The bot sends a message, once the message is received, the bot sends a message back, and the ping is calculated.</p>
- * @author <a href="https://github.com/Leon412">Leon412</a>
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
- * @since 1.0
+ * @since 1.3
  */
-
-public class Ping extends Command {
-
+public class ThreadCounter extends Command{
     /**
      * Default constructor for the class.
      */
-    public Ping(){
+    public ThreadCounter(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.ownerCommand = true;
         this.hidden = true;
     }
     /**
      * This method is called every time a member executes the command.
-     */
-    @Override
+    */
+     @Override
     protected void execute(CommandEvent e) {
-        long time = System.currentTimeMillis();
-        e.reply("Pong!", response -> {
-            response.editMessageFormat("Pong: %d ms", System.currentTimeMillis() - time).queue();
-        });
+        double cont = 0.0;
+        for (Thread t : ThreadUtils.getAllThreads()) {
+            if(t.getName().startsWith("lava"))
+                cont++;
+        }
+        e.reply("Active LavaPlayer's Threads: " + cont +"\n" +e.getPrefix()+"p executed: " + cont/3);
     }
-   
 }

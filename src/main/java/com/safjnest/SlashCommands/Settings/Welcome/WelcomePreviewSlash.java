@@ -24,7 +24,7 @@ public class WelcomePreviewSlash extends SlashCommand{
         String query = "SELECT message_text, channel_id FROM welcome_message WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';"; 
         ArrayList<String> list = sql.getSpecifiedRow(query, 0);
         if(list == null){
-            event.deferReply(false).addContent("You need to set a welcome message first.").queue();
+            event.deferReply(true).addContent("Set a welcome message first.").queue();
             return;
         }
 
@@ -42,7 +42,6 @@ public class WelcomePreviewSlash extends SlashCommand{
         }
 
         event.deferReply(false).addContent(message).queue();
-        
     }
     
 }

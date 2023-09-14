@@ -32,9 +32,10 @@ public class CustomizeSoundSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-                new OptionData(OptionType.STRING, "sound", "Sound to modify (name or id)", true),
-                new OptionData(OptionType.STRING, "name", "New name", false),
-                new OptionData(OptionType.BOOLEAN, "public", "TRUE OR FALSE", false));
+            new OptionData(OptionType.STRING, "sound", "Sound to modify (name or id)", true),
+            new OptionData(OptionType.STRING, "name", "New name of the sound", false),
+            new OptionData(OptionType.BOOLEAN, "public", "true or false", false)
+        );
     }
 
     @Override
@@ -52,12 +53,12 @@ public class CustomizeSoundSlash extends SlashCommand {
                     + event.getUser().getId() + "' OR guild_id = '" + event.getGuild().getId() + "');";
 
         if ((arr = DatabaseHandler.getSql().getAllRows(query, 4)) == null || arr.isEmpty()) {
-            event.reply("There is no sound with that name/id");
+            event.deferReply(true).addContent("Couldn't find a sound with that name/id.").queue();
             return;
         }
 
         if (arr.size() > 1) {
-            event.deferReply(false).addContent("You have uploaded more than one sound with that name in this server, please use IDs to choose the sound you want to modify").queue();
+            event.deferReply(true).addContent("You have uploaded more than one sound with that name in this server, please use IDs to choose the sound you want to modify.").queue();
             return;
         }
 
@@ -67,7 +68,7 @@ public class CustomizeSoundSlash extends SlashCommand {
         wasPublic = arr.get(0).get(3).equals("1");
 
         if (!event.getUser().getId().equals(userId) && !event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
-            event.deferReply(false).addContent("You don't have permission to modify this sound").queue();
+            event.deferReply(false).addContent("You don't have permission to modify this sound.").queue();
             return;
         }
 

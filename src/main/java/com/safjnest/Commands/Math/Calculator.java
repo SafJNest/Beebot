@@ -52,7 +52,7 @@ public class Calculator extends Command{
                 if (!operators.isEmpty()) {
                     operators.pop(); // rimuove la parentesi aperta
                 } else {
-                    throw new IllegalArgumentException("Parentesi non corrette: " + expression);
+                    throw new IllegalArgumentException("Incorrect parenthesis: " + expression);
                 }
             } else if (token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/")) {
                 while (!operators.isEmpty() && hasPrecedence(token, operators.peek())) {
@@ -104,7 +104,7 @@ public class Calculator extends Command{
         while (!operators.isEmpty()) {
             String op = operators.pop();
             if (op.equals("(")) {
-                throw new IllegalArgumentException("Parentesi non corrette: " + expression);
+                throw new IllegalArgumentException("Incorrect parenthesis: " + expression);
             }
             double b = numbers.pop();
             double a = numbers.pop();

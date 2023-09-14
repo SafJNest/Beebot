@@ -27,7 +27,7 @@ public class BlacklistChannelSlash extends SlashCommand {
         this.botPermissions = new Permission[]{Permission.BAN_MEMBERS};
         
         this.options = Arrays.asList(
-            new OptionData(OptionType.CHANNEL, "channel", "Channel to sent ban notifications", true)
+            new OptionData(OptionType.CHANNEL, "channel", "Notification channel", true)
                 .setChannelTypes(ChannelType.TEXT)
         );   
 
@@ -37,7 +37,7 @@ public class BlacklistChannelSlash extends SlashCommand {
     @Override
     protected void execute(SlashCommandEvent event) {
         if(gs.getServer(event.getGuild().getId()).getThreshold() == 0){
-            event.deferReply(false).addContent("Blacklist is not enabled.").queue();
+            event.deferReply(true).addContent("Blacklist is disabled.").queue();
             return;
         }
 
@@ -49,7 +49,7 @@ public class BlacklistChannelSlash extends SlashCommand {
             event.deferReply(false).addContent("Blacklist channel set to " + event.getGuild().getTextChannelById(channelId).getAsMention() + ".").queue();
             return;
         }
-        event.deferReply(false).addContent("Something went wrong.").queue();
+        event.deferReply(true).addContent("Something went wrong.").queue();
         
     }
 }

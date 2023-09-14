@@ -19,6 +19,7 @@ public class Prefix extends Command{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.userPermissions = new Permission[]{Permission.ADMINISTRATOR};
         this.sql = sql;
         this.gs = gs;
     }
@@ -26,17 +27,13 @@ public class Prefix extends Command{
     @Override
     protected void execute(CommandEvent event) {
         if(event.getArgs() == "") {
-            event.reply("You have to write the new prefix");
-            return;
-        }
-        if(!event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
-            event.reply("Only admins can change the prefix of the guild");
+            event.reply("Write the new prefix.");
             return;
         }
         
         String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getSelfUser().getId() + "','" + event.getArgs() +"') ON DUPLICATE KEY UPDATE prefix = '" + event.getArgs() + "';";
         if(sql.runQuery(query))
-            event.reply("New prefix is: " + event.getArgs());
+            event.reply("The new prefix is: " + event.getArgs());
         else
             event.reply("Error");
         

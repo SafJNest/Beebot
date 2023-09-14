@@ -23,9 +23,9 @@ public class LevelUpChannelSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.CHANNEL, "channel", "Channel to active/disable exp gain", true)
+            new OptionData(OptionType.CHANNEL, "channel", "Channel to enable/disable exp gain", true)
                             .setChannelTypes(ChannelType.TEXT),
-            new OptionData(OptionType.BOOLEAN, "value", "TRUE OR FALSE", true));
+            new OptionData(OptionType.BOOLEAN, "value", "true or false", true));
     }
 
     @Override
@@ -45,10 +45,10 @@ public class LevelUpChannelSlash extends SlashCommand{
            gs.getServer(event.getGuild().getId()).setExpSystemRoom(Long.parseLong(channel), buly); 
         }
         if(!buly){
-            event.deferReply(false).addContent("You will no more gain exp on this channel!").queue();
+            event.deferReply(false).addContent("This channel no longer gives exp.").queue();
             return;
         }
-        event.deferReply(false).addContent("You will gain exp on this channel!").queue();
+        event.deferReply(false).addContent("This channel gives exp now.").queue();
     }
     
 }
