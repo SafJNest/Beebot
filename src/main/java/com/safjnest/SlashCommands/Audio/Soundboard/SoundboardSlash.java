@@ -23,7 +23,7 @@ public class SoundboardSlash extends SlashCommand{
         this.help = new CommandsLoader().getString(this.name, "help");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new SoundboardSelectSlash(father), new SoundboardCreateSlash(father), new SoundboardAddSlash(father), new SoundboardRemoveSlash(father));
+        Collections.addAll(slashCommandsList, new SoundboardSelectSlash(father), new SoundboardCreateSlash(father), new SoundboardAddSlash(father), new SoundboardRemoveSlash(father), new SoundboardDeleteSlash(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
     }
 
