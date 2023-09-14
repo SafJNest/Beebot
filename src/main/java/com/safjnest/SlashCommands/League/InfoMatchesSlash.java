@@ -33,7 +33,8 @@ public class InfoMatchesSlash extends SlashCommand {
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.options = Arrays.asList(new OptionData(OptionType.STRING, "user", "Summoner name you want to get data", false));
+        this.options = Arrays.asList(
+            new OptionData(OptionType.STRING, "user", "Name of the summoner you want to get information on", false));
     }
 
     /**
@@ -52,7 +53,7 @@ public class InfoMatchesSlash extends SlashCommand {
         if(event.getOption("user") == null){
             s = RiotHandler.getSummonerFromDB(event.getUser().getId());
             if(s == null){
-                event.getHook().editOriginal("You dont have connected a Riot account, for more information /help setSummoner").queue();
+                event.getHook().editOriginal("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).").queue();
                 return;
             }
             searchByUser = true;
@@ -61,7 +62,7 @@ public class InfoMatchesSlash extends SlashCommand {
         }else{
             s = RiotHandler.getSummonerByName(event.getOption("user").getAsString());
             if(s == null){
-                event.getHook().editOriginal("Didn't find this user. ").queue();
+                event.getHook().editOriginal("Couldn't find the specified summoner.").queue();
                 return;
             }
             

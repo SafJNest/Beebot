@@ -54,7 +54,7 @@ public class ServerInfo extends Command{
                 guild = event.getJDA().getGuildById(args[0]);
             }
             else {
-                event.reply("Invalid id or the bot is not in the guild");
+                event.reply("Couldn't find the guild.");
                 return;
             }
         }
@@ -68,7 +68,7 @@ public class ServerInfo extends Command{
                 guild = event.getJDA().getGuildById(args[0]);
             }
             else {
-                event.reply("Invalid id or the bot is not in the guild");
+                event.reply("Couldn't find the guild.");
                 return;
             }
         }

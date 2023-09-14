@@ -53,9 +53,9 @@ public class KickSlash extends SlashCommand{
                 event.deferReply(true).addContent(selfMember.getAsMention() + " can't kick a member with higher or equal highest role than itself.").queue();
             }// if the bot doesnt have a high enough role to kick the member
 
-            else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
+            else if(!author.canInteract(mentionedMember) || author == mentionedMember) {
                 event.deferReply(true).addContent("You can't kick a member with higher or equal highest role than yourself.").queue();
-            }// if the author doesnt have a high enough role to kick the member and if its not yourself!
+            }// if the author doesnt have a high enough role to kick the member
             
             else {
                 event.getGuild().kick(mentionedMember).reason(reason).queue(

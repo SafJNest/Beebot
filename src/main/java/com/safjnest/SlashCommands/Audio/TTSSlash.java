@@ -57,7 +57,6 @@ public class TTSSlash extends SlashCommand{
         voices.put(Voices.Swedish.id, Set.of(Voices.Swedish.array));
         voices.put(Voices.Spanish_Spain.id, Set.of(Voices.Spanish_Spain.array));
 
-
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -66,11 +65,10 @@ public class TTSSlash extends SlashCommand{
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "text", "Text to be read", true),
-            new OptionData(OptionType.STRING, "voice", "Change the reader's voice", false));
+            new OptionData(OptionType.STRING, "voice", "Reader's voice (also language)", false)
+        );
         this.tts = tts;
         this.sql = DatabaseHandler.getSql();
-
-    
     }
 
     @Override
@@ -80,15 +78,20 @@ public class TTSSlash extends SlashCommand{
         String defaultVoice = "keria";
         EmbedBuilder eb = null;
 
-
-        if((event.getMember().getVoiceState().getChannel() != event.getGuild().getSelfMember().getVoiceState().getChannel()) && event.getGuild().getSelfMember().getVoiceState().getChannel() != null){
-            event.deferReply(false).addContent("The bot is used by someone else, dont be annoying and use another beebot instance.").queue();
+        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
+        
+        if(myChannel == null){
+            event.deferReply(true).addContent("You need to be in a voice channel to use this command.").queue();
             return;
         }
 
+        if(botChannel != null && (myChannel != botChannel)){
+            event.deferReply(true).addContent("The bot is already being used in another voice channel.").queue();
+            return;
+        }
 
         speech = event.getOption("text").getAsString();
-
 
         File file = new File("rsc" + File.separator + "tts");
         if(!file.exists())
@@ -126,7 +129,6 @@ public class TTSSlash extends SlashCommand{
         String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getMember().getEffectiveName() + ".mp3";
         
         pm = new PlayerManager();
-        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
 
         audioManager.setSendingHandler(pm.getAudioHandler());
@@ -160,33 +162,26 @@ public class TTSSlash extends SlashCommand{
             }
         });
 
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());;
+        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        if(pm.getPlayer().getPlayingTrack() == null) {
+            return;
+        }
         
         eb = new EmbedBuilder();
         eb.setTitle("Playing now:");
-        eb.addField("Lenght",SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length),true);
+        
         eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest",event.getMember().getAvatarUrl());
-        //eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
-
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setDescription(speech);
+
+        eb.addField("Lenght",SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length),true);
         eb.addField("Language", language, true);
         eb.addBlankField(true);
         eb.addField("Voice", voice, true);
         eb.addField("Default voice", defaultVoice, true);
         eb.addBlankField(true);
-        eb.setColor(Color.decode(
-            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-            ));
-            
-            /* 
-            String img = "tts.png";
-            File path = new File("rsc" + File.separator + "img" + File.separator + img);
-        eb.setThumbnail("attachment://" + img);
-        event.deferReply(false).addEmbeds(eb.build())
-            .addFiles(FileUpload.fromData(path))
-            .queue();
-        */
-        eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
+
         event.deferReply(false).addEmbeds(eb.build()).queue();
     }
 }

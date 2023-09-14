@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Dangerous;
+package com.safjnest.Commands.Owner;
 
 import java.util.List;
 
@@ -24,6 +24,7 @@ public class RandomMove extends Command{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.ownerCommand = true;
         this.hidden = true;
     }
 

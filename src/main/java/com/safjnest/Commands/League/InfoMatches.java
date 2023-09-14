@@ -56,7 +56,7 @@ public class InfoMatches extends Command {
         if(args.equals("")){
             s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
             if(s == null){
-                event.reply("You dont have a Riot account connected, for more information /help setUser");
+                event.reply("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).");
                 return;
             }
             searchByUser = true;
@@ -67,13 +67,13 @@ public class InfoMatches extends Command {
         else if(event.getMessage().getMentions().getMembers().size() != 0){
             s = RiotHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
             if(s == null){
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
+                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " doesn't have a Riot account connected.");
                 return;
             }
         }else{
             s = RiotHandler.getSummonerByName(args);
             if(s == null){
-                event.reply("Didn't find this user. ");
+                event.reply("Couldn't find the specified summoner.");
                 return;
             }
         }

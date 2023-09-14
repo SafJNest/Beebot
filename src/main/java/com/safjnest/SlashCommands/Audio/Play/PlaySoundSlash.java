@@ -19,7 +19,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -48,17 +47,18 @@ public class PlaySoundSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
+        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
         
-        if(event.getMember().getVoiceState().getChannel() == null){
-            event.deferReply(false).addContent("You need to be in a voice channel to use this command").queue();
+        if(myChannel == null){
+            event.deferReply(true).addContent("You need to be in a voice channel to use this command.").queue();
             return;
         }
 
-        if(event.getGuild().getSelfMember().getVoiceState().getChannel() != null && (event.getMember().getVoiceState().getChannel() != event.getGuild().getSelfMember().getVoiceState().getChannel())){
-            event.deferReply(false).addContent("The bot is used by someone else, dont be annoying and use another beebot instance.").queue();
+        if(botChannel != null && (myChannel != botChannel)){
+            event.deferReply(true).addContent("The bot is already being used in another voice channel.").queue();
             return;
         }
-
 
         fileName = event.getOption("sound").getAsString();
         
@@ -81,7 +81,7 @@ public class PlaySoundSlash extends SlashCommand{
 
 
         if((arr = sql.getAllRows(query, 6)).isEmpty()){
-            event.reply("There is no sound with that name/id");
+            event.reply("Couldn't find a sound with that name/id.");
             return;
         }
 
@@ -104,13 +104,10 @@ public class PlaySoundSlash extends SlashCommand{
         extension = arr.get(indexForKeria).get(4);
 
         
-        
         fileName = path + id + "." + extension;
 
         pm = new PlayerManager();
         
-        MessageChannel channel = event.getChannel();
-        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
         audioManager.openAudioConnection(myChannel);
@@ -136,17 +133,20 @@ public class PlaySoundSlash extends SlashCommand{
             
             @Override
             public void noMatches() {
-                channel.sendMessage("File not found").queue();
+                event.deferReply(true).addContent("Not found").queue();
                 pm.getTrackScheduler().addQueue(null);
             }
 
             @Override
             public void loadFailed(FriendlyException throwable) {
-                System.out.println("error: " + throwable.getMessage());
+                event.deferReply(true).addContent(throwable.getMessage()).queue();
             }
         });
 
         pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        if(pm.getPlayer().getPlayingTrack() == null) {
+            return;
+        }
         
 
         query = "SELECT times FROM play where play.sound_id = '" + id + "' and play.user_id = '" + event.getMember().getId() + "';";
@@ -187,12 +187,8 @@ public class PlaySoundSlash extends SlashCommand{
 
         eb.addField("Played", "```" + timesPlayed + (timesPlayed.equals("1") ? " time" : " times") + " (yours: "+timesPlayedByUser+")```", true);
 
-        
-           
-        eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-            ));
-        //eb.setFooter("*This is not SoundFx, this is much worse. cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
+         
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
             
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         event.deferReply(false).addEmbeds(eb.build()).queue();

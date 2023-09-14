@@ -18,7 +18,7 @@ public class LevelUpTextSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "msg", "Welcome message", true));
+            new OptionData(OptionType.STRING, "msg", "Level up message", true));
     }
 
     @Override
@@ -29,7 +29,7 @@ public class LevelUpTextSlash extends SlashCommand{
         String discordId = event.getGuild().getId();
         String query = "SELECT exp_enabled FROM guild_settings WHERE guild_id = '" + discordId + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         if(DatabaseHandler.getSql().getString(query, "exp_enabled") != null && DatabaseHandler.getSql().getString(query, "exp_enabled").equals("0")){
-            event.deferReply(false).addContent("You have not enabled the exp system yet.").queue();
+            event.deferReply(true).addContent("Enabled the exp system first.").queue();
             return;
         }
         query = "INSERT INTO levelup_message(guild_id, message_text)"
@@ -37,10 +37,10 @@ public class LevelUpTextSlash extends SlashCommand{
         if(!DatabaseHandler.getSql().runQuery(query)){
             query = "UPDATE levelup_message SET message_text = '" + message + "' WHERE guild_id = '" + discordId + "';"; 
             DatabaseHandler.getSql().runQuery(query);
-            event.deferReply(false).addContent("Set a new LevelUp message.").queue();
+            event.deferReply(false).addContent("Level up message set.").queue();
             return;
         }
-        event.deferReply(false).addContent("All set correctly.").queue();
+        event.deferReply(false).addContent("Level up message set.").queue();
     }
     
 }

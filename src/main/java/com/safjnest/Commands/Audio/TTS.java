@@ -27,7 +27,6 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
 public class TTS extends Command{
-    private String speech;
     private TTSHandler tts;
     private SQL sql;
     private PlayerManager pm;
@@ -70,18 +69,30 @@ public class TTS extends Command{
         String language = "it-it";
         String voice = "keria";
         String defaultVoice = "keria";
-        MessageChannel channel = event.getChannel();
+        String speech = event.getArgs();
+
         EmbedBuilder eb = null;
 
-        if((event.getMember().getVoiceState().getChannel() != event.getSelfMember().getVoiceState().getChannel()) && event.getSelfMember().getVoiceState().getChannel() != null){
-            event.reply("The bot is used by someone else, dont be annoying and use another beebot instance.");
+        MessageChannel channel = event.getChannel();
+        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
+        
+        if(myChannel == null){
+            event.reply("You need to be in a voice channel to use this command.");
             return;
         }
 
-        if((speech = event.getArgs()) == ""){
-            event.reply("Write somthing you want the bot to say");
+        if(botChannel != null && (myChannel != botChannel)){
+            event.reply("The bot is already being used in another voice channel.");
             return;
-        }else if (event.getArgs().split(" ")[0].equalsIgnoreCase("list")){
+        }
+
+        if(speech == "") {
+            event.reply("Write the text you want to turn into speech (or list to get the list of voices).");
+            return;
+        }
+
+        if (speech.split(" ")[0].equalsIgnoreCase("list")){
             eb = new EmbedBuilder();
             eb.setTitle("Available languages:");
             eb.setColor(new Color(255, 196, 0));
@@ -101,7 +112,6 @@ public class TTS extends Command{
             return;
         }
 
-
         File file = new File("rsc" + File.separator + "tts");
         if(!file.exists())
             file.mkdirs();
@@ -113,21 +123,21 @@ public class TTS extends Command{
         
         //check if the user asked a tts with another voice pt Mia blablabla 
         for(String key : voices.keySet()){
-            if(voices.get(key).contains(event.getArgs().split(" ")[0])){
+            if(voices.get(key).contains(speech.split(" ")[0])){
                 language = key;
-                voice = event.getArgs().split(" ")[0];
+                voice = speech.split(" ")[0];
             }
         }
         if(!voice.equals("keria")){
-            speech = event.getArgs().substring(event.getArgs().indexOf(" "));
+            speech = speech.substring(speech.indexOf(" "));
         }
-        else if(!defaultVoice.equals("keria")){ //if true means there is a default voice setted so the user wants to use it
+        else if(!defaultVoice.equals("keria")){ //if true means there is a default voice set so the user wants to use it
             voice = defaultVoice;
             query = "SELECT language_tts FROM guild_settings WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
             language = sql.getString(query, "language_tts");
             speech = event.getArgs();
         }
-        else{ //means the user is unable to use the bot so @NeutronSun setted a default default voice of piece of shit like repolo
+        else{ //means the user is unable to use the bot so @NeutronSun set a default default voice of piece of shit like repolo
             voice = "Not setted"; 
             defaultVoice = voice; 
             speech = event.getArgs();
@@ -137,11 +147,8 @@ public class TTS extends Command{
         String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
         
         pm = new PlayerManager();
-        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioManager audioManager = event.getGuild().getAudioManager();
-
         audioManager.setSendingHandler(pm.getAudioHandler());
-
         audioManager.openAudioConnection(myChannel);
 
         pm.getAudioPlayerManager().loadItem(nameFile, new AudioLoadResultHandler() {
@@ -171,34 +178,25 @@ public class TTS extends Command{
             }
         });
 
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());;
+        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        if(pm.getPlayer().getPlayingTrack() == null) {
+            return;
+        }
         
         eb = new EmbedBuilder();
         eb.setTitle("Playing now:");
-        eb.addField("Lenght",SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length),true);
-        eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
-        //eb.setFooter("*This is not SoundFx, this is much worse cit. steve jobs (probably)", null); //Questo non e' SoundFx, questa e' perfezione cit. steve jobs (probabilmente)
-
         eb.setDescription(event.getArgs());
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+        eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
+        
+        eb.addField("Lenght",SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length),true);
         eb.addField("Language", language, true);
         eb.addBlankField(true);
         eb.addField("Voice", voice, true);
         eb.addField("Default voice", defaultVoice, true);
         eb.addBlankField(true);
-        eb.setColor(Color.decode(
-            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-            ));
-            
-            /*
-            String img = "tts.png";
-            File path = new File("rsc" + File.separator + "img" + File.separator + img);
-        eb.setThumbnail("attachment://" + img);
-        channel.sendMessageEmbeds(eb.build())
-            .addFiles(FileUpload.fromData(path))
-            .queue();
-        */
-        eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+
         event.reply(eb.build());
-        
     }
 }

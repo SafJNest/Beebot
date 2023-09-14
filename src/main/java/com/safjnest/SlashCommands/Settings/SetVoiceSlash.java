@@ -29,7 +29,7 @@ public class SetVoiceSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "voice", "Speaker name's voice", true));
+            new OptionData(OptionType.STRING, "voice", "Voice name", true));
         this.sql = DatabaseHandler.getSql();
     }
 
@@ -45,7 +45,7 @@ public class SetVoiceSlash extends SlashCommand {
             }
         }
         if(voice.equals("keria")){
-            event.deferReply(true).addContent("Voice not found, use command /t list").queue();
+            event.deferReply(true).addContent("Voice not found, use command /tts list").queue();
             return;
         }
         String query = "INSERT INTO guild_settings (guild_id, bot_id, language_tts, name_tts) VALUES ('" + event.getGuild().getId() + "', '" + event.getJDA().getSelfUser().getId() + "', '" + language + "', '" + voice + "') ON DUPLICATE KEY UPDATE language_tts = '" + language + "', name_tts = '" + voice + "'";

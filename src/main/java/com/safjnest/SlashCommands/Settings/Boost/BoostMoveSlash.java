@@ -20,8 +20,9 @@ public class BoostMoveSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.CHANNEL, "channel", "Set a different channel where the message will be sent. Null to use default channel.", false)
-                            .setChannelTypes(ChannelType.TEXT));
+            new OptionData(OptionType.CHANNEL, "channel", "Change boost channel (leave out to use the guild's system channel).", false)
+                .setChannelTypes(ChannelType.TEXT)
+        );
     }
 
     @Override
@@ -32,7 +33,7 @@ public class BoostMoveSlash extends SlashCommand{
             try {
                 channel = event.getGuild().getSystemChannel().getId();
             } catch (Exception e) {
-                event.deferReply(true).addContent("No channel was selected and there isn't a system channel (check your server discord settings). Be sure to select a channel next time.").queue();
+                event.deferReply(true).addContent("There isn't a system channel in this guild (check your guild settings).").queue();
                 return;
             }
         }else{
@@ -43,18 +44,18 @@ public class BoostMoveSlash extends SlashCommand{
         String id = sql.getString(query, "channel_id");
 
         if(id == null){
-            event.deferReply(false).addContent("You need to set a boost message first.").queue();
+            event.deferReply(true).addContent("Set a boost message first.").queue();
             return;
         }
 
         if(id.equals(channel)){
-            event.deferReply(false).addContent("Set a different channel.").queue();
+            event.deferReply(true).addContent("This channel is already the Boost channel.").queue();
             return;
         }
 
         query = "UPDATE boost_message SET channel_id = '" + channel + "' WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
         sql.runQuery(query);
-        event.deferReply(false).addContent("All set correctly").queue();
+        event.deferReply(false).addContent("Changed boost channel.").queue();
     }
     
 }

@@ -1,14 +1,16 @@
-package com.safjnest.Commands.Admin;
+package com.safjnest.Commands.Owner;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.TableHandler;
 
+import net.dv8tion.jda.api.utils.FileUpload;
 
 public class Query extends Command{
     /**
@@ -21,35 +23,30 @@ public class Query extends Command{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.ownerCommand = true;
         this.hidden = true;
     }
 
     @Override
-    protected void execute(CommandEvent e) {
-        if(!PermissionHandler.isUntouchable(e.getAuthor().getId())){
-            e.getAuthor().openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessage("You will not do sql injection on my bot (what, did you excpect an insult? we here at safjnest are family friendly, also we want to stay on top.gg).").queue());
-            return;
-        }
-
-        String query = e.getArgs();
-        if(query.equals("")){
-            e.reply("Please specify a query to execute.");
-            return;
-        }
-
+    protected void execute(CommandEvent event) {
+        String query = event.getArgs();
         ArrayList<ArrayList<String>> res = DatabaseHandler.getSql().getAllRows(query);
+        if(res == null) {
+            event.reply("Wrong query (probably).");
+            return;
+        }
+
         String[][] data = new String[res.size()-1][res.get(0).size()];
         for(int i = 1; i < res.size(); i++)
             data[i-1] = res.get(i).toArray(new String[0]);
         String[] headers = res.get(0).toArray(new String[0]);
         
-        TableHandler.replaceIdsWithNames(data, e.getJDA());
-
+        TableHandler.replaceIdsWithNames(data, event.getJDA());
         String table = TableHandler.constructTable(data, headers);
 
-        String[] splitTable = TableHandler.splitTable(table);
-
-        for(int i = 0; i < splitTable.length; i++)
-            e.reply("```" + splitTable[i] + "```");
+        event.getChannel().sendFiles(FileUpload.fromData(
+            new ByteArrayInputStream(table.getBytes(StandardCharsets.UTF_8)),
+            "table.txt"
+        )).queue();
     }
 }

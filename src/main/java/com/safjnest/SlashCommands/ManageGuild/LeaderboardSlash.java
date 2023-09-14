@@ -29,7 +29,7 @@ public class LeaderboardSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.INTEGER, "limit", "row limit", false)
+            new OptionData(OptionType.INTEGER, "limit", "positions limit", false)
         );
     }
 
@@ -40,7 +40,7 @@ public class LeaderboardSlash extends SlashCommand {
         String query = "SELECT user_id, messages, level, exp from exp_table WHERE guild_id = '" + event.getGuild().getId() + "' order by exp DESC limit " + limit + ";";
         ArrayList<ArrayList<String>> res = DatabaseHandler.getSql().getAllRows(query);
         if(res.size() == 1){
-            event.getChannel().sendMessage("```No Result```").queue();
+            event.getChannel().sendMessage("```No Results```").queue();
             return;
         }
         String[][] databaseData = new String[res.size()-1][res.get(0).size()];
@@ -70,7 +70,7 @@ public class LeaderboardSlash extends SlashCommand {
         String table = TableHandler.constructTable(data, headers);
 
         String[] splitTable = TableHandler.splitTable(table);
-        event.deferReply(false).addContent("Here the full table:").queue();
+        event.deferReply(false).addContent(event.getGuild().getName() + " leaderboard:").queue();
          for(int i = 0; i < splitTable.length; i++)
             event.getChannel().sendMessage("```" + splitTable[i] + "```").queue();
 	}

