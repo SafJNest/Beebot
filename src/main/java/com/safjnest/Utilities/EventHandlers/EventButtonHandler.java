@@ -1,6 +1,7 @@
 package com.safjnest.Utilities.EventHandlers;
 
 import java.awt.Color;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -10,13 +11,21 @@ import com.safjnest.Commands.League.InfoMatches;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
+import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
@@ -29,6 +38,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
@@ -70,6 +80,9 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if(event.getButton().getId().startsWith("unban-"))
             pardonUserEvent(event);
+
+        else if(event.getButton().getId().startsWith("soundboard-"))
+            soundboardEvent(event);
         
     }
 
@@ -652,6 +665,66 @@ public class EventButtonHandler extends ListenerAdapter {
                 ErrorResponse.MISSING_PERMISSIONS,
                 (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
         );
+    }
+
+
+    private void soundboardEvent(ButtonInteractionEvent event){
+
+        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        PlayerManager pm = new PlayerManager();
+
+        TextChannel channel = event.getChannel().asTextChannel();
+
+        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+        AudioManager audioManager = event.getGuild().getAudioManager();
+        audioManager.setSendingHandler(pm.getAudioHandler());
+        audioManager.openAudioConnection(myChannel);
+
+        if(pm.getPlayer().getPlayingTrack() != null){
+            //pm.stopAudioHandler();
+        }
+
+        String path = "rsc" + File.separator + "SoundBoard"+ File.separator + args;
+        pm.getAudioPlayerManager().loadItem(path, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                pm.getTrackScheduler().addQueue(track);
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {
+                /*
+                 * for (AudioTrack track : playlist.getTracks()) {
+                 * trackScheduler.queue(track);
+                 * }
+                 */
+            }
+            
+            @Override
+            public void noMatches() {
+                channel.sendMessage("File not found").queue();
+                pm.getTrackScheduler().addQueue(null);
+            }
+
+            @Override
+            public void loadFailed(FriendlyException throwable) {
+                System.out.println("error: " + throwable.getMessage());
+            }
+        });
+
+        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        
+        String id = args.split("\\.")[0];
+        SQL sql = DatabaseHandler.getSql();
+        String query = "SELECT times FROM play where play.sound_id = '" + id + "' and play.user_id = '" + event.getMember().getId() + "';";
+        if(sql.getString(query, "times") == null){
+            query = "INSERT INTO play(user_id, sound_id, times) VALUES('" + event.getMember().getId() + "','" + id + "', 1);";
+        }
+        else{
+            query = "UPDATE play SET times = times + 1 WHERE sound_id = (" + id + ") AND user_id = '" + event.getMember().getId() + "';";
+        }
+        
+        sql.runQuery(query);
     }
 
 }

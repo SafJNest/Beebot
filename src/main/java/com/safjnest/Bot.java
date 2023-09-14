@@ -57,6 +57,7 @@ import com.safjnest.Commands.ManageMembers.*;
 import com.safjnest.SlashCommands.Audio.*;
 import com.safjnest.SlashCommands.Audio.List.ListSlash;
 import com.safjnest.SlashCommands.Audio.Play.PlaySlash;
+import com.safjnest.SlashCommands.Audio.Soundboard.SoundboardSlash;
 import com.safjnest.SlashCommands.League.*;
 import com.safjnest.SlashCommands.ManageGuild.*;
 import com.safjnest.SlashCommands.ManageMembers.*;
@@ -178,15 +179,18 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.setOwnerId(ownerID);
         builder.setCoOwnerIds(coOwnersIDs);
         builder.setActivity(activity);
-        if(App.isExtremeTesting())
-            builder.forceGuildOnly("474935164451946506");
+
+        
         
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
                 gs.retrieveAllServers();
-                //g.updateCommands().queue();
-                
+                /* 
+                for(Guild g : event.getJDA().getGuilds()){
+                    g.updateCommands().queue();
+                }
+                */
                 System.out.println("[" + threadName + "] INFO Guild cached correctly");
             }
         });
@@ -241,7 +245,8 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), 
-                new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash());
+                 new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash());
+
 
         if(threadName.equals("beebot"))
             Collections.addAll(slashCommandsList, new RewardsSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));

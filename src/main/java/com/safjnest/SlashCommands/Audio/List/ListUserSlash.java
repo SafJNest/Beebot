@@ -53,7 +53,7 @@ public class ListUserSlash extends SlashCommand{
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setTitle("List of " + theGuy.getName());
         eb.setColor(Color.decode(
-        BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
+            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
         ));
         String queryAdd = "";
         if(theGuy.getId().equals(event.getMember().getId()))

@@ -47,6 +47,40 @@
         "arguments" : "[CommandName] [text]"
     },
 
+    "soundboard": {
+        "alias" : [],
+        "help"  : "Create, select and manage soundboards.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#channel)(@role) | [message]",
+        "children": {
+            "create": {
+                "alias" : [],
+                "help"  : "Create a new soundboard.",
+                "arguments" : "[CommandName]"
+            }, 
+            "select": {
+                "alias" : [],
+                "help"  : "Select and show an existing soundboard.",
+                "arguments" : "[CommandName]"
+            },
+            "add": {
+                "alias" : [],
+                "help"  : "Add a sound to an existing soundboard.",
+                "arguments" : "[CommandName]"
+            }, 
+            "remove": {
+                "alias" : [],
+                "help"  : "Remove a sound from an existing soundboard.",
+                "arguments" : "[CommandName]"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete an existing soundboard.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
     "stop":{
         "alias" : ["stp", "donteventhinkaboutit"],
         "help"  : "Stop the bot from playing.",
