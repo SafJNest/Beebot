@@ -5,6 +5,7 @@ import java.util.Arrays;
 
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
@@ -29,7 +30,7 @@ public class BugsNotifierSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "command", "Name of the bugged command", true),
+            new OptionData(OptionType.STRING, "command", "Name of the bugged command", true).setAutoComplete(true),
             new OptionData(OptionType.STRING, "text", "Describe the bug", true));
     }
 
@@ -40,7 +41,8 @@ public class BugsNotifierSlash extends SlashCommand {
         eb.setAuthor(event.getUser().getName() + " from " + event.getGuild().getName());
         eb.setThumbnail(event.getUser().getAvatarUrl());
         eb.setDescription(event.getOption("text").getAsString());
-        eb.setColor(new Color(255, 0, 0));
+        eb.setColor(Color.decode(
+                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
         PermissionHandler.getUntouchables().forEach((id) -> event.getJDA().retrieveUserById(id).complete().openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(eb.build()).queue()));
         event.deferReply(true).addContent("Message sent successfuly").queue();

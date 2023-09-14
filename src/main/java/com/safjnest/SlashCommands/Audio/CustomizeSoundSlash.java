@@ -32,7 +32,7 @@ public class CustomizeSoundSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sound", "Sound to modify (name or id)", true),
+            new OptionData(OptionType.STRING, "sound", "Sound to modify (name or id)", true).setAutoComplete(true),
             new OptionData(OptionType.STRING, "name", "New name of the sound", false),
             new OptionData(OptionType.BOOLEAN, "public", "true or false", false)
         );

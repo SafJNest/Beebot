@@ -12,7 +12,9 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -26,7 +28,6 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
  */
 public class LastMatchesSlash extends SlashCommand {
     private R4J r;
-    private SQL sql;
     
     /**
      * Constructor
@@ -45,7 +46,6 @@ public class LastMatchesSlash extends SlashCommand {
             new OptionData(OptionType.STRING, "user", "Name of the summoner you want to get information on", false)
         );
         this.r = r;
-        this.sql = sql;
     }
 
     /**
@@ -57,21 +57,29 @@ public class LastMatchesSlash extends SlashCommand {
         HashMap<String, Integer> played = new HashMap<>();
         int gamesToAnalyze = event.getOption("games").getAsInt();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        if(event.getOption("user") == null){
-            String query = "SELECT account_id FROM lol_user WHERE guild_id = '" + event.getMember().getId() + "';";
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
-            } catch (Exception e) {
-               event.getHook().editOriginal("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).").queue();
-               return;
+
+        User theGuy = null;
+         if(event.getOption("summoner") == null && event.getOption("user") == null){
+            s = RiotHandler.getSummonerFromDB(event.getUser().getId());
+            theGuy = event.getUser();
+            if(s == null){
+                event.getHook().editOriginal("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).").queue();
+                return;
+            }
+        }else if(event.getOption("user") != null){
+            theGuy = event.getOption("user").getAsUser();
+            s = RiotHandler.getSummonerFromDB(theGuy.getId());
+            if(s == null){
+                 event.getHook().editOriginal(theGuy.getEffectiveName() + " doesn't have a Riot account connected.").queue();
+                return;
             }
         }else{
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("user").getAsString());
-            } catch (Exception e) {
+            s = RiotHandler.getSummonerByName(event.getOption("summoner").getAsString());
+            if(s == null){
                 event.getHook().editOriginal("Couldn't find the specified summoner.").queue();
                 return;
             }
+            
         }
         int gamesNumber = gamesToAnalyze;
         try {
