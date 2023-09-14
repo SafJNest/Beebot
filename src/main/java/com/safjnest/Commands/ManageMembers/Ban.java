@@ -51,7 +51,7 @@ public class Ban extends Command{
                 event.reply(selfMember.getAsMention() + " can't ban a member with higher or equal highest role than itself.");
             }// if the bot doesnt have a high enough role to ban the member
 
-            else if(!author.canInteract(mentionedMember) && author != mentionedMember) {
+            else if(!author.canInteract(mentionedMember) || author == mentionedMember) {
                 event.reply("You can't ban a member with higher or equal highest role than yourself.");
             }// if the author doesnt have a high enough role to ban the member and if its not yourself!
             

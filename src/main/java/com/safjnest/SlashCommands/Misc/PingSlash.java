@@ -1,4 +1,4 @@
-package com.safjnest.SlashCommands.Admin;
+package com.safjnest.SlashCommands.Misc;
 
 
 

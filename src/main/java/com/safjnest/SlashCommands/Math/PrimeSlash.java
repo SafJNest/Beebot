@@ -29,9 +29,10 @@ public class PrimeSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.INTEGER, "value", "Number of bits", true)
-            .setMaxValue(maxPrime)
-            .setMinValue(1));
+            new OptionData(OptionType.INTEGER, "value", "Number of bits of the prime to generate", true)
+                .setMinValue(1)
+                .setMaxValue(maxPrime)
+        );
     }
 
 	@Override
@@ -49,7 +50,7 @@ public class PrimeSlash extends SlashCommand {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    event.deferReply(true).addContent("Your prime number is too insane for discord, we need a file to hold it").addFiles(FileUpload.fromData(supp)).queue();
+                    event.deferReply(true).addContent("The prime number is too big for discord, so here's a file:").addFiles(FileUpload.fromData(supp)).queue();
                 } else {
                     event.deferReply(false).addContent(primi).queue();
                 }

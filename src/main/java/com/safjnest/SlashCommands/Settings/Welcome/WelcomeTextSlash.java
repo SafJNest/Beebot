@@ -20,10 +20,11 @@ public class WelcomeTextSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-        new OptionData(OptionType.STRING, "msg", "Welcome message", true),
-        new OptionData(OptionType.CHANNEL, "channel", "Channel where the message will be sent. Null to use default channel.", false)
-                        .setChannelTypes(ChannelType.TEXT),
-        new OptionData(OptionType.ROLE, "role", "Role that will be given to new members.", false));
+            new OptionData(OptionType.STRING, "msg", "Welcome message", true),
+            new OptionData(OptionType.CHANNEL, "channel", "Welcome channel (leave out to use the guild's system channel).", false)
+                .setChannelTypes(ChannelType.TEXT),
+            new OptionData(OptionType.ROLE, "role", "Role that will be given to new members.", false)
+        );
     }
 
     @Override
@@ -34,7 +35,7 @@ public class WelcomeTextSlash extends SlashCommand{
             try {
                 channel = event.getGuild().getSystemChannel().getId();
             } catch (Exception e) {
-                event.deferReply(true).addContent("No channel was selected and there isn't a system channel (check your server discord settings). Be sure to select a channel next time.").queue();
+                event.deferReply(true).addContent("There isn't a system channel in this guild (check your guild settings).").queue();
                 return;
             }
         }else{
@@ -54,7 +55,7 @@ public class WelcomeTextSlash extends SlashCommand{
         }
 
         
-        event.deferReply(false).addContent("All set correctly").queue();
+        event.deferReply(false).addContent("Welcome message set.").queue();
     }
     
 }

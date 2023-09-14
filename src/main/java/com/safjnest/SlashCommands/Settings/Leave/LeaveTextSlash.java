@@ -19,9 +19,10 @@ public class LeaveTextSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "msg", "Welcome message", true),
-            new OptionData(OptionType.CHANNEL, "channel", "User to get the information about", false)
-                            .setChannelTypes(ChannelType.TEXT));
+            new OptionData(OptionType.STRING, "msg", "Leave message", true),
+            new OptionData(OptionType.CHANNEL, "channel", "Leave channel (leave out to use the guild's system channel).", false)
+                .setChannelTypes(ChannelType.TEXT)
+        );
     }
 
     @Override
@@ -31,7 +32,7 @@ public class LeaveTextSlash extends SlashCommand{
             try {
                 channel = event.getGuild().getSystemChannel().getId();
             } catch (Exception e) {
-                event.deferReply(true).addContent("No channel was selected and there isn't a system channel (check your server discord settings). Be sure to select a channel next time.").queue();
+                event.deferReply(true).addContent("There isn't a system channel in this guild (check your guild settings).").queue();
                 return;
             }
         }else{
@@ -45,7 +46,7 @@ public class LeaveTextSlash extends SlashCommand{
         String query = "INSERT INTO left_message(guild_id, channel_id, message_text, bot_id)"
                             + "VALUES('" + discordId + "','" + channel +"','" + message + "','"+event.getJDA().getSelfUser().getId()+"');";
         DatabaseHandler.getSql().runQuery(query);
-        event.deferReply(false).addContent("All set correctly").queue();
+        event.deferReply(false).addContent("Leave message set.").queue();
     }
     
 }

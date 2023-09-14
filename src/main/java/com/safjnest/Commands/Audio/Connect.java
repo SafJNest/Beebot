@@ -1,7 +1,5 @@
 package com.safjnest.Commands.Audio;
 
-import java.util.EventListener;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
@@ -12,7 +10,7 @@ import com.safjnest.Utilities.CommandsLoader;
  * 
  * @since 1.0
  */
-public class Connect extends Command implements EventListener{
+public class Connect extends Command {
 
     public Connect(){
         this.name = this.getClass().getSimpleName();
@@ -26,7 +24,7 @@ public class Connect extends Command implements EventListener{
 	@Override
 	protected void execute(CommandEvent event) {
         if(event.getMember().getVoiceState().getChannel() == null) {
-            event.reply("You need to be in a voice channel to use this command");
+            event.reply("You need to be in a voice channel to use this command.");
             return;
         }
 

@@ -22,6 +22,7 @@ public class PrefixSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.userPermissions = new Permission[]{Permission.ADMINISTRATOR};
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "prefix", "New Prefix", true));
         this.sql = sql;
@@ -30,13 +31,9 @@ public class PrefixSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(!event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
-            event.deferReply(true).addContent("Only admins can change the prefix of the guild").queue();
-            return;
-        }
         String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getJDA().getSelfUser().getId()  + "','" + event.getOption("prefix").getAsString() +"') ON DUPLICATE KEY UPDATE prefix = '" + event.getOption("prefix").getAsString() + "';";
         if(sql.runQuery(query))
-            event.deferReply(false).addContent("New Prefix is " + event.getOption("prefix").getAsString()).queue();
+            event.deferReply(false).addContent("The new Prefix is " + event.getOption("prefix").getAsString()).queue();
         else
             event.deferReply(true).addContent("Error").queue();
         

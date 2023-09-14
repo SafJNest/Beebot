@@ -47,7 +47,7 @@ public class DownloadSoundSlash extends SlashCommand{
         }
 
         if((arr = sql.getAllRows(query, 3)).isEmpty()){
-            event.deferReply(true).addContent("There is no sound with that name/id").queue();
+            event.deferReply(true).addContent("Couldn't find a sound with that name/id.").queue();
             return;
         }
         int indexForKeria = -1;
@@ -60,17 +60,15 @@ public class DownloadSoundSlash extends SlashCommand{
         
         if(indexForKeria == -1){
             indexForKeria = (int)(Math.random()*arr.size());
-            event.deferReply(false).addContent("I couldn't find this sound on your guild so i downloaded a random sound with this name").queue();
+            event.deferReply(false).addContent("Couldn't find a sound with this name on your guild so i downloaded a random sound with this name.").queue();
         }
         else{
-            event.deferReply(false).addContent("I'm downloading the file with this name from your guild").queue();
+            event.deferReply(false).addContent("Downloading the sound with this name from your guild.").queue();
         }
 
         id = arr.get(indexForKeria).get(0);
         extension = arr.get(indexForKeria).get(2);
 
-       
-        
         fileName = id + "." + extension;
 
         File toSend = new File(path + fileName);

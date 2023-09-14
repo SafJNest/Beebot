@@ -21,9 +21,6 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
  */
 public class FreeChampSlash extends SlashCommand {
     
-    /**
-     * Constructor
-     */
     public FreeChampSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
@@ -33,32 +30,29 @@ public class FreeChampSlash extends SlashCommand {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
     }
 
-    /**
-     * This method is called every time a member executes the command.
-     */
     @Override
 	protected void execute(SlashCommandEvent event) {
         String img = "iconLol.png";
         File file = new File("rsc" + File.separator + "img" + File.separator + img);
-        event.deferReply()
-            .addFiles(FileUpload.fromData(file))
-            .queue();
+
+        event.deferReply().addFiles(FileUpload.fromData(file)).queue();
+
         ChampionBuilder builder = new ChampionBuilder().withPlatform(LeagueShard.EUW1);
         ChampionRotationInfo c = builder.getFreeToPlayRotation();
+
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getMember().getEffectiveName());
-        eb.setColor(Color.decode(
-            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-        ));
-        eb.setTitle("List of free champion:");
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setTitle("Current free champion rotation:");
+
         String s = "";
         for(StaticChampion ce : c.getFreeChampions()){
-            s+=ce.getName()+" | ";
+            s += ce.getName() + " | ";
         }
+
         eb.setDescription(s);
         eb.setThumbnail("attachment://" + img);
-        event.getHook().editOriginalEmbeds(eb.build())
-            .queue();
+        
+        event.getHook().editOriginalEmbeds(eb.build()).queue();
 	}
-
 }

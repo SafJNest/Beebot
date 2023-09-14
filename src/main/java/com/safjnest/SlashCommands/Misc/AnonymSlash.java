@@ -29,7 +29,7 @@ public class AnonymSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.USER, "user", "The user you want to send the message", true),
+            new OptionData(OptionType.USER, "user", "The user you want to message", true),
             new OptionData(OptionType.STRING, "msg", "The message you want to send", true));
     }
 
@@ -47,6 +47,6 @@ public class AnonymSlash extends SlashCommand {
             eb.build())
             .addFiles(FileUpload.fromData(file))
             .queue());
-        event.deferReply(false).addContent("Message sent successfuly").queue();
+        event.deferReply(true).addContent("Message sent successfuly").queue();
 	}
 }
