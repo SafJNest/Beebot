@@ -104,7 +104,11 @@ public class ExpSystem {
         if(lvl == 1 && exp < 100)
             lvl = 0;
         return (exp - totalExpToLvlUp(lvl));
-    }  
+    }
+
+    public static int lvlPercentage(int lvl, int exp) {
+        return Math.round((float)ExpSystem.expToLvlUp(lvl, exp)/(float)(ExpSystem.totalExpToLvlUp(lvl + 1) - ExpSystem.totalExpToLvlUp(lvl))*100);
+    }
 
     /**
      * This method is used to add the experience to the user.
