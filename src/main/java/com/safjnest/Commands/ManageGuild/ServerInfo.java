@@ -12,7 +12,6 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -23,7 +22,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
  * @since 1.1.02
  */
 public class ServerInfo extends Command{
-    private final int defaultRoleCharNumber = 200;
 
     public ServerInfo(){
         this.name = this.getClass().getSimpleName();
@@ -36,41 +34,17 @@ public class ServerInfo extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
-        String[] args = event.getArgs().split(" ", 2);
-        int roleCharNumber;
-        Guild guild = null;
-
-        if(args.length == 1 && args[0] == "") {
-            roleCharNumber = defaultRoleCharNumber;
+        Guild guild;
+        if(event.getArgs() == null) {
             guild = event.getGuild();
         }
-        else if(args.length == 1) {
-            if(SafJNest.intIsParsable(args[0]) && (Integer.parseInt(args[0])) < 1024 && (Integer.parseInt(args[0])) > 1) {
-                roleCharNumber = Integer.parseInt(args[0]);
-                guild = event.getGuild();
-            }
-            else if(SafJNest.longIsParsable(args[0]) && event.getJDA().getGuildById(args[0]) != null) {
-                roleCharNumber = defaultRoleCharNumber;
-                guild = event.getJDA().getGuildById(args[0]);
-            }
-            else {
-                event.reply("Couldn't find the guild.");
-                return;
-            }
+        else {
+            guild = event.getJDA().getGuildById(event.getArgs());
         }
-        else { //args.length == 2
-            if((SafJNest.intIsParsable(args[0]) && (Integer.parseInt(args[0])) < 1024 && (Integer.parseInt(args[0])) > 1) && (SafJNest.longIsParsable(args[1]) && event.getJDA().getGuildById(args[1]) != null)) {
-                roleCharNumber = Integer.parseInt(args[0]);
-                guild = event.getJDA().getGuildById(args[1]);
-            }
-            else if((SafJNest.intIsParsable(args[1]) && (Integer.parseInt(args[1])) < 1024 && (Integer.parseInt(args[1])) > 1) && (SafJNest.longIsParsable(args[0]) && event.getJDA().getGuildById(args[0]) != null)) {
-                roleCharNumber = Integer.parseInt(args[1]);
-                guild = event.getJDA().getGuildById(args[0]);
-            }
-            else {
-                event.reply("Couldn't find the guild.");
-                return;
-            }
+
+        if(guild == null) {
+            event.reply("Couldn't find the specified guild. Please write the id of the guild and make sure the bot is in that guild.");
+            return;
         }
 
 
@@ -94,7 +68,7 @@ public class ServerInfo extends Command{
 
         String lvlUpMsg = DatabaseHandler.getSql().getString("SELECT message_text FROM levelup_message WHERE guild_id = '" + guild.getId() + "';", "message_text");
 
-        List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(guild.getRoles(), roleCharNumber);
+        List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(guild.getRoles());
 
         
         EmbedBuilder eb = new EmbedBuilder();

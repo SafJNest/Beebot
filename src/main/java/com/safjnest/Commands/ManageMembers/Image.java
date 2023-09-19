@@ -34,7 +34,7 @@ public class Image extends Command{
             if(mentionedUser == null)
                 event.reply("Couldn't find the specified member, please mention or write the id of a member.");
             else
-                event.reply(mentionedUser.getAvatarUrl() + "?size=4096");
+                event.reply(mentionedUser.getAvatarUrl() + "?size=4096&quality=lossless");
         } catch (Exception e) {
             event.reply("Error: " + e.getMessage());
         }

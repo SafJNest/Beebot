@@ -59,7 +59,7 @@ public class RewardsSlash extends SlashCommand {
         if(rewards.size() == 0) {
             eb.addField("No rewards", "There are no rewards set up for this guild yet.", false);
         }else{
-            for(ArrayList<String> reward : rewards) {
+            for(ArrayList<String> reward : rewards) {//TODO add sort()
                 buttons.add(Button.primary("rewards-role-" + reward.get(0), reward.get(1)));
                 eb.addField(g.getRoleById(reward.get(0)).getName(), "Level: " + reward.get(1), false);
             }
@@ -69,7 +69,7 @@ public class RewardsSlash extends SlashCommand {
         //return event.replyEmbeds(eb.build()).addComponents(ActionRow.of(buttons));
     }
 
-        public static MessageEditAction createEmbed(Message message,  Guild g){
+    public static MessageEditAction createEmbed(Message message,  Guild g) {
         Button add = Button.success("rewards-add", "+");
         ArrayList<Button> buttons = new ArrayList<>();
         buttons.add(add);
