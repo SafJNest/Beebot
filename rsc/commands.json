@@ -168,22 +168,22 @@
     },
 
     "greet": {
-        "alias" : ["papyrus", "paper", "listoide"],
-        "help"  : "Play a sound from the soundboard or a video from youtube.",
-        "longhelp"  : "Play a sound from the soundboard or a video from youtube.",
+        "alias" : [],
+        "help"  : "Set/Unset your greet sound.",
+        "longhelp"  : "set or unset your greet sound from the soundboard. You can specify if the greet is going to be guild specific or global",
         "category" : "Audio",
         "arguments" : "[CommandName]",
         "children": {
             "set": {
                 "alias" : [],
-                "help"  : "Play a video from youtube.",
-                "longhelp"  : "Play a video from youtube.",
+                "help"  : "Set your greet sound.",
+                "longhelp"  : "Set your greet sound.",
                 "arguments" : "[CommandName]"
             }, 
             "unset": {
                 "alias" : [],
-                "help"  : "Play a sound from the soundboard.",
-                "longhelp"  : "Play a sound from the soundboard.",
+                "help"  : "Unset your greet sound.",
+                "longhelp"  : "Unset your greet sound.",
                 "arguments" : "[CommandName]"
             }
         }

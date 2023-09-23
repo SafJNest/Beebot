@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Random;
 
 /**
  * Classe ufficiale della <a href="https://github.com/SafJNest">SafJNest Corporation</a>
@@ -140,8 +141,13 @@ public class SafJNest extends Thread {
         return x>0?x:-x;
     }
 
+
+    /**
+     * @Deprecated
+     * 
+     */
     public static BigInteger randomBighi(int numBits) {
-        if (numBits < 1)
+        if (numBits < 2)
             throw new IllegalArgumentException("SafJNest doesnt like 0 or negative numbers");
         numBits--;
         int numBytes = (int) (((long) numBits + 7) / 8);
@@ -156,6 +162,33 @@ public class SafJNest extends Thread {
             randomBits[0] &= (1 << (8 - excessBits)) - 1;
         }
         return new BigInteger(1, randomBits).add(BigInteger.TWO.pow(numBits));
+    }
+
+
+    public static BigInteger randomBigInteger(int numBits) {
+        if (numBits < 2) {
+            throw new IllegalArgumentException("Number of bits must be at least 2");
+        }
+
+        byte[] randomBytes = new byte[(numBits + 7) / 8];
+        (new Random()).nextBytes(randomBytes);
+        randomBytes[0] |= (byte) (1 << (numBits % 8));
+        return new BigInteger(1, randomBytes);
+    }
+
+    public static BigInteger randomSecureBigInteger(int numBits) {
+        if (numBits < 2) {
+            throw new IllegalArgumentException("Number of bits must be at least 2");
+        }
+
+        byte[] randomBytes = new byte[(numBits + 7) / 8];
+        try {
+            SecureRandom.getInstanceStrong().nextBytes(randomBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Secure random number generator not available", e);
+        }
+        randomBytes[0] |= (byte) (1 << (numBits % 8));
+        return new BigInteger(1, randomBytes);
     }
 
     public static float fastInvSquareRoot(float x) {
@@ -187,7 +220,7 @@ public class SafJNest extends Thread {
     }
 
     public static boolean isPrime(BigInteger p) {
-        return (BigInteger.TWO.modPow(p, p).compareTo(BigInteger.TWO) == 0) ? 1>0 : 1<0;
+        return (BigInteger.TWO.modPow(p, p).compareTo(BigInteger.TWO) == 0);
     }
 
     public static String getFirstPrime(BigInteger n){
@@ -220,12 +253,17 @@ public class SafJNest extends Thread {
         return formattedTime;
     }
     
-    public static double factorial(double n){
+    public static double factorial(double n) {
         double fact = 1;
         for (int i = 2; i <= n; i++) {
             fact *= i;
         }
         return fact;
+    }
+
+    public static double recursiveFactorial(double n) {
+        if(n == 1) return 1;
+        return n * factorial(n - 1);
     }
 
 

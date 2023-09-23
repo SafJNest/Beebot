@@ -58,7 +58,7 @@ public class SetRoom extends Command {
                 event.reply("Error: wrong id probably");
         }
         if(gs.getServer(event.getGuild().getId()).getRoom(Long.parseLong(channel)) == null){
-            Room r = new Room(Long.parseLong(channel),name, true, "1", true);
+            Room r = new Room(Long.parseLong(channel),name, true, 1, true);
             gs.getServer(event.getGuild().getId()).addRoom(r);
         }else{
            gs.getServer(event.getGuild().getId()).setNameRoom(Long.parseLong(channel), name); 

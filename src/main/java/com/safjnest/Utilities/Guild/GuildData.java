@@ -46,11 +46,11 @@ public class GuildData {
         return id;
     }
 
-    public synchronized String getPrefix() {
+    public String getPrefix() {
         return prefix;
     }
 
-    public boolean getExpSystem() {
+    public boolean isExpSystemEnabled() {
         return expSystem;
     }
 
@@ -96,7 +96,7 @@ public class GuildData {
                     Long.parseLong(row.get(0)), 
                     row.get(1), 
                     row.get(2).equals("1") ? true : false, 
-                    row.get(3),
+                    Double.parseDouble(row.get(3)),
                     row.get(4).equals("1") ? true : false
                     )
             );
@@ -110,11 +110,12 @@ public class GuildData {
 
     public Boolean getExpSystemRoom(Long id){
         try {
-            return rooms.get(id).getExpSystem();
+            return rooms.get(id).isExpSystemEnabled();
         } catch (Exception e) {
             return true;
         }
     }
+
     public Boolean getCommandStatsRoom(Long id){
         try {
             return rooms.get(id).getCommand();
@@ -123,11 +124,11 @@ public class GuildData {
         }
     }
 
-    public String getExpValueRoom(Long id){
+    public double getExpValueRoom(Long id){
         try {
             return rooms.get(id).getExpValue();
         } catch (Exception e) {
-            return "1";
+            return 1;
         }
     }
 
@@ -143,7 +144,7 @@ public class GuildData {
         rooms.get(id).setName(name);
     }
 
-    public synchronized void setExpValueRoom(Long id, String value){
+    public synchronized void setExpValueRoom(Long id, double value){
         rooms.get(id).setExpValue(value);
     }
 

@@ -1,6 +1,5 @@
 package com.safjnest.Commands.Owner;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -45,7 +44,7 @@ public class Query extends Command{
         String table = TableHandler.constructTable(data, headers);
 
         event.getChannel().sendFiles(FileUpload.fromData(
-            new ByteArrayInputStream(table.getBytes(StandardCharsets.UTF_8)),
+            table.getBytes(StandardCharsets.UTF_8),
             "table.txt"
         )).queue();
     }

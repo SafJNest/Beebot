@@ -40,10 +40,10 @@ public class DownloadSoundSlash extends SlashCommand{
         ArrayList<ArrayList<String>> arr = null;
 
         if(fileName.matches("[0123456789]*")){
-            query = "SELECT id, guild_id, extension FROM sound WHERE id = '" + fileName + "';";
+            query = "SELECT id, guild_id, extension FROM sound WHERE id = '" + fileName + "' AND (user_id = '" + event.getMember().getId() + "' OR public = '1')";
         }
         else{
-            query = "SELECT id, guild_id, extension FROM sound WHERE name = '" + fileName + "';";
+            query = "SELECT id, guild_id, extension FROM sound WHERE name = '" + fileName + "' AND (user_id = '" + event.getMember().getId() + "' OR public = '1')";
         }
 
         if((arr = sql.getAllRows(query, 3)).isEmpty()){
