@@ -1,5 +1,6 @@
 package com.safjnest.Utilities.EventHandlers;
 
+import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,15 +11,22 @@ import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.LOL.Augment;
 import com.safjnest.Utilities.LOL.RiotHandler;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
@@ -36,6 +44,7 @@ import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.managers.AudioManager;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -64,10 +73,63 @@ public class EventHandler extends ListenerAdapter {
      */
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent e) {
+        AudioChannel ac = e.getChannelJoined();
+        AudioChannel bebyc = e.getGuild().getAudioManager().getConnectedChannel();
+
         if((e.getGuild().getAudioManager().isConnected() && e.getChannelLeft() != null) &&
             (e.getGuild().getAudioManager().getConnectedChannel().getId().equals(e.getChannelLeft().getId())) &&
             (e.getChannelLeft().getMembers().size() == 1)){
             e.getGuild().getAudioManager().closeAudioConnection();
+        }
+
+
+        if(e.getJDA().getUserById(e.getMember().getId()).isBot() || ac == null)
+            return;
+
+        if(bebyc != null && ac.getId().equals(bebyc.getId()) || bebyc == null){
+            Member theGuy = e.getMember();
+            String query = "SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + theGuy.getId() + "' AND (greeting.guild_id = '" + e.getGuild().getId() + "' OR greeting.guild_id = '0') AND greeting.bot_id = '" + e.getJDA().getSelfUser().getId() + "' ORDER BY CASE WHEN greeting.guild_id = '0' THEN 1 ELSE 0 END LIMIT 1;";
+            ArrayList<String> sound = sql.getSpecifiedRow(query, 0);
+            if(sound == null)
+                return;
+
+            PlayerManager pm = new PlayerManager();
+            AudioManager audioManager = e.getGuild().getAudioManager();
+            audioManager.setSendingHandler(pm.getAudioHandler());
+            audioManager.openAudioConnection(ac);
+
+            if(pm.getPlayer().getPlayingTrack() != null){
+                //pm.stopAudioHandler();
+            }
+
+            String path = "rsc" + File.separator + "SoundBoard"+ File.separator + sound.get(0) + "." + sound.get(1);
+            pm.getAudioPlayerManager().loadItem(path, new AudioLoadResultHandler() {
+                @Override
+                public void trackLoaded(AudioTrack track) {
+                    pm.getTrackScheduler().addQueue(track);
+                }
+
+                @Override
+                public void playlistLoaded(AudioPlaylist playlist) {
+                    /*
+                    * for (AudioTrack track : playlist.getTracks()) {
+                    * trackScheduler.queue(track);
+                    * }
+                    */
+                }
+                
+                @Override
+                public void noMatches() {
+                    pm.getTrackScheduler().addQueue(null);
+                }
+
+                @Override
+                public void loadFailed(FriendlyException throwable) {
+                    System.out.println("error: " + throwable.getMessage());
+                }
+            });
+
+            pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
         }
     }
 
@@ -94,6 +156,7 @@ public class EventHandler extends ListenerAdapter {
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         String name = e.getName();
+
         if(e.getFullCommandName().equals("soundboard create"))
             name = "play";
         
@@ -108,6 +171,7 @@ public class EventHandler extends ListenerAdapter {
         
         else if(e.getFullCommandName().equals("customizesound"))
             name = "user_sound";
+
         else if(e.getFullCommandName().equals("bugsnotifier"))
             name = "help";
         
@@ -217,6 +281,21 @@ public class EventHandler extends ListenerAdapter {
                     String query = "SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '"+e.getFocusedOption().getValue()+"%' AND ss.id = '" + soundboardId + "' ORDER BY RAND() LIMIT 25;";
                     for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0), arr.get(1)));
+                }
+                break;
+
+            case "greet":
+
+                if(e.getFocusedOption().getValue().equals("")){
+                    String query = "SELECT name, id FROM sound WHERE user_id = '" + e.getMember().getId() + "' OR guild_id = '" + e.getGuild().getId() + "' AND public = 1 ORDER BY RAND() LIMIT 25;";
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0) + " (" + arr.get(1) + ")", arr.get(1)));
+                    System.out.println(query);
+                }else{
+                    String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' OR id LIKE '"+e.getFocusedOption().getValue()+ "%' AND (user_id = '" + e.getMember().getId() + "' OR (guild_id = '" + e.getGuild().getId() + "' AND public = 1)) ORDER BY RAND() LIMIT 25;";
+                    System.out.println(query);
+                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                        choices.add(new Choice(arr.get(0) + " (" + arr.get(1) + ")", arr.get(1)));
                 }
                 break;
         }

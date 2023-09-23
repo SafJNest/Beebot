@@ -167,6 +167,28 @@
         }
     },
 
+    "greet": {
+        "alias" : ["papyrus", "paper", "listoide"],
+        "help"  : "Play a sound from the soundboard or a video from youtube.",
+        "longhelp"  : "Play a sound from the soundboard or a video from youtube.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "set": {
+                "alias" : [],
+                "help"  : "Play a video from youtube.",
+                "longhelp"  : "Play a video from youtube.",
+                "arguments" : "[CommandName]"
+            }, 
+            "unset": {
+                "alias" : [],
+                "help"  : "Play a sound from the soundboard.",
+                "longhelp"  : "Play a sound from the soundboard.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
 
 
 
