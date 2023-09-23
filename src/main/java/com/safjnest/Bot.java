@@ -55,6 +55,7 @@ import com.safjnest.Commands.ManageGuild.*;
 import com.safjnest.Commands.ManageMembers.*;
 
 import com.safjnest.SlashCommands.Audio.*;
+import com.safjnest.SlashCommands.Audio.Greet.GreetSlash;
 import com.safjnest.SlashCommands.Audio.List.ListSlash;
 import com.safjnest.SlashCommands.Audio.Play.PlaySlash;
 import com.safjnest.SlashCommands.Audio.Soundboard.SoundboardSlash;
@@ -245,7 +246,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), 
-                 new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash());
+                 new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash());
 
 
         if(threadName.equals("beebot"))
