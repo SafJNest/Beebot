@@ -213,13 +213,13 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(commandsList, new Summoner(), new InfoAugment(), new FreeChamp(), new GameRank(), 
-                new LastMatches(riotApi, sql), new InfoMatches(),new Prime(maxPrime), new Calculator(), new Dice(), 
+                new LastMatches(riotApi, sql), new InfoMatches(), new Calculator(), new Dice(), 
                 new ThreadCounter(), new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
-                new InviteBot(), new ListGuild(), new Ban(), new Unban(), new Kick(), new Move(sql), new Mute(), new UnMute(), new Image(), 
-                new Permissions(), new ModifyNickname(), new ListRoom(sql), new SetRoom(sql, gs), new RandomMove());
+                new InviteBot(), new ListGuild(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
+                new Permissions(), new ModifyNickname(), new RandomMove());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), new PlayYoutube(youtubeApiKey), 
@@ -253,7 +253,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             Collections.addAll(slashCommandsList, new RewardsSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
 
         if(threadName.equals("beebot canary"))
-            Collections.addAll(slashCommandsList, new TalkSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
+            Collections.addAll(slashCommandsList, new TalkSlash(), new LeaderboardSlash(), new LevelUpSlash(gs), new RewardsSlash());
 
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));

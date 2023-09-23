@@ -39,10 +39,10 @@ public class LevelUpModifierSlash extends SlashCommand{
                 "ON DUPLICATE KEY UPDATE exp_value = "+ value +";";
         sql.runQuery(query);
         if(gs.getServer(event.getGuild().getId()).getRoom(Long.parseLong(channel)) == null){
-            Room r = new Room(Long.parseLong(channel),null, true, String.valueOf(value), true);
+            Room r = new Room(Long.parseLong(channel),null, true, value, true);
             gs.getServer(event.getGuild().getId()).addRoom(r);
         }else{
-           gs.getServer(event.getGuild().getId()).setExpValueRoom(Long.parseLong(channel), String.valueOf(value)); 
+           gs.getServer(event.getGuild().getId()).setExpValueRoom(Long.parseLong(channel), value); 
         }
         event.deferReply(false).addContent("You will gain " + value + " times the normal amount of exp in this channel").queue();
     }

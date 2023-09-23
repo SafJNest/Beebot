@@ -321,7 +321,7 @@ public class EventHandler extends ListenerAdapter {
             String query = "INSERT INTO rewards_table (guild_id, role_id, level, message_text) VALUES ('" + event.getGuild().getId() + "', '" + role + "', '" + lvl + "', '" + msg + "');";
             DatabaseHandler.getSql().runQuery(query);
             event.deferEdit().queue();
-            RewardsSlash.createEmbed(event.getMessage(), event.getGuild()).queue();
+            RewardsSlash.createEmbed(event.getMessage()).queue();
         }
     }
 

@@ -49,7 +49,7 @@ public class PrintCache extends Command {
         for(GuildData gd : gs.cache.values()){
             try {
                 if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot"))
-                msg += "SERVER: " + event.getJDA().getGuildById(gd.getId()).getName() + " | PREFIX: " + gd.getPrefix() + " | EXP: " + gd.getExpSystem() + " | Threshariel: " + gd.getThreshold() + "\n";
+                msg += "SERVER: " + event.getJDA().getGuildById(gd.getId()).getName() + " | PREFIX: " + gd.getPrefix() + " | EXP: " + gd.isExpSystemEnabled() + " | Threshariel: " + gd.getThreshold() + "\n";
             } catch (Exception e) {
                continue;
             }

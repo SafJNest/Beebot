@@ -20,7 +20,6 @@ public class ExpSystem {
      */
     private HashMap<String, UserTime> users;
     
-
     /**
      * Constructor for the ExpSystem class.
      */
@@ -41,19 +40,19 @@ public class ExpSystem {
      * @return
      */
     public synchronized int receiveMessage(String userId, String guildId, double modifier) {
-        if(!users.containsKey(userId+"-"+guildId)){
-            users.put(userId+"-"+guildId, new UserTime());
+        if(!users.containsKey(userId + "-" + guildId)) {
+            users.put(userId + "-" + guildId, new UserTime());
             return addExp(userId, guildId, modifier);
         }
-        UserTime user =  users.get(userId+"-"+guildId);
+
+        UserTime user = users.get(userId + "-" + guildId);
         if (user.canReceiveExperience()) {
            return addExp(userId, guildId, modifier);
-           
-        }else{
-           return -1;
         }
         
+        return -1;
     }
+
 
     /**
      * This method is used to calculate the experience that the user will receive.
@@ -119,35 +118,30 @@ public class ExpSystem {
      * @return
      * int
      */
-    public int addExp(String userId, String guildId, double modifer){
-        int exp, lvl, msg;
-        String query = "select exp, level, messages from exp_table where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
+    public int addExp(String userId, String guildId, double modifer) {
+        String query = "SELECT exp, level, messages FROM exp_table WHERE user_id = '" + userId + "' AND guild_id = '" + guildId + "';";
         ArrayList<String> arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
-        if(arr == null){
-            query = "INSERT INTO exp_table (user_id, guild_id, exp, level, messages) VALUES ('"+userId+"','"+guildId+"',"+0+","+1+","+0+");";
-            if(!DatabaseHandler.getSql().runQuery(query))
+        if (arr == null) {
+            query = "INSERT INTO exp_table (user_id, guild_id, exp, level, messages) VALUES ('" + userId + "','" + guildId + "',0,1,0);";
+            if (!DatabaseHandler.getSql().runQuery(query)) {
                 return -1;
-            exp = Math.round(Float.parseFloat(String.valueOf(Double.parseDouble(String.valueOf(calculateExp()))*modifer)));
-            lvl = 1;
-            msg = 1;
-        }else{
+            }
+            return 1;
+        }
 
-            int newExp = Math.round(Float.parseFloat(String.valueOf(Double.parseDouble(String.valueOf(calculateExp()))*modifer)));
-            exp = Integer.valueOf(arr.get(0)) + newExp;
-            lvl = Integer.valueOf(arr.get(1));
-            msg = Integer.valueOf(arr.get(2)) + 1;
-        }
+        int exp = Integer.valueOf(arr.get(0)) + Math.round(Float.parseFloat(String.valueOf(Double.parseDouble(String.valueOf(calculateExp())) * modifer)));
+        int lvl = Integer.valueOf(arr.get(1));
+        int msg = Integer.valueOf(arr.get(2)) + 1;
+
         int expNeeded = totalExpToLvlUp(lvl + 1) - exp;
-        if(expNeeded <= 0){
-            query = "update exp_table set exp = " + exp + ", level = " + (lvl+1) + ", messages = "+msg+" where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
+        if (expNeeded <= 0) {
+            query = "UPDATE exp_table SET exp = " + exp + ", level = " + (lvl + 1) + ", messages = " + msg + " WHERE user_id = '" + userId + "' AND guild_id = '" + guildId + "';";
             DatabaseHandler.getSql().runQuery(query);
-            return lvl+1;
+            return lvl + 1;
         }
-        
-        query = "update exp_table set exp = " + exp + ", messages = "+msg+" where user_id ='"+userId+"' and guild_id = '"+guildId+"';";
+
+        query = "UPDATE exp_table SET exp = " + exp + ", messages = " + msg + " WHERE user_id = '" + userId + "' AND guild_id = '" + guildId + "';";
         DatabaseHandler.getSql().runQuery(query);
         return -1;
-        
-
-    }   
+    }
 }

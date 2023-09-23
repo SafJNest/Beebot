@@ -1,8 +1,6 @@
 package com.safjnest.SlashCommands.Math;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import com.safjnest.Utilities.CommandsLoader;
@@ -37,27 +35,17 @@ public class PrimeSlash extends SlashCommand {
 
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        try {
-                String primi = SafJNest.getFirstPrime(SafJNest.randomBighi(event.getOption("value").getAsInt()));
-                if (primi.length() > 2000) {
-                    File supp = new File("primi.txt");
-                    FileWriter app;
-                    try {
-                        app = new FileWriter(supp);
-                        app.write(primi);
-                        app.flush();
-                        app.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    event.deferReply(true).addContent("The prime number is too big for discord, so here's a file:").addFiles(FileUpload.fromData(supp)).queue();
-                } else {
-                    event.deferReply(false).addContent(primi).queue();
-                }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            
-        }
+        String primi = SafJNest.getFirstPrime(SafJNest.randomBigInteger(event.getOption("value").getAsInt()));
+        if (primi.length() > 2000) {
+            event.deferReply(false).addContent("The prime number is too big for discord, so here's a file:")
+                .addFiles(FileUpload.fromData(
+                    primi.getBytes(StandardCharsets.UTF_8),
+                    "prime.txt"
+                )
+            ).queue();
+        } 
+        else {
+            event.deferReply(false).addContent(primi).queue();
+        }    
 	}
 }

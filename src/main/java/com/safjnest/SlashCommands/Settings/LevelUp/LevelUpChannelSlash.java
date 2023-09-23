@@ -39,7 +39,7 @@ public class LevelUpChannelSlash extends SlashCommand{
                 
         sql.runQuery(query);
         if(gs.getServer(event.getGuild().getId()).getRoom(Long.parseLong(channel)) == null){
-            Room r = new Room(Long.parseLong(channel),null, buly, "1", true);
+            Room r = new Room(Long.parseLong(channel),null, buly, 1, true);
             gs.getServer(event.getGuild().getId()).addRoom(r);
         }else{
            gs.getServer(event.getGuild().getId()).setExpSystemRoom(Long.parseLong(channel), buly); 

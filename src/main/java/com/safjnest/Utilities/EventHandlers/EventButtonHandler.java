@@ -47,43 +47,44 @@ public class EventButtonHandler extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
-
-        if(event.getButton().getId().startsWith("rewards-")){
+        String buttonId = event.getButton().getId();
+        
+        if(buttonId.startsWith("rewards-")){
             rewardsButtonEvent(event);
             return;
         }
 
         event.deferEdit().queue();
-        if (event.getButton().getId().startsWith("lol-")) 
+
+        if (buttonId.startsWith("lol-")) 
             lolButtonEvent(event);
         
-        else if (event.getButton().getId().startsWith("match-")) 
+        else if (buttonId.startsWith("match-")) 
             matchButtonEvent(event);
 
-        else if (event.getButton().getId().startsWith("rank-")) 
+        else if (buttonId.startsWith("rank-")) 
             rankButtonEvent(event);
 
-        else if (event.getButton().getId().startsWith("list-")) 
+        else if (buttonId.startsWith("list-")) 
             listButtonEvent(event);
 
-        else if (event.getButton().getId().startsWith("listuser-")) 
+        else if (buttonId.startsWith("listuser-")) 
             listUserButtonEvent(event);
 
-        else if(event.getButton().getId().startsWith("ban-"))
+        else if(buttonId.startsWith("ban-"))
             banUserEvent(event);
 
-        else if(event.getButton().getId().startsWith("kick-"))
+        else if(buttonId.startsWith("kick-"))
             kickUserEvent(event);
 
-        else if(event.getButton().getId().startsWith("ignore-"))
+        else if(buttonId.startsWith("ignore-"))
             ignoreUserEvent(event);
 
-        else if(event.getButton().getId().startsWith("unban-"))
+        else if(buttonId.startsWith("unban-"))
             pardonUserEvent(event);
 
-        else if(event.getButton().getId().startsWith("soundboard-"))
+        else if(buttonId.startsWith("soundboard-"))
             soundboardEvent(event);
-        
     }
 
 
@@ -526,13 +527,12 @@ public class EventButtonHandler extends ListenerAdapter {
 
     private void rewardsButtonEvent(ButtonInteractionEvent event) {
         if(!event.getMember().hasPermission(Permission.ADMINISTRATOR)){
-            event.deferReply().addContent("You don't have the permission to do that.").queue();
+            event.deferReply(true).addContent("You don't have the permission to do that.").queue();
             return;
         }
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
         
         switch (args){
-            
             case "add":
                 TextInput subject = TextInput.create("rewards-lvl", "Level", TextInputStyle.SHORT)
                     .setPlaceholder("1")
@@ -556,7 +556,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         .addComponents(ActionRow.of(subject), ActionRow.of(body), ActionRow.of(role))
                         .build();
                 event.replyModal(modal).queue();
-                break;
+            break;
 
             default:
                 if(event.getButton().getId().startsWith("rewards-role-")){
@@ -565,16 +565,14 @@ public class EventButtonHandler extends ListenerAdapter {
                         String query = "DELETE FROM rewards_table WHERE role_id = '" + roleString + "';";
                         DatabaseHandler.getSql().runQuery(query);
                         event.deferEdit().queue();
-                        RewardsSlash.createEmbed(event.getMessage(), event.getGuild()).queue();
+                        RewardsSlash.createEmbed(event.getMessage()).queue();
                         return;
                     }
                     //modify button style into danger
                     
                     event.editButton(event.getButton().withStyle(ButtonStyle.DANGER)).queue();
-                    
                 }
-                break;
-
+            break;
         }
     }
 
