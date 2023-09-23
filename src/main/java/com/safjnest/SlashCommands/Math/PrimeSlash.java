@@ -35,17 +35,19 @@ public class PrimeSlash extends SlashCommand {
 
 	@Override
 	protected void execute(SlashCommandEvent event) {
+        event.deferReply(false).queue();
         String primi = SafJNest.getFirstPrime(SafJNest.randomBigInteger(event.getOption("value").getAsInt()));
         if (primi.length() > 2000) {
-            event.deferReply(false).addContent("The prime number is too big for discord, so here's a file:")
-                .addFiles(FileUpload.fromData(
+            event.getHook().editOriginal("The prime number is too big for discord, so here's a file:")
+                .setFiles(FileUpload.fromData(
                     primi.getBytes(StandardCharsets.UTF_8),
                     "prime.txt"
                 )
+                
             ).queue();
         } 
         else {
-            event.deferReply(false).addContent(primi).queue();
+            event.getHook().editOriginal(primi).queue();
         }    
 	}
 }
