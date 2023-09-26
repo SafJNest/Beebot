@@ -43,7 +43,6 @@ public class PrimeSlash extends SlashCommand {
                     primi.getBytes(StandardCharsets.UTF_8),
                     "prime.txt"
                 )
-                
             ).queue();
         } 
         else {

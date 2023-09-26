@@ -21,7 +21,6 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.math.BigInteger;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 

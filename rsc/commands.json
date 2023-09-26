@@ -565,6 +565,7 @@
         "alias" : ["randomprime"],
         "help"  : "Calculate a prime number using Fermat's little theorem.",
         "category" : "Math",
+        "cooldown" : "10",
         "arguments" : "[prime] [nbit]"
     },
 
