@@ -36,7 +36,7 @@ public class PrimeSlash extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
-        String primi = SafJNest.getFirstPrime(SafJNest.randomBigInteger(event.getOption("value").getAsInt()));
+        String primi = SafJNest.getRandomPrime(event.getOption("value").getAsInt()).toString();
         if (primi.length() > 2000) {
             event.getHook().editOriginal("The prime number is too big for discord, so here's a file:")
                 .setFiles(FileUpload.fromData(

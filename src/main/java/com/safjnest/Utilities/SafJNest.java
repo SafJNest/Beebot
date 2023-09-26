@@ -165,12 +165,26 @@ public class SafJNest extends Thread {
         return new BigInteger(1, randomBits).add(BigInteger.TWO.pow(numBits));
     }
 
-    public static BigInteger randomBigInteger(int numBits) {
-        Random rnd = new Random();
-        StringBuilder randomBits = new StringBuilder("1");
-        for (int i = 1; i < numBits; i++)
-            randomBits.append(rnd.nextInt(2));
-        return new BigInteger(randomBits.toString(), 2);
+    /**
+     * @Deprecated
+     * 
+     */
+    public static boolean isPrime(BigInteger p) {
+        return (BigInteger.TWO.modPow(p, p).compareTo(BigInteger.TWO) == 0);
+    }
+
+    /**
+     * @Deprecated
+     * 
+     */
+    public static BigInteger getFirstPrime(BigInteger n) {
+        if(n.equals(BigInteger.TWO))
+            return n;
+        if(n.mod(BigInteger.TWO).equals(BigInteger.ZERO))
+            n = n.add(BigInteger.ONE);
+        while(!isPrime(n))
+            n = n.add(BigInteger.TWO);
+        return n;
     }
 
     public static float fastInvSquareRoot(float x) {
@@ -201,15 +215,22 @@ public class SafJNest extends Thread {
         return msg;
     }
 
-    public static boolean isPrime(BigInteger p) {
-        return (BigInteger.TWO.modPow(p, p).compareTo(BigInteger.TWO) == 0);
+    public static BigInteger getRandomBigInteger(int numBits) {
+        return new BigInteger(numBits-1, new Random()).add(BigInteger.TWO.pow(numBits-1));
     }
 
-    public static String getFirstPrime(BigInteger n){
-        n = (n.mod(BigInteger.TWO).equals(BigInteger.ZERO)) ? n.add(BigInteger.ONE) : n.add(BigInteger.ZERO);
-        while(!isPrime(n))
-            n = n.add(BigInteger.TWO);
-        return n.toString();
+    public static BigInteger getRandomPrime(int numBits) {
+        if(numBits < 2)
+            return null;
+
+        BigInteger result = SafJNest.getRandomBigInteger(numBits).nextProbablePrime();
+        if(result.bitLength() > numBits) {
+            result = BigInteger.TWO.pow(numBits - 1).nextProbablePrime();
+            if(result.bitLength() > numBits) {
+                result = null;
+            }
+        }
+        return result;
     }
     
     public static String getJSalt(int byteNum) {
