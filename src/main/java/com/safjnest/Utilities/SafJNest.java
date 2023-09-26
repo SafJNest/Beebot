@@ -221,13 +221,13 @@ public class SafJNest extends Thread {
 
     public static BigInteger getRandomPrime(int numBits) {
         if(numBits < 2)
-            return null;
+            return BigInteger.valueOf(-1);
 
         BigInteger result = SafJNest.getRandomBigInteger(numBits).nextProbablePrime();
         if(result.bitLength() > numBits) {
             result = BigInteger.TWO.pow(numBits - 1).nextProbablePrime();
             if(result.bitLength() > numBits) {
-                result = null;
+                result = BigInteger.valueOf(-1);
             }
         }
         return result;
