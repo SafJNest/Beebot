@@ -226,10 +226,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             new PlaySound(sql), new TTS(tts, sql), new Stop());
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
-            Collections.addAll(commandsList, new Leaderboard());
-
-        if(threadName.equals("beebot canary"))
-            Collections.addAll(commandsList, new Test());
+            Collections.addAll(commandsList, new Leaderboard(), new Test());
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
