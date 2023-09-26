@@ -77,7 +77,10 @@ public class Test extends Command{
                 }
             break;
             case 4:
-                e.reply(SafJNest.randomBigInteger(Integer.parseInt(e.getArgs())).toString());
+                e.reply(SafJNest.getRandomPrime(Integer.parseInt(e.getArgs())).toString());
+            break;
+            case 5:
+
             break;
         }
     }  
