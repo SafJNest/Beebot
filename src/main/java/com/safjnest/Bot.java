@@ -227,6 +227,9 @@ public class Bot extends ListenerAdapter implements Runnable {
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
             Collections.addAll(commandsList, new Leaderboard());
+
+        if(threadName.equals("beebot canary"))
+            Collections.addAll(commandsList, new Test());
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
@@ -246,7 +249,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), 
-                 new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash());
+                new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash());
 
 
         if(threadName.equals("beebot"))

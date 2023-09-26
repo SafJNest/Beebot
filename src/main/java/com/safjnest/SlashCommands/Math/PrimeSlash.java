@@ -28,7 +28,7 @@ public class PrimeSlash extends SlashCommand {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.INTEGER, "value", "Number of bits of the prime to generate", true)
-                .setMinValue(1)
+                .setMinValue(2)
                 .setMaxValue(maxPrime)
         );
     }

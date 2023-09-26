@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Random;
 
+
 /**
  * Classe ufficiale della <a href="https://github.com/SafJNest">SafJNest Corporation</a>
  * <p>
@@ -164,31 +165,12 @@ public class SafJNest extends Thread {
         return new BigInteger(1, randomBits).add(BigInteger.TWO.pow(numBits));
     }
 
-
     public static BigInteger randomBigInteger(int numBits) {
-        if (numBits < 2) {
-            throw new IllegalArgumentException("Number of bits must be at least 2");
-        }
-
-        byte[] randomBytes = new byte[(numBits + 7) / 8];
-        (new Random()).nextBytes(randomBytes);
-        randomBytes[0] |= (byte) (1 << (numBits % 8));
-        return new BigInteger(1, randomBytes);
-    }
-
-    public static BigInteger randomSecureBigInteger(int numBits) {
-        if (numBits < 2) {
-            throw new IllegalArgumentException("Number of bits must be at least 2");
-        }
-
-        byte[] randomBytes = new byte[(numBits + 7) / 8];
-        try {
-            SecureRandom.getInstanceStrong().nextBytes(randomBytes);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Secure random number generator not available", e);
-        }
-        randomBytes[0] |= (byte) (1 << (numBits % 8));
-        return new BigInteger(1, randomBytes);
+        Random rnd = new Random();
+        StringBuilder randomBits = new StringBuilder("1");
+        for (int i = 1; i < numBits; i++)
+            randomBits.append(rnd.nextInt(2));
+        return new BigInteger(randomBits.toString(), 2);
     }
 
     public static float fastInvSquareRoot(float x) {

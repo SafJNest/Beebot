@@ -10,7 +10,7 @@ import java.util.TimerTask;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.SafJNest;
 
 import net.dv8tion.jda.api.entities.Member;
 
@@ -27,28 +27,20 @@ import java.io.File;
  * @since 1.3
  */
 public class Test extends Command{
-    /**
-     * Default constructor for the class.
-     */
+
     public Test(){
         this.name = "test";
         this.aliases = new String[]{"wip"};
         this.help = "";
-        this.cooldown = 0;
         this.category = new Category("Admin");
         this.arguments = "faker";
         this.ownerCommand = true;
         this.hidden = true;
     }
-    /**
-     * This method is called every time a member executes the command.
-    */
-     @Override
-    protected void execute(CommandEvent e) {
-        if(!PermissionHandler.isUntouchable(e.getAuthor().getId()))
-            return;
 
-        switch (3){
+    @Override
+    protected void execute(CommandEvent e) {
+        switch (4){
             case 1:
                 Timer timer = new Timer();
                 /* 
@@ -74,19 +66,21 @@ public class Test extends Command{
                 System.out.println(initialDelay);
                 System.out.println(scheduledDateTime.getDayOfMonth());
                 timer.schedule(new MonthlyTask(), initialDelay, period);
-                break;
+            break;
 
-                case 2:
-                    createAndSaveChartAsPNG();
-                    break;
-                case 3:
-                    for(Member m : e.getJDA().getGuildById("943974473370062948").getMembers()){
-                        System.out.println(m.getEffectiveName() + " " + m.getId());
-                    }
+            case 2:
+                createAndSaveChartAsPNG();
+            break;
+            case 3:
+                for(Member m : e.getJDA().getGuildById("943974473370062948").getMembers()){
+                    System.out.println(m.getEffectiveName() + " " + m.getId());
+                }
+            break;
+            case 4:
+                e.reply(SafJNest.randomBigInteger(Integer.parseInt(e.getArgs())).toString());
+            break;
         }
-        
     }  
-
 
     static class MonthlyTask extends TimerTask {
         @Override
