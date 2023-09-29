@@ -81,8 +81,10 @@ public class EventHandlerBeebot extends ListenerAdapter {
         query = "SELECT message_text FROM levelup_message WHERE guild_id = '" + guildData.getId() + "';";
         arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
 
-        if (arr == null)
+        if (arr == null){
             channel.sendMessage("Congratulations, you are now level: " + lvl).queue();
+            return;
+        }
 
         String message = arr.get(0);
         message = message.replace("#user", newGuy.getAsMention());
