@@ -19,8 +19,10 @@ public class CommandEventHandler implements CommandListener{
     public void onCommand(CommandEvent event, Command command){
         if(!settings.getServer(event.getGuild().getId()).getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
+        
         String commandName = command.getName();
-        String query = "INSERT INTO command_analytic(name, time, user_id, guild_id, bot_id) VALUES ('" + commandName + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + event.getAuthor().getId()+ "', '"+ event.getGuild().getId() +"','"+ event.getSelfMember().getId() +"');";
+        String args = event.getArgs();
+        String query = "INSERT INTO command_analytic(name, time, user_id, guild_id, bot_id, args) VALUES ('" + commandName + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + event.getAuthor().getId()+ "', '"+ event.getGuild().getId() +"','"+ event.getSelfMember().getId() +"', '"+ args +"');";
         DatabaseHandler.getSql().runQuery(query);
     }
 }
