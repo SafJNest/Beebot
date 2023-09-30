@@ -59,7 +59,7 @@ public class ExpSystem {
      * <p> The experience is calculated randomly between 15 and 25.
      * @return
      */
-    public int calculateExp(){
+    public int getRandomExp(){
         return new Random().nextInt((25 - 15) + 1) + 15;
     }
 
@@ -86,8 +86,12 @@ public class ExpSystem {
      * @param lvl
      * @return
      */
-    public static int totalExpToLvlUp(int lvl){
+    public static int getExpToReachLvlFromZero(int lvl){
         return (int) ((5.0/6.0) * (lvl) * (2 * (lvl) * (lvl) + 27 * (lvl) + 91));
+    }
+
+    public static int getExpToReachLvl(int lvl){
+        return ExpSystem.getExpToReachLvlFromZero(lvl + 1) - ExpSystem.getExpToReachLvlFromZero(lvl);
     }
 
 
@@ -99,14 +103,14 @@ public class ExpSystem {
      * @param exp
      * @return 
      */
-    public static int expToLvlUp(int lvl, int exp){
+    public static int getExpToLvlUp(int lvl, int exp){
         if(lvl == 1 && exp < 100)
             lvl = 0;
-        return (exp - totalExpToLvlUp(lvl));
+        return (exp - getExpToReachLvlFromZero(lvl));
     }
 
-    public static int lvlPercentage(int lvl, int exp) {
-        return Math.round((float)ExpSystem.expToLvlUp(lvl, exp)/(float)(ExpSystem.totalExpToLvlUp(lvl + 1) - ExpSystem.totalExpToLvlUp(lvl))*100);
+    public static int getLvlUpPercentage(int lvl, int exp) {
+        return Math.round((float)ExpSystem.getExpToLvlUp(lvl, exp)/(float)(getExpToReachLvl(lvl))*100);
     }
 
     /**
@@ -129,11 +133,11 @@ public class ExpSystem {
             return 1;
         }
 
-        int exp = Integer.valueOf(arr.get(0)) + Math.round(Float.parseFloat(String.valueOf(Double.parseDouble(String.valueOf(calculateExp())) * modifer)));
+        int exp = Integer.valueOf(arr.get(0)) + Math.round((float) ((double) getRandomExp() * modifer));//TODO controlla se funziona
         int lvl = Integer.valueOf(arr.get(1));
         int msg = Integer.valueOf(arr.get(2)) + 1;
 
-        int expNeeded = totalExpToLvlUp(lvl + 1) - exp;
+        int expNeeded = getExpToReachLvlFromZero(lvl + 1) - exp;
         if (expNeeded <= 0) {
             query = "UPDATE exp_table SET exp = " + exp + ", level = " + (lvl + 1) + ", messages = " + msg + " WHERE user_id = '" + userId + "' AND guild_id = '" + guildId + "';";
             DatabaseHandler.getSql().runQuery(query);

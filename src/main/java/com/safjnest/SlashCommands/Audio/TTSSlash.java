@@ -66,6 +66,7 @@ public class TTSSlash extends SlashCommand{
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "text", "Text to be read", true),
             new OptionData(OptionType.STRING, "voice", "Reader's voice (also language)", false)
+                .setAutoComplete(true)
         );
         this.tts = tts;
         this.sql = DatabaseHandler.getSql();
