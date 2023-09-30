@@ -60,7 +60,7 @@ public class LeaderboardSlash extends SlashCommand {
             lvl = Integer.parseInt(databaseData[i][2]);
             exp = Integer.parseInt(databaseData[i][3]);
             data[i][2] = String.valueOf(lvl);
-            data[i][3] = Math.round((float)ExpSystem.expToLvlUp(lvl, exp)/(float)(ExpSystem.totalExpToLvlUp(lvl + 1) - ExpSystem.totalExpToLvlUp(lvl))*100) + "% (" + ExpSystem.expToLvlUp(lvl, exp) + "/" + (ExpSystem.totalExpToLvlUp(lvl + 1) - ExpSystem.totalExpToLvlUp(lvl)) + ") ";
+            data[i][3] = Math.round((float)ExpSystem.getExpToLvlUp(lvl, exp)/(float)(ExpSystem.getExpToReachLvlFromZero(lvl + 1) - ExpSystem.getExpToReachLvlFromZero(lvl))*100) + "% (" + ExpSystem.getExpToLvlUp(lvl, exp) + "/" + (ExpSystem.getExpToReachLvlFromZero(lvl + 1) - ExpSystem.getExpToReachLvlFromZero(lvl)) + ") ";
 
             data[i][4] = databaseData[i][1];
         }

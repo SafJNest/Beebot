@@ -81,7 +81,7 @@ public class MemberInfoSlash extends SlashCommand{
             lvl = Integer.valueOf(arr.get(1));
             msg = Integer.valueOf(arr.get(2));
         }
-        String lvlString = String.valueOf(ExpSystem.expToLvlUp(lvl, exp) + "/" + (ExpSystem.totalExpToLvlUp(lvl + 1) - ExpSystem.totalExpToLvlUp(lvl)));
+        String lvlString = String.valueOf(ExpSystem.getExpToLvlUp(lvl, exp) + "/" + (ExpSystem.getExpToReachLvlFromZero(lvl + 1) - ExpSystem.getExpToReachLvlFromZero(lvl)));
 
         List<String> activityNames = new ArrayList<String>();
         member.getActivities().forEach(activity -> activityNames.add(activity.getName()));

@@ -174,132 +174,148 @@ public class EventHandler extends ListenerAdapter {
 
         else if(e.getFullCommandName().equals("bugsnotifier"))
             name = "help";
+
+        else if(e.getFullCommandName().equals("TTS"))
+            name = "tts";
         
-        switch (name){
-            
+        switch (name) {
             case "play":
-                if(e.getFocusedOption().getValue().equals("")){
-                    String query = "SELECT name, id FROM sound WHERE guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                if (e.getFocusedOption().getValue().equals("")) {
+                    String query = "SELECT name, id FROM sound WHERE guild_id = '" + e.getGuild().getId()
+                            + "' ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0), arr.get(1)));
-                }else{
-                    String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                } else {
+                    String query = "SELECT name, id FROM sound WHERE name LIKE '" + e.getFocusedOption().getValue()
+                            + "%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0), arr.get(1)));
                 }
-                break;
-             case "user_sound":
-                if(e.getFocusedOption().getValue().equals("")){
-                    String query = "SELECT name, id FROM sound WHERE user_id = '" + e.getMember().getId() + "' ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+            break;
+            case "user_sound":
+                if (e.getFocusedOption().getValue().equals("")) {
+                    String query = "SELECT name, id FROM sound WHERE user_id = '" + e.getMember().getId()
+                            + "' ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0) + " (" + arr.get(1) + ")", arr.get(1)));
-                }else{
-                    String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' OR id LIKE '"+e.getFocusedOption().getValue()+ "%' AND user_id = '" + e.getMember().getId() + "' ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                } else {
+                    String query = "SELECT name, id FROM sound WHERE name LIKE '" + e.getFocusedOption().getValue()
+                            + "%' OR id LIKE '" + e.getFocusedOption().getValue() + "%' AND user_id = '"
+                            + e.getMember().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0) + " (" + arr.get(1) + ")", arr.get(1)));
                 }
-                break;
-
+            break;
             case "help":
-
                 List<Command> allCommands = e.getJDA().retrieveCommands().complete();
-                if(e.getFocusedOption().getValue().equals("")){
+                if (e.getFocusedOption().getValue().equals("")) {
                     Collections.shuffle(allCommands);
-                    for(int i = 0; i < 10; i++)
+                    for (int i = 0; i < 10; i++)
                         choices.add(new Choice(allCommands.get(i).getName(), allCommands.get(i).getName()));
-                }else{
-                    for(Command c : allCommands){
-                        if(c.getName().startsWith(e.getFocusedOption().getValue()))
+                } else {
+                    for (Command c : allCommands) {
+                        if (c.getName().startsWith(e.getFocusedOption().getValue()))
                             choices.add(new Choice(c.getName(), c.getName()));
                     }
                 }
-                break;
-
+            break;
             case "champion":
                 List<String> champions = Arrays.asList(RiotHandler.getChampions());
-                if(e.getFocusedOption().getValue().equals("")){
+                if (e.getFocusedOption().getValue().equals("")) {
                     Collections.shuffle(champions);
-                    for(int i = 0; i < 10; i++)
+                    for (int i = 0; i < 10; i++)
                         choices.add(new Choice(champions.get(i), champions.get(i)));
-                }else{
+                } else {
                     int max = 0;
-                    for(int i = 0; i < champions.size() && max < 10; i++){
-                        if(champions.get(i).toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())){
+                    for (int i = 0; i < champions.size() && max < 10; i++) {
+                        if (champions.get(i).toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())) {
                             choices.add(new Choice(champions.get(i), champions.get(i)));
                             max++;
                         }
                     }
                 }
-                break; 
-            
+            break;
             case "infoaugment":
                 List<Augment> augments = RiotHandler.getAugments();
-                if(e.getFocusedOption().getValue().equals("")){
+                if (e.getFocusedOption().getValue().equals("")) {
                     Collections.shuffle(augments);
-                    for(int i = 0; i < 10; i++)
+                    for (int i = 0; i < 10; i++)
                         choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
-                }else{
+                } else {
                     int max = 0;
-                    if(e.getFocusedOption().getValue().matches("\\d+")){
-                        for(int i = 0; i < augments.size() && max < 10; i++){
-                            if(augments.get(i).getId().startsWith(e.getFocusedOption().getValue())){
+                    if (e.getFocusedOption().getValue().matches("\\d+")) {
+                        for (int i = 0; i < augments.size() && max < 10; i++) {
+                            if (augments.get(i).getId().startsWith(e.getFocusedOption().getValue())) {
                                 choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
                                 max++;
                             }
                         }
-                        }else{
-                            for(int i = 0; i < augments.size() && max < 10; i++){
-                                if(augments.get(i).getName().toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())){
-                                    choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
-                                    max++;
-                                }
+                    } else {
+                        for (int i = 0; i < augments.size() && max < 10; i++) {
+                            if (augments.get(i).getName().toLowerCase()
+                                    .startsWith(e.getFocusedOption().getValue().toLowerCase())) {
+                                choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
+                                max++;
                             }
+                        }
                     }
                 }
-            break; 
-
+            break;
             case "soundboard_select":
-                if(e.getFocusedOption().getValue().equals("")){
-                    String query = "SELECT name, id FROM soundboard WHERE guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                if (e.getFocusedOption().getValue().equals("")) {
+                    String query = "SELECT name, id FROM soundboard WHERE guild_id = '" + e.getGuild().getId()
+                            + "' ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0), arr.get(1)));
-                }else{
-                    String query = "SELECT name, id FROM soundboard WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                } else {
+                    String query = "SELECT name, id FROM soundboard WHERE name LIKE '" + e.getFocusedOption().getValue()
+                            + "%' AND guild_id = '" + e.getGuild().getId() + "' ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0), arr.get(1)));
                 }
-                break;
+            break;
             case "sound_remove":
-                if(e.getOption("name") == null)
+                if (e.getOption("name") == null)
                     return;
                 String soundboardId = e.getOption("name").getAsString();
-                if(e.getFocusedOption().getValue().equals("")){
-                    String query = "SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE ss.id = '" + soundboardId + "' ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                if (e.getFocusedOption().getValue().equals("")) {
+                    String query = "SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE ss.id = '"
+                            + soundboardId + "' ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0), arr.get(1)));
-                }else{
-                    String query = "SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '"+e.getFocusedOption().getValue()+"%' AND ss.id = '" + soundboardId + "' ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                } else {
+                    String query = "SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '"
+                            + e.getFocusedOption().getValue() + "%' AND ss.id = '" + soundboardId
+                            + "' ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0), arr.get(1)));
                 }
-                break;
-
+            break;
             case "greet":
-
-                if(e.getFocusedOption().getValue().equals("")){
-                    String query = "SELECT name, id FROM sound WHERE user_id = '" + e.getMember().getId() + "' OR guild_id = '" + e.getGuild().getId() + "' AND public = 1 ORDER BY RAND() LIMIT 25;";
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                if (e.getFocusedOption().getValue().equals("")) {
+                    String query = "SELECT name, id FROM sound WHERE user_id = '" + e.getMember().getId()
+                            + "' OR guild_id = '" + e.getGuild().getId() + "' AND public = 1 ORDER BY RAND() LIMIT 25;";
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0) + " (" + arr.get(1) + ")", arr.get(1)));
                     System.out.println(query);
-                }else{
-                    String query = "SELECT name, id FROM sound WHERE name LIKE '"+e.getFocusedOption().getValue()+"%' OR id LIKE '"+e.getFocusedOption().getValue()+ "%' AND (user_id = '" + e.getMember().getId() + "' OR (guild_id = '" + e.getGuild().getId() + "' AND public = 1)) ORDER BY RAND() LIMIT 25;";
+                } else {
+                    String query = "SELECT name, id FROM sound WHERE name LIKE '" + e.getFocusedOption().getValue()
+                            + "%' OR id LIKE '" + e.getFocusedOption().getValue() + "%' AND (user_id = '"
+                            + e.getMember().getId() + "' OR (guild_id = '" + e.getGuild().getId()
+                            + "' AND public = 1)) ORDER BY RAND() LIMIT 25;";
                     System.out.println(query);
-                    for(ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
+                    for (ArrayList<String> arr : DatabaseHandler.getSql().getAllRows(query, 2))
                         choices.add(new Choice(arr.get(0) + " (" + arr.get(1) + ")", arr.get(1)));
                 }
-                break;
+            break;
+            case "tts":
+                if (e.getFocusedOption().getValue().equals("")) {
+                    //TODO non ho voglia
+                } else {
+
+                }
+            break;
         }
-        
         e.replyChoices(choices).queue();
     }
 
