@@ -147,7 +147,8 @@ public class EventHandler extends ListenerAdapter {
         if(!gs.getServer(event.getGuild().getId()).getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         String commandName = event.getName() + "Slash";
-        String query = "INSERT INTO command_analytic(name, time, user_id, guild_id, bot_id) VALUES ('" + commandName + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + event.getUser().getId()+ "', '"+ event.getGuild().getId() +"','"+ event.getJDA().getSelfUser().getId() +"');";
+        String args = event.getOptions().toString();
+        String query = "INSERT INTO command_analytic(name, time, user_id, guild_id, bot_id, args) VALUES ('" + commandName + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + event.getUser().getId()+ "', '"+ event.getGuild().getId() +"','"+ event.getJDA().getSelfUser().getId() +"', '" + args + "');";
         sql.runQuery(query);
     }
 
