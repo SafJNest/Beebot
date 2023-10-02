@@ -186,13 +186,13 @@ public class Bot extends ListenerAdapter implements Runnable {
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
-                gs.retrieveAllServers();
+                //gs.retrieveAllServers();
                 /* 
                 for(Guild g : event.getJDA().getGuilds()){
                     g.updateCommands().queue();
                 }
                 */
-                System.out.println("[" + threadName + "] INFO Guild cached correctly");
+                System.out.println("[" + threadName + "] INFO no more guild cached correctly");
             }
         });
         

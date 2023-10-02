@@ -12,7 +12,6 @@ import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.LOL.Augment;
 import com.safjnest.Utilities.LOL.RiotHandler;
@@ -440,20 +439,25 @@ public class EventHandler extends ListenerAdapter {
         String timesSql = DatabaseHandler.getSql().getString(query, "times");
         times = times + ((timesSql != null) ? Integer.valueOf(timesSql) : 0);
 
+
+        query = "SELECT guild_id, blacklist_channel, threshold FROM guild_settings WHERE threshold <= '" + times + "' AND blacklist_channel IS NOT NULL AND guild_id != '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "'";
+        System.out.println(query);
+        ArrayList<ArrayList<String>> arr = DatabaseHandler.getSql().getAllRows(query, 3);
+        if(arr == null)
+            return;
+        
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getJDA().getSelfUser().getName());
         eb.setThumbnail(theGuy.getAvatarUrl());
         eb.setTitle(":radioactive:Blacklist:radioactive:");
         eb.setDescription("The member " + theGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
-        for(GuildData g : gs.cache.values()){
-            if(g.getThreshold() == 0 || g.getThreshold() > times || g.getId() == event.getGuild().getIdLong())
-                continue;
-            
-            Guild gg = event.getJDA().getGuildById(g.getId());
+        for(ArrayList<String> g : arr){
+
+            Guild gg = event.getJDA().getGuildById(g.get(0));
             if(gg.getMemberById(theGuy.getId()) == null)
                 continue;
 
-            TextChannel channel = gg.getTextChannelById(g.getBlackChannelId());
+            TextChannel channel = gg.getTextChannelById(g.get(1));
 
             Button kick = Button.primary("kick-" + theGuy.getId(), "Kick");
             Button ban = Button.primary("ban-" + theGuy.getId(), "Ban");
