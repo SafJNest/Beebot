@@ -94,7 +94,6 @@ public class PlayYoutubeSlash extends SlashCommand {
         if(toPlay == null){
             try {
                 URL theUrl = new URL("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=" + video.replace(" ", "+") + "&key=" + youtubeApiKey);
-                System.out.println(theUrl);
                 URLConnection request = theUrl.openConnection();
                 request.connect();
                 JSONParser parser = new JSONParser();
@@ -110,10 +109,6 @@ public class PlayYoutubeSlash extends SlashCommand {
         }
 
         pm = new PlayerManager();
-        
-        AudioManager audioManager = event.getGuild().getAudioManager();
-        audioManager.setSendingHandler(pm.getAudioHandler());
-        audioManager.openAudioConnection(myChannel);
         
         pm.getAudioPlayerManager().loadItem(toPlay, new AudioLoadResultHandler() {
             @Override
@@ -147,17 +142,18 @@ public class PlayYoutubeSlash extends SlashCommand {
             return;
         }
 
+        AudioManager audioManager = event.getGuild().getAudioManager();
+        audioManager.setSendingHandler(pm.getAudioHandler());
+        audioManager.openAudioConnection(myChannel);
+
         EmbedBuilder eb = new EmbedBuilder();
-        eb = new EmbedBuilder();
         eb.setTitle("Playing now:");
-        eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length) , true);
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        //eb.setFooter("*Questo non e' rhythm, questa e' perfezione cit. steve jobs (probabilmente)", null);
-        eb.setColor(Color.decode(
-            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-        ));
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setDescription("[" + pm.getPlayer().getPlayingTrack().getInfo().title + "](" + pm.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + pm.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+        eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length) , true);
+
         event.deferReply(false).addEmbeds(eb.build()).queue();
 	
     }
