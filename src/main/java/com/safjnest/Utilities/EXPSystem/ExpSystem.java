@@ -133,7 +133,7 @@ public class ExpSystem {
             return 1;
         }
 
-        int exp = Integer.valueOf(arr.get(0)) + Math.round((float) ((double) getRandomExp() * modifer));//TODO controlla se funziona
+        int exp = Integer.valueOf(arr.get(0)) + Math.round((float) ((double) getRandomExp() * modifer));
         int lvl = Integer.valueOf(arr.get(1));
         int msg = Integer.valueOf(arr.get(2)) + 1;
 
