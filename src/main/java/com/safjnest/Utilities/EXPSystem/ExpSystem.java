@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import com.safjnest.Utilities.DatabaseHandler;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 
 /**

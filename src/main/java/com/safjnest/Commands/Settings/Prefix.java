@@ -3,8 +3,8 @@ package com.safjnest.Commands.Settings;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.SQL.SQL;
 
 import net.dv8tion.jda.api.Permission;
 

@@ -8,11 +8,11 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.LOL.RiotHandler;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;

@@ -8,11 +8,12 @@ import java.util.ArrayList;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.SoundBoard;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -25,20 +26,18 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
 public class PlaySound extends Command{
-    SQL sql;
     String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
     String fileName;
     PlayerManager pm;
 
 
-    public PlaySound(SQL sql){
+    public PlaySound(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.sql = sql;
     }
 
     @Override
@@ -68,16 +67,10 @@ public class PlaySound extends Command{
         String query = null;
         String id = null, name, guildId, userId, extension;
         boolean isPublic = true;
-        ArrayList<ArrayList<String>> arr = null;
+       
+        QueryResult sounds = fileName.matches("[0123456789]*") ? DatabaseHandler.getSoundsfromId(fileName, event.getGuild().getId(), event.getAuthor().getId()) : DatabaseHandler.getSoundsfromName(fileName, event.getGuild().getId(), event.getAuthor().getId())
 
-        if(fileName.matches("[0123456789]*")){
-            query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + fileName + "' AND  (guild_id = '" + event.getGuild().getId() + "'  OR public = 1 OR user_id = '" + event.getAuthor().getId() + "')";
-        }
-        else{
-            query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + fileName + "' AND (guild_id = '" + event.getGuild().getId() + "'  OR public = 1 OR user_id = '" + event.getAuthor().getId() + "')";
-        }
-
-        if((arr = sql.getAllRows(query, 6)).isEmpty()){
+        if(sounds.isEmpty()){
             event.reply("Couldn't find a sound with that name/id.");
             return;
         }

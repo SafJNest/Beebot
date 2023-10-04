@@ -8,8 +8,8 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Commands.League.GameRank;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.LOL.RiotHandler;
+import com.safjnest.Utilities.SQL.SQL;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;

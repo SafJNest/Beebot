@@ -15,10 +15,9 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-
-import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.LOL.Runes.PageRunes;
 import com.safjnest.Utilities.LOL.Runes.Rune;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;

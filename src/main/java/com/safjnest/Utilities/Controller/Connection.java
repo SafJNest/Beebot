@@ -9,9 +9,9 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 public class Connection extends WebSocketServer {
     

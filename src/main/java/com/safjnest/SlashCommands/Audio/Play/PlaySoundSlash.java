@@ -9,12 +9,12 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.SoundBoard;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.SQL;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;

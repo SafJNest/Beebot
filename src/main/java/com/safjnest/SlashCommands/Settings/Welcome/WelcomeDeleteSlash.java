@@ -3,8 +3,8 @@ package com.safjnest.SlashCommands.Settings.Welcome;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.SQL;
 
 public class WelcomeDeleteSlash extends SlashCommand{
     
