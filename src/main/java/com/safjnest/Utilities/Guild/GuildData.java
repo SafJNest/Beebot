@@ -3,7 +3,7 @@ package com.safjnest.Utilities.Guild;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.safjnest.Utilities.DatabaseHandler;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 
 /**

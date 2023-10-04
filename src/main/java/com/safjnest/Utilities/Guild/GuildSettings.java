@@ -3,7 +3,7 @@ package com.safjnest.Utilities.Guild;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.safjnest.Utilities.DatabaseHandler;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 
 
@@ -34,7 +34,7 @@ public class GuildSettings {
 
     /**
      * This method checks if a guild is in the cache, otherwise will be called {@link GuildSettings#retrieveServer() retrievServer}
-     * to search for it in the {@link com.safjnest.Utilities.SQL mysql database}.
+     * to search for it in the {@link com.safjnest.Utilities.SQL.SQL mysql database}.
      * @param id Server ID
      * @return
      * The {@link com.safjnest.Utilities.Guild.GuildData guildData} if is stored in the cache(or is in the database), otherwise a defult {@link com.safjnest.Utilities.Guild.GuildData guildData}.
@@ -60,7 +60,7 @@ public class GuildSettings {
     }
 
     /**
-     * Search the gived guild in the {@link com.safjnest.Utilities.SQL postgre database}.
+     * Search the gived guild in the {@link com.safjnest.Utilities.SQL.SQL postgre database}.
      * If the query found it all the settings will be downloaded and saved in the cache, otherwise will be used
      * the default settings:
      * <ul>
@@ -92,7 +92,7 @@ public class GuildSettings {
     }
 
     /**
-     * Search the gived guild in the {@link com.safjnest.Utilities.SQL postgre database}.
+     * Search the gived guild in the {@link com.safjnest.Utilities.SQL.SQL postgre database}.
      * If the query found it all the settings will be downloaded and saved in the cache, otherwise will be used
      * the default settings:
      * <ul>

@@ -1,4 +1,4 @@
-package com.safjnest.Utilities;
+package com.safjnest.Utilities.SQL;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -7,8 +7,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-
-
 
 /**
  * Contains all the method to comunicate with SafJNest Database.
@@ -181,8 +179,8 @@ public class SQL {
             return null;
         }
     }
-    
 
+    
     /**
      * Run a query and return an array of strings, so every column with a specified row.
      * <p>For example, if the query returns 5 row, this method will return a specified row with

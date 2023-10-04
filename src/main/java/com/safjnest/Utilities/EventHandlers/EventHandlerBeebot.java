@@ -2,10 +2,10 @@ package com.safjnest.Utilities.EventHandlers;
 
 import java.util.ArrayList;
 
-import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
