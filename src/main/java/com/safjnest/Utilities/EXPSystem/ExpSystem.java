@@ -1,10 +1,10 @@
 package com.safjnest.Utilities.EXPSystem;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.ResultRow;
 
 
 /**
@@ -123,29 +123,25 @@ public class ExpSystem {
      * int
      */
     public int addExp(String userId, String guildId, double modifer) {
-        String query = "SELECT exp, level, messages FROM exp_table WHERE user_id = '" + userId + "' AND guild_id = '" + guildId + "';";
-        ArrayList<String> arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
-        if (arr == null) {
-            query = "INSERT INTO exp_table (user_id, guild_id, exp, level, messages) VALUES ('" + userId + "','" + guildId + "',0,1,0);";
-            if (!DatabaseHandler.getSql().runQuery(query)) {
+        ResultRow expData = DatabaseHandler.getExp(guildId, userId);
+        if (expData == null) {
+            
+            if (!DatabaseHandler.addExpData(guildId, userId)) {
                 return -1;
             }
             return 1;
         }
 
-        int exp = Integer.valueOf(arr.get(0)) + Math.round((float) ((double) getRandomExp() * modifer));
-        int lvl = Integer.valueOf(arr.get(1));
-        int msg = Integer.valueOf(arr.get(2)) + 1;
+        int exp = expData.getAsInt("exp") + Math.round((float) ((double) getRandomExp() * modifer));
+        int lvl = expData.getAsInt("level");
+        int msg = expData.getAsInt("messages") + 1;
 
         int expNeeded = getExpToReachLvlFromZero(lvl + 1) - exp;
         if (expNeeded <= 0) {
-            query = "UPDATE exp_table SET exp = " + exp + ", level = " + (lvl + 1) + ", messages = " + msg + " WHERE user_id = '" + userId + "' AND guild_id = '" + guildId + "';";
-            DatabaseHandler.getSql().runQuery(query);
+            DatabaseHandler.updateExp(guildId, userId, exp,(lvl + 1),  msg);
             return lvl + 1;
         }
-
-        query = "UPDATE exp_table SET exp = " + exp + ", messages = " + msg + " WHERE user_id = '" + userId + "' AND guild_id = '" + guildId + "';";
-        DatabaseHandler.getSql().runQuery(query);
+        DatabaseHandler.updateExp(guildId, userId, exp,  msg);
         return -1;
     }
 }

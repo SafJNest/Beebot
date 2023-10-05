@@ -6,16 +6,16 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.SQL.SQL;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class PrefixSlash extends SlashCommand{
-    private SQL sql;
+
     GuildSettings gs;
-    public PrefixSlash(SQL sql, GuildSettings gs){
+    public PrefixSlash(GuildSettings gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -25,14 +25,13 @@ public class PrefixSlash extends SlashCommand{
         this.userPermissions = new Permission[]{Permission.ADMINISTRATOR};
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "prefix", "New Prefix", true));
-        this.sql = sql;
         this.gs = gs;
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + event.getGuild().getId() + "','" + event.getJDA().getSelfUser().getId()  + "','" + event.getOption("prefix").getAsString() +"') ON DUPLICATE KEY UPDATE prefix = '" + event.getOption("prefix").getAsString() + "';";
-        if(sql.runQuery(query))
+
+        if(DatabaseHandler.insertGuild(event.getGuild().getId(), event.getJDA().getSelfUser().getId(), event.getOption("prefix").getAsString()))
             event.deferReply(false).addContent("The new Prefix is " + event.getOption("prefix").getAsString()).queue();
         else
             event.deferReply(true).addContent("Error").queue();

@@ -1,9 +1,12 @@
 package com.safjnest.Utilities.Guild;
 
-import java.util.ArrayList;
+
 import java.util.HashMap;
 
+
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
+import com.safjnest.Utilities.SQL.ResultRow;
 
 
 /**
@@ -87,17 +90,16 @@ public class GuildData {
      */
     public void loadRooms(){
         rooms = new HashMap<>();
-        String query = "SELECT room_id, room_name, has_exp, exp_value, has_command_stats FROM rooms_settings WHERE guild_id ='" + id + "';";
-        ArrayList<ArrayList<String>> result = DatabaseHandler.getSql().getAllRows(query, 5);
-        for(ArrayList<String> row: result){;
+        QueryResult result = DatabaseHandler.getRoomsData(String.valueOf(id));
+        for(ResultRow row: result){;
             rooms.put(
-                Long.parseLong(row.get(0)),
+                row.getAsLong("room_id"),
                 new Room(
-                    Long.parseLong(row.get(0)), 
-                    row.get(1), 
-                    row.get(2).equals("1") ? true : false, 
-                    Double.parseDouble(row.get(3)),
-                    row.get(4).equals("1") ? true : false
+                    row.getAsLong("room_id"), 
+                    row.get("room_name"), 
+                    row.getAsBoolean("has_exp"), 
+                    row.getAsDouble("exp_value"),
+                    row.getAsBoolean("has_command_stats")
                     )
             );
         }
