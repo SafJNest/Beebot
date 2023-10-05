@@ -40,4 +40,12 @@ public class ResultRow {
             throw new IllegalArgumentException();
         }
     }
+
+    public double getAsDouble(String columnName) {
+        try {
+            return Double.parseDouble(row.get(columnName));
+        } catch (Exception e) {
+            throw new IllegalArgumentException();
+        }
+    }
 }

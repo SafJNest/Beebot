@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class BeeSQL implements Iterable<BeeRoResultRow>{
+public class QueryResult implements Iterable<ResultRow>{
 
     private List<ResultRow> result;
 
@@ -21,7 +21,7 @@ public class BeeSQL implements Iterable<BeeRoResultRow>{
         result.add(row);
     }
 
-    public ResultRowRow get(int index){
+    public ResultRow get(int index){
         return result.get(index);
     }
 

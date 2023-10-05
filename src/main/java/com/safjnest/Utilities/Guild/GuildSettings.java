@@ -1,9 +1,10 @@
 package com.safjnest.Utilities.Guild;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
+import com.safjnest.Utilities.SQL.ResultRow;
 
 
 
@@ -72,19 +73,18 @@ public class GuildSettings {
      * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
      */
     public GuildData retrieveServer(String stringId) {
-        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel FROM guild_settings WHERE guild_id = '" + stringId + "' AND bot_id = '" + botId + "';";
         System.out.println("[CACHE] Retriving guild from database => " + stringId);
-        ArrayList<String> guildArrayList = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
+        ResultRow guildData = DatabaseHandler.getGuildData(stringId, botId);
         
-        if(guildArrayList == null) {
+        if(guildData == null) {
             return insertGuild(stringId);
         }
 
-        Long guildId = Long.parseLong(guildArrayList.get(0));
-        String PREFIX = guildArrayList.get(1);
-        boolean expEnabled = (guildArrayList.get(2).equals("1"));
-        int threshold = Integer.parseInt(guildArrayList.get(3));
-        String blacklistChannel = guildArrayList.get(4);
+        Long guildId = guildData.getAsLong("guild_id");
+        String PREFIX = guildData.get("prefix");
+        boolean expEnabled = guildData.getAsBoolean("exp_enabled");
+        int threshold = guildData.getAsInt("threshold");
+        String blacklistChannel = guildData.get("blacklist_channel");
 
         GuildData guild = new GuildData(guildId, PREFIX, expEnabled, threshold, blacklistChannel);
         saveData(guild);
@@ -104,26 +104,24 @@ public class GuildSettings {
      * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
      */
     public void retrieveAllServers() {
-        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel FROM guild_settings WHERE bot_id = '" + botId + "';";
-        ArrayList<ArrayList<String>> guildsArrayList = DatabaseHandler.getSql().getAllRows(query, 5);
+        QueryResult guilds = DatabaseHandler.getGuildData(botId);
         
-        for(ArrayList<String> guildArrayList : guildsArrayList){
-            Long guildId = Long.parseLong(guildArrayList.get(0));
-            String PREFIX = guildArrayList.get(1);
-            boolean expEnabled = (guildArrayList.get(2).equals("1"));
-            int threshold = Integer.parseInt(guildArrayList.get(3));
-            String blacklistChannel = guildArrayList.get(4);
-    
+        for(ResultRow guildData : guilds){
+           Long guildId = guildData.getAsLong("guild_id");
+            String PREFIX = guildData.get("prefix");
+            boolean expEnabled = guildData.getAsBoolean("exp_enabled");
+            int threshold = guildData.getAsInt("threshold");
+            String blacklistChannel = guildData.get("blacklist_channel");
+
             GuildData guild = new GuildData(guildId, PREFIX, expEnabled, threshold, blacklistChannel);
             saveData(guild);
         }
     }
 
     public GuildData insertGuild(String guildId) {
-        String query = "INSERT INTO guild_settings (guild_id, bot_id, PREFIX, exp_enabled, threshold, blacklist_channel) VALUES ('" + guildId + "', '" + botId + "', '" + PREFIX + "', '0', '0', null);";
-        System.out.println("[ERROR] Missing guild in database => " + query);
+        DatabaseHandler.insertGuild(guildId, guildId, PREFIX);
+        System.out.println("[ERROR] Missing guild in database => " + guildId);
 
-        DatabaseHandler.getSql().runQuery(query);
         GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false, 0, null);
         saveData(guild);
         return guild;

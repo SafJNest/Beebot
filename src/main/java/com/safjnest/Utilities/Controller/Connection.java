@@ -75,8 +75,7 @@ public class Connection extends WebSocketServer {
             case "newPrefix":
                 try {
                     gs.getServer(guildId).setPrefix(parseRequest(message, "prefix"));
-                    String query = "INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" +guildId + "','" + jda.getSelfUser().getId() + "','" + parseRequest(message, "prefix") +"') ON DUPLICATE KEY UPDATE prefix = '" + parseRequest(message, "prefix") + "';";
-                    DatabaseHandler.getSql().runQuery(query);
+                    DatabaseHandler.insertGuild(guildId, userId, parseRequest(message, "prefix"));
                     server = "newPrefix-ok"; 
                 } catch (Exception e) {
                     server = "newPrefix-!ok"; 
