@@ -32,7 +32,5 @@ public class QueryResult implements Iterable<ResultRow>{
     public boolean isEmpty(){
         return result.isEmpty();
     }
-
-
-
+    
 }

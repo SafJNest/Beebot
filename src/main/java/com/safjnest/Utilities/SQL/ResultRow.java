@@ -1,6 +1,7 @@
 package com.safjnest.Utilities.SQL;
 
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class ResultRow {
     Map<String, String> row;
@@ -48,4 +49,13 @@ public class ResultRow {
             throw new IllegalArgumentException();
         }
     }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (Entry<String, String> col : row.entrySet())
+            sb.append(col.getKey()).append(": ").append(col.getValue());
+        return sb.toString();
+    }
+
+    
 }

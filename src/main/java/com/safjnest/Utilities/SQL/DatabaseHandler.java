@@ -51,7 +51,7 @@ public class DatabaseHandler {
     public static QueryResult safJQuery(String query) {
         QueryResult result = new QueryResult();
         try (Statement stmt = c.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+            ResultSet rs = stmt.executeQuery(query)) {
             ResultSetMetaData rsmd = rs.getMetaData();
             while (rs.next()) {
                 Map<String, String> row = new HashMap<>();
@@ -74,7 +74,7 @@ public class DatabaseHandler {
         ResultRow beeRow = null;
 
         try (Statement stmt = c.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+            ResultSet rs = stmt.executeQuery(query)) {
             ResultSetMetaData rsmd = rs.getMetaData();
             if (rs.next()) {
                 Map<String, String> row = new HashMap<>();
@@ -144,6 +144,16 @@ public class DatabaseHandler {
 
     public static QueryResult getSoundsfromName(String name, String guild_id, String author_id) {
         return getSounds("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
+    }
+
+    public static boolean updateUserPlays(String sound_id, String user_id) {
+        return runQuery("INSERT INTO play(user_id, sound_id, times) VALUES('" + user_id + "','" + sound_id + "', 1) ON DUPLICATE KEY UPDATE times = times + 1;");
+    }
+
+    public static QueryResult getPlays(String sound_id, String user_id) {
+        return safJQuery("SELECT"
+            + "(SELECT SUM(times) FROM play WHERE sound_id = '" + sound_id + "') AS totalTimes,"
+            + "(SELECT times FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "') AS timesByUser;");
     }
 
     public static String getLOLAccountIdByUserId(String user_id){
