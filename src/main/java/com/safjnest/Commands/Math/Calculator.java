@@ -11,6 +11,7 @@ import com.safjnest.Utilities.CommandsLoader;
  * This class is used to calculate the result of a mathematical expression.
  * <p>There is one way to use it:</p>
  * By typing <code>%calc</code> followed by the expression you want to calculate.
+ * 
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
  * @since 1.2.5

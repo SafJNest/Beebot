@@ -4,13 +4,14 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
+import com.safjnest.Utilities.SQL.ResultRow;
 
 import net.dv8tion.jda.api.entities.Member;
 
@@ -23,6 +24,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
  * @since 1.3
  */
@@ -122,11 +124,12 @@ public class Test extends Command{
 
     private static DefaultCategoryDataset createDataset() {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        String query = "select time, count(name) as cont from command_analytic where MONTH(time)= 8 group by DAY(time);";
-        ArrayList<ArrayList<String>> result = DatabaseHandler.getSql().getAllRows(query,2);
-        for(ArrayList<String> row : result){
-            System.out.println(row.get(0) + " " + row.get(1));
-            dataset.addValue(Integer.parseInt(row.get(1)), "Comandi", row.get(0));
+        String query = "select time, count(name) as count from command_analytic where MONTH(time) = 8 group by DAY(time);";
+        QueryResult res = DatabaseHandler.safJQuery(query);
+        
+        for(ResultRow row : res){
+            System.out.println(row.get("time") + " " + row.get("count"));
+            dataset.addValue(Integer.parseInt(row.get("count")), "Comandi", row.get("time"));
         }
 
         return dataset;

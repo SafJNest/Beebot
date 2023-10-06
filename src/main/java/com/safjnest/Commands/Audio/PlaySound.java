@@ -24,11 +24,16 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.0
+ */
 public class PlaySound extends Command{
     String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
     String fileName;
     PlayerManager pm;
-
 
     public PlaySound(){
         this.name = this.getClass().getSimpleName();
@@ -60,8 +65,8 @@ public class PlaySound extends Command{
         }
         
         QueryResult sounds = fileName.matches("[0123456789]*") 
-                           ? DatabaseHandler.getSoundsfromId(fileName, event.getGuild().getId(), event.getAuthor().getId()) 
-                           : DatabaseHandler.getSoundsfromName(fileName, event.getGuild().getId(), event.getAuthor().getId());
+                           ? DatabaseHandler.getSoundsById(fileName, event.getGuild().getId(), event.getAuthor().getId()) 
+                           : DatabaseHandler.getSoundsByName(fileName, event.getGuild().getId(), event.getAuthor().getId());
 
         if(sounds.isEmpty()){
             event.reply("Couldn't find a sound with that name/id.");
@@ -82,6 +87,9 @@ public class PlaySound extends Command{
         if(!soundBoard.exists())
             soundBoard.mkdirs();
         String fileName = path + toPlay.get("id") + "." + toPlay.get("extension");
+
+        AudioManager audioManager = event.getGuild().getAudioManager();
+        audioManager.setSendingHandler(pm.getAudioHandler());
 
         pm = new PlayerManager();
         pm.getAudioPlayerManager().loadItem(fileName, new AudioLoadResultHandler() {
@@ -116,12 +124,10 @@ public class PlaySound extends Command{
             return;
         }
 
-        AudioManager audioManager = event.getGuild().getAudioManager();
-        audioManager.setSendingHandler(pm.getAudioHandler());
         audioManager.openAudioConnection(authorChannel);
 
         DatabaseHandler.updateUserPlays(toPlay.get("id"), event.getAuthor().getId());
-        ResultRow plays = DatabaseHandler.getPlays(toPlay.get("id"), event.getAuthor().getId()).get(0);
+        ResultRow plays = DatabaseHandler.getPlays(toPlay.get("id"), event.getAuthor().getId());
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
@@ -149,6 +155,7 @@ public class PlaySound extends Command{
         eb.addField("Guild", "```" 
             + event.getJDA().getGuildById(toPlay.get("guild_id")).getName() 
         + "```", true);
+
         eb.addField("Played", "```" 
             + plays.get("totalTimes") 
             + (plays.get("totalTimes").equals("1") ? " time" : " times") 

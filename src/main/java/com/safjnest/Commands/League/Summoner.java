@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
-
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
@@ -65,7 +64,6 @@ public class Summoner extends Command {
             }
         }
         
-        
         EmbedBuilder builder = createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s);
         
         if(searchByUser && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
@@ -77,9 +75,6 @@ public class Summoner extends Command {
         }
 
         event.reply(builder.build());
-            
-       
-
 	}
 
     public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
@@ -109,5 +104,4 @@ public class Summoner extends Command {
         builder.addField("Activity", RiotHandler.getActivity(jda, s), true);
         return builder;
     }
-
 }

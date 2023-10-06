@@ -1,16 +1,22 @@
 package com.safjnest.Commands.Owner;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.TableHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
 
 import net.dv8tion.jda.api.utils.FileUpload;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.1
+ */
 public class Query extends Command{
     /**
      * Default constructor for the class.
@@ -29,16 +35,18 @@ public class Query extends Command{
     @Override
     protected void execute(CommandEvent event) {
         String query = event.getArgs();
-        ArrayList<ArrayList<String>> res = DatabaseHandler.getSql().getAllRows(query);
-        if(res == null) {
-            event.reply("Wrong query (probably).");
+
+        QueryResult res = DatabaseHandler.safJQuery(query);
+
+        if(res.isEmpty()) {
+            event.reply("```No result```");
             return;
         }
 
         String[][] data = new String[res.size()-1][res.get(0).size()];
         for(int i = 1; i < res.size(); i++)
-            data[i-1] = res.get(i).toArray(new String[0]);
-        String[] headers = res.get(0).toArray(new String[0]);
+            data[i-1] = res.get(i).toArray();
+        String[] headers = res.get(0).toArray();
         
         TableHandler.replaceIdsWithNames(data, event.getJDA());
         String table = TableHandler.constructTable(data, headers);

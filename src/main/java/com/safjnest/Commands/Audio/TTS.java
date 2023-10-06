@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import org.voicerss.tts.Voice.Voices;
 
@@ -14,7 +15,8 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.SQL.SQL;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -26,22 +28,28 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.0
+ */
 public class TTS extends Command{
     private TTSHandler tts;
-    private SQL sql;
     private PlayerManager pm;
     
     public static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
     
-    public TTS(TTSHandler tts, SQL sql){
+    public TTS(TTSHandler tts){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
         this.tts = tts;
-        this.sql = sql;
+
         voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
         voices.put(Voices.Chinese_China.id, Set.of(Voices.Chinese_China.array));
         voices.put(Voices.Dutch_Netherlands.id, Set.of(Voices.Dutch_Netherlands.array));
@@ -60,18 +68,13 @@ public class TTS extends Command{
         voices.put(Voices.Russian.id, Set.of(Voices.Russian.array));
         voices.put(Voices.Swedish.id, Set.of(Voices.Swedish.array));
         voices.put(Voices.Spanish_Spain.id, Set.of(Voices.Spanish_Spain.array));
-
-    
     }
 
     @Override
     protected void execute(CommandEvent event) {
-        String language = "it-it";
-        String voice = "keria";
-        String defaultVoice = "keria";
+        String voice = null, defaultVoice = null, language = null;
         String speech = event.getArgs();
-
-        EmbedBuilder eb = null;
+        EmbedBuilder eb;
 
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
@@ -92,66 +95,66 @@ public class TTS extends Command{
             return;
         }
 
-        if (speech.split(" ")[0].equalsIgnoreCase("list")){
+        String firstWord = speech.split(" ", 2)[0];
+
+        if(firstWord.equalsIgnoreCase("list")) {
             eb = new EmbedBuilder();
             eb.setTitle("Available languages:");
             eb.setColor(new Color(255, 196, 0));
-            String lang = "";
-            String voiceString = "";
-            for(String key : voices.keySet()){
-                lang += "**"+ key.toUpperCase() +"**" + ":\n";
-                for(String s : voices.get(key)){
-                    voiceString += s + " - ";
+            for(Entry<String, Set<String>> entry : voices.entrySet()){
+                StringBuilder lang = new StringBuilder();
+                StringBuilder voiceString = new StringBuilder();
+                lang.append("**" + entry.getKey().toUpperCase() + "**:\n");
+                for(String s : entry.getValue()){
+                    voiceString.append(s + " - ");
                 }
-                eb.addField(lang, voiceString, true);
-                lang = "";
-                voiceString = "";
+                eb.addField(lang.toString(), voiceString.toString(), true);
             }
             eb.setThumbnail(event.getSelfUser().getAvatarUrl());
             event.reply(eb.build());
             return;
         }
 
+        for(String key : voices.keySet()){
+            if(voices.get(key).contains(firstWord)) {
+                language = key;
+                voice = firstWord;
+                break;
+            }
+        }
+
+        if(voice != null){
+            speech = speech.split(" ", 2)[1];
+        }
+        else {
+            ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+            if(defaultVoiceRow != null) {
+                voice = defaultVoiceRow.get("name_tts");
+                language = defaultVoiceRow.get("language_tts");
+                speech = speech.split(" ", 2)[1];
+
+                defaultVoice = voice;
+            }
+            else {
+                voice = "mia";
+                language = "it-it";
+            }
+        }
+
         File file = new File("rsc" + File.separator + "tts");
         if(!file.exists())
             file.mkdirs();
-        
-        //check if there is a defualt voice setted in user's guild
-        String query = "SELECT name_tts FROM guild_settings WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-        if(sql.getString(query, "name_tts") != null)
-            defaultVoice = sql.getString(query, "name_tts");
-        
-        //check if the user asked a tts with another voice pt Mia blablabla 
-        for(String key : voices.keySet()){
-            if(voices.get(key).contains(speech.split(" ")[0])){
-                language = key;
-                voice = speech.split(" ")[0];
-            }
-        }
-        if(!voice.equals("keria")){
-            speech = speech.substring(speech.indexOf(" "));
-        }
-        else if(!defaultVoice.equals("keria")){ //if true means there is a default voice set so the user wants to use it
-            voice = defaultVoice;
-            query = "SELECT language_tts FROM guild_settings WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-            language = sql.getString(query, "language_tts");
-            speech = event.getArgs();
-        }
-        else{ //means the user is unable to use the bot so @NeutronSun set a default default voice of piece of shit like repolo
-            voice = "Not setted"; 
-            defaultVoice = voice; 
-            speech = event.getArgs();
-        }
+
         tts.makeSpeech(speech, event.getAuthor().getName(), voice, language);
         
-        String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
+        String ttsFileName = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
         
         pm = new PlayerManager();
+        
         AudioManager audioManager = event.getGuild().getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
-        audioManager.openAudioConnection(myChannel);
 
-        pm.getAudioPlayerManager().loadItem(nameFile, new AudioLoadResultHandler() {
+        pm.getAudioPlayerManager().loadItem(ttsFileName, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
                 pm.getTrackScheduler().addQueue(track);
@@ -182,6 +185,8 @@ public class TTS extends Command{
         if(pm.getPlayer().getPlayingTrack() == null) {
             return;
         }
+
+        audioManager.openAudioConnection(myChannel);
         
         eb = new EmbedBuilder();
         eb.setTitle("Playing now:");
@@ -190,7 +195,7 @@ public class TTS extends Command{
         eb.setThumbnail(event.getSelfUser().getAvatarUrl());
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest",event.getAuthor().getAvatarUrl());
         
-        eb.addField("Lenght",SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length),true);
+        eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length),true);
         eb.addField("Language", language, true);
         eb.addBlankField(true);
         eb.addField("Voice", voice, true);
