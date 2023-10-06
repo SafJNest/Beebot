@@ -114,46 +114,78 @@ public class DatabaseHandler {
         return safJQuery(query);
     }
 
-    public static QueryResult getSounds(String filter){
-        String query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE " + filter + ";";
-        System.out.println(query);
-        return safJQuery(query);
-    }
-
-    public static QueryResult getSounds(String filter, String custom){
-        String query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE " + filter + " " + custom + ";";
-        System.out.println(query);
-        return safJQuery(query);
-    }
-
     public static QueryResult getlistGuildSounds(String guild_id) {
-        return getSounds("where guild_id = '" + guild_id + "'", "ORDER BY name ASC LIMIT 24");
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC LIMIT 24");
     }
 
     public static QueryResult getlistUserSounds(String user_id) {
-        return getSounds("WHERE user_id = '" + user_id + "' ", "ORDER BY name ASC LIMIT 24");
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' ORDER BY name ASC LIMIT 24");
     }
 
     public static QueryResult getlistUserSounds(String user_id, String guild_id) {
-        return getSounds("where user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1)", "ORDER BY name ASC LIMIT 24");
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY name ASC LIMIT 24");
     }
 
-    public static QueryResult getSoundsfromId(String id, String guild_id, String author_id) {
-        return getSounds("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + id + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
+    public static QueryResult getSoundsById(String id, String guild_id, String author_id) {
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + id + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
 
-    public static QueryResult getSoundsfromName(String name, String guild_id, String author_id) {
-        return getSounds("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
+    public static QueryResult getSoundsByName(String name, String guild_id, String author_id) {
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
+    }
+
+    public static QueryResult getDuplicateSoundsByName(String name, String guild_id, String author_id) {
+        return safJQuery("SELECT id, guild_id, user_id FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "' OR user_id = '" + author_id + "')");
+    }
+
+    public static ResultRow getAuthorSoundById(String id, String user_id) {
+        return fetchJRow("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + id + "' AND user_id = '" + user_id + "'");
+    }
+
+    public static ResultRow getAuthorSoundByName(String name, String user_id) {
+        return fetchJRow("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + name + "' AND user_id = '" + user_id + "'");
+    }
+
+    public static String insertSound(String name, String guild_id, String user_id, String extension, boolean isPublic) {
+        return fetchJRow("START TRANSACTION; "
+            + "INSERT INTO sound(name, guild_id, user_id, extension, public) VALUES('" + name + "','" + guild_id + "','" + user_id + "','" + extension + "', " + ((isPublic == true) ? "1" : "0") + "); "
+            + "SELECT LAST_INSERT_ID() AS id; "
+            + "COMMIT;")
+            .get("id");
+    }
+
+    public static boolean updateSound(String id, String name, boolean isPublic) {
+        return runQuery("UPDATE sound SET name = '" + name + "', public = '" + (isPublic ? "1" : "0") + "' WHERE id = '" + id + "';");
+    }
+
+    public static boolean deleteSound(String id) {
+        return runQuery("DELETE FROM sound WHERE id = " + id + ";");
     }
 
     public static boolean updateUserPlays(String sound_id, String user_id) {
         return runQuery("INSERT INTO play(user_id, sound_id, times) VALUES('" + user_id + "','" + sound_id + "', 1) ON DUPLICATE KEY UPDATE times = times + 1;");
     }
 
-    public static QueryResult getPlays(String sound_id, String user_id) {
-        return safJQuery("SELECT"
+    public static ResultRow getPlays(String sound_id, String user_id) {
+        return fetchJRow("SELECT"
             + "(SELECT SUM(times) FROM play WHERE sound_id = '" + sound_id + "') AS totalTimes,"
             + "(SELECT times FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "') AS timesByUser;");
+    }
+
+    public static String getSoundsUploadedByUserCount(String user_id) {
+        return fetchJRow("select count(name) as count from sound where user_id = '" + user_id + "';").get("count");
+    }
+
+    public static String getSoundsUploadedByUserCount(String user_id, String guild_id) {
+        return fetchJRow("select count(name) as count from sound where guild_id = '" + guild_id + "' AND user_id = '" + user_id + "';").get("count");
+    }
+
+    public static String getTotalPlays(String user_id) {
+        return fetchJRow("select sum(times) as sum from play where user_id = '" + user_id + "';").get("sum");
+    }
+
+    public static ResultRow getDefaultVoice(String guild_id, String bot_id) {
+        return fetchJRow("SELECT name_tts, language_tts FROM guild_settings WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
 
     public static String getLOLAccountIdByUserId(String user_id){
@@ -167,7 +199,7 @@ public class DatabaseHandler {
     }
 
     public static boolean addLOLAccount(String user_id, String summoner_id, String account_id){
-        String query = "INSERT INTO lol_user(user_id, summoner_id, account_id) VALUES('"+user_id+"','"+summoner_id+"','"+account_id+"');";
+        String query = "INSERT INTO lol_user(user_id, summoner_id, account_id) VALUES('" + user_id + "','" + summoner_id + "','" + account_id + "');";
         return runQuery(query);
     }
 
@@ -225,17 +257,31 @@ public class DatabaseHandler {
         String  query = "UPDATE exp_table SET exp = " + exp + ", messages = " + messages + " WHERE user_id = '" + user_id + "' AND guild_id = '" + guild_id + "';";
         return runQuery(query);
     }
+
+    public static QueryResult getUsersByExp(String guild_id, int limit) {
+        return safJQuery("SELECT user_id, messages, level, exp from exp_table WHERE guild_id = '" + guild_id + "' order by exp DESC limit " + limit + ";");
+    }
+
+    public static QueryResult getLolAccounts(String user_id) {
+        return safJQuery("SELECT summoner_id FROM lol_user WHERE user_id = '" + user_id + "';");
+    }
+
+    public static ResultRow getUserExp(String user_id, String guild_id) {
+        return fetchJRow("select exp, level, messages from exp_table where user_id ='" + user_id + "' and guild_id = '" + guild_id + "';");
+    }
+
+    public static ResultRow getAlert(String guild_id) {
+        return fetchJRow("SELECT * FROM alert WHERE guild_id = '" + guild_id + "'");
+    }
+
+    public static boolean setPrefix(String guild_id, String bot_id, String prefix) {
+        return runQuery("INSERT INTO guild_settings(guild_id, bot_id, prefix)" + "VALUES('" + guild_id + "','" + bot_id + "','" + prefix +"') ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';");
+    }
+
+    public static boolean updatePrefix(String guild_id, String bot_id, String prefix) {
+        return runQuery("UPDATE guild_settings SET prefix = '" + prefix + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+    }
     
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -257,5 +303,6 @@ public class DatabaseHandler {
     public static String getCannuccia(){
         return ":cannuccia:";
     }
+
     
 }

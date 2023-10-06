@@ -10,7 +10,6 @@ import java.util.Map;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL.SQL;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -23,12 +22,11 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
  */
 public class LastMatches extends Command {
     private R4J r;
-    private SQL sql;
     
     /**
      * Constructor
      */
-    public LastMatches(R4J r, SQL sql){
+    public LastMatches(R4J r){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -36,7 +34,6 @@ public class LastMatches extends Command {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.r = r;
-        this.sql = sql;
     }
 
     /**

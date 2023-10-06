@@ -14,9 +14,6 @@ import com.safjnest.Utilities.CommandsLoader;
 
 public class Ping extends Command {
 
-    /**
-     * Default constructor for the class.
-     */
     public Ping(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
@@ -26,9 +23,7 @@ public class Ping extends Command {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.hidden = true;
     }
-    /**
-     * This method is called every time a member executes the command.
-     */
+
     @Override
     protected void execute(CommandEvent e) {
         long time = System.currentTimeMillis();

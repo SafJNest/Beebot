@@ -35,11 +35,7 @@ public class ResultRow {
     }
 
     public boolean getAsBoolean(String columnName){
-        try {
-            return Boolean.parseBoolean(row.get(columnName));
-        } catch (Exception e) {
-            throw new IllegalArgumentException();
-        }
+        return "1".equals(row.get(columnName)) || "true".equalsIgnoreCase(row.get(columnName));
     }
 
     public double getAsDouble(String columnName) {
@@ -50,12 +46,24 @@ public class ResultRow {
         }
     }
 
+    public int size() {
+        return row.size();
+    }
+
+    public String[] toArray() {
+        String[] array = new String[row.size()];
+        int i = 0;
+        for(String col : row.values()) {
+            array[i] = col;
+            i++;
+        }
+        return array;
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (Entry<String, String> col : row.entrySet())
             sb.append(col.getKey()).append(": ").append(col.getValue());
         return sb.toString();
     }
-
-    
 }

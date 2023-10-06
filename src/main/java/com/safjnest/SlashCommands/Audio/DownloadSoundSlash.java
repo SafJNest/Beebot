@@ -1,14 +1,14 @@
 package com.safjnest.SlashCommands.Audio;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.SQL;
+import com.safjnest.Utilities.SQL.QueryResult;
+import com.safjnest.Utilities.SQL.ResultRow;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.utils.FileUpload;
 
 public class DownloadSoundSlash extends SlashCommand{
     String path = "rsc" + File.separator + "SoundBoard" + File.separator;
-    SQL sql;
 
     public DownloadSoundSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -27,52 +26,45 @@ public class DownloadSoundSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.sql = DatabaseHandler.getSql();
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sound", "Sound to download", true));
+            new OptionData(OptionType.STRING, "sound", "Sound to download", true)
+        );
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
         String fileName = event.getOption("sound").getAsString();
-        String query = null;
-        String id = null, extension;
-        ArrayList<ArrayList<String>> arr = null;
 
-        if(fileName.matches("[0123456789]*")){
-            query = "SELECT id, guild_id, extension FROM sound WHERE id = '" + fileName + "' AND (user_id = '" + event.getMember().getId() + "' OR public = '1')";
-        }
-        else{
-            query = "SELECT id, guild_id, extension FROM sound WHERE name = '" + fileName + "' AND (user_id = '" + event.getMember().getId() + "' OR public = '1')";
-        }
+        QueryResult sounds = fileName.matches("[0123456789]*") 
+                           ? DatabaseHandler.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
+                           : DatabaseHandler.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
 
-        if((arr = sql.getAllRows(query, 3)).isEmpty()){
-            event.deferReply(true).addContent("Couldn't find a sound with that name/id.").queue();
+        if(sounds.isEmpty()){
+            event.reply("Couldn't find a sound with that name/id.");
             return;
         }
-        int indexForKeria = -1;
-        for(int i = 0; i < arr.size(); i++){
-            if(arr.get(i).get(1).equals(event.getGuild().getId())){
-               indexForKeria = i;
-               break;
+
+        ResultRow toDownload = null;
+        for(ResultRow sound : sounds) {
+            if(sound.get("guild_id") == event.getGuild().getId()) {
+                toDownload = sound;
             }
         }
         
-        if(indexForKeria == -1){
-            indexForKeria = (int)(Math.random()*arr.size());
-            event.deferReply(false).addContent("Couldn't find a sound with this name on your guild so i downloaded a random sound with this name.").queue();
+        if(toDownload == null){
+            toDownload = sounds.get((int)(Math.random() * sounds.size()));
+
+            fileName = path + toDownload.get("id") + "." + toDownload.get("extension");
+
+            event.deferReply(false).addContent("Couldn't find a sound with this name on your guild so i downloaded a random sound with this name.")
+                .setFiles(FileUpload.fromData(new File(fileName)))
+                .queue();
         }
         else{
-            event.deferReply(false).addContent("Downloading the sound with this name from your guild.").queue();
+            fileName = path + toDownload.get("id") + "." + toDownload.get("extension");
+            event.deferReply(false).addContent("Downloading the sound with this name from your guild.")
+                .setFiles(FileUpload.fromData(new File(fileName)))
+                .queue();
         }
-
-        id = arr.get(indexForKeria).get(0);
-        extension = arr.get(indexForKeria).get(2);
-
-        fileName = id + "." + extension;
-
-        File toSend = new File(path + fileName);
-        event.getHook().sendFiles(FileUpload.fromData(toSend)).queue();
-
     }
 }

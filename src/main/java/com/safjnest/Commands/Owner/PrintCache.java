@@ -18,7 +18,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
- * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
  * 
  * @since 1.0
  */

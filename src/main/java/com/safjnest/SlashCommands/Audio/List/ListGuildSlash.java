@@ -8,6 +8,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
+import com.safjnest.Utilities.SQL.ResultRow;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -15,6 +17,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
  * @since 1.1
  */
@@ -36,35 +39,26 @@ public class ListGuildSlash extends SlashCommand{
         center = center.withStyle(ButtonStyle.SUCCESS);
         center = center.asDisabled();
 
-
         EmbedBuilder eb = new  EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest", event.getUser().getAvatarUrl());
-        eb.setTitle("List of " + event.getGuild().getName());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(
-            BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color
-        ));
-        String query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + event.getGuild().getId() + "' ORDER BY name ASC;";
-        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 6);
+        eb.setTitle("List of " + event.getGuild().getName());
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+
+        QueryResult sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId());
+
         eb.setDescription("Total Sound: " + sounds.size());
-        int cont = 0;
-        while(cont <24 && cont < sounds.size()){
-            String locket = (sounds.get(cont).get(5).equals("0")) ? ":lock:" : "";
-            eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
-            cont++;
-        }
         
+        for(ResultRow sound : sounds){
+            String locket = sound.getAsBoolean("public") ? "" : ":lock:";
+            eb.addField("**" + sound.get("name") + "**" + locket, "ID: " + sound.get("id"), true);
+        }
+         
         if(sounds.size() <= 24){
             right = right.withStyle(ButtonStyle.DANGER);
             right = right.asDisabled();
         }
+         
         event.deferReply(false).addEmbeds(eb.build()).addActionRow(left, center, right).queue();
     }
-
-    
-
-    
-
-    
-   
 }

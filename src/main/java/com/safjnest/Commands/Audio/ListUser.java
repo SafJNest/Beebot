@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
  * @since 2.1
  */
@@ -66,7 +67,7 @@ public class ListUser extends Command{
         eb.setDescription("Total Sound: " + sounds.size());
 
         for(ResultRow sound : sounds){
-            String locket = (sound.getAsBoolean("public")) ? ":lock:" : "";
+            String locket = sound.getAsBoolean("public") ? "" : ":lock:";
             eb.addField("**" + sound.get("name") + "**" + locket, "ID: " + sound.get("id"), true);
         }
         
