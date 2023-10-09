@@ -6,7 +6,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.SQL;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -57,5 +56,4 @@ public class WelcomeTextSlash extends SlashCommand{
         
         event.deferReply(false).addContent("Welcome message set.").queue();
     }
-    
 }
