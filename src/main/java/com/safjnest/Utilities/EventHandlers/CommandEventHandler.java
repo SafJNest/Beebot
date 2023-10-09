@@ -1,7 +1,5 @@
 package com.safjnest.Utilities.EventHandlers;
 
-import java.sql.Timestamp;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.CommandListener;
@@ -22,7 +20,6 @@ public class CommandEventHandler implements CommandListener{
         
         String commandName = command.getName();
         String args = event.getArgs();
-        String query = "INSERT INTO command_analytic(name, time, user_id, guild_id, bot_id, args) VALUES ('" + commandName + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + event.getAuthor().getId()+ "', '"+ event.getGuild().getId() +"','"+ event.getSelfMember().getId() +"', '"+ args +"');";
-        DatabaseHandler.getSql().runQuery(query);
+        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getJDA().getSelfUser().getId(), event.getMember().getId(), commandName, args);
     }
 }
