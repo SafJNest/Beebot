@@ -31,11 +31,4 @@ public class SoundboardSlash extends SlashCommand{
 	public void execute(SlashCommandEvent event) {
         
     }
-
-    
-
-    
-
-    
-   
 }
