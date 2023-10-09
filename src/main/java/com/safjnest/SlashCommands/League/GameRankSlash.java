@@ -9,7 +9,6 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Commands.League.GameRank;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
-import com.safjnest.Utilities.SQL.SQL;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -32,7 +31,7 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 public class GameRankSlash extends SlashCommand {
 
 
-    public GameRankSlash(R4J r, SQL sql  ){
+    public GameRankSlash(R4J r){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -41,7 +40,8 @@ public class GameRankSlash extends SlashCommand {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name of the summoner you want to get information on", false),
-            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false));
+            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
+        );
     }
 
 	@Override
@@ -52,7 +52,6 @@ public class GameRankSlash extends SlashCommand {
         Button right = Button.primary("rank-right", "->");
         Button center = Button.primary("rank-center", "f");
         event.deferReply(false).queue();
-
 
         User theGuy = null;
         if(event.getOption("summoner") == null && event.getOption("user") == null){
@@ -98,7 +97,6 @@ public class GameRankSlash extends SlashCommand {
             event.getHook().editOriginal(s.getName() + " is not in a match.").queue();
         }
 
-        
         List<SpectatorParticipant> users = null;
         EmbedBuilder builder = null;
         try {

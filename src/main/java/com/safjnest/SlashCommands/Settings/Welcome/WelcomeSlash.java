@@ -7,11 +7,10 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.SQL.SQL;
 
 public class WelcomeSlash extends SlashCommand{
 
-    public WelcomeSlash(SQL sql, GuildSettings gs){
+    public WelcomeSlash(GuildSettings gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         String father = this.getClass().getSimpleName().replace("Slash", "");
 

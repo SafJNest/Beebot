@@ -66,7 +66,6 @@ public class Leaderboard extends Command {
         String[] splitTable = TableHandler.splitTable(table);
 
         event.reply(event.getGuild().getName() + " leaderboard:");
-
         for(int i = 0; i < splitTable.length; i++)
             event.reply("```" + splitTable[i] + "```");
     }

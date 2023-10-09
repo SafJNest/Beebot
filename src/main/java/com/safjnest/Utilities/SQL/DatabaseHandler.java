@@ -339,8 +339,29 @@ public class DatabaseHandler {
         return fetchJRow("select exp, level, messages from exp_table where user_id ='" + user_id + "' and guild_id = '" + guild_id + "';");
     }
 
-    public static ResultRow getAlert(String guild_id) {
-        return fetchJRow("SELECT * FROM alert WHERE guild_id = '" + guild_id + "'");
+    public static ResultRow getAlert(String guild_id, String bot_id) {
+        return fetchJRow("SELECT * FROM alert WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "'");
+    }
+
+    public static boolean hasWelcome(String guild_id, String bot_id) {
+        return fetchJRow("SELECT welcome_message FROM alert WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "'").get("welcome_message") != null;
+    }
+
+    public static ResultRow getWelcome(String guild_id, String bot_id) {
+        return fetchJRow("SELECT welcome_message FROM alert WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "'");
+    }
+
+    public static boolean setWelcome(String guild_id, String bot_id, String welcome_channel, String welcome_message, String welcome_role) {
+        if(welcome_role == null) {
+            return runQuery("INSERT INTO alert(guild_id, bot_id, welcome_channel, welcome_message, welcome_enabled)"
+                + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + welcome_message + "','" + "1" + "');");
+        }
+        return runQuery("INSERT INTO alert(guild_id, bot_id, welcome_channel, welcome_message, welcome_role, welcome_enabled)"
+            + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + welcome_message + "','" + "1" + "');");
+    }
+
+    public static boolean deleteWelcome(String guild_id, String bot_id) {
+        return runQuery("UPDATE alert SET welcome_message = NULL, welcome_channel = NULL, welcome_role = NULL, welcome_enabled = '0' WHERE guild_id = '" + guild_id + "',' AND bot_id = '" + bot_id + "'"); 
     }
 
     public static boolean setPrefix(String guild_id, String bot_id, String prefix) {
@@ -359,10 +380,17 @@ public class DatabaseHandler {
         return runQuery("DELETE from greeting WHERE guild_id = '" + guild_id + "' AND user_id = '" + user_id + "' AND bot_id = '" + bot_id + "';");
     }
     
+    public static QueryResult getRewards(String guild_id) {
+        return safJQuery("SELECT role_id, level FROM rewards_table WHERE guild_id = '" + guild_id + "' ORDER BY level DESC;");
+    }
 
+    public static boolean setBlacklistChannel(String blacklist_channel, String guild_id, String bot_id) {
+        return runQuery("UPDATE guild_settings SET blacklist_channel = '" + blacklist_channel + "' WHERE guild_id = '" + guild_id +  "' AND bot_id = '" + bot_id +  "';");
+    }
 
-
-
+    public static boolean enableBlacklist(String guild_id, String bot_id, String threshold, String blacklist_channel) {
+        return runQuery("INSERT INTO guild_settings(guild_id, bot_id, threshold, blacklist_channel)" + "VALUES('" + guild_id + "','" + bot_id + "','" + threshold +"', '" + blacklist_channel + "') ON DUPLICATE KEY UPDATE threshold = '" + threshold + "', blacklist_channel = '" + blacklist_channel + "';");
+    }
 
 
 
@@ -377,7 +405,7 @@ public class DatabaseHandler {
      * eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee la cannuccia
      * weru9fgt9uehrgferwfghreyuio
     */
-    public static String getCannuccia(){
+    public static String getCannuccia() {
         return ":cannuccia:";
     }
 }

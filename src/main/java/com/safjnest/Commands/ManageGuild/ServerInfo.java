@@ -35,17 +35,17 @@ public class ServerInfo extends Command{
     @Override
     protected void execute(CommandEvent event) {
         Guild guild;
-        if(event.getArgs() == "")
-            guild = event.getGuild();
-        else
+        if(!event.getArgs().equals("") && PermissionHandler.isUntouchable(event.getAuthor().getId()))
             guild = PermissionHandler.getGuild(event, event.getArgs());
-
+        else 
+            guild = event.getGuild();
+            
         if(guild == null) {
             event.reply("Couldn't find the specified guild. Please write the id of the guild and make sure the bot is in that guild.");
             return;
         }
 
-        ResultRow alerts = DatabaseHandler.getAlert(event.getGuild().getId());
+        ResultRow alerts = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
         
         String welcomeMessageString = null;
         if(alerts.get("welcome_message") != null) {
