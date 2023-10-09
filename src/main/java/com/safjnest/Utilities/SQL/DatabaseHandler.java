@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,12 +119,32 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC LIMIT 24");
     }
 
+    public static QueryResult getGuildRandomSound(String guild_id){
+        return safJQuery("SELECT name, id FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
+    }
+
+    public static QueryResult getUserRandomSound(String user_id){
+        return safJQuery("SELECT name, id FROM sound WHERE user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
+    }
+
     public static QueryResult getlistUserSounds(String user_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' ORDER BY name ASC LIMIT 24");
     }
 
     public static QueryResult getlistUserSounds(String user_id, String guild_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY name ASC LIMIT 24");
+    }
+
+    public static QueryResult getFocusedGuildSound(String guild_id, String like){
+        return safJQuery("SELECT name, id FROM sound WHERE name LIKE '" + like + "%' AND guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
+    }
+
+    public static QueryResult getFocusedUserSound(String user_id, String like){
+        return safJQuery("SELECT name, id FROM sound WHERE name LIKE '" + like + "%' OR id LIKE '" + like + "%' AND user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
+    }
+
+    public static QueryResult getFocusedListUserSounds(String user_id, String guild_id, String like) {
+        return safJQuery("SELECT name, id FROM sound WHERE name LIKE '" + like + "%' OR id LIKE '" + like + "%' AND (user_id = '" + user_id + "' OR (guild_id = '" + guild_id + "' AND public = 1)) ORDER BY RAND() LIMIT 25;");
     }
 
     public static QueryResult getSoundsById(String... sound_ids) {
@@ -209,6 +230,20 @@ public class DatabaseHandler {
     public static ResultRow getSoundboardByID(String id) {
         return fetchJRow("select name from soundboard where id = '" + id + "'");
     }
+    
+    public static QueryResult getRandomSoundboard(String guild_id) {
+        return safJQuery("SELECT name, id FROM soundboard WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
+    }
+
+    public static QueryResult getFocusedSoundboard(String guild_id, String like){
+        return safJQuery("SELECT name, id FROM soundboard WHERE name LIKE '" + like + "%' AND guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
+    }
+
+    public static QueryResult getFocusedSoundFromSounboard(String id, String like){
+        return safJQuery("SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '" + like + "%' AND ss.id = '" + id);
+    }
+
+
 
     public static boolean insertSoundBoard(String name, String guild_id, String... sound_ids) {
         if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
@@ -380,6 +415,10 @@ public class DatabaseHandler {
         return runQuery("DELETE from greeting WHERE guild_id = '" + guild_id + "' AND user_id = '" + user_id + "' AND bot_id = '" + bot_id + "';");
     }
     
+
+    public static boolean insertRewards(String guild_id, String role, String level, String message){
+        return runQuery("INSERT INTO rewards_table (guild_id, role_id, level, message_text) VALUES ('" + guild_id + "', '" + role + "', '" + level + "', '" + message + "');");
+    }
     public static QueryResult getRewards(String guild_id) {
         return safJQuery("SELECT role_id, level FROM rewards_table WHERE guild_id = '" + guild_id + "' ORDER BY level DESC;");
     }
@@ -390,6 +429,18 @@ public class DatabaseHandler {
 
     public static boolean enableBlacklist(String guild_id, String bot_id, String threshold, String blacklist_channel) {
         return runQuery("INSERT INTO guild_settings(guild_id, bot_id, threshold, blacklist_channel)" + "VALUES('" + guild_id + "','" + bot_id + "','" + threshold +"', '" + blacklist_channel + "') ON DUPLICATE KEY UPDATE threshold = '" + threshold + "', blacklist_channel = '" + blacklist_channel + "';");
+    }
+
+    public static int getBlacklistBan(String user_id){
+        return fetchJRow("SELECT count(user_id) as times from blacklist WHERE user_id = '" + user_id + "'").getAsInt("times");
+    }
+
+    public static boolean insertCommand(String guild_id, String bot_id, String author_id, String command, String args){
+        return runQuery("INSERT INTO command_analytic(name, time, user_id, guild_id, bot_id, args) VALUES ('" + command + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + author_id + "', '"+ guild_id +"','"+ bot_id +"', '"+ args +"');");
+    }
+
+    public static ResultRow getGreet(String user_id, String guild_id, String bot_id) {
+        return fetchJRow("SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + user_id + "' AND (greeting.guild_id = '" + guild_id + "' OR greeting.guild_id = '0') AND greeting.bot_id = '" + bot_id + "' ORDER BY CASE WHEN greeting.guild_id = '0' THEN 1 ELSE 0 END LIMIT 1;");
     }
 
 
