@@ -10,6 +10,7 @@ import java.util.Map;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -42,30 +43,29 @@ public class LastMatches extends Command {
 	@Override
 	protected void execute(CommandEvent event) {
         HashMap<String, Integer> played = new HashMap<>();
-        int gamesToAnalyze = 0;
+        int gamesToAnalyze = 20;
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         if(args.equals("")){
-            String query = "SELECT account_id FROM lol_user WHERE user_id = '" + event.getAuthor().getId() + "';";
             try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
+                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, DatabaseHandler.getLOLAccountIdByUserId(event.getAuthor().getId()));
             } catch (Exception e) {
                event.reply("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).");
                return;
             }
         }
         else if(event.getMessage().getMentions().getMembers().size() != 0){
-            String query = "SELECT account_id FROM lol_user WHERE user_id = '" + event.getMessage().getMentions().getMembers().get(0).getId() + "';";
             try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, sql.getString(query, "account_id"));
+                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, DatabaseHandler.getLOLAccountIdByUserId(event.getMessage().getMentions().getMembers().get(0).getId()));
             } catch (Exception e) {
                 event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
                 return;
             }
-        }else{
+        }
+        else{
             s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
         }
-        gamesToAnalyze = 20;
+
         int gamesNumber = gamesToAnalyze;
         try {
             for(int i = 0; i < gamesToAnalyze; i++){
@@ -111,9 +111,7 @@ public class LastMatches extends Command {
         event.reply(message);
 	}
 
-    public static HashMap<String, Integer>
-    sortByValue(HashMap<String, Integer> hm)
-    {
+    public static HashMap<String, Integer> sortByValue(HashMap<String, Integer> hm) {
         // Create a list from elements of HashMap
         List<Map.Entry<String, Integer> > list
             = new LinkedList<Map.Entry<String, Integer> >(
@@ -133,5 +131,4 @@ public class LastMatches extends Command {
         }
         return temp;
     }
-
 }
