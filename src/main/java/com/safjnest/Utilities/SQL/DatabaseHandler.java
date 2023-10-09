@@ -126,6 +126,15 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY name ASC LIMIT 24");
     }
 
+    public static QueryResult getSoundsById(String... sound_ids) {
+        StringBuilder sb = new StringBuilder();
+        for(String sound_id : sound_ids) {
+            sb.append("('" + sound_id + "'), ");
+        }
+        sb.setLength(sb.length() - 2);
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id IN " + sb.toString() + ";");
+    }
+
     public static QueryResult getSoundsById(String id, String guild_id, String author_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + id + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
@@ -151,7 +160,8 @@ public class DatabaseHandler {
             + "INSERT INTO sound(name, guild_id, user_id, extension, public) VALUES('" + name + "','" + guild_id + "','" + user_id + "','" + extension + "', " + ((isPublic == true) ? "1" : "0") + "); "
             + "SELECT LAST_INSERT_ID() AS id; "
             + "COMMIT;")
-            .get("id");
+            .get("id"
+        );
     }
 
     public static boolean updateSound(String id, String name, boolean isPublic) {
@@ -184,6 +194,59 @@ public class DatabaseHandler {
         return fetchJRow("select sum(times) as sum from play where user_id = '" + user_id + "';").get("sum");
     }
 
+    public static boolean soundboardExists(String name, String guild_id) {
+        return !safJQuery("SELECT count(name) as count from soundboard WHERE name = '" + name + "' guild_id = '" + guild_id + "'").isEmpty();
+    }
+
+    public static int getSoundInSoundboardCount(String id) {
+        return fetchJRow("SELECT count(sound_id) as cont FROM soundboard_sounds WHERE id = '" + id + "'").getAsInt("count");
+    }
+
+    public static QueryResult getSoundsFromSoundBoard(String id) {
+        return safJQuery("select soundboard_sounds.sound_id, sound.extension, sound.name from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "'");
+    }
+
+    public static ResultRow getSoundboardByID(String id) {
+        return fetchJRow("select name from soundboard where id = '" + id + "'");
+    }
+
+    public static boolean insertSoundBoard(String name, String guild_id, String... sound_ids) {
+        if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
+
+        StringBuilder sb = new StringBuilder();
+        for(String sound_id : sound_ids) {
+            sb.append("(@soundboard_id, '" + sound_id + "'), ");
+        }
+        sb.setLength(sb.length() - 2);
+
+        return runQuery("START TRANSACTION; "
+            + "INSERT INTO soundboard (name, guild_id) VALUES ('" + name + "', '" + guild_id + "'); "
+            + "SET @soundboard_id = LAST_INSERT_ID(); "
+            + "INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + "; "
+            + "COMMIT;"
+        );
+    }
+
+    public static boolean insertSoundsInSoundBoard(String id, String... sound_ids) {
+        if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
+
+        StringBuilder sb = new StringBuilder();
+        for(String sound_id : sound_ids) {
+            sb.append("('" + id + "', '" + sound_id + "'), ");
+        }
+        sb.setLength(sb.length() - 2);
+
+        return runQuery("INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + "; ");
+    }
+
+    public static boolean deleteSoundboard(String id) {
+        return runQuery("DELETE FROM soundboard WHERE id = '" + id + "'");
+    }
+
+    public static boolean deleteSoundFromSoundboard(String id, String sound_id) {
+        return runQuery("DELETE FROM soundboard_sounds WHERE id = '" + id + "' AND sound_id = '" + sound_id + "'");
+    }
+ 
     public static ResultRow getDefaultVoice(String guild_id, String bot_id) {
         return fetchJRow("SELECT name_tts, language_tts FROM guild_settings WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
@@ -197,6 +260,12 @@ public class DatabaseHandler {
         String query = "SELECT account_id FROM lol_user WHERE user_id = '" + user_id + "';";
         return safJQuery(query);
     }
+
+    public static String getUserIdByLOLAccountId(String account_id) {
+        return fetchJRow("SELECT user_id FROM lol_user WHERE account_id = '" + account_id + "';").get("user_id");
+    }
+
+    
 
     public static boolean addLOLAccount(String user_id, String summoner_id, String account_id){
         String query = "INSERT INTO lol_user(user_id, summoner_id, account_id) VALUES('" + user_id + "','" + summoner_id + "','" + account_id + "');";
@@ -281,6 +350,14 @@ public class DatabaseHandler {
     public static boolean updatePrefix(String guild_id, String bot_id, String prefix) {
         return runQuery("UPDATE guild_settings SET prefix = '" + prefix + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
+
+    public static boolean setGreet(String user_id, String guild_id, String bot_id, String sound_id) {
+        return runQuery("INSERT INTO greeting (user_id, guild_id, bot_id, sound_id) VALUES ('" + user_id + "', '" + guild_id + "', '" + bot_id + "', '" + sound_id + "') ON DUPLICATE KEY UPDATE sound_id = '" + sound_id + "';");
+    }
+
+    public static boolean deleteGreet(String user_id, String guild_id, String bot_id) {
+        return runQuery("DELETE from greeting WHERE guild_id = '" + guild_id + "' AND user_id = '" + user_id + "' AND bot_id = '" + bot_id + "';");
+    }
     
 
 
@@ -303,6 +380,4 @@ public class DatabaseHandler {
     public static String getCannuccia(){
         return ":cannuccia:";
     }
-
-    
 }

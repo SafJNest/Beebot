@@ -1,7 +1,6 @@
 package com.safjnest.SlashCommands.Audio.List;
 
 import java.awt.Color;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;

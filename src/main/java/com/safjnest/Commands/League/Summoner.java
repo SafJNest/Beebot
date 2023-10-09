@@ -80,12 +80,10 @@ public class Summoner extends Command {
     public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(s.getName());
-        builder.setColor(Color.decode(
-            BotSettingsHandler.map.get(id).color
-        ));
+        builder.setColor(Color.decode(BotSettingsHandler.map.get(id).color));
         builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
-        String query = "SELECT user_id FROM lol_user WHERE account_id = '" + s.getAccountId() + "';";
-        String userId = DatabaseHandler.getSql().getString(query, "user_id");
+
+        String userId = DatabaseHandler.getUserIdByLOLAccountId(s.getAccountId());
         if(userId != null){
             User theGuy = jda.getUserById(userId);
             builder.addField("User:", theGuy.getName(), true);
@@ -94,6 +92,7 @@ public class Summoner extends Command {
         }else{
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
         }
+        
         builder.addField("Solo/duo Queue", RiotHandler.getSoloQStats(jda, s), true);
         builder.addField("Flex Queue", RiotHandler.getFlexStats(jda, s), true);
         String masteryString = "";
