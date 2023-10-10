@@ -18,12 +18,13 @@ public class BoostSlash extends SlashCommand {
         this.help = "json";
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new BoostPreviewSlash(father), new BoostTextSlash(father), new BoostMoveSlash(father), new BoostDeleteSlash(father));
+        Collections.addAll(slashCommandsList, new BoostPreviewSlash(father), new BoostCreateSlash(father), new BoostChannelSlash(father), new BoostDeleteSlash(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);                            
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
+        
     }
     
 }

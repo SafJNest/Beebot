@@ -14,7 +14,6 @@ import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.SQL;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;

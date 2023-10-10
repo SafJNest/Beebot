@@ -16,12 +16,16 @@ public class WelcomeDeleteSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(!DatabaseHandler.hasWelcome(event.getGuild().getId(), event.getJDA().getSelfUser().getId())) {
+        String guildId = event.getGuild().getId();
+        String botId = event.getJDA().getSelfUser().getId();
+
+        if(!DatabaseHandler.hasWelcome(guildId, botId)) {
             event.deferReply(true).addContent("This guild doesn't have a welcome message.").queue();
             return;
         }
-        if(!DatabaseHandler.deleteWelcome(event.getGuild().getId(), event.getJDA().getSelfUser().getId())) {
-            event.deferReply(true).addContent("Failed to delete the welcome message.").queue();
+
+        if(!DatabaseHandler.deleteWelcome(guildId, botId)) {
+            event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
 

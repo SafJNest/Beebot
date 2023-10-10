@@ -1,11 +1,10 @@
 package com.safjnest.Utilities.EventHandlers;
 
-import java.util.ArrayList;
-
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.ResultRow;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -65,11 +64,10 @@ public class EventHandlerBeebot extends ListenerAdapter {
 
         User newGuy = e.getAuthor();
 
-        String query = "SELECT role_id, message_text FROM rewards_table WHERE guild_id = '" + guild + "' AND level = '" + lvl + "';";
-        ArrayList<String> arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
-        if(arr != null){
-            String message = arr.get(1);
-            Role role = guild.getRoleById(arr.get(0));
+        ResultRow reward = DatabaseHandler.getReward(guild.getId(), lvl);
+        if(reward != null){
+            String message = reward.get("message_text");
+            Role role = guild.getRoleById(reward.get("role_id"));
             message = message.replace("#user", newGuy.getAsMention());
             message = message.replace("#level", String.valueOf(lvl));
             message = message.replace("#role", role.getName());
@@ -78,15 +76,14 @@ public class EventHandlerBeebot extends ListenerAdapter {
             return;
         }
         
-        query = "SELECT message_text FROM levelup_message WHERE guild_id = '" + guildData.getId() + "';";
-        arr = DatabaseHandler.getSql().getSpecifiedRow(query, 0);
+        ResultRow alert = DatabaseHandler.getAlert(guild.getId(), e.getJDA().getSelfUser().getId());
 
-        if (arr == null){
+        if (alert.get("levelup_message") == null){
             channel.sendMessage("Congratulations, you are now level: " + lvl).queue();
             return;
         }
 
-        String message = arr.get(0);
+        String message = alert.get("levelup_message");
         message = message.replace("#user", newGuy.getAsMention());
         message = message.replace("#level", String.valueOf(lvl));
         e.getChannel().asTextChannel().sendMessage(message).queue();
@@ -96,16 +93,13 @@ public class EventHandlerBeebot extends ListenerAdapter {
 
     @Override
     public void onRoleDelete(RoleDeleteEvent event){
-        String query = "DELETE FROM rewards_table WHERE role_id = '" + event.getRole().getId() + "';";
-        DatabaseHandler.getSql().runQuery(query);
+        DatabaseHandler.deleteReward(event.getRole().getId());
     }
 
     @Override
     public void onChannelDelete(ChannelDeleteEvent event){
         if(event.getChannelType().isAudio()){
-            String query = "DELETE from rooms_settings WHERE guild_id = '" + event.getGuild().getId()
-                           + "' AND room_id = '" + event.getChannel().getId() + "';";
-            DatabaseHandler.getSql().runQuery(query);
+            DatabaseHandler.deleteRoom(event.getGuild().getId(), event.getChannel().getId());
         }
     }
 

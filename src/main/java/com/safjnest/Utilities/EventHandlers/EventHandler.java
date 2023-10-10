@@ -1,15 +1,11 @@
 package com.safjnest.Utilities.EventHandlers;
 
 import java.io.File;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import javax.naming.spi.DirStateFactory.Result;
-
-import com.google.api.client.util.Data;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
@@ -412,18 +408,13 @@ public class EventHandler extends ListenerAdapter {
         if(threshold == 0)
             return;
         
-        query = "INSERT INTO blacklist VALUES('" + theGuy.getId() + "', '" + event.getGuild().getId() + "') ";
-        DatabaseHandler.getSql().runQuery(query);
+        DatabaseHandler.insertUserBlacklist(event.getUser().getId(), event.getGuild().getId());
+
         int times = 0;
-        query = "SELECT count(user_id) as times from blacklist WHERE user_id = '" + theGuy.getId() + "'";
-        String timesSql = DatabaseHandler.getSql().getString(query, "times");
-        times = times + ((timesSql != null) ? Integer.valueOf(timesSql) : 0);
+        times = times + DatabaseHandler.getBannedTimes(event.getUser().getId());
 
-
-        query = "SELECT guild_id, blacklist_channel, threshold FROM guild_settings WHERE threshold <= '" + times + "' AND blacklist_channel IS NOT NULL AND guild_id != '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "'";
-        System.out.println(query);
-        ArrayList<ArrayList<String>> arr = DatabaseHandler.getSql().getAllRows(query, 3);
-        if(arr == null)
+        QueryResult guilds = DatabaseHandler.getGuildByThreshold(times, event.getJDA().getSelfUser().getId(), event.getGuild().getId());
+        if(guilds == null)
             return;
         
         EmbedBuilder eb = new EmbedBuilder();
@@ -431,13 +422,13 @@ public class EventHandler extends ListenerAdapter {
         eb.setThumbnail(theGuy.getAvatarUrl());
         eb.setTitle(":radioactive:Blacklist:radioactive:");
         eb.setDescription("The member " + theGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
-        for(ArrayList<String> g : arr){
+        for(ResultRow g : guilds){
 
-            Guild gg = event.getJDA().getGuildById(g.get(0));
+            Guild gg = event.getJDA().getGuildById(g.get("guild_id"));
             if(gg.getMemberById(theGuy.getId()) == null)
                 continue;
 
-            TextChannel channel = gg.getTextChannelById(g.get(1));
+            TextChannel channel = gg.getTextChannelById(g.get("blacklist_channel"));
 
             Button kick = Button.primary("kick-" + theGuy.getId(), "Kick");
             Button ban = Button.primary("ban-" + theGuy.getId(), "Ban");
@@ -456,8 +447,7 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onGuildUnban(GuildUnbanEvent event) {
         User theGuy = event.getUser();
-        String query = "DELETE FROM blacklist WHERE guild_id = '" + event.getGuild().getId() + "' AND user_id = '" + theGuy.getId() + "'";
-        DatabaseHandler.getSql().runQuery(query);
+        DatabaseHandler.deleteBlacklist(event.getGuild().getId(), theGuy.getId());
     }
 
     /**
@@ -465,15 +455,12 @@ public class EventHandler extends ListenerAdapter {
      */
     public void onGuildMemberUpdateBoostTime(GuildMemberUpdateBoostTimeEvent event) {
         MessageChannel channel = null;
-        String query = "SELECT channel_id FROM boost_message WHERE guild_id = '" + event.getGuild().getId()
-                + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-        String notNullPls = sql.getString(query, "channel_id");
+        ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+        String notNullPls = alert.get("boost_channel");
         if (notNullPls == null)
             return;
         channel = event.getGuild().getTextChannelById(notNullPls);
-        query = "SELECT message_text FROM boost_message WHERE guild_id = '" + event.getGuild().getId()
-                + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-        String message = sql.getString(query, "message_text");
+        String message = alert.get("boost_message");
         message = message.replace("#user", event.getUser().getAsMention());
         channel.sendMessage(message).queue();
     }
