@@ -16,10 +16,19 @@ public class LeaveDeleteSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String query = "DELETE from left_message WHERE guild_id = '" + event.getGuild().getId()
-                           + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-        DatabaseHandler.getSql().runQuery(query);
-        event.deferReply(false).addContent("Left message deleted").queue();
+        String guildId = event.getGuild().getId();
+        String botId = event.getJDA().getSelfUser().getId();
+
+        if(!DatabaseHandler.hasLeave(guildId, botId)) {
+            event.deferReply(true).addContent("This guild doesn't have a leave message.").queue();
+            return;
+        }
+
+        if(!DatabaseHandler.deleteLeave(guildId, botId)) {
+            event.deferReply(true).addContent("Something went wrong.").queue();
+            return;
+        }
+
+        event.deferReply(false).addContent("leave message deleted.").queue();
     }
-    
 }

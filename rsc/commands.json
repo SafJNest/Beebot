@@ -312,22 +312,37 @@
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel)(@role) | [message]",
         "children": {
-            "delete": {
+            "channel": {
                 "alias" : [],
                 "help"  : "Delete the welcome message.",
                 "arguments" : "[CommandName]"
             }, 
-            "move": {
+            "create": {
                 "alias" : [],
                 "help"  : "Change the welcome channel.",
                 "arguments" : "[CommandName]"
             },
-            "preview": {
+            "delete": {
                 "alias" : [],
                 "help"  : "Show a preview of the welcome message.",
                 "arguments" : "[CommandName]"
             },
+            "preview": {
+                "alias" : [],
+                "help"  : "Modify or set the welcome message.",
+                "arguments" : "[CommandName]"
+            },
+            "role": {
+                "alias" : [],
+                "help"  : "Modify or set the welcome message.",
+                "arguments" : "[CommandName]"
+            },
             "text": {
+                "alias" : [],
+                "help"  : "Modify or set the welcome message.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
                 "alias" : [],
                 "help"  : "Modify or set the welcome message.",
                 "arguments" : "[CommandName]"
@@ -341,24 +356,34 @@
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [message]",
         "children": {
-            "delete": {
+            "channel": {
                 "alias" : [],
-                "help"  : "Delete the leave message.",
+                "help"  : "Delete the welcome message.",
                 "arguments" : "[CommandName]"
             }, 
-            "move": {
+            "create": {
                 "alias" : [],
-                "help"  : "Change the leave channel.",
+                "help"  : "Change the welcome channel.",
+                "arguments" : "[CommandName]"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Show a preview of the welcome message.",
                 "arguments" : "[CommandName]"
             },
             "preview": {
                 "alias" : [],
-                "help"  : "Show a preview of the leave message.",
+                "help"  : "Modify or set the welcome message.",
                 "arguments" : "[CommandName]"
             },
             "text": {
                 "alias" : [],
-                "help"  : "Modify or set the leave message.",
+                "help"  : "Modify or set the welcome message.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Modify or set the welcome message.",
                 "arguments" : "[CommandName]"
             }
         }
@@ -370,27 +395,27 @@
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [messagge]",
         "children": {
-            "toggle": {
+            "channeltoggle": {
                 "alias" : [],
                 "help"  : "Toggle the exp system on and off.",
                 "arguments" : "[CommandName]"
             }, 
-            "preview": {
+            "modifier": {
                 "alias" : [],
                 "help"  : "Show a preview of the levelup message.",
                 "arguments" : "[CommandName]"
             },
-            "text": {
+            "preview": {
                 "alias" : [],
                 "help"  : "Modify or set the levelup message.",
                 "arguments" : "[CommandName]"
             },
-            "channel": {
+            "text": {
                 "alias" : [],
                 "help"  : "Turn the exp system ON or OFF for a specific channel.",
                 "arguments" : "[CommandName]"
             },
-            "modifier": {
+            "toggle": {
                 "alias" : [],
                 "help"  : "Set a modifier for the exp gained in a specific channel.",
                 "arguments" : "[CommandName]"
@@ -405,26 +430,36 @@
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [messagge]",
         "children": {
-            "delete": {
+            "channel": {
                 "alias" : [],
-                "help"  : "Delete the boost message.",
+                "help"  : "Delete the welcome message.",
                 "arguments" : "[CommandName]"
             }, 
+            "create": {
+                "alias" : [],
+                "help"  : "Change the welcome channel.",
+                "arguments" : "[CommandName]"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Show a preview of the welcome message.",
+                "arguments" : "[CommandName]"
+            },
             "preview": {
                 "alias" : [],
-                "help"  : "Show a preview of the boost message.",
+                "help"  : "Modify or set the welcome message.",
                 "arguments" : "[CommandName]"
             },
             "text": {
                 "alias" : [],
-                "help"  : "Modify or set the boost message.",
+                "help"  : "Modify or set the welcome message.",
                 "arguments" : "[CommandName]"
             },
-            "move": {
+            "toggle": {
                 "alias" : [],
-                "help"  : "Change the boost channel.",
+                "help"  : "Modify or set the welcome message.",
                 "arguments" : "[CommandName]"
-            } 
+            }
         }
     },
 

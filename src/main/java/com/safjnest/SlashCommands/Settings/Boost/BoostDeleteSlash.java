@@ -16,10 +16,19 @@ public class BoostDeleteSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        SQL sql = DatabaseHandler.getSql();
-        String query = "DELETE FROM boost_message WHERE guild_id = '" + event.getGuild().getId() + "' AND bot_id = '" + event.getJDA().getSelfUser().getId() + "';";
-        sql.runQuery(query);
-        event.deferReply(false).addContent("Boost message deleted.").queue();
+        String guildId = event.getGuild().getId();
+        String botId = event.getJDA().getSelfUser().getId();
+
+        if(!DatabaseHandler.hasBoost(guildId, botId)) {
+            event.deferReply(true).addContent("This guild doesn't have a boost message.").queue();
+            return;
+        }
+
+        if(!DatabaseHandler.deleteBoost(guildId, botId)) {
+            event.deferReply(true).addContent("Something went wrong.").queue();
+            return;
+        }
+
+        event.deferReply(false).addContent("boost message deleted.").queue();
     }
-    
 }

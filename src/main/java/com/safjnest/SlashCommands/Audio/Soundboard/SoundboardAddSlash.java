@@ -1,5 +1,6 @@
 package com.safjnest.SlashCommands.Audio.Soundboard;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,9 +28,8 @@ public class SoundboardAddSlash extends SlashCommand{
         this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
-        this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "name", "Soundboard to add the sound(s) to.", true).setAutoComplete(true)
-        );
+        this.options = new ArrayList<>();
+        this.options.add(new OptionData(OptionType.STRING, "name", "Soundboard to add the sound(s) to.", true).setAutoComplete(true));
         for(int i = 1; i <= maxSounds-1; i++) {
             this.options.add(new OptionData(OptionType.STRING, "sound-" + i, "Sound " + i, false).setAutoComplete(true));
         }

@@ -262,7 +262,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             client.setListener(new CommandEventHandler(gs));
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler(gs, PREFIX));
-        jda.addEventListener(new EventButtonHandler());;
+        //jda.addEventListener(new EventButtonHandler());;
 
         if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(new EventHandlerBeebot(gs, farm));

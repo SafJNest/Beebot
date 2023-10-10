@@ -80,6 +80,7 @@ public class PlaySound extends Command{
                 break;
             }
         }
+        
         if(toPlay == null)
             toPlay = sounds.get((int)(Math.random() * sounds.size()));
 
@@ -88,10 +89,11 @@ public class PlaySound extends Command{
             soundBoard.mkdirs();
         String fileName = path + toPlay.get("id") + "." + toPlay.get("extension");
 
+
+        pm = new PlayerManager();
         AudioManager audioManager = event.getGuild().getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
 
-        pm = new PlayerManager();
         pm.getAudioPlayerManager().loadItem(fileName, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
