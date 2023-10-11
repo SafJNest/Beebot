@@ -46,8 +46,7 @@ public class Query extends Command{
         String[][] data = new String[res.size()-1][res.get(0).size()];
         for(int i = 1; i < res.size(); i++)
             data[i-1] = res.get(i).toArray();
-        String[] headers = res.get(0).toArray();
-        
+        String[] headers = res.get(0).keySet().toArray(new String[0]);
         TableHandler.replaceIdsWithNames(data, event.getJDA());
         String table = TableHandler.constructTable(data, headers);
 

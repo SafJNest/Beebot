@@ -2,6 +2,7 @@ package com.safjnest.Utilities.SQL;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 public class ResultRow {
@@ -81,6 +82,10 @@ public class ResultRow {
             i++;
         }
         return array;
+    }
+
+    public Set<String> keySet(){
+        return row.keySet();
     }
 
     public String toString() {
