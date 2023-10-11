@@ -55,7 +55,7 @@ public class SoundboardSelectSlash extends SlashCommand{
         List<LayoutComponent> rows = new ArrayList<>();
         List<Button> row = new ArrayList<>();
         for (int i = 0; i < sounds.size(); i++) {
-            row.add(Button.primary("soundboard-" + sounds.get(i).get("id") + "." + sounds.get(i).get("extension"), sounds.get(i).get("name")));
+            row.add(Button.primary("soundboard-" + sounds.get(i).get("sound_id") + "." + sounds.get(i).get("extension"), sounds.get(i).get("name")));
             if (row.size() == 5 || i == sounds.size() - 1) {
                 rows.add(ActionRow.of(row));
                 row = new ArrayList<>();

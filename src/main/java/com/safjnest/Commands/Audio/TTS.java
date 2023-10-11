@@ -128,15 +128,15 @@ public class TTS extends Command{
         }
         else {
             ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
-            if(defaultVoiceRow != null) {
+            if(!defaultVoiceRow.emptyValues()) {
                 voice = defaultVoiceRow.get("name_tts");
                 language = defaultVoiceRow.get("language_tts");
-                speech = speech.split(" ", 2)[1];
+                speech = speech.split(" ")[0];
 
                 defaultVoice = voice;
             }
             else {
-                voice = "mia";
+                voice = "Mia";
                 language = "it-it";
             }
         }
@@ -199,7 +199,7 @@ public class TTS extends Command{
         eb.addField("Language", language, true);
         eb.addBlankField(true);
         eb.addField("Voice", voice, true);
-        eb.addField("Default voice", defaultVoice, true);
+        eb.addField("Default voice", (defaultVoice == null ? "Not setted" : defaultVoice), true);
         eb.addBlankField(true);
 
         event.reply(eb.build());
