@@ -102,7 +102,7 @@ public class TTSSlash extends SlashCommand{
 
         if(voice == null) {
             ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
-            if(defaultVoiceRow != null) {
+            if(!defaultVoiceRow.emptyValues()) {
                 voice = defaultVoiceRow.get("name_tts");
                 language = defaultVoiceRow.get("language_tts");
                 speech = speech.split(" ", 2)[1];
@@ -123,10 +123,11 @@ public class TTSSlash extends SlashCommand{
         
         String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getMember().getEffectiveName() + ".mp3";
         
+        pm = new PlayerManager();
+        
         AudioManager audioManager = event.getGuild().getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
         
-        pm = new PlayerManager();
 
         pm.getAudioPlayerManager().loadItem(nameFile, new AudioLoadResultHandler() {
             @Override
@@ -173,7 +174,7 @@ public class TTSSlash extends SlashCommand{
         eb.addField("Language", language, true);
         eb.addBlankField(true);
         eb.addField("Voice", voice, true);
-        eb.addField("Default voice", defaultVoice, true);
+        eb.addField("Default voice", (defaultVoice == null ? "Not setted" : defaultVoice), true);
         eb.addBlankField(true);
 
         event.deferReply(false).addEmbeds(eb.build()).queue();

@@ -59,7 +59,8 @@ public class ListUserSlash extends SlashCommand{
 
         eb.setDescription("Total Sound: " + sounds.size());
 
-        for(ResultRow sound : sounds){
+        for(int i = 0; i < sounds.size() && i < 24; i++){
+            ResultRow sound = sounds.get(i);
             String locket = sound.getAsBoolean("public") ? "" : ":lock:";
             eb.addField("**" + sound.get("name") + "**" + locket, "ID: " + sound.get("id"), true);
         }

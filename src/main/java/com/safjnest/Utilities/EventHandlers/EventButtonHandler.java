@@ -14,6 +14,7 @@ import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -99,17 +100,15 @@ public class EventButtonHandler extends ListenerAdapter {
             if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                 nameSum = b.getLabel();
         }
-        String query = "SELECT user_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
-                + "';";
-        query = "SELECT summoner_id FROM lol_user WHERE user_id = '"
-                + DatabaseHandler.getSql().getString(query, "user_id") + "';";
-        ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
+
+        String user_id = DatabaseHandler.getUserIdByLOLAccountId(RiotHandler.getAccountIdByName(nameSum));
+        QueryResult accounts = DatabaseHandler.getLolAccounts(user_id);
         switch (args) {
 
             case "right":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id")).getName().equals(nameSum))
                         index = i;
                 }
 
@@ -119,12 +118,12 @@ public class EventButtonHandler extends ListenerAdapter {
                     index += 1;
 
                 center = Button.primary("lol-center",
-                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")).getName());
                 center = center.asDisabled();
                 
                 event.getMessage()
                         .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
+                                RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"))).build())
                         .setActionRow(left, center, right)
                         .queue();
                 break;
@@ -132,7 +131,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "left":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id")).getName().equals(nameSum))
                         index = i;
 
                 }
@@ -143,12 +142,12 @@ public class EventButtonHandler extends ListenerAdapter {
                     index -= 1;
 
                 center = Button.primary("lol-center",
-                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")).getName());
                 center = center.asDisabled();
                 
                 event.getMessage()
                         .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
-                                RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0))).build())
+                                RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"))).build())
                         .setActionRow(left, center, right)
                         .queue();
                 break;
@@ -167,17 +166,14 @@ public class EventButtonHandler extends ListenerAdapter {
             if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                 nameSum = b.getLabel();
         }
-        String query = "SELECT user_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
-                + "';";
-        query = "SELECT summoner_id FROM lol_user WHERE user_id = '"
-                + DatabaseHandler.getSql().getString(query, "user_id") + "';";
-        ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
+        String user_id = DatabaseHandler.getUserIdByLOLAccountId(RiotHandler.getAccountIdByName(nameSum));
+        QueryResult accounts = DatabaseHandler.getLolAccounts(user_id);
         switch (args) {
 
             case "right":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id")).getName().equals(nameSum))
                         index = i;
                 }
 
@@ -187,12 +183,12 @@ public class EventButtonHandler extends ListenerAdapter {
                     index += 1;
 
                 center = Button.primary("match-center",
-                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")).getName());
                 center = center.asDisabled();
                 
                 event.getMessage()
                         .editMessageEmbeds(InfoMatches.createEmbed(
-                            RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)), event.getJDA()).build())
+                            RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")), event.getJDA()).build())
                         .setActionRow(left, center, right)
                         .queue();
                 break;
@@ -200,7 +196,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "left":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id")).getName().equals(nameSum))
                         index = i;
 
                 }
@@ -211,12 +207,12 @@ public class EventButtonHandler extends ListenerAdapter {
                     index -= 1;
 
                 center = Button.primary("match-center",
-                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")).getName());
                 center = center.asDisabled();
                 
                event.getMessage()
                         .editMessageEmbeds(InfoMatches.createEmbed(
-                            RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)), event.getJDA()).build())
+                            RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")), event.getJDA()).build())
                         .setActionRow(left, center, right)
                         .queue();
                 break;
@@ -235,11 +231,9 @@ public class EventButtonHandler extends ListenerAdapter {
             if (!b.getLabel().equals("->") && !b.getLabel().equals("<-"))
                 nameSum = b.getLabel();
         }
-        String query = "SELECT user_id FROM lol_user WHERE account_id = '" + RiotHandler.getAccountIdByName(nameSum)
-                + "';";
-        query = "SELECT summoner_id FROM lol_user WHERE user_id = '"
-                + DatabaseHandler.getSql().getString(query, "user_id") + "';";
-        ArrayList<ArrayList<String>> accounts = DatabaseHandler.getSql().getAllRows(query, 1);
+
+        String user_id = DatabaseHandler.getUserIdByLOLAccountId(RiotHandler.getAccountIdByName(nameSum));
+        QueryResult accounts = DatabaseHandler.getLolAccounts(user_id);
         List<SpectatorParticipant> users = null;
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
@@ -249,7 +243,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "right":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id")).getName().equals(nameSum))
                         index = i;
                 }
 
@@ -259,9 +253,9 @@ public class EventButtonHandler extends ListenerAdapter {
 
                     index += 1;
 
-                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0));
+                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"));
                 center = Button.primary("lol-center",
-                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")).getName());
                 center = center.asDisabled();
 
                 try {
@@ -306,7 +300,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "left":
 
                 for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get(0)).getName().equals(nameSum))
+                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id")).getName().equals(nameSum))
                         index = i;
                 }
 
@@ -315,9 +309,9 @@ public class EventButtonHandler extends ListenerAdapter {
                 else
                     index -= 1;
 
-                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0));
+                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"));
                 center = Button.primary("lol-center",
-                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get(0)).getName());
+                        RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")).getName());
                 center = center.asDisabled();
                 
                 try {
@@ -371,9 +365,7 @@ public class EventButtonHandler extends ListenerAdapter {
         Button right = Button.primary("list-right", "->");
         Button center = null;
 
-        String query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '"
-                + event.getGuild().getId() + "' ORDER BY name ASC;";
-        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 6);
+        QueryResult sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId());
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
@@ -395,8 +387,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 cont = 24 * page;
                 while (cont < (24 * (page + 1)) && cont < sounds.size()) {
-                    String locket = (sounds.get(cont).get(5).equals("0")) ? ":lock:" : "";
-                    eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
+                    String locket = (!sounds.get(cont).getAsBoolean("public")) ? ":lock:" : "";
+                    eb.addField("**"+sounds.get(cont).get("name")+"**" + locket, "ID: " + sounds.get(cont).get("id"), true);
                     cont++;
                 }
 
@@ -421,8 +413,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 cont = (24 * (page - 2) < 0) ? 0 : 24 * (page - 2);
 
                 while (cont < (24 * (page - 1)) && cont < sounds.size()) {
-                    String locket = (sounds.get(cont).get(5).equals("0")) ? ":lock:" : "";
-                    eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
+                    String locket = (!sounds.get(cont).getAsBoolean("public")) ? ":lock:" : "";
+                    eb.addField("**"+sounds.get(cont).get("name")+"**" + locket, "ID: " + sounds.get(cont).get("id"), true);
                     cont++;
                 }
 
@@ -459,14 +451,9 @@ public class EventButtonHandler extends ListenerAdapter {
             }
         }
 
-        String queryAdd = "";
-        if(!userId.equals(event.getMember().getId()))
-            queryAdd = "AND (guild_id = '" + event.getGuild().getId() + "'  OR public = 1 OR user_id = '" + event.getMember().getId() + "')";
-
-
-        String query = "SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '"
-                + userId + "' " + queryAdd + " ORDER BY name ASC;";
-        ArrayList<ArrayList<String>> sounds = DatabaseHandler.getSql().getAllRows(query, 6);
+        QueryResult sounds = (userId.equals(event.getMember().getId())) 
+                           ? DatabaseHandler.getlistUserSounds(userId) 
+                           : DatabaseHandler.getlistUserSounds(userId, event.getGuild().getId());
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
@@ -483,8 +470,8 @@ public class EventButtonHandler extends ListenerAdapter {
             case "right":
                 cont = 24 * page;
                 while (cont < (24 * (page + 1)) && cont < sounds.size()) {
-                    String locket = (sounds.get(cont).get(5).equals("0")) ? ":lock:" : "";
-                    eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
+                   String locket = (!sounds.get(cont).getAsBoolean("public")) ? ":lock:" : "";
+                    eb.addField("**"+sounds.get(cont).get("name")+"**" + locket, "ID: " + sounds.get(cont).get("id"), true);
                     cont++;
                 }
 
@@ -504,8 +491,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 cont = (24 * (page - 2) < 0) ? 0 : 24 * (page - 2);
 
                 while (cont < (24 * (page - 1)) && cont < sounds.size()) {
-                    String locket = (sounds.get(cont).get(5).equals("0")) ? ":lock:" : "";
-                    eb.addField("**"+sounds.get(cont).get(1)+"**" + locket, "ID: " + sounds.get(cont).get(0), true);
+                    String locket = (!sounds.get(cont).getAsBoolean("public")) ? ":lock:" : "";
+                    eb.addField("**"+sounds.get(cont).get("name")+"**" + locket, "ID: " + sounds.get(cont).get("id"), true);
                     cont++;
                 }
 
@@ -561,9 +548,9 @@ public class EventButtonHandler extends ListenerAdapter {
                 if(event.getButton().getId().startsWith("rewards-role-")){
                     if(event.getButton().getStyle() == ButtonStyle.DANGER){
                         String roleString = event.getButton().getId().split("-")[2];
-                        String query = "DELETE FROM rewards_table WHERE role_id = '" + roleString + "';";
-                        DatabaseHandler.getSql().runQuery(query);
+                        DatabaseHandler.deleteReward(roleString);
                         event.deferEdit().queue();
+                        
                         RewardsSlash.createEmbed(event.getMessage()).queue();
                         return;
                     }
@@ -680,7 +667,7 @@ public class EventButtonHandler extends ListenerAdapter {
         if(pm.getPlayer().getPlayingTrack() != null){
             //pm.stopAudioHandler();
         }
-
+        
         String path = "rsc" + File.separator + "SoundBoard"+ File.separator + args;
         pm.getAudioPlayerManager().loadItem(path, new AudioLoadResultHandler() {
             @Override
@@ -712,16 +699,8 @@ public class EventButtonHandler extends ListenerAdapter {
         pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
         
         String id = args.split("\\.")[0];
-        SQL sql = DatabaseHandler.getSql();
-        String query = "SELECT times FROM play where play.sound_id = '" + id + "' and play.user_id = '" + event.getMember().getId() + "';";
-        if(sql.getString(query, "times") == null){
-            query = "INSERT INTO play(user_id, sound_id, times) VALUES('" + event.getMember().getId() + "','" + id + "', 1);";
-        }
-        else{
-            query = "UPDATE play SET times = times + 1 WHERE sound_id = (" + id + ") AND user_id = '" + event.getMember().getId() + "';";
-        }
+        DatabaseHandler.updateUserPlays(id, event.getMember().getId());
         
-        sql.runQuery(query);
     }
 
 }

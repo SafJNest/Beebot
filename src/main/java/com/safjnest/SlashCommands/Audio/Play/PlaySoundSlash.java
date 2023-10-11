@@ -133,7 +133,7 @@ public class PlaySoundSlash extends SlashCommand{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest", event.getMember().getAvatarUrl());
         eb.setTitle("Playing now:");
-        eb.setDescription("```" + name + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
+        eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
 

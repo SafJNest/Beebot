@@ -45,7 +45,7 @@ public class ServerInfo extends Command{
             return;
         }
 
-        ResultRow alerts = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+        ResultRow alerts = DatabaseHandler.getAlert(guild.getId(), event.getJDA().getSelfUser().getId());
         
         String welcomeMessageString = null;
         if(alerts.get("welcome_message") != null) {

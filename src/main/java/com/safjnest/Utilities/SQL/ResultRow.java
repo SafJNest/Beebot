@@ -1,5 +1,6 @@
 package com.safjnest.Utilities.SQL;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -8,6 +9,16 @@ public class ResultRow {
 
     public ResultRow(Map<String, String> row){
         this.row = row;
+    }
+
+
+    /**
+     * Default construct to return an empty ResultRow if the query returns nothing.
+     * <p>
+     * If the {@link com.safjnest.Utilities.SQL.ResultRow query} is null, the method {@code row.get(String)} will throw a NullPointerException.
+     */
+    public ResultRow(){
+        this.row = new HashMap<String, String>();
     }
 
     public String get(String columnName){
@@ -48,6 +59,18 @@ public class ResultRow {
 
     public int size() {
         return row.size();
+    }
+
+    public boolean isEmpty(){
+        return row.isEmpty();
+    }
+
+    public boolean emptyValues(){
+        for(String value : row.values()){
+            if(value != null && !value.isEmpty())
+                return false;
+        }
+        return true;
     }
 
     public String[] toArray() {
