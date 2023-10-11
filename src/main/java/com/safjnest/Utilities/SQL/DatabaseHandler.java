@@ -93,6 +93,38 @@ public class DatabaseHandler {
         return beeRow;
     }
 
+    public static boolean runQuery(String... queries) {
+        Statement stmt = null;
+        try {
+            stmt = c.createStatement();
+            c.setAutoCommit(false); // Imposta l'autocommit su false per iniziare una transazione
+            for (String query : queries) {
+                stmt.execute(query);
+            }
+            c.commit(); // Conferma la transazione
+            return true;
+        } catch (SQLException e) {
+            try {
+                if (c != null) {
+                    c.rollback(); // Annulla la transazione in caso di errore
+                }
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (stmt != null) {
+                    stmt.close();
+                }
+                c.setAutoCommit(true); // Ripristina l'autocommit a true
+            } catch (SQLException closeEx) {
+                closeEx.printStackTrace();
+            }
+        }
+    }
+
     public static boolean runQuery(String query){
         Statement stmt;
         try {
@@ -254,11 +286,11 @@ public class DatabaseHandler {
         }
         sb.setLength(sb.length() - 2);
 
-        return runQuery("START TRANSACTION;\n"
-            + "INSERT INTO soundboard (name, guild_id) VALUES ('" + name + "', '" + guild_id + "');\n"
-            + "SET @soundboard_id = LAST_INSERT_ID();\n"
-            + "INSERT INTO soundboard_sounds (id, sound_id) VALUES \n" + sb.toString() + ";\n"
-            + "COMMIT;"
+        
+        return runQuery(
+            "INSERT INTO soundboard (name, guild_id) VALUES ('" + name + "', '" + guild_id + "');",
+            "SET @soundboard_id = LAST_INSERT_ID();",
+            "INSERT INTO soundboard_sounds (id, sound_id) VALUES \n" + sb.toString() + ";"
         );
     }
 
