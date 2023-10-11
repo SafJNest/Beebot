@@ -37,7 +37,7 @@ public class ListUser extends Command{
 	@Override
 	protected void execute(CommandEvent event) {
         User mentionedUser;
-        if(event.getArgs() == null)
+        if(event.getArgs().equals(""))
             mentionedUser = event.getAuthor();
         else
             mentionedUser = PermissionHandler.getMentionedUser(event, event.getArgs());

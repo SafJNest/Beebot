@@ -5,6 +5,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 
 /**
@@ -15,13 +16,15 @@ import net.dv8tion.jda.api.entities.Member;
  */
 public class Disconnect extends Command {
 
-    public Disconnect(){
+    public Disconnect() {
         this.name = this.getClass().getSimpleName();;
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
+        this.botPermissions = new Permission[]{Permission.VOICE_MOVE_OTHERS};
+        this.userPermissions = new Permission[]{Permission.VOICE_MOVE_OTHERS};
     }
 
 	@Override
