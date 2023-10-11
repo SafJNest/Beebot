@@ -97,7 +97,7 @@ public class DatabaseHandler {
         Statement stmt;
         try {
             stmt = c.createStatement();
-            stmt.executeUpdate(query);
+            stmt.execute(query);
             stmt.close();
             return true;
         }
@@ -150,10 +150,10 @@ public class DatabaseHandler {
     public static QueryResult getSoundsById(String... sound_ids) {
         StringBuilder sb = new StringBuilder();
         for(String sound_id : sound_ids) {
-            sb.append("('" + sound_id + "'), ");
+            sb.append(sound_id + ", ");
         }
         sb.setLength(sb.length() - 2);
-        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id IN " + sb.toString() + ";");
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id IN (" + sb.toString() + ");");
     }
 
     public static QueryResult getSoundsById(String id, String guild_id, String author_id) {
@@ -216,7 +216,7 @@ public class DatabaseHandler {
     }
 
     public static boolean soundboardExists(String name, String guild_id) {
-        return !safJQuery("SELECT count(name) as count from soundboard WHERE name = '" + name + "' guild_id = '" + guild_id + "'").isEmpty();
+        return !fetchJRow("SELECT id from soundboard WHERE name = '" + name + "' AND guild_id = '" + guild_id + "'").emptyValues();
     }
 
     public static int getSoundInSoundboardCount(String id) {
@@ -250,14 +250,14 @@ public class DatabaseHandler {
 
         StringBuilder sb = new StringBuilder();
         for(String sound_id : sound_ids) {
-            sb.append("(@soundboard_id, '" + sound_id + "'), ");
+            sb.append("(@soundboard_id, " + sound_id + "),\n");
         }
         sb.setLength(sb.length() - 2);
 
-        return runQuery("START TRANSACTION; "
-            + "INSERT INTO soundboard (name, guild_id) VALUES ('" + name + "', '" + guild_id + "'); "
-            + "SET @soundboard_id = LAST_INSERT_ID(); "
-            + "INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + "; "
+        return runQuery("START TRANSACTION;\n"
+            + "INSERT INTO soundboard (name, guild_id) VALUES ('" + name + "', '" + guild_id + "');\n"
+            + "SET @soundboard_id = LAST_INSERT_ID();\n"
+            + "INSERT INTO soundboard_sounds (id, sound_id) VALUES \n" + sb.toString() + ";\n"
             + "COMMIT;"
         );
     }

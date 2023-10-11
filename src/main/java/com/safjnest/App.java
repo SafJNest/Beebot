@@ -69,7 +69,7 @@ public class App {
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }
-        
+        DatabaseHandler.getCannuccia();
         lolHandler = new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
 
         dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();

@@ -90,7 +90,7 @@ public class TTS extends Command{
             return;
         }
 
-        if(speech == "") {
+        if(speech.equals("")) {
             event.reply("Write the text you want to turn into speech (or list to get the list of voices).");
             return;
         }

@@ -49,7 +49,7 @@ public class PlaySound extends Command{
         AudioChannel authorChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
         
-        if((fileName = event.getArgs()) == ""){
+        if((fileName = event.getArgs()).equals("")){
             event.reply("You need to specify a sound name or id.");
             return;
         }
@@ -75,7 +75,7 @@ public class PlaySound extends Command{
 
         ResultRow toPlay = null;
         for(ResultRow sound : sounds) {
-            if(sound.get("guild_id") == event.getGuild().getId()) {
+            if(sound.get("guild_id").equals(event.getGuild().getId())) {
                 toPlay = sound;
                 break;
             }
