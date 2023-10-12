@@ -314,37 +314,37 @@
         "children": {
             "channel": {
                 "alias" : [],
-                "help"  : "Delete the welcome message.",
+                "help"  : "Change the welcome channel.",
                 "arguments" : "[CommandName]"
             }, 
             "create": {
                 "alias" : [],
-                "help"  : "Change the welcome channel.",
+                "help"  : "Create a welcome message for this guild.",
                 "arguments" : "[CommandName]"
             },
             "delete": {
                 "alias" : [],
-                "help"  : "Show a preview of the welcome message.",
+                "help"  : "Delete the welcome message for this guild.",
                 "arguments" : "[CommandName]"
             },
             "preview": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Preview the welcome message.",
                 "arguments" : "[CommandName]"
             },
             "role": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Change the role users will get when they enter this guild.",
                 "arguments" : "[CommandName]"
             },
             "text": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Change the welcome message's text.",
                 "arguments" : "[CommandName]"
             },
             "toggle": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Toggle the welcome message on or off.",
                 "arguments" : "[CommandName]"
             }
         }
@@ -358,32 +358,32 @@
         "children": {
             "channel": {
                 "alias" : [],
-                "help"  : "Delete the welcome message.",
+                "help"  : "Change the leave channel.",
                 "arguments" : "[CommandName]"
             }, 
             "create": {
                 "alias" : [],
-                "help"  : "Change the welcome channel.",
+                "help"  : "Create a leave message for this guild.",
                 "arguments" : "[CommandName]"
             },
             "delete": {
                 "alias" : [],
-                "help"  : "Show a preview of the welcome message.",
+                "help"  : "Delete the leave message for this guild.",
                 "arguments" : "[CommandName]"
             },
             "preview": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Preview the leave message.",
                 "arguments" : "[CommandName]"
             },
             "text": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Change the leave message's text.",
                 "arguments" : "[CommandName]"
             },
             "toggle": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Toggle the leave message on or off.",
                 "arguments" : "[CommandName]"
             }
         }
@@ -397,30 +397,29 @@
         "children": {
             "channeltoggle": {
                 "alias" : [],
-                "help"  : "Toggle the exp system on and off.",
+                "help"  : "Toggle the exp system on and off for the specified channel.",
                 "arguments" : "[CommandName]"
             }, 
             "modifier": {
                 "alias" : [],
-                "help"  : "Show a preview of the levelup message.",
+                "help"  : "Change the exp modifier for the specified channel.",
                 "arguments" : "[CommandName]"
             },
             "preview": {
                 "alias" : [],
-                "help"  : "Modify or set the levelup message.",
+                "help"  : "Preview the level up message.",
                 "arguments" : "[CommandName]"
             },
             "text": {
                 "alias" : [],
-                "help"  : "Turn the exp system ON or OFF for a specific channel.",
+                "help"  : "Change the level up message's text.",
                 "arguments" : "[CommandName]"
             },
             "toggle": {
                 "alias" : [],
-                "help"  : "Set a modifier for the exp gained in a specific channel.",
+                "help"  : "Toggle the exp system on and off for the whole guild.",
                 "arguments" : "[CommandName]"
-            } 
-            
+            }
         }
     },
 
@@ -432,32 +431,32 @@
         "children": {
             "channel": {
                 "alias" : [],
-                "help"  : "Delete the welcome message.",
+                "help"  : "Change the boost channel.",
                 "arguments" : "[CommandName]"
             }, 
             "create": {
                 "alias" : [],
-                "help"  : "Change the welcome channel.",
+                "help"  : "Create a boost message for this guild.",
                 "arguments" : "[CommandName]"
             },
             "delete": {
                 "alias" : [],
-                "help"  : "Show a preview of the welcome message.",
+                "help"  : "Delete the boost message for this guild.",
                 "arguments" : "[CommandName]"
             },
             "preview": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Preview the boost message.",
                 "arguments" : "[CommandName]"
             },
             "text": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Change the boost message's text.",
                 "arguments" : "[CommandName]"
             },
             "toggle": {
                 "alias" : [],
-                "help"  : "Modify or set the welcome message.",
+                "help"  : "Toggle the boost message on or off.",
                 "arguments" : "[CommandName]"
             }
         }
