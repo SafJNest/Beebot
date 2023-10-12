@@ -29,11 +29,11 @@ public class Disconnect extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        if(event.getArgs() == ""){
+        if(event.getArgs().equals("")) {
             event.getGuild().getAudioManager().closeAudioConnection();
             return;
         }
-
+        
         Member mentionedMember = PermissionHandler.getMentionedMember(event, event.getArgs());
         if(mentionedMember == null) {
             event.reply("Couldn't find the specified member, please mention or write the id of a member.");

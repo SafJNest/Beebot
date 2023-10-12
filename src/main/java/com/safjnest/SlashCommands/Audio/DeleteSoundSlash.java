@@ -50,7 +50,7 @@ public class DeleteSoundSlash extends SlashCommand{
         if(sounds.size() > 1) {
             StringBuilder toSend = new StringBuilder("Two or more sounds with that name have been found, please use IDs.\n");
             for(ResultRow sound : sounds)
-                toSend.append(sound.get("name") + " (ID: " + sound.get("id") + ") | guild: " + event.getJDA().getGuildById(sound.get("guild_id")) + " | author: " + event.getGuild().getMemberById(sound.get("user_id")) + " | Can you delete this: " + ((!event.getUser().getId().equals(sound.get("user_id")) && !(event.getMember().hasPermission(Permission.ADMINISTRATOR) && event.getGuild().getId().equals(sound.get("guild_id")))) ? "no" : "yes") + "\n");
+                toSend.append("**Sound:** " + sound.get("name") + " (ID: " + sound.get("id") + ") | **Guild:** " + event.getJDA().getGuildById(sound.get("guild_id")).getName() + " | **Author:** " + event.getGuild().getMemberById(sound.get("user_id")).getAsMention() + " | **Can you delete this:** " + ((!event.getUser().getId().equals(sound.get("user_id")) && !(event.getMember().hasPermission(Permission.ADMINISTRATOR) && event.getGuild().getId().equals(sound.get("guild_id")))) ? "no" : "yes") + "\n");
             event.deferReply(true).addContent(toSend.toString()).queue();
             return;
         }

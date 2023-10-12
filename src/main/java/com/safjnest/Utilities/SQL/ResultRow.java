@@ -30,6 +30,10 @@ public class ResultRow {
         }
     }
 
+    public void put(String key, String value) {
+        this.row.put(key, value);
+    }
+
     public int getAsInt(String columnName){
         try {
             return Integer.parseInt(row.get(columnName));

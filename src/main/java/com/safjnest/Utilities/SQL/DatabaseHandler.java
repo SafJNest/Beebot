@@ -7,16 +7,13 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
-
 
 /**
- * Useless class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
+ * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
  * of the biggest caterpies ever made
  */
 public class DatabaseHandler {
-
+    
     /** Object that opens the connection between database and beeby */
     private static Connection c;
 
@@ -30,42 +27,62 @@ public class DatabaseHandler {
      */
     public DatabaseHandler(String hostName, String database, String user, String password){
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            c = DriverManager
-                .getConnection("jdbc:mysql://"+hostName+"/"+ database + "?autoReconnect=true",user,password);
+            Class.forName("org.mariadb.jdbc.Driver");
+            c = DriverManager.getConnection("jdbc:mariadb://" + hostName + "/" + database + "?autoReconnect=true", user, password);
+            c.setAutoCommit(false);
             System.out.println("[SQL] INFO Connection to the extreme db successful!");
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println(e.getClass().getName()+": "+e.getMessage());
-            System.out.println("[SQL] INFO Connection to the extreme db ANNODAM!");;
+            System.err.println(e.getClass().getName() + ": " + e.getMessage());
+            System.out.println("[SQL] INFO Connection to the extreme db ANNODAM!");
         }
     }
 
-    /**
-    * Useless method but {@link <a href="https://github.com/NeutronSun">NeutronSun</a>} is one
-    * of the biggest bellsprout ever made
-    */
-	public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {
-        return;
-	}
-
     public static QueryResult safJQuery(String query) {
         QueryResult result = new QueryResult();
+
         try (Statement stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query)) {
+
             ResultSetMetaData rsmd = rs.getMetaData();
             while (rs.next()) {
-                Map<String, String> row = new HashMap<>();
+                ResultRow beeRow = new ResultRow();
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                     String columnName = rsmd.getColumnName(i);
                     String columnValue = rs.getString(i);
-                    row.put(columnName, columnValue);
+                    beeRow.put(columnName, columnValue);
                 }
-                ResultRow beeRow = new ResultRow(row);
                 result.add(beeRow);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            c.commit();
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+            //return null;
+        }
+
+        return result; 
+    }
+
+    public static QueryResult safJQuery(Statement stmt, String query) throws SQLException {
+        QueryResult result = new QueryResult();
+
+        ResultSet rs = stmt.executeQuery(query);
+
+        ResultSetMetaData rsmd = rs.getMetaData();
+
+        while (rs.next()) {
+            ResultRow beeRow = new ResultRow();
+            for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                String columnName = rsmd.getColumnName(i);
+                String columnValue = rs.getString(i);
+                beeRow.put(columnName, columnValue);
+            }
+            result.add(beeRow);
         }
 
         return result; 
@@ -76,65 +93,69 @@ public class DatabaseHandler {
 
         try (Statement stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query)) {
+            
             ResultSetMetaData rsmd = rs.getMetaData();
             if (rs.next()) {
-                Map<String, String> row = new HashMap<>();
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                     String columnName = rsmd.getColumnName(i);
                     String columnValue = rs.getString(i);
-                    row.put(columnName, columnValue);
+                    beeRow.put(columnName, columnValue);
                 }
-                beeRow = new ResultRow(row);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+            c.commit();
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+            //return null;
+        }
+
+        return beeRow;
+    }
+
+    public static ResultRow fetchJRow(Statement stmt, String query) throws SQLException {
+        ResultRow beeRow = new ResultRow();
+
+        ResultSet rs = stmt.executeQuery(query);
+            
+        ResultSetMetaData rsmd = rs.getMetaData();
+
+        if (rs.next()) {
+            for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                String columnName = rsmd.getColumnName(i);
+                String columnValue = rs.getString(i);
+                beeRow.put(columnName, columnValue);
+            }
         }
 
         return beeRow;
     }
 
     public static boolean runQuery(String... queries) {
-        Statement stmt = null;
-        try {
-            stmt = c.createStatement();
-            c.setAutoCommit(false); // Imposta l'autocommit su false per iniziare una transazione
-            for (String query : queries) {
+        try (Statement stmt = c.createStatement()) {
+            for (String query : queries)
                 stmt.execute(query);
-            }
-            c.commit(); // Conferma la transazione
+            c.commit();
             return true;
-        } catch (SQLException e) {
+        } catch (SQLException ex) {
             try {
-                if (c != null) {
-                    c.rollback(); // Annulla la transazione in caso di errore
-                }
-            } catch (SQLException rollbackEx) {
-                rollbackEx.printStackTrace();
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
             }
-            e.printStackTrace();
+            System.out.println(ex.getMessage());
             return false;
-        } finally {
-            try {
-                if (stmt != null) {
-                    stmt.close();
-                }
-                c.setAutoCommit(true); // Ripristina l'autocommit a true
-            } catch (SQLException closeEx) {
-                closeEx.printStackTrace();
-            }
         }
     }
 
-    public static boolean runQuery(String query){
-        Statement stmt;
-        try {
-            stmt = c.createStatement();
+    public static void runQuery(Statement stmt, String... queries) throws SQLException {
+        for (String query : queries)
             stmt.execute(query);
-            stmt.close();
-            return true;
-        }
-        catch (SQLException e1) {e1.printStackTrace(); return false;}
     }
+
 
 
     public static QueryResult getGuildsData(String filter){        
@@ -181,10 +202,10 @@ public class DatabaseHandler {
 
     public static QueryResult getSoundsById(String... sound_ids) {
         StringBuilder sb = new StringBuilder();
-        for(String sound_id : sound_ids) {
+        for(String sound_id : sound_ids)
             sb.append(sound_id + ", ");
-        }
         sb.setLength(sb.length() - 2);
+
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id IN (" + sb.toString() + ");");
     }
 
@@ -209,12 +230,20 @@ public class DatabaseHandler {
     }
 
     public static String insertSound(String name, String guild_id, String user_id, String extension, boolean isPublic) {
-        return fetchJRow("START TRANSACTION; "
-            + "INSERT INTO sound(name, guild_id, user_id, extension, public) VALUES('" + name + "','" + guild_id + "','" + user_id + "','" + extension + "', " + ((isPublic == true) ? "1" : "0") + "); "
-            + "SELECT LAST_INSERT_ID() AS id; "
-            + "COMMIT;")
-            .get("id"
-        );
+        String soundId = null;
+        try (Statement stmt = c.createStatement()) {
+            runQuery(stmt, "INSERT INTO sound(name, guild_id, user_id, extension, public) VALUES('" + name + "','" + guild_id + "','" + user_id + "','" + extension + "', " + ((isPublic == true) ? "1" : "0") + "); ");
+            soundId = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").get("id");
+            c.commit();
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+        }
+        return soundId;
     }
 
     public static boolean updateSound(String id, String name, boolean isPublic) {
@@ -281,17 +310,25 @@ public class DatabaseHandler {
         if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
 
         StringBuilder sb = new StringBuilder();
-        for(String sound_id : sound_ids) {
-            sb.append("(@soundboard_id, " + sound_id + "),\n");
-        }
-        sb.setLength(sb.length() - 2);
 
+        for (String sound_id : sound_ids)
+            sb.append("(LAST_INSERT_ID(), " + sound_id + "), ");
+        sb.setLength(sb.length() - 2);
         
-        return runQuery(
-            "INSERT INTO soundboard (name, guild_id) VALUES ('" + name + "', '" + guild_id + "');",
-            "SET @soundboard_id = LAST_INSERT_ID();",
-            "INSERT INTO soundboard_sounds (id, sound_id) VALUES \n" + sb.toString() + ";"
-        );
+        try (Statement stmt = c.createStatement()) {
+            runQuery(stmt, "INSERT INTO soundboard (name, guild_id) VALUES ('" + name + "', '" + guild_id + "'); ");
+            runQuery(stmt, "INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
+            c.commit();
+            return true;
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+            return false;
+        }
     }
 
     public static boolean insertSoundsInSoundBoard(String id, String... sound_ids) {
@@ -625,9 +662,6 @@ public class DatabaseHandler {
     public static ResultRow getGreet(String user_id, String guild_id, String bot_id) {
         return fetchJRow("SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + user_id + "' AND (greeting.guild_id = '" + guild_id + "' OR greeting.guild_id = '0') AND greeting.bot_id = '" + bot_id + "' ORDER BY CASE WHEN greeting.guild_id = '0' THEN 1 ELSE 0 END LIMIT 1;");
     }
-
-
-
 
 
 

@@ -26,7 +26,7 @@ public class Image extends Command{
     protected void execute(CommandEvent event) {
         try {
             User mentionedUser;
-            if(event.getArgs() == "")
+            if(event.getArgs().equals(""))
                 mentionedUser = event.getAuthor();
             else
                 mentionedUser = PermissionHandler.getMentionedUser(event, event.getArgs());

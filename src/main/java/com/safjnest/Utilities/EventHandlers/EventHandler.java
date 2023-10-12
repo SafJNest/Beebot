@@ -404,7 +404,6 @@ public class EventHandler extends ListenerAdapter {
     public void onGuildBan(GuildBanEvent event) {
         User theGuy = event.getUser();
         int threshold = gs.getServer(event.getGuild().getId()).getThreshold();
-        String query = "";
 
         if(threshold == 0)
             return;
@@ -424,7 +423,6 @@ public class EventHandler extends ListenerAdapter {
         eb.setTitle(":radioactive:Blacklist:radioactive:");
         eb.setDescription("The member " + theGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
         for(ResultRow g : guilds){
-
             Guild gg = event.getJDA().getGuildById(g.get("guild_id"));
             if(gg.getMemberById(theGuy.getId()) == null)
                 continue;
@@ -434,7 +432,6 @@ public class EventHandler extends ListenerAdapter {
             Button kick = Button.primary("kick-" + theGuy.getId(), "Kick");
             Button ban = Button.primary("ban-" + theGuy.getId(), "Ban");
             Button ignore = Button.primary("ignore-" + theGuy.getId(), "Ignore");
-
 
             kick = kick.withStyle(ButtonStyle.PRIMARY);
             ban = ban.withStyle(ButtonStyle.PRIMARY);

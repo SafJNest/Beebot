@@ -73,7 +73,7 @@ public class UploadSlash extends SlashCommand{
         String id = DatabaseHandler.insertSound(name, event.getGuild().getId(), event.getMember().getId(), attachment.getFileExtension(), isPublic);
 
         if(id == null){
-            event.deferReply(true).addContent("An error with the database occured.").queue();
+            event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
 

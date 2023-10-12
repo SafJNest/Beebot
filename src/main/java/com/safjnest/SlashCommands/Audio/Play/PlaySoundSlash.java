@@ -74,7 +74,7 @@ public class PlaySoundSlash extends SlashCommand{
 
         ResultRow toPlay = null;
         for(ResultRow sound : sounds) {
-            if(sound.get("guild_id") == event.getGuild().getId()) {
+            if(sound.get("guild_id").equals(event.getGuild().getId())) {
                 toPlay = sound;
                 break;
             }

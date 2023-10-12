@@ -31,7 +31,7 @@ public class Prefix extends Command{
     @Override
     protected void execute(CommandEvent event) {
         String prefix = event.getArgs();
-        if(prefix == "") {
+        if(prefix.equals("")) {
             event.reply("Write the new prefix.");
             return;
         }
