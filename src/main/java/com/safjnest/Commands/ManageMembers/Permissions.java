@@ -27,7 +27,7 @@ public class Permissions extends Command{
     protected void execute(CommandEvent event) {
         try {
             Member mentionedMember;
-            if(event.getArgs() == "")
+            if(event.getArgs().equals(""))
                 mentionedMember = event.getMember();
             else
                 mentionedMember = PermissionHandler.getMentionedMember(event, event.getArgs());

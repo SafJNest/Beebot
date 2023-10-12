@@ -85,15 +85,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         System.out.println("[R4J-Augments] INFO Augments Successful! Viktor is proud :)");
     }
 
-    /**
-    * Useless method but {@link <a href="https://github.com/NeutronSun">NeutronSun</a>} is one
-    * of the biggest bellsprout ever made
-    */
-	public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {
-        return;
-	}
-
-
     private void loadChampions(){
         champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
     }

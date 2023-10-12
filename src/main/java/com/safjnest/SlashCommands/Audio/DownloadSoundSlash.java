@@ -14,8 +14,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.FileUpload;
 
-
-
 public class DownloadSoundSlash extends SlashCommand{
     String path = "rsc" + File.separator + "SoundBoard" + File.separator;
 
@@ -34,37 +32,40 @@ public class DownloadSoundSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         String fileName = event.getOption("sound").getAsString();
+        String message = null;
 
-        QueryResult sounds = fileName.matches("[0123456789]*") 
+        QueryResult sounds = fileName.matches("\\d+") 
                            ? DatabaseHandler.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
                            : DatabaseHandler.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
 
-        if(sounds.isEmpty()){
-            event.reply("Couldn't find a sound with that name/id.");
+        if(sounds.isEmpty()) {
+            event.deferReply(true).addContent("Couldn't find a sound with that name/id.");
             return;
         }
 
         ResultRow toDownload = null;
-        for(ResultRow sound : sounds) {
-            if(sound.get("guild_id") == event.getGuild().getId()) {
-                toDownload = sound;
+
+        if(sounds.size() == 1) {
+            toDownload = sounds.get(0);
+            message = "Downloaded sound **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")**";
+        }
+        else {
+            for(ResultRow sound : sounds) {
+                if(sound.get("guild_id").equals(event.getGuild().getId())) {
+                    toDownload = sound;
+                    message = "Downloaded sound **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")** from this guild.";
+                }
             }
         }
-        
-        if(toDownload == null){
+        if(toDownload == null) {
             toDownload = sounds.get((int)(Math.random() * sounds.size()));
-
-            fileName = path + toDownload.get("id") + "." + toDownload.get("extension");
-
-            event.deferReply(false).addContent("Couldn't find a sound with this name on your guild so i downloaded a random sound with this name.")
-                .setFiles(FileUpload.fromData(new File(fileName)))
-                .queue();
+            message = "Downloaded a random sound named **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")** ";
         }
-        else{
-            fileName = path + toDownload.get("id") + "." + toDownload.get("extension");
-            event.deferReply(false).addContent("Downloading the sound with this name from your guild.")
-                .setFiles(FileUpload.fromData(new File(fileName)))
-                .queue();
-        }
+
+        fileName = path + toDownload.get("id") + "." + toDownload.get("extension");
+
+        event.deferReply(false).addContent(message)
+            .setFiles(FileUpload.fromData(new File(fileName)))
+            .queue();
     }
 }

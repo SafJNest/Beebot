@@ -22,8 +22,6 @@ public class App {
     public static ArrayList<Thread> botsArr = new ArrayList<>(); 
     private static TTSHandler tts;
     private static R4J riotApi;
-    private static RiotHandler lolHandler;
-    private static DatabaseHandler dbh;
     private static BotSettingsHandler bs;
     public static String key;
 
@@ -54,7 +52,7 @@ public class App {
         }
         tts = new TTSHandler(settings.get("ttsApiKey").toString());
         
-        dbh = new DatabaseHandler(
+        new DatabaseHandler(
             SQLSettings.get("HostName").toString(), 
             SQLSettings.get("database").toString(), 
             SQLSettings.get("user").toString(), 
@@ -63,21 +61,18 @@ public class App {
         
         riotApi = null;
         try {
-            riotApi = new R4J(new APICredentials(
-                riotSettings.get("riotKey").toString()));
+            riotApi = new R4J(new APICredentials(riotSettings.get("riotKey").toString()));
             System.out.println("[R4J] INFO Connection Successful!");
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }
-        DatabaseHandler.getCannuccia();
-        lolHandler = new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
 
-        dbh.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-        lolHandler.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
+        new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
+
 
         bs = new BotSettingsHandler();
 
-        if(!isExtremeTesting()){
+        if(!isExtremeTesting()) {
             try {
                 for (int i = 0; i < bots.size(); i++) {
                     Thread t = new Thread(new Bot(bs, tts, riotApi));
@@ -89,14 +84,14 @@ public class App {
                     Thread.sleep(1170); //pebble non riesce a gestire più di un bot che si loada contemporaneamente
                 }
             } catch (Exception e) {e.printStackTrace(); return;}
-        }else{
+        } else{
             Thread bc = new Thread(new Bot(bs, tts, riotApi));
             bc.setName("beebot canary");
             bc.start();
         }
     }
 
-    public static void shutdown(String bot){
+    public static void shutdown(String bot) {
         System.out.println("Shutting down " + bot);
         for(int i = 0; i < botsArr.size(); i++){
             if(botsArr.get(i).getName().equals(bot)){
@@ -106,7 +101,7 @@ public class App {
         }
     }
 
-    public static void restart(String bot){
+    public static void restart(String bot) {
         System.out.println("Shutting down " + bot);
         for(int i = 0; i < botsArr.size(); i++){
             if(botsArr.get(i).getName().equals(bot)){
@@ -120,5 +115,4 @@ public class App {
         botsArr.add(t);
         return;
     }
-   
 }
