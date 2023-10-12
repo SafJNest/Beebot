@@ -22,7 +22,7 @@ public class BoostPreviewSlash extends SlashCommand{
 
         ResultRow boost = DatabaseHandler.getBoost(guildId, botId);
 
-        if(boost == null) {
+        if(boost.get("boost_message") == null) {
             event.deferReply(true).addContent("This guild doesn't have a boost message.").queue();
             return;
         }
