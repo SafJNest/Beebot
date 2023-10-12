@@ -477,7 +477,7 @@ public class DatabaseHandler {
     }
 
     public static boolean deleteWelcome(String guild_id, String bot_id) {
-        return runQuery("UPDATE alert SET welcome_message = NULL, welcome_channel = NULL, welcome_role = NULL, welcome_enabled = '0' WHERE guild_id = '" + guild_id + "',' AND bot_id = '" + bot_id + "'"); 
+        return runQuery("UPDATE alert SET welcome_message = NULL, welcome_channel = NULL, welcome_role = NULL, welcome_enabled = 0 WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "'"); 
     }
 
     public static boolean updateWelcomeChannel(String guild_id, String bot_id, String welcome_channel) {
@@ -511,7 +511,7 @@ public class DatabaseHandler {
     }
 
     public static boolean deleteLeave(String guild_id, String bot_id) {
-        return runQuery("UPDATE alert SET leave_message = NULL, leave_channel = NULL, leave_role = NULL, leave_enabled = '0' WHERE guild_id = '" + guild_id + "',' AND bot_id = '" + bot_id + "'"); 
+        return runQuery("UPDATE alert SET leave_message = NULL, leave_channel = NULL, leave_enabled = 0 WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "'"); 
     }
 
     public static boolean updateLeaveChannel(String guild_id, String bot_id, String leave_message) {
@@ -541,7 +541,7 @@ public class DatabaseHandler {
     }
 
     public static boolean deleteBoost(String guild_id, String bot_id) {
-        return runQuery("UPDATE alert SET boost_message = NULL, boost_channel = NULL, boost_role = NULL, boost_enabled = '0' WHERE guild_id = '" + guild_id + "',' AND bot_id = '" + bot_id + "'"); 
+        return runQuery("UPDATE alert SET boost_message = NULL, boost_channel = NULL, boost_enabled = 0 WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "'"); 
     }
 
     public static boolean updateBoostChannel(String guild_id, String bot_id, String boost_message) {
