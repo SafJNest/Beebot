@@ -11,7 +11,6 @@ import java.util.Map;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.entities.User;
@@ -32,7 +31,7 @@ public class LastMatchesSlash extends SlashCommand {
     /**
      * Constructor
      */
-    public LastMatchesSlash(R4J r, SQL sql){
+    public LastMatchesSlash(R4J r){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

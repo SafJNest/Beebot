@@ -5,8 +5,8 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -41,15 +41,16 @@ public class BlacklistChannelSlash extends SlashCommand {
             return;
         }
 
-        String channelId = event.getOption("channel").getAsChannel().getId();
-        String query = "UPDATE guild_settings SET blacklist_channel = '" + channelId + "' WHERE guild_id = '" + event.getGuild().getId() +  "' AND bot_id = '" + event.getJDA().getSelfUser().getId() +  "';";
+        String channelID = event.getOption("channel").getAsChannel().getId();
+        String guildID = event.getGuild().getId();
+        String botID = event.getJDA().getSelfUser().getId();
 
-        if(DatabaseHandler.getSql().runQuery(query)){
-            gs.getServer(event.getGuild().getId()).setBlackChannel(channelId);
-            event.deferReply(false).addContent("Blacklist channel set to " + event.getGuild().getTextChannelById(channelId).getAsMention() + ".").queue();
+        if(!DatabaseHandler.setBlacklistChannel(channelID, guildID, botID)) {
+            event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
-        event.deferReply(true).addContent("Something went wrong.").queue();
         
+        gs.getServer(event.getGuild().getId()).setBlackChannel(channelID);
+        event.deferReply(false).addContent("Blacklist channel set to " + event.getGuild().getTextChannelById(channelID).getAsMention() + ".").queue();
     }
 }

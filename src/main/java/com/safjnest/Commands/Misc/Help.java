@@ -25,9 +25,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
  * @since 1.1.01
  */
 public class Help extends Command {
-    /**
-     * Default constructor for the class.
-     */
 
     GuildSettings gs;
     public Help(GuildSettings gs) {
@@ -39,9 +36,7 @@ public class Help extends Command {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.gs = gs;
     }
-    /**
-     * This method is called every time a member executes the command.
-     */
+
     @Override
     protected void execute(CommandEvent event) {
         int nCom = 0;

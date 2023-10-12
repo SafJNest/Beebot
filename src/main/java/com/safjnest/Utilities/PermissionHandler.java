@@ -219,6 +219,15 @@ public class PermissionHandler {
         return member;
     }
 
+    public static Guild getGuild(CommandEvent event, String guildName) {
+        Guild guild = null;
+        try {
+            guild = event.getJDA().getGuildById(guildName);
+        }
+        catch (Exception e) {}
+        return guild;
+    }
+
     public static boolean isUserBanned(Guild guild, User user) throws InsufficientPermissionException{
         try {
             guild.retrieveBan(user).complete();

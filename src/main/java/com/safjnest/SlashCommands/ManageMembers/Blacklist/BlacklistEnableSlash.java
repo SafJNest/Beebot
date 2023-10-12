@@ -2,12 +2,11 @@ package com.safjnest.SlashCommands.ManageMembers.Blacklist;
 
 import java.util.Arrays;
 
-
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.DatabaseHandler;
 import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -28,7 +27,8 @@ public class BlacklistEnableSlash extends SlashCommand{
             new OptionData(OptionType.INTEGER, "threshold", "Ban threshold", true)
                 .setMinValue(3)    
                 .setMaxValue(100),
-            new OptionData(OptionType.CHANNEL, "channel", "Notification channel", true));
+            new OptionData(OptionType.CHANNEL, "channel", "Notification channel", true)
+        );
         
         this.gs = gs;
     }
@@ -38,13 +38,13 @@ public class BlacklistEnableSlash extends SlashCommand{
         String threshold = event.getOption("threshold").getAsString();
         String channelId = event.getOption("channel").getAsChannel().getId();
 
-
-        String query = "INSERT INTO guild_settings(guild_id, bot_id, threshold, blacklist_channel)" + "VALUES('" + event.getGuild().getId() + "','" + event.getJDA().getSelfUser().getId() + "','" + threshold +"', '" + channelId + "') ON DUPLICATE KEY UPDATE threshold = '" + threshold + "', blacklist_channel = '" + channelId + "';";
-        if(!DatabaseHandler.getSql().runQuery(query)){
+        if(!DatabaseHandler.enableBlacklist(event.getGuild().getId(), event.getJDA().getSelfUser().getId(), threshold, channelId)){
             event.deferReply(false).addContent("Something went wrong.").queue();
             return;            
         }
+        
         event.deferReply(false).addContent("Blacklist enabled with a ban threshold of " + threshold + ".\nNotification will be sent in " + event.getGuild().getTextChannelById(channelId).getAsMention() + ".").queue();
+        
         gs.getServer(event.getGuild().getId()).setThreshold(Integer.parseInt(threshold));
         gs.getServer(event.getGuild().getId()).setBlackChannel(channelId);
     }

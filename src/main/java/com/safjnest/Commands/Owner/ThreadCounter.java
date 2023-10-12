@@ -11,9 +11,7 @@ import com.safjnest.Utilities.CommandsLoader;
  * @since 1.3
  */
 public class ThreadCounter extends Command{
-    /**
-     * Default constructor for the class.
-     */
+
     public ThreadCounter(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
@@ -24,10 +22,8 @@ public class ThreadCounter extends Command{
         this.ownerCommand = true;
         this.hidden = true;
     }
-    /**
-     * This method is called every time a member executes the command.
-    */
-     @Override
+
+    @Override
     protected void execute(CommandEvent e) {
         double cont = 0.0;
         for (Thread t : ThreadUtils.getAllThreads()) {
