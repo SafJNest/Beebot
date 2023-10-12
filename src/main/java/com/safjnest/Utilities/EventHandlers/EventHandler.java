@@ -331,7 +331,7 @@ public class EventHandler extends ListenerAdapter {
         ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
 
         String notNullPls = alert.get("welcome_channel");
-        if (notNullPls != null){
+        if (notNullPls != null && alert.getAsBoolean("welcome_enabled")){
             channel = event.getGuild().getTextChannelById(notNullPls);
             String message = alert.get("welcome_message");
 
@@ -390,7 +390,7 @@ public class EventHandler extends ListenerAdapter {
         ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
         
         String notNullPls = alert.get("leave_channel");
-        if (notNullPls == null)
+        if (notNullPls == null || !alert.getAsBoolean("leave_enabled"))
             return;
         channel = event.getGuild().getTextChannelById(notNullPls);
         
@@ -455,7 +455,7 @@ public class EventHandler extends ListenerAdapter {
         MessageChannel channel = null;
         ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
         String notNullPls = alert.get("boost_channel");
-        if (notNullPls == null)
+        if (notNullPls == null || !alert.getAsBoolean("boost_enabled"))
             return;
         channel = event.getGuild().getTextChannelById(notNullPls);
         String message = alert.get("boost_message");

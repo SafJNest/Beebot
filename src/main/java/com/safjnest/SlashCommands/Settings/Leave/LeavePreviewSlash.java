@@ -22,7 +22,7 @@ public class LeavePreviewSlash extends SlashCommand{
 
         ResultRow leave = DatabaseHandler.getLeave(guildId, botId);
 
-        if(leave == null) {
+        if(leave.get("leave_message") == null) {
             event.deferReply(true).addContent("This guild doesn't have a leave message.").queue();
             return;
         }

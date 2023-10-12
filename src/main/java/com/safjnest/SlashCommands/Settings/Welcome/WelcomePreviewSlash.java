@@ -22,7 +22,7 @@ public class WelcomePreviewSlash extends SlashCommand{
 
         ResultRow welcome = DatabaseHandler.getWelcome(guildId, botId);
 
-        if(welcome == null) {
+        if(welcome.get("welcome_message") == null) {
             event.deferReply(true).addContent("This guild doesn't have a welcome message.").queue();
             return;
         }
