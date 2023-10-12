@@ -2,8 +2,7 @@ package com.safjnest.SlashCommands.Settings;
 
 import com.safjnest.Commands.Audio.TTS;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.DatabaseHandler;
-import com.safjnest.Utilities.SQL;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -19,7 +18,6 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
  * @since 1.3
  */
 public class SetVoiceSlash extends SlashCommand {
-    private SQL sql;
 
     public SetVoiceSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -30,7 +28,6 @@ public class SetVoiceSlash extends SlashCommand {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "voice", "Voice name", true));
-        this.sql = DatabaseHandler.getSql();
     }
 
     @Override
@@ -48,8 +45,8 @@ public class SetVoiceSlash extends SlashCommand {
             event.deferReply(true).addContent("Voice not found, use command /tts list").queue();
             return;
         }
-        String query = "INSERT INTO guild_settings (guild_id, bot_id, language_tts, name_tts) VALUES ('" + event.getGuild().getId() + "', '" + event.getJDA().getSelfUser().getId() + "', '" + language + "', '" + voice + "') ON DUPLICATE KEY UPDATE language_tts = '" + language + "', name_tts = '" + voice + "'";
-        sql.runQuery(query);
+
+        DatabaseHandler.updateVoiceGuild(event.getGuild().getId(), event.getJDA().getSelfUser().getId(), language, voice);
         event.deferReply(true).addContent("Voice set to " + voice).queue();
     }
 }

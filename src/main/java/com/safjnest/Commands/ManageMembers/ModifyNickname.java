@@ -10,6 +10,11 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 
+/**
+ * @author <a href="https://github.com/Leon412">Leon412</a>
+ * 
+ * @since 1.1
+ */
 public class ModifyNickname extends Command {
     /**
      * Default constructor for the class.

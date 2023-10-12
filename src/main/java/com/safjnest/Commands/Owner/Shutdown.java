@@ -12,10 +12,13 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsLoader;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * 
+ * @since 1.1
+ */
 public class Shutdown extends Command{
-    /**
-     * Default constructor for the class.
-     */
+
     public Shutdown(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
@@ -26,9 +29,7 @@ public class Shutdown extends Command{
         this.ownerCommand = true;
         this.hidden = true;
     }
-    /**
-     * This method is called every time a member executes the command.
-    */
+
     @Override
     protected void execute(CommandEvent e) {
         String bot = e.getArgs();

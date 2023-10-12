@@ -12,10 +12,13 @@ import java.io.Reader;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+/**
+ * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
+ * 
+ * @since 1.1
+ */
 public class Restart extends Command{
-    /**
-     * Default constructor for the class.
-     */
+
     public Restart(){
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
@@ -26,10 +29,8 @@ public class Restart extends Command{
         this.ownerCommand = true;
         this.hidden = true;
     }
-    /**
-     * This method is called every time a member executes the command.
-    */
-     @Override
+
+    @Override
     protected void execute(CommandEvent e) {
         String bot = e.getArgs();
         JSONParser parser = new JSONParser();
