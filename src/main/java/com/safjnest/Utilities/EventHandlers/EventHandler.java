@@ -87,7 +87,7 @@ public class EventHandler extends ListenerAdapter {
         if(bebyc != null && ac.getId().equals(bebyc.getId()) || bebyc == null){
             Member theGuy = e.getMember();
             ResultRow sound = DatabaseHandler.getGreet(theGuy.getId(), e.getGuild().getId(), e.getJDA().getSelfUser().getId());
-            if(sound == null)
+            if(sound.emptyValues())
                 return;
 
             PlayerManager pm = new PlayerManager();
