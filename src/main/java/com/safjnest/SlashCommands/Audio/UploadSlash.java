@@ -21,7 +21,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 1.2.5
  */
 public class UploadSlash extends SlashCommand{
-    private String name;
+    private String soundName;
     
     public UploadSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -39,7 +39,7 @@ public class UploadSlash extends SlashCommand{
     
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        name = event.getOption("name").getAsString();
+        soundName = event.getOption("name").getAsString();
         Attachment attachment = event.getOption("file").getAsAttachment();
 
         boolean isPublic;
@@ -48,7 +48,7 @@ public class UploadSlash extends SlashCommand{
         else
             isPublic = true;
         
-        if(name.matches("[0123456789]*")){
+        if(soundName.matches("[0123456789]*")){
             event.reply("You can't use a name that only contains numbers.");
             return;
         }
@@ -58,7 +58,7 @@ public class UploadSlash extends SlashCommand{
             return;
         }
 
-        QueryResult sounds = DatabaseHandler.getDuplicateSoundsByName(name, event.getGuild().getId(), event.getMember().getId());
+        QueryResult sounds = DatabaseHandler.getDuplicateSoundsByName(soundName, event.getGuild().getId(), event.getMember().getId());
 
         if(!sounds.isEmpty()) {
             for(ResultRow sound : sounds) {
@@ -70,7 +70,7 @@ public class UploadSlash extends SlashCommand{
             return;
         }
 
-        String id = DatabaseHandler.insertSound(name, event.getGuild().getId(), event.getMember().getId(), attachment.getFileExtension(), isPublic);
+        String id = DatabaseHandler.insertSound(soundName, event.getGuild().getId(), event.getMember().getId(), attachment.getFileExtension(), isPublic);
 
         if(id == null){
             event.deferReply(true).addContent("Something went wrong.").queue();
