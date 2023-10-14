@@ -552,14 +552,24 @@
         "category" : "Member Management",
         "arguments" : "",
         "children": {
-            "enable": {
-                "alias" : [],
-                "help"  : "Enable the blacklist for your server.\nAdmin has to set a threshold and a channel for notifications.",
-                "arguments" : "[CommandName]"
-            }, 
             "channel": {
                 "alias" : [],
-                "help"  : "Change the notification channel.",
+                "help"  : "Change the boost channel.",
+                "arguments" : "[CommandName]"
+            }, 
+            "create": {
+                "alias" : [],
+                "help"  : "Create and set the blacklist for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "threshold": {
+                "alias" : [],
+                "help"  : "Change the threshold.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Toggle the blacklist on or off.",
                 "arguments" : "[CommandName]"
             }
         }
