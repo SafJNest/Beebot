@@ -360,7 +360,7 @@ public class EventHandler extends ListenerAdapter {
         
         int times = DatabaseHandler.getBlacklistBan(event.getUser().getId());
 
-        if(gs.getServer(event.getGuild().getId()).getThreshold() == 0 || gs.getServer(event.getGuild().getId()).getThreshold() > times)
+        if(!gs.getServer(event.getGuild().getId()).blacklistEnabled() || gs.getServer(event.getGuild().getId()).getThreshold() == 0 || gs.getServer(event.getGuild().getId()).getThreshold() > times)
             return;
         
         EmbedBuilder eb = new EmbedBuilder();

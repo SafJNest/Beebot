@@ -36,12 +36,15 @@ public class GuildData {
 
     private String blackChannelId;
 
-    public GuildData(Long id, String prefix, boolean expSystem, int threshold, String channel) {
+    private boolean blacklist_enabled;
+
+    public GuildData(Long id, String prefix, boolean expSystem, int threshold, String channel, boolean blacklist_enabled) {
         this.id = id;
         this.prefix = prefix;
         this.expSystem = expSystem;
         this.threshold = threshold;
         this.blackChannelId = channel;
+        this.blacklist_enabled = blacklist_enabled;
         loadRooms();
     }
 
@@ -150,5 +153,12 @@ public class GuildData {
         rooms.get(id).setExpValue(value);
     }
 
+    public boolean blacklistEnabled() {
+        return blacklist_enabled;
+    }
+    
+    public void setBlacklistEnabled(boolean blacklist_enabled) {
+        this.blacklist_enabled = blacklist_enabled;
+    }
     
 }

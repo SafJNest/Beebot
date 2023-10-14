@@ -32,7 +32,7 @@ public class BlacklistSlash extends SlashCommand{
         this.gs = gs;
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new BlacklistChannelSlash(father, gs), new BlacklistEnableSlash(father, gs));
+        Collections.addAll(slashCommandsList, new BlacklistChannelSlash(father, gs), new BlacklistCreateSlash(father, gs), new BlacklistThresholdSlash(father, gs), new BlacklistToggleSlash(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
     }
 

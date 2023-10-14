@@ -68,6 +68,13 @@ public class DatabaseHandler {
         return result; 
     }
 
+
+    /**
+     * Method used for returning a {@link com.safjnest.Utilities.SQL.QueryResult result} from a query using default statement
+     * @param stmt
+     * @param query
+     * @throws SQLException
+     */ 
     public static QueryResult safJQuery(Statement stmt, String query) throws SQLException {
         QueryResult result = new QueryResult();
 
@@ -88,6 +95,13 @@ public class DatabaseHandler {
         return result; 
     }
 
+
+    /**
+     * Method used for returning a single {@link com.safjnest.Utilities.SQL.ResultRow row} from a query using default statement
+     * @param stmt
+     * @param query
+     * @throws SQLException
+     */
     public static ResultRow fetchJRow(String query) {
         ResultRow beeRow = new ResultRow();
 
@@ -116,6 +130,13 @@ public class DatabaseHandler {
         return beeRow;
     }
 
+
+    /**
+     * Method used for returning a single {@link com.safjnest.Utilities.SQL.ResultRow row} from a query.
+     * @param stmt
+     * @param query
+     * @throws SQLException
+     */
     public static ResultRow fetchJRow(Statement stmt, String query) throws SQLException {
         ResultRow beeRow = new ResultRow();
 
@@ -134,6 +155,11 @@ public class DatabaseHandler {
         return beeRow;
     }
 
+
+    /**
+     * Run one or more queries using the deffault statement
+     * @param queries
+     */
     public static boolean runQuery(String... queries) {
         try (Statement stmt = c.createStatement()) {
             for (String query : queries)
@@ -151,6 +177,15 @@ public class DatabaseHandler {
         }
     }
 
+
+    /**
+     * Run one or more queries with a specific statement
+     * <p>
+     * Only for insert, update and delete
+     * @param stmt
+     * @param queries
+     * @throws SQLException
+     */
     public static void runQuery(Statement stmt, String... queries) throws SQLException {
         for (String query : queries)
             stmt.execute(query);
@@ -387,17 +422,17 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getGuildData(String bot_id){
-        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel FROM guild_settings WHERE bot_id = '" + bot_id + "';";
+        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild_settings WHERE bot_id = '" + bot_id + "';";
         return safJQuery(query);
     }
     
     public static ResultRow getGuildData(String guild_id, String bot_id) {
-        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel FROM guild_settings WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';";
+        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild_settings WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';";
         return fetchJRow(query);
     }
 
     public static boolean insertGuild(String guild_id, String bot_id, String prefix) {
-        String query = "INSERT INTO guild_settings (guild_id, bot_id, PREFIX, exp_enabled, threshold, blacklist_channel) VALUES ('" + guild_id + "', '" + bot_id + "', '" + prefix + "', '0', '0', null); ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';";
+        String query = "INSERT INTO guild_settings (guild_id, bot_id, PREFIX, exp_enabled, threshold, blacklist_channel) VALUES ('" + guild_id + "', '" + bot_id + "', '" + prefix + "', '0', '0', null) ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';";
         return runQuery(query);
     }
 
@@ -584,6 +619,10 @@ public class DatabaseHandler {
             + "ON DUPLICATE KEY UPDATE has_exp = " + (toggle ? "1": "0") +";");
     }
 
+    public static boolean toggleBlacklist(String guild_id, String bot_id, boolean toggle) {
+        return runQuery("UPDATE guild_settings SET blacklist_enabled = '" + toggle + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+    }
+
     public static boolean deleteRoom(String guild_id, String room_id) {
         return runQuery("DELETE FROM rooms_settings WHERE guild_id = '" + guild_id + "' AND room_id = '" + room_id + "';");
     }
@@ -631,8 +670,12 @@ public class DatabaseHandler {
         return runQuery("UPDATE guild_settings SET blacklist_channel = '" + blacklist_channel + "' WHERE guild_id = '" + guild_id +  "' AND bot_id = '" + bot_id +  "';");
     }
 
+    public static boolean setBlacklistThreshold(String threshold, String guild_id, String bot_id) {
+        return runQuery("UPDATE guild_settings SET threshold = '" + threshold + "' WHERE guild_id = '" + guild_id +  "' AND bot_id = '" + bot_id +  "';");
+    }
+
     public static boolean enableBlacklist(String guild_id, String bot_id, String threshold, String blacklist_channel) {
-        return runQuery("INSERT INTO guild_settings(guild_id, bot_id, threshold, blacklist_channel)" + "VALUES('" + guild_id + "','" + bot_id + "','" + threshold +"', '" + blacklist_channel + "') ON DUPLICATE KEY UPDATE threshold = '" + threshold + "', blacklist_channel = '" + blacklist_channel + "';");
+        return runQuery("INSERT INTO guild_settings(guild_id, bot_id, threshold, blacklist_channel, blacklist_enabled)" + "VALUES('" + guild_id + "','" + bot_id + "','" + threshold +"', '" + blacklist_channel + "', 1) ON DUPLICATE KEY UPDATE threshold = '" + threshold + "', blacklist_channel = '" + blacklist_channel + "', blacklist_enabled = 1;");
     }
 
     public static boolean insertUserBlacklist(String user_id, String guild_id){
@@ -648,7 +691,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getGuildByThreshold(int threshold, String bot_id, String guild_id){
-        return safJQuery("SELECT guild_id, blacklist_channel, threshold FROM guild_settings WHERE threshold <= '" + threshold + "' AND blacklist_channel IS NOT NULL AND guild_id != '" + guild_id + "' AND bot_id = '" + bot_id + "'");
+        return safJQuery("SELECT guild_id, blacklist_channel, threshold FROM guild_settings WHERE blacklist_enabled = 1 AND threshold <= '" + threshold + "' AND blacklist_channel IS NOT NULL AND guild_id != '" + guild_id + "' AND bot_id = '" + bot_id + "'");
     }
 
     public static boolean insertCommand(String guild_id, String bot_id, String author_id, String command, String args){
@@ -657,6 +700,10 @@ public class DatabaseHandler {
 
     public static int getBannedTimes(String user_id){
         return fetchJRow("SELECT count(user_id) as times from blacklist WHERE user_id = '" + user_id + "'").getAsInt("times");
+    }
+    
+    public static int getBannedTimesInGuild(String guild_id){
+        return fetchJRow("SELECT count(user_id) as times from blacklist WHERE guild_id = '" + guild_id + "'").getAsInt("times");
     }
 
     public static ResultRow getGreet(String user_id, String guild_id, String bot_id) {

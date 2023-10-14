@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
@@ -48,7 +49,8 @@ public class ServerInfoSlash extends SlashCommand{
         int roleCharNumber = (event.getOption("roleCharNumber") == null) ? defaultRoleCharNumber : event.getOption("roleCharNumber").getAsInt();
 
         ResultRow alerts = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
-        
+        ResultRow settings = DatabaseHandler.getGuildData(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+
         String welcomeMessageString = null;
         if(alerts.get("welcome_message") != null) {
             welcomeMessageString = alerts.get("welcome_message")
@@ -62,6 +64,14 @@ public class ServerInfoSlash extends SlashCommand{
             leaveMessageString = alerts.get("leave_message")
                 + " [" + event.getJDA().getChannelById(TextChannel.class, alerts.get("leave_channel")).getName() + "]"
                 + " [" + (alerts.getAsBoolean("leave_enabled") ? "on" : "off") + "]"
+            + "\n\n";
+        }
+
+        String blacklistString = null;
+        if(settings.get("blacklist_channel") != null) {
+            blacklistString = "A total of " + DatabaseHandler.getBannedTimesInGuild(guild.getId()) + " users have been banned from this guild"
+                + " [" + event.getJDA().getChannelById(TextChannel.class, settings.get("blacklist_channel")).getName() + "]"
+                + " [" + (settings.getAsBoolean("blacklist_enabled") ? "on" : "off") + "]"
             + "\n\n";
         }
 
@@ -105,22 +115,28 @@ public class ServerInfoSlash extends SlashCommand{
                 : guild.getBoostRole().getName())
         + "```", true);
         
-        eb.addField("Welcome Message(s)", "```" 
+        eb.addField("Welcome Message", "```" 
             + ((welcomeMessageString == null)
-                ? "No welcome message set for this guild, use /help setwelcomemessage for more information"
+                ? "No welcome message set for this guild, use /help welcome for more information"
                 : welcomeMessageString)
         +  "```", false);
         
-        eb.addField("Leave Message(s)", "```" 
+        eb.addField("Leave Message", "```" 
             + ((leaveMessageString == null)
-                ? "No leave message set for this guild, use /help setleavemessage for more information"
+                ? "No leave message set for this guild, use /help leave for more information"
                 : leaveMessageString)
         +  "```", false);
         
         eb.addField("Level Up Message", "```" 
             + ((lvlUpString == null)
-                ? "No levelup message set for this guild, use /help setlevelupmessage for more information"
+                ? "No levelup message set for this guild, use /help levelup for more information"
                 : lvlUpString)
+        +  "```", false);
+
+        eb.addField("Blacklist", "```" 
+            + ((blacklistString == null)
+                ? "No blacklist set for this guild, use /help blacklist for more information"
+                : blacklistString)
         +  "```", false);
 
         eb.addField("Categories and channels [" + guild.getChannels().size() + "]", "```" 

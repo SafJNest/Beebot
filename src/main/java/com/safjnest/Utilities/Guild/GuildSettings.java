@@ -76,7 +76,7 @@ public class GuildSettings {
         System.out.println("[CACHE] Retriving guild from database => " + stringId);
         ResultRow guildData = DatabaseHandler.getGuildData(stringId, botId);
         
-        if(guildData == null) {
+        if(guildData.emptyValues()) {
             return insertGuild(stringId);
         }
 
@@ -85,8 +85,9 @@ public class GuildSettings {
         boolean expEnabled = guildData.getAsBoolean("exp_enabled");
         int threshold = guildData.getAsInt("threshold");
         String blacklistChannel = guildData.get("blacklist_channel");
+        boolean blacklist_enabled = guildData.getAsBoolean("blacklist_enabled");
 
-        GuildData guild = new GuildData(guildId, PREFIX, expEnabled, threshold, blacklistChannel);
+        GuildData guild = new GuildData(guildId, PREFIX, expEnabled, threshold, blacklistChannel, blacklist_enabled);
         saveData(guild);
         return guild;
     }
@@ -112,8 +113,9 @@ public class GuildSettings {
             boolean expEnabled = guildData.getAsBoolean("exp_enabled");
             int threshold = guildData.getAsInt("threshold");
             String blacklistChannel = guildData.get("blacklist_channel");
+            boolean blacklist_enabled = guildData.getAsBoolean("blacklist_enabled");
 
-            GuildData guild = new GuildData(guildId, PREFIX, expEnabled, threshold, blacklistChannel);
+            GuildData guild = new GuildData(guildId, PREFIX, expEnabled, threshold, blacklistChannel, blacklist_enabled);
             saveData(guild);
         }
     }
@@ -122,7 +124,7 @@ public class GuildSettings {
         DatabaseHandler.insertGuild(guildId, guildId, PREFIX);
         System.out.println("[ERROR] Missing guild in database => " + guildId);
 
-        GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false, 0, null);
+        GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false, 0, null, false);
         saveData(guild);
         return guild;
     }
