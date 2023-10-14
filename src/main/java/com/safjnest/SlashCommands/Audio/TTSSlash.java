@@ -89,6 +89,10 @@ public class TTSSlash extends SlashCommand{
             return;
         }
 
+        ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+        if(!defaultVoiceRow.emptyValues())
+            defaultVoice = defaultVoiceRow.get("name_tts");
+
         if(event.getOption("voice") != null) {
             String possibleVoice = event.getOption("voice").getAsString();
             for(String key : voices.keySet()) {
@@ -101,13 +105,9 @@ public class TTSSlash extends SlashCommand{
         }
 
         if(voice == null) {
-            ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
-            if(!defaultVoiceRow.emptyValues()) {
-                voice = defaultVoiceRow.get("name_tts");
+            if(defaultVoice != null) {
+                voice = defaultVoice;
                 language = defaultVoiceRow.get("language_tts");
-                speech = speech.split(" ", 2)[1];
-
-                defaultVoice = voice;
             }
             else {
                 voice = "mia";
