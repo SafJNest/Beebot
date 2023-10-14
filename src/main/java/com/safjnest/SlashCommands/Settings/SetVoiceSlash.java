@@ -32,8 +32,8 @@ public class SetVoiceSlash extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String language = null;
-        String voice = "keria";
+        String voice= null, language = null;
+
         for(String key : TTS.voices.keySet()){
             if(TTS.voices.get(key).contains(event.getOption("voice").getAsString())){
                 language = key;
@@ -41,12 +41,13 @@ public class SetVoiceSlash extends SlashCommand {
                 break;
             }
         }
-        if(voice.equals("keria")){
-            event.deferReply(true).addContent("Voice not found, use command /tts list").queue();
+        if(voice == null) {
+            event.deferReply(true).addContent("Voice not found").queue();
             return;
         }
 
         DatabaseHandler.updateVoiceGuild(event.getGuild().getId(), event.getJDA().getSelfUser().getId(), language, voice);
-        event.deferReply(true).addContent("Voice set to " + voice).queue();
+
+        event.deferReply(false).addContent("Voice set to " + voice + " (" + language + ")").queue();
     }
 }
