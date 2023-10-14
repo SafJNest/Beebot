@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Commands.League.GameRank;
+import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -28,10 +28,10 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class GameRankSlash extends SlashCommand {
+public class LivegameSlash extends SlashCommand {
 
 
-    public GameRankSlash(R4J r){
+    public LivegameSlash(R4J r){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -90,7 +90,7 @@ public class GameRankSlash extends SlashCommand {
             try {
                 users = s.getCurrentGame().getParticipants();
             } catch (Exception e) { }
-            EmbedBuilder builder = GameRank.createEmbed(event.getJDA(), event.getMember().getId(), s, users);
+            EmbedBuilder builder = Livegame.createEmbed(event.getJDA(), event.getMember().getId(), s, users);
             event.getHook().editOriginalEmbeds(builder.build()).queue();
             
         } catch (Exception e) {
@@ -101,7 +101,7 @@ public class GameRankSlash extends SlashCommand {
         EmbedBuilder builder = null;
         try {
             users = s.getCurrentGame().getParticipants();
-            builder = GameRank.createEmbed(event.getJDA(), event.getMember().getId(), s, users);
+            builder = Livegame.createEmbed(event.getJDA(), event.getMember().getId(), s, users);
         
             ArrayList<SelectOption> options = new ArrayList<>();
             for(SpectatorParticipant p : users){
@@ -122,20 +122,20 @@ public class GameRankSlash extends SlashCommand {
                 .build();
 
             if (searchByUser && RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
-                WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                         s, users).build());
                         action.setComponents(ActionRow.of(menu),
                                             ActionRow.of(left, center, right)).queue();
                 return;
             }
-            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                                 s, users).build());
             action.setComponents(ActionRow.of(menu)).queue();
                 
         } catch (Exception e) {
-            builder = GameRank.createEmbed(event.getJDA(), event.getMember().getId(), s, users);
+            builder = Livegame.createEmbed(event.getJDA(), event.getMember().getId(), s, users);
             if (searchByUser && RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
-                WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                         s, users).build());
                         action.setComponents(ActionRow.of(left, center, right))
                         .queue();

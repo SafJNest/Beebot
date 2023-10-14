@@ -210,8 +210,8 @@ public class Bot extends ListenerAdapter implements Runnable {
         Collections.addAll(commandsList, new PrintCache(gs, farm), new Ping(), new Ram(), new Help(gs), new Prefix(gs));
 
         if(beebotsAll.contains(threadName))
-            Collections.addAll(commandsList, new Summoner(), new InfoAugment(), new FreeChamp(), new GameRank(), 
-                new LastMatches(riotApi), new InfoMatches(), new Calculator(), new Dice(), 
+            Collections.addAll(commandsList, new Summoner(), new InfoAugment(), new FreeChamp(), new Livegame(), 
+                new LastMatches(riotApi), new Opgg(), new Calculator(), new Dice(), 
                 new ThreadCounter(), new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
@@ -233,8 +233,8 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), 
-                new GameRankSlash(riotApi), new SetSummonerSlash(riotApi), new LastMatchesSlash(riotApi), 
-                new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new InfoMatchesSlash());
+                new LivegameSlash(riotApi), new SetSummonerSlash(riotApi), new LastMatchesSlash(riotApi), 
+                new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(slashCommandsList, new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), 
