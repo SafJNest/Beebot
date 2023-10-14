@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.safjnest.Commands.League.GameRank;
-import com.safjnest.Commands.League.InfoMatches;
+import com.safjnest.Commands.League.Livegame;
+import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
@@ -187,7 +187,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 center = center.asDisabled();
                 
                 event.getMessage()
-                        .editMessageEmbeds(InfoMatches.createEmbed(
+                        .editMessageEmbeds(Opgg.createEmbed(
                             RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")), event.getJDA()).build())
                         .setActionRow(left, center, right)
                         .queue();
@@ -211,7 +211,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 center = center.asDisabled();
                 
                event.getMessage()
-                        .editMessageEmbeds(InfoMatches.createEmbed(
+                        .editMessageEmbeds(Opgg.createEmbed(
                             RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id")), event.getJDA()).build())
                         .setActionRow(left, center, right)
                         .queue();
@@ -282,7 +282,7 @@ public class EventButtonHandler extends ListenerAdapter {
                             .build();
 
                     MessageEditAction action = event.getMessage().editMessageEmbeds(
-                            GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                            Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                     s, users).build());
                     action.setComponents(ActionRow.of(menu),
                             ActionRow.of(left, center, right));
@@ -290,7 +290,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 } catch (Exception e) {
                     event.getMessage()
                             .editMessageEmbeds(
-                                    GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                                    Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                             s, users).build())
                             .setActionRow(left, center, right)
                             .queue();
@@ -338,7 +338,7 @@ public class EventButtonHandler extends ListenerAdapter {
                             .build();
 
                     MessageEditAction action = event.getMessage().editMessageEmbeds(
-                            GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                            Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                     s, users).build());
                     action.setComponents(ActionRow.of(menu),
                             ActionRow.of(left, center, right));
@@ -346,7 +346,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 } catch (Exception e) {
                     event.getMessage()
                             .editMessageEmbeds(
-                                    GameRank.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                                    Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                             s, users).build())
                             .setActionRow(left, center, right)
                             .queue();

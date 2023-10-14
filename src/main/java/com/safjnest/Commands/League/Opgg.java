@@ -28,11 +28,11 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class InfoMatches extends Command {
+public class Opgg extends Command {
     /**
      * Constructor
      */
-    public InfoMatches() {
+    public Opgg() {
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

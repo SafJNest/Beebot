@@ -793,8 +793,8 @@
         "arguments" : "[CommandName]"
     },
 
-    "gamerank":{
-        "alias" : ["ranks"],
+    "livegame":{
+        "alias" : ["live"],
         "help"  : "Show the summoners in the game of a given summoner and their ranks.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName]"
@@ -807,8 +807,8 @@
         "arguments" : "[CommandName] [summonerName] (n games to analyze)"
     },
 
-    "infomatches":{
-        "alias" : ["im", "opgg"],
+    "opgg":{
+        "alias" : ["im", "infomatch"],
         "help"  : "Show information about the last 5 games of a summoner.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName] (n games to analyze)"

@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Commands.League.InfoMatches;
+import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -21,12 +21,12 @@ import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class InfoMatchesSlash extends SlashCommand {
+public class OpggSlash extends SlashCommand {
  
     /**
      * Constructor
      */
-    public InfoMatchesSlash(){
+    public OpggSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -68,7 +68,7 @@ public class InfoMatchesSlash extends SlashCommand {
             
         }
         
-        EmbedBuilder builder = InfoMatches.createEmbed(s, event.getJDA());
+        EmbedBuilder builder = Opgg.createEmbed(s, event.getJDA());
         
         if(searchByUser && RiotHandler.getNumberOfProfile(event.getUser().getId()) > 1){
             WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());

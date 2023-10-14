@@ -25,11 +25,11 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class GameRank extends Command {
+public class Livegame extends Command {
     /**
      * Constructor
      */
-    public GameRank() {
+    public Livegame() {
         this.name = this.getClass().getSimpleName();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
