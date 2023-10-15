@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 public class ResultRow {
-    Map<String, String> row;
+    private Map<String, String> row;
 
     public ResultRow(Map<String, String> row){
         this.row = row;

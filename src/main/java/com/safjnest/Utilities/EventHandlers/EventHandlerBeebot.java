@@ -49,7 +49,10 @@ public class EventHandlerBeebot extends ListenerAdapter {
         
         GuildData guildData = settings.getServer(e.getGuild().getId());
         Guild guild = e.getGuild();
+        
         TextChannel channel = e.getChannel().asTextChannel();
+        
+        User newGuy = e.getAuthor();
 
         if (!guildData.isExpSystemEnabled())
             return;	
@@ -59,13 +62,12 @@ public class EventHandlerBeebot extends ListenerAdapter {
 
         double modifier = guildData.getExpValueRoom(channel.getIdLong());
         int lvl = farm.receiveMessage(e.getAuthor().getId(), guild.getId(), modifier);
-        if(lvl == -1)
+
+        if(lvl == ExpSystem.NOT_LEVELED_UP)
             return;
 
-        User newGuy = e.getAuthor();
-
         ResultRow reward = DatabaseHandler.getReward(guild.getId(), lvl);
-        if(reward != null){
+        if(!reward.emptyValues()){
             String message = reward.get("message_text");
             Role role = guild.getRoleById(reward.get("role_id"));
             message = message.replace("#user", newGuy.getAsMention());

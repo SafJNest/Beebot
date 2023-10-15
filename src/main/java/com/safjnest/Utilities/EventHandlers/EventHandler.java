@@ -323,33 +323,31 @@ public class EventHandler extends ListenerAdapter {
      */
     @Override
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        /**
-         * Welcome message 
-         */
         MessageChannel channel = null;
         User newGuy = event.getUser();
         ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
 
-        String notNullPls = alert.get("welcome_channel");
-        if (notNullPls != null && alert.getAsBoolean("welcome_enabled")){
-            channel = event.getGuild().getTextChannelById(notNullPls);
-            String message = alert.get("welcome_message");
+        String channel_id = alert.get("welcome_channel");
+        if(channel_id == null || !alert.getAsBoolean("welcome_enabled"))
+            return;
 
-            message = message.replace("#user", newGuy.getAsMention());
-            channel.sendMessage(message).queue();
+        channel = event.getGuild().getTextChannelById(channel_id);
+        String message = alert.get("welcome_message").replace("#user", newGuy.getAsMention());
 
-            if(alert.get("welcome_role") != null)
-                event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRoleById(alert.get("welcome_role"))).queue();
-                
-            /* 
-            ArrayList<String> roles = sql.getAllRowsSpecifiedColumn(query, "role_id");
-            if (roles.size() > 0) {
-                for (String role : roles) {
-                    event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
-                }
+        channel.sendMessage(message).queue();
+
+        if(alert.get("welcome_role") != null)
+            event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRoleById(alert.get("welcome_role"))).queue();
+            
+        /* 
+        ArrayList<String> roles = sql.getAllRowsSpecifiedColumn(query, "role_id");
+        if (roles.size() > 0) {
+            for (String role : roles) {
+                event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
             }
-            */
         }
+        */
+        
 
         /**
          * Blacklist
@@ -389,13 +387,13 @@ public class EventHandler extends ListenerAdapter {
         MessageChannel channel = null;
         ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
         
-        String notNullPls = alert.get("leave_channel");
-        if (notNullPls == null || !alert.getAsBoolean("leave_enabled"))
+        String channel_id = alert.get("leave_channel");
+        if (channel_id == null || !alert.getAsBoolean("leave_enabled"))
             return;
-        channel = event.getGuild().getTextChannelById(notNullPls);
+
+        channel = event.getGuild().getTextChannelById(channel_id);
         
-        String message = alert.get("leave_message");
-        message = message.replace("#user", event.getUser().getAsMention());
+        String message = alert.get("leave_message").replace("#user", event.getUser().getAsMention());
         channel.sendMessage(message).queue();
     }
 
@@ -437,7 +435,6 @@ public class EventHandler extends ListenerAdapter {
             ban = ban.withStyle(ButtonStyle.PRIMARY);
             ignore = ignore.withStyle(ButtonStyle.SUCCESS);
             channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
-            //channel.sendMessage("THIS PIECE OF SHIT DOGSHIT RANDOM " + theGuy.getName() + " HAS BEEN BANNED " + times + " TIMES").queue();
         }
         
     }
@@ -454,12 +451,13 @@ public class EventHandler extends ListenerAdapter {
     public void onGuildMemberUpdateBoostTime(GuildMemberUpdateBoostTimeEvent event) {
         MessageChannel channel = null;
         ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
-        String notNullPls = alert.get("boost_channel");
-        if (notNullPls == null || !alert.getAsBoolean("boost_enabled"))
+        
+        String channel_id = alert.get("boost_channel");
+        if (channel_id == null || !alert.getAsBoolean("boost_enabled"))
             return;
-        channel = event.getGuild().getTextChannelById(notNullPls);
-        String message = alert.get("boost_message");
-        message = message.replace("#user", event.getUser().getAsMention());
+        
+        channel = event.getGuild().getTextChannelById(channel_id);
+        String message = alert.get("boost_message").replace("#user", event.getUser().getAsMention());
         channel.sendMessage(message).queue();
     }
 
