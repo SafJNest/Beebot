@@ -21,7 +21,7 @@ public class GuildSettings {
     public HashMap<String, GuildData> cache = new HashMap<>();
     private String botId;
     private final String PREFIX;
-    final GuildData data;
+    private final GuildData data;
 
     /**
      * Default constructor

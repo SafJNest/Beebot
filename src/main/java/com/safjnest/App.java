@@ -9,6 +9,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+
+import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
@@ -69,6 +71,9 @@ public class App {
 
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
 
+
+        System.out.println(DatabaseHandler.getCannuccia());
+        System.out.println(PermissionHandler.getEpria());
 
         bs = new BotSettingsHandler();
 

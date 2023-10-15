@@ -19,6 +19,9 @@ public class ExpSystem {
      * The key is {@code userId-guildId} and the value is {@link com.safjnest.Utilities.EXPSystem.UserTime UserTime.
      */
     private HashMap<String, UserTime> users;
+
+    public static final int NOT_LEVELED_UP = -1;
+
     
     /**
      * Constructor for the ExpSystem class.
@@ -50,7 +53,7 @@ public class ExpSystem {
            return addExp(userId, guildId, modifier);
         }
         
-        return -1;
+        return NOT_LEVELED_UP;
     }
 
 
@@ -124,14 +127,9 @@ public class ExpSystem {
      */
     public int addExp(String userId, String guildId, double modifer) {
         ResultRow expData = DatabaseHandler.getExp(guildId, userId);
-        if (expData == null) {
-            
-            if (!DatabaseHandler.addExpData(guildId, userId)) {
-                return -1;
-            }
-            return 1;
-        }
-
+        if (expData.emptyValues() && !DatabaseHandler.addExpData(guildId, userId)) 
+            return NOT_LEVELED_UP;
+        
         int exp = expData.getAsInt("exp") + Math.round((float) ((double) getRandomExp() * modifer));
         int lvl = expData.getAsInt("level");
         int msg = expData.getAsInt("messages") + 1;
@@ -142,6 +140,6 @@ public class ExpSystem {
             return lvl + 1;
         }
         DatabaseHandler.updateExp(guildId, userId, exp,  msg);
-        return -1;
+        return NOT_LEVELED_UP;
     }
 }
