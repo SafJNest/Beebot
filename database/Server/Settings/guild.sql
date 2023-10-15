@@ -1,5 +1,5 @@
 CREATE TABLE
-  `guild_settings` (
+  `guild` (
     `guild_id` varchar(19) NOT NULL,
     `bot_id` varchar(19) NOT NULL,
     `prefix` varchar(32) DEFAULT NULL,
@@ -8,5 +8,6 @@ CREATE TABLE
     `exp_enabled` tinyint(1) DEFAULT 0,
     `threshold` tinyint(4) DEFAULT 0,
     `blacklist_channel` varchar(19) DEFAULT NULL,
+    `blacklist_enabled` tinyint(1) DEFAULT 0,
     PRIMARY KEY (`guild_id`, `bot_id`)
   ) ENGINE = InnoDB DEFAULT CHARSET = latin1

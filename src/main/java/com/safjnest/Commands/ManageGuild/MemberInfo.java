@@ -38,7 +38,7 @@ public class MemberInfo extends Command{
     @Override
     protected void execute(CommandEvent event) {
         Member mentionedMember;
-        if(event.getArgs() == null) {
+        if(event.getArgs().equals("")) {
             mentionedMember = event.getMember();
         }
         else {
@@ -60,7 +60,7 @@ public class MemberInfo extends Command{
         QueryResult lolAccounts = DatabaseHandler.getLolAccounts(id);
         String lolAccountsString = "";
         if(lolAccounts.isEmpty()) {
-            lolAccountsString = mentionedMember.getNickname() + " has not connected a riot account.";
+            lolAccountsString = mentionedMember.getEffectiveName() + " has not connected a riot account.";
         }
         else {
             for(ResultRow lolAccount : lolAccounts) {
@@ -83,7 +83,7 @@ public class MemberInfo extends Command{
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT " + name + "** :busts_in_silhouette:");
-        eb.setThumbnail(mentionedMember.getAvatarUrl());
+        eb.setThumbnail(mentionedMember.getEffectiveAvatarUrl());
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
         eb.addField("Name", "```" + name + "```", true);
@@ -125,7 +125,7 @@ public class MemberInfo extends Command{
         + "```", false);
         
         eb.addField("League Of Legends Account [" + lolAccounts.size() + "]", "```" 
-            + lolAccounts 
+            + lolAccountsString 
         + "```", false);
         
         eb.addField("Level", "```" 

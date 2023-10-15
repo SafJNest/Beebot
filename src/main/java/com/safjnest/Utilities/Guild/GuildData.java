@@ -18,26 +18,53 @@ import com.safjnest.Utilities.SQL.ResultRow;
  * @author <a href="https://github.com/Leon412">Leon412</a>
  */
 public class GuildData {
-    /**Server ID */
-    private Long id;
-    /**Prefix Server */
-    private String prefix;
-    /**Exp System */
-    private boolean expSystem;
     /**
-     * default constructor
-     * @param id
-     * @param prefix
+     * Server ID 
      */
+    private Long id;
+    
+    /**
+     * Prefix Server 
+     */
+    private String prefix;
+    
+    /**
+     * Exp System 
+     */
+    private boolean expSystem;
 
+    /**
+     * A map with all the settings for rooms
+     */
     private HashMap<Long, Room> rooms;
 
+    /**
+     * Threshold for blacklist
+     */
     private int threshold;
 
+
+    /**
+     * Blacklist Channel
+     */
     private String blackChannelId;
 
+
+    /**
+     * Flag to toggle the blacklist
+     */
     private boolean blacklist_enabled;
 
+
+    /**
+     * 
+     * @param id
+     * @param prefix
+     * @param expSystem
+     * @param threshold
+     * @param channel
+     * @param blacklist_enabled
+     */
     public GuildData(Long id, String prefix, boolean expSystem, int threshold, String channel, boolean blacklist_enabled) {
         this.id = id;
         this.prefix = prefix;
@@ -45,6 +72,21 @@ public class GuildData {
         this.threshold = threshold;
         this.blackChannelId = channel;
         this.blacklist_enabled = blacklist_enabled;
+        loadRooms();
+    }
+
+    /**
+     * Default constructor
+     * @param id
+     * @param prefix
+     */
+    public GuildData(Long id, String prefix) {
+        this.id = id;
+        this.prefix = prefix;
+        this.expSystem = false;
+        this.threshold = 0;
+        this.blackChannelId = null;
+        this.blacklist_enabled = false;
         loadRooms();
     }
 

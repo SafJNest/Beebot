@@ -1,5 +1,5 @@
 CREATE TABLE
-  `rooms_settings` (
+  `room` (
     `guild_id` varchar(19) NOT NULL,
     `room_id` varchar(19) NOT NULL,
     `room_name` varchar(255) DEFAULT NULL,

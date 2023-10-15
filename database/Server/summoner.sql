@@ -1,5 +1,5 @@
 CREATE TABLE
-  `lol_user` (
+  `summoner` (
     `user_id` varchar(19) NOT NULL,
     `summoner_id` varchar(255) NOT NULL,
     `account_id` varchar(255) NOT NULL,
