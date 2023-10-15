@@ -34,7 +34,7 @@ public class Test extends Command{
         this.name = "test";
         this.aliases = new String[]{"wip"};
         this.help = "";
-        this.category = new Category("Admin");
+        this.category = new Category("Ower");
         this.arguments = "faker";
         this.ownerCommand = true;
         this.hidden = true;

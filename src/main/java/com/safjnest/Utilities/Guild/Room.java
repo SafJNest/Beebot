@@ -19,6 +19,7 @@ public class Room {
     private Long id;
     
     /**
+     * @deprecated
      * Name of the room
      */
     private String name;

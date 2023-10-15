@@ -67,7 +67,7 @@ public class MemberInfoSlash extends SlashCommand{
         QueryResult lolAccounts = DatabaseHandler.getLolAccounts(id);
         String lolAccountsString = "";
         if(lolAccounts.isEmpty()) {
-            lolAccountsString = mentionedMember.getNickname() + " has not connected a riot account.";
+            lolAccountsString = mentionedMember.getEffectiveName() + " has not connected a riot account.";
         }
         else {
             for(ResultRow lolAccount : lolAccounts) {
@@ -132,7 +132,7 @@ public class MemberInfoSlash extends SlashCommand{
         + "```", false);
         
         eb.addField("League Of Legends Account [" + lolAccounts.size() + "]", "```" 
-            + lolAccounts 
+            + lolAccountsString 
         + "```", false);
         
         eb.addField("Level", "```" 

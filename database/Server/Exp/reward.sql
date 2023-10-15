@@ -1,5 +1,5 @@
 CREATE TABLE
-  `rewards_table` (
+  `reward` (
     `guild_id` varchar(19) NOT NULL,
     `role_id` varchar(19) NOT NULL,
     `level` smallint(6) NOT NULL,

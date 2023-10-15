@@ -1,5 +1,5 @@
 CREATE TABLE
-  `exp_table` (
+  `experience` (
     `user_id` varchar(19) NOT NULL,
     `guild_id` varchar(19) NOT NULL,
     `exp` mediumint(9) NOT NULL,

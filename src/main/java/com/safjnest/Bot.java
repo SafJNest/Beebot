@@ -84,7 +84,7 @@ import no.stelar7.api.r4j.impl.R4J;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
- * @version 2.0
+ * @version 4.0
  */
 public class Bot extends ListenerAdapter implements Runnable {
     private BotSettingsHandler bs;
