@@ -100,6 +100,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
     private String token;
     private String youtubeApiKey;
+    private String weatherApiKey;
 
     private int maxPrime;
 
@@ -155,15 +156,16 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
         youtubeApiKey = settingsSettings.get("youtubeApiKey").toString();
+        weatherApiKey = settingsSettings.get("weatherApiKey").toString();
 
         jda = JDABuilder
-                .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
-                    GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
-                    GatewayIntent.GUILD_EMOJIS_AND_STICKERS, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MODERATION)
-                .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .setChunkingFilter(ChunkingFilter.ALL)
-                .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
-                .build();
+            .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
+                GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
+                GatewayIntent.GUILD_EMOJIS_AND_STICKERS, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MODERATION)
+            .setMemberCachePolicy(MemberCachePolicy.ALL)
+            .setChunkingFilter(ChunkingFilter.ALL)
+            .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
+            .build();
 
         botId = jda.getSelfUser().getId();
 
@@ -220,8 +222,8 @@ public class Bot extends ListenerAdapter implements Runnable {
                 new Permissions(), new ModifyNickname(), new RandomMove());
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
-            Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), new PlayYoutube(youtubeApiKey), 
-            new PlaySound(), new TTS(tts), new Stop());
+            Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
+            new PlayYoutube(youtubeApiKey), new PlaySound(), new TTS(tts), new Stop());
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
             Collections.addAll(commandsList, new Leaderboard(), new Test());
@@ -234,17 +236,23 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), 
                 new LivegameSlash(riotApi), new SetSummonerSlash(riotApi), new LastMatchesSlash(riotApi), 
-                new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash());
+                new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
+                new WeatherSlash(weatherApiKey)
+            );
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(slashCommandsList, new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), 
-                new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(), new UnbanSlash(), 
-                new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), new PermissionsSlash(), 
-                new ModifyNicknameSlash(), new WelcomeSlash(gs), new LeaveSlash(), new BoostSlash(), new BlacklistSlash(gs));
+                new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(), 
+                new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), 
+                new PermissionsSlash(), new ModifyNicknameSlash(), new WelcomeSlash(gs), new LeaveSlash(), new BoostSlash(), 
+                new BlacklistSlash(gs)
+            );
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
-            Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), new ListSlash(), 
-                new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash());
+            Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), 
+                new ListSlash(), new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), 
+                new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash()
+            );
 
 
         if(threadName.equals("beebot"))

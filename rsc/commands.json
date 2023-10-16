@@ -670,6 +670,14 @@
         "arguments" : "[msg] [@user/id] [message]"
     },
 
+    "weather":{
+        "alias" : [],
+        "help"  : "Get the weather of a location.",
+        "longhelp" : "Get the weather of a location. The results are from weatherApi.com. You can write the location as coordinates, city name, US zip, UK postcode, Canada postal code, metar, iata and Ip address.",
+        "category" : "Miscellaneous",
+        "arguments" : "[weather] [place]"
+    },
+
 
 
 
