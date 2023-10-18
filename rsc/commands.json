@@ -801,7 +801,24 @@
         "alias" : ["sum"],
         "help"  : "Show statistics for a summoner.",
         "category" : "League Of Legends",
-        "arguments" : "[CommandName] [summonerName]"
+        "arguments" : "[CommandName] [summonerName]",
+        "children": {
+            "info": {
+                "alias" : [],
+                "help"  : "Create a new soundboard.",
+                "arguments" : "[CommandName]"
+            }, 
+            "connect": {
+                "alias" : [],
+                "help"  : "Select and show an existing soundboard.",
+                "arguments" : "[CommandName]"
+            },
+            "disconnect": {
+                "alias" : [],
+                "help"  : "Add a sound to an existing soundboard.",
+                "arguments" : "[CommandName]"
+            }
+        }
     },
 
     "freechamp":{
