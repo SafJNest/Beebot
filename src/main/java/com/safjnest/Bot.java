@@ -235,7 +235,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), 
-                new LivegameSlash(riotApi), new SetSummonerSlash(riotApi), new LastMatchesSlash(riotApi), 
+                new LivegameSlash(riotApi), new LastMatchesSlash(riotApi), 
                 new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
                 new WeatherSlash(weatherApiKey)
             );
