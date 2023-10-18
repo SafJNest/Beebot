@@ -695,7 +695,7 @@ public class DatabaseHandler {
     }
 
     public static boolean insertCommand(String guild_id, String bot_id, String author_id, String command, String args){
-        return runQuery("INSERT INTO command(name, time, user_id, guild_id, bot_id, args) VALUES ('" + command + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + author_id + "', '"+ guild_id +"','"+ bot_id +"', '"+ args +"');");
+        return runQuery("INSERT INTO command(name, time, user_id, guild_id, bot_id, args) VALUES ('" + command + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + author_id + "', '"+ guild_id +"','"+ bot_id +"', \""+ args +"\");");
     }
 
     public static int getBannedTimes(String user_id){
