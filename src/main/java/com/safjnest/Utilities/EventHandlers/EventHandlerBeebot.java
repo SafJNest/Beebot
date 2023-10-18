@@ -80,7 +80,7 @@ public class EventHandlerBeebot extends ListenerAdapter {
         
         ResultRow alert = DatabaseHandler.getAlert(guild.getId(), e.getJDA().getSelfUser().getId());
 
-        if(alert.getAsBoolean("levelup_enabled"))
+        if(!alert.getAsBoolean("levelup_enabled"))
             return;
 
         if (alert.get("levelup_message") == null){
