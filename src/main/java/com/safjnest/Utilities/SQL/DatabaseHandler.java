@@ -503,12 +503,15 @@ public class DatabaseHandler {
     public static boolean setWelcome(String guild_id, String bot_id, String welcome_channel, String welcome_message, String welcome_role) {
         if(welcome_role == null) {
             return runQuery("INSERT INTO alert(guild_id, bot_id, welcome_channel, welcome_message, welcome_enabled)"
-                + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + welcome_message + "','" + "1" + "') "
-                + "ON DUPLICATE KEY UPDATE welcome_channel = '" + welcome_channel + "', welcome_message = '" + welcome_message + "', welcome_enabled = '" + "1" + "';");
+                + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + fixSQL(welcome_message) + "','" + "1" + "') "
+                + "ON DUPLICATE KEY UPDATE welcome_channel = '" + welcome_channel + "', welcome_message = '" + fixSQL(welcome_message) + "', welcome_enabled = '" + "1" + "';");
         }
+        System.out.println("INSERT INTO alert(guild_id, bot_id, welcome_channel, welcome_message, welcome_role, welcome_enabled)"
+            + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + fixSQL(welcome_message) + "','" + "1" + "') "
+            + "ON DUPLICATE KEY UPDATE welcome_channel = '" + welcome_channel + "', welcome_message = '" + fixSQL(welcome_message) + "', welcome_role = '" + welcome_role + "', welcome_enabled = '" + "1" + "';");
         return runQuery("INSERT INTO alert(guild_id, bot_id, welcome_channel, welcome_message, welcome_role, welcome_enabled)"
-            + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + welcome_message + "','" + "1" + "') "
-            + "ON DUPLICATE KEY UPDATE welcome_channel = '" + welcome_channel + "', welcome_message = '" + welcome_message + "', welcome_role = '" + welcome_role + "', welcome_enabled = '" + "1" + "';");
+            + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + fixSQL(welcome_message) + "','" + "1" + "') "
+            + "ON DUPLICATE KEY UPDATE welcome_channel = '" + welcome_channel + "', welcome_message = '" + fixSQL(welcome_message) + "', welcome_role = '" + welcome_role + "', welcome_enabled = '" + "1" + "';");
     }
 
     public static boolean deleteWelcome(String guild_id, String bot_id) {
@@ -524,7 +527,8 @@ public class DatabaseHandler {
     }
 
     public static boolean updateWelcomeMessage(String guild_id, String bot_id, String welcome_message) {
-        return runQuery("UPDATE alert SET welcome_message = '" + welcome_message + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+        System.out.println("UPDATE alert SET welcome_message = '" + fixSQL(welcome_message) + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+        return runQuery("UPDATE alert SET welcome_message = '" + fixSQL(welcome_message) + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
 
     public static boolean toggleWelcome(String guild_id, String bot_id, boolean toggle) {
@@ -541,8 +545,8 @@ public class DatabaseHandler {
 
     public static boolean setLeave(String guild_id, String bot_id, String leave_channel, String leave_message) {
         return runQuery("INSERT INTO alert(guild_id, bot_id, leave_channel, leave_message, leave_enabled)"
-            + "VALUES('" + guild_id + "','" + bot_id + "','" + leave_channel + "','" + leave_message + "','" + "1" + "') "
-            + "ON DUPLICATE KEY UPDATE leave_channel = '" + leave_channel + "', leave_message = '" + leave_message + "', leave_enabled = '" + "1" + "';");
+            + "VALUES('" + guild_id + "','" + bot_id + "','" + leave_channel + "','" + fixSQL(leave_message) + "','" + "1" + "') "
+            + "ON DUPLICATE KEY UPDATE leave_channel = '" + leave_channel + "', leave_message = '" + fixSQL(leave_message) + "', leave_enabled = '" + "1" + "';");
     }
 
     public static boolean deleteLeave(String guild_id, String bot_id) {
@@ -550,11 +554,11 @@ public class DatabaseHandler {
     }
 
     public static boolean updateLeaveChannel(String guild_id, String bot_id, String leave_message) {
-        return runQuery("UPDATE alert SET leave_message = '" + leave_message + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+        return runQuery("UPDATE alert SET leave_message = '" + fixSQL(leave_message) + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
 
     public static boolean updateLeaveMessage(String guild_id, String bot_id, String leave_message) {
-        return runQuery("UPDATE alert SET leave_message = '" + leave_message + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+        return runQuery("UPDATE alert SET leave_message = '" + fixSQL(leave_message) + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
 
     public static boolean toggleLeave(String guild_id, String bot_id, boolean toggle) {
@@ -571,8 +575,8 @@ public class DatabaseHandler {
 
     public static boolean setBoost(String guild_id, String bot_id, String boost_channel, String boost_message) {
         return runQuery("INSERT INTO alert(guild_id, bot_id, boost_channel, boost_message, boost_enabled)"
-            + "VALUES('" + guild_id + "','" + bot_id + "','" + boost_channel + "','" + boost_message + "','" + "1" + "') "
-            + "ON DUPLICATE KEY UPDATE boost_channel = '" + boost_channel + "', boost_message = '" + boost_message + "', boost_enabled = '" + "1" + "';");
+            + "VALUES('" + guild_id + "','" + bot_id + "','" + boost_channel + "','" + fixSQL(boost_message) + "','" + "1" + "') "
+            + "ON DUPLICATE KEY UPDATE boost_channel = '" + boost_channel + "', boost_message = '" + fixSQL(boost_message) + "', boost_enabled = '" + "1" + "';");
     }
 
     public static boolean deleteBoost(String guild_id, String bot_id) {
@@ -580,11 +584,11 @@ public class DatabaseHandler {
     }
 
     public static boolean updateBoostChannel(String guild_id, String bot_id, String boost_message) {
-        return runQuery("UPDATE alert SET boost_message = '" + boost_message + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+        return runQuery("UPDATE alert SET boost_message = '" + fixSQL(boost_message) + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
 
     public static boolean updateBoostMessage(String guild_id, String bot_id, String boost_message) {
-        return runQuery("UPDATE alert SET boost_message = '" + boost_message + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+        return runQuery("UPDATE alert SET boost_message = '" + fixSQL(boost_message) + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
 
     public static boolean toggleBoost(String guild_id, String bot_id, boolean toggle) {
@@ -651,7 +655,7 @@ public class DatabaseHandler {
     
 
     public static boolean insertRewards(String guild_id, String role, String level, String message){
-        return runQuery("INSERT INTO reward (guild_id, role_id, level, message_text) VALUES ('" + guild_id + "', '" + role + "', '" + level + "', '" + message + "');");
+        return runQuery("INSERT INTO reward (guild_id, role_id, level, message_text) VALUES ('" + guild_id + "', '" + role + "', '" + level + "', '" + fixSQL(message) + "');");
     }
     
     public static QueryResult getRewards(String guild_id) {
@@ -695,7 +699,7 @@ public class DatabaseHandler {
     }
 
     public static boolean insertCommand(String guild_id, String bot_id, String author_id, String command, String args){
-        return runQuery("INSERT INTO command(name, time, user_id, guild_id, bot_id, args) VALUES ('" + command + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + author_id + "', '"+ guild_id +"','"+ bot_id +"', \""+ args +"\");");
+        return runQuery("INSERT INTO command(name, time, user_id, guild_id, bot_id, args) VALUES ('" + command + "', '" + new Timestamp(System.currentTimeMillis()) + "', '" + author_id + "', '"+ guild_id +"','"+ bot_id +"', '"+ fixSQL(args) +"');");
     }
 
     public static int getBannedTimes(String user_id){
@@ -722,5 +726,11 @@ public class DatabaseHandler {
     */
     public static String getCannuccia() {
         return ":cannuccia:";
+    }
+
+    private static String fixSQL(String s){
+        s = s.replace("\"", "\\\"");
+        s = s.replace("\'", "\\\'");
+        return s;
     }
 }
