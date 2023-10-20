@@ -101,6 +101,7 @@ public class Bot extends ListenerAdapter implements Runnable {
     private String token;
     private String youtubeApiKey;
     private String weatherApiKey;
+    private String nasaApiKey;
 
     private int maxPrime;
 
@@ -157,6 +158,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
         youtubeApiKey = settingsSettings.get("youtubeApiKey").toString();
         weatherApiKey = settingsSettings.get("weatherApiKey").toString();
+        nasaApiKey = settingsSettings.get("nasaApiKey").toString();
 
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
@@ -237,7 +239,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), 
                 new LivegameSlash(riotApi), new LastMatchesSlash(riotApi), 
                 new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
-                new WeatherSlash(weatherApiKey)
+                new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey)
             );
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
