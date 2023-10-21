@@ -93,6 +93,7 @@ public class Connection extends WebSocketServer {
     public void onError(org.java_websocket.WebSocket conn, Exception ex) {
         System.out.println("Error from " + conn.getRemoteSocketAddress().getAddress().getHostAddress());
         ex.printStackTrace();
+        conn.close();
     }
 
 
