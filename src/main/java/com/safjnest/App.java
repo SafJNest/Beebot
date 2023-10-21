@@ -43,6 +43,7 @@ public class App {
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, riotSettings = null;
         JSONArray bots = null;
+        int waitingTime = 0;
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
             bots = (JSONArray) settings.get("startup");
@@ -70,7 +71,7 @@ public class App {
         }
 
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
-
+        waitingTime = Integer.parseInt(settings.get("waitingTime").toString());
 
         System.out.println(DatabaseHandler.getCannuccia());
         System.out.println(PermissionHandler.getEpria());
@@ -86,7 +87,7 @@ public class App {
                 }
                 for(Thread t : botsArr){
                     t.start();
-                    Thread.sleep(1170); //pebble non riesce a gestire più di un bot che si loada contemporaneamente
+                    Thread.sleep(waitingTime); //pebble non riesce a gestire più di un bot che si loada contemporaneamente
                 }
             } catch (Exception e) {e.printStackTrace(); return;}
         } else{

@@ -42,7 +42,8 @@
         "youtubeApiKey": "AIzaSyC1H92_8GzQmiL-GPZB2X8uqYgrP0rPOns",
         "ttsApiKey": "d6199f5911f4493da571729f8127ce37",
         "weatherApiKey":"ec5278cfe6294447a11140508231610",
-        "nasaApiKey": "D474RgCDzTt4opIzUDphk8UQiye0lkr4sts16qfW"
+        "nasaApiKey": "D474RgCDzTt4opIzUDphk8UQiye0lkr4sts16qfW",
+        "waitingTime": "4117"
     },
 
     "beebot": {
