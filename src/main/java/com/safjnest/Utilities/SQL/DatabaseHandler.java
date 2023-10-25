@@ -431,6 +431,11 @@ public class DatabaseHandler {
         return fetchJRow(query);
     }
 
+    public static boolean addGuild(String guild_id) {
+        String query = "INSERT IGNORE INTO guilds (id) VALUES ('" + guild_id + "');";
+        return runQuery(query);
+    }
+
     public static boolean insertGuild(String guild_id, String bot_id, String prefix) {
         String query = "INSERT INTO guild (guild_id, bot_id, PREFIX, exp_enabled, threshold, blacklist_channel) VALUES ('" + guild_id + "', '" + bot_id + "', '" + prefix + "', '0', '0', null) ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';";
         return runQuery(query);

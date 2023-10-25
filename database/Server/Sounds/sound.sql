@@ -5,6 +5,8 @@ CREATE TABLE
     `guild_id` varchar(19) NOT NULL,
     `user_id` varchar(19) NOT NULL,
     `extension` varchar(4) NOT NULL,
-    `public` tinyint(1) DEFAULT 1,
-    PRIMARY KEY (`id`)
-  ) ENGINE = InnoDB AUTO_INCREMENT = 189 DEFAULT CHARSET = latin1
+    `public` tinyint(1) DEFAULT 0,
+    PRIMARY KEY (`id`),
+    KEY `sound_guild_relation` (`guild_id`),
+    CONSTRAINT `sound_guild_relation` FOREIGN KEY (`guild_id`) REFERENCES `guilds` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  ) ENGINE = InnoDB AUTO_INCREMENT = 214 DEFAULT CHARSET = latin1
