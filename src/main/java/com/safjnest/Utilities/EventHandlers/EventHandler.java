@@ -132,6 +132,7 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent event){
+        DatabaseHandler.addGuild(event.getGuild().getId());
         DatabaseHandler.insertGuild(event.getGuild().getId(), event.getJDA().getSelfUser().getId(), PREFIX);
     }
 
