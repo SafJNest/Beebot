@@ -99,6 +99,27 @@ public class ExpSystem {
 
 
     /**
+     * This method is used to calculate the level you would be with a given quantity of exp.
+     * @param exp
+     * @return 
+     */
+    public static double getLevelFromExp(double exp) {
+        double epsilon = 1e-6;
+        double lvl = 0.0;
+        while (true) {
+            double equationValue = (5.0 / 3.0) * Math.pow(lvl, 3) + (45.0 / 2.0) * Math.pow(lvl, 2) + (455.0 / 6.0) * lvl;
+
+            if (Math.abs(equationValue - exp) < epsilon) {
+                return lvl;
+            }
+
+            double derivativeValue = (5.0) * Math.pow(lvl, 2) + (45.0) * lvl + (455.0 / 6.0);
+            lvl -= (equationValue - exp) / derivativeValue;
+        }
+    }
+
+
+    /**
      * This method is used to calculate the experience that the user needs to get level up.
      * <p>
      * So if the user is level 1 with 175 exp and to get level 2 needs a total of 255 experience, this method will return 80.
@@ -134,10 +155,11 @@ public class ExpSystem {
         int lvl = expData.getAsInt("level");
         int msg = expData.getAsInt("messages") + 1;
 
-        int expNeeded = getExpToReachLvlFromZero(lvl + 1) - exp;
-        if (expNeeded <= 0) {
-            DatabaseHandler.updateExp(guildId, userId, exp,(lvl + 1),  msg);
-            return lvl + 1;
+        int newLvl = (int) getLevelFromExp(exp);
+
+        if (newLvl > lvl) {
+            DatabaseHandler.updateExp(guildId, userId, exp, newLvl, msg);
+            return newLvl;
         }
         DatabaseHandler.updateExp(guildId, userId, exp,  msg);
         return NOT_LEVELED_UP;
