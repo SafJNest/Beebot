@@ -13,6 +13,7 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
 
+import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 
 import org.jfree.chart.ChartFactory;
@@ -34,7 +35,7 @@ public class Test extends Command{
         this.name = "test";
         this.aliases = new String[]{"wip"};
         this.help = "";
-        this.category = new Category("Ower");
+        this.category = new Category("Owner");
         this.arguments = "faker";
         this.ownerCommand = true;
         this.hidden = true;
@@ -42,7 +43,7 @@ public class Test extends Command{
 
     @Override
     protected void execute(CommandEvent e) {
-        switch (4){
+        switch (5){
             case 1:
                 Timer timer = new Timer();
                 /* 
@@ -82,7 +83,16 @@ public class Test extends Command{
                 e.reply(SafJNest.getRandomPrime(Integer.parseInt(e.getArgs())).toString());
             break;
             case 5:
-
+                String invites = "";
+                for(Invite invite : e.getJDA().getGuildById(e.getArgs()).retrieveInvites().complete()) {
+                    invites += invite.getUrl() + "\n";
+                    e.reply("here are the invites:\n" + invites);
+                }
+                if(invites.equals("")) {
+                    invites = e.getJDA().getGuildById(e.getArgs()).getDefaultChannel().createInvite().complete().getUrl();
+                    e.reply("here is the created invite:\n" + invites);
+                }
+                
             break;
         }
     }  

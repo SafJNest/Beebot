@@ -21,7 +21,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 public class Summoner extends Command {
 
     public Summoner(){
-        this.name = this.getClass().getSimpleName();
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
