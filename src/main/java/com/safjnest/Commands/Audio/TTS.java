@@ -41,7 +41,7 @@ public class TTS extends Command{
     public static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
     
     public TTS(TTSHandler tts){
-        this.name = this.getClass().getSimpleName();
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);

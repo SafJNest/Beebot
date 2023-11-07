@@ -27,7 +27,7 @@ import net.dv8tion.jda.api.entities.Member;
 public class MemberInfo extends Command{
 
     public MemberInfo() {
-        this.name = this.getClass().getSimpleName();
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);

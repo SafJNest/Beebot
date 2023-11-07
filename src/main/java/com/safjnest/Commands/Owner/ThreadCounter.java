@@ -13,7 +13,7 @@ import com.safjnest.Utilities.CommandsLoader;
 public class ThreadCounter extends Command{
 
     public ThreadCounter(){
-        this.name = this.getClass().getSimpleName();
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);

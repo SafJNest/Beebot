@@ -20,7 +20,7 @@ import net.dv8tion.jda.api.entities.sticker.Sticker;
 public class EmojiInfo extends Command {
 
     public EmojiInfo(){
-        this.name = this.getClass().getSimpleName();
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
