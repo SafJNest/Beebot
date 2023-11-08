@@ -9,6 +9,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -83,20 +85,37 @@ public class APODSlash extends SlashCommand {
             return;
         }
 
+        String type = jsonResponse.get("media_type").toString();
+        if(!type.equals("image") && !type.equals("video")) {
+            event.deferReply(true).addContent("Something went wrong.");
+            return;
+        }
+
         String title = jsonResponse.get("title").toString();
         String explanation = jsonResponse.get("explanation").toString();
-        String hdurl = jsonResponse.get("hdurl").toString();
         String date = jsonResponse.get("date").toString();
+        
         String apodUrl = "https://apod.nasa.gov/apod/ap" + date.replace("-", "").substring(2) + ".html";
         
-
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setAuthor("Astronomy Picture of the Day");
         eb.setTitle(title, apodUrl);
         eb.setDescription(explanation);
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-        eb.setImage(hdurl);
+
+        if(type.equals("image")) {
+            eb.setImage(jsonResponse.get("hdurl").toString());
+        }
+        else if(type.equals("video")) {
+            eb.appendDescription("\n\n**The apod is a video, click the link in the title to watch it**");
+            Pattern pattern = Pattern.compile("(?:https://)?(?:www\\.)?youtube\\.com/embed/([A-Za-z0-9_-]+)\\?");
+            Matcher matcher = pattern.matcher(jsonResponse.get("url").toString());
+            if(matcher.find()) {
+                eb.setImage("https://img.youtube.com/vi/" + matcher.group(1) + "/hqdefault.jpg");
+            }
+        }
+        
         eb.setFooter("Date: " + date);
 
         event.deferReply(false).addEmbeds(eb.build()).queue();
