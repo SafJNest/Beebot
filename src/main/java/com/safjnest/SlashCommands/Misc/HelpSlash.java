@@ -111,6 +111,7 @@ public class HelpSlash extends SlashCommand {
         } 
         else {
             if(!commands.containsKey(inputCommand.toLowerCase())) {
+                event.deferReply(true).addContent("Command not found").queue();
                 event.reply("Command not found");
                 return;
             }
@@ -159,7 +160,7 @@ public class HelpSlash extends SlashCommand {
         }
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", event.getJDA().getSelfUser().getAvatarUrl());
-        event.getChannel().sendMessageEmbeds(eb.build()).queue();
+        event.deferReply(false).addEmbeds(eb.build()).queue();
     }
 
     public List<String> getCategoriesBySize(HashMap<String, List<BotCommand>> map) {

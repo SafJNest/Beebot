@@ -87,7 +87,7 @@ public class APODSlash extends SlashCommand {
 
         String type = jsonResponse.get("media_type").toString();
         if(!type.equals("image") && !type.equals("video")) {
-            event.deferReply(true).addContent("Something went wrong.");
+            event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
 
