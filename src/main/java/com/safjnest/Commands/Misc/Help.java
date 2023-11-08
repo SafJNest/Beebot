@@ -148,7 +148,7 @@ public class Help extends Command {
         }
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", event.getJDA().getSelfUser().getAvatarUrl());
-        event.getChannel().sendMessageEmbeds(eb.build()).queue();
+        event.reply(eb.build());
     }
 
     public List<String> getCategoriesBySize(HashMap<String, List<BotCommand>> map) {

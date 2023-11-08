@@ -54,7 +54,7 @@ public class PlayYoutubeSlash extends SlashCommand {
 
     public static String getVideoIdFromYoutubeUrl(String youtubeUrl) {
         //Matches possibile Youtube urls.
-        String pattern = "(.*?)(^|\\/|v=)([a-z0-9_-]{11})(.*)?*";
+        String pattern = "(.*?)(^|\\/|v=)([a-z0-9_-]{11})(.*)?";
         Pattern compiledPattern = Pattern.compile(pattern);
         Matcher matcher = compiledPattern.matcher(youtubeUrl);
         if (matcher.find()) {
