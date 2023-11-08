@@ -53,23 +53,12 @@ public class PlayYoutubeSlash extends SlashCommand {
     }
 
     public static String getVideoIdFromYoutubeUrl(String youtubeUrl) {
-        /*
-            Possibile Youtube urls.
-            http://www.youtube.com/watch?v=dQw4w9WgXcQ
-            http://www.youtube.com/embed/dQw4w9WgXcQ
-            http://www.youtube.com/v/dQw4w9WgXcQ
-            http://www.youtube-nocookie.com/v/dQw4w9WgXcQ?version=3&hl=en_US&rel=0
-            http://www.youtube.com/watch?v=dQw4w9WgXcQ
-            http://www.youtube.com/watch?feature=player_embedded&v=dQw4w9WgXcQ
-            http://www.youtube.com/e/dQw4w9WgXcQ
-            http://youtu.be/dQw4w9WgXcQ
-        */
-        String pattern = "(?<=watch\\?v=|/videos/|embed\\/|youtu.be\\/|\\/v\\/|\\/e\\/|watch\\?v%3D|watch\\?feature=player_embedded&v=|%2Fvideos%2F|embed%\u200C\u200B2F|youtu.be%2F|%2Fv%2F)[^#\\&\\?\\n]*";
+        //Matches possibile Youtube urls.
+        String pattern = "(.*?)(^|\\/|v=)([a-z0-9_-]{11})(.*)?*";
         Pattern compiledPattern = Pattern.compile(pattern);
-        //url is youtube url for which you want to extract the id.
         Matcher matcher = compiledPattern.matcher(youtubeUrl);
         if (matcher.find()) {
-            return matcher.group();
+            return matcher.group(3);
         }
         return null;
     }
