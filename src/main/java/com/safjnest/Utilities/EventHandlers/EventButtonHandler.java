@@ -11,6 +11,7 @@ import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -22,6 +23,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -653,9 +655,9 @@ public class EventButtonHandler extends ListenerAdapter {
 
 
     private void soundboardEvent(ButtonInteractionEvent event){
-
+        Guild guild = event.getGuild();
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-        PlayerManager pm = new PlayerManager();
+        PlayerManager pm = PlayerPool.contains(event.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getJDA().getSelfUser().getId(), guild.getId());
 
         TextChannel channel = event.getChannel().asTextChannel();
 

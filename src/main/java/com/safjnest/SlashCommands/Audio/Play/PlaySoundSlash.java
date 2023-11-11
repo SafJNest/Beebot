@@ -10,6 +10,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Audio.SoundBoard;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -18,6 +19,7 @@ import com.safjnest.Utilities.SQL.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -34,6 +36,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
  * @since 1.1
  */
 public class PlaySoundSlash extends SlashCommand{
+    private PlayerManager pm;
     String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
 
     public PlaySoundSlash(String father){
@@ -48,8 +51,9 @@ public class PlaySoundSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
+        Guild guild = event.getGuild();
         AudioChannel authorChannel = event.getMember().getVoiceState().getChannel();
-        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
+        AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
         if(authorChannel == null){
             event.deferReply(true).addContent("You need to be in a voice channel to use this command.").queue();
@@ -64,8 +68,8 @@ public class PlaySoundSlash extends SlashCommand{
         String fileName = event.getOption("sound").getAsString();
 
         QueryResult sounds = fileName.matches("[0123456789]*") 
-                           ? DatabaseHandler.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
-                           : DatabaseHandler.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
+                           ? DatabaseHandler.getSoundsById(fileName, guild.getId(), event.getMember().getId()) 
+                           : DatabaseHandler.getSoundsByName(fileName, guild.getId(), event.getMember().getId());
         
         if(sounds.isEmpty()){
             event.reply("Couldn't find a sound with that name/id.");
@@ -74,7 +78,7 @@ public class PlaySoundSlash extends SlashCommand{
 
         ResultRow toPlay = null;
         for(ResultRow sound : sounds) {
-            if(sound.get("guild_id").equals(event.getGuild().getId())) {
+            if(sound.get("guild_id").equals(guild.getId())) {
                 toPlay = sound;
                 break;
             }
@@ -88,9 +92,9 @@ public class PlaySoundSlash extends SlashCommand{
 
         fileName = path + toPlay.get("id") + "." + toPlay.get("extension");
 
-        PlayerManager pm = new PlayerManager();
+        pm = PlayerPool.contains(event.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getJDA().getSelfUser().getId(), guild.getId());
         
-        AudioManager audioManager = event.getGuild().getAudioManager();
+        AudioManager audioManager = guild.getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
         
         pm.getAudioPlayerManager().loadItem(fileName, new AudioLoadResultHandler() {

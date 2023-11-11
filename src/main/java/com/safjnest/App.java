@@ -13,6 +13,7 @@ import org.json.simple.parser.JSONParser;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
+import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -61,6 +62,8 @@ public class App {
             SQLSettings.get("user").toString(), 
             SQLSettings.get("password").toString()
         );
+
+        new PlayerPool();
         
         riotApi = null;
         try {

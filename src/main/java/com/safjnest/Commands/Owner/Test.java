@@ -9,6 +9,7 @@ import java.util.TimerTask;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -43,7 +44,7 @@ public class Test extends Command{
 
     @Override
     protected void execute(CommandEvent e) {
-        switch (5){
+        switch (6){
             case 1:
                 Timer timer = new Timer();
                 /* 
@@ -92,7 +93,11 @@ public class Test extends Command{
                     invites = e.getJDA().getGuildById(e.getArgs()).getDefaultChannel().createInvite().complete().getUrl();
                     e.reply("here is the created invite:\n" + invites);
                 }
-                
+            break;
+            case 6:
+                System.out.println(PlayerPool.printPlayers());
+                PlayerPool.clearPool();
+                System.out.println(PlayerPool.printPlayers());
             break;
         }
     }  

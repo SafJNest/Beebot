@@ -9,6 +9,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Audio.SoundBoard;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -17,6 +18,7 @@ import com.safjnest.Utilities.SQL.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
@@ -46,8 +48,9 @@ public class PlaySound extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
+        Guild guild = event.getGuild();
         AudioChannel authorChannel = event.getMember().getVoiceState().getChannel();
-        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
+        AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
         if((fileName = event.getArgs()).equals("")){
             event.reply("You need to specify a sound name or id.");
@@ -65,8 +68,8 @@ public class PlaySound extends Command{
         }
         
         QueryResult sounds = fileName.matches("[0123456789]*") 
-                           ? DatabaseHandler.getSoundsById(fileName, event.getGuild().getId(), event.getAuthor().getId()) 
-                           : DatabaseHandler.getSoundsByName(fileName, event.getGuild().getId(), event.getAuthor().getId());
+                           ? DatabaseHandler.getSoundsById(fileName, guild.getId(), event.getAuthor().getId()) 
+                           : DatabaseHandler.getSoundsByName(fileName, guild.getId(), event.getAuthor().getId());
 
         if(sounds.isEmpty()){
             event.reply("Couldn't find a sound with that name/id.");
@@ -75,7 +78,7 @@ public class PlaySound extends Command{
 
         ResultRow toPlay = null;
         for(ResultRow sound : sounds) {
-            if(sound.get("guild_id").equals(event.getGuild().getId())) {
+            if(sound.get("guild_id").equals(guild.getId())) {
                 toPlay = sound;
                 break;
             }
@@ -90,10 +93,9 @@ public class PlaySound extends Command{
         String fileName = path + toPlay.get("id") + "." + toPlay.get("extension");
 
 
-        pm = new PlayerManager();
-        AudioManager audioManager = event.getGuild().getAudioManager();
+        pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
+        AudioManager audioManager = guild.getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
-
         pm.getAudioPlayerManager().loadItem(fileName, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
@@ -102,6 +104,7 @@ public class PlaySound extends Command{
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
+                System.out.println("playlist");
                 /*
                  * for (AudioTrack track : playlist.getTracks()) {
                  * trackScheduler.queue(track);

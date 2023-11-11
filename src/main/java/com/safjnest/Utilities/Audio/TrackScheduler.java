@@ -35,6 +35,7 @@ public class TrackScheduler extends AudioEventAdapter {
   /**Queue that contains all the track */
   private Queue<AudioTrack> queue = new LinkedList<>();
   private PlayerManager publicMagister;
+  
 
   /**
    *  constructor
@@ -66,7 +67,8 @@ public class TrackScheduler extends AudioEventAdapter {
   @OverridingMethodsMustInvokeSuper
   public AudioTrack getTrack() {
     try {
-      while (queue.isEmpty()) {
+      int i = 0;
+      while (i++ < 500 && queue.isEmpty()) {
         Thread.sleep(2);
       }
       Thread.sleep(5);
@@ -78,12 +80,12 @@ public class TrackScheduler extends AudioEventAdapter {
 
   @Override
   public void onPlayerPause(AudioPlayer player) {
-    // Player was paused
+
   }
 
   @Override
   public void onPlayerResume(AudioPlayer player) {
-    // Player was resumed
+    
   }
 
   @Override
@@ -93,15 +95,11 @@ public class TrackScheduler extends AudioEventAdapter {
 
   @Override
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-      if(endReason.name().equals("FINISHED")){
-        publicMagister.terminator3LeMacchineRibelli();
-      }
-      else if(endReason.name().equals("CLEANUP")){
+      if(endReason.name().equals("CLEANUP")){
         System.out.println("The time of thread has come to an end.");
         publicMagister.terminator3LeMacchineRibelli();
       }
     
-
     // endReason == FINISHED: A track finished or died by an exception (mayStartNext
     // = true).
     // endReason == LOAD_FAILED: Loading of a track failed (mayStartNext = true).
@@ -109,8 +107,7 @@ public class TrackScheduler extends AudioEventAdapter {
     // endReason == REPLACED: Another track started playing while this had not
     // finished
     // endReason == CLEANUP: Player hasn't been queried for a while, if you want you
-    // can put a
-    // clone of this back to your queue
+    // can put a clone of this back to your queue
   }
 
   @Override
