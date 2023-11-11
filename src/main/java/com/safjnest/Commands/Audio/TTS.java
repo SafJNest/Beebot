@@ -14,12 +14,14 @@ import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -76,9 +78,11 @@ public class TTS extends Command{
         String speech = event.getArgs();
         EmbedBuilder eb;
 
+
+        Guild guild = event.getGuild();
         MessageChannel channel = event.getChannel();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
-        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
+        AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
         if(myChannel == null){
             event.reply("You need to be in a voice channel to use this command.");
@@ -115,7 +119,7 @@ public class TTS extends Command{
             return;
         }
 
-        ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+        ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(guild.getId(), event.getJDA().getSelfUser().getId());
         if(!defaultVoiceRow.emptyValues())
             defaultVoice = defaultVoiceRow.get("name_tts");
 
@@ -149,9 +153,9 @@ public class TTS extends Command{
         
         String ttsFileName = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
         
-        pm = new PlayerManager();
+        pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
         
-        AudioManager audioManager = event.getGuild().getAudioManager();
+        AudioManager audioManager = guild.getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
 
         pm.getAudioPlayerManager().loadItem(ttsFileName, new AudioLoadResultHandler() {

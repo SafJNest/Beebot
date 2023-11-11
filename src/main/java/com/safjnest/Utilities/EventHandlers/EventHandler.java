@@ -9,6 +9,7 @@ import java.util.List;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.LOL.Augment;
 import com.safjnest.Utilities.LOL.RiotHandler;
@@ -71,33 +72,27 @@ public class EventHandler extends ListenerAdapter {
      */
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent e) {
-        AudioChannel ac = e.getChannelJoined();
-        AudioChannel bebyc = e.getGuild().getAudioManager().getConnectedChannel();
+        Guild guild = e.getGuild();
+        AudioChannel cj = e.getChannelJoined();
+        AudioChannel cl = e.getChannelLeft();
+        AudioChannel bebyc = guild.getAudioManager().getConnectedChannel();
 
-        if((e.getGuild().getAudioManager().isConnected() && e.getChannelLeft() != null) &&
-            (e.getGuild().getAudioManager().getConnectedChannel().getId().equals(e.getChannelLeft().getId())) &&
-            (e.getChannelLeft().getMembers().size() == 1)){
-            e.getGuild().getAudioManager().closeAudioConnection();
+        if((bebyc != null && cl != null) && (bebyc.getId().equals(cl.getId()))
+            && (cl.getMembers().stream().filter(member -> !member.getUser().isBot()).count() == 0)) {
+                guild.getAudioManager().closeAudioConnection();
         }
-
-
-        if(e.getJDA().getUserById(e.getMember().getId()).isBot() || ac == null)
-            return;
-
-        if(bebyc != null && ac.getId().equals(bebyc.getId()) || bebyc == null){
+        
+        if(cj != null && ((bebyc != null && cj.getId().equals(bebyc.getId())) || bebyc == null)) {
             Member theGuy = e.getMember();
-            ResultRow sound = DatabaseHandler.getGreet(theGuy.getId(), e.getGuild().getId(), e.getJDA().getSelfUser().getId());
+            ResultRow sound = DatabaseHandler.getGreet(theGuy.getId(), guild.getId(), e.getJDA().getSelfUser().getId());
             if(sound.emptyValues())
                 return;
 
-            PlayerManager pm = new PlayerManager();
-            AudioManager audioManager = e.getGuild().getAudioManager();
+            PlayerManager pm = PlayerPool.contains(e.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(e.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(e.getJDA().getSelfUser().getId(), guild.getId());
+            
+            AudioManager audioManager = guild.getAudioManager();
             audioManager.setSendingHandler(pm.getAudioHandler());
-            audioManager.openAudioConnection(ac);
-
-            if(pm.getPlayer().getPlayingTrack() != null){
-                //pm.stopAudioHandler();
-            }
+            audioManager.openAudioConnection(cj);
 
             String path = "rsc" + File.separator + "SoundBoard"+ File.separator + sound.get("id") + "." + sound.get("extension");
             pm.getAudioPlayerManager().loadItem(path, new AudioLoadResultHandler() {
@@ -278,7 +273,7 @@ public class EventHandler extends ListenerAdapter {
 
             case "greet":
                 if (e.getFocusedOption().getValue().equals("")) {
-                    for (ResultRow greet : DatabaseHandler.getlistGuildSounds(e.getGuild().getId()))
+                    for (ResultRow greet : DatabaseHandler.getlistGuildSounds(e.getGuild().getId(), 25))
                         choices.add(new Choice(greet.get("name"), greet.get("id")));
                 } else {
                     for (ResultRow greet : DatabaseHandler.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), e.getFocusedOption().getValue()))

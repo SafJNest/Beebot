@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -27,6 +28,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -65,8 +67,9 @@ public class PlayYoutubeSlash extends SlashCommand {
 
 	@Override
 	protected void execute(SlashCommandEvent event) {
+        Guild guild = event.getGuild();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
-        AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
+        AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
         if(myChannel == null){
             event.deferReply(true).addContent("You need to be in a voice channel to use this command.").queue();
@@ -97,7 +100,7 @@ public class PlayYoutubeSlash extends SlashCommand {
             }
         }
 
-        pm = new PlayerManager();
+        pm = PlayerPool.contains(event.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getJDA().getSelfUser().getId(), guild.getId());
         
         pm.getAudioPlayerManager().loadItem(toPlay, new AudioLoadResultHandler() {
             @Override
@@ -131,7 +134,7 @@ public class PlayYoutubeSlash extends SlashCommand {
             return;
         }
 
-        AudioManager audioManager = event.getGuild().getAudioManager();
+        AudioManager audioManager = guild.getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
         audioManager.openAudioConnection(myChannel);
 

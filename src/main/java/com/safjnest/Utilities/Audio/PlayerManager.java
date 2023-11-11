@@ -15,11 +15,16 @@ public class PlayerManager {
     private AudioPlayer player;
     private AudioHandler audioPlayerSendHandler;
     private TrackScheduler trackScheduler;
+    private String guildId;
+    private String botId;
 
-    public PlayerManager(){
+    public PlayerManager(String botId, String guildId){
       this.playerManager = new DefaultAudioPlayerManager();
       this.player = playerManager.createPlayer();
       this.audioPlayerSendHandler = new AudioHandler(player);
+
+      this.botId = botId;
+      this.guildId = guildId;
 
       this.trackScheduler = new TrackScheduler(player, this);
       player.addListener(trackScheduler);
@@ -35,6 +40,7 @@ public class PlayerManager {
       player.destroy();
       playerManager.shutdown();
       audioPlayerSendHandler.stop();
+      PlayerPool.remove(botId, guildId);
     }
 
     public AudioHandler getAudioHandler(){

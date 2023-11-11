@@ -121,6 +121,22 @@
         "arguments" : "[CommandName]"
     },
 
+    "pause":{
+        "alias" : [],
+        "help"  : "Pause the playing audio.",
+        "longhelp": "Pause the playing audio.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
+    "resume":{
+        "alias" : [],
+        "help"  : "Resume the playing audio.",
+        "longhelp": "Resume the playing audio.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
 
 
     "list": {

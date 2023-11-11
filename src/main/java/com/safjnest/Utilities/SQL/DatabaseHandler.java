@@ -207,6 +207,10 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC");
     }
 
+    public static QueryResult getlistGuildSounds(String guild_id, int limit) {
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC LIMIT " + limit);
+    }
+
     public static QueryResult getGuildRandomSound(String guild_id){
         return safJQuery("SELECT name, id FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
     }

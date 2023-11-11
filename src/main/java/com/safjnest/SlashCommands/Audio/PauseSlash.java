@@ -3,12 +3,12 @@ package com.safjnest.SlashCommands.Audio;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Audio.AudioHandler;
+import com.safjnest.Utilities.Audio.PlayerPool;
 
 
-public class StopSlash extends SlashCommand {
+public class PauseSlash extends SlashCommand {
 
-    public StopSlash(){
+    public PauseSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -19,8 +19,8 @@ public class StopSlash extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        AudioHandler handler = (AudioHandler)event.getGuild().getAudioManager().getSendingHandler();
-        handler.stop();
-        event.deferReply(false).addContent("Playing stopped").queue();
+        PlayerPool.get(event.getJDA().getSelfUser().getId(), event.getGuild().getId()).getPlayer().setPaused(true);
+
+        event.deferReply(false).addContent("Playing paused").queue();
     }
 }
