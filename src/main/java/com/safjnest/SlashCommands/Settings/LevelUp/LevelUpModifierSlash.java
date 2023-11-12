@@ -42,7 +42,7 @@ public class LevelUpModifierSlash extends SlashCommand{
             return;
         }
         if(gs.getServer(guildId).getRoom(Long.parseLong(channelId)) == null){
-            Room r = new Room(Long.parseLong(channelId),null, true, modifier, true);
+            Room r = new Room(Long.parseLong(channelId), true, modifier, true);
             gs.getServer(guildId).addRoom(r);
         }
         else{

@@ -46,7 +46,7 @@ public class LevelUpChannelToggleSlash extends SlashCommand{
         int expValue = DatabaseHandler.getRoomSettings(guildId, channelId).getAsInt("exp_value");
 
         if(gs.getServer(event.getGuild().getId()).getRoom(Long.parseLong(channelId)) == null){
-            Room r = new Room(Long.parseLong(channelId),null, toggle, expValue, true);
+            Room r = new Room(Long.parseLong(channelId), toggle, expValue, true);
             gs.getServer(event.getGuild().getId()).addRoom(r);
         }
         else{

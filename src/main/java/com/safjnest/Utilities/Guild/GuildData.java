@@ -141,7 +141,6 @@ public class GuildData {
                 row.getAsLong("room_id"),
                 new Room(
                     row.getAsLong("room_id"), 
-                    row.get("room_name"), 
                     row.getAsBoolean("has_exp"), 
                     row.getAsDouble("exp_value"),
                     row.getAsBoolean("has_command_stats")
@@ -185,10 +184,6 @@ public class GuildData {
 
     public synchronized void setExpSystemRoom(Long id, boolean exp){
         rooms.get(id).setExpSystem(exp);
-    }
-
-    public synchronized void setNameRoom(Long id, String name){
-        rooms.get(id).setName(name);
     }
 
     public synchronized void setExpValueRoom(Long id, double value){
