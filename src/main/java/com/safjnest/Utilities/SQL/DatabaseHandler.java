@@ -199,7 +199,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getRoomsData(String filter){        
-        String query = "SELECT guild_id, room_id, room_name, has_exp, exp_value, has_command_stats FROM room WHERE " + filter + ";";
+        String query = "SELECT guild_id, room_id, has_exp, exp_value, has_command_stats FROM room WHERE " + filter + ";";
         return safJQuery(query);
     }
 
@@ -451,12 +451,12 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getRoomsSettings(String guild_id) {
-        String query = "SELECT room_id, room_name, has_exp, exp_value, has_command_stats FROM room WHERE guild_id ='" + guild_id + "';";
+        String query = "SELECT room_id, has_exp, exp_value, has_command_stats FROM room WHERE guild_id ='" + guild_id + "';";
         return safJQuery(query);
     }
 
     public static QueryResult getRoomsSettingsWithExpModifier(String guild_id) {
-        String query = "SELECT room_id, room_name, has_exp, exp_value, has_command_stats FROM room WHERE guild_id ='" + guild_id + "' AnND has_exp = 1 AND exp_value > 1;";
+        String query = "SELECT room_id, has_exp, exp_value, has_command_stats FROM room WHERE guild_id ='" + guild_id + "' AnND has_exp = 1 AND exp_value > 1;";
         return safJQuery(query);
     }
 
@@ -617,7 +617,7 @@ public class DatabaseHandler {
     }
 
     public static ResultRow getRoomSettings(String guild_id, String room_id) {
-        return fetchJRow("SELECT room_name, has_exp, exp_value, has_command_stats FROM alert WHERE guild_id = '" + guild_id + "' AND room_id = '" + room_id + "';");
+        return fetchJRow("SELECT has_exp, exp_value, has_command_stats FROM alert WHERE guild_id = '" + guild_id + "' AND room_id = '" + room_id + "';");
     }
 
     public static boolean updateExpValue(String guild_id, String room_id, Double exp_value) {
