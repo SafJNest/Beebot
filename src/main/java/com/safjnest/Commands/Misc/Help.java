@@ -68,6 +68,8 @@ public class Help extends Command {
             categories.get(category).sort((c1, c2) -> {
                 int c1p = (c1.isText() ? 2 : 0) + (c1.isSlash() ? 1 : 0);
                 int c2p = (c2.isText() ? 2 : 0) + (c2.isSlash() ? 1 : 0);
+                if(c1p == c2p)
+                    return c1.getName().compareTo(c2.getName());
                 return Integer.compare(c1p, c2p);
             });
         }
@@ -76,14 +78,17 @@ public class Help extends Command {
             eb.setTitle("📒INFO AND COMMANDS📒");
             eb.setDescription("Current prefix is: **" + prefix + "**\n"
                 + "For more information on a command: **" + prefix + "help <command name>.**\n"
-                + "In brackets is specified if the command is text only or slash only.");
+                + "In **brackets** is specified if the command is **text only** or **slash only**.\n"
+                + "If it doesn't have brackets it's **both**. **s** means the command has **sub-commands**.");
             String ss = "```\n";
 
             for(String category : getCategoriesBySize(categories)) {
                 for(BotCommand command : categories.get(category)) {
                     String brackets = "";
                     if(command.isText() != command.isSlash())
-                        brackets += " [" + (command.isText() ? prefix : "") + (command.isSlash() ? "/" : "") + "]";
+                        brackets += " [" + (command.isText() ? prefix : "") + (command.isSlash() ? "/" : "") + ((command.getChildren().size() != 0) ? "s" : "") + "]";
+                    else if(command.getChildren().size() != 0)
+                        brackets += " [s]";
                     ss += command.getName() + brackets + "\n";
                 }
                 ss +="```";

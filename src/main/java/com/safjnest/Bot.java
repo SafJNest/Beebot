@@ -261,7 +261,7 @@ public class Bot extends ListenerAdapter implements Runnable {
             Collections.addAll(slashCommandsList, new RewardsSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
 
         if(threadName.equals("beebot canary"))
-            Collections.addAll(slashCommandsList, new TalkSlash(), new LeaderboardSlash(), new LevelUpSlash(gs), new RewardsSlash());
+            Collections.addAll(slashCommandsList, new LeaderboardSlash(), new LevelUpSlash(gs), new RewardsSlash());
 
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
