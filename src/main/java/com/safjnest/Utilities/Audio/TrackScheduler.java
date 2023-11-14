@@ -35,6 +35,7 @@ public class TrackScheduler extends AudioEventAdapter {
   /**Queue that contains all the track */
   private Queue<AudioTrack> queue = new LinkedList<>();
   private PlayerManager publicMagister;
+  public boolean isPlaying;
   
 
   /**
@@ -75,6 +76,7 @@ public class TrackScheduler extends AudioEventAdapter {
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
+    isPlaying = true;
     return queue.poll();
   }
 
@@ -99,6 +101,12 @@ public class TrackScheduler extends AudioEventAdapter {
         System.out.println("The time of thread has come to an end.");
         publicMagister.terminator3LeMacchineRibelli();
       }
+      if(endReason.name().equals("FINISHED")) { 
+        publicMagister.getPlayer().playTrack(publicMagister.getTrackScheduler().getTrack());
+        System.out.println("si cambia song les go");
+      }
+
+      isPlaying = false;
     
     // endReason == FINISHED: A track finished or died by an exception (mayStartNext
     // = true).
