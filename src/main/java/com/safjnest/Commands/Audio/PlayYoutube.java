@@ -129,6 +129,11 @@ public class PlayYoutube extends Command {
             }
         });
 
+        if(pm.getTrackScheduler().isPlaying) {
+             System.out.println("metto nella coda del porca madonna");
+            return;
+        }
+
         pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
         if(pm.getPlayer().getPlayingTrack() == null) {
             return;
