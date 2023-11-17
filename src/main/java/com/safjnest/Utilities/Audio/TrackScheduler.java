@@ -127,4 +127,8 @@ public class TrackScheduler extends AudioEventAdapter {
   public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
     System.out.println("Track stuck");
   }
+
+  public int getQueueSize() { 
+    return queue.size();
+  }
 }
