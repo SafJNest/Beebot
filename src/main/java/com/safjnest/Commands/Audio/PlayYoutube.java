@@ -79,6 +79,13 @@ public class PlayYoutube extends Command {
             return;
         }
 
+        if(event.getArgs().equals("") && PlayerPool.contains(event.getSelfUser().getId(), guild.getId())) {
+            pm = PlayerPool.get(event.getSelfUser().getId(), guild.getId());
+            if(pm.getPlayer().getPlayingTrack() == null && pm.getTrackScheduler().getQueueSize() > 0)
+                pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+            return;
+        }
+
         String toPlay = getVideoIdFromYoutubeUrl(event.getArgs());
 
         if(toPlay == null){
@@ -106,6 +113,28 @@ public class PlayYoutube extends Command {
             @Override
             public void trackLoaded(AudioTrack track) {
                 pm.getTrackScheduler().addQueue(track);
+
+                System.out.println(pm.getTrackScheduler().getQueueSize());
+                
+                if(pm.getPlayer().getPlayingTrack() == null) {
+                    pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+                }
+
+                AudioManager audioManager = guild.getAudioManager();
+                audioManager.setSendingHandler(pm.getAudioHandler());
+                audioManager.openAudioConnection(myChannel);
+
+                EmbedBuilder eb = new EmbedBuilder();
+
+                eb.setTitle("Playing now:");
+                eb.setDescription("[" + pm.getPlayer().getPlayingTrack().getInfo().title + "](" + pm.getPlayer().getPlayingTrack().getInfo().uri + ")");
+                eb.setThumbnail("https://img.youtube.com/vi/" + pm.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+                eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
+                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+
+                eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length) , true);
+
+                event.reply(eb.build());
             }
 
             @Override
@@ -128,31 +157,5 @@ public class PlayYoutube extends Command {
                 event.reply(throwable.getMessage());
             }
         });
-
-        if(pm.getTrackScheduler().isPlaying) {
-             System.out.println("metto nella coda del porca madonna");
-            return;
-        }
-
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
-        if(pm.getPlayer().getPlayingTrack() == null) {
-            return;
-        }
-
-        AudioManager audioManager = guild.getAudioManager();
-        audioManager.setSendingHandler(pm.getAudioHandler());
-        audioManager.openAudioConnection(myChannel);
-
-        EmbedBuilder eb = new EmbedBuilder();
-
-        eb.setTitle("Playing now:");
-        eb.setDescription("[" + pm.getPlayer().getPlayingTrack().getInfo().title + "](" + pm.getPlayer().getPlayingTrack().getInfo().uri + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + pm.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-
-        eb.addField("Lenght", SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length) , true);
-
-        event.reply(eb.build());
     }
 }
