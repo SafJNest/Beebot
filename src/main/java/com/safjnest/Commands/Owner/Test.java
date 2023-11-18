@@ -52,6 +52,9 @@ public class Test extends Command{
         String[] args = e.getArgs().split(" ", 2);
         if(args.length == 0 || !SafJNest.intIsParsable(args[0])) return;
 
+
+        File soundBoard = new File("rsc" + File.separator + "SoundBoard");
+        File[] files = soundBoard.listFiles();
         switch (Integer.parseInt(args[0])){
             case 1:
                 Timer timer = new Timer();
@@ -143,6 +146,27 @@ public class Test extends Command{
                 System.out.println(PlayerPool.printPlayers());
                 PlayerPool.clearPool();
                 System.out.println(PlayerPool.printPlayers());
+            break;
+            case 9:
+                for(File file : files){
+                    String name = file.getName().split("\\.")[0];
+                    String extension = file.getName().split("\\.")[1];
+                    String newName = String.valueOf(Integer.valueOf(name) + 1000);
+                    file.renameTo(new File(soundBoard + File.separator + newName + "." + extension));
+
+                }
+            break;
+            case 10:
+                for(File file : files){
+                    String name = file.getName().split("\\.")[0];
+                    String extension = file.getName().split("\\.")[1];
+
+                    String query = "SELECT * FROM sound WHERE id = " + name + ";";
+                    ResultRow res = DatabaseHandler.fetchJRow(query);
+                    String newName = res.get("new_id");
+                    file.renameTo(new File(soundBoard + File.separator + newName + "." + extension));
+
+                }
             break;
             default:
                 e.reply("Command does not exist.");
