@@ -3,6 +3,9 @@ package com.safjnest.Commands.Audio;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -160,12 +163,17 @@ public class PlaySound extends Command{
         eb.addField("Guild", "```" 
             + event.getJDA().getGuildById(toPlay.get("guild_id")).getName() 
         + "```", true);
-
         eb.addField("Played", "```" 
             + plays.get("totalTimes") 
             + (plays.get("totalTimes").equals("1") ? " time" : " times") 
             + " (yours: "+plays.get("timesByUser") + ")"
         + "```", true);
+
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime dateTime = LocalDateTime.parse(toPlay.get("time"), formatter);
+        eb.addField("Time Creation","<t:" + dateTime.toEpochSecond(ZoneOffset.UTC) + ":f> | "
+                        + "<t:" + dateTime.toEpochSecond(ZoneOffset.UTC)+ ":R>", false);
 
         event.reply(eb.build());
     }
