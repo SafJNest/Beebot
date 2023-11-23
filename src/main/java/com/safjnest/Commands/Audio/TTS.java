@@ -185,7 +185,7 @@ public class TTS extends Command{
             }
         });
 
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        pm.getTrackScheduler().nextTrack();
         if(pm.getPlayer().getPlayingTrack() == null) {
             return;
         }

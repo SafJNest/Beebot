@@ -137,6 +137,14 @@
         "arguments" : "[CommandName]"
     },
 
+    "queue":{
+        "alias" : [],
+        "help"  : "Queue a track (youtube).",
+        "longhelp": "Queue a track (youtube).",
+        "category" : "Audio",
+        "arguments" : "[CommandName] [track]"
+    },
+
 
 
     "list": {

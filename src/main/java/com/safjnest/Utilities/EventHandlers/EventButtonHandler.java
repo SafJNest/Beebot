@@ -698,7 +698,7 @@ public class EventButtonHandler extends ListenerAdapter {
             }
         });
 
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        pm.getTrackScheduler().nextTrack();
         
         String id = args.split("\\.")[0];
         DatabaseHandler.updateUserPlays(id, event.getMember().getId());

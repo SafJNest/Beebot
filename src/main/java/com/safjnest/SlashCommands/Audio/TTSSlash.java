@@ -159,7 +159,7 @@ public class TTSSlash extends SlashCommand{
             }
         });
 
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        pm.getTrackScheduler().nextTrack();
         if(pm.getPlayer().getPlayingTrack() == null) {
             return;
         }

@@ -36,6 +36,7 @@ public class PlaySound extends Command{
     String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
     String fileName;
     PlayerManager pm;
+    ResultRow toPlay;
 
     public PlaySound(){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -76,7 +77,7 @@ public class PlaySound extends Command{
             return;
         }
 
-        ResultRow toPlay = null;
+        toPlay = null;
         for(ResultRow sound : sounds) {
             if(sound.get("guild_id").equals(guild.getId())) {
                 toPlay = sound;
@@ -92,14 +93,54 @@ public class PlaySound extends Command{
             soundBoard.mkdirs();
         String fileName = path + toPlay.get("id") + "." + toPlay.get("extension");
 
-
         pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
         AudioManager audioManager = guild.getAudioManager();
         audioManager.setSendingHandler(pm.getAudioHandler());
         pm.getAudioPlayerManager().loadItem(fileName, new AudioLoadResultHandler() {
+            
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getTrackScheduler().addQueue(track);
+                audioManager.openAudioConnection(authorChannel);
+                pm.getTrackScheduler().addTopQueue(track);
+                pm.getTrackScheduler().nextTrack();
+                
+                DatabaseHandler.updateUserPlays(toPlay.get("id"), event.getAuthor().getId());
+                ResultRow plays = DatabaseHandler.getPlays(toPlay.get("id"), event.getAuthor().getId());
+
+                EmbedBuilder eb = new EmbedBuilder();
+                eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
+                eb.setTitle("Playing now:");
+                eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
+                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+
+                eb.addField("Author", "```" 
+                    + event.getJDA().getUserById(toPlay.get("user_id")).getName() 
+                + "```", true);
+
+                try {
+                    eb.addField("Lenght", "```"
+                        + (toPlay.get("extension").equals("opus") 
+                        ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(fileName)))*1000)
+                        : SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length))
+                    + "```", true);
+                } catch (IOException e) {e.printStackTrace();}
+
+                eb.addField("Format", "```" 
+                    + toPlay.get("extension").toUpperCase() 
+                + "```", true);
+
+                eb.addField("Guild", "```" 
+                    + event.getJDA().getGuildById(toPlay.get("guild_id")).getName() 
+                + "```", true);
+
+                eb.addField("Played", "```" 
+                    + plays.get("totalTimes") 
+                    + (plays.get("totalTimes").equals("1") ? " time" : " times") 
+                    + " (yours: "+plays.get("timesByUser") + ")"
+                + "```", true);
+
+                event.reply(eb.build());
             }
 
             @Override
@@ -123,50 +164,5 @@ public class PlaySound extends Command{
                 System.out.println("error: " + throwable.getMessage());
             }
         });
-
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
-        if(pm.getPlayer().getPlayingTrack() == null) {
-            return;
-        }
-
-        audioManager.openAudioConnection(authorChannel);
-
-        DatabaseHandler.updateUserPlays(toPlay.get("id"), event.getAuthor().getId());
-        ResultRow plays = DatabaseHandler.getPlays(toPlay.get("id"), event.getAuthor().getId());
-
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
-        eb.setTitle("Playing now:");
-        eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-        eb.setThumbnail(event.getSelfUser().getAvatarUrl());
-
-        eb.addField("Author", "```" 
-            + event.getJDA().getUserById(toPlay.get("user_id")).getName() 
-        + "```", true);
-
-        try {
-            eb.addField("Lenght", "```"
-                + (toPlay.get("extension").equals("opus") 
-                ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(fileName)))*1000)
-                : SafJNest.getFormattedDuration(pm.getPlayer().getPlayingTrack().getInfo().length))
-            + "```", true);
-        } catch (IOException e) {e.printStackTrace();}
-
-        eb.addField("Format", "```" 
-            + toPlay.get("extension").toUpperCase() 
-        + "```", true);
-
-        eb.addField("Guild", "```" 
-            + event.getJDA().getGuildById(toPlay.get("guild_id")).getName() 
-        + "```", true);
-
-        eb.addField("Played", "```" 
-            + plays.get("totalTimes") 
-            + (plays.get("totalTimes").equals("1") ? " time" : " times") 
-            + " (yours: "+plays.get("timesByUser") + ")"
-        + "```", true);
-
-        event.reply(eb.build());
     }
 }

@@ -2,18 +2,17 @@ package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
 
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -21,17 +20,11 @@ import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
-/**
- * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
- * @author <a href="https://github.com/Leon412">Leon412</a>
- * 
- * @since 1.0
- */
-public class PlayYoutube extends Command {
+public class Queue extends Command {
     private String youtubeApiKey;
     private PlayerManager pm;
 
-    public PlayYoutube(String youtubeApiKey){
+    public Queue(String youtubeApiKey){
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -59,8 +52,7 @@ public class PlayYoutube extends Command {
 
         if(event.getArgs().equals("") && PlayerPool.contains(event.getSelfUser().getId(), guild.getId())) {
             pm = PlayerPool.get(event.getSelfUser().getId(), guild.getId());
-            if(pm.getPlayer().getPlayingTrack() == null && pm.getTrackScheduler().getQueueSize() > 0)
-                pm.getTrackScheduler().nextTrack();
+            pm.getTrackScheduler().prevTrack();
             return;
         }
 
@@ -78,12 +70,12 @@ public class PlayYoutube extends Command {
 
         MessageChannel channel = event.getChannel();
 
-        PlayerManager pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
+        pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
         
         pm.getAudioPlayerManager().loadItem(toPlay, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getPlayer().playTrack(track);
+                pm.getTrackScheduler().addQueue(track);
 
                 AudioManager audioManager = guild.getAudioManager();
                 audioManager.setSendingHandler(pm.getAudioHandler());
@@ -91,13 +83,11 @@ public class PlayYoutube extends Command {
 
                 EmbedBuilder eb = new EmbedBuilder();
 
-                eb.setTitle("Playing now:");
+                eb.setTitle("Added to queue:");
                 eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
                 eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", event.getJDA().getSelfUser().getAvatarUrl());
                 eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-
-                eb.addField("Lenght", SafJNest.getFormattedDuration(track.getInfo().length) , true);
+                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
 
                 event.reply(eb.build());
             }

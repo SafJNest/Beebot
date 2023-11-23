@@ -193,7 +193,9 @@ public class Bot extends ListenerAdapter implements Runnable {
                 for(Guild g : event.getJDA().getGuilds()){
                     g.updateCommands().queue();
                 }
+                event.getJDA().getGuildById("474935164451946506").getCh
                 */
+               event.getJDA().getGuildById("474935164451946506").getTextChannelById("938513359626715176").sendMessage("Fired up and ready to ban eeeeeeeeeeeeeeeeeeeeeeeeeepria").queue();
                 System.out.println("[" + threadName + "] INFO no more guild cached correctly");
             }
         });
@@ -225,7 +227,8 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
-            new PlayYoutube(youtubeApiKey), new PlaySound(), new TTS(tts), new Stop(), new Pause(), new Resume());
+                new PlayYoutube(youtubeApiKey), new PlaySound(), new TTS(tts), new Stop(), new Pause(), new Resume(), new Queue(youtubeApiKey)
+            );
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
             Collections.addAll(commandsList, new Leaderboard(), new Test());
