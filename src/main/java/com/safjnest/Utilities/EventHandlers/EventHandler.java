@@ -98,7 +98,7 @@ public class EventHandler extends ListenerAdapter {
             pm.getAudioPlayerManager().loadItem(path, new AudioLoadResultHandler() {
                 @Override
                 public void trackLoaded(AudioTrack track) {
-                    pm.getTrackScheduler().addQueue(track);
+                    pm.getPlayer().playTrack(track);
                 }
 
                 @Override
@@ -121,7 +121,6 @@ public class EventHandler extends ListenerAdapter {
                 }
             });
 
-            pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
         }
     }
 

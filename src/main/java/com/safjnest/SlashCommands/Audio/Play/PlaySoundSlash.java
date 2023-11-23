@@ -100,7 +100,7 @@ public class PlaySoundSlash extends SlashCommand{
         pm.getAudioPlayerManager().loadItem(fileName, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getTrackScheduler().addQueue(track);
+                pm.getPlayer().playTrack(track);
             }
 
             @Override
@@ -124,7 +124,7 @@ public class PlaySoundSlash extends SlashCommand{
             }
         });
 
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        pm.getTrackScheduler().nextTrack();
         if(pm.getPlayer().getPlayingTrack() == null) {
             return;
         }

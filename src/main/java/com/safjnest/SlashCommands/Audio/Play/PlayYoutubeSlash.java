@@ -1,13 +1,7 @@
 package com.safjnest.SlashCommands.Audio.Play;
 
 import java.awt.Color;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.Arrays;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
@@ -17,11 +11,6 @@ import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-
-import org.json.simple.parser.JSONParser;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -54,17 +43,6 @@ public class PlayYoutubeSlash extends SlashCommand {
         this.youtubeApiKey = youtubeApiKey;
     }
 
-    public static String getVideoIdFromYoutubeUrl(String youtubeUrl) {
-        //Matches possibile Youtube urls.
-        String pattern = "(.*?)(^|\\/|v=)([a-z0-9_-]{11})(.*)?";
-        Pattern compiledPattern = Pattern.compile(pattern);
-        Matcher matcher = compiledPattern.matcher(youtubeUrl);
-        if (matcher.find()) {
-            return matcher.group(3);
-        }
-        return null;
-    }
-
 	@Override
 	protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
@@ -82,20 +60,14 @@ public class PlayYoutubeSlash extends SlashCommand {
         }
 
         String video = event.getOption("video").getAsString();
-        String toPlay = getVideoIdFromYoutubeUrl(video);
+        String toPlay = SafJNest.getVideoIdFromYoutubeUrl(video);
+
         if(toPlay == null){
             try {
-                URL theUrl = new URL("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=" + video.replace(" ", "+") + "&key=" + youtubeApiKey);
-                URLConnection request = theUrl.openConnection();
-                request.connect();
-                JSONParser parser = new JSONParser();
-                JSONObject json = (JSONObject) parser.parse(new InputStreamReader((InputStream) request.getContent()));
-                JSONArray items = (JSONArray) json.get("items");
-                JSONObject item = (JSONObject) items.get(0);
-                JSONObject id = (JSONObject) item.get("id");
-                toPlay = (String) id.get("videoId");
+                toPlay = SafJNest.searchYoutubeVideo(video, youtubeApiKey);
             } catch (Exception e) {
-                event.deferReply(true).addContent("Couldn't find a video for the given search.").queue();
+                e.printStackTrace();
+                event.reply("Couldn't find a video for the given query.");
                 return;
             }
         }
@@ -129,7 +101,7 @@ public class PlayYoutubeSlash extends SlashCommand {
             }
         });
 
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
+        pm.getTrackScheduler().nextTrack();
         if(pm.getPlayer().getPlayingTrack() == null) {
             return;
         }

@@ -26,7 +26,7 @@ public class PlayerManager {
       this.botId = botId;
       this.guildId = guildId;
 
-      this.trackScheduler = new TrackScheduler(player, this);
+      this.trackScheduler = new TrackScheduler(player, this, guildId);
       player.addListener(trackScheduler);
 
       playerManager.registerSourceManager(new LocalAudioSourceManager());

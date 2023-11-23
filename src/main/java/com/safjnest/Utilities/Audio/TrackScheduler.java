@@ -1,14 +1,17 @@
 package com.safjnest.Utilities.Audio;
 
-import java.util.LinkedList;
-import java.util.Queue;
-import javax.annotation.OverridingMethodsMustInvokeSuper;
-
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+
+import net.dv8tion.jda.api.JDA;
+
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.LinkedList;
 
 /**
  * 
@@ -29,31 +32,38 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
  * @since 1.0
  */
 public class TrackScheduler extends AudioEventAdapter {
+  private final AudioPlayer player;
+  private final LinkedList<AudioTrack> queue;
+  private final PlayerManager pm;
+  private final String guildId;
+  private final Deque<AudioTrack> stack = new ArrayDeque<AudioTrack>();
 
-  /**Audioplayer that allows the bot reproduce a sound */
-  AudioPlayer player;
-  /**Queue that contains all the track */
-  private Queue<AudioTrack> queue = new LinkedList<>();
-  private PlayerManager publicMagister;
-  public boolean isPlaying;
-  
-
-  /**
-   *  constructor
-   * @param player Comes from {@link com.safjnest.Commands.Audio.PlayYoutube Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
-   */
-  public TrackScheduler(AudioPlayer player, PlayerManager pm) {
+  public TrackScheduler(AudioPlayer player, PlayerManager pm, String guildId) {
     this.player = player;
-    this.publicMagister = pm;
+    this.pm = pm;
+    this.guildId = guildId;
+    this.queue = new LinkedList<>();
   }
 
   /**
    * Add the track to the {@link com.safjnest.Utilities.Audio.TrackScheduler#queue queue}
    * @param track Comes from {@link com.safjnest.Commands.Audio.PlayYoutube Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
    */
-  @OverridingMethodsMustInvokeSuper
   public void addQueue(AudioTrack track) {
-    queue.add(track);
+    if (!player.startTrack(track, true)) {
+      queue.add(track);
+    }
+  }
+
+  public void addTopQueue(AudioTrack track) {
+    queue.add(0, track);
+    if(pm.getPlayer().getPlayingTrack() != null)
+      queue.add(1, pm.getPlayer().getPlayingTrack().makeClone());
+    nextTrack();
+  }
+
+  public void forcePlay(AudioTrack track) {
+    player.startTrack(track, false);
   }
 
   /**
@@ -65,19 +75,12 @@ public class TrackScheduler extends AudioEventAdapter {
    * {@code AudioTrack}
    * @throws InterruptedException
    */
-  @OverridingMethodsMustInvokeSuper
-  public AudioTrack getTrack() {
-    try {
-      int i = 0;
-      while (i++ < 500 && queue.isEmpty()) {
-        Thread.sleep(2);
-      }
-      Thread.sleep(5);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-    isPlaying = true;
-    return queue.poll();
+  public void nextTrack() {
+    forcePlay(queue.poll());
+  }
+
+  public void prevTrack() {
+    addTopQueue(stack.poll().makeClone());
   }
 
   @Override
@@ -99,15 +102,22 @@ public class TrackScheduler extends AudioEventAdapter {
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
       if(endReason.name().equals("CLEANUP")){
         System.out.println("The time of thread has come to an end.");
-        publicMagister.terminator3LeMacchineRibelli();
-      }
-      if(endReason.name().equals("FINISHED")) { 
-        publicMagister.getPlayer().playTrack(publicMagister.getTrackScheduler().getTrack());
-        System.out.println("si cambia song les go");
+        pm.terminator3LeMacchineRibelli();
       }
 
-      isPlaying = false;
-    
+      System.out.println(endReason);
+
+      if(endReason.name().equals("REPLACED")) {
+        stack.push(track);
+        System.out.println("stack:" + stack.size());
+      }  
+      else if(endReason.mayStartNext) {
+        System.out.println(stack.size());
+        stack.push(track);
+        nextTrack();
+      }
+      
+       
     // endReason == FINISHED: A track finished or died by an exception (mayStartNext
     // = true).
     // endReason == LOAD_FAILED: Loading of a track failed (mayStartNext = true).
@@ -126,6 +136,10 @@ public class TrackScheduler extends AudioEventAdapter {
   @Override
   public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
     System.out.println("Track stuck");
+  }
+
+  public boolean isPlaying(JDA jda) {
+    return jda.getGuildById(guildId).getSelfMember().getVoiceState().inAudioChannel() && player.getPlayingTrack() != null;
   }
 
   public int getQueueSize() { 
