@@ -9,8 +9,6 @@ import net.dv8tion.jda.api.JDA;
 
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.LinkedList;
 
 /**
@@ -32,11 +30,13 @@ import java.util.LinkedList;
  * @since 1.0
  */
 public class TrackScheduler extends AudioEventAdapter {
-  private final AudioPlayer player;
-  private final LinkedList<AudioTrack> queue;
   private final PlayerManager pm;
+  private final AudioPlayer player;
+  
+  private final LinkedList<AudioTrack> queue;
+  private int currentTrackIndex = -1;
+
   private final String guildId;
-  private final Deque<AudioTrack> stack = new ArrayDeque<AudioTrack>();
 
   public TrackScheduler(AudioPlayer player, PlayerManager pm, String guildId) {
     this.player = player;
@@ -45,42 +45,55 @@ public class TrackScheduler extends AudioEventAdapter {
     this.queue = new LinkedList<>();
   }
 
-  /**
-   * Add the track to the {@link com.safjnest.Utilities.Audio.TrackScheduler#queue queue}
-   * @param track Comes from {@link com.safjnest.Commands.Audio.PlayYoutube Play} or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
-   */
-  public void addQueue(AudioTrack track) {
-    if (!player.startTrack(track, true)) {
-      queue.add(track);
-    }
+  public void play(AudioTrack track) {
+    player.startTrack(track, true);
   }
 
-  public void addTopQueue(AudioTrack track) {
-    queue.add(0, track);
-    if(pm.getPlayer().getPlayingTrack() != null)
-      queue.add(1, pm.getPlayer().getPlayingTrack().makeClone());
-    nextTrack();
-  }
-
-  public void forcePlay(AudioTrack track) {
+  public void playForce(AudioTrack track) {
     player.startTrack(track, false);
   }
 
-  /**
-   * When a new track is required from 
-   * {@link com.safjnest.Commands.Audio.PlayYoutube Play} 
-   * or {@link com.safjnest.Commands.Audio.PlaySound PlaySound}
-   * the method polls the first track in the {@link com.safjnest.Utilities.Audio.TrackScheduler#queue queue}
-   * @return
-   * {@code AudioTrack}
-   * @throws InterruptedException
-   */
-  public void nextTrack() {
-    forcePlay(queue.poll());
+  public void addQueue(AudioTrack track) {
+    queue.offer(track);
+    if (currentTrackIndex == -1) {
+      currentTrackIndex = queue.size() - 1;
+    }
+    play(getCurrentTrack());
   }
 
-  public void prevTrack() {
-    addTopQueue(stack.poll().makeClone());
+  public void addTrackToFront(AudioTrack track) {
+    if (currentTrackIndex != -1 && currentTrackIndex < queue.size() - 1) {
+      queue.add(currentTrackIndex + 1, track);
+    } else {
+      queue.offer(track);
+    }
+  }
+
+  public AudioTrack getCurrentTrack() {
+    if (currentTrackIndex != -1 && currentTrackIndex < queue.size()) {
+      return queue.get(currentTrackIndex).makeClone();
+    }
+    return null;
+  }
+
+  public AudioTrack nextTrack() {
+    if (queue.isEmpty() || currentTrackIndex >= queue.size() - 1) {
+      currentTrackIndex = -1;
+      return null;
+    }
+    currentTrackIndex = currentTrackIndex + 1;
+    return getCurrentTrack();
+  }
+
+  public AudioTrack prevTrack() {
+    if(!queue.isEmpty() && currentTrackIndex == -1) {
+      currentTrackIndex = queue.size() - 1;
+    }
+    else if (queue.isEmpty() || currentTrackIndex <= 0) {
+      return null;
+    }
+    currentTrackIndex = currentTrackIndex - 1;
+    return getCurrentTrack();
   }
 
   @Override
@@ -106,15 +119,11 @@ public class TrackScheduler extends AudioEventAdapter {
       }
 
       System.out.println(endReason);
+      System.out.println("index before" + currentTrackIndex);
 
-      if(endReason.name().equals("REPLACED")) {
-        stack.push(track);
-        System.out.println("stack:" + stack.size());
-      }  
-      else if(endReason.mayStartNext) {
-        System.out.println(stack.size());
-        stack.push(track);
-        nextTrack();
+      if(endReason.mayStartNext) {
+        play(nextTrack());
+        System.out.println("index after" + currentTrackIndex);
       }
       
        
@@ -145,4 +154,10 @@ public class TrackScheduler extends AudioEventAdapter {
   public int getQueueSize() { 
     return queue.size();
   }
+
+
+  public LinkedList<AudioTrack> getQueue() {
+    return queue;
+  }
+
 }

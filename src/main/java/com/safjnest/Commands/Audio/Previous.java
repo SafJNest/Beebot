@@ -13,11 +13,11 @@ import net.dv8tion.jda.api.entities.Guild;
 
 import java.awt.Color;
 
-public class Queueview extends Command{
+public class Previous extends Command{
     
-    public Queueview() {
+    public Previous() {
         this.name = this.getClass().getSimpleName().toLowerCase();
-        this.aliases = new String[]{"q"};
+        this.aliases = new String[]{"pv", "lets go back dio cane"};
     }
 
     @Override
@@ -27,29 +27,20 @@ public class Queueview extends Command{
         PlayerManager pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
         TrackScheduler ts = pm.getTrackScheduler();
 
-        
-        String current = "";
-        if(pm.getPlayer().getPlayingTrack() != null) {
-            current = "" + pm.getPlayer().getPlayingTrack().getInfo().title;
+        /* 
+        if(ts.getStackSize() == 0) {
+            event.reply("cant go back if there is no song dio cane svegliati dal coma");
+            return;
         }
+        */
 
-        String queue = "";
-        for(AudioTrack track : ts.getQueue()) {
-            queue += track.getInfo().title + "\n";
+        AudioTrack prevTrack = ts.prevTrack();
+        if(prevTrack == null) {
+            event.reply("cant go back if there is no song dio cane svegliati dal coma");
+            return;
         }
-
-
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
-        eb.setTitle("Extreme Safj Queue");
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-        eb.setThumbnail(event.getSelfUser().getAvatarUrl());
-
-
-        eb.addField("CURRENT", "```"+current+"```", false);
-        eb.addField("QUEUE",  "```"+queue+"```", false);
-
-        event.reply(eb.build());
+        ts.playForce(prevTrack);
+        event.reply("back into the past");
 
 
     }
