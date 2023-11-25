@@ -2,16 +2,18 @@ package com.safjnest.Commands.Audio;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.TableHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Audio.TrackScheduler;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-import net.dv8tion.jda.api.EmbedBuilder;
+
 import net.dv8tion.jda.api.entities.Guild;
 
-import java.awt.Color;
+
+import java.util.LinkedList;
 
 public class Queueview extends Command{
     
@@ -20,37 +22,56 @@ public class Queueview extends Command{
         this.aliases = new String[]{"q"};
     }
 
+  
     @Override
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
 
         PlayerManager pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
         TrackScheduler ts = pm.getTrackScheduler();
-
         
-        String current = "";
-        if(pm.getPlayer().getPlayingTrack() != null) {
-            current = "" + pm.getPlayer().getPlayingTrack().getInfo().title;
+        int index = ts.getIndex();
+
+        LinkedList<AudioTrack> queue = ts.getQueue();
+
+        if(queue.isEmpty()) {
+            event.reply("```Queue is empty```");
+            return;
         }
 
-        String queue = "";
-        for(AudioTrack track : ts.getQueue()) {
-            queue += track.getInfo().title + "\n";
+        /*
+         * 0: position
+         * 1: title
+         * 2: duration
+         */
+        String[][] data = new String[queue.size()][3];
+
+        int i = 0;
+        for(AudioTrack track : queue) {
+            data[i][0] = (i + 1) + "";
+
+            if(i == index) {
+                data[i][0] = "-> " + data[i][0];
+            }     
+            
+            
+            
+            data[i][1] = track.getInfo().title;
+                        
+            data[i][2] = SafJNest.getFormattedDuration(track.getInfo().length);
+            i++;
         }
 
-
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
-        eb.setTitle("Extreme Safj Queue");
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-        eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+        String[] headers = new String[]{"Position", "Title", "Duration"};
+        
+        TableHandler.replaceIdsWithNames(data, event.getJDA());
+        String table = TableHandler.constructTable(data, headers);
 
 
-        eb.addField("CURRENT", "```"+current+"```", false);
-        eb.addField("QUEUE",  "```"+queue+"```", false);
+        String[] splitTable = TableHandler.splitTable(table);
 
-        event.reply(eb.build());
-
-
+        event.reply(event.getGuild().getName() + " current queue:");
+        for(i = 0; i < splitTable.length; i++)
+            event.reply("```" + splitTable[i] + "```");
     }
 }

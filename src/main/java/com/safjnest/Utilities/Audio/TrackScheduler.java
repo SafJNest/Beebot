@@ -160,4 +160,8 @@ public class TrackScheduler extends AudioEventAdapter {
     return queue;
   }
 
+  public int getIndex() {
+    return currentTrackIndex;
+  }
+
 }
