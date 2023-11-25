@@ -101,7 +101,7 @@ public class PlaySound extends Command{
             @Override
             public void trackLoaded(AudioTrack track) {
                 audioManager.openAudioConnection(authorChannel);
-                pm.getTrackScheduler().addTopQueue(track);
+                pm.getTrackScheduler().addTrackToFront(track);
                 pm.getTrackScheduler().nextTrack();
                 
                 DatabaseHandler.updateUserPlays(toPlay.get("id"), event.getAuthor().getId());
