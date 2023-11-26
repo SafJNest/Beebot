@@ -3,6 +3,7 @@ package com.safjnest.Utilities.EventHandlers;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -10,8 +11,11 @@ import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
+import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.TableHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.PlayerPool;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -33,6 +37,7 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
@@ -87,8 +92,90 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if(buttonId.startsWith("soundboard-"))
             soundboardEvent(event);
+
+        else if(buttonId.startsWith("queue-"))
+            queue(event);
     }
 
+    public void queue(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+
+        Guild guild = event.getGuild();
+
+        PlayerManager pm = PlayerPool.contains(event.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getJDA().getSelfUser().getId(), guild.getId());
+        TrackScheduler ts = pm.getTrackScheduler();
+
+
+        Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));
+        Button previous = Button.primary("queue-previous", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
+        Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
+        Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
+        Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
+        
+        java.util.List<LayoutComponent> rows = new ArrayList<>();
+
+        String table = "";
+        switch (args) {
+            case "repeat":
+                
+                break;
+            case "previous":
+                
+                AudioTrack prevTrack = ts.prevTrack();
+                ts.playForce(prevTrack);
+                break;
+            case "pause":
+                pm.getPlayer().setPaused(true);
+                play = Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
+                break;
+
+            case "play":
+                pm.getPlayer().setPaused(false);
+                break;
+
+            case "next":
+                AudioTrack nextTrack = ts.nextTrack();
+                ts.playForce(nextTrack);
+                break;
+            case "shurima":
+            
+                break;
+        
+            default:
+                break;
+        }
+
+        LinkedList<AudioTrack> queue = ts.getQueue(); 
+        String[][] data = new String[queue.size()][3];
+        
+        int index = ts.getIndex();
+        int i = 0;
+        for(AudioTrack track : queue) {
+            data[i][0] = (i + 1) + "";
+            if(i == index) {
+                data[i][0] = "-> " + data[i][0];
+            }  
+            data[i][1] = track.getInfo().title;                     
+            data[i][2] = SafJNest.getFormattedDuration(track.getInfo().length);
+            i++;
+        }
+
+        String[] headers = new String[]{"Position", "Title", "Duration"};
+        
+        TableHandler.replaceIdsWithNames(data, event.getJDA());
+        table = TableHandler.constructTable(data, headers);    
+        rows.add(ActionRow.of(
+            repeat,
+            previous,
+            play,
+            next,
+            shurima
+        ));
+        event.getMessage()
+                .editMessage("```" + table + "```")
+                .setComponents(rows)
+                .queue();
+    }
 
     public void lolButtonEvent(ButtonInteractionEvent event) {
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
