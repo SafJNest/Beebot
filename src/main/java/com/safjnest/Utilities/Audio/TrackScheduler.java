@@ -86,15 +86,20 @@ public class TrackScheduler extends AudioEventAdapter {
   }
 
   public AudioTrack prevTrack() {
-    if(!queue.isEmpty() && currentTrackIndex == -1) {
-      currentTrackIndex = queue.size() - 1;
-    }
-    else if (queue.isEmpty() || currentTrackIndex <= 0) {
+    if (queue.isEmpty()) {
       return null;
     }
-    currentTrackIndex = currentTrackIndex - 1;
+
+    if (currentTrackIndex == -1) {
+      currentTrackIndex = queue.size() - 1;
+    } else if (currentTrackIndex > 0) {
+      currentTrackIndex--;
+    } else {
+      return null;
+    }
+
     return getCurrentTrack();
-  }
+}
 
   @Override
   public void onPlayerPause(AudioPlayer player) {

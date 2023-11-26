@@ -17,21 +17,18 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 public class Queue extends Command {
-    private String youtubeApiKey;
     private PlayerManager pm;
 
-    public Queue(String youtubeApiKey){
+    public Queue(){
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.youtubeApiKey = youtubeApiKey;
     }
 
 	@Override
@@ -59,58 +56,72 @@ public class Queue extends Command {
         String toPlay = SafJNest.getVideoIdFromYoutubeUrl(event.getArgs());
 
         if(toPlay == null){
-            try {
-                toPlay = SafJNest.searchYoutubeVideo(event.getArgs(), youtubeApiKey);
-            } catch (Exception e) {
-                e.printStackTrace();
-                event.reply("Couldn't find a video for the given query.");
-                return;
-            }
+            toPlay = "ytsearch:" + event.getArgs();
         }
-
-        MessageChannel channel = event.getChannel();
 
         pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
         
-        pm.getAudioPlayerManager().loadItem(toPlay, new AudioLoadResultHandler() {
-            @Override
-            public void trackLoaded(AudioTrack track) {
-                pm.getTrackScheduler().addQueue(track);
+        pm.getAudioPlayerManager().loadItemOrdered(event.getGuild(), toPlay, new ResultHandler(event));
+    }
 
-                AudioManager audioManager = guild.getAudioManager();
-                audioManager.setSendingHandler(pm.getAudioHandler());
-                audioManager.openAudioConnection(myChannel);
-
-                EmbedBuilder eb = new EmbedBuilder();
-
-                eb.setTitle("Added to queue:");
-                eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-                eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
-
-                event.reply(eb.build());
-            }
-
-            @Override
-            public void playlistLoaded(AudioPlaylist playlist) {
-                /*
-                 * for (AudioTrack track : playlist.getTracks()) {
-                 * trackScheduler.queue(track);
-                 * }
-                 */
-            }
+    private class ResultHandler implements AudioLoadResultHandler {
+        private final CommandEvent event;
         
-            @Override
-            public void noMatches() {
-                channel.sendMessage("Not found").queue();
-                pm.getTrackScheduler().addQueue(null);
+        private ResultHandler(CommandEvent event) {
+            this.event = event;
+        }
+        
+        @Override
+        public void trackLoaded(AudioTrack track) {
+            pm.getTrackScheduler().addQueue(track);
+
+            AudioManager audioManager = event.getGuild().getAudioManager();
+            audioManager.setSendingHandler(pm.getAudioHandler());
+            audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+
+            EmbedBuilder eb = new EmbedBuilder();
+
+            eb.setTitle("Added to queue:");
+            eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
+            eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
+            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+            eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
+
+            event.reply(eb.build());
+        }
+
+        @Override
+        public void playlistLoaded(AudioPlaylist playlist) {
+            AudioTrack cTrack = null;
+            for(AudioTrack track : playlist.getTracks()){
+                pm.getTrackScheduler().addQueue(track);
+                cTrack = track;;
+                break;
             }
 
-            @Override
-            public void loadFailed(FriendlyException throwable) {
-                event.reply(throwable.getMessage());
-            }
-        });
+            AudioManager audioManager = event.getGuild().getAudioManager();
+            audioManager.setSendingHandler(pm.getAudioHandler());
+            audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+
+            EmbedBuilder eb = new EmbedBuilder();
+
+            eb.setTitle("Added to queue:");
+            eb.setDescription("[" + cTrack.getInfo().title + "](" + cTrack.getInfo().uri + ")");
+            eb.setThumbnail("https://img.youtube.com/vi/" + cTrack.getIdentifier() + "/hqdefault.jpg");
+            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+            eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
+
+            event.reply(eb.build());
+        }
+
+        @Override
+        public void noMatches() {
+            event.getChannel().sendMessage("Not found").queue();
+        }
+
+        @Override
+        public void loadFailed(FriendlyException throwable) {
+            event.reply(throwable.getMessage());
+        }
     }
 }
