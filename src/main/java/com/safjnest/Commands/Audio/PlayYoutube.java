@@ -1,11 +1,11 @@
 package com.safjnest.Commands.Audio;
 
 import java.awt.Color;
+import java.util.Collections;
 
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -17,9 +17,9 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
-import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.managers.AudioManager;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -28,7 +28,6 @@ import net.dv8tion.jda.api.managers.AudioManager;
  * @since 1.0
  */
 public class PlayYoutube extends Command {
-    private String youtubeApiKey;
     private PlayerManager pm;
 
     public PlayYoutube(String youtubeApiKey){
@@ -38,12 +37,14 @@ public class PlayYoutube extends Command {
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.youtubeApiKey = youtubeApiKey;
+        this.pm = PlayerManager.get();
     }
 
 	@Override
 	protected void execute(CommandEvent event) {
+        String query = event.getArgs();
         Guild guild = event.getGuild();
+        User self = event.getSelfUser();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
@@ -56,71 +57,102 @@ public class PlayYoutube extends Command {
             event.reply("The bot is already being used in another voice channel.");
             return;
         }
-
-        if(event.getArgs().equals("") && PlayerPool.contains(event.getSelfUser().getId(), guild.getId())) {
-            pm = PlayerPool.get(event.getSelfUser().getId(), guild.getId());
-            if(pm.getPlayer().getPlayingTrack() == null && pm.getTrackScheduler().getQueueSize() > 0)
-                pm.getTrackScheduler().nextTrack();
-            return;
-        }
-
-        String toPlay = SafJNest.getVideoIdFromYoutubeUrl(event.getArgs());
-
-        if(toPlay == null){
-            try {
-                toPlay = SafJNest.searchYoutubeVideo(event.getArgs(), youtubeApiKey);
-            } catch (Exception e) {
-                e.printStackTrace();
-                event.reply("Couldn't find a video for the given query.");
-                return;
-            }
-        }
-
-        MessageChannel channel = event.getChannel();
-
-        PlayerManager pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
         
-        pm.getAudioPlayerManager().loadItem(toPlay, new AudioLoadResultHandler() {
-            @Override
-            public void trackLoaded(AudioTrack track) {
-                pm.getPlayer().playTrack(track);
+        pm.loadItemOrdered(guild, self, query, new ResultHandler(event, false));
+    }
 
-                AudioManager audioManager = guild.getAudioManager();
-                audioManager.setSendingHandler(pm.getAudioHandler());
-                audioManager.openAudioConnection(myChannel);
+    private class ResultHandler implements AudioLoadResultHandler {
+        private final CommandEvent event;
+        private final Guild guild;
+        private final User self;
+        private final Member author;
+        private final String args;
+        private final boolean youtubeSearch;
+        
+        private ResultHandler(CommandEvent event, boolean youtubeSearch) {
+            this.event = event;
+            this.guild = event.getGuild();
+            this.self = event.getSelfUser();
+            this.author = event.getMember();
+            this.args = event.getArgs();
+            this.youtubeSearch = youtubeSearch;
+        }
+        
+        @Override
+        public void trackLoaded(AudioTrack track) {
+            int seconds = SafJNest.extractSeconds(args);
+            if(seconds != -1)
+                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track, seconds*1000);
+            else
+                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+
+            guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+
+            EmbedBuilder eb = new EmbedBuilder();
+
+            eb.setTitle("Added to play:");
+            eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
+            eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
+            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+            eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
+
+            event.reply(eb.build());
+        }
+
+        @Override
+        public void playlistLoaded(AudioPlaylist playlist) {
+            if(youtubeSearch) {
+                AudioTrack track = playlist.getTracks().get(0);
+                
+                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+
+                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
                 EmbedBuilder eb = new EmbedBuilder();
 
-                eb.setTitle("Playing now:");
+                eb.setTitle("Added to play:");
                 eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
                 eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", event.getJDA().getSelfUser().getAvatarUrl());
                 eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-
-                eb.addField("Lenght", SafJNest.getFormattedDuration(track.getInfo().length) , true);
+                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
 
                 event.reply(eb.build());
             }
+            else {
+                java.util.List<AudioTrack> tracks = playlist.getTracks();
+                Collections.reverse(tracks);
+                for(AudioTrack track : tracks) {
+                    pm.getGuildMusicManager(guild, self).getTrackScheduler().addTrackToFront(track);
+                }
 
-            @Override
-            public void playlistLoaded(AudioPlaylist playlist) {
-                /*
-                 * for (AudioTrack track : playlist.getTracks()) {
-                 * trackScheduler.queue(track);
-                 * }
-                 */
-            }
-        
-            @Override
-            public void noMatches() {
-                channel.sendMessage("Not found").queue();
-                pm.getTrackScheduler().addQueue(null);
-            }
+                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForceNext();
 
-            @Override
-            public void loadFailed(FriendlyException throwable) {
-                event.reply(throwable.getMessage());
+                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+
+                EmbedBuilder eb = new EmbedBuilder();
+
+                eb.setTitle("Playlist added to play:");
+                eb.setDescription("[" + playlist.getName() + "](" + args + ")");
+                //eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
+                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
+
+                event.reply(eb.build());
             }
-        });
+        }
+
+        @Override
+        public void noMatches() {
+            if(!youtubeSearch) {
+                pm.loadItemOrdered(guild, self, "ytsearch:" + args, new ResultHandler(event, true));
+                return;
+            }
+            event.reply("No matches");
+        }
+
+        @Override
+        public void loadFailed(FriendlyException throwable) {
+            event.reply(throwable.getMessage());
+        }
     }
 }

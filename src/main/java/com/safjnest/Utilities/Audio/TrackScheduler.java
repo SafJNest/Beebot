@@ -5,15 +5,15 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 
-import net.dv8tion.jda.api.JDA;
-
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 
+import java.util.Collections;
 import java.util.LinkedList;
 
 /**
  * 
- * This class schedules tracks for the audio player, handles the queue and manages
+ * This class schedules tracks for the audio player, handles the queue and
+ * manages
  * all the tracks.
  * <p>
  * Handles all the events that could occur during the listening:
@@ -30,143 +30,195 @@ import java.util.LinkedList;
  * @since 1.0
  */
 public class TrackScheduler extends AudioEventAdapter {
-  private final PlayerManager pm;
-  private final AudioPlayer player;
-  
-  private final LinkedList<AudioTrack> queue;
-  private int currentTrackIndex = -1;
 
-  private final String guildId;
+    private final AudioPlayer player;
+    private final LinkedList<AudioTrack> queue;
+    private LinkedList<AudioTrack> unshuffledQueue;
+    private int currentTrackIndex;
+    private boolean isRepeat;
 
-  public TrackScheduler(AudioPlayer player, PlayerManager pm, String guildId) {
-    this.player = player;
-    this.pm = pm;
-    this.guildId = guildId;
-    this.queue = new LinkedList<>();
-  }
-
-  public void play(AudioTrack track) {
-    player.startTrack(track, true);
-  }
-
-  public void playForce(AudioTrack track) {
-    player.startTrack(track, false);
-  }
-
-  public void addQueue(AudioTrack track) {
-    queue.offer(track);
-    if (currentTrackIndex == -1) {
-      currentTrackIndex = queue.size() - 1;
-    }
-    play(getCurrentTrack());
-  }
-
-  public void addTrackToFront(AudioTrack track) {
-    if (currentTrackIndex != -1 && currentTrackIndex < queue.size() - 1) {
-      queue.add(currentTrackIndex + 1, track);
-    } else {
-      queue.offer(track);
-    }
-  }
-
-  public AudioTrack getCurrentTrack() {
-    if (currentTrackIndex != -1 && currentTrackIndex < queue.size()) {
-      return queue.get(currentTrackIndex).makeClone();
-    }
-    return null;
-  }
-
-  public AudioTrack nextTrack() {
-    if (queue.isEmpty() || currentTrackIndex >= queue.size() - 1) {
-      currentTrackIndex = -1;
-      return null;
-    }
-    currentTrackIndex = currentTrackIndex + 1;
-    return getCurrentTrack();
-  }
-
-  public AudioTrack prevTrack() {
-    if (queue.isEmpty()) {
-      return null;
+    public TrackScheduler(AudioPlayer player) {
+        this.player = player;
+        this.queue = new LinkedList<>();
+        this.currentTrackIndex = -1;
+        this.unshuffledQueue = null;
+        this.isRepeat = false;
     }
 
-    if (currentTrackIndex == -1) {
-      currentTrackIndex = queue.size() - 1;
-    } else if (currentTrackIndex > 0) {
-      currentTrackIndex--;
-    } else {
-      return null;
+    public void play(AudioTrack track) {
+        player.startTrack(track, true);
     }
 
-    return getCurrentTrack();
-}
+    public void playForce(AudioTrack track) {
+        player.startTrack(track, false);
+    }
 
-  @Override
-  public void onPlayerPause(AudioPlayer player) {
+    public void playForce(AudioTrack track, long position) {
+        track.setPosition(position);
+        player.startTrack(track, false);
+    }
 
-  }
+    public void queue(AudioTrack track) {
+        queue.offer(track);
+        if (currentTrackIndex == -1) {
+            currentTrackIndex = queue.size() - 1;
+        }
+        play(getCurrentTrack());
+    }
 
-  @Override
-  public void onPlayerResume(AudioPlayer player) {
-    
-  }
+    public void queueNoPlay(AudioTrack track) {
+        queue.offer(track);
+        if (currentTrackIndex == -1) {
+            currentTrackIndex = queue.size() - 1;
+        }
+    }
 
-  @Override
-  public void onTrackStart(AudioPlayer player, AudioTrack track) {
-    // A track started playing
-  }
+    public void addTrackToFront(AudioTrack track) {
+        if (currentTrackIndex < queue.size() - 1) {
+            queue.add(currentTrackIndex + 1, track);
+        } else {
+            queue.offer(track);
+        }
+    }
 
-  @Override
-  public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-      if(endReason.name().equals("CLEANUP")){
-        System.out.println("The time of thread has come to an end.");
-        pm.terminator3LeMacchineRibelli();
-      }
+    public AudioTrack getCurrentTrack() {
+        if (currentTrackIndex != -1 && currentTrackIndex < queue.size()) {
+            return queue.get(currentTrackIndex).makeClone();
+        }
+        return null;
+    }
 
-      System.out.println(endReason);
-      System.out.println("index before" + currentTrackIndex);
+    public AudioTrack nextTrack() {
+        if (queue.isEmpty() || currentTrackIndex >= queue.size() - 1) {
+            currentTrackIndex = -1;
+            return null;
+        }
+        currentTrackIndex = currentTrackIndex + 1;
+        return getCurrentTrack();
+    }
 
-      if(endReason.mayStartNext) {
-        play(nextTrack());
-        System.out.println("index after" + currentTrackIndex);
-      }
-      
-       
-    // endReason == FINISHED: A track finished or died by an exception (mayStartNext
-    // = true).
-    // endReason == LOAD_FAILED: Loading of a track failed (mayStartNext = true).
-    // endReason == STOPPED: The player was stopped.
-    // endReason == REPLACED: Another track started playing while this had not
-    // finished
-    // endReason == CLEANUP: Player hasn't been queried for a while, if you want you
-    // can put a clone of this back to your queue
-  }
+    public AudioTrack prevTrack() {
+        if (queue.isEmpty()) {
+            return null;
+        }
 
-  @Override
-  public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
-    System.out.println("Track exception");
-  }
+        if (currentTrackIndex == -1) {
+            currentTrackIndex = queue.size() - 1;
+        } else if (currentTrackIndex > 0) {
+            currentTrackIndex--;
+        } else {
+            return null;
+        }
 
-  @Override
-  public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
-    System.out.println("Track stuck");
-  }
+        return getCurrentTrack();
+    }
 
-  public boolean isPlaying(JDA jda) {
-    return jda.getGuildById(guildId).getSelfMember().getVoiceState().inAudioChannel() && player.getPlayingTrack() != null;
-  }
+    public void playForceNext() {
+        playForce(nextTrack());
+    }
 
-  public int getQueueSize() { 
-    return queue.size();
-  }
+    public void playForcePrev() {
+        playForce(prevTrack());
+    }
 
+    @Override
+    public void onPlayerPause(AudioPlayer player) {
 
-  public LinkedList<AudioTrack> getQueue() {
-    return queue;
-  }
+    }
 
-  public int getIndex() {
-    return currentTrackIndex;
-  }
+    @Override
+    public void onPlayerResume(AudioPlayer player) {
+
+    }
+
+    @Override
+    public void onTrackStart(AudioPlayer player, AudioTrack track) {
+
+    }
+
+    @Override
+    public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+        System.out.println(endReason);
+
+        if (endReason.mayStartNext) {
+            if (isRepeat) {
+                playForce(track.makeClone());
+                return;
+            }
+            play(nextTrack());
+        }
+
+        // endReason == FINISHED: A track finished or died by an exception (mayStartNext
+        // = true).
+        // endReason == LOAD_FAILED: Loading of a track failed (mayStartNext = true).
+        // endReason == STOPPED: The player was stopped.
+        // endReason == REPLACED: Another track started playing while this had not
+        // finished
+        // endReason == CLEANUP: Player hasn't been queried for a while, if you want you
+        // can put a clone of this back to your queue
+    }
+
+    @Override
+    public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
+        System.out.println("Track exception");
+    }
+
+    @Override
+    public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
+        System.out.println("Track stuck");
+    }
+
+    public boolean isPlaying() {
+        return // jda.getGuildById(guildId).getSelfMember().getVoiceState().inAudioChannel() &&
+            player.getPlayingTrack() != null;
+    }
+
+    public LinkedList<AudioTrack> getQueue() {
+        return queue;
+    }
+
+    public int getIndex() {
+        return currentTrackIndex;
+    }
+
+    public AudioPlayer getPlayer() {
+        return player;
+    }
+
+    public void shuffleQueue() {
+        if (!queue.isEmpty()) {
+            unshuffledQueue = new LinkedList<>(queue);
+            Collections.shuffle(queue);
+
+            if (currentTrackIndex != -1) {
+                currentTrackIndex = queue.indexOf(unshuffledQueue.get(currentTrackIndex));
+            }
+
+        }
+    }
+
+    public void unshuffleQueue() {
+        if (unshuffledQueue != null) {
+            if (currentTrackIndex != -1) {
+                currentTrackIndex = unshuffledQueue.indexOf(queue.get(currentTrackIndex));
+            }
+            
+            queue.clear();
+            queue.addAll(unshuffledQueue);
+            unshuffledQueue = null;
+        }
+    }
+
+    public void setRepeat(boolean repeat) {
+        isRepeat = repeat;
+    }
+
+    public boolean isRepeat() {
+        return isRepeat;
+    }
+
+    public boolean isShuffled() {
+        return unshuffledQueue != null;
+    }
 
 }

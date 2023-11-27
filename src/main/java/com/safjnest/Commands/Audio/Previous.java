@@ -3,11 +3,11 @@ package com.safjnest.Commands.Audio;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 
 
 public class Previous extends Command{
@@ -20,25 +20,16 @@ public class Previous extends Command{
     @Override
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
-
-        PlayerManager pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
-        TrackScheduler ts = pm.getTrackScheduler();
-
-        /* 
-        if(ts.getStackSize() == 0) {
-            event.reply("cant go back if there is no song dio cane svegliati dal coma");
-            return;
-        }
-        */
-
+        User self = event.getSelfUser();
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
         AudioTrack prevTrack = ts.prevTrack();
+        
         if(prevTrack == null) {
-            event.reply("cant go back if there is no song dio cane svegliati dal coma");
+            event.reply("This is the beginning of the queue");
             return;
         }
+
         ts.playForce(prevTrack);
-        event.reply("back into the past");
-
-
+        event.reply("Previous");
     }
 }

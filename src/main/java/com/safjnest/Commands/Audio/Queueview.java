@@ -5,16 +5,16 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TableHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -30,13 +30,13 @@ public class Queueview extends Command{
     @Override
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
+        User self = event.getSelfUser();
 
-        PlayerManager pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
-        TrackScheduler ts = pm.getTrackScheduler();
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
         
         int index = ts.getIndex();
-
         LinkedList<AudioTrack> queue = ts.getQueue();
+        
 
         if(queue.isEmpty()) {
             event.reply("```Queue is empty```");
@@ -81,6 +81,33 @@ public class Queueview extends Command{
         Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
         Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
         Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
+        
+        if(ts.isRepeat()) {
+            repeat = repeat.withStyle(ButtonStyle.DANGER);
+            repeat = repeat.asDisabled();
+        }
+            
+        
+        if(ts.isShuffled()) {
+            shurima = shurima.withStyle(ButtonStyle.SUCCESS);
+            shurima = shurima.asDisabled();
+        }
+
+        if(ts.getIndex() == 0) {
+            previous = previous.withStyle(ButtonStyle.DANGER);
+            previous = previous.asDisabled();
+        }
+
+        if(ts.getIndex() == ts.getQueue().size() - 1) {
+            next = next.withStyle(ButtonStyle.DANGER);
+            next = next.asDisabled();
+        }
+
+        if(ts.isPlaying()) {
+            play = play.withStyle(ButtonStyle.SUCCESS);
+        }
+
+
         rows.add(ActionRow.of(
             repeat,
             previous,

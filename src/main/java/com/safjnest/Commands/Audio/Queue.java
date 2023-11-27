@@ -5,9 +5,7 @@ import java.awt.Color;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -16,8 +14,9 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
-import net.dv8tion.jda.api.managers.AudioManager;
 
 public class Queue extends Command {
     private PlayerManager pm;
@@ -33,7 +32,9 @@ public class Queue extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
+        String query = event.getArgs();
         Guild guild = event.getGuild();
+        User self = event.getSelfUser();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
@@ -42,42 +43,37 @@ public class Queue extends Command {
             return;
         }
 
-        if(botChannel != null && (myChannel != botChannel)){
+        if(botChannel != null && myChannel != botChannel){
             event.reply("The bot is already being used in another voice channel.");
             return;
         }
-
-        if(event.getArgs().equals("") && PlayerPool.contains(event.getSelfUser().getId(), guild.getId())) {
-            pm = PlayerPool.get(event.getSelfUser().getId(), guild.getId());
-            pm.getTrackScheduler().prevTrack();
-            return;
-        }
-
-        String toPlay = SafJNest.getVideoIdFromYoutubeUrl(event.getArgs());
-
-        if(toPlay == null){
-            toPlay = "ytsearch:" + event.getArgs();
-        }
-
-        pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
         
-        pm.getAudioPlayerManager().loadItemOrdered(event.getGuild(), toPlay, new ResultHandler(event));
+        pm = PlayerManager.get();
+        pm.loadItemOrdered(guild, self, query, new ResultHandler(event, false));
     }
 
     private class ResultHandler implements AudioLoadResultHandler {
         private final CommandEvent event;
+        private final Guild guild;
+        private final User self;
+        private final Member author;
+        private final String args;
+        private final boolean youtubeSearch;
         
-        private ResultHandler(CommandEvent event) {
+        private ResultHandler(CommandEvent event, boolean youtubeSearch) {
             this.event = event;
+            this.guild = event.getGuild();
+            this.self = event.getSelfUser();
+            this.author = event.getMember();
+            this.args = event.getArgs();
+            this.youtubeSearch = youtubeSearch;
         }
         
         @Override
         public void trackLoaded(AudioTrack track) {
-            pm.getTrackScheduler().addQueue(track);
+            pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
 
-            AudioManager audioManager = event.getGuild().getAudioManager();
-            audioManager.setSendingHandler(pm.getAudioHandler());
-            audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
+            guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
             EmbedBuilder eb = new EmbedBuilder();
 
@@ -92,31 +88,35 @@ public class Queue extends Command {
 
         @Override
         public void playlistLoaded(AudioPlaylist playlist) {
-            AudioTrack cTrack = null;
-            for(AudioTrack track : playlist.getTracks()){
-                pm.getTrackScheduler().addQueue(track);
-                cTrack = track;;
-                break;
+            if(youtubeSearch) {
+                AudioTrack track = playlist.getTracks().get(0);
+                
+                pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
+
+                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+
+                EmbedBuilder eb = new EmbedBuilder();
+
+                eb.setTitle("Added to queue:");
+                eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
+                eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
+                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
+
+                event.reply(eb.build());
             }
-
-            AudioManager audioManager = event.getGuild().getAudioManager();
-            audioManager.setSendingHandler(pm.getAudioHandler());
-            audioManager.openAudioConnection(event.getMember().getVoiceState().getChannel());
-
-            EmbedBuilder eb = new EmbedBuilder();
-
-            eb.setTitle("Added to queue:");
-            eb.setDescription("[" + cTrack.getInfo().title + "](" + cTrack.getInfo().uri + ")");
-            eb.setThumbnail("https://img.youtube.com/vi/" + cTrack.getIdentifier() + "/hqdefault.jpg");
-            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-            eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
-
-            event.reply(eb.build());
+            else {
+                //TODO load playlist
+            }
         }
 
         @Override
         public void noMatches() {
-            event.getChannel().sendMessage("Not found").queue();
+            if(!youtubeSearch) {
+                pm.loadItemOrdered(guild, self, "ytsearch:" + args, new ResultHandler(event, true));
+                return;
+            }
+            event.reply("No matches");
         }
 
         @Override

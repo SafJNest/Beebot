@@ -14,7 +14,6 @@ import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TableHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
@@ -45,7 +44,6 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
-import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
@@ -101,10 +99,10 @@ public class EventButtonHandler extends ListenerAdapter {
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
 
         Guild guild = event.getGuild();
+        User self = event.getJDA().getSelfUser();
 
-        PlayerManager pm = PlayerPool.contains(event.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getJDA().getSelfUser().getId(), guild.getId());
-        TrackScheduler ts = pm.getTrackScheduler();
-
+        PlayerManager pm = PlayerManager.get();
+        TrackScheduler ts = pm.getGuildMusicManager(guild, self).getTrackScheduler();
 
         Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));
         Button previous = Button.primary("queue-previous", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
@@ -112,36 +110,50 @@ public class EventButtonHandler extends ListenerAdapter {
         Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
         Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
         
+
         java.util.List<LayoutComponent> rows = new ArrayList<>();
 
         String table = "";
         switch (args) {
             case "repeat":
-                
-                break;
-            case "previous":
-                
-                AudioTrack prevTrack = ts.prevTrack();
-                ts.playForce(prevTrack);
-                break;
-            case "pause":
-                pm.getPlayer().setPaused(true);
-                play = Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
-                break;
-
-            case "play":
-                pm.getPlayer().setPaused(false);
-                break;
-
-            case "next":
-                AudioTrack nextTrack = ts.nextTrack();
-                ts.playForce(nextTrack);
-                break;
-            case "shurima":
+                ts.setRepeat(!ts.isRepeat());
             
                 break;
-        
+            case "previous":
+                if(event.getButton().getStyle() == ButtonStyle.DANGER)
+                    break;
+
+                ts.playForcePrev();
+
+                break;
+            case "pause":
+
+                ts.getPlayer().setPaused(true);
+                play = Button.success("queue-play", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
+
+                break;
+            case "play":
+
+                ts.getPlayer().setPaused(false);
+
+                break;
+            case "next":
+                if(event.getButton().getStyle() == ButtonStyle.DANGER)
+                    break;
+
+                ts.playForceNext();
+                
+                break;
+            case "shurima":
+                if(!ts.isShuffled()) {
+                    ts.shuffleQueue();
+                    break;
+                }
+                ts.unshuffleQueue();
+                
+                break;
             default:
+            
                 break;
         }
 
@@ -163,7 +175,33 @@ public class EventButtonHandler extends ListenerAdapter {
         String[] headers = new String[]{"Position", "Title", "Duration"};
         
         TableHandler.replaceIdsWithNames(data, event.getJDA());
-        table = TableHandler.constructTable(data, headers);    
+        table = TableHandler.constructTable(data, headers);   
+
+        if(ts.isRepeat()) {
+            repeat = repeat.withStyle(ButtonStyle.DANGER);
+            repeat.asDisabled();
+        }
+            
+        
+        if(ts.isShuffled()) {
+            shurima = shurima.withStyle(ButtonStyle.DANGER);
+            shurima.asDisabled();
+        }
+
+        if(ts.getIndex() == 0) {
+            previous = previous.withStyle(ButtonStyle.DANGER);
+            previous.asDisabled();
+        }
+
+        if(ts.getIndex() == ts.getQueue().size() - 1) {
+            next = next.withStyle(ButtonStyle.DANGER);
+            next.asDisabled();
+        }
+
+        if(ts.isPlaying()) {
+            play = play.withStyle(ButtonStyle.SUCCESS);
+        }
+        
         rows.add(ActionRow.of(
             repeat,
             previous,
@@ -743,40 +781,29 @@ public class EventButtonHandler extends ListenerAdapter {
 
     private void soundboardEvent(ButtonInteractionEvent event){
         Guild guild = event.getGuild();
+        User self = event.getJDA().getSelfUser();
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-        PlayerManager pm = PlayerPool.contains(event.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getJDA().getSelfUser().getId(), guild.getId());
-
-        TextChannel channel = event.getChannel().asTextChannel();
-
-        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
-        AudioManager audioManager = event.getGuild().getAudioManager();
-        audioManager.setSendingHandler(pm.getAudioHandler());
-        audioManager.openAudioConnection(myChannel);
-
-        if(pm.getPlayer().getPlayingTrack() != null){
-            //pm.stopAudioHandler();
-        }
-        
+        TextChannel textChannel = event.getChannel().asTextChannel();
+        AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
         String path = "rsc" + File.separator + "SoundBoard"+ File.separator + args;
-        pm.getAudioPlayerManager().loadItem(path, new AudioLoadResultHandler() {
+
+        PlayerManager pm = PlayerManager.get();
+        pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getTrackScheduler().addQueue(track);
+                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                guild.getAudioManager().openAudioConnection(audioChannel);
+
+                String id = args.split("\\.")[0];
+                DatabaseHandler.updateUserPlays(id, event.getMember().getId());
             }
 
             @Override
-            public void playlistLoaded(AudioPlaylist playlist) {
-                /*
-                 * for (AudioTrack track : playlist.getTracks()) {
-                 * trackScheduler.queue(track);
-                 * }
-                 */
-            }
+            public void playlistLoaded(AudioPlaylist playlist) {}
             
             @Override
             public void noMatches() {
-                channel.sendMessage("File not found").queue();
-                pm.getTrackScheduler().addQueue(null);
+                textChannel.sendMessage("File not found").queue();
             }
 
             @Override
@@ -784,11 +811,6 @@ public class EventButtonHandler extends ListenerAdapter {
                 System.out.println("error: " + throwable.getMessage());
             }
         });
-
-        pm.getTrackScheduler().nextTrack();
-        
-        String id = args.split("\\.")[0];
-        DatabaseHandler.updateUserPlays(id, event.getMember().getId());
         
     }
 
