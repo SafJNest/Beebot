@@ -3,6 +3,9 @@ package com.safjnest.SlashCommands.Audio.Play;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -166,6 +169,11 @@ public class PlaySoundSlash extends SlashCommand{
             + (plays.get("totalTimes").equals("1") ? " time" : " times") 
             + " (yours: "+plays.get("timesByUser") + ")"
         + "```", true);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime dateTime = LocalDateTime.parse(toPlay.get("time"), formatter);
+        eb.addField("Time Creation","<t:" + dateTime.toEpochSecond(ZoneOffset.UTC) + ":f> | "
+                        + "<t:" + dateTime.toEpochSecond(ZoneOffset.UTC)+ ":R>", false);
 
         event.deferReply(false).addEmbeds(eb.build()).queue();
     }

@@ -7,6 +7,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.Instant;
 
 /**
  * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
@@ -249,11 +250,11 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getSoundsById(String id, String guild_id, String author_id) {
-        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + id + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
 
     public static QueryResult getSoundsByName(String name, String guild_id, String author_id) {
-        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
 
     public static QueryResult getDuplicateSoundsByName(String name, String guild_id, String author_id) {
@@ -271,7 +272,7 @@ public class DatabaseHandler {
     public static String insertSound(String name, String guild_id, String user_id, String extension, boolean isPublic) {
         String soundId = null;
         try (Statement stmt = c.createStatement()) {
-            runQuery(stmt, "INSERT INTO sound(name, guild_id, user_id, extension, public) VALUES('" + name + "','" + guild_id + "','" + user_id + "','" + extension + "', " + ((isPublic == true) ? "1" : "0") + "); ");
+            runQuery(stmt, "INSERT INTO sound(name, guild_id, user_id, extension, public, time) VALUES('" + name + "','" + guild_id + "','" + user_id + "','" + extension + "', " + ((isPublic == true) ? "1" : "0") + ", '" +  Timestamp.from(Instant.now()) + "'); ");
             soundId = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").get("id");
             c.commit();
         } catch (SQLException ex) {
