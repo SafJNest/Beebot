@@ -11,7 +11,6 @@ import java.util.TimerTask;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -143,9 +142,7 @@ public class Test extends Command{
                 e.reply("Guilds with invites:\n" + guildlist);
             break;
             case 8:
-                System.out.println(PlayerPool.printPlayers());
-                PlayerPool.clearPool();
-                System.out.println(PlayerPool.printPlayers());
+                
             break;
             case 9:
                 for(File file : files){

@@ -347,6 +347,9 @@ public class SafJNest extends Thread {
         return null;
     }
 
+    /**
+     * @deprecated
+     */
     public static String searchYoutubeVideo(String query, String youtubeApiKey) throws Exception {
         URL theUrl = new URL("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=" + query.replace(" ", "+") + "&key=" + youtubeApiKey);
         URLConnection request = theUrl.openConnection();
@@ -357,6 +360,20 @@ public class SafJNest extends Thread {
         JSONObject item = (JSONObject) items.get(0);
         JSONObject id = (JSONObject) item.get("id");
         return (String) id.get("videoId");
+    }
+
+    public static int extractSeconds(String youtubeLink) {
+        String regex = "[?&]t=(\\d+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(youtubeLink);
+
+        if (matcher.find()) {
+            String secondsStr = matcher.group(1);
+            try {
+                return Integer.parseInt(secondsStr);
+            } catch (NumberFormatException e) {}
+        }
+        return -1;
     }
     
 }

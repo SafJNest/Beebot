@@ -4,12 +4,11 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Audio.TrackScheduler;
-
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 
 public class Skip extends Command{
     
@@ -21,18 +20,16 @@ public class Skip extends Command{
     @Override
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
-
-        PlayerManager pm = PlayerPool.contains(event.getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getSelfUser().getId(), guild.getId());
-        TrackScheduler ts = pm.getTrackScheduler();
-
+        User self = event.getSelfUser();
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
         AudioTrack nextTrack = ts.nextTrack();
+        
         if(nextTrack == null) {
-            event.reply("cant go next if there is no song dio cane svegliati dal come");
+            event.reply("This is the end of the queue");
             return;
         }
+
         ts.playForce(nextTrack);
-        event.reply("Skipped to guma song");
-
-
+        event.reply("Skipped");
     }
 }
