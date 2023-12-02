@@ -30,7 +30,7 @@ import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 public class PlayYoutube extends Command {
     private PlayerManager pm;
 
-    public PlayYoutube(String youtubeApiKey){
+    public PlayYoutube(){
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

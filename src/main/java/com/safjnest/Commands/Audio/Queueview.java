@@ -3,12 +3,13 @@ package com.safjnest.Commands.Audio;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.TableHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;
+import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -19,6 +20,8 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
+import java.awt.Color;
+
 public class Queueview extends Command{
     
     public Queueview() {
@@ -26,7 +29,10 @@ public class Queueview extends Command{
         this.aliases = new String[]{"q"};
     }
 
-  
+    private String formatTrack(int index, AudioTrack track) {
+        return "**[" + (index + 1) + "]** " + "`-`" + "[" + track.getInfo().title + "](" + track.getInfo().uri + ") - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
+    }
+    
     @Override
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
@@ -36,46 +42,39 @@ public class Queueview extends Command{
         
         int index = ts.getIndex();
         LinkedList<AudioTrack> queue = ts.getQueue();
-        
 
         if(queue.isEmpty()) {
             event.reply("```Queue is empty```");
             return;
         }
 
-        String[][] data = new String[queue.size()][3];
 
-        int i = 0;
-        for(AudioTrack track : queue) {
-            data[i][0] = (i + 1) + "";
-            if(i == index) {
-                data[i][0] = "-> " + data[i][0];
-            }      
-            System.out.println("i: " + i + " index: " + index);      
-            data[i][1] = track.getInfo().title;                     
-            data[i][2] = SafJNest.getFormattedDuration(track.getInfo().length);
-            i++;
+        AudioTrack playingNow = null;
+
+
+
+        if(index != -1 ) {
+            playingNow = queue.get(index);
         }
 
-        String[] headers = new String[]{"Position", "Title", "Duration"};
-        
-        TableHandler.replaceIdsWithNames(data, event.getJDA());
-        String table = TableHandler.constructTable(data, headers);
+        String queues = "";
+        for(int i = index+1; i < queue.size() && (queue.size() - i - 1) < 10 ; i++) {
+            queues += formatTrack(i, queue.get(i)) + "\n";
+        }
 
+        EmbedBuilder eb = new EmbedBuilder();
+        //eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
+        eb.setTitle(guild.getName() + " current queue");
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setThumbnail(guild.getIconUrl());
 
-        event.reply(event.getGuild().getName() + " current queue:");
+        if(playingNow != null)
+            eb.addField(RiotHandler.getFormattedEmoji(event.getJDA(), "audio") + " Now playing", formatTrack(index, playingNow), false);
 
-        java.util.List<LayoutComponent> rows = new ArrayList<>();
+        eb.addField(RiotHandler.getFormattedEmoji(event.getJDA(), "playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
 
-        /*
-         * rows.add(ActionRow.of(
-            Button.primary("queue-repeat", ":repeat_one:"),
-            Button.primary("queue-previous", ":track_previous:"),
-            Button.primary("queue-stop", ":arrow_forward:"),
-            Button.primary("queue-next", ":track_next:"),
-            Button.primary("queue-shurima", ":twisted_rightwards_arrows:")
-        ));
-         */
+        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+
         Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));
         Button previous = Button.primary("queue-previous", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
         Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
@@ -108,7 +107,7 @@ public class Queueview extends Command{
         }
 
 
-        rows.add(ActionRow.of(
+        buttonRows.add(ActionRow.of(
             repeat,
             previous,
             play,
@@ -116,6 +115,6 @@ public class Queueview extends Command{
             shurima
         ));
 
-        event.getChannel().sendMessage("```" + table + "```").addComponents(rows).queue();
+        event.getChannel().sendMessageEmbeds(eb.build()).addComponents(buttonRows).queue();
     }
 }

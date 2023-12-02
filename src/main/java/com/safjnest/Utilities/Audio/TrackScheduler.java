@@ -68,9 +68,6 @@ public class TrackScheduler extends AudioEventAdapter {
 
     public void queueNoPlay(AudioTrack track) {
         queue.offer(track);
-        if (currentTrackIndex == -1) {
-            currentTrackIndex = queue.size() - 1;
-        }
     }
 
     public void addTrackToFront(AudioTrack track) {

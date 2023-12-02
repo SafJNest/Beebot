@@ -265,6 +265,20 @@ public class SafJNest extends Thread {
             formattedTime = formattedTime.substring(3);
         return formattedTime;
     }
+
+    public static String formatDuration(long milliseconds) {
+        Duration duration = Duration.ofMillis(milliseconds);
+
+        long hours = duration.toHours();
+        long minutes = duration.toMinutesPart();
+        long seconds = duration.toSecondsPart();
+
+        if (hours > 0) {
+            return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        } else
+            return String.format("%02d:%02d", minutes, seconds);
+
+    }
     
     public static double factorial(double n) {
         double fact = 1;
