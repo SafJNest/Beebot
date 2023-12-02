@@ -99,7 +99,6 @@ public class Bot extends ListenerAdapter implements Runnable {
     private String helpWord;
 
     private String token;
-    private String youtubeApiKey;
     private String weatherApiKey;
     private String nasaApiKey;
 
@@ -156,7 +155,6 @@ public class Bot extends ListenerAdapter implements Runnable {
         helpWord = discordSettings.get("helpWord").toString();
 
         maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
-        youtubeApiKey = settingsSettings.get("youtubeApiKey").toString();
         weatherApiKey = settingsSettings.get("weatherApiKey").toString();
         nasaApiKey = settingsSettings.get("nasaApiKey").toString();
 
@@ -195,7 +193,7 @@ public class Bot extends ListenerAdapter implements Runnable {
                 }
                 event.getJDA().getGuildById("474935164451946506").getCh
                 */
-                //event.getJDA().getGuildById("474935164451946506").getTextChannelById("938513359626715176").sendMessage("Fired up and ready to ban eeeeeeeeeeeeeeeeeeeeeeeeeepria").queue();
+                event.getJDA().getGuildById("474935164451946506").getTextChannelById("938513359626715176").sendMessage("Fired up and ready to ban eeeeeeeeeeeeeeeeeeeeeeeeeepria").queue();
                 System.out.println("[" + threadName + "] INFO no more guild cached correctly");
             }
         });
@@ -227,7 +225,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
-                new PlayYoutube(youtubeApiKey), new PlaySound(), new TTS(tts), new Stop(), new Pause(), new Resume(), new Queue(), new Queueview(), new Skip(), new Previous()
+                new PlayYoutube(), new PlaySound(), new TTS(tts), new Stop(), new Pause(), new Resume(), new Queue(), new Queueview(), new Skip(), new Previous()
             );
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
@@ -255,7 +253,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), 
-                new ListSlash(), new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), 
+                new ListSlash(), new PlaySlash(), new UploadSlash(), new TTSSlash(tts), new StopSlash(), 
                 new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash()
             );
 

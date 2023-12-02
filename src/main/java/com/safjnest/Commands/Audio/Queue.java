@@ -106,7 +106,22 @@ public class Queue extends Command {
                 event.reply(eb.build());
             }
             else {
-                //TODO load playlist
+                java.util.List<AudioTrack> tracks = playlist.getTracks();
+                for(AudioTrack track : tracks) {
+                    pm.getGuildMusicManager(guild, self).getTrackScheduler().queueNoPlay(track);
+                }
+
+                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+
+                EmbedBuilder eb = new EmbedBuilder();
+
+                eb.setTitle("Playlist queued:");
+                eb.setDescription("[" + playlist.getName() + "](" + args + ")");
+                eb.setThumbnail("https://img.youtube.com/vi/" + playlist.getTracks().get(0).getIdentifier() + "/hqdefault.jpg");
+                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
+
+                event.reply(eb.build());
             }
         }
 

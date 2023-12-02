@@ -32,7 +32,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 public class PlayYoutubeSlash extends SlashCommand {
     private PlayerManager pm;
 
-    public PlayYoutubeSlash(String youtubeApiKey, String father){
+    public PlayYoutubeSlash(String father) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
         this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
