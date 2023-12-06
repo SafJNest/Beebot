@@ -44,7 +44,7 @@ public class App {
         if(args.length > 0) {
             if(args[0].equalsIgnoreCase("true")) {
                 extremeTesting = true;
-                System.out.println("[INFO] Beebot is set to testing mode");
+                System.out.println("[INFO] Beebot Canary is turning to outplay jelly");
             }
             else if(args[0].equalsIgnoreCase("false")) {
                 extremeTesting = false;
@@ -53,7 +53,7 @@ public class App {
         }
 
         SecureRandom secureRandom = new SecureRandom();
-        System.out.println("Provider: " + secureRandom.getProvider());
+        System.out.println("[System]: System Entropy: " + secureRandom.getProvider());//thx copilot
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, riotSettings = null;
