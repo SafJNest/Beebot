@@ -7,12 +7,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.safjnest.Commands.Audio.Queueview;
 import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
-import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.TableHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
@@ -96,7 +95,7 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void queue(ButtonInteractionEvent event) {
-        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        String args = event.getButton().getId().split("-")[1];
 
         Guild guild = event.getGuild();
         User self = event.getJDA().getSelfUser();
@@ -104,27 +103,50 @@ public class EventButtonHandler extends ListenerAdapter {
         PlayerManager pm = PlayerManager.get();
         TrackScheduler ts = pm.getGuildMusicManager(guild, self).getTrackScheduler();
 
-        Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));
+
+        int previousIndex = ts.getIndex() - 11;
+        int nextIndex = ts.getIndex() + 11;
+
+        for (Button b : event.getMessage().getButtons()) {
+            if(b.getId().split("-")[1].equalsIgnoreCase("previouspage"))
+                previousIndex = Integer.parseInt(b.getId().split("-", 3)[2]);
+
+            if(b.getId().split("-")[1].equalsIgnoreCase("nextpage"))
+                nextIndex = Integer.parseInt(b.getId().split("-", 3)[2]);
+            
+        }
+
+        Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));  
         Button previous = Button.primary("queue-previous", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
         Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
         Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
         Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
+
         
 
         java.util.List<LayoutComponent> rows = new ArrayList<>();
+        int startIndex = ts.getIndex(); 
 
-        String table = "";
         switch (args) {
             case "repeat":
                 ts.setRepeat(!ts.isRepeat());
             
+                break;
+            case "previouspage":
+                startIndex = Integer.parseInt(event.getButton().getId().split("-", 3)[2]);
+                if(startIndex < 0)
+                    startIndex = 0;
+                
+                previousIndex = startIndex - 11;
+                nextIndex = startIndex + 11;
+
                 break;
             case "previous":
                 if(event.getButton().getStyle() == ButtonStyle.DANGER)
                     break;
 
                 ts.playForcePrev();
-
+                startIndex = ts.getIndex();
                 break;
             case "pause":
 
@@ -142,7 +164,14 @@ public class EventButtonHandler extends ListenerAdapter {
                     break;
 
                 ts.playForceNext();
-                
+                startIndex = ts.getIndex();
+                break;
+            case "nextpage":
+                startIndex = Integer.parseInt(event.getButton().getId().split("-")[2]);
+
+                nextIndex = startIndex + 11;
+                previousIndex = startIndex - 11;
+
                 break;
             case "shurima":
                 if(!ts.isShuffled()) {
@@ -157,26 +186,21 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        LinkedList<AudioTrack> queue = ts.getQueue(); 
-        String[][] data = new String[queue.size()][3];
         
-        int index = ts.getIndex();
-        int i = 0;
-        for(AudioTrack track : queue) {
-            data[i][0] = (i + 1) + "";
-            if(i == index) {
-                data[i][0] = "-> " + data[i][0];
-            }  
-            data[i][1] = track.getInfo().title;                     
-            data[i][2] = SafJNest.getFormattedDuration(track.getInfo().length);
-            i++;
+        if(startIndex > ts.getQueue().size())
+            startIndex = ts.getQueue().size() - 1;
+                
+        if(startIndex < ts.getIndex() && startIndex + 11 > ts.getIndex()) { 
+            nextIndex = ts.getIndex();
         }
-
-        String[] headers = new String[]{"Position", "Title", "Duration"};
+        else {
+            nextIndex = startIndex + 11;
+        }
         
-        TableHandler.replaceIdsWithNames(data, event.getJDA());
-        table = TableHandler.constructTable(data, headers);   
-
+        
+        
+        LinkedList<AudioTrack> queue = ts.getQueue(); 
+        
         if(ts.isRepeat()) {
             repeat = repeat.withStyle(ButtonStyle.DANGER);
             repeat.asDisabled();
@@ -209,8 +233,21 @@ public class EventButtonHandler extends ListenerAdapter {
             next,
             shurima
         ));
+
+
+        Button previousPage = Button.primary("queue-previouspage-" + previousIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
+        Button nextPage = Button.primary("queue-nextpage-" + nextIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
+
+        rows.add(ActionRow.of(
+            Button.primary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            previousPage,
+            Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            nextPage,
+            Button.primary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank"))
+        ));
+
         event.getMessage()
-                .editMessage("```" + table + "```")
+                .editMessageEmbeds(Queueview.getEmbed(event.getJDA(), guild, queue, startIndex).build())
                 .setComponents(rows)
                 .queue();
     }
