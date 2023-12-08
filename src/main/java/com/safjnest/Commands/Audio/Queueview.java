@@ -77,46 +77,43 @@ public class Queueview extends Command{
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
         LinkedList<AudioTrack> queue = ts.getQueue();
 
+        int currentIndex = ts.getIndex();
         if(queue.isEmpty()) {
             event.reply("```Queue is empty```");
             return;
         }
 
-        int previousIndex = ts.getIndex() - 10;
-        int nextIndex = ts.getIndex() + 10;
-
-
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
         Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));
-        Button previous = Button.primary("queue-previous-" + previousIndex , " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
+        Button previous = Button.primary("queue-previous" , " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
         Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
-        Button next = Button.primary("queue-next-" + nextIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
+        Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
         Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
         
         if(ts.isRepeat()) {
             repeat = repeat.withStyle(ButtonStyle.DANGER);
-            repeat = repeat.asDisabled();
         }
             
         
         if(ts.isShuffled()) {
-            shurima = shurima.withStyle(ButtonStyle.SUCCESS);
-            shurima = shurima.asDisabled();
+            shurima = shurima.withStyle(ButtonStyle.DANGER);
         }
 
-        if(ts.getIndex() == 0) {
+        if(currentIndex == 0) {
             previous = previous.withStyle(ButtonStyle.DANGER);
             previous = previous.asDisabled();
         }
 
-        if(ts.getIndex() == ts.getQueue().size() - 1) {
+        if(currentIndex == ts.getQueue().size() - 1) {
             next = next.withStyle(ButtonStyle.DANGER);
             next = next.asDisabled();
         }
 
-        if(ts.isPlaying()) {
-            play = play.withStyle(ButtonStyle.SUCCESS);
+        if(!ts.isPaused()) {
+            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
+        } else {
+            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
         }
 
 
@@ -126,6 +123,38 @@ public class Queueview extends Command{
             play,
             next,
             shurima
+        ));
+
+
+        Button previousPage = Button.primary("queue-previouspage-", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
+        Button nextPage = Button.primary("queue-nextpage-", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
+ 
+        int previousIndex = ts.getIndex() - 11;
+        if(previousIndex < 0)
+            previousIndex = 0;
+
+        int nextIndex = ts.getIndex() + 11;
+        if(nextIndex > ts.getQueue().size())
+            nextIndex = ts.getQueue().size() - 1;
+
+        if(currentIndex > ts.getQueue().size()) {
+            nextPage = nextPage.asDisabled();
+        }
+
+        if(previousIndex < 0) {
+            previousPage = previousPage.asDisabled();
+        }
+
+        nextPage = nextPage.withId("queue-nextpage-" + nextIndex);
+        previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
+
+
+        buttonRows.add(ActionRow.of(
+            Button.primary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            previousPage,
+            Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            nextPage,
+            Button.primary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank"))
         ));
 
         event.getChannel().sendMessageEmbeds(getEmbed(event.getJDA(), guild, queue, ts.getIndex()).build()).addComponents(buttonRows).queue();

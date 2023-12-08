@@ -6,7 +6,10 @@ import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 
 /**
+ * Copilot doenst know what this class does
+ * 
  * @author <a href="https://github.com/Leon412">Leon412</a>
+ * @since 5.0
  */
 public class AudioForwarder implements AudioSendHandler {
     private final AudioPlayer player;
