@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.safjnest.Commands.Audio.Queueview;
+import com.safjnest.Commands.Audio.Queue;
 import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
@@ -263,7 +263,7 @@ public class EventButtonHandler extends ListenerAdapter {
         ));
 
         event.getMessage()
-                .editMessageEmbeds(Queueview.getEmbed(event.getJDA(), guild, queue, startIndex).build())
+                .editMessageEmbeds(Queue.getEmbed(event.getJDA(), guild, queue, startIndex).build())
                 .setComponents(rows)
                 .queue();
     }

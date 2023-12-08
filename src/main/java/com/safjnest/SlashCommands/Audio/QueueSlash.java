@@ -1,16 +1,19 @@
-package com.safjnest.Commands.Audio;
+package com.safjnest.SlashCommands.Audio;
 
-import com.jagrosh.jdautilities.command.Command;
-import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.SafJNest;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Commands.Audio.Queue;
+import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.JDA;
+
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
@@ -18,61 +21,22 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
 
-import java.awt.Color;
-
-public class Queueview extends Command{
+public class QueueSlash extends SlashCommand{
     
-    public Queueview() {
-        this.name = this.getClass().getSimpleName().toLowerCase();
-        this.aliases = new String[]{"q"};
+    public QueueSlash() {
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
+        this.aliases = new CommandsLoader().getArray(this.name, "alias");
+        this.help = new CommandsLoader().getString(this.name, "help");
+        this.cooldown = new CommandsLoader().getCooldown(this.name);
+        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
+        this.arguments = new CommandsLoader().getString(this.name, "arguments");
     }
 
-    private static String formatTrack(int index, AudioTrack track) {
-        //return "**[" + (index + 1) + "]** " + "`-`" + "[" + track.getInfo().title + "](" + track.getInfo().uri + ") - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
-        return "**[" + (index + 1) + "]** " + "`-`"  + track.getInfo().title + " - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
-    }
-
-    public static EmbedBuilder getEmbed(JDA jda, Guild guild, LinkedList<AudioTrack> queue, int startIndex) {
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle(guild.getName() + " current queue");
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(jda.getSelfUser().getId()).color));
-        eb.setThumbnail(guild.getIconUrl());
-
-        AudioTrack playingNow = null;
-
-        int index = PlayerManager.get().getGuildMusicManager(guild, jda.getSelfUser()).getTrackScheduler().getIndex();
-
-        /**
-         * Se vuoi che esca sempre la current song anche se stiamo guardando altre pagine basta
-         * aggiungere un altro if dove se index==startindex startIndex = index + 1;
-         * e lasciare index != -1 per playingNow
-         * 
-         * sinceramente non so cosa sia meglio, ma questo è questione di stile quindi si lascia per ultima
-         */
-        if(index != -1 && index == startIndex) {
-            playingNow = queue.get(index);
-            startIndex = index + 1;
-        }
-        
-        String queues = "";
-        for(int i = startIndex, cont = 0; i < queue.size() && cont < 10 && i != index; i++, cont ++) {
-            queues += formatTrack(i, queue.get(i)) + "\n";
-        }
-
-        if(playingNow != null)
-            eb.addField(RiotHandler.getFormattedEmoji(jda, "audio") + " Now playing", formatTrack(index, playingNow), false);
-
-        eb.addField(RiotHandler.getFormattedEmoji(jda, "playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
-        return eb;
-    }
-    
     @Override
-    protected void execute(CommandEvent event) {
+    protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getSelfUser();
+        User self = event.getJDA().getSelfUser();
 
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
         LinkedList<AudioTrack> queue = ts.getQueue();
@@ -82,6 +46,8 @@ public class Queueview extends Command{
             event.reply("```Queue is empty```");
             return;
         }
+
+        event.deferReply(false).queue();
 
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
@@ -157,6 +123,6 @@ public class Queueview extends Command{
             Button.primary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank"))
         ));
 
-        event.getChannel().sendMessageEmbeds(getEmbed(event.getJDA(), guild, queue, ts.getIndex()).build()).addComponents(buttonRows).queue();
+        event.getHook().editOriginalEmbeds(Queue.getEmbed(event.getJDA(), guild, queue, ts.getIndex()).build()).setComponents(buttonRows).queue();
     }
 }

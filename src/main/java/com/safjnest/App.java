@@ -88,8 +88,8 @@ public class App {
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
         waitingTime = Integer.parseInt(settings.get("waitingTime").toString());
 
-        System.out.println(DatabaseHandler.getCannuccia());
-        System.out.println(PermissionHandler.getEpria());
+        System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
+        System.out.println("[EPRIA] ID " + PermissionHandler.getEpria());
 
         bs = new BotSettingsHandler();
 

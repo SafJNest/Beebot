@@ -182,7 +182,6 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.setActivity(activity);
 
         
-        
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
@@ -225,7 +224,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
-                new PlayYoutube(), new PlaySound(), new TTS(tts), new Stop(), new Pause(), new Resume(), new Queue(), new Queueview(), new Skip(), new Previous()
+                new PlayYoutube(), new PlaySound(), new TTS(tts), new Stop(), new Pause(), new Resume(), new Queue(), new Skip(), new Previous(), new PlayYoutubeForce()
             );
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
@@ -254,7 +253,8 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), 
                 new ListSlash(), new PlaySlash(), new UploadSlash(), new TTSSlash(tts), new StopSlash(), 
-                new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash()
+                new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash(),
+                new QueueSlash(), new SkipSlash(), new PreviousSlash()
             );
 
 
