@@ -38,7 +38,8 @@ public class PlayYoutubeSlash extends SlashCommand {
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "video", "Link or video name", true)
+            new OptionData(OptionType.STRING, "video", "Link or video name", true),
+            new OptionData(OptionType.BOOLEAN, "force", "Force play", false)
         );
         this.pm = PlayerManager.get();
     }
@@ -71,6 +72,7 @@ public class PlayYoutubeSlash extends SlashCommand {
         private final Member author;
         private final String args;
         private final boolean youtubeSearch;
+        private final boolean force;
         
         private ResultHandler(SlashCommandEvent event, boolean youtubeSearch) {
             this.event = event;
@@ -79,52 +81,66 @@ public class PlayYoutubeSlash extends SlashCommand {
             this.author = event.getMember();
             this.args = event.getOption("video").getAsString();
             this.youtubeSearch = youtubeSearch;
+            this.force = event.getOption("force") != null && event.getOption("force").getAsBoolean();
         }
         
         @Override
         public void trackLoaded(AudioTrack track) {
-            int seconds = SafJNest.extractSeconds(args);
-            System.out.println(seconds);
-            if(seconds != -1)
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track, seconds*1000);
-            else
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
-
-            guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
-
-            EmbedBuilder eb = new EmbedBuilder();
-
-            eb.setTitle("Added to play:");
-            eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-            eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-            eb.setFooter("Queued by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
-
-            event.deferReply(false).addEmbeds(eb.build()).queue();
+            
         }
 
         @Override
         public void playlistLoaded(AudioPlaylist playlist) {
+            EmbedBuilder eb = new EmbedBuilder();
+
             if(youtubeSearch) {
                 AudioTrack track = playlist.getTracks().get(0);
-                
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                if(force) {
+                    int seconds = SafJNest.extractSeconds(args);
+                    if(seconds != -1)
+                        pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track, seconds*1000);
+                    else
+                        pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
 
-                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+                    guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
-                EmbedBuilder eb = new EmbedBuilder();
+                    
+                    eb.setTitle("Added to play:");
+                    eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
+                    eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
+                    eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                    eb.setFooter("Queued by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
 
-                eb.setTitle("Added to play:");
-                eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-                eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-                eb.setFooter("Queued by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
+                }
+                else {
+            
+                    pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
 
-                event.deferReply(false).addEmbeds(eb.build()).queue();
+                    guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+
+                    eb.setTitle("Added to queue:");
+                    eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
+                    eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
+                    eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                    eb.setFooter("Queued by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
+
+                }
             }
             else {
-                //TODO load playlist
+                java.util.List<AudioTrack> tracks = playlist.getTracks();
+                for(AudioTrack track : tracks) {
+                    pm.getGuildMusicManager(guild, self).getTrackScheduler().queueNoPlay(track);
+                }
+                
+                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+
+                eb.setTitle("Playlist queued (" + tracks.size() + " tracks):");
+                eb.setDescription("[" + playlist.getName() + "](" + args + ")");
+                eb.setThumbnail("https://img.youtube.com/vi/" + playlist.getTracks().get(0).getIdentifier() + "/hqdefault.jpg");
+                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                eb.setFooter("Queued by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
             }
+            event.deferReply(false).addEmbeds(eb.build()).queue();
         }
 
         @Override

@@ -1,27 +1,32 @@
 package com.safjnest.Commands.Audio;
 
-import java.awt.Color;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.safjnest.Utilities.LOL.RiotHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
-public class Queue extends Command {
-    private PlayerManager pm;
+import java.util.ArrayList;
+import java.util.LinkedList;
 
-    public Queue(){
+import java.awt.Color;
+
+public class Queue extends Command{
+    
+    public Queue() {
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -30,113 +35,133 @@ public class Queue extends Command {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
     }
 
-	@Override
-	protected void execute(CommandEvent event) {
-        String query = event.getArgs();
-        Guild guild = event.getGuild();
-        User self = event.getSelfUser();
-        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
-        AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
-        
-        if(myChannel == null){
-            event.reply("You need to be in a voice channel to use this command.");
-            return;
-        }
-
-        if(botChannel != null && myChannel != botChannel){
-            event.reply("The bot is already being used in another voice channel.");
-            return;
-        }
-        
-        pm = PlayerManager.get();
-        pm.loadItemOrdered(guild, self, query, new ResultHandler(event, false));
+    private static String formatTrack(int index, AudioTrack track) {
+        //return "**[" + (index + 1) + "]** " + "`-`" + "[" + track.getInfo().title + "](" + track.getInfo().uri + ") - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
+        return "**[" + (index + 1) + "]** " + "`-`"  + track.getInfo().title + " - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
     }
 
-    private class ResultHandler implements AudioLoadResultHandler {
-        private final CommandEvent event;
-        private final Guild guild;
-        private final User self;
-        private final Member author;
-        private final String args;
-        private final boolean youtubeSearch;
-        
-        private ResultHandler(CommandEvent event, boolean youtubeSearch) {
-            this.event = event;
-            this.guild = event.getGuild();
-            this.self = event.getSelfUser();
-            this.author = event.getMember();
-            this.args = event.getArgs();
-            this.youtubeSearch = youtubeSearch;
+    public static EmbedBuilder getEmbed(JDA jda, Guild guild, LinkedList<AudioTrack> queue, int startIndex) {
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle(guild.getName() + " current queue");
+        eb.setColor(Color.decode(BotSettingsHandler.map.get(jda.getSelfUser().getId()).color));
+        eb.setThumbnail(guild.getIconUrl());
+
+        AudioTrack playingNow = null;
+
+        int index = PlayerManager.get().getGuildMusicManager(guild, jda.getSelfUser()).getTrackScheduler().getIndex();
+
+        /**
+         * Se vuoi che esca sempre la current song anche se stiamo guardando altre pagine basta
+         * aggiungere un altro if dove se index==startindex startIndex = index + 1;
+         * e lasciare index != -1 per playingNow
+         * 
+         * sinceramente non so cosa sia meglio, ma questo è questione di stile quindi si lascia per ultima
+         */
+        if(index != -1 && index == startIndex) {
+            playingNow = queue.get(index);
+            startIndex = index + 1;
         }
         
-        @Override
-        public void trackLoaded(AudioTrack track) {
-            pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
-
-            guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
-
-            EmbedBuilder eb = new EmbedBuilder();
-
-            eb.setTitle("Added to queue:");
-            eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-            eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-            eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
-
-            event.reply(eb.build());
+        String queues = "";
+        for(int i = startIndex, cont = 0; i < queue.size() && cont < 10 && i != index; i++, cont ++) {
+            queues += formatTrack(i, queue.get(i)) + "\n";
         }
 
-        @Override
-        public void playlistLoaded(AudioPlaylist playlist) {
-            if(youtubeSearch) {
-                AudioTrack track = playlist.getTracks().get(0);
-                
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
+        if(playingNow != null)
+            eb.addField(RiotHandler.getFormattedEmoji(jda, "audio") + " Now playing", formatTrack(index, playingNow), false);
 
-                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
+        eb.addField(RiotHandler.getFormattedEmoji(jda, "playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
+        return eb;
+    }
+    
+    @Override
+    protected void execute(CommandEvent event) {
+        Guild guild = event.getGuild();
+        User self = event.getSelfUser();
 
-                EmbedBuilder eb = new EmbedBuilder();
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
+        LinkedList<AudioTrack> queue = ts.getQueue();
 
-                eb.setTitle("Added to queue:");
-                eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-                eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
-
-                event.reply(eb.build());
-            }
-            else {
-                java.util.List<AudioTrack> tracks = playlist.getTracks();
-                for(AudioTrack track : tracks) {
-                    pm.getGuildMusicManager(guild, self).getTrackScheduler().queueNoPlay(track);
-                }
-
-                guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
-
-                EmbedBuilder eb = new EmbedBuilder();
-
-                eb.setTitle("Playlist queued (" + tracks.size() + " tracks):");
-                eb.setDescription("[" + playlist.getName() + "](" + args + ")");
-                eb.setThumbnail("https://img.youtube.com/vi/" + playlist.getTracks().get(0).getIdentifier() + "/hqdefault.jpg");
-                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
-                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
-
-                event.reply(eb.build());
-            }
+        int currentIndex = ts.getIndex();
+        if(queue.isEmpty()) {
+            event.reply("```Queue is empty```");
+            return;
         }
 
-        @Override
-        public void noMatches() {
-            if(!youtubeSearch) {
-                pm.loadItemOrdered(guild, self, "ytsearch:" + args, new ResultHandler(event, true));
-                return;
-            }
-            event.reply("No matches");
+        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+
+        Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));
+        Button previous = Button.primary("queue-previous" , " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
+        Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
+        Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
+        Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
+        
+        if(ts.isRepeat()) {
+            repeat = repeat.withStyle(ButtonStyle.DANGER);
+        }
+            
+        
+        if(ts.isShuffled()) {
+            shurima = shurima.withStyle(ButtonStyle.DANGER);
         }
 
-        @Override
-        public void loadFailed(FriendlyException throwable) {
-            event.reply(throwable.getMessage());
+        if(currentIndex == 0) {
+            previous = previous.withStyle(ButtonStyle.DANGER);
+            previous = previous.asDisabled();
         }
+
+        if(currentIndex == ts.getQueue().size() - 1) {
+            next = next.withStyle(ButtonStyle.DANGER);
+            next = next.asDisabled();
+        }
+
+        if(!ts.isPaused()) {
+            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
+        } else {
+            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
+        }
+
+
+        buttonRows.add(ActionRow.of(
+            repeat,
+            previous,
+            play,
+            next,
+            shurima
+        ));
+
+
+        Button previousPage = Button.primary("queue-previouspage-", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
+        Button nextPage = Button.primary("queue-nextpage-", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
+ 
+        int previousIndex = ts.getIndex() - 11;
+        if(previousIndex < 0)
+            previousIndex = 0;
+
+        int nextIndex = ts.getIndex() + 11;
+        if(nextIndex > ts.getQueue().size())
+            nextIndex = ts.getQueue().size() - 1;
+
+        if(currentIndex > ts.getQueue().size()) {
+            nextPage = nextPage.asDisabled();
+        }
+
+        if(previousIndex < 0) {
+            previousPage = previousPage.asDisabled();
+        }
+
+        nextPage = nextPage.withId("queue-nextpage-" + nextIndex);
+        previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
+
+
+        buttonRows.add(ActionRow.of(
+            Button.primary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            previousPage,
+            Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            nextPage,
+            Button.primary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank"))
+        ));
+
+        event.getChannel().sendMessageEmbeds(getEmbed(event.getJDA(), guild, queue, ts.getIndex()).build()).addComponents(buttonRows).queue();
     }
 }

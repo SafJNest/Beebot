@@ -204,14 +204,15 @@ public class TrackScheduler extends AudioEventAdapter {
      */
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-        System.out.println(endReason);
-
         if (endReason.mayStartNext) {
             if (isRepeat) {
                 playForce(track.makeClone());
                 return;
             }
             play(nextTrack());
+        } 
+        if(endReason == AudioTrackEndReason.CLEANUP) {
+            System.out.println("The time of thread has come to an end.");
         }
 
         // endReason == FINISHED: A track finished or died by an exception (mayStartNext
