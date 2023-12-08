@@ -15,6 +15,8 @@ import net.dv8tion.jda.api.entities.User;
  * I really would to know what this class does but i think quantum mechanics its
  * easier to explain.
  * 
+ * after 2 years i still dont know what this class does
+ * 
  * @author <a href="https://github.com/Leon412">Leon412</a>
  */
 public class PlayerManager {

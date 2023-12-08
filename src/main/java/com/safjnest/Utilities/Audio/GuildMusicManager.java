@@ -4,7 +4,9 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 
 /**
+ * Copilot doenst know what this class does
  * @author <a href="https://github.com/Leon412">Leon412</a>
+ * @since 5.0
  */
 public class GuildMusicManager {
     private TrackScheduler trackScheduler;

@@ -115,7 +115,7 @@ public class Queue extends Command {
 
                 EmbedBuilder eb = new EmbedBuilder();
 
-                eb.setTitle("Playlist queued:");
+                eb.setTitle("Playlist queued (" + tracks.size() + " tracks):");
                 eb.setDescription("[" + playlist.getName() + "](" + args + ")");
                 eb.setThumbnail("https://img.youtube.com/vi/" + playlist.getTracks().get(0).getIdentifier() + "/hqdefault.jpg");
                 eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
