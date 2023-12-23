@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import java.util.Collections;
 import java.util.LinkedList;
 
+
 /**
  * This class schedules tracks for the audio player.
  * It contains the queue, the events and the methods to handle them.
@@ -49,6 +50,11 @@ public class TrackScheduler extends AudioEventAdapter {
     private boolean isRepeat;
 
     /**
+     * If the current track has been forced plays the previous one on trackEnd.
+     */
+    private boolean isForced;
+
+    /**
      * Creates a new TrackScheduler.
      * 
      * @param player The audio player.
@@ -56,9 +62,12 @@ public class TrackScheduler extends AudioEventAdapter {
     public TrackScheduler(AudioPlayer player) {
         this.player = player;
         this.queue = new LinkedList<>();
+        
         this.currentTrackIndex = -1;
         this.unshuffledQueue = null;
+        
         this.isRepeat = false;
+        this.isForced = false;
     }
 
     /**
@@ -66,6 +75,21 @@ public class TrackScheduler extends AudioEventAdapter {
      * @param track
      */
     public void play(AudioTrack track) {
+        if(player.isPaused()) {
+            player.setPaused(false);
+        }
+        player.startTrack(track, true);
+    }
+
+    /**
+     * Starts playing a track if there is no track playing.
+     * @param track
+     */
+    public void play(AudioTrack track, long position) {
+        if(player.isPaused()) {
+            player.setPaused(false);
+        }
+        track.setPosition(position);
         player.startTrack(track, true);
     }
 
@@ -74,6 +98,10 @@ public class TrackScheduler extends AudioEventAdapter {
      * @param track
      */
     public void playForce(AudioTrack track) {
+        if(player.isPaused()) {
+            player.setPaused(false);
+        }
+        isForced = true;
         player.startTrack(track, false);
     }
 
@@ -84,6 +112,9 @@ public class TrackScheduler extends AudioEventAdapter {
      * @param position
      */
     public void playForce(AudioTrack track, long position) {
+        if(player.isPaused()) {
+            player.setPaused(false);
+        }
         track.setPosition(position);
         player.startTrack(track, false);
     }
@@ -176,6 +207,11 @@ public class TrackScheduler extends AudioEventAdapter {
         playForce(prevTrack());
     }
 
+    public void clearQueue() {
+        queue.clear();
+        currentTrackIndex = -1;
+    }
+
     @Override
     public void onPlayerPause(AudioPlayer player) {
 
@@ -209,10 +245,23 @@ public class TrackScheduler extends AudioEventAdapter {
                 playForce(track.makeClone());
                 return;
             }
+            else if (isForced) {
+                isForced = false;
+                play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition());
+                return;
+            }
+
             play(nextTrack());
         } 
+
         if(endReason == AudioTrackEndReason.CLEANUP) {
             System.out.println("The time of thread has come to an end.");
+        }
+
+        if(endReason == AudioTrackEndReason.REPLACED) {
+            if(isForced) {
+                queue.get(currentTrackIndex).setPosition(track.getPosition()); 
+            }
         }
 
         // endReason == FINISHED: A track finished or died by an exception (mayStartNext

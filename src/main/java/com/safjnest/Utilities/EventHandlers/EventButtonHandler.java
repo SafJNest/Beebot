@@ -191,6 +191,9 @@ public class EventButtonHandler extends ListenerAdapter {
                     nextIndex = ts.getQueue().size() - 1;
                 
                 break;
+            case "clear":
+                ts.clearQueue();
+                break;
             default:
             
                 break;
@@ -259,7 +262,7 @@ public class EventButtonHandler extends ListenerAdapter {
             previousPage,
             Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
             nextPage,
-            Button.primary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank"))
+            Button.primary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
         ));
 
         event.getMessage()
