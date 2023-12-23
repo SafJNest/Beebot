@@ -36,7 +36,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.safjnest.Utilities.*;
 import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.Controller.Connection;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
@@ -99,7 +98,6 @@ public class Bot extends ListenerAdapter implements Runnable {
     private String helpWord;
 
     private String token;
-    private String youtubeApiKey;
     private String weatherApiKey;
     private String nasaApiKey;
 
@@ -156,7 +154,6 @@ public class Bot extends ListenerAdapter implements Runnable {
         helpWord = discordSettings.get("helpWord").toString();
 
         maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
-        youtubeApiKey = settingsSettings.get("youtubeApiKey").toString();
         weatherApiKey = settingsSettings.get("weatherApiKey").toString();
         nasaApiKey = settingsSettings.get("nasaApiKey").toString();
 
@@ -184,7 +181,6 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.setActivity(activity);
 
         
-        
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
@@ -193,7 +189,9 @@ public class Bot extends ListenerAdapter implements Runnable {
                 for(Guild g : event.getJDA().getGuilds()){
                     g.updateCommands().queue();
                 }
+                event.getJDA().getGuildById("474935164451946506").getCh
                 */
+                //event.getJDA().getGuildById("474935164451946506").getTextChannelById("938513359626715176").sendMessage("Fired up and ready to ban eeeeeeeeeeeeeeeeeeeeeeeeeepria").queue();
                 System.out.println("[" + threadName + "] INFO no more guild cached correctly");
             }
         });
@@ -216,7 +214,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         if(beebotsAll.contains(threadName))
             Collections.addAll(commandsList, new Summoner(), new InfoAugment(), new FreeChamp(), new Livegame(), 
                 new LastMatches(riotApi), new Opgg(), new Calculator(), new Dice(), 
-                new ThreadCounter(), new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
+                new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))
             Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
@@ -225,7 +223,8 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
-            new PlayYoutube(youtubeApiKey), new PlaySound(), new TTS(tts), new Stop(), new Pause(), new Resume());
+                new PlayYoutube(), new PlaySound(), new TTS(tts), new Stop(), new Pause(), new Resume(), new Queue(), new Skip(), new Previous(), new PlayYoutubeForce()
+            );
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
             Collections.addAll(commandsList, new Leaderboard(), new Test());
@@ -252,8 +251,9 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(beebotsAll.contains(threadName) || threadName.equals("beebot music"))
             Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), 
-                new ListSlash(), new PlaySlash(youtubeApiKey), new UploadSlash(), new TTSSlash(tts), new StopSlash(), 
-                new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash()
+                new ListSlash(), new PlaySlash(), new UploadSlash(), new TTSSlash(tts), new StopSlash(), 
+                new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash(),
+                new QueueSlash(), new SkipSlash(), new PreviousSlash()
             );
 
 
@@ -276,8 +276,8 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(new EventHandlerBeebot(gs, farm));
-            Connection c = new Connection(jda, gs, bs);
-            c.start();
+            //Connection c = new Connection(jda, gs, bs);
+            //c.start();
         }
         
         synchronized (this){

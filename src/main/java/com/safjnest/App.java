@@ -3,6 +3,7 @@ package com.safjnest;
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 
 import org.json.simple.JSONArray;
@@ -13,7 +14,6 @@ import org.json.simple.parser.JSONParser;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -44,13 +44,16 @@ public class App {
         if(args.length > 0) {
             if(args[0].equalsIgnoreCase("true")) {
                 extremeTesting = true;
-                System.out.println("[INFO] Beebot is set to testing mode");
+                System.out.println("[INFO] Beebot Canary is turning to outplay jelly");
             }
             else if(args[0].equalsIgnoreCase("false")) {
                 extremeTesting = false;
                 System.out.println("[INFO] Beebot is set to normal mode");
             }
         }
+
+        SecureRandom secureRandom = new SecureRandom();
+        System.out.println("[System]: System Entropy: " + secureRandom.getProvider());//thx copilot
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, riotSettings = null;
@@ -73,8 +76,6 @@ public class App {
             SQLSettings.get("user").toString(), 
             SQLSettings.get("password").toString()
         );
-
-        new PlayerPool();
         
         riotApi = null;
         try {
@@ -87,8 +88,8 @@ public class App {
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
         waitingTime = Integer.parseInt(settings.get("waitingTime").toString());
 
-        System.out.println(DatabaseHandler.getCannuccia());
-        System.out.println(PermissionHandler.getEpria());
+        System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
+        System.out.println("[EPRIA] ID " + PermissionHandler.getEpria());
 
         bs = new BotSettingsHandler();
 

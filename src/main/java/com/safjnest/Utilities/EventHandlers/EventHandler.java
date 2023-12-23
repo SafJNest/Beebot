@@ -9,7 +9,6 @@ import java.util.List;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.PlayerPool;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.LOL.Augment;
 import com.safjnest.Utilities.LOL.RiotHandler;
@@ -44,7 +43,6 @@ import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.managers.AudioManager;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -73,13 +71,19 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent e) {
         Guild guild = e.getGuild();
+        User self = e.getJDA().getSelfUser();
         AudioChannel cj = e.getChannelJoined();
         AudioChannel cl = e.getChannelLeft();
         AudioChannel bebyc = guild.getAudioManager().getConnectedChannel();
 
+        if(bebyc == null && e.getMember().getId() == self.getId() && cj == null) {
+            PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().clearQueue();
+        }
+
         if((bebyc != null && cl != null) && (bebyc.getId().equals(cl.getId()))
             && (cl.getMembers().stream().filter(member -> !member.getUser().isBot()).count() == 0)) {
                 guild.getAudioManager().closeAudioConnection();
+                PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().clearQueue();
         }
         
         if(cj != null && ((bebyc != null && cj.getId().equals(bebyc.getId())) || bebyc == null)) {
@@ -88,40 +92,28 @@ public class EventHandler extends ListenerAdapter {
             if(sound.emptyValues())
                 return;
 
-            PlayerManager pm = PlayerPool.contains(e.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(e.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(e.getJDA().getSelfUser().getId(), guild.getId());
-            
-            AudioManager audioManager = guild.getAudioManager();
-            audioManager.setSendingHandler(pm.getAudioHandler());
-            audioManager.openAudioConnection(cj);
+            PlayerManager pm = PlayerManager.get();
 
             String path = "rsc" + File.separator + "SoundBoard"+ File.separator + sound.get("id") + "." + sound.get("extension");
-            pm.getAudioPlayerManager().loadItem(path, new AudioLoadResultHandler() {
+
+            pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {
                 @Override
                 public void trackLoaded(AudioTrack track) {
-                    pm.getTrackScheduler().addQueue(track);
+                    pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                    guild.getAudioManager().openAudioConnection(cj);
                 }
 
                 @Override
-                public void playlistLoaded(AudioPlaylist playlist) {
-                    /*
-                    * for (AudioTrack track : playlist.getTracks()) {
-                    * trackScheduler.queue(track);
-                    * }
-                    */
-                }
+                public void playlistLoaded(AudioPlaylist playlist) {}
                 
                 @Override
-                public void noMatches() {
-                    pm.getTrackScheduler().addQueue(null);
-                }
+                public void noMatches() {}
 
                 @Override
                 public void loadFailed(FriendlyException throwable) {
                     System.out.println("error: " + throwable.getMessage());
                 }
             });
-
-            pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
         }
     }
 

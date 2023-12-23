@@ -31,6 +31,14 @@
         "arguments" : "[link/name video]"
     },
 
+    "playyoutubeforce":{
+        "alias" : ["yf", "pyf", "ytf"],
+        "help"  : "Play a video from youtube ignoring the current queue.",
+        "longhelp"  : "Play a video from youtube.",
+        "category" : "Audio",
+        "arguments" : "[link/name video]"
+    },
+
     "playsound":{
         "alias" : ["p", "ps"],
         "help"  : "Play a sound from the soundboard.",
@@ -133,6 +141,30 @@
         "alias" : [],
         "help"  : "Resume the playing audio.",
         "longhelp": "Resume the playing audio.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
+    "queue":{
+        "alias" : ["q"],
+        "help"  : "Show the current queue.",
+        "longhelp": "Show the current queue.",
+        "category" : "Audio",
+        "arguments" : "[CommandName] [track]"
+    },
+
+    "skip":{
+        "alias" : ["s", "skipper"],
+        "help"  : "Skip the current track.",
+        "longhelp": "Skip the current track.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
+    "previous":{
+        "alias" : ["prev"],
+        "help"  : "Go back to the previous track.",
+        "longhelp": "Go back to the previous track.",
         "category" : "Audio",
         "arguments" : "[CommandName]"
     },

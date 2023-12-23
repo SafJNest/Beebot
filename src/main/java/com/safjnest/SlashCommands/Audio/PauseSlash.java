@@ -3,7 +3,10 @@ package com.safjnest.SlashCommands.Audio;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Audio.PlayerPool;
+import com.safjnest.Utilities.Audio.PlayerManager;
+
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 
 
 public class PauseSlash extends SlashCommand {
@@ -19,7 +22,9 @@ public class PauseSlash extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        PlayerPool.get(event.getJDA().getSelfUser().getId(), event.getGuild().getId()).getPlayer().setPaused(true);
+        Guild guild = event.getGuild();
+        User self = event.getJDA().getSelfUser();
+        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().setPaused(true);
 
         event.deferReply(false).addContent("Playing paused").queue();
     }
