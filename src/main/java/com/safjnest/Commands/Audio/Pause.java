@@ -3,7 +3,10 @@ package com.safjnest.Commands.Audio;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Audio.PlayerPool;
+import com.safjnest.Utilities.Audio.PlayerManager;
+
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.User;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -24,7 +27,9 @@ public class Pause extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        PlayerPool.get(event.getSelfUser().getId(), event.getGuild().getId()).getPlayer().setPaused(true);
+        Guild guild = event.getGuild();
+        User self = event.getSelfUser();
+        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().setPaused(true);
 
         event.reply("Playing paused");
     }

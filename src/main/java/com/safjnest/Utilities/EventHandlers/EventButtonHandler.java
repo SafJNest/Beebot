@@ -3,15 +3,17 @@ package com.safjnest.Utilities.EventHandlers;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.safjnest.Commands.Audio.Queue;
 import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.PlayerPool;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -33,6 +35,7 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.exceptions.ErrorHandler;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
@@ -40,7 +43,6 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
-import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
@@ -87,8 +89,187 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if(buttonId.startsWith("soundboard-"))
             soundboardEvent(event);
+
+        else if(buttonId.startsWith("queue-"))
+            queue(event);
     }
 
+    public void queue(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-")[1];
+
+        Guild guild = event.getGuild();
+        User self = event.getJDA().getSelfUser();
+
+        PlayerManager pm = PlayerManager.get();
+        TrackScheduler ts = pm.getGuildMusicManager(guild, self).getTrackScheduler();
+
+
+        int previousIndex = ts.getIndex() - 11;
+        if(previousIndex < 0)
+            previousIndex = 0;
+
+        int nextIndex = ts.getIndex() + 11;
+        if(nextIndex > ts.getQueue().size())
+            nextIndex = ts.getQueue().size() - 1;
+
+        // for (Button b : event.getMessage().getButtons()) {
+        //     if(b.getId().split("-")[1].equalsIgnoreCase("previouspage"))
+        //         previousIndex = Integer.parseInt(b.getId().split("-", 3)[2]);
+
+        //     if(b.getId().split("-")[1].equalsIgnoreCase("nextpage"))
+        //         nextIndex = Integer.parseInt(b.getId().split("-", 3)[2]);
+            
+        // }
+
+        Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));  
+        Button previous = Button.primary("queue-previous", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
+        Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
+        Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
+        Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
+
+        
+
+        java.util.List<LayoutComponent> rows = new ArrayList<>();
+        int startIndex = ts.getIndex(); 
+
+        switch (args) {
+            case "repeat":
+                ts.setRepeat(!ts.isRepeat());
+            
+                break;
+            case "previouspage":
+                startIndex = Integer.parseInt(event.getButton().getId().split("-", 3)[2]);
+                if(startIndex < 0)
+                    startIndex = 0;
+                
+                previousIndex = (startIndex == ts.getIndex() ? 0 : startIndex - 11);
+                nextIndex = startIndex + 11;
+
+                break;
+            case "previous":
+                if(event.getButton().getStyle() == ButtonStyle.DANGER)
+                    break;
+
+                ts.playForcePrev();
+                startIndex = ts.getIndex();
+                break;
+            case "pause":
+
+                ts.getPlayer().setPaused(true);
+                break;
+            case "play":
+
+                ts.getPlayer().setPaused(false);
+                break;
+            case "next":
+                if(event.getButton().getStyle() == ButtonStyle.DANGER)
+                    break;
+
+                ts.playForceNext();
+                startIndex = ts.getIndex();
+                break;
+            case "nextpage":
+                startIndex = Integer.parseInt(event.getButton().getId().split("-")[2]);
+
+                nextIndex = startIndex + 11;
+                previousIndex = startIndex - 11;
+
+                break;
+            case "shurima":
+                if(!ts.isShuffled()) 
+                    ts.shuffleQueue();
+                else
+                    ts.unshuffleQueue();
+                    
+                startIndex = ts.getIndex();
+                previousIndex = startIndex - 11;
+                if(previousIndex < 0)
+                    previousIndex = 0;
+
+                nextIndex = startIndex + 11;
+                if(nextIndex > ts.getQueue().size())
+                    nextIndex = ts.getQueue().size() - 1;
+                
+                break;
+            case "clear":
+                ts.clearQueue();
+                break;
+            default:
+            
+                break;
+        }
+
+        LinkedList<AudioTrack> queue = ts.getQueue(); 
+        
+        if(ts.isRepeat()) {
+            repeat = repeat.withStyle(ButtonStyle.DANGER);
+        }
+            
+        
+        if(ts.isShuffled()) {
+            shurima = shurima.withStyle(ButtonStyle.DANGER);
+        }
+
+        if(ts.getIndex() == 0) {
+            previous = previous.withStyle(ButtonStyle.DANGER);
+            previous.asDisabled();
+        }
+
+        if(ts.getIndex() == ts.getQueue().size() - 1) {
+            next = next.withStyle(ButtonStyle.DANGER);
+            next.asDisabled();
+        }
+
+        if(!ts.isPaused()) {
+            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
+        } else {
+            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
+        }
+        
+        rows.add(ActionRow.of(
+            repeat,
+            previous,
+            play,
+            next,
+            shurima
+        ));
+
+
+        Button previousPage = Button.primary("queue-previouspage-" + previousIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
+        Button nextPage = Button.primary("queue-nextpage-" + nextIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
+
+        if(startIndex > ts.getQueue().size()) {
+            startIndex = ts.getQueue().size() - 1;
+            nextPage = nextPage.asDisabled();
+        }
+        
+        if(startIndex < ts.getIndex() && (startIndex + 11) > ts.getIndex()) { 
+            nextIndex = ts.getIndex();
+        }
+        else {
+            nextIndex = startIndex + 11;
+        }
+
+        if(previousIndex < 0) {
+            previousPage = previousPage.asDisabled();
+        }
+
+        nextPage = nextPage.withId("queue-nextpage-" + nextIndex);
+        previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
+
+        rows.add(ActionRow.of(
+            Button.primary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            previousPage,
+            Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            nextPage,
+            Button.primary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
+        ));
+
+        event.getMessage()
+                .editMessageEmbeds(Queue.getEmbed(event.getJDA(), guild, queue, startIndex).build())
+                .setComponents(rows)
+                .queue();
+    }
 
     public void lolButtonEvent(ButtonInteractionEvent event) {
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
@@ -656,40 +837,29 @@ public class EventButtonHandler extends ListenerAdapter {
 
     private void soundboardEvent(ButtonInteractionEvent event){
         Guild guild = event.getGuild();
+        User self = event.getJDA().getSelfUser();
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-        PlayerManager pm = PlayerPool.contains(event.getJDA().getSelfUser().getId(), guild.getId()) ? PlayerPool.get(event.getJDA().getSelfUser().getId(), guild.getId()) : PlayerPool.createPlayer(event.getJDA().getSelfUser().getId(), guild.getId());
-
-        TextChannel channel = event.getChannel().asTextChannel();
-
-        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
-        AudioManager audioManager = event.getGuild().getAudioManager();
-        audioManager.setSendingHandler(pm.getAudioHandler());
-        audioManager.openAudioConnection(myChannel);
-
-        if(pm.getPlayer().getPlayingTrack() != null){
-            //pm.stopAudioHandler();
-        }
-        
+        TextChannel textChannel = event.getChannel().asTextChannel();
+        AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
         String path = "rsc" + File.separator + "SoundBoard"+ File.separator + args;
-        pm.getAudioPlayerManager().loadItem(path, new AudioLoadResultHandler() {
+
+        PlayerManager pm = PlayerManager.get();
+        pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getTrackScheduler().addQueue(track);
+                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                guild.getAudioManager().openAudioConnection(audioChannel);
+
+                String id = args.split("\\.")[0];
+                DatabaseHandler.updateUserPlays(id, event.getMember().getId());
             }
 
             @Override
-            public void playlistLoaded(AudioPlaylist playlist) {
-                /*
-                 * for (AudioTrack track : playlist.getTracks()) {
-                 * trackScheduler.queue(track);
-                 * }
-                 */
-            }
+            public void playlistLoaded(AudioPlaylist playlist) {}
             
             @Override
             public void noMatches() {
-                channel.sendMessage("File not found").queue();
-                pm.getTrackScheduler().addQueue(null);
+                textChannel.sendMessage("File not found").queue();
             }
 
             @Override
@@ -697,11 +867,6 @@ public class EventButtonHandler extends ListenerAdapter {
                 System.out.println("error: " + throwable.getMessage());
             }
         });
-
-        pm.getPlayer().playTrack(pm.getTrackScheduler().getTrack());
-        
-        String id = args.split("\\.")[0];
-        DatabaseHandler.updateUserPlays(id, event.getMember().getId());
         
     }
 
