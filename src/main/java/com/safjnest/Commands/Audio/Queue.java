@@ -118,7 +118,7 @@ public class Queue extends Command{
         if(!ts.isPaused()) {
             play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
         } else {
-            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
+            play = Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
         }
 
 
@@ -159,7 +159,7 @@ public class Queue extends Command{
             previousPage,
             Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
             nextPage,
-            Button.primary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank"))
+            Button.primary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
         ));
 
         event.getChannel().sendMessageEmbeds(getEmbed(event.getJDA(), guild, queue, ts.getIndex()).build()).addComponents(buttonRows).queue();

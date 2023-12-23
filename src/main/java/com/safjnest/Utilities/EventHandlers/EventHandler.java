@@ -76,9 +76,14 @@ public class EventHandler extends ListenerAdapter {
         AudioChannel cl = e.getChannelLeft();
         AudioChannel bebyc = guild.getAudioManager().getConnectedChannel();
 
+        if(bebyc == null && e.getMember().getId() == self.getId() && cj == null) {
+            PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().clearQueue();
+        }
+
         if((bebyc != null && cl != null) && (bebyc.getId().equals(cl.getId()))
             && (cl.getMembers().stream().filter(member -> !member.getUser().isBot()).count() == 0)) {
                 guild.getAudioManager().closeAudioConnection();
+                PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().clearQueue();
         }
         
         if(cj != null && ((bebyc != null && cj.getId().equals(bebyc.getId())) || bebyc == null)) {

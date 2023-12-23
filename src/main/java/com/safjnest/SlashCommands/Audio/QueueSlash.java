@@ -120,7 +120,7 @@ public class QueueSlash extends SlashCommand{
             previousPage,
             Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
             nextPage,
-            Button.primary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank"))
+            Button.primary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
         ));
 
         event.getHook().editOriginalEmbeds(Queue.getEmbed(event.getJDA(), guild, queue, ts.getIndex()).build()).setComponents(buttonRows).queue();

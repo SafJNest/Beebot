@@ -36,7 +36,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.safjnest.Utilities.*;
 import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.Controller.Connection;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
@@ -277,8 +276,8 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         if(Thread.currentThread().getName().equals("beebot")){
             jda.addEventListener(new EventHandlerBeebot(gs, farm));
-            Connection c = new Connection(jda, gs, bs);
-            c.start();
+            //Connection c = new Connection(jda, gs, bs);
+            //c.start();
         }
         
         synchronized (this){
