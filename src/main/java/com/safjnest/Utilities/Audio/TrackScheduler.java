@@ -247,7 +247,9 @@ public class TrackScheduler extends AudioEventAdapter {
             }
             else if (isForced) {
                 isForced = false;
-                play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition());
+                if (currentTrackIndex != -1) {
+                    play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition());
+                }
                 return;
             }
 
@@ -313,6 +315,14 @@ public class TrackScheduler extends AudioEventAdapter {
      */
     public int getIndex() {
         return currentTrackIndex;
+    }
+
+    /**
+     * Set the {@link com.safjnest.Utilities.Audio.TrackScheduler#currentTrackIndex currentTrackIndex}
+     * @param index
+     */
+    public void setIndex(int index) {
+        currentTrackIndex = index;
     }
 
     /**

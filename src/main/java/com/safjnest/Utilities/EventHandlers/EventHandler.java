@@ -136,6 +136,9 @@ public class EventHandler extends ListenerAdapter {
     }
 
 
+    /**
+     * TODO: rifare questa merda
+     */
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
@@ -161,7 +164,7 @@ public class EventHandler extends ListenerAdapter {
 
         else if(e.getFullCommandName().equals("TTS"))
             name = "tts";
-        
+
         switch (name) {
             case "play":
                 if (e.getFocusedOption().getValue().equals("")) {
@@ -280,6 +283,21 @@ public class EventHandler extends ListenerAdapter {
 
                 }
             break;
+            case "jumpto":
+                List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild(), e.getJDA().getSelfUser()).getTrackScheduler().getQueue();
+                if (e.getFocusedOption().getValue().equals("")) {
+                    Collections.shuffle(queue);
+                    for (int i = 0; i < 10; i++)
+                        choices.add(new Choice(queue.get(i).getInfo().title, String.valueOf(i + 1)));
+                } else {
+                    int max = 0;
+                    for (int i = 0; i < queue.size() && max < 10; i++) {
+                        if (queue.get(i).getInfo().title.toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())) {
+                            choices.add(new Choice(queue.get(i).getInfo().title, String.valueOf(i + 1)));
+                            max++;
+                        }
+                    }
+                }
         }
         e.replyChoices(choices).queue();
     }

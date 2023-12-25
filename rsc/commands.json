@@ -237,6 +237,14 @@
         }
     },
 
+    "jumpto": {
+        "alias" : ["jump", "jt", "j"],
+        "help"  : "Jump to a specific track in the queue.",
+        "longhelp"  : "Jump to a specific track in the queue.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
 
 
 
