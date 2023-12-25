@@ -2,14 +2,14 @@ package com.safjnest.Utilities.LOL;
 
 import java.util.HashMap;
 
-public class Augment {
+public class AugmentData {
     private String id;
     private String name;
     private String desc;
     HashMap<String, String> spellDataValues = new HashMap<>();
 
 
-    public Augment(String id, String name, String desc, HashMap<String, String> spellDataValues){
+    public AugmentData(String id, String name, String desc, HashMap<String, String> spellDataValues){
         this.id = id;
         this.name = name;
         this.desc = desc;

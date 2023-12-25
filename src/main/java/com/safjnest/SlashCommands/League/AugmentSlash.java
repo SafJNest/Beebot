@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.LOL.Augment;
+import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -17,9 +17,9 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.awt.Color;
 
-public class InfoAugmentSlash extends SlashCommand {
+public class AugmentSlash extends SlashCommand {
 
-    public InfoAugmentSlash(){
+    public AugmentSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -33,12 +33,12 @@ public class InfoAugmentSlash extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
         String aug = event.getOption("augment").getAsString();
-        Augment augment = null;
+        AugmentData augment = null;
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         
-        for(Augment a : RiotHandler.getAugments()){
+        for(AugmentData a : RiotHandler.getAugments()){
             if(a.getId().equalsIgnoreCase(aug)){
                     augment = a;
                     break;

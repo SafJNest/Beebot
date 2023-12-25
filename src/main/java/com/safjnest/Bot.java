@@ -212,7 +212,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         Collections.addAll(commandsList, new PrintCache(gs, farm), new Ping(), new Ram(), new Help(gs), new Prefix(gs));
 
         if(beebotsAll.contains(threadName))
-            Collections.addAll(commandsList, new Summoner(), new InfoAugment(), new FreeChamp(), new Livegame(), 
+            Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
                 new LastMatches(riotApi), new Opgg(), new Calculator(), new Dice(), 
                 new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
         
@@ -236,7 +236,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new PrefixSlash(gs));
 
         if(beebotsAll.contains(threadName))
-            Collections.addAll(slashCommandsList, new SummonerSlash(), new InfoAugmentSlash(), new FreeChampSlash(), 
+            Collections.addAll(slashCommandsList, new SummonerSlash(), new AugmentSlash(), new FreeChampSlash(), 
                 new LivegameSlash(riotApi), new LastMatchesSlash(riotApi), 
                 new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
                 new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey)
