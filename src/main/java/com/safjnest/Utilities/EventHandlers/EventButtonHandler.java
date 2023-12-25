@@ -223,7 +223,7 @@ public class EventButtonHandler extends ListenerAdapter {
         if(!ts.isPaused()) {
             play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
         } else {
-            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
+            play = Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
         }
         
         rows.add(ActionRow.of(

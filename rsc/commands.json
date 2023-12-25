@@ -27,7 +27,7 @@
         "alias" : ["y", "py", "yt"],
         "help"  : "Play a video from youtube.",
         "longhelp"  : "Play a video from youtube.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[link/name video]"
     },
 
@@ -35,7 +35,7 @@
         "alias" : ["yf", "pyf", "ytf"],
         "help"  : "Play a video from youtube ignoring the current queue.",
         "longhelp"  : "Play a video from youtube.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[link/name video]"
     },
 
@@ -58,7 +58,7 @@
     "soundboard": {
         "alias" : [],
         "help"  : "Create, select and manage soundboards.",
-        "category" : "Settings",
+        "category" : "Audio",
         "arguments" : "[CommandName] (#channel)(@role) | [message]",
         "children": {
             "create": {
@@ -93,7 +93,7 @@
         "alias" : ["stp", "donteventhinkaboutit"],
         "help"  : "Stop the bot from playing.",
         "longhelp"  : "Stop the bot from playing.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[CommandName]"
     },
 
@@ -133,7 +133,7 @@
         "alias" : [],
         "help"  : "Pause the playing audio.",
         "longhelp": "Pause the playing audio.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[CommandName]"
     },
 
@@ -141,7 +141,7 @@
         "alias" : [],
         "help"  : "Resume the playing audio.",
         "longhelp": "Resume the playing audio.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[CommandName]"
     },
 
@@ -149,7 +149,7 @@
         "alias" : ["q"],
         "help"  : "Show the current queue.",
         "longhelp": "Show the current queue.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[CommandName] [track]"
     },
 
@@ -157,7 +157,7 @@
         "alias" : ["s", "skipper"],
         "help"  : "Skip the current track.",
         "longhelp": "Skip the current track.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[CommandName]"
     },
 
@@ -165,7 +165,7 @@
         "alias" : ["prev"],
         "help"  : "Go back to the previous track.",
         "longhelp": "Go back to the previous track.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[CommandName]"
     },
 
@@ -197,7 +197,7 @@
         "alias" : ["papyrus", "paper", "listoide"],
         "help"  : "Play a sound from the soundboard or a video from youtube.",
         "longhelp"  : "Play a sound from the soundboard or a video from youtube.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[CommandName]",
         "children": {
             "youtube": {
@@ -241,7 +241,7 @@
         "alias" : ["jump", "jt", "j"],
         "help"  : "Jump to a specific track in the queue.",
         "longhelp"  : "Jump to a specific track in the queue.",
-        "category" : "Audio",
+        "category" : "Audio Queue",
         "arguments" : "[CommandName]"
     },
 
@@ -854,7 +854,7 @@
         "arguments" : "[CommandName]"
     },
 
-    "infoaugment":{
+    "augment":{
         "alias" : ["aug"],
         "help"  : "Show information about an augment.",
         "category" : "League Of Legends",

@@ -5,12 +5,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.LOL.Augment;
+import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -43,6 +44,8 @@ import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+
+import org.apache.commons.text.similarity.FuzzyScore;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -164,7 +167,7 @@ public class EventHandler extends ListenerAdapter {
 
         else if(e.getFullCommandName().equals("TTS"))
             name = "tts";
-
+             
         switch (name) {
             case "play":
                 if (e.getFocusedOption().getValue().equals("")) {
@@ -218,7 +221,7 @@ public class EventHandler extends ListenerAdapter {
                 break;
 
             case "infoaugment":
-                List<Augment> augments = RiotHandler.getAugments();
+                List<AugmentData> augments = RiotHandler.getAugments();
                 if (e.getFocusedOption().getValue().equals("")) {
                     Collections.shuffle(augments);
                     for (int i = 0; i < 10; i++)
@@ -287,16 +290,22 @@ public class EventHandler extends ListenerAdapter {
                 List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild(), e.getJDA().getSelfUser()).getTrackScheduler().getQueue();
                 if (e.getFocusedOption().getValue().equals("")) {
                     Collections.shuffle(queue);
-                    for (int i = 0; i < 10; i++)
+                    for (int i = 0; i < queue.size() && i < 10; i++)
                         choices.add(new Choice(queue.get(i).getInfo().title, String.valueOf(i + 1)));
                 } else {
+                    FuzzyScore fs = new FuzzyScore(Locale.getDefault());
+                    String query = e.getFocusedOption().getValue().toLowerCase();
+                    int threshold = 2; 
+
                     int max = 0;
                     for (int i = 0; i < queue.size() && max < 10; i++) {
-                        if (queue.get(i).getInfo().title.toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())) {
+                        String title = queue.get(i).getInfo().title.toLowerCase();
+                        if (fs.fuzzyScore(title, query) > threshold) {
                             choices.add(new Choice(queue.get(i).getInfo().title, String.valueOf(i + 1)));
                             max++;
                         }
                     }
+                    
                 }
         }
         e.replyChoices(choices).queue();
