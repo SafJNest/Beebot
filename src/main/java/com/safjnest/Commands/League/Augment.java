@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.LOL.Augment;
+import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -17,9 +17,9 @@ import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class InfoAugment extends Command {
+public class Augment extends Command {
 
-    public InfoAugment(){
+    public Augment(){
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -33,10 +33,10 @@ public class InfoAugment extends Command {
 	protected void execute(CommandEvent event) {
         String args = event.getArgs();
 
-        ArrayList<Augment> augments = RiotHandler.getAugments();
+        ArrayList<AugmentData> augments = RiotHandler.getAugments();
         ArrayList<String> augmentNames = new ArrayList<>();
 
-        for(Augment a : augments){
+        for(AugmentData a : augments){
             augmentNames.add(a.getName());
         }
 
@@ -44,8 +44,8 @@ public class InfoAugment extends Command {
         
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         
-        Augment augment = null;
-        for(Augment a : augments){
+        AugmentData augment = null;
+        for(AugmentData a : augments){
             //regex is number
             if(args.matches("\\d+")){
                 if(a.getId().equalsIgnoreCase(args)){
