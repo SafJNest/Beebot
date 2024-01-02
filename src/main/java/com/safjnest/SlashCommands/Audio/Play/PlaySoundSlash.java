@@ -9,6 +9,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.SoundBoard;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
@@ -120,7 +121,7 @@ public class PlaySoundSlash extends SlashCommand{
         
         @Override
         public void trackLoaded(AudioTrack track) {
-            pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+            pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track, AudioType.SOUND);
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 

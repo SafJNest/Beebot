@@ -42,11 +42,12 @@ public class JumpToSlash extends SlashCommand {
         Guild guild = event.getGuild();
         User self = event.getJDA().getSelfUser();
 
-        int position = Integer.parseInt(event.getOption("position").getAsString()) - 1;
+        int position = Integer.parseInt(event.getOption("position").getAsString());
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
 
-
+        System.out.println(ts.getIndex());
         ts.setIndex(position - 1);
+        System.out.println(ts.getIndex());
         ts.getPlayer().stopTrack();
         ts.play(ts.nextTrack());
         EmbedBuilder eb = new EmbedBuilder();

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
@@ -45,7 +44,7 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
-import org.apache.commons.text.similarity.FuzzyScore;
+
 
 /**
  * This class handles all events that could occur during the listening:
@@ -79,7 +78,7 @@ public class EventHandler extends ListenerAdapter {
         AudioChannel cl = e.getChannelLeft();
         AudioChannel bebyc = guild.getAudioManager().getConnectedChannel();
 
-        if(bebyc == null && e.getMember().getId() == self.getId() && cj == null) {
+        if(e.getMember().getId().equals(self.getId()) && cj == null) {
             PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().clearQueue();
         }
 
@@ -289,23 +288,20 @@ public class EventHandler extends ListenerAdapter {
             case "jumpto":
                 List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild(), e.getJDA().getSelfUser()).getTrackScheduler().getQueue();
                 if (e.getFocusedOption().getValue().equals("")) {
-                    Collections.shuffle(queue);
+                    //Collections.shuffle(queue);
                     for (int i = 0; i < queue.size() && i < 10; i++)
                         choices.add(new Choice(queue.get(i).getInfo().title, String.valueOf(i + 1)));
                 } else {
-                    FuzzyScore fs = new FuzzyScore(Locale.getDefault());
                     String query = e.getFocusedOption().getValue().toLowerCase();
-                    int threshold = 2; 
 
                     int max = 0;
                     for (int i = 0; i < queue.size() && max < 10; i++) {
                         String title = queue.get(i).getInfo().title.toLowerCase();
-                        if (fs.fuzzyScore(title, query) > threshold) {
-                            choices.add(new Choice(queue.get(i).getInfo().title, String.valueOf(i + 1)));
+                        if (title.contains(query)) {
+                            choices.add(new Choice("[" + (i+1) +"] " + queue.get(i).getInfo().title, String.valueOf(i)));
                             max++;
                         }
                     }
-                    
                 }
         }
         e.replyChoices(choices).queue();
