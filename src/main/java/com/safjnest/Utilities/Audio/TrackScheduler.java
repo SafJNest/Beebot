@@ -4,7 +4,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 
 import java.util.Collections;
@@ -97,13 +96,27 @@ public class TrackScheduler extends AudioEventAdapter {
      * Starts playing a track even if there is a track playing.
      * @param track
      */
+    public void playForce(AudioTrack track, AudioType type) {
+        if(player.isPaused()) {
+            player.setPaused(false);
+        }
+
+        isForced = (type == AudioType.SOUND);
+        player.startTrack(track, false);
+    }
+
+    /**
+     * Starts playing a track even if there is a track playing.
+     * @param track
+     */
     public void playForce(AudioTrack track) {
         if(player.isPaused()) {
             player.setPaused(false);
         }
-        isForced = true;
         player.startTrack(track, false);
     }
+
+
 
 
     /**
@@ -210,6 +223,8 @@ public class TrackScheduler extends AudioEventAdapter {
     public void clearQueue() {
         queue.clear();
         currentTrackIndex = -1;
+        isForced = false;
+        isRepeat = false;
     }
 
     @Override
@@ -240,6 +255,7 @@ public class TrackScheduler extends AudioEventAdapter {
      */
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+        System.out.println("isRepeat: " + isRepeat + " isForced: " + isForced + " endReason: " + endReason.name() + " current: " + track.getInfo().title);
         if (endReason.mayStartNext) {
             if (isRepeat) {
                 playForce(track.makeClone());
@@ -262,7 +278,9 @@ public class TrackScheduler extends AudioEventAdapter {
 
         if(endReason == AudioTrackEndReason.REPLACED) {
             if(isForced) {
-                queue.get(currentTrackIndex).setPosition(track.getPosition()); 
+                if (currentTrackIndex != -1) {
+                    play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition());
+                }
             }
         }
 
