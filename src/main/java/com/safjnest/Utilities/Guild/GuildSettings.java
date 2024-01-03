@@ -121,7 +121,7 @@ public class GuildSettings {
     }
 
     public GuildData insertGuild(String guildId) {
-        DatabaseHandler.insertGuild(guildId, guildId, PREFIX);
+        DatabaseHandler.insertGuild(guildId, botId, PREFIX);
         System.out.println("[ERROR] Missing guild in database => " + guildId);
 
         GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false, 0, null, false);
