@@ -18,8 +18,10 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -70,9 +72,19 @@ public class Livegame extends Command {
                 return;
             }
         } else {
-            s = RiotHandler.getSummonerByName(args);
-            if (s == null) {
-                event.reply("Couldn't find the specified summoner.");
+            String name = "";
+            String tag = "";
+            if (!args.contains("#")){
+                name = args;
+                tag = "EUW";
+            }
+            else {
+                name = args.split("#", 2)[0];
+                tag = args.split("#", 2)[1];
+            }
+            s = RiotHandler.getSummonerByName(name, tag);
+            if(s == null){
+                event.reply("Couldn't find the specified summoner. Remember to use the tag!");
                 return;
             }
         }
@@ -122,8 +134,10 @@ public class Livegame extends Command {
 
     public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s, List<SpectatorParticipant> users) {
         try {
+            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(s.getName() + "'s Game");
+            builder.setTitle(account.getName() + "#" + account.getTag() + "'s Game");
             builder.setColor(Color.decode(
                     BotSettingsHandler.map.get(jda.getSelfUser().getId()).color));
             builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));

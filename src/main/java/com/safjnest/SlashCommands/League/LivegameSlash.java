@@ -40,6 +40,7 @@ public class LivegameSlash extends SlashCommand {
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name of the summoner you want to get information on", false),
+            new OptionData(OptionType.STRING, "tag", "Tag of the summoner you want to get information on", false),
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );
     }
@@ -71,9 +72,11 @@ public class LivegameSlash extends SlashCommand {
                 return;
             }
         }else{
-            s = RiotHandler.getSummonerByName(event.getOption("summoner").getAsString());
+            String name = event.getOption("summoner").getAsString();
+            String tag = (event.getOption("tag") != null) ? event.getOption("tag").getAsString() : "";
+            s = RiotHandler.getSummonerByName(name, tag);
             if(s == null){
-                event.getHook().editOriginal("Couldn't find the specified summoner.").queue();
+                event.reply("Couldn't find the specified summoner.");
                 return;
             }
             
