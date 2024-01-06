@@ -23,6 +23,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -71,9 +72,19 @@ public class Opgg extends Command {
                 return;
             }
         }else{
-            s = RiotHandler.getSummonerByName(args);
+            String name = "";
+            String tag = "";
+            if (!args.contains("#")){
+                name = args;
+                tag = "EUW";
+            }
+            else {
+                name = args.split("#", 2)[0];
+                tag = args.split("#", 2)[1];
+            }
+            s = RiotHandler.getSummonerByName(name, tag);
             if(s == null){
-                event.reply("Couldn't find the specified summoner.");
+                event.reply("Couldn't find the specified summoner. Remember to use the tag!");
                 return;
             }
         }
@@ -93,11 +104,12 @@ public class Opgg extends Command {
     
     
     public static EmbedBuilder createEmbed(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s , JDA jda){
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
         EmbedBuilder eb = new EmbedBuilder();
         MatchParticipant me = null;
         LOLMatch match = null;
         R4J r4j = RiotHandler.getRiotApi();
-        eb.setAuthor(s.getName());
+        eb.setAuthor(account.getName() + "#" + account.getTag());
         
         for(int i = 0; i < 5; i++){
             try {

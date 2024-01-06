@@ -23,6 +23,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -197,10 +198,26 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         } catch (Exception e) { return 0; }
     }
 
+    public static Summoner getSummonerByName(String nameAccount, String tag){
+        try {
+            String puiid = riotApi.getAccountAPI().getAccountByTag(RegionShard.EUROPE, nameAccount, tag).getPUUID();
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(LeagueShard.EUW1, puiid);  
+        } catch (Exception e) {
+            return getSummonerByName(nameAccount);
+        }
+    }
+
+    /**
+     * @deprecated
+     * @param nameAccount
+     * @return
+     */
     public static Summoner getSummonerByName(String nameAccount){
         try {
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, nameAccount);
-        } catch (Exception e) { return null; }
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static Summoner getSummonerBySummonerId(String id){
