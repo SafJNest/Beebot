@@ -123,13 +123,14 @@ public class Opgg extends Command {
                 ArrayList<String> blue = new ArrayList<>();
                 ArrayList<String> red = new ArrayList<>();
                 for(MatchParticipant searchMe : match.getParticipants()){
+                    RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, searchMe.getPuuid());
                     if(searchMe.getSummonerId().equals(s.getSummonerId()))
                         me = searchMe;
                     String supp = RiotHandler.getFormattedEmoji(jda, searchMe.getChampionName()) 
                                     + " " 
                                     + (searchMe.getSummonerName().equals(me.getSummonerName()) 
-                                        ? "**" + me.getSummonerName() + "**" 
-                                        : searchMe.getSummonerName());
+                                        ? "**" + searchAccount.getName()+ "#" + searchAccount.getTag() + "**" 
+                                        : searchAccount.getName()+ "#" + searchAccount.getTag());
     
                     if(searchMe.getTeam() == TeamType.BLUE)
                         blue.add(supp);
@@ -164,7 +165,10 @@ public class Opgg extends Command {
                         prova.put("teamminions", new ArrayList<>());
                         int cont = 0;
                         for(MatchParticipant mt : match.getParticipants()){
-                            String name = ((mt.getSummonerName().equals(s.getName())) ? "**" + mt.getSummonerName() + "**" : mt.getSummonerName());
+                            RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, mt.getPuuid());
+
+                            String nameAccount = searchAccount.getName()+ "#" + searchAccount.getTag();
+                            String name = ((mt.getSummonerName().equals(s.getName())) ? "**" + nameAccount + "**" : nameAccount);
                             if(cont < 2){
                                 prova.get("teamscuttles").add(RiotHandler.getFormattedEmoji(jda, "teamscuttles") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
                             }
