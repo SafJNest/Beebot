@@ -11,6 +11,7 @@ import java.util.TimerTask;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -20,6 +21,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -142,7 +144,16 @@ public class Test extends Command{
                 e.reply("Guilds with invites:\n" + guildlist);
             break;
             case 8:
-                
+                System.out.println("eee");
+                String ss = "";
+                for (Item item : RiotHandler.getRiotApi().getDDragonAPI().getItems().values()) {
+                    System.out.println(item.getId());
+                    if (item != null)
+                        ss += RiotHandler.getFormattedEmoji(e.getJDA(), item.getId()) + "-";
+                }
+                System.out.println("efee");
+                e.reply(ss);
+
             break;
             case 9:
                 // for(File file : files){
