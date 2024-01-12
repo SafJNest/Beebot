@@ -43,6 +43,7 @@ import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Owner.*;
 import com.safjnest.Commands.Owner.Shutdown;
@@ -192,6 +193,10 @@ public class Bot extends ListenerAdapter implements Runnable {
                 event.getJDA().getGuildById("474935164451946506").getCh
                 */
                 //event.getJDA().getGuildById("474935164451946506").getTextChannelById("938513359626715176").sendMessage("Fired up and ready to ban eeeeeeeeeeeeeeeeeeeeeeeeeepria").queue();
+                if(threadName.equals("beebot") || threadName.equals("beebot canary")) {
+                    RiotHandler.loadEmoji(event.getJDA());
+                    System.out.println("[" + threadName + "] INFO custom emoji cached correctly");
+                }
                 System.out.println("[" + threadName + "] INFO no more guild cached correctly");
             }
         });
