@@ -8,6 +8,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.io.IOUtils;
@@ -15,6 +16,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import com.safjnest.Utilities.CustomEmoji;
 import com.safjnest.Utilities.LOL.Runes.PageRunes;
 import com.safjnest.Utilities.LOL.Runes.Rune;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -69,6 +71,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     
 
     private static ArrayList<AugmentData> augments = new ArrayList<>();
+
+    private static HashMap<String, CustomEmoji> emoji = new HashMap<>();
 
 
     public RiotHandler(R4J riotApi, String dataDragonVersion){
@@ -163,6 +167,17 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         }
     }
 
+
+    public static void loadEmoji(JDA jda) {
+        List<String> emojiServers = List.of(ids);
+        for(Guild guild : jda.getGuilds()){
+            if (emojiServers.contains(guild.getId())) {
+                for(RichCustomEmoji em : guild.getEmojis()){
+                    emoji.put(em.getName().toLowerCase(), new CustomEmoji(em.getId(), guild.getId(), em.getName(), em));
+                }
+            }
+        }
+    }
 
     public static HashMap<String, PageRunes> getRunesHandler() {
         return runesHandler;
@@ -312,70 +327,40 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 
     public static String getFormattedEmoji(JDA jda, String name){
-        if(name.equals("2201_"))
-            name = "4_";
-        name = transposeChampionNameForDataDragon(name);
-        try {    
-            for(String id : ids){
-                Guild g = jda.getGuildById(id);
-                for(RichCustomEmoji em: g.getEmojisByName(name, true))
-                    return "<:"+name+":"+em.getId()+">";
-                
-            } 
-            if(name.equals("0") || name.equals("a0") || name.equals("2202_"))
-                return ":black_large_square:";
-            return name;
-        } catch (Exception e) {
-            return null;
+        if(name.equals("0") || name.equals("a0") || name.equals("2202_")) {
+            return ":black_large_square:";
         }
+
+        if(name.equals("2201_")) {
+            name = "4_";
+        }
+        name = transposeChampionNameForDataDragon(name);
+  
+        String ss = emoji.get(name.toLowerCase()).toString();            
+        return ss != null ? ss : String.valueOf(name);
     }
 
     public static RichCustomEmoji getRichEmoji(JDA jda, String name){
-        if(name.equals("2201_"))
+        if(name.equals("2201_")) {
             name = "4_";
-        name = transposeChampionNameForDataDragon(name);
-        try {    
-            for(String id : ids){
-                Guild g = jda.getGuildById(id);
-                for(RichCustomEmoji em: g.getEmojisByName(name, true))
-                    return em;
-                
-            } 
-            return null;
-        } catch (Exception e) {
-            return null;
         }
+
+        name = transposeChampionNameForDataDragon(name);
+        return emoji.get(name.toLowerCase()).getObject();
+       
     }
 
     public static String getFormattedEmoji(JDA jda, int name){
-        try {    
-            for(String id : ids){
-                Guild g = jda.getGuildById(id);
-                for(RichCustomEmoji em: g.getEmojisByName(String.valueOf(name), true))
-                    return "<:"+name+":"+em.getId()+">";
-                
-            } 
-            if(name == 0)
-                return ":black_large_square:";
-            return String.valueOf(name);
-        } catch (Exception e) {
-            return null;
+        if(name == 0) {
+            return ":black_large_square:";
         }
+        String ss = emoji.get(String.valueOf(name)).toString();            
+        return ss != null ? ss : String.valueOf(name);
     }
 
     public static String getEmojiId(JDA jda, String name){
         name = transposeChampionNameForDataDragon(name);
-        try {    
-            for(String id : ids){
-                Guild g = jda.getGuildById(id);
-                for(RichCustomEmoji em: g.getEmojisByName(name, true))
-                    return em.getId();
-                
-            }   
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
+        return emoji.get(String.valueOf(name)).getId();
     }
 
     public static String[] getForbiddenServers() {
