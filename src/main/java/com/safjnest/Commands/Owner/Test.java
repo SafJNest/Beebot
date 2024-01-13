@@ -30,6 +30,7 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.sql.SQLException;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -175,6 +176,13 @@ public class Test extends Command{
                 //     file.renameTo(new File(soundBoard + File.separator + newName + "." + extension));
 
                 // }
+            break;
+            case 11:
+                try {
+                    DatabaseHandler.getConnection().close();
+                } catch (SQLException e1) {
+                    e1.printStackTrace();
+                }
             break;
             default:
                 e.reply("Command does not exist.");
