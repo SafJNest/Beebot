@@ -14,8 +14,11 @@ import java.time.Instant;
  * of the biggest caterpies ever made
  */
 public class DatabaseHandler {
-    
-    /** Object that opens the connection between database and beeby */
+    private static String hostName;
+    private static String database;
+    private static String user;
+    private static String password;
+
     private static Connection c;
 
     /**
@@ -27,7 +30,18 @@ public class DatabaseHandler {
      * @param password Password
      */
     public DatabaseHandler(String hostName, String database, String user, String password){
+        DatabaseHandler.hostName = hostName;
+        DatabaseHandler.database = database;
+        DatabaseHandler.user = user;
+        DatabaseHandler.password = password;
+        
+        connectIfNot();
+    }
+
+    private static void connectIfNot() {
         try {
+            if (c != null && !c.isClosed()) return;
+
             Class.forName("org.mariadb.jdbc.Driver");
             c = DriverManager.getConnection("jdbc:mariadb://" + hostName + "/" + database + "?autoReconnect=true", user, password);
             c.setAutoCommit(false);
@@ -35,13 +49,15 @@ public class DatabaseHandler {
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            System.out.println("[SQL] INFO Connection to the extreme db ANNODAM!");
+            System.out.println("[SQL] ERROR Connection to the extreme db failed!");
         }
     }
 
     public static QueryResult safJQuery(String query) {
-        QueryResult result = new QueryResult();
+        connectIfNot();
 
+        QueryResult result = new QueryResult();
+        
         try (Statement stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query)) {
 
@@ -77,6 +93,8 @@ public class DatabaseHandler {
      * @throws SQLException
      */ 
     public static QueryResult safJQuery(Statement stmt, String query) throws SQLException {
+        connectIfNot();
+
         QueryResult result = new QueryResult();
 
         ResultSet rs = stmt.executeQuery(query);
@@ -104,6 +122,8 @@ public class DatabaseHandler {
      * @throws SQLException
      */
     public static ResultRow fetchJRow(String query) {
+        connectIfNot();
+
         ResultRow beeRow = new ResultRow();
 
         try (Statement stmt = c.createStatement();
@@ -139,6 +159,8 @@ public class DatabaseHandler {
      * @throws SQLException
      */
     public static ResultRow fetchJRow(Statement stmt, String query) throws SQLException {
+        connectIfNot();
+        
         ResultRow beeRow = new ResultRow();
 
         ResultSet rs = stmt.executeQuery(query);
@@ -162,6 +184,8 @@ public class DatabaseHandler {
      * @param queries
      */
     public static boolean runQuery(String... queries) {
+        connectIfNot();
+
         try (Statement stmt = c.createStatement()) {
             for (String query : queries)
                 stmt.execute(query);
@@ -188,11 +212,13 @@ public class DatabaseHandler {
      * @throws SQLException
      */
     public static void runQuery(Statement stmt, String... queries) throws SQLException {
+        connectIfNot();
+        
         for (String query : queries)
             stmt.execute(query);
     }
 
-
+    //-------------------------------------------------------------------------
 
     public static QueryResult getGuildsData(String filter){        
         String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild WHERE " + filter + ";";
@@ -316,8 +342,8 @@ public class DatabaseHandler {
         return fetchJRow("select sum(times) as sum from play where user_id = '" + user_id + "';").get("sum");
     }
 
-    public static boolean soundboardExists(String name, String guild_id) {
-        return !fetchJRow("SELECT id from soundboard WHERE name = '" + name + "' AND guild_id = '" + guild_id + "'").emptyValues();
+    public static boolean soundboardExists(String id, String guild_id) {
+        return !fetchJRow("SELECT id from soundboard WHERE ID = '" + id + "' AND guild_id = '" + guild_id + "'").emptyValues();
     }
 
     public static int getSoundInSoundboardCount(String id) {
@@ -742,5 +768,9 @@ public class DatabaseHandler {
         s = s.replace("\"", "\\\"");
         s = s.replace("\'", "\\\'");
         return s;
+    }
+
+    public static Connection getConnection(){
+        return c;
     }
 }
