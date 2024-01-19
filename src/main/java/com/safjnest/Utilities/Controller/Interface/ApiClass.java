@@ -1,12 +1,14 @@
 package com.safjnest.Utilities.Controller.Interface;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
 @Entity
 public class ApiClass {
     @Id
     private int ID;
+    
     private String name;
 
     public ApiClass(int ID, String name) {

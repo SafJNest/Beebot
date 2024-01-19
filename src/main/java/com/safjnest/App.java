@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -54,7 +55,11 @@ public class App {
             }
         }
 
-        SpringApplication.run(App.class, args);
+        SpringApplication app = new SpringApplication(App.class);
+        app.setDefaultProperties(Collections.singletonMap("server.port", "8096"));
+        app.run(args);
+        
+
 
         SecureRandom secureRandom = new SecureRandom();
         System.out.println("[System]: System Entropy: " + secureRandom.getProvider());//thx copilot
@@ -90,7 +95,7 @@ public class App {
         }
         
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
-        RiotHandler.getSkinsSale();
+
         waitingTime = Integer.parseInt(settings.get("waitingTime").toString());
 
         System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
