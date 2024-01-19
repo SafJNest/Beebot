@@ -84,8 +84,9 @@ public class App {
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }
-
+        
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
+        RiotHandler.getSkinsSale();
         waitingTime = Integer.parseInt(settings.get("waitingTime").toString());
 
         System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
