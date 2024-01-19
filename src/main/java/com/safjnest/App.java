@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
@@ -21,6 +22,7 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
 
+@SpringBootApplication
 public class App {
     public static ArrayList<Thread> botsArr = new ArrayList<>(); 
     private static TTSHandler tts;
@@ -31,7 +33,7 @@ public class App {
     /**
      * Insane beebot core
      */
-    private static boolean extremeTesting = false;
+    private static boolean extremeTesting = true;
 
     public static boolean isExtremeTesting() {
         return extremeTesting;
@@ -51,6 +53,8 @@ public class App {
                 System.out.println("[INFO] Beebot is set to normal mode");
             }
         }
+
+        SpringApplication.run(App.class, args);
 
         SecureRandom secureRandom = new SecureRandom();
         System.out.println("[System]: System Entropy: " + secureRandom.getProvider());//thx copilot
