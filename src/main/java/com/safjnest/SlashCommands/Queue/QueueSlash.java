@@ -1,4 +1,4 @@
-package com.safjnest.SlashCommands.Audio;
+package com.safjnest.SlashCommands.Queue;
 
 
 import java.util.ArrayList;
@@ -6,7 +6,7 @@ import java.util.LinkedList;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Commands.Audio.Queue;
+import com.safjnest.Commands.Queue.Queue;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;

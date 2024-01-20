@@ -1,10 +1,7 @@
-package com.safjnest.SlashCommands.Audio;
+package com.safjnest.Commands.Queue;
 
-import java.util.Arrays;
-import java.awt.Color;
-
-import com.jagrosh.jdautilities.command.SlashCommand;
-import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
@@ -14,40 +11,47 @@ import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+
+import java.awt.Color;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
  */
-public class JumpToSlash extends SlashCommand {
+public class JumpTo extends Command {
 
-    public JumpToSlash(){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
+    public JumpTo() {
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "position", "Select a song from the queue", true)
-                .setAutoComplete(true)
-        );
     }
 
-	@Override
-	protected void execute(SlashCommandEvent event) {
+    @Override
+    protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
+        User self = event.getSelfUser();
 
-        int position = Integer.parseInt(event.getOption("position").getAsString());
+        if (event.getArgs().isEmpty()) {
+            event.reply("Please provide a valid number");
+            return;
+        }
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
 
-        System.out.println(ts.getIndex());
+        int position = Integer.parseInt(event.getArgs()) - 1;
+        if (position > ts.getQueue().size()) {
+            event.reply("There are only " + ts.getQueue().size() + " songs in the queue");
+            return;
+        }
+        else if (position < 0) {
+            event.reply("Please provide a valid number");
+            return;
+        }
+
         ts.setIndex(position - 1);
-        System.out.println(ts.getIndex());
         ts.getPlayer().stopTrack();
         ts.play(ts.nextTrack());
         EmbedBuilder eb = new EmbedBuilder();
@@ -59,8 +63,8 @@ public class JumpToSlash extends SlashCommand {
         eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
         eb.addField("Lenght", SafJNest.getFormattedDuration(ts.getPlayer().getPlayingTrack().getInfo().length) , true);
-        eb.setFooter("Requested by " + event.getMember().getEffectiveName(), event.getUser().getAvatarUrl());
+        eb.setFooter("Requested by " + event.getMember().getEffectiveName(), event.getAuthor().getAvatarUrl());
 
-        event.deferReply().addEmbeds(eb.build()).queue();
-	}
+        event.reply(eb.build());
+    }
 }
