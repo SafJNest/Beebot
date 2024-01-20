@@ -1,9 +1,9 @@
-package com.safjnest.SlashCommands.Audio;
+package com.safjnest.Commands.Queue;
 
 import java.awt.Color;
 
-import com.jagrosh.jdautilities.command.SlashCommand;
-import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.jagrosh.jdautilities.command.Command;
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
@@ -15,11 +15,10 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 
-
-public class SkipSlash extends SlashCommand{
+public class Skip extends Command{
     
-    public SkipSlash() {
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
+    public Skip() {
+        this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
         this.cooldown = new CommandsLoader().getCooldown(this.name);
@@ -28,14 +27,14 @@ public class SkipSlash extends SlashCommand{
     }
 
     @Override
-    protected void execute(SlashCommandEvent event) {
+    protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
+        User self = event.getSelfUser();
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
         AudioTrack nextTrack = ts.nextTrack();
         
         if(nextTrack == null) {
-            event.deferReply(false).addContent("This is the end of the queue").queue();
+            event.reply("This is the end of the queue");
             return;
         }
 
@@ -52,6 +51,6 @@ public class SkipSlash extends SlashCommand{
         eb.addField("Lenght", SafJNest.getFormattedDuration(ts.getPlayer().getPlayingTrack().getInfo().length) , true);
         eb.setFooter("Requested by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
 
-        event.deferReply(false).addEmbeds(eb.build()).queue();
+        event.reply(eb.build());
     }
 }

@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Audio;
+package com.safjnest.Commands.Queue;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;

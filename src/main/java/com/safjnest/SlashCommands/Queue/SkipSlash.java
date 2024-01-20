@@ -1,7 +1,6 @@
-package com.safjnest.SlashCommands.Audio;
+package com.safjnest.SlashCommands.Queue;
 
 import java.awt.Color;
-
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -17,9 +16,9 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 
 
-public class PreviousSlash extends SlashCommand{
+public class SkipSlash extends SlashCommand{
     
-    public PreviousSlash() {
+    public SkipSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -33,18 +32,18 @@ public class PreviousSlash extends SlashCommand{
         Guild guild = event.getGuild();
         User self = event.getJDA().getSelfUser();
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
-        AudioTrack prevTrack = ts.prevTrack();
+        AudioTrack nextTrack = ts.nextTrack();
         
-        if(prevTrack == null) {
-            event.deferReply(false).addContent("This is the beginning of the queue").queue();
+        if(nextTrack == null) {
+            event.deferReply(false).addContent("This is the end of the queue").queue();
             return;
         }
 
-        ts.playForce(prevTrack);
-        
+        ts.playForce(nextTrack);
+
         EmbedBuilder eb = new EmbedBuilder();
 
-        eb.setTitle("Previous Song:");
+        eb.setTitle("Skipped Song:");
         eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
