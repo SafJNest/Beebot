@@ -1,4 +1,4 @@
-package com.safjnest.SlashCommands.Audio;
+package com.safjnest.SlashCommands.Queue;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -9,9 +9,9 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 
 
-public class ResumeSlash extends SlashCommand {
+public class PauseSlash extends SlashCommand {
 
-    public ResumeSlash(){
+    public PauseSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -24,8 +24,8 @@ public class ResumeSlash extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
         User self = event.getJDA().getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().setPaused(false);
+        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().setPaused(true);
 
-        event.deferReply(false).addContent("Playing resumed").queue();
+        event.deferReply(false).addContent("Playing paused").queue();
     }
 }

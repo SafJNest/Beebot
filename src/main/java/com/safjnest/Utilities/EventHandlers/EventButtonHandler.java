@@ -7,10 +7,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.safjnest.Commands.Audio.Queue;
 import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
+import com.safjnest.Commands.Queue.Queue;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;
