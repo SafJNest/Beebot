@@ -2,12 +2,17 @@ package com.safjnest.Utilities.Bot;
 
 import java.util.HashMap;
 
+import org.springframework.stereotype.Component;
+
+
+
 
 /**
  * This class is used to store the data of all the bots and all of their attributes.
  * <p>This is usually setupped in the main class of the bot during the startup 
  * and the attributes are loaded in the {@link com.safjnest.Bot bot} class.</p>
  */
+@Component
 public class BotSettingsHandler {
     
     /**
@@ -32,6 +37,10 @@ public class BotSettingsHandler {
      */
     public synchronized void setSettings(BotSettings bs, String botId){
         map.put(botId, bs);
+    }
+
+    public BotSettings getSettings(String botId){
+        return map.get(botId);
     }
 
     public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {
