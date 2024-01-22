@@ -43,7 +43,7 @@ public class ApiController {
                 list += "{\"id\":\"" + g.getId() + "\",\"name\":\"" + g.getName() + "\" ,\"icon\":\"" + g.getIconUrl() + "\"},";
             } catch (Exception e) {
                
-            }
+            } 
         }
         list = list.substring(0, list.length()-1);
         return list + "]";
