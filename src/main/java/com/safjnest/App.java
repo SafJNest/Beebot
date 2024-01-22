@@ -40,6 +40,11 @@ public class App {
         return extremeTesting;
     }
 
+    public BotSettingsHandler getBotSettingsHandler() {
+        return bs;
+    }
+
+
     public static void main(String args[]) {
         
         SafJNest.bee();

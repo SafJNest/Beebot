@@ -188,7 +188,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         ExpSystem farm = new ExpSystem();
         
 
-        bs.setSettings(new BotSettings(botId, PREFIX, color), botId);
+        bs.setSettings(new BotSettings(botId, PREFIX, color, jda, gs), botId);
 
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(helpWord);
