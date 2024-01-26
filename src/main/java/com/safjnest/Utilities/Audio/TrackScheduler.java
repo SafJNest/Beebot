@@ -54,6 +54,11 @@ public class TrackScheduler extends AudioEventAdapter {
     private boolean isForced;
 
     /**
+     * If the player has been stopped.
+     */
+    private boolean isStopped;
+
+    /**
      * Creates a new TrackScheduler.
      * 
      * @param player The audio player.
@@ -67,6 +72,7 @@ public class TrackScheduler extends AudioEventAdapter {
         
         this.isRepeat = false;
         this.isForced = false;
+        this.isStopped = false;
     }
 
     /**
@@ -77,6 +83,7 @@ public class TrackScheduler extends AudioEventAdapter {
         if(player.isPaused()) {
             player.setPaused(false);
         }
+        isStopped = false;
         player.startTrack(track, true);
     }
 
@@ -89,7 +96,7 @@ public class TrackScheduler extends AudioEventAdapter {
             player.setPaused(false);
         }
         track.setPosition(position);
-        player.startTrack(track, true);
+        play(track);
     }
 
     /**
@@ -97,12 +104,8 @@ public class TrackScheduler extends AudioEventAdapter {
      * @param track
      */
     public void playForce(AudioTrack track, AudioType type) {
-        if(player.isPaused()) {
-            player.setPaused(false);
-        }
-
         isForced = (type == AudioType.SOUND);
-        player.startTrack(track, false);
+        playForce(track);
     }
 
     /**
@@ -125,11 +128,8 @@ public class TrackScheduler extends AudioEventAdapter {
      * @param position
      */
     public void playForce(AudioTrack track, long position) {
-        if(player.isPaused()) {
-            player.setPaused(false);
-        }
         track.setPosition(position);
-        player.startTrack(track, false);
+        playForce(track);
     }
 
     /**
@@ -263,7 +263,7 @@ public class TrackScheduler extends AudioEventAdapter {
             }
             else if (isForced) {
                 isForced = false;
-                if (currentTrackIndex != -1) {
+                if (currentTrackIndex != -1 && !isPaused() && !isStopped) {
                     play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition());
                 }
                 return;
@@ -276,9 +276,13 @@ public class TrackScheduler extends AudioEventAdapter {
             System.out.println("The time of thread has come to an end.");
         }
 
+        if (endReason == AudioTrackEndReason.STOPPED) {
+            isStopped = true;
+        }
+
         if(endReason == AudioTrackEndReason.REPLACED) {
             if(isForced) {
-                if (currentTrackIndex != -1) {
+                if (currentTrackIndex != -1 && !isPaused() && !isStopped) {
                     play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition());
                 }
             }
