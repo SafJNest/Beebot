@@ -1,10 +1,16 @@
 package com.safjnest.Utilities.Controller.Interface;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.safjnest.Utilities.Bot.BotSettings;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 
 import net.dv8tion.jda.api.JDA;
@@ -33,21 +40,28 @@ public class ApiController {
 
     @GetMapping("/{id}")
     public String getEmployeeById(@PathVariable String id) {
-        return bs.getSettings(id).prefix;
+        BotSettings settings = bs.getSettings(id);
+        if (settings == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
+        }
+        return settings.prefix;
     }
 
     @GetMapping("/{id}/guilds")
-    public String getEmployeeByIdAndGuilds(@PathVariable String id, @RequestBody List<String> ids) {
+    public ResponseEntity<List<Map<String, String>>> getEmployeeByIdAndGuilds(@PathVariable String id, @RequestBody List<String> ids) {
         JDA jda = bs.getSettings(id).getJda();
-        String list = "[";
+        List<Map<String, String>> guilds = new ArrayList<>();
         for(String guildId : ids){
             try {
-                Guild g = jda.getGuildById(guildId);                        
-                list += "{\"id\":\"" + g.getId() + "\",\"name\":\"" + g.getName() + "\" ,\"icon\":\"" + g.getIconUrl() + "\"},";
+                Guild g = jda.getGuildById(guildId);
+                Map<String, String> guildInfo = new HashMap<>();
+                guildInfo.put("id", g.getId());
+                guildInfo.put("name", g.getName());
+                guildInfo.put("icon", g.getIconUrl());
+                guilds.add(guildInfo);
             } catch (Exception ignored) { }
         }
-        list = list.substring(0, list.length()-1);
-        return list + "]";
+        return ResponseEntity.ok(guilds);
     }
 
     @PostMapping("/{id}/{guildId}/prefix")
@@ -59,6 +73,17 @@ public class ApiController {
         bs.getSettings(id).getGuildSettings().getServer(guildId).setPrefix(prefix);
         DatabaseHandler.setPrefix(guildId, id, prefix);
         return bs.getSettings(id).getGuildSettings().getServer(guildId).getPrefix();
+    }
+
+    @GetMapping("/{guildId}/leaderboard")//TODO: add user_info (icon, name, role)
+    public ResponseEntity<List<Map<String, String>>> getLeaderboard(@PathVariable String guildId) {
+        QueryResult leaderboard = DatabaseHandler.getUsersByExp(guildId, 0);
+        if(leaderboard.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No results");
+        }
+        return ResponseEntity.ok(leaderboard.toList());
+
+
     }
 
 
