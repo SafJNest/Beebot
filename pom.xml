@@ -76,7 +76,7 @@
       <version>4.13.1</version>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/com.sedmelluq/lavaplayer 
+    <!-- https://mvnrepository.com/artifact/com.sedmelluq/lavaplayer
     <dependency>
       <groupId>com.sedmelluq</groupId>
       <artifactId>lavaplayer</artifactId>
@@ -151,7 +151,7 @@
       <version>0.8</version>
       <type>jar</type>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss 
+    <!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss
     <dependency>
       <groupId>org.openhab.voice</groupId>
       <artifactId>org.openhab.voice.voicerss</artifactId>
@@ -290,5 +290,15 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>
