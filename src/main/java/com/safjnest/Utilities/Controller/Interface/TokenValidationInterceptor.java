@@ -1,5 +1,7 @@
 package com.safjnest.Utilities.Controller.Interface;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,10 +11,11 @@ public class TokenValidationInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String token = request.getHeader("Authorization");
+        if (token == null || token.equals("")) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token not found.");
+        }
         if (!isValidToken(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Figlio di troia non mi distruggi il bot, beebot its too safe to get hacked");
-            return false;
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unvalid token.");
         }
         return true;
     }
