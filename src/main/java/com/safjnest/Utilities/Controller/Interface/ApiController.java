@@ -2,13 +2,16 @@ package com.safjnest.Utilities.Controller.Interface;
 
 import java.util.List;
 
+import com.safjnest.Utilities.SQL.DatabaseHandler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 
@@ -41,19 +44,20 @@ public class ApiController {
             try {
                 Guild g = jda.getGuildById(guildId);                        
                 list += "{\"id\":\"" + g.getId() + "\",\"name\":\"" + g.getName() + "\" ,\"icon\":\"" + g.getIconUrl() + "\"},";
-            } catch (Exception e) {
-               
-            } 
+            } catch (Exception ignored) { }
         }
         list = list.substring(0, list.length()-1);
         return list + "]";
     }
 
     @PostMapping("/{id}/{guildId}/prefix")
-    public String setPrefix(@PathVariable String id, @PathVariable String guildId, @RequestBody String prefix) {
+    public String setPrefix(@PathVariable String id, @PathVariable String guildId, @RequestBody(required = false) String prefix) {
+        if (prefix == null || prefix.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prefix is required");
+        }
         prefix = prefix.replace("\"", "");
         bs.getSettings(id).getGuildSettings().getServer(guildId).setPrefix(prefix);
-        System.out.println(bs.getSettings(id).getGuildSettings().getServer(guildId).getPrefix());   
+        DatabaseHandler.setPrefix(guildId, id, prefix);
         return bs.getSettings(id).getGuildSettings().getServer(guildId).getPrefix();
     }
 
