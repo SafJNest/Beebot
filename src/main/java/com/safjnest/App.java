@@ -18,6 +18,7 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Bot.BotSettingsHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
+import com.safjnest.Utilities.PalWorld.PalHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import no.stelar7.api.r4j.basic.APICredentials;
@@ -62,9 +63,9 @@ public class App {
 
         SpringApplication app = new SpringApplication(App.class);
         app.setDefaultProperties(Collections.singletonMap("server.port", "8096"));
-        app.run(args);
+        //app.run(args);
         
-
+        new PalHandler();
 
         SecureRandom secureRandom = new SecureRandom();
         System.out.println("[System]: System Entropy: " + secureRandom.getProvider());//thx copilot
