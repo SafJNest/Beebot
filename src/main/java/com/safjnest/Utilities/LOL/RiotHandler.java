@@ -223,10 +223,10 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
     /**
-     * @deprecated
      * @param nameAccount
      * @return
      */
+    @Deprecated
     public static Summoner getSummonerByName(String nameAccount){
         try {
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, nameAccount);
