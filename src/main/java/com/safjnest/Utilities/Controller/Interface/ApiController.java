@@ -75,7 +75,49 @@ public class ApiController {
         return bs.getSettings(id).getGuildSettings().getServer(guildId).getPrefix();
     }
 
-    @GetMapping("/{guildId}/leaderboard")//TODO: add user_info (icon, name, role)
+    @GetMapping("/{id}/{guildId}")
+    public ResponseEntity<Map<String, String>> getGuild(@PathVariable String id, @PathVariable String guildId) {
+        BotSettings settings = bs.getSettings(id);
+        if (settings == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
+        }
+        JDA jda = settings.getJda();
+        Guild g = jda.getGuildById(guildId);
+        if (g == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid guild id. Try with another id.");
+        }
+        Map<String, String> guildInfo = new HashMap<>();
+        guildInfo.put("id", g.getId());
+        guildInfo.put("name", g.getName());
+        guildInfo.put("icon", g.getIconUrl());
+        return ResponseEntity.ok(guildInfo);
+    }
+
+    @GetMapping("/{id}/{guildId}/users")
+    public ResponseEntity<List<Map<String, String>>> getUsers(@PathVariable String id, @PathVariable String guildId) {
+        BotSettings settings = bs.getSettings(id);
+        if (settings == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
+        }
+        JDA jda = settings.getJda();
+        Guild g = jda.getGuildById(guildId);
+        if (g == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid guild id. Try with another id.");
+        }
+        List<Map<String, String>> users = new ArrayList<>();
+        for (net.dv8tion.jda.api.entities.Member m : g.getMembers()) {
+            Map<String, String> userInfo = new HashMap<>();
+            userInfo.put("id", m.getId());
+            userInfo.put("nickname", m.getNickname());
+            userInfo.put("name", m.getUser().getName());
+            userInfo.put("icon", m.getUser().getAvatarUrl());
+            users.add(userInfo);
+        }
+
+        return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/{guildId}/leaderboard")
     public ResponseEntity<List<Map<String, String>>> getLeaderboard(@PathVariable String guildId) {
         QueryResult leaderboard = DatabaseHandler.getUsersByExp(guildId, 0);
         if(leaderboard.isEmpty()) {
