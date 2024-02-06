@@ -513,6 +513,9 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getUsersByExp(String guild_id, int limit) {
+        if (limit == 0) {
+            return safJQuery("SELECT user_id, messages, level, exp from experience WHERE guild_id = '" + guild_id + "' order by exp DESC;");
+        }
         return safJQuery("SELECT user_id, messages, level, exp from experience WHERE guild_id = '" + guild_id + "' order by exp DESC limit " + limit + ";");
     }
 

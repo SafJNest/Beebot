@@ -5,11 +5,13 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
@@ -21,6 +23,7 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
 
+@SpringBootApplication
 public class App {
     public static ArrayList<Thread> botsArr = new ArrayList<>(); 
     private static TTSHandler tts;
@@ -31,11 +34,16 @@ public class App {
     /**
      * Insane beebot core
      */
-    private static boolean extremeTesting = false;
+    private static boolean extremeTesting = true;
 
     public static boolean isExtremeTesting() {
         return extremeTesting;
     }
+
+    public BotSettingsHandler getBotSettingsHandler() {
+        return bs;
+    }
+
 
     public static void main(String args[]) {
         
@@ -51,6 +59,12 @@ public class App {
                 System.out.println("[INFO] Beebot is set to normal mode");
             }
         }
+
+        SpringApplication app = new SpringApplication(App.class);
+        app.setDefaultProperties(Collections.singletonMap("server.port", "8096"));
+        app.run(args);
+        
+
 
         SecureRandom secureRandom = new SecureRandom();
         System.out.println("[System]: System Entropy: " + secureRandom.getProvider());//thx copilot
@@ -84,8 +98,9 @@ public class App {
         } catch (Exception e) {
             System.out.println("[R4J] INFO Annodam Not Successful!");
         }
-
+        
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
+
         waitingTime = Integer.parseInt(settings.get("waitingTime").toString());
 
         System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());

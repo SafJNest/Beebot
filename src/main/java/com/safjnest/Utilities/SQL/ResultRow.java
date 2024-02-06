@@ -98,4 +98,8 @@ public class ResultRow {
             sb.append(col.getKey()).append(": ").append(col.getValue());
         return sb.toString();
     }
+
+    public Map<String, String> getAsMap() {
+        return row;
+    }
 }

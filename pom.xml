@@ -7,7 +7,7 @@
 
   <groupId>com.safjnest</groupId>
   <artifactId>beebox</artifactId>
-  <version>5.1-SNAPSHOT</version>
+  <version>6.0-SNAPSHOT</version>
 
   <name>TheBeebox</name>
 
@@ -16,6 +16,8 @@
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
   </properties>
+
+
 
   <repositories>
     <repository>
@@ -37,6 +39,32 @@
 
 
   <dependencies>
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-parent</artifactId>
+  <version>3.2.1</version>
+  <type>pom</type>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-web</artifactId>
+  <version>3.2.1</version>
+</dependency>
+
+
+<dependency>
+  <groupId>com.h2database</groupId>
+  <artifactId>h2</artifactId>
+  <version>2.2.224</version>
+  <scope>runtime</scope>
+</dependency>
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+    <version>3.2.1</version>
+  </dependency>
+
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
@@ -48,7 +76,7 @@
       <version>4.13.1</version>
       <scope>test</scope>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/com.sedmelluq/lavaplayer 
+    <!-- https://mvnrepository.com/artifact/com.sedmelluq/lavaplayer
     <dependency>
       <groupId>com.sedmelluq</groupId>
       <artifactId>lavaplayer</artifactId>
@@ -88,12 +116,12 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <version>1.7.36</version>
+      <version>2.0.11</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>1.7.36</version>
+      <version>2.0.11</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
     <dependency>
@@ -123,7 +151,7 @@
       <version>0.8</version>
       <type>jar</type>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss 
+    <!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss
     <dependency>
       <groupId>org.openhab.voice</groupId>
       <artifactId>org.openhab.voice.voicerss</artifactId>
@@ -146,7 +174,7 @@
     <dependency>
 	    <groupId>com.github.stelar7</groupId>
 	    <artifactId>R4J</artifactId>
-	    <version>2.4.5</version>
+	    <version>2.4.3</version>
 	  </dependency>
     <!-- https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client -->
     <dependency>
@@ -194,9 +222,17 @@
           <version>3.0.2</version>
         </plugin>
         <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
-        </plugin>
+          <version>3.8.1</version>
+          <configuration>
+              <source>1.8</source>
+              <target>1.8</target>
+              <compilerArgs>
+                  <arg>-parameters</arg>
+              </compilerArgs>
+          </configuration>
+      </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.22.1</version>
@@ -254,5 +290,15 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
+    </plugins>
   </build>
 </project>
