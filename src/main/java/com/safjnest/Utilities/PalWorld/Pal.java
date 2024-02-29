@@ -12,7 +12,7 @@ public class Pal {
 
     private String[] types;
 
-    private HashMap<String, HashMap<String, String>> suitability;
+    private HashMap<String, String> suitability;
 
     private String aura;
     private String auraDescription;
