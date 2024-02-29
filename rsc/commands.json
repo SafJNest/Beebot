@@ -690,7 +690,7 @@
         "arguments" : "[CommandName]"
     },
 
-    "bugsnotifier":{
+    "bug":{
         "alias" : ["baco", "bughi", "report", "rep", "bugs", "reptail96", "reptail", "rep066", "moonny", "moonnypunto", "repthebread", "repologameplay", "repologaming"],
         "help"  : "Report a bug to the developer.",
         "category" : "Miscellaneous",
