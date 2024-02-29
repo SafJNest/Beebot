@@ -4,7 +4,6 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.Permission;
 
@@ -37,8 +36,7 @@ public class Prefix extends Command{
         }
         String guildId = event.getGuild().getId();
         
-        if(DatabaseHandler.updatePrefix(guildId, event.getSelfUser().getId(), prefix)){
-            gs.getServer(guildId).setPrefix(prefix);
+        if(gs.getServer(guildId).setPrefix(prefix)){
             event.reply("The new prefix is: " + prefix);
         }
         else

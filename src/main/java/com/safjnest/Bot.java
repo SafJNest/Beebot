@@ -248,18 +248,18 @@ public class Bot extends ListenerAdapter implements Runnable {
             );
         
         if(threadName.equals("beebot") || threadName.equals("beebot canary"))
-            Collections.addAll(commandsList, new Leaderboard(), new Test());
+            Collections.addAll(commandsList, new Leaderboard(), new Test(gs));
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new PingSlash(), new BugsNotifierSlash(), new HelpSlash(gs), new PrefixSlash(gs));
+        Collections.addAll(slashCommandsList, new PingSlash(), new BugSlash(), new HelpSlash(gs), new PrefixSlash(gs));
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(slashCommandsList, new SummonerSlash(), new AugmentSlash(), new FreeChampSlash(), 
                 new LivegameSlash(riotApi), new LastMatchesSlash(riotApi), 
                 new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
-                new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey)
+                new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey), new SpecialCharSlash()
             );
         
         if(beebotsAll.contains(threadName) || threadName.equals("beebot moderation"))

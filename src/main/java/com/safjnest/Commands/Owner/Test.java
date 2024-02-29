@@ -11,6 +11,7 @@ import java.util.TimerTask;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -39,7 +40,9 @@ import java.sql.SQLException;
  */
 public class Test extends Command{
 
-    public Test(){
+    private GuildSettings gs;
+
+    public Test(GuildSettings gs){
         this.name = "test";
         this.aliases = new String[]{"wip"};
         this.help = "";
@@ -47,6 +50,7 @@ public class Test extends Command{
         this.arguments = "faker";
         this.ownerCommand = true;
         this.hidden = true;
+        this.gs = gs;
     }
 
     @Override
@@ -184,6 +188,9 @@ public class Test extends Command{
                     e1.printStackTrace();
                 }
             break;
+            case 12:
+                System.out.println(gs.getServer(e.getGuild().getId()).getBlacklistData().toString());
+                break;
             default:
                 e.reply("Command does not exist.");
             break;
