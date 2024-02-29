@@ -38,23 +38,9 @@ public class GuildData {
      */
     private HashMap<Long, Room> rooms;
 
-    /**
-     * Threshold for blacklist
-     */
-    private int threshold;
+    private String botId;
 
-
-    /**
-     * Blacklist Channel
-     */
-    private String blackChannelId;
-
-
-    /**
-     * Flag to toggle the blacklist
-     */
-    private boolean blacklist_enabled;
-
+    private BlacklistData blacklistData;
 
     /**
      * 
@@ -65,13 +51,11 @@ public class GuildData {
      * @param channel
      * @param blacklist_enabled
      */
-    public GuildData(Long id, String prefix, boolean expSystem, int threshold, String channel, boolean blacklist_enabled) {
+    public GuildData(Long id, String prefix, boolean expSystem, String botId) {
         this.id = id;
         this.prefix = prefix;
         this.expSystem = expSystem;
-        this.threshold = threshold;
-        this.blackChannelId = channel;
-        this.blacklist_enabled = blacklist_enabled;
+        this.botId = botId;
         loadRooms();
     }
 
@@ -84,9 +68,6 @@ public class GuildData {
         this.id = id;
         this.prefix = prefix;
         this.expSystem = false;
-        this.threshold = 0;
-        this.blackChannelId = null;
-        this.blacklist_enabled = false;
         loadRooms();
     }
 
@@ -102,24 +83,54 @@ public class GuildData {
         return expSystem;
     }
 
+    public String getBotId() {
+        return botId;
+    }
+
+    public BlacklistData getBlacklistData() {
+        if (this.blacklistData == null) {
+            BlacklistData bd = null;
+            ResultRow result = DatabaseHandler.getGuildData(String.valueOf(id), botId);
+            System.out.println("[CACHE] Retriving BlacklistData from database => " + id);
+            bd = new BlacklistData(
+                result.getAsInt("threshold"),
+                result.get("blacklist_channel"),
+                result.getAsBoolean("blacklist_enabled"),
+                this
+            );
+            this.blacklistData = bd;
+        }
+        return this.blacklistData;
+    }
+
+    public boolean setBlackListData(int threshold, String blackChannelId) {
+        this.blacklistData = new BlacklistData(threshold, blackChannelId, true, this);
+        return this.blacklistData.update();
+    }
+
+
     public int getThreshold() {
-        return threshold;
+        return getBlacklistData().getThreshold();
     }
 
     public String getBlackChannelId() {
-        return blackChannelId;
+        return getBlacklistData().getBlackChannelId();
     }
 
-    public synchronized void setBlackChannel(String blackChannel) {
-        this.blackChannelId = blackChannel;
+    public synchronized boolean setBlackChannel(String blackChannel) {
+        return getBlacklistData().setBlackChannelId(blackChannel);
     }
 
-    public synchronized void setThreshold(int threshold) {
-        this.threshold = threshold;
+    public synchronized boolean setThreshold(int threshold) {
+        return getBlacklistData().setThreshold(threshold);
     }
 
-    public synchronized void setPrefix(String prefix) {
-        this.prefix = prefix;
+    public synchronized boolean setPrefix(String prefix) {
+        boolean result = DatabaseHandler.updatePrefix(String.valueOf(id), botId, prefix);
+        if (result) {
+            this.prefix = prefix;
+        }
+        return result;
     }
 
     public synchronized void setExpSystem(boolean expSystem) {
@@ -191,11 +202,11 @@ public class GuildData {
     }
 
     public boolean blacklistEnabled() {
-        return blacklist_enabled;
+        return getBlacklistData().isBlacklistEnabled();
     }
     
-    public void setBlacklistEnabled(boolean blacklist_enabled) {
-        this.blacklist_enabled = blacklist_enabled;
+    public boolean setBlacklistEnabled(boolean blacklist_enabled) {
+        return getBlacklistData().setBlacklistEnabled(blacklist_enabled);
     }
     
 }

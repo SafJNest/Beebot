@@ -83,11 +83,8 @@ public class GuildSettings {
         Long guildId = guildData.getAsLong("guild_id");
         String PREFIX = guildData.get("prefix");
         boolean expEnabled = guildData.getAsBoolean("exp_enabled");
-        int threshold = guildData.getAsInt("threshold");
-        String blacklistChannel = guildData.get("blacklist_channel");
-        boolean blacklist_enabled = guildData.getAsBoolean("blacklist_enabled");
 
-        GuildData guild = new GuildData(guildId, PREFIX, expEnabled, threshold, blacklistChannel, blacklist_enabled);
+        GuildData guild = new GuildData(guildId, PREFIX, expEnabled, botId);
         saveData(guild);
         return guild;
     }
@@ -111,11 +108,8 @@ public class GuildSettings {
            Long guildId = guildData.getAsLong("guild_id");
             String PREFIX = guildData.get("prefix");
             boolean expEnabled = guildData.getAsBoolean("exp_enabled");
-            int threshold = guildData.getAsInt("threshold");
-            String blacklistChannel = guildData.get("blacklist_channel");
-            boolean blacklist_enabled = guildData.getAsBoolean("blacklist_enabled");
 
-            GuildData guild = new GuildData(guildId, PREFIX, expEnabled, threshold, blacklistChannel, blacklist_enabled);
+            GuildData guild = new GuildData(guildId, PREFIX, expEnabled, botId);
             saveData(guild);
         }
     }
@@ -124,7 +118,7 @@ public class GuildSettings {
         DatabaseHandler.insertGuild(guildId, botId, PREFIX);
         System.out.println("[ERROR] Missing guild in database => " + guildId);
 
-        GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false, 0, null, false);
+        GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false, botId);
         saveData(guild);
         return guild;
     }
