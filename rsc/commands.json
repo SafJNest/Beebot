@@ -742,6 +742,14 @@
         "arguments" : "[apod]"
     },
 
+    "specialchar":{
+        "alias" : [],
+        "help"  : "Show all special characters.",
+        "longhelp" : "Show all special characters.",
+        "category" : "Miscellaneous",
+        "arguments" : "[specialchar]"
+    },
+
 
 
 
