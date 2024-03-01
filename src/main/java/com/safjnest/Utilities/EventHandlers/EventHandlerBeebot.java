@@ -1,8 +1,10 @@
 package com.safjnest.Utilities.EventHandlers;
 
+import com.safjnest.Utilities.Bot.Guild.GuildData;
+import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
-import com.safjnest.Utilities.Guild.GuildData;
-import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
 
@@ -77,18 +79,14 @@ public class EventHandlerBeebot extends ListenerAdapter {
             channel.sendMessage(message).queue();
             return;
         }
-        
-        ResultRow alert = DatabaseHandler.getAlert(guild.getId(), e.getJDA().getSelfUser().getId());
 
-        if(!alert.getAsBoolean("levelup_enabled"))
-            return;
-
-        if (alert.get("levelup_message") == null){
+        AlertData alert = guildData.getAlert(AlertType.LEVEL_UP);
+        if (alert == null || !alert.isValid()) {
             channel.sendMessage("Congratulations, you are now level: " + lvl).queue();
             return;
         }
 
-        String message = alert.get("levelup_message");
+        String message = alert.getMessage();
         message = message.replace("#user", newGuy.getAsMention());
         message = message.replace("#level", String.valueOf(lvl));
         e.getChannel().asTextChannel().sendMessage(message).queue();

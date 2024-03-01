@@ -1,10 +1,11 @@
-package com.safjnest.Utilities.Guild;
+package com.safjnest.Utilities.Bot.Guild;
+
 
 
 import java.util.HashMap;
 
-import com.safjnest.Utilities.Guild.Alert.AlertData;
-import com.safjnest.Utilities.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -103,6 +104,18 @@ public class GuildData {
 
     public AlertData getAlert(AlertType type) {
         return getAlerts().get(type);
+    }
+
+    public AlertData getWelcome() {
+        return getAlert(AlertType.WELCOME);
+    }
+
+    public boolean deleteAlert(AlertType type) {
+        AlertData toDelete = getAlerts().remove(type);
+        if (toDelete == null) {
+            return false;
+        }
+        return toDelete.terminator4LaRinascita();
     }
 
     public BlacklistData getBlacklistData() {

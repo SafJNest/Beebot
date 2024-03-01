@@ -9,6 +9,9 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
 
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+
 /**
  * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
  * of the biggest caterpies ever made
@@ -65,7 +68,7 @@ public class DatabaseHandler {
             while (rs.next()) {
                 ResultRow beeRow = new ResultRow();
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                    String columnName = rsmd.getColumnName(i);
+                    String columnName = rsmd.getColumnLabel(i);
                     String columnValue = rs.getString(i);
                     beeRow.put(columnName, columnValue);
                 }
@@ -764,12 +767,33 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getAlerts(String guild_id, String bot_id) {
-        return safJQuery("SELECT ID, message, channel, enabled, type FROM alert2 WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+        return safJQuery("SELECT id, message, channel, enabled, type FROM alert2 WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
 
     public static QueryResult getAlertsRoles(String guild_id, String bot_id) {
-        System.out.println("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert2 as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "' AND a.bot_id = '" + bot_id + "';");
         return safJQuery("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert2 as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "' AND a.bot_id = '" + bot_id + "';");
+    }
+
+    public static int createAlert(String guild_id, String bot_id, String message, String channelId, AlertType type) {
+        int id = 0;
+        try (Statement stmt = c.createStatement()) {
+            runQuery(stmt, "INSERT INTO alert2(guild_id, bot_id, message, channel, enabled, type) VALUES('" + guild_id + "','" + bot_id + "','" + message + "','" + channelId + "', 1, '" + type.ordinal() + "');");
+            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+            c.commit();
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+        }
+        return id;
+    }
+
+    public static boolean deleteAlert(String valueOf) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'deleteAlert'");
     }
 
 

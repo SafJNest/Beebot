@@ -9,7 +9,9 @@ import java.util.List;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -336,19 +338,20 @@ public class EventHandler extends ListenerAdapter {
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         MessageChannel channel = null;
         User newGuy = event.getUser();
-        ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
 
-        String channel_id = alert.get("welcome_channel");
-        if(channel_id == null || !alert.getAsBoolean("welcome_enabled"))
+        AlertData welcome = gs.getServer(event.getGuild().getId()).getAlert(AlertType.WELCOME);
+        if(welcome == null || !welcome.isValid())
             return;
 
+        String channel_id = welcome.getChannelId();
+
         channel = event.getGuild().getTextChannelById(channel_id);
-        String message = alert.get("welcome_message").replace("#user", newGuy.getAsMention());
+        String message = welcome.getMessage().replace("#user", newGuy.getAsMention());
 
         channel.sendMessage(message).queue();
 
-        if(alert.get("welcome_role") != null)
-            event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRoleById(alert.get("welcome_role"))).queue();
+        // if(alert.get("welcome_role") != null)
+        //     event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRoleById(alert.get("welcome_role"))).queue();
             
         /* 
         ArrayList<String> roles = sql.getAllRowsSpecifiedColumn(query, "role_id");
