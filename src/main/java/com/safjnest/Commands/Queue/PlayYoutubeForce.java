@@ -6,7 +6,7 @@ import java.util.Collections;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -93,7 +93,7 @@ public class PlayYoutubeForce extends Command {
             eb.setTitle("Added to play:");
             eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
             eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+            eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
             eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
 
             event.reply(eb.build());
@@ -113,7 +113,7 @@ public class PlayYoutubeForce extends Command {
                 eb.setTitle("Added to play:");
                 eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
                 eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
                 eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
 
                 event.reply(eb.build());
@@ -134,7 +134,7 @@ public class PlayYoutubeForce extends Command {
                 eb.setTitle("Playlist added to play:");
                 eb.setDescription("[" + playlist.getName() + "](" + args + ")");
                 //eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
                 eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
 
                 event.reply(eb.build());

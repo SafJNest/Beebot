@@ -12,8 +12,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotCommand;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -158,7 +158,7 @@ public class HelpSlash extends SlashCommand {
 
             eb.setFooter("In arguments [] is a required field and () is an optional field", null);
         }
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", event.getJDA().getSelfUser().getAvatarUrl());
         event.deferReply(false).addEmbeds(eb.build()).queue();
     }

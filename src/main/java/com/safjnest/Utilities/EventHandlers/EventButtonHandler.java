@@ -14,7 +14,7 @@ import com.safjnest.Commands.Queue.Queue;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -556,7 +556,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setTitle("List of " + event.getGuild().getName());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setDescription("Total Sound: " + sounds.size());
         
         
@@ -644,7 +644,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setTitle("List of " + event.getJDA().getUserById(userId).getName());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setDescription("Total Sound: " + sounds.size());
         
 
@@ -764,7 +764,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setTitle(theGuy.getUser().getName() + " has been banned");
         eb.setThumbnail(theGuy.getUser().getAvatarUrl());
         eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         Button pardon = Button.primary("unban-" + theGuy.getId(), "Pardon");
         event.getGuild().ban(theGuy, 0, TimeUnit.SECONDS).reason("Entered the blacklist").queue(
                     (e) -> event.getMessage().editMessageEmbeds(eb.build()).setActionRow(pardon).queue(),
@@ -794,7 +794,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setTitle(theGuy.getUser().getName() + " has been kicked");
         eb.setThumbnail(theGuy.getUser().getAvatarUrl());
         eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         event.getGuild().kick(theGuy).reason("Entered the blacklist").queue(
             (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(),
             new ErrorHandler().handle(
@@ -824,7 +824,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setTitle(theGuy.getName() + " has been unbanned");
         eb.setThumbnail(theGuy.getAvatarUrl());
         eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
         event.getGuild().unban(theGuy).queue(
             (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(), 

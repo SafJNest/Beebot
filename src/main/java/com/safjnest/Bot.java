@@ -34,15 +34,15 @@ import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.command.SlashCommand;
 
 import com.safjnest.Utilities.*;
-import com.safjnest.Utilities.Bot.BotSettings;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotData;
+import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.GuildData;
+import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
-import com.safjnest.Utilities.Guild.GuildData;
-import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Owner.*;
@@ -102,7 +102,7 @@ import no.stelar7.api.r4j.impl.R4J;
  * @version 4.0
  */
 public class Bot extends ListenerAdapter implements Runnable {
-    private BotSettingsHandler bs;
+    private BotDataHandler bs;
 
     private JDA jda;
     public String PREFIX;
@@ -123,7 +123,7 @@ public class Bot extends ListenerAdapter implements Runnable {
     private R4J riotApi;
     private GuildSettings gs;
 
-    public Bot(BotSettingsHandler bs, TTSHandler tts,  R4J riotApi) {
+    public Bot(BotDataHandler bs, TTSHandler tts,  R4J riotApi) {
         this.tts = tts;
         this.riotApi = riotApi;
         this.bs = bs;
@@ -188,7 +188,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         ExpSystem farm = new ExpSystem();
         
 
-        bs.setSettings(new BotSettings(botId, PREFIX, color, jda, gs), botId);
+        bs.setSettings(new BotData(botId, PREFIX, color, jda, gs), botId);
 
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(helpWord);

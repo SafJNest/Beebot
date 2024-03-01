@@ -6,7 +6,7 @@ import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -43,7 +43,7 @@ public class Queue extends Command{
     public static EmbedBuilder getEmbed(JDA jda, Guild guild, LinkedList<AudioTrack> queue, int startIndex) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(guild.getName() + " current queue");
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(jda.getSelfUser().getId()).color));
+        eb.setColor(Color.decode(BotDataHandler.map.get(jda.getSelfUser().getId()).color));
         eb.setThumbnail(guild.getIconUrl());
 
         AudioTrack playingNow = null;

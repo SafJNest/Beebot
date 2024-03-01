@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -51,7 +51,7 @@ public class RewardsSlash extends SlashCommand {
         eb.setTitle("Rewards");
         eb.setThumbnail(guild.getIconUrl());
         
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(hook.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(BotDataHandler.map.get(hook.getJDA().getSelfUser().getId()).color));
         eb.setDescription("Create custom rewards for your guild.\n" 
             + "Just prepare a role that you want to give to people that reach a certain level in this guild and click the \"+\" button\n" 
             + "You have to have the Exp System enabled to be able to level up. You can enable it with /levelup toggle:true.");
@@ -82,7 +82,7 @@ public class RewardsSlash extends SlashCommand {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Rewards");
         eb.setThumbnail(guild.getIconUrl());
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(message.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(BotDataHandler.map.get(message.getJDA().getSelfUser().getId()).color));
         eb.setDescription("Create custom rewards for your guild.\n" 
             + "Just prepare a role that you want to give to people that reach a certain level in this guild and click the \"+\" button\n" 
             + "You have to have the Exp System enabled to be able to level up. You can enable it with /levelup toggle:true.");

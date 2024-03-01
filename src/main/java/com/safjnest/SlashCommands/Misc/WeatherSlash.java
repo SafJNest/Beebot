@@ -16,7 +16,7 @@ import org.json.simple.parser.JSONParser;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -100,7 +100,7 @@ public class WeatherSlash extends SlashCommand {
         eb.setTitle("**Weather in **" + locationName);
         eb.setDescription(conditionText);
         eb.setThumbnail("https:" + iconURL);
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
         eb.addField("Temperature", temp_c + " C", true);
         eb.addField("Feels like", feelslike_c + " C", true);

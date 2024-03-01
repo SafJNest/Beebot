@@ -12,9 +12,9 @@ import java.util.TimerTask;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.Guild.Alert.AlertData;
-import com.safjnest.Utilities.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -31,6 +31,8 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
+import org.json.simple.JSONObject;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -196,9 +198,7 @@ public class Test extends Command{
                 break;
             case 13:
                 HashMap<AlertType, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
-                for(AlertType at : prova.keySet()){
-                    System.out.println(prova.get(at).toString());
-                }
+                System.out.println(new JSONObject(prova).toString());
                 break;
             default:
                 e.reply("Command does not exist.");

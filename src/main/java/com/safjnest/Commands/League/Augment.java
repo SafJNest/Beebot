@@ -6,7 +6,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -42,7 +42,7 @@ public class Augment extends Command {
 
         EmbedBuilder eb = new EmbedBuilder();
         
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         
         AugmentData augment = null;
         for(AugmentData a : augments){

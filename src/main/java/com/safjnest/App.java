@@ -16,7 +16,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.PalWorld.PalHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -29,7 +29,7 @@ public class App {
     public static ArrayList<Thread> botsArr = new ArrayList<>(); 
     private static TTSHandler tts;
     private static R4J riotApi;
-    private static BotSettingsHandler bs;
+    private static BotDataHandler bs;
     public static String key;
 
     /**
@@ -41,7 +41,7 @@ public class App {
         return extremeTesting;
     }
 
-    public BotSettingsHandler getBotSettingsHandler() {
+    public BotDataHandler getBotSettingsHandler() {
         return bs;
     }
 
@@ -107,7 +107,7 @@ public class App {
         System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
         System.out.println("[EPRIA] ID " + PermissionHandler.getEpria());
 
-        bs = new BotSettingsHandler();
+        bs = new BotDataHandler();
 
         if(!isExtremeTesting()) {
             try {

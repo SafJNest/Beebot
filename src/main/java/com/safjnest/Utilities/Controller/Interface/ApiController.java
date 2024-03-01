@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.Utilities.Bot.BotSettings;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotData;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -31,16 +31,16 @@ import net.dv8tion.jda.api.entities.Guild;
 @RequestMapping("/api")
 public class ApiController {
     
-    private BotSettingsHandler bs;
+    private BotDataHandler bs;
 
     @Autowired
-    public ApiController(BotSettingsHandler bs) {
+    public ApiController(BotDataHandler bs) {
         this.bs = bs;
     }
 
     @GetMapping("/{id}")
     public String getEmployeeById(@PathVariable String id) {
-        BotSettings settings = bs.getSettings(id);
+        BotData settings = bs.getSettings(id);
         if (settings == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
         }
@@ -77,7 +77,7 @@ public class ApiController {
 
     @GetMapping("/{id}/{guildId}")
     public ResponseEntity<Map<String, String>> getGuild(@PathVariable String id, @PathVariable String guildId) {
-        BotSettings settings = bs.getSettings(id);
+        BotData settings = bs.getSettings(id);
         if (settings == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
         }
@@ -95,7 +95,7 @@ public class ApiController {
 
     @GetMapping("/{id}/{guildId}/users")
     public ResponseEntity<List<Map<String, String>>> getUsers(@PathVariable String id, @PathVariable String guildId) {
-        BotSettings settings = bs.getSettings(id);
+        BotData settings = bs.getSettings(id);
         if (settings == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
         }
