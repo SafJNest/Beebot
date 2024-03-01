@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Guild;
+package com.safjnest.Utilities.Bot.Guild;
 
 /**
  * Class that stores all the settings for a guild.

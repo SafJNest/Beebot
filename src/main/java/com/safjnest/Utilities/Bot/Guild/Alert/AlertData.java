@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Guild.Alert;
+package com.safjnest.Utilities.Bot.Guild.Alert;
 
 import java.util.HashMap;
 
@@ -21,6 +21,18 @@ public class AlertData {
         this.type = type;
         this.roles = roles;
     }
+
+    public AlertData(String guild_id, String bot_id, String message, String channelId, boolean enabled, AlertType type) {
+        this.ID = DatabaseHandler.createAlert(guild_id, bot_id, message, channelId, type);
+        this.message = message;
+        this.channelId = channelId;
+        this.enabled = enabled;
+        this.type = type;
+    }
+
+    public boolean isValid() {
+        return this.message != null && (this.type == AlertType.LEVEL_UP ||  this.channelId != null) && this.enabled;
+    }
     
     public boolean setMessage(String message) {
         boolean result = DatabaseHandler.setAlertMessage(String.valueOf(this.ID), message);
@@ -31,7 +43,7 @@ public class AlertData {
     }
 
     public boolean setAlertChannel(String channelId) {
-        boolean result = DatabaseHandler.setAlertMessage(String.valueOf(this.ID), channelId);
+        boolean result = DatabaseHandler.setAlertChannel(String.valueOf(this.ID), channelId);
         if (result) {
             this.channelId = channelId;
         }
@@ -44,6 +56,10 @@ public class AlertData {
             this.enabled = enabled;
         }
         return result;
+    }
+
+    public boolean terminator4LaRinascita() {
+        return DatabaseHandler.deleteAlert(String.valueOf(this.ID));
     }
 
 
