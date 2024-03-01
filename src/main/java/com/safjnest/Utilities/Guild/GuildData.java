@@ -3,7 +3,8 @@ package com.safjnest.Utilities.Guild;
 
 import java.util.HashMap;
 
-
+import com.safjnest.Utilities.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Guild.Alert.AlertType;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -21,7 +22,9 @@ public class GuildData {
     /**
      * Server ID 
      */
-    private Long id;
+    private final Long ID;
+
+    private final String BOT_ID;
     
     /**
      * Prefix Server 
@@ -38,41 +41,20 @@ public class GuildData {
      */
     private HashMap<Long, Room> rooms;
 
-    private String botId;
-
     private BlacklistData blacklistData;
 
-    /**
-     * 
-     * @param id
-     * @param prefix
-     * @param expSystem
-     * @param threshold
-     * @param channel
-     * @param blacklist_enabled
-     */
+    private HashMap<AlertType, AlertData> alerts;
+
     public GuildData(Long id, String prefix, boolean expSystem, String botId) {
-        this.id = id;
+        this.ID = id;
         this.prefix = prefix;
         this.expSystem = expSystem;
-        this.botId = botId;
-        loadRooms();
-    }
-
-    /**
-     * Default constructor
-     * @param id
-     * @param prefix
-     */
-    public GuildData(Long id, String prefix) {
-        this.id = id;
-        this.prefix = prefix;
-        this.expSystem = false;
+        this.BOT_ID = botId;
         loadRooms();
     }
 
     public Long getId() {
-        return id;
+        return ID;
     }
 
     public String getPrefix() {
@@ -84,14 +66,50 @@ public class GuildData {
     }
 
     public String getBotId() {
-        return botId;
+        return BOT_ID;
+    }
+
+    public HashMap<AlertType, AlertData> getAlerts() {
+        if (this.alerts == null) {
+            this.alerts = new HashMap<>();
+            QueryResult result = DatabaseHandler.getAlerts(String.valueOf(ID), BOT_ID);
+            QueryResult result2 = DatabaseHandler.getAlertsRoles(String.valueOf(ID), BOT_ID);
+            
+            HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
+            for (ResultRow row : result2) {
+                int alertId = row.getAsInt("alert_id");
+                String roleId = row.get("role_id");
+                int rowId = row.getAsInt("row_id");
+                if (!roles.containsKey(alertId)) {
+                    roles.put(alertId, new HashMap<>());
+                }
+                roles.get(alertId).put(rowId, roleId);
+            }
+
+            for (ResultRow row : result) {
+                AlertData ad = new AlertData(
+                    row.getAsInt("id"),
+                    row.get("message"),
+                    row.get("channel"),
+                    row.getAsBoolean("enabled"),
+                    AlertType.values()[row.getAsInt("type")],
+                    roles.get(row.getAsInt("id"))
+                );
+                this.alerts.put(ad.getType(), ad);
+            }
+        }
+        return this.alerts;
+    }
+
+    public AlertData getAlert(AlertType type) {
+        return getAlerts().get(type);
     }
 
     public BlacklistData getBlacklistData() {
         if (this.blacklistData == null) {
             BlacklistData bd = null;
-            ResultRow result = DatabaseHandler.getGuildData(String.valueOf(id), botId);
-            System.out.println("[CACHE] Retriving BlacklistData from database => " + id);
+            ResultRow result = DatabaseHandler.getGuildData(String.valueOf(ID), BOT_ID);
+            System.out.println("[CACHE] Retriving BlacklistData from database => " + ID);
             bd = new BlacklistData(
                 result.getAsInt("threshold"),
                 result.get("blacklist_channel"),
@@ -126,7 +144,7 @@ public class GuildData {
     }
 
     public synchronized boolean setPrefix(String prefix) {
-        boolean result = DatabaseHandler.updatePrefix(String.valueOf(id), botId, prefix);
+        boolean result = DatabaseHandler.updatePrefix(String.valueOf(ID), BOT_ID, prefix);
         if (result) {
             this.prefix = prefix;
         }
@@ -138,7 +156,7 @@ public class GuildData {
     }
 
     public String toString(){
-        return "ID: " + id + "| Prefix: " + prefix + " |ExpSystem: " + expSystem;
+        return "ID: " + ID + "| Prefix: " + prefix + " |ExpSystem: " + expSystem;
     }
 
     /**
@@ -146,7 +164,7 @@ public class GuildData {
      */
     public void loadRooms(){
         rooms = new HashMap<>();
-        QueryResult result = DatabaseHandler.getRoomsData(String.valueOf(id));
+        QueryResult result = DatabaseHandler.getRoomsData(String.valueOf(ID));
         for(ResultRow row: result){;
             rooms.put(
                 row.getAsLong("room_id"),

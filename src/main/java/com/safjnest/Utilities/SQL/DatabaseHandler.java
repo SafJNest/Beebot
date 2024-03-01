@@ -545,9 +545,6 @@ public class DatabaseHandler {
                 + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + fixSQL(welcome_message) + "','" + "1" + "') "
                 + "ON DUPLICATE KEY UPDATE welcome_channel = '" + welcome_channel + "', welcome_message = '" + fixSQL(welcome_message) + "', welcome_enabled = '" + "1" + "';");
         }
-        System.out.println("INSERT INTO alert(guild_id, bot_id, welcome_channel, welcome_message, welcome_role, welcome_enabled)"
-            + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + fixSQL(welcome_message) + "','" + "1" + "') "
-            + "ON DUPLICATE KEY UPDATE welcome_channel = '" + welcome_channel + "', welcome_message = '" + fixSQL(welcome_message) + "', welcome_role = '" + welcome_role + "', welcome_enabled = '" + "1" + "';");
         return runQuery("INSERT INTO alert(guild_id, bot_id, welcome_channel, welcome_message, welcome_role, welcome_enabled)"
             + "VALUES('" + guild_id + "','" + bot_id + "','" + welcome_channel + "','" + fixSQL(welcome_message) + "','" + "1" + "') "
             + "ON DUPLICATE KEY UPDATE welcome_channel = '" + welcome_channel + "', welcome_message = '" + fixSQL(welcome_message) + "', welcome_role = '" + welcome_role + "', welcome_enabled = '" + "1" + "';");
@@ -753,6 +750,27 @@ public class DatabaseHandler {
         return fetchJRow("SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + user_id + "' AND (greeting.guild_id = '" + guild_id + "' OR greeting.guild_id = '0') AND greeting.bot_id = '" + bot_id + "' ORDER BY CASE WHEN greeting.guild_id = '0' THEN 1 ELSE 0 END LIMIT 1;");
     }
 
+
+    public static boolean setAlertMessage(String ID, String message) {
+        return runQuery("UPDATE alert2 SET message = '" + message + "' WHERE ID = '" + ID + "';");
+    }
+
+    public static boolean setAlertChannel(String ID, String channel) {
+        return runQuery("UPDATE alert2 SET channel = '" + channel + "' WHERE ID = '" + ID + "';");
+    }
+
+    public static boolean setAlertEnabled(String ID, boolean toggle) {
+        return runQuery("UPDATE alert2 SET enabled = '" + toggle + "' WHERE ID = '" + ID + "';");
+    }
+
+    public static QueryResult getAlerts(String guild_id, String bot_id) {
+        return safJQuery("SELECT ID, message, channel, enabled, type FROM alert2 WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+    }
+
+    public static QueryResult getAlertsRoles(String guild_id, String bot_id) {
+        System.out.println("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert2 as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "' AND a.bot_id = '" + bot_id + "';");
+        return safJQuery("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert2 as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "' AND a.bot_id = '" + bot_id + "';");
+    }
 
 
 

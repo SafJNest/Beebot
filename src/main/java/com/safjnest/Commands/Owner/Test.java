@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -12,6 +13,8 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Guild.Alert.AlertType;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -190,6 +193,12 @@ public class Test extends Command{
             break;
             case 12:
                 System.out.println(gs.getServer(e.getGuild().getId()).getBlacklistData().toString());
+                break;
+            case 13:
+                HashMap<AlertType, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
+                for(AlertType at : prova.keySet()){
+                    System.out.println(prova.get(at).toString());
+                }
                 break;
             default:
                 e.reply("Command does not exist.");
