@@ -9,9 +9,10 @@ import java.util.HashMap;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.Bot.Guild.GuildData;
+import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
-import com.safjnest.Utilities.Guild.GuildData;
-import com.safjnest.Utilities.Guild.GuildSettings;
+
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.utils.FileUpload;

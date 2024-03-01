@@ -8,7 +8,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -84,7 +84,7 @@ public class MemberInfo extends Command{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT " + name + "** :busts_in_silhouette:");
         eb.setThumbnail(mentionedMember.getEffectiveAvatarUrl());
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
         eb.addField("Name", "```" + name + "```", true);
 

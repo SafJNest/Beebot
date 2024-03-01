@@ -6,7 +6,7 @@ import java.io.File;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -44,7 +44,7 @@ public class FreeChamp extends Command {
             
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName());
-        eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         eb.setTitle("Current free champion rotation:");
 
         String s = "";

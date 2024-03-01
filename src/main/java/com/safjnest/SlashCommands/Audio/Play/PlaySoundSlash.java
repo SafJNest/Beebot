@@ -12,7 +12,7 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.SoundBoard;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -132,7 +132,7 @@ public class PlaySoundSlash extends SlashCommand{
             eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest", event.getMember().getAvatarUrl());
             eb.setTitle("Playing now:");
             eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
-            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+            eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
             eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
 
             eb.addField("Author", "```" 

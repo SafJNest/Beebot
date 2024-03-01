@@ -3,7 +3,7 @@ package com.safjnest.Utilities.EventHandlers;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.CommandListener;
-import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 public class CommandEventHandler implements CommandListener{

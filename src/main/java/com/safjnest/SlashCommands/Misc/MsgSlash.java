@@ -7,7 +7,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
@@ -61,7 +61,7 @@ public class MsgSlash extends SlashCommand {
         eb.setAuthor(author);
         eb.setDescription(event.getOption("msg").getAsString());
         eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
         if(event.getOption("anonym") != null && event.getOption("anonym").getAsBoolean()){
             theGuy.openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(
                 eb.build())

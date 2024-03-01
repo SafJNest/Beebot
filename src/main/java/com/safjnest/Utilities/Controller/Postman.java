@@ -1,7 +1,7 @@
 package com.safjnest.Utilities.Controller;
 
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
-import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -12,9 +12,9 @@ public class Postman {
 
     private GuildSettings gs;
 
-    private BotSettingsHandler bs;
+    private BotDataHandler bs;
 
-    public Postman(JDA jda, GuildSettings gs, BotSettingsHandler bs){
+    public Postman(JDA jda, GuildSettings gs, BotDataHandler bs){
 
         this.jda = jda;
         this.gs = gs;

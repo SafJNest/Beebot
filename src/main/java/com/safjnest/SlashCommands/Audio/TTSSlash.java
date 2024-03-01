@@ -14,7 +14,7 @@ import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -159,7 +159,7 @@ public class TTSSlash extends SlashCommand{
         
             eb.setTitle("Playing now:");
             eb.setDescription(event.getOption("text").getAsString());
-            eb.setColor(Color.decode(BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+            eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
             eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
             eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest", event.getMember().getAvatarUrl());
             

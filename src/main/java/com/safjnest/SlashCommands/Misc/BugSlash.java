@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Bot.BotSettingsHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
@@ -42,7 +42,7 @@ public class BugSlash extends SlashCommand {
         eb.setThumbnail(event.getUser().getAvatarUrl());
         eb.setDescription(event.getOption("text").getAsString());
         eb.setColor(Color.decode(
-                BotSettingsHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
 
         PermissionHandler.getUntouchables().forEach((id) -> event.getJDA().retrieveUserById(id).complete().openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(eb.build()).queue()));
         event.deferReply(true).addContent("Message sent successfuly").queue();
