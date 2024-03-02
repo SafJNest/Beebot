@@ -12,6 +12,7 @@ import java.util.TimerTask;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.Bot.Guild.BlacklistData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
@@ -198,7 +199,17 @@ public class Test extends Command{
                 break;
             case 13:
                 HashMap<AlertType, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
-                System.out.println(new JSONObject(prova).toString());
+                String s = new JSONObject(prova).toJSONString();
+                e.reply("```json\n" + s + "```");
+                BlacklistData bd = gs.getServer(e.getGuild().getId()).getBlacklistData();
+                e.reply("```json\n" + bd.toString()+ "```");
+                break;
+            case 14:
+                for(Guild g : e.getJDA().getGuilds()) {
+                    gs.getServer(g.getId()).getAlerts();
+                    gs.getServer(g.getId()).getBlacklistData();
+                }
+                e.reply("Done");
                 break;
             default:
                 e.reply("Command does not exist.");

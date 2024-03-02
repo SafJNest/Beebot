@@ -1,19 +1,16 @@
 package com.safjnest.Utilities.PalWorld;
 
 import java.io.File;
-import java.io.FileReader;
+
 import java.util.HashMap;
 
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 
 public class PalHandler {
-    
+    @SuppressWarnings("unused")
     private String path = "rsc" + File.separator + "Testing" + File.separator + "palworld" + File.separator + "pals.json";
-
+    @SuppressWarnings("unused")
     private HashMap<String, Pal> pals = new HashMap<String, Pal>();
 
     public PalHandler() {

@@ -340,27 +340,23 @@ public class EventHandler extends ListenerAdapter {
         User newGuy = event.getUser();
 
         AlertData welcome = gs.getServer(event.getGuild().getId()).getAlert(AlertType.WELCOME);
-        if(welcome == null || !welcome.isValid())
-            return;
-
-        String channel_id = welcome.getChannelId();
-
-        channel = event.getGuild().getTextChannelById(channel_id);
-        String message = welcome.getMessage().replace("#user", newGuy.getAsMention());
-
-        channel.sendMessage(message).queue();
-
-        // if(alert.get("welcome_role") != null)
-        //     event.getGuild().addRoleToMember(event.getMember(), event.getGuild().getRoleById(alert.get("welcome_role"))).queue();
-            
-        /* 
-        ArrayList<String> roles = sql.getAllRowsSpecifiedColumn(query, "role_id");
-        if (roles.size() > 0) {
-            for (String role : roles) {
-                event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
+        if(welcome != null && welcome.isValid()) {
+            String channel_id = welcome.getChannelId();
+    
+            channel = event.getGuild().getTextChannelById(channel_id);
+            String message = welcome.getMessage().replace("#user", newGuy.getAsMention());
+    
+            channel.sendMessage(message).queue();
+                
+            if (welcome.getRoles() != null) {
+                String[] roles = welcome.getRoles().values().toArray(new String[0]);
+                for (String role : roles) {
+                    event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
+                }
             }
         }
-        */
+
+
         
 
         /**
@@ -399,16 +395,14 @@ public class EventHandler extends ListenerAdapter {
     public void onGuildMemberRemove(GuildMemberRemoveEvent event){
         
         MessageChannel channel = null;
-        ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+        AlertData leave = gs.getServer(event.getGuild().getId()).getAlert(AlertType.LEAVE);
+        if(leave != null && leave.isValid()) {
+            String channel_id = leave.getChannelId();
+            channel = event.getGuild().getTextChannelById(channel_id);
+            String message = leave.getMessage().replace("#user", event.getUser().getAsMention());
+            channel.sendMessage(message).queue();
+        }
         
-        String channel_id = alert.get("leave_channel");
-        if (channel_id == null || !alert.getAsBoolean("leave_enabled"))
-            return;
-
-        channel = event.getGuild().getTextChannelById(channel_id);
-        
-        String message = alert.get("leave_message").replace("#user", event.getUser().getAsMention());
-        channel.sendMessage(message).queue();
     }
 
 
@@ -464,15 +458,13 @@ public class EventHandler extends ListenerAdapter {
      */
     public void onGuildMemberUpdateBoostTime(GuildMemberUpdateBoostTimeEvent event) {
         MessageChannel channel = null;
-        ResultRow alert = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
-        
-        String channel_id = alert.get("boost_channel");
-        if (channel_id == null || !alert.getAsBoolean("boost_enabled"))
-            return;
-        
-        channel = event.getGuild().getTextChannelById(channel_id);
-        String message = alert.get("boost_message").replace("#user", event.getUser().getAsMention());
-        channel.sendMessage(message).queue();
+        AlertData boost = gs.getServer(event.getGuild().getId()).getAlert(AlertType.BOOST);
+        if(boost != null && boost.isValid()) {
+            String channel_id = boost.getChannelId();
+            channel = event.getGuild().getTextChannelById(channel_id);
+            String message = boost.getMessage().replace("#user", event.getEntity().getAsMention());
+            channel.sendMessage(message).queue();
+        }
     }
 
 

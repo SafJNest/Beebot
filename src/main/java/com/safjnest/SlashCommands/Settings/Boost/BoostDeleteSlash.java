@@ -3,7 +3,10 @@ package com.safjnest.SlashCommands.Settings.Boost;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.GuildData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 
 public class BoostDeleteSlash extends SlashCommand{
     
@@ -19,12 +22,16 @@ public class BoostDeleteSlash extends SlashCommand{
         String guildId = event.getGuild().getId();
         String botId = event.getJDA().getSelfUser().getId();
 
-        if(!DatabaseHandler.hasBoost(guildId, botId)) {
+        GuildData gs = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guildId);
+
+        AlertData boost = gs.getAlert(AlertType.BOOST);   
+
+        if(boost == null) {
             event.deferReply(true).addContent("This guild doesn't have a boost message.").queue();
             return;
         }
 
-        if(!DatabaseHandler.deleteBoost(guildId, botId)) {
+        if(!gs.deleteAlert(boost.getType())) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

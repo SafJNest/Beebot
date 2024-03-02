@@ -52,14 +52,14 @@ public class WelcomeCreateSlash extends SlashCommand{
 
         AlertData welcome = gs.getAlert(AlertType.WELCOME);
 
-        //welcome.set
-
         if(welcome != null) {
             event.deferReply(true).addContent("A welcome message already exists.").queue();
             return;
         }
 
-        AlertData newWelcome = new AlertData(guildId, botId, welcomeText, channelID, true, AlertType.WELCOME);
+        String[] roles = new String[]{roleID};
+
+        AlertData newWelcome = new AlertData(guildId, botId, welcomeText, channelID, roles);
         
         if(newWelcome.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

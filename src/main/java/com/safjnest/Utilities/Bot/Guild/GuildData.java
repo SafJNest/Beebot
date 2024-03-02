@@ -72,6 +72,7 @@ public class GuildData {
 
     public HashMap<AlertType, AlertData> getAlerts() {
         if (this.alerts == null) {
+            System.out.println("[CACHE] Retriving AlertData from database => " + ID);
             this.alerts = new HashMap<>();
             QueryResult result = DatabaseHandler.getAlerts(String.valueOf(ID), BOT_ID);
             QueryResult result2 = DatabaseHandler.getAlertsRoles(String.valueOf(ID), BOT_ID);
@@ -164,8 +165,12 @@ public class GuildData {
         return result;
     }
 
-    public synchronized void setExpSystem(boolean expSystem) {
-        this.expSystem = expSystem;
+    public synchronized boolean setExpSystem(boolean expSystem) {
+        boolean result = DatabaseHandler.toggleLevelUp(String.valueOf(this.ID), this.BOT_ID, expSystem);
+        if (result) {
+            this.expSystem = expSystem;
+        }
+        return result;
     }
 
     public String toString(){
@@ -238,6 +243,14 @@ public class GuildData {
     
     public boolean setBlacklistEnabled(boolean blacklist_enabled) {
         return getBlacklistData().setBlacklistEnabled(blacklist_enabled);
+    }
+
+    public boolean isBlackListCached() {
+        return this.blacklistData != null;
+    }
+
+    public boolean isAlertsCached() {
+        return this.alerts != null;
     }
     
 }

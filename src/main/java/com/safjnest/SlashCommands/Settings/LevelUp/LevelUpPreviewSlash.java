@@ -3,6 +3,10 @@ package com.safjnest.SlashCommands.Settings.LevelUp;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.GuildData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -21,17 +25,23 @@ public class LevelUpPreviewSlash extends SlashCommand{
         String guildId = event.getGuild().getId();
         String botId = event.getJDA().getSelfUser().getId();
 
-        if(!DatabaseHandler.isExpEnabled(guildId, botId)) {
+        GuildData gs = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guildId);
+
+        AlertData level = gs.getAlert(AlertType.LEVEL_UP);
+
+        if(!gs.isExpSystemEnabled()) {
             event.deferReply(true).addContent("This guild doesn't have the exp system enabled.").queue();
             return;
         }
 
-        String levelupMessage = DatabaseHandler.getLevelUp(guildId, botId).get("levelup_message");
 
-        if(levelupMessage == null){
+
+        if(level == null){
             event.deferReply(true).addContent("No level up message found.").queue();
             return;
         }
+        
+        String levelupMessage = level.getMessage();
 
         levelupMessage = levelupMessage.replace("#user", event.getUser().getAsMention());
         levelupMessage = levelupMessage.replace("#level", "117");

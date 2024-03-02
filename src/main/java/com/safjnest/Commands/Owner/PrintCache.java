@@ -45,19 +45,8 @@ public class PrintCache extends Command {
     @Override
     protected void execute(CommandEvent event) {
         String msg = "";
-        msg += "Beebot v3.0\n";
         msg += "Guilds cached: " + gs.cache.size() + "\n";
-        for(GuildData gd : gs.cache.values()){
-            try {
-                if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot"))
-                msg += "SERVER: " + event.getJDA().getGuildById(gd.getId()).getName() + " | PREFIX: " + gd.getPrefix() + " | EXP: " + gd.isExpSystemEnabled() + " | Threshariel: " + gd.getThreshold() + "\n";
-            } catch (Exception e) {
-               continue;
-            }
-            
-        }
-        
-        
+
         HashMap<String, ArrayList<User>> users = new HashMap<>();
         for(String s : es.getUsers().keySet()){
             if(!users.containsKey(s.split("-", 2)[1]))
@@ -65,17 +54,24 @@ public class PrintCache extends Command {
             users.get(s.split("-", 2)[1]).add(event.getJDA().getUserById(s.split("-", 2)[0]));
         }
 
-        for(String s : users.keySet()){
+        for(GuildData gd : gs.cache.values()){
             try {
-                msg += "Guild: " + event.getJDA().getGuildById(s).getName() + "\n";
-                for(User u : users.get(s))
-                    msg += u.getName() + "\n";
-            } catch (Exception e) {
-                continue;
-            }
-        }
-            
+                if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot")) {
+                    msg += "**" + event.getJDA().getGuildById(gd.getId()).getName() + "**```"
+                        + "Prefix: " + gd.getPrefix() + "\n"
+                        + "ExpSystem: " + (gd.isExpSystemEnabled() ? "enabled" : "disabled") + "\n"
+                        +  "Users: " + es.getUsers().keySet().stream().filter(s -> s.split("-", 2)[1].equals(String.valueOf(gd.getId()))).count() + "\n"
+                        + "Alerts: " + (gd.isAlertsCached() ? "cached" : "not cached") + "\n"
+                        + "BlackList: " + (gd.isBlackListCached() ? "cached" : "not cached") + "```";
 
+                }
+
+            } catch (Exception e) {
+               continue;
+            }
+            
+        }
+        
         MessageChannel channel = event.getChannel();
         try {
             if (msg.length() > 2000) {
