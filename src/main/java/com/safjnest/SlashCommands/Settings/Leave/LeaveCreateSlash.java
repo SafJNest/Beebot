@@ -5,7 +5,10 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.GuildData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -42,15 +45,24 @@ public class LeaveCreateSlash extends SlashCommand{
         String guildId = event.getGuild().getId();
         String botId = event.getJDA().getSelfUser().getId();
 
-        if(DatabaseHandler.hasLeave(guildId, botId)) {
+        GuildData gs = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guildId);
+
+        AlertData leave = gs.getAlert(AlertType.LEAVE);
+
+        if(leave != null) {
             event.deferReply(true).addContent("A leave message already exists.").queue();
             return;
         }
 
-        if(!DatabaseHandler.setLeave(guildId, botId, channelID, leaveText)) {
+        AlertData newLeave = new AlertData(guildId, botId, leaveText, channelID, AlertType.LEAVE);
+        
+        if(newLeave.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
+
+        gs.getAlerts().put(AlertType.LEAVE, newLeave);
+
 
         event.deferReply(false).addContent("leave message created.").queue();
     }

@@ -2,6 +2,7 @@ package com.safjnest.SlashCommands.ManageGuild;
 
 import java.awt.Color;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import net.dv8tion.jda.api.entities.Guild;
@@ -15,6 +16,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
 
@@ -45,25 +48,33 @@ public class ServerInfoSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
-
+        String botId = event.getJDA().getSelfUser().getId();
         int roleCharNumber = (event.getOption("roleCharNumber") == null) ? defaultRoleCharNumber : event.getOption("roleCharNumber").getAsInt();
 
-        ResultRow alerts = DatabaseHandler.getAlert(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
         ResultRow settings = DatabaseHandler.getGuildData(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
 
+        HashMap<AlertType, AlertData> alerts = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guild.getId()).getAlerts();
+        AlertData welcome = alerts.get(AlertType.WELCOME);
+        AlertData leave = alerts.get(AlertType.LEAVE);
+        AlertData lvlup = alerts.get(AlertType.LEVEL_UP);
+
+
+        
         String welcomeMessageString = null;
-        if(alerts.get("welcome_message") != null) {
-            welcomeMessageString = alerts.get("welcome_message")
-                + " [" + event.getJDA().getTextChannelById(alerts.get("welcome_channel")).getName() + "]"
-                + " [" + (alerts.getAsBoolean("welcome_enabled") ? "on" : "off") + "]"
+        if(welcome != null) {
+            String channelString = welcome.getChannelId() == null ? "No channel set" : event.getJDA().getTextChannelById(welcome.getChannelId()).getName();
+            welcomeMessageString = welcome.getMessage()
+                + " [" + channelString + "]"
+                + " [" + (welcome.isEnabled() ? "on" : "off") + "]"
             + "\n\n";
         }
         
         String leaveMessageString = null;
-        if(alerts.get("leave_message") != null) {
-            leaveMessageString = alerts.get("leave_message")
-                + " [" + event.getJDA().getChannelById(TextChannel.class, alerts.get("leave_channel")).getName() + "]"
-                + " [" + (alerts.getAsBoolean("leave_enabled") ? "on" : "off") + "]"
+        if(leave != null) {
+            String channelString = leave.getChannelId() == null ? "No channel set" : event.getJDA().getTextChannelById(leave.getChannelId()).getName();
+            leaveMessageString = leave.getMessage()
+                + " [" + channelString + "]"
+                + " [" + (leave.isEnabled() ? "on" : "off") + "]"
             + "\n\n";
         }
 
@@ -75,7 +86,12 @@ public class ServerInfoSlash extends SlashCommand{
             + "\n\n";
         }
 
-        String lvlUpString = alerts.get("lvlup_message");
+        String lvlUpString = null;
+        if(lvlup != null) {
+            lvlUpString = lvlup.getMessage()
+                + " [" + (lvlup.isEnabled() ? "on" : "off") + "]"
+            + "\n\n";
+        }
 
         List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(guild.getRoles(), roleCharNumber);
 

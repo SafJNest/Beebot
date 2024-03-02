@@ -22,12 +22,53 @@ public class AlertData {
         this.roles = roles;
     }
 
-    public AlertData(String guild_id, String bot_id, String message, String channelId, boolean enabled, AlertType type) {
+
+    /**
+     * Constructor for the alert message
+     * @param guild_id
+     * @param bot_id
+     * @param message
+     * @param channelId
+     * @param enabled
+     * @param type
+     */
+    public AlertData(String guild_id, String bot_id, String message, String channelId, AlertType type) {
         this.ID = DatabaseHandler.createAlert(guild_id, bot_id, message, channelId, type);
         this.message = message;
         this.channelId = channelId;
-        this.enabled = enabled;
+        this.enabled = true;
         this.type = type;
+    }
+
+    /**
+     * Constructor for the welcome message
+     * @param guild_id
+     * @param bot_id
+     * @param message
+     * @param channelId
+     * @param roles
+     */
+    public AlertData(String guild_id, String bot_id, String message, String channelId, String[] roles) {
+        this.ID = DatabaseHandler.createAlert(guild_id, bot_id, message, channelId, AlertType.WELCOME);
+        this.message = message;
+        this.channelId = channelId;
+        this.enabled = true;
+        this.type = AlertType.WELCOME;
+        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
+    }
+
+    /**
+     * Constructor for the level up message
+     * @param guild_id
+     * @param bot_id
+     * @param message
+     */
+    public AlertData(String guild_id, String bot_id, String message) {
+        this.ID = DatabaseHandler.createAlert(guild_id, bot_id, message, null, AlertType.LEVEL_UP);
+        this.message = message;
+        this.channelId = null;
+        this.enabled = true;
+        this.type = AlertType.LEVEL_UP;
     }
 
     public boolean isValid() {
@@ -56,6 +97,16 @@ public class AlertData {
             this.enabled = enabled;
         }
         return result;
+    }
+
+    public boolean addRole(String roleId) {
+        HashMap<Integer, String> roles = this.roles;
+        if (roles == null) {
+            roles = new HashMap<>();
+        }
+        roles.put(0, roleId);
+        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
+        return this.roles != null;
     }
 
     public boolean terminator4LaRinascita() {

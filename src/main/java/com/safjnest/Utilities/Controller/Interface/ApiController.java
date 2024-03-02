@@ -31,16 +31,13 @@ import net.dv8tion.jda.api.entities.Guild;
 @RequestMapping("/api")
 public class ApiController {
     
-    private BotDataHandler bs;
 
     @Autowired
-    public ApiController(BotDataHandler bs) {
-        this.bs = bs;
-    }
+    public ApiController() { }
 
     @GetMapping("/{id}")
     public String getEmployeeById(@PathVariable String id) {
-        BotData settings = bs.getSettings(id);
+        BotData settings = BotDataHandler.getSettings(id);
         if (settings == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
         }
@@ -49,7 +46,7 @@ public class ApiController {
 
     @GetMapping("/{id}/guilds")
     public ResponseEntity<List<Map<String, String>>> getEmployeeByIdAndGuilds(@PathVariable String id, @RequestBody List<String> ids) {
-        JDA jda = bs.getSettings(id).getJda();
+        JDA jda = BotDataHandler.getSettings(id).getJda();
         List<Map<String, String>> guilds = new ArrayList<>();
         for(String guildId : ids){
             try {
@@ -70,14 +67,14 @@ public class ApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prefix is required");
         }
         prefix = prefix.replace("\"", "");
-        bs.getSettings(id).getGuildSettings().getServer(guildId).setPrefix(prefix);
+        BotDataHandler.getSettings(id).getGuildSettings().getServer(guildId).setPrefix(prefix);
         DatabaseHandler.setPrefix(guildId, id, prefix);
-        return bs.getSettings(id).getGuildSettings().getServer(guildId).getPrefix();
+        return BotDataHandler.getSettings(id).getGuildSettings().getServer(guildId).getPrefix();
     }
 
     @GetMapping("/{id}/{guildId}")
     public ResponseEntity<Map<String, String>> getGuild(@PathVariable String id, @PathVariable String guildId) {
-        BotData settings = bs.getSettings(id);
+        BotData settings = BotDataHandler.getSettings(id);
         if (settings == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
         }
@@ -95,7 +92,7 @@ public class ApiController {
 
     @GetMapping("/{id}/{guildId}/users")
     public ResponseEntity<List<Map<String, String>>> getUsers(@PathVariable String id, @PathVariable String guildId) {
-        BotData settings = bs.getSettings(id);
+        BotData settings = BotDataHandler.getSettings(id);
         if (settings == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
         }

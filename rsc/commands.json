@@ -388,7 +388,7 @@
                 "help"  : "Preview the welcome message.",
                 "arguments" : "[CommandName]"
             },
-            "role": {
+            "addrole": {
                 "alias" : [],
                 "help"  : "Change the role users will get when they enter this guild.",
                 "arguments" : "[CommandName]"
