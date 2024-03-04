@@ -682,6 +682,10 @@ public class DatabaseHandler {
         return runQuery("DELETE FROM alert WHERE id = '" + valueOf + "';");
     }
 
+    public static boolean deleteAlertRoles(String valueOf) {
+        return runQuery("DELETE FROM alert_role WHERE alert_id = '" + valueOf + "';");
+    }
+
     public static HashMap<Integer, String> createRolesAlert(String valueOf, String[] roles) {
         
         String values = "";
@@ -697,7 +701,7 @@ public class DatabaseHandler {
             return null;
         }
 
-        if (runQuery("INSERT INTO alert_role(alert_id, role_id) VALUES " + values + ";")) {
+        if (deleteAlertRoles(valueOf) && runQuery("INSERT INTO alert_role(alert_id, role_id) VALUES " + values + ";")) {
             HashMap<Integer, String> roleMap = new HashMap<>();
             QueryResult result = safJQuery("SELECT id, role_id FROM alert_role WHERE alert_id = '" + valueOf + "';");
             for(ResultRow row : result) {
