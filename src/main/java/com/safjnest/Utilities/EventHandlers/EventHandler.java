@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.Commands.League.Summoner;
@@ -25,6 +26,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -168,6 +170,10 @@ public class EventHandler extends ListenerAdapter {
 
         else if(e.getFullCommandName().equals("TTS"))
             name = "tts";
+        
+        else if(e.getFocusedOption().getName().equals("role_remove")) {
+            name = "alert_role";
+        }
              
         switch (name) {
             case "play":
@@ -305,6 +311,29 @@ public class EventHandler extends ListenerAdapter {
                         }
                     }
                 }
+            case "alert_role":
+                AlertData alert = gs.getServer(e.getGuild().getId()).getAlert(AlertType.WELCOME);
+                if (alert != null && alert.getRoles() != null) {
+                    HashMap<Integer, String> alertRoles = alert.getRoles();
+                    List<Role> roles = new ArrayList<>();
+                    for (Role r : e.getGuild().getRoles()) {
+                        if (alertRoles.containsValue(r.getId()))
+                            roles.add(r);
+                    }
+                    
+                    Collections.shuffle(roles);
+                    if (e.getFocusedOption().getValue().equals("")) {
+                        for (int i = 0; i < roles.size() && i < 10; i++)
+                            choices.add(new Choice(roles.get(i).getName(), roles.get(i).getId()));
+                    } else {
+                        for (Role role : roles) {
+                            if (role.getName().toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
+                                choices.add(new Choice(role.getName(), role.getId()));
+                        }
+                    
+                    }
+                }
+                break;
         }
         e.replyChoices(choices).queue();
     }
