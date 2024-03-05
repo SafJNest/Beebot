@@ -42,6 +42,8 @@ public class GuildData {
      */
     private HashMap<Long, Room> rooms;
 
+    private HashMap<Integer, ChannelData> channels;
+
     private BlacklistData blacklistData;
 
     private HashMap<AlertType, AlertData> alerts;
@@ -52,6 +54,7 @@ public class GuildData {
         this.expSystem = expSystem;
         this.BOT_ID = botId;
         loadRooms();
+        retriveChannels();
     }
 
     public Long getId() {
@@ -203,6 +206,27 @@ public class GuildData {
                     )
             );
         }
+    }
+
+    public void retriveChannels() {
+        this.channels = new HashMap<>();
+        QueryResult result = DatabaseHandler.getChannelData(String.valueOf(ID), BOT_ID);
+        
+        if (result == null) { return; }
+
+        for(ResultRow row: result){
+            this.channels.put(
+                row.getAsInt("id"),
+                new ChannelData(
+                    row.getAsInt("id"),
+                    row.getAsLong("room_id"),
+                    row.getAsBoolean("exp_enabled"),
+                    row.getAsDouble("exp_value"),
+                    row.getAsBoolean("command_stats")
+                )
+            );
+        }
+
     }
 
 

@@ -695,11 +695,11 @@ public class DatabaseHandler {
             }
         }
 
-        values = values.substring(0, values.length() - 2);
-
         if (values.isEmpty()) {
             return null;
         }
+
+        values = values.substring(0, values.length() - 2);
 
         if (deleteAlertRoles(valueOf) && runQuery("INSERT INTO alert_role(alert_id, role_id) VALUES " + values + ";")) {
             HashMap<Integer, String> roleMap = new HashMap<>();
@@ -711,9 +711,20 @@ public class DatabaseHandler {
         }
 
         return null;
-        
+                
+    }
 
-        
+
+    public static QueryResult getChannelData(String guild_id, String bot_id) {
+        return safJQuery("SELECT id, channel_id, exp_enabled, exp_modifier, stats_enabled FROM channel WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
+    }
+
+    public static boolean setChannelExpModifier(int ID, double exp_modifier) {
+        return runQuery("UPDATE channel SET exp_modifier = '" + exp_modifier + "' WHERE id = '" + ID + "';");
+    }
+
+    public static boolean setChannelExpEnabled(int ID, boolean toggle) {
+        return runQuery("UPDATE channel SET exp_enabled = '" + (toggle ? 1 : 0) + "' WHERE id = '" + ID + "';");
     }
 
 
