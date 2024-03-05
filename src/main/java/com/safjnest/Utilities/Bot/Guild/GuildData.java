@@ -70,15 +70,24 @@ public class GuildData {
         return BOT_ID;
     }
 
+    /**
+     * If the {@link #alerts alerts map} is null, it will be retrieved from the database and cached.
+     * <p>
+     * The key is the {@link AlertType type} of the alert.
+     * </p>
+     * <p>
+     * If the alert is {@link AlertType#WELCOME WELCOME}, the will be also retrieved the roles, otherwise it will be null.
+     * @return
+     */
     public HashMap<AlertType, AlertData> getAlerts() {
         if (this.alerts == null) {
             System.out.println("[CACHE] Retriving AlertData from database => " + ID);
             this.alerts = new HashMap<>();
-            QueryResult result = DatabaseHandler.getAlerts(String.valueOf(ID), BOT_ID);
-            QueryResult result2 = DatabaseHandler.getAlertsRoles(String.valueOf(ID), BOT_ID);
+            QueryResult alertResult = DatabaseHandler.getAlerts(String.valueOf(ID), BOT_ID);
+            QueryResult roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID), BOT_ID);
             
             HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
-            for (ResultRow row : result2) {
+            for (ResultRow row : roleResult) {
                 int alertId = row.getAsInt("alert_id");
                 String roleId = row.get("role_id");
                 int rowId = row.getAsInt("row_id");
@@ -88,7 +97,7 @@ public class GuildData {
                 roles.get(alertId).put(rowId, roleId);
             }
 
-            for (ResultRow row : result) {
+            for (ResultRow row : alertResult) {
                 AlertData ad = new AlertData(
                     row.getAsInt("id"),
                     row.get("message"),

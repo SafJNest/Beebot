@@ -71,6 +71,10 @@ public class AlertData {
         this.type = AlertType.LEVEL_UP;
     }
 
+    /**
+     * An alert is valid if and only if it has a message, a channel (except for level up messages) and it's enabled (true by default)
+     * @return true if the alert is valid, false otherwise
+     */
     public boolean isValid() {
         return this.message != null && (this.type == AlertType.LEVEL_UP ||  this.channelId != null) && this.enabled;
     }
@@ -99,12 +103,51 @@ public class AlertData {
         return result;
     }
 
+    /**
+     * The method first adds the new role to the local roles map at position 0, 
+     * because the actual database row ID for the new role is not known yet.
+     * 
+     * It then calls a database operation that deletes all existing roles for 
+     * the alert and re-adds them, including the new role. This operation also 
+     * assigns actual database row IDs to the roles.
+     * 
+     * The updated roles are then assigned back to the local roles map.
+     * 
+     * @param roleId The ID of the new role to be added.
+     * @return true if the operation was successful, false otherwise.
+     * 
+     */
     public boolean addRole(String roleId) {
         HashMap<Integer, String> roles = this.roles;
         if (roles == null) {
             roles = new HashMap<>();
         }
         roles.put(0, roleId);
+        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
+        return this.roles != null;
+    }
+
+
+    /**
+     * The method first removes the role from the local roles map, 
+     * using the provided role ID.
+     * 
+     * It then calls a database operation that deletes all existing roles for 
+     * the alert and re-adds them, excluding the removed role. This operation also 
+     * assigns actual database row IDs to the roles.
+     * 
+     * The updated roles are then assigned back to the local roles map.
+     * 
+     * @param roleId The ID of the role to be removed.
+     * @return true if the operation was successful, false otherwise.
+     * 
+     */
+    public boolean removeRole(String roleId) {
+        HashMap<Integer, String> roles = this.roles;
+        if (roles == null || !roles.containsValue(roleId)) {
+            return false;
+        }
+        roles.values().removeIf(role -> role.equals(roleId));
         this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
         return this.roles != null;
     }
