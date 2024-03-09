@@ -6,6 +6,7 @@ public class CustomEmoji {
     private String id;
     private String guildId;
     private String name;
+    private boolean animated;
     private RichCustomEmoji richCustomEmoji;
 
     public CustomEmoji(String id, String guildId, String name, RichCustomEmoji richCustomEmoji){
@@ -13,6 +14,7 @@ public class CustomEmoji {
         this.guildId = guildId;
         this.name = name;
         this.richCustomEmoji = richCustomEmoji;
+        this.animated = richCustomEmoji.isAnimated();
     }
 
     public String getId(){
@@ -32,6 +34,6 @@ public class CustomEmoji {
     }
 
     public String toString(){
-        return "<:" + this.name + ":" + this.id + ">";
+        return "<"+ (animated ? "a" : "") +":" + this.name + ":" + this.id + ">";
     }
 }

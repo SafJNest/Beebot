@@ -335,7 +335,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             name = "4_";
         }
         name = transposeChampionNameForDataDragon(name);
-        CustomEmoji em = emoji.get(name.toLowerCase());          
+        CustomEmoji em = emoji.get(name.toLowerCase());     
         return em != null ? emoji.get(name.toLowerCase()).toString() : String.valueOf(name);
     }
 

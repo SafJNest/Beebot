@@ -68,7 +68,7 @@ public class Queue extends Command{
         }
 
         if(playingNow != null)
-            eb.addField(RiotHandler.getFormattedEmoji(jda, "audio") + " Now playing", formatTrack(index, playingNow), false);
+            eb.addField(RiotHandler.getFormattedEmoji(jda, "playing") + " Now playing", formatTrack(index, playingNow), false);
 
         eb.addField(RiotHandler.getFormattedEmoji(jda, "playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
         return eb;
@@ -90,11 +90,11 @@ public class Queue extends Command{
 
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
-        Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));
+        Button repeat = Button.secondary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));
         Button previous = Button.primary("queue-previous" , " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
         Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
         Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
-        Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
+        Button shurima = Button.secondary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
         
         if(ts.isRepeat()) {
             repeat = repeat.withStyle(ButtonStyle.DANGER);
@@ -131,8 +131,8 @@ public class Queue extends Command{
         ));
 
 
-        Button previousPage = Button.primary("queue-previouspage-", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
-        Button nextPage = Button.primary("queue-nextpage-", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
+        Button previousPage = Button.secondary("queue-previouspage-", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
+        Button nextPage = Button.secondary("queue-nextpage-", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
  
         int previousIndex = ts.getIndex() - 11;
         if(previousIndex < 0)
@@ -155,11 +155,11 @@ public class Queue extends Command{
 
 
         buttonRows.add(ActionRow.of(
-            Button.primary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            Button.secondary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
             previousPage,
-            Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
             nextPage,
-            Button.primary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
+            Button.secondary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
         ));
 
         event.getChannel().sendMessageEmbeds(getEmbed(event.getJDA(), guild, queue, ts.getIndex()).build()).addComponents(buttonRows).queue();
