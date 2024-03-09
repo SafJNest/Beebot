@@ -161,6 +161,10 @@ public class PlaySoundSlash extends SlashCommand{
                 + " (yours: "+plays.get("timesByUser") + ")"
             + "```", true);
 
+            eb.addField("Creation time", 
+                "<t:" + toPlay.getAsEpochSecond("time") + ":f>"  + " | <t:" + toPlay.getAsEpochSecond("time") + ":R>",
+            false);
+
             event.deferReply(false).addEmbeds(eb.build()).queue();
         }
 

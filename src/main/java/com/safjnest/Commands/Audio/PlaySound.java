@@ -159,6 +159,10 @@ public class PlaySound extends Command{
                 + " (yours: "+plays.get("timesByUser") + ")"
             + "```", true);
 
+            eb.addField("Creation time", 
+                "<t:" + toPlay.getAsEpochSecond("time") + ":f>"  + " | <t:" + toPlay.getAsEpochSecond("time") + ":R>",
+            false);
+
             event.reply(eb.build());
         }
 
