@@ -121,11 +121,11 @@ public class EventButtonHandler extends ListenerAdapter {
             
         // }
 
-        Button repeat = Button.primary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));  
+        Button repeat = Button.secondary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));  
         Button previous = Button.primary("queue-previous", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
         Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
         Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
-        Button shurima = Button.primary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
+        Button shurima = Button.secondary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
 
         
 
@@ -212,12 +212,12 @@ public class EventButtonHandler extends ListenerAdapter {
 
         if(ts.getIndex() == 0) {
             previous = previous.withStyle(ButtonStyle.DANGER);
-            previous.asDisabled();
+            previous = previous.asDisabled();
         }
 
         if(ts.getIndex() == ts.getQueue().size() - 1) {
             next = next.withStyle(ButtonStyle.DANGER);
-            next.asDisabled();
+            next = next.asDisabled();
         }
 
         if(!ts.isPaused()) {
@@ -235,8 +235,8 @@ public class EventButtonHandler extends ListenerAdapter {
         ));
 
 
-        Button previousPage = Button.primary("queue-previouspage-" + previousIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
-        Button nextPage = Button.primary("queue-nextpage-" + nextIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
+        Button previousPage = Button.secondary("queue-previouspage-" + previousIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
+        Button nextPage = Button.secondary("queue-nextpage-" + nextIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
 
         if(startIndex > ts.getQueue().size()) {
             startIndex = ts.getQueue().size() - 1;
@@ -258,11 +258,11 @@ public class EventButtonHandler extends ListenerAdapter {
         previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
 
         rows.add(ActionRow.of(
-            Button.primary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            Button.secondary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
             previousPage,
-            Button.primary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
+            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
             nextPage,
-            Button.primary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
+            Button.secondary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
         ));
 
         event.getMessage()

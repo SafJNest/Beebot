@@ -1,5 +1,7 @@
 package com.safjnest.Utilities.SQL;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +61,20 @@ public class ResultRow {
             return Double.parseDouble(row.get(columnName));
         } catch (Exception e) {
             throw new IllegalArgumentException();
+        }
+    }
+    /**
+     * 2022-04-08 16:39:57:
+     * @param columnName
+     * @return
+     */
+    public long getAsEpochSecond(String columnName){
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime dateTime = LocalDateTime.parse(row.get(columnName), formatter);
+            return dateTime.toEpochSecond(java.time.ZoneOffset.UTC);
+        } catch (Exception e) {
+            return 0;
         }
     }
 
