@@ -227,10 +227,6 @@ public class DatabaseHandler {
         return safJQuery(query);
     }
 
-    public static QueryResult getRoomsData(String filter){        
-        String query = "SELECT guild_id, room_id, has_exp, exp_value, has_command_stats FROM room WHERE " + filter + ";";
-        return safJQuery(query);
-    }
 
     public static QueryResult getlistGuildSounds(String guild_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC");
@@ -479,20 +475,7 @@ public class DatabaseHandler {
         return runQuery(query);
     }
 
-    public static QueryResult getRoomsSettings(String guild_id) {
-        String query = "SELECT room_id, has_exp, exp_value, has_command_stats FROM room WHERE guild_id ='" + guild_id + "';";
-        return safJQuery(query);
-    }
 
-    public static QueryResult getRoomsSettingsWithExpModifier(String guild_id) {
-        String query = "SELECT room_id, has_exp, exp_value, has_command_stats FROM room WHERE guild_id ='" + guild_id + "' AND has_exp = 1 AND exp_value > 1;";
-        return safJQuery(query);
-    }
-
-    public static QueryResult getRoomsSettingsWithoutExp(String guild_id) {
-        String query = "SELECT room_id, has_exp, exp_value from room WHERE guild_id = '"+ guild_id +"' AND has_exp = 0;";
-        return safJQuery(query);
-    }
 
     public static ResultRow getExp(String guild_id, String user_id) {
         String query = "SELECT exp, level, messages FROM experience WHERE user_id = '" + user_id + "' AND guild_id = '" + guild_id + "';";
@@ -533,30 +516,9 @@ public class DatabaseHandler {
         return runQuery("INSERT INTO guild(guild_id, bot_id, exp_enabled) VALUES ('" + guild_id + "', '" + bot_id + "', '" + (toggle ? "1" : "0") + "') ON DUPLICATE KEY UPDATE exp_enabled = '" + (toggle ? "1" : "0") + "';");
     }
 
-    public static ResultRow getRoomSettings(String guild_id, String room_id) {
-        return fetchJRow("SELECT has_exp, exp_value, has_command_stats FROM room WHERE guild_id = '" + guild_id + "' AND room_id = '" + room_id + "';");
-    }
-
-    public static boolean updateExpValue(String guild_id, String room_id, Double exp_value) {
-        return runQuery("INSERT INTO room (guild_id, room_id, exp_value)" 
-            + " VALUES ('" + guild_id + "', '" + room_id + "', '" + exp_value + "')" 
-            + " ON DUPLICATE KEY UPDATE exp_value = " + exp_value + ";");
-    }
-
-    public static boolean toggleLevelUpChannel(String guild_id, String room_id, boolean toggle) {
-        return runQuery("INSERT INTO room (guild_id, room_id, has_exp) "
-            + "VALUES ('" + guild_id + "', '" + room_id + "', '" + (toggle ? "1": "0") + "') "
-            + "ON DUPLICATE KEY UPDATE has_exp = " + (toggle ? "1": "0") +";");
-    }
-
     public static boolean toggleBlacklist(String guild_id, String bot_id, boolean toggle) {
         return runQuery("UPDATE guild SET blacklist_enabled = '" + toggle + "' WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
-
-    public static boolean deleteRoom(String guild_id, String room_id) {
-        return runQuery("DELETE FROM room WHERE guild_id = '" + guild_id + "' AND room_id = '" + room_id + "';");
-    }
-
 
     public static boolean isExpEnabled(String guildId, String botId) {
         return runQuery("SELECT exp_enabled FROM guild WHERE guild_id = '" + guildId + "' AND bot_id = '" + botId + "';");
@@ -715,6 +677,23 @@ public class DatabaseHandler {
     }
 
 
+    public static int insertChannelData(long guild_id, String bot_id, long channel_id) {
+        int id = 0;
+        try (Statement stmt = c.createStatement()) {
+            runQuery(stmt, "INSERT INTO channel(guild_id, bot_id, channel_id) VALUES('" + guild_id + "','" + bot_id + "','" + channel_id + "');");
+            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+            c.commit();
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+        }
+        return id;
+    }
+
     public static QueryResult getChannelData(String guild_id, String bot_id) {
         return safJQuery("SELECT id, channel_id, exp_enabled, exp_modifier, stats_enabled FROM channel WHERE guild_id = '" + guild_id + "' AND bot_id = '" + bot_id + "';");
     }
@@ -725,6 +704,10 @@ public class DatabaseHandler {
 
     public static boolean setChannelExpEnabled(int ID, boolean toggle) {
         return runQuery("UPDATE channel SET exp_enabled = '" + (toggle ? 1 : 0) + "' WHERE id = '" + ID + "';");
+    }
+
+    public static boolean deleteChannelData(int ID) {
+        return runQuery("DELETE FROM channel WHERE id = '" + ID + "';");
     }
 
 
