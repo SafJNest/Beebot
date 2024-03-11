@@ -9,10 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Bot.Guild.BlacklistData;
+import com.safjnest.Utilities.Bot.Guild.ChannelData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
@@ -63,7 +66,7 @@ public class Test extends Command{
     protected void execute(CommandEvent e) {
         String[] args = e.getArgs().split(" ", 2);
         if(args.length == 0 || !SafJNest.intIsParsable(args[0])) return;
-
+        String query = "";
 
         //File soundBoard = new File("rsc" + File.separator + "SoundBoard");
         //File[] files = soundBoard.listFiles();
@@ -203,6 +206,8 @@ public class Test extends Command{
                 e.reply("```json\n" + s + "```");
                 BlacklistData bd = gs.getServer(e.getGuild().getId()).getBlacklistData();
                 e.reply("```json\n" + bd.toString()+ "```");
+                HashMap<Long, ChannelData> channels = gs.getServer(e.getGuild().getId()).getChannels();
+                e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
                 break;
             case 14:
                 for(Guild g : e.getJDA().getGuilds()) {
@@ -210,6 +215,31 @@ public class Test extends Command{
                     gs.getServer(g.getId()).getBlacklistData();
                 }
                 e.reply("Done");
+                break;
+            case 15:
+                String sss = new JSONObject(gs.getServer(e.getGuild().getId()).getChannels()).toJSONString();
+                e.reply("```json\n" + sss + "```");
+                break;
+            case 16:
+                query = "SELECT guild_id, room_id FROM room WHERE has_command_stats = 0";
+                QueryResult res = DatabaseHandler.safJQuery(query);
+                String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
+                for(ResultRow row : res){
+
+                    for (String bot : bots) {
+                        query = "INSERT INTO channel(guild_id, channel_id, bot_id, stats_enabled) VALUES (" + row.get("guild_id") + ", "+ row.get("room_id") +", " + bot + ", 0)";
+                        DatabaseHandler.safJQuery(query);
+                    }
+                }
+                e.reply("Done");
+                break;
+            case 17:
+                query = "SELECT id FROM guilds";
+                res = DatabaseHandler.safJQuery(query);
+                for(ResultRow row : res){
+                    query = "INSERT INTO blacklist(guild_id, user_id) VALUES (" + row.get("id") + "," + PermissionHandler.getEpria() + ")";
+                    DatabaseHandler.safJQuery(query);
+                }
                 break;
             default:
                 e.reply("Command does not exist.");

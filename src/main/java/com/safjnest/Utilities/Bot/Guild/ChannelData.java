@@ -15,13 +15,13 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 public class ChannelData {
     
 
-    private final int ID;
+    private int ID;
 
 
     /**
      * ID of the room
      */
-    private final long ROOM_ID;
+    private final long CHANNEL_ID;
         
     /**
      * If the room has the exp system
@@ -38,6 +38,8 @@ public class ChannelData {
      * If the room has the command system
      */
     private boolean statisticsEnabled;
+
+    private GuildData guildData;
     
     /**
      * Defaul Constructor
@@ -47,12 +49,22 @@ public class ChannelData {
      * @param expValue
      * @param command
      */
-    public ChannelData(int ID, long ROOM_ID, boolean expSystem, double expValue, boolean command) {
+    public ChannelData(int ID, long CHANNEL_ID, boolean expSystem, double expValue, boolean command, GuildData guildData) {
         this.ID = ID;
-        this.ROOM_ID = ROOM_ID;
+        this.CHANNEL_ID = CHANNEL_ID;
         this.expEnabled = expSystem;
         this.expModifier = expValue;
         this.statisticsEnabled = command;
+        this.guildData = guildData;
+    }
+
+    public ChannelData(long CHANNEL_ID, GuildData guildData) {
+        this.ID = 0;
+        this.CHANNEL_ID = CHANNEL_ID;
+        this.expEnabled = true;
+        this.expModifier = 1;
+        this.statisticsEnabled = true;
+        this.guildData = guildData;
     }
 
     public int getId() {
@@ -60,7 +72,7 @@ public class ChannelData {
     }
 
     public long getRoomId() {
-        return this.ROOM_ID;
+        return this.CHANNEL_ID;
     }
 
     public boolean isExpSystemEnabled() {
@@ -77,6 +89,8 @@ public class ChannelData {
     }
 
     public boolean setExpEnabled(boolean exp) {
+        handleEmptyID();
+
         boolean result = DatabaseHandler.setChannelExpEnabled(this.ID, exp);
         if (result) {
             this.expEnabled = exp;
@@ -85,11 +99,32 @@ public class ChannelData {
     }
 
     public boolean setExpModifier(double value) {
+        handleEmptyID();
+
         boolean result = DatabaseHandler.setChannelExpModifier(this.ID, value);
         if (result) {
             this.expModifier = value;
         }
         return result;
+    }
+
+    public boolean terminator5LaRivolta() {
+        if (this.ID == 0) {
+            return true;
+        }
+        return DatabaseHandler.deleteChannelData(this.ID);
+    }
+
+    private void handleEmptyID() {
+        if (this.ID == 0) {
+            this.ID = DatabaseHandler.insertChannelData(guildData.getId(), guildData.getBotId(), this.CHANNEL_ID);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ChannelData [ID=" + ID + ", CHANNEL_ID=" + CHANNEL_ID + ", expEnabled=" + expEnabled + ", expModifier="
+                + expModifier + ", statisticsEnabled=" + statisticsEnabled + "]";
     }
 
 }

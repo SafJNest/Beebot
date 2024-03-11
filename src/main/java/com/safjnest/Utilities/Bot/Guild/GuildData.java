@@ -4,6 +4,7 @@ package com.safjnest.Utilities.Bot.Guild;
 
 import java.util.HashMap;
 
+
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -37,12 +38,7 @@ public class GuildData {
      */
     private boolean expSystem;
 
-    /**
-     * A map with all the settings for rooms
-     */
-    private HashMap<Long, Room> rooms;
-
-    private HashMap<Integer, ChannelData> channels;
+    private HashMap<Long, ChannelData> channels;
 
     private BlacklistData blacklistData;
 
@@ -53,7 +49,6 @@ public class GuildData {
         this.prefix = prefix;
         this.expSystem = expSystem;
         this.BOT_ID = botId;
-        loadRooms();
         retriveChannels();
     }
 
@@ -72,6 +67,31 @@ public class GuildData {
     public String getBotId() {
         return BOT_ID;
     }
+
+    public synchronized boolean setPrefix(String prefix) {
+        boolean result = DatabaseHandler.updatePrefix(String.valueOf(ID), BOT_ID, prefix);
+        if (result) {
+            this.prefix = prefix;
+        }
+        return result;
+    }
+
+    public synchronized boolean setExpSystem(boolean expSystem) {
+        boolean result = DatabaseHandler.toggleLevelUp(String.valueOf(this.ID), this.BOT_ID, expSystem);
+        if (result) {
+            this.expSystem = expSystem;
+        }
+        return result;
+    }
+
+    public String toString(){
+        return "ID: " + ID + "| Prefix: " + prefix + " |ExpSystem: " + expSystem;
+    }
+
+
+    /* -------------------------------------------------------------------------- */
+    /*                                AlertData                                   */
+    /* -------------------------------------------------------------------------- */
 
     /**
      * If the {@link #alerts alerts map} is null, it will be retrieved from the database and cached.
@@ -131,6 +151,11 @@ public class GuildData {
         return toDelete.terminator4LaRinascita();
     }
 
+    /* -------------------------------------------------------------------------- */
+    /*                                BlacklistData                               */
+    /* -------------------------------------------------------------------------- */
+
+
     public BlacklistData getBlacklistData() {
         if (this.blacklistData == null) {
             BlacklistData bd = null;
@@ -169,107 +194,6 @@ public class GuildData {
         return getBlacklistData().setThreshold(threshold);
     }
 
-    public synchronized boolean setPrefix(String prefix) {
-        boolean result = DatabaseHandler.updatePrefix(String.valueOf(ID), BOT_ID, prefix);
-        if (result) {
-            this.prefix = prefix;
-        }
-        return result;
-    }
-
-    public synchronized boolean setExpSystem(boolean expSystem) {
-        boolean result = DatabaseHandler.toggleLevelUp(String.valueOf(this.ID), this.BOT_ID, expSystem);
-        if (result) {
-            this.expSystem = expSystem;
-        }
-        return result;
-    }
-
-    public String toString(){
-        return "ID: " + ID + "| Prefix: " + prefix + " |ExpSystem: " + expSystem;
-    }
-
-    /**
-     * Load all the rooms of the guild
-     */
-    public void loadRooms(){
-        rooms = new HashMap<>();
-        QueryResult result = DatabaseHandler.getRoomsData(String.valueOf(ID));
-        for(ResultRow row: result){;
-            rooms.put(
-                row.getAsLong("room_id"),
-                new Room(
-                    row.getAsLong("room_id"), 
-                    row.getAsBoolean("has_exp"), 
-                    row.getAsDouble("exp_value"),
-                    row.getAsBoolean("has_command_stats")
-                    )
-            );
-        }
-    }
-
-    public void retriveChannels() {
-        this.channels = new HashMap<>();
-        QueryResult result = DatabaseHandler.getChannelData(String.valueOf(ID), BOT_ID);
-        
-        if (result == null) { return; }
-
-        for(ResultRow row: result){
-            this.channels.put(
-                row.getAsInt("id"),
-                new ChannelData(
-                    row.getAsInt("id"),
-                    row.getAsLong("room_id"),
-                    row.getAsBoolean("exp_enabled"),
-                    row.getAsDouble("exp_value"),
-                    row.getAsBoolean("command_stats")
-                )
-            );
-        }
-
-    }
-
-
-    public Room getRoom(Long id){
-        return rooms.get(id);
-    }
-
-    public Boolean getExpSystemRoom(Long id){
-        try {
-            return rooms.get(id).isExpSystemEnabled();
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
-    public Boolean getCommandStatsRoom(Long id){
-        try {
-            return rooms.get(id).getCommand();
-        } catch (Exception e) {
-            return true;
-        }
-    }
-
-    public double getExpValueRoom(Long id){
-        try {
-            return rooms.get(id).getExpValue();
-        } catch (Exception e) {
-            return 1;
-        }
-    }
-
-    public synchronized void addRoom(Room room){
-        rooms.put(room.getId(), room);
-    }
-
-    public synchronized void setExpSystemRoom(Long id, boolean exp){
-        rooms.get(id).setExpSystem(exp);
-    }
-
-    public synchronized void setExpValueRoom(Long id, double value){
-        rooms.get(id).setExpValue(value);
-    }
-
     public boolean blacklistEnabled() {
         return getBlacklistData().isBlacklistEnabled();
     }
@@ -278,6 +202,85 @@ public class GuildData {
         return getBlacklistData().setBlacklistEnabled(blacklist_enabled);
     }
 
+
+    /* -------------------------------------------------------------------------- */
+    /*                                Channel Data                                */
+    /* -------------------------------------------------------------------------- */
+
+
+    public void retriveChannels() {
+        this.channels = new HashMap<>();
+        QueryResult result = DatabaseHandler.getChannelData(String.valueOf(ID), BOT_ID);
+        
+        if (result == null) { return; }
+
+        for(ResultRow row: result){
+            System.out.println(row.toString());
+            this.channels.put(
+                row.getAsLong("channel_id"),
+                new ChannelData(
+                    row.getAsInt("id"),
+                    row.getAsLong("channel_id"),
+                    row.getAsBoolean("exp_enabled"),
+                    row.getAsDouble("exp_modifier"),
+                    row.getAsBoolean("stats_enabled"),
+                    this
+                )
+            );
+        }
+
+    }
+
+    public HashMap<Long, ChannelData> getChannels() {
+        return this.channels;
+    }
+
+    public ChannelData getChannelData(long channel_id) {
+        ChannelData cd = this.channels.get(channel_id);
+        if (cd == null) {
+            cd = new ChannelData(channel_id, this);
+            this.channels.put(channel_id, cd);
+        }
+        return cd;
+    }
+
+    public ChannelData getChannelData(String channel_id) {
+        return getChannelData(Long.parseLong(channel_id));
+    }
+
+    public boolean deleteChannelData(String channel_id) {
+        ChannelData toDelete = this.channels.remove(Long.parseLong(channel_id));
+        if (toDelete == null) {
+            return true;
+        }
+        return toDelete.terminator5LaRivolta();
+    }
+
+
+    public Boolean getExpSystemRoom(Long id){
+        return getChannelData(id).isExpSystemEnabled();
+    }
+
+    public Boolean getCommandStatsRoom(Long id){
+        return getChannelData(id).getCommand();
+    }
+
+    public double getExpValueRoom(Long id){
+        return getChannelData(id).getExpValue();
+    }
+
+
+    public synchronized boolean setExpSystemRoom(Long id, boolean exp){
+        return getChannelData(id).setExpEnabled(exp);
+    }
+
+    public synchronized boolean setExpValueChannel(Long id, double value){
+        return getChannelData(id).setExpModifier(value);
+    }
+
+
+
+
     public boolean isBlackListCached() {
         return this.blacklistData != null;
     }
@@ -285,5 +288,6 @@ public class GuildData {
     public boolean isAlertsCached() {
         return this.alerts != null;
     }
+
     
 }

@@ -1,15 +1,16 @@
 package com.safjnest.SlashCommands.Settings.LevelUp;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.ChannelData;
 import com.safjnest.Utilities.Bot.Guild.GuildData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.QueryResult;
-import com.safjnest.Utilities.SQL.ResultRow;
 
 public class LevelUpPreviewSlash extends SlashCommand{
 
@@ -48,20 +49,31 @@ public class LevelUpPreviewSlash extends SlashCommand{
 
         String message = "Level Up message:\n" + levelupMessage;
         
-        QueryResult rooms = DatabaseHandler.getRoomsSettingsWithExpModifier(guildId);
+        HashMap<Long, ChannelData> channels = gs.getChannels();
 
-        if(!rooms.isEmpty()) {
-            message += "\n\nChannel with exp Modifier:\n";
-            for(ResultRow room : rooms) {
-                message += event.getGuild().getTextChannelById(room.get("room_id")).getAsMention() + " exp: " + room.get("exp_value") + "\n";
+        ArrayList<String> expChannels = new ArrayList<>();
+        ArrayList<String> noExpChannels = new ArrayList<>();
+
+        for (ChannelData channel : channels.values()) {
+            if (!channel.isExpSystemEnabled()) {
+                noExpChannels.add(String.valueOf(channel.getRoomId()));
+            }
+            if (channel.getExpValue() != 1.0) {
+                expChannels.add(String.valueOf(channel.getRoomId()));
             }
         }
 
-        rooms = DatabaseHandler.getRoomsSettingsWithoutExp(guildId);
-        if(!rooms.isEmpty()){
+        if(!expChannels.isEmpty()) {
+            message += "\n\nChannel with exp Modifier:\n";
+            for(String channel_id : expChannels) {
+                message += event.getGuild().getTextChannelById(channel_id).getAsMention() + " exp: " + channels.get(Long.parseLong(channel_id)).getExpValue() + "\n";
+            }
+        }
+
+        if(!noExpChannels.isEmpty()){
             message += "\n\nChannel with exp system disabled:\n";
-            for(ResultRow room : rooms){
-                message += event.getGuild().getTextChannelById(room.get("room_id")).getAsMention() + "\n";
+            for(String channel_id : noExpChannels){
+                message += event.getGuild().getTextChannelById(channel_id).getAsMention() + "\n";
             }
         }
 

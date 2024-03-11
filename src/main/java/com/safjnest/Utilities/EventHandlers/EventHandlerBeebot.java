@@ -102,7 +102,7 @@ public class EventHandlerBeebot extends ListenerAdapter {
     @Override
     public void onChannelDelete(ChannelDeleteEvent event){
         if(event.getChannelType().isAudio()){
-            DatabaseHandler.deleteRoom(event.getGuild().getId(), event.getChannel().getId());
+            settings.getServer(event.getGuild().getId()).deleteChannelData(event.getChannel().getId());
         }
     }
 

@@ -60,7 +60,8 @@ public class PrintCache extends Command {
                     msg += "**" + event.getJDA().getGuildById(gd.getId()).getName() + "**```"
                         + "Prefix: " + gd.getPrefix() + "\n"
                         + "ExpSystem: " + (gd.isExpSystemEnabled() ? "enabled" : "disabled") + "\n"
-                        +  "Users: " + es.getUsers().keySet().stream().filter(s -> s.split("-", 2)[1].equals(String.valueOf(gd.getId()))).count() + "\n"
+                        + "Users: " + es.getUsers().keySet().stream().filter(s -> s.split("-", 2)[1].equals(String.valueOf(gd.getId()))).count() + "\n"
+                        + "Channels: " + gd.getChannels().size() + "\n"
                         + "Alerts: " + (gd.isAlertsCached() ? "cached" : "not cached") + "\n"
                         + "BlackList: " + (gd.isBlackListCached() ? "cached" : "not cached") + "```";
 
