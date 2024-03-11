@@ -36,6 +36,11 @@ public class Query extends Command{
     protected void execute(CommandEvent event) {
         String query = event.getArgs();
 
+        query = query.replace("#guild", event.getGuild().getId());
+        query = query.replace("#me", event.getAuthor().getId());
+        query = query.replace("#channel", event.getChannel().getId());
+        query = query.replace("#bot", event.getSelfMember().getId());
+
         QueryResult res = DatabaseHandler.safJQuery(query);
 
         if(res.isEmpty()) {
