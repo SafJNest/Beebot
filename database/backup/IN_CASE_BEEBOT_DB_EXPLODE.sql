@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: na01-sql.pebblehost.com
--- Creato il: Mar 01, 2024 alle 22:36
+-- Creato il: Mar 11, 2024 alle 22:09
 -- Versione del server: 10.2.41-MariaDB-log
 -- Versione PHP: 7.2.34
 
@@ -29,43 +29,6 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `alert` (
-  `guild_id` varchar(19) NOT NULL,
-  `bot_id` varchar(19) NOT NULL,
-  `boost_channel` varchar(19) DEFAULT NULL,
-  `leave_channel` varchar(19) DEFAULT NULL,
-  `welcome_channel` varchar(19) DEFAULT NULL,
-  `boost_message` text DEFAULT NULL,
-  `leave_message` text DEFAULT NULL,
-  `levelup_message` text DEFAULT NULL,
-  `welcome_message` text DEFAULT NULL,
-  `boost_enabled` tinyint(1) DEFAULT 0,
-  `leave_enabled` tinyint(1) DEFAULT 0,
-  `levelup_enabled` tinyint(1) DEFAULT 0,
-  `welcome_enabled` tinyint(1) DEFAULT 0,
-  `welcome_role` varchar(19) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dump dei dati per la tabella `alert`
---
-
-INSERT INTO `alert` (`guild_id`, `bot_id`, `boost_channel`, `leave_channel`, `welcome_channel`, `boost_message`, `leave_message`, `levelup_message`, `welcome_message`, `boost_enabled`, `leave_enabled`, `levelup_enabled`, `welcome_enabled`, `welcome_role`) VALUES
-('1132694832305934439', '938487470339801169', NULL, '1132694833912356946', '1132694833912356946', NULL, 'Ci vediamo tra 5 min chiaretta', NULL, 'Bentornata chiaretta, come procede il testing dei ban?', 0, 1, 0, 1, NULL),
-('1162886156082487306', '938487470339801169', NULL, NULL, '1162887572402491534', NULL, NULL, NULL, 'prova guma xddddd', 0, 0, 0, 1, NULL),
-('1191835670445035571', '938487470339801169', NULL, NULL, '1192046843060830289', NULL, NULL, 'wp #user, non sei ritardato come enrico, lvl: #level', 'porco mondo porco, ciao #user', 0, 0, 1, 1, NULL),
-('474935164451946506', '1098906798016184422', '691005529354665984', '691005390074150993', '691005390074150993', 'As always we got #user who is 1v9 machine and boost the best server in the focking world', 'This disgusting dog piece of shit compleanno abuser university enjoyer opt chimica unbalanced subject dell\'onissasa ovittaoidar  oid ocrop enacoid nocturne be liker dio mr chcuck figlio di puttana wake the fuck up and become a human being not a Burger King employee h&m cashier zero iq naples liver vesuvio liker wash them with lava of #user left the best server in the world', NULL, 'Welcome #user, i know you won\'t read this so i won\'t write anything interesting', 1, 1, 1, 1, '691012864609222667'),
-('474935164451946506', '938487470339801169', '1152150402863743036', '1152150402863743036', '1152150402863743036', 'yo epria imbesils', 'This disgusting dog piece of shit compleanno abuser university enjoyer opt chimica unbalanced subject dell\'onissasa ovittaoidar  oid ocrop enacoid nocturne be liker dio mr chcuck figlio di puttana wake the fuck up and become a human being not a Burger King employee h&m cashier zero iq naples liver vesuvio liker wash them with lava of #user left the best server in the world', 'wp #user, keep smurfing, now you are level: #level', 'hello guys welcome in ta insane server', 1, 1, 1, 1, '691012864609222667'),
-('608967318789160970', '1098906798016184422', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, NULL),
-('608967318789160970', '938487470339801169', NULL, '1094186395716817107', '1094186309465165854', NULL, 'guma and keria', 'Figlio di troia #user hai raggiunto il lvl #level', 'ciao keria #user', 0, 1, 1, 1, NULL),
-('608967318789160970', '939876818465488926', '1094186418705793097', '1094186395716817107', '824537182168547349', 'enacoid', 'keria', NULL, 'lel \"eee\" \'ee', 1, 1, 0, 1, '732671413366030437');
-
--- --------------------------------------------------------
-
---
--- Struttura della tabella `alert2`
---
-
-CREATE TABLE `alert2` (
   `id` int(10) UNSIGNED NOT NULL,
   `guild_id` varchar(19) NOT NULL,
   `bot_id` varchar(19) NOT NULL,
@@ -76,18 +39,15 @@ CREATE TABLE `alert2` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Dump dei dati per la tabella `alert2`
+-- Dump dei dati per la tabella `alert`
 --
 
-INSERT INTO `alert2` (`id`, `guild_id`, `bot_id`, `message`, `channel`, `enabled`, `type`) VALUES
+INSERT IGNORE INTO `alert` (`id`, `guild_id`, `bot_id`, `message`, `channel`, `enabled`, `type`) VALUES
 (1, '474935164451946506', '1098906798016184422', 'As always we got #user who is 1v9 machine and boost the best server in the focking world', '691005529354665984', 1, 0),
 (2, '474935164451946506', '938487470339801169', 'yo epria imbesils', '1152150402863743036', 1, 0),
-(3, '608967318789160970', '939876818465488926', 'enacoid', '1094186418705793097', 1, 0),
 (4, '1132694832305934439', '938487470339801169', 'Ci vediamo tra 5 min chiaretta', '1132694833912356946', 1, 1),
 (5, '474935164451946506', '1098906798016184422', 'This disgusting dog piece of shit compleanno abuser university enjoyer opt chimica unbalanced subject dell\'onissasa ovittaoidar  oid ocrop enacoid nocturne be liker dio mr chcuck figlio di puttana wake the fuck up and become a human being not a Burger King employee h&m cashier zero iq naples liver vesuvio liker wash them with lava of #user left the best server in the world', '691005390074150993', 1, 1),
-(6, '474935164451946506', '938487470339801169', 'This disgusting dog piece of shit compleanno abuser university enjoyer opt chimica unbalanced subject dell\'onissasa ovittaoidar  oid ocrop enacoid nocturne be liker dio mr chcuck figlio di puttana wake the fuck up and become a human being not a Burger King employee h&m cashier zero iq naples liver vesuvio liker wash them with lava of #user left the best server in the world', '1152150402863743036', 1, 1),
 (7, '608967318789160970', '938487470339801169', 'guma and keria', '1094186395716817107', 1, 1),
-(8, '608967318789160970', '939876818465488926', 'keria', '1094186395716817107', 1, 1),
 (9, '1191835670445035571', '938487470339801169', 'wp #user, non sei ritardato come enrico, lvl: #level', NULL, 1, 2),
 (10, '474935164451946506', '938487470339801169', 'wp #user, keep smurfing, now you are level: #level', NULL, 1, 2),
 (11, '608967318789160970', '938487470339801169', 'Figlio di troia #user hai raggiunto il lvl #level', NULL, 1, 2),
@@ -95,11 +55,17 @@ INSERT INTO `alert2` (`id`, `guild_id`, `bot_id`, `message`, `channel`, `enabled
 (13, '1162886156082487306', '938487470339801169', 'prova guma xddddd', '1162887572402491534', 1, 3),
 (14, '1191835670445035571', '938487470339801169', 'porco mondo porco, ciao #user', '1192046843060830289', 1, 3),
 (15, '474935164451946506', '1098906798016184422', 'Welcome #user, i know you won\'t read this so i won\'t write anything interesting', '691005390074150993', 1, 3),
-(16, '474935164451946506', '938487470339801169', 'hello guys welcome in ta insane server', '1152150402863743036', 1, 3),
 (17, '608967318789160970', '938487470339801169', 'ciao keria #user', '1094186309465165854', 1, 3),
-(18, '608967318789160970', '939876818465488926', 'lel \"eee\" \'ee', '824537182168547349', 1, 3),
 (20, '474935164451946506', '939876818465488926', 'keria', '1094186395716817107', 1, 1),
-(21, '474935164451946506', '939876818465488926', 'panta', '938513359626715176', 1, 3);
+(21, '474935164451946506', '939876818465488926', 'panta', '938513359626715176', 1, 3),
+(23, '608967318789160970', '939876818465488926', 'prova pippus', '1094186418705793097', 1, 3),
+(25, '608967318789160970', '939876818465488926', 'yo keria faker guma', NULL, 1, 2),
+(26, '608967318789160970', '939876818465488926', 'ciao faker', '1094186418705793097', 1, 1),
+(27, '608967318789160970', '939876818465488926', 'efwef', '1094186418705793097', 1, 0),
+(30, '1214539851861463071', '938487470339801169', '1232', '1214539853476405270', 1, 3),
+(31, '1214539851861463071', '938487470339801169', '123', '1214539853476405270', 1, 1),
+(32, '1214539851861463071', '938487470339801169', '123', NULL, 1, 2),
+(33, '474935164451946506', '938487470339801169', 'eeeeeeeeeeeee', '1152150402863743036', 1, 3);
 
 -- --------------------------------------------------------
 
@@ -117,11 +83,12 @@ CREATE TABLE `alert_role` (
 -- Dump dei dati per la tabella `alert_role`
 --
 
-INSERT INTO `alert_role` (`id`, `alert_id`, `role_id`) VALUES
-(1, 15, '691012864609222667'),
-(2, 16, '691012864609222667'),
-(3, 18, '732671413366030437'),
-(4, 18, '1094189794604626032');
+INSERT IGNORE INTO `alert_role` (`id`, `alert_id`, `role_id`) VALUES
+(12, 17, '732662989353779250'),
+(40, 23, '732662989353779250'),
+(41, 15, '691701297195253811'),
+(42, 15, '691012864609222667'),
+(43, 30, '1214540000826368013');
 
 -- --------------------------------------------------------
 
@@ -138,7 +105,7 @@ CREATE TABLE `blacklist` (
 -- Dump dei dati per la tabella `blacklist`
 --
 
-INSERT INTO `blacklist` (`user_id`, `guild_id`) VALUES
+INSERT IGNORE INTO `blacklist` (`user_id`, `guild_id`) VALUES
 ('1130157682435821678', '474935164451946506'),
 ('1171463034624032828', '608967318789160970'),
 ('1172264625933398149', '474935164451946506'),
@@ -151,6 +118,51 @@ INSERT INTO `blacklist` (`user_id`, `guild_id`) VALUES
 ('452174352230907904', '474935164451946506'),
 ('607400270518943758', '474935164451946506'),
 ('703886990948565003', '474935164451946506'),
+('707479292644163604', '1007678089054134392'),
+('707479292644163604', '1071851182160629790'),
+('707479292644163604', '1103387093109063713'),
+('707479292644163604', '1106615853660766298'),
+('707479292644163604', '1106615897952636930'),
+('707479292644163604', '1106615926578761830'),
+('707479292644163604', '1106615956685475991'),
+('707479292644163604', '1106648612039041064'),
+('707479292644163604', '1108673762708172811'),
+('707479292644163604', '1114239502874054756'),
+('707479292644163604', '1114848772762120313'),
+('707479292644163604', '1117059269901164636'),
+('707479292644163604', '1117060300592664677'),
+('707479292644163604', '1117060763182452746'),
+('707479292644163604', '1123678509693423738'),
+('707479292644163604', '1131573980944416768'),
+('707479292644163604', '1131943807714349117'),
+('707479292644163604', '1132405368119627869'),
+('707479292644163604', '1132636113568280636'),
+('707479292644163604', '1132636703883014154'),
+('707479292644163604', '1132694780703416410'),
+('707479292644163604', '1132694832305934439'),
+('707479292644163604', '1150154886005133492'),
+('707479292644163604', '1160358952173834352'),
+('707479292644163604', '1162886156082487306'),
+('707479292644163604', '1166825736393457735'),
+('707479292644163604', '1191835670445035571'),
+('707479292644163604', '1194737164202807379'),
+('707479292644163604', '1214539851861463071'),
+('707479292644163604', '333949691962195969'),
+('707479292644163604', '474935164451946506'),
+('707479292644163604', '518108973824475136'),
+('707479292644163604', '608967318789160970'),
+('707479292644163604', '676530982169608192'),
+('707479292644163604', '697504135309820025'),
+('707479292644163604', '707624177913430108'),
+('707479292644163604', '726201794031779852'),
+('707479292644163604', '731222545864458260'),
+('707479292644163604', '772754737032069192'),
+('707479292644163604', '806221769458450483'),
+('707479292644163604', '812404348298330142'),
+('707479292644163604', '876606568412639272'),
+('707479292644163604', '943974473370062948'),
+('707479292644163604', '981936477225242734'),
+('707479292644163604', '983324272627974144'),
 ('944016826751389717', '474935164451946506');
 
 -- --------------------------------------------------------
@@ -168,13 +180,54 @@ CREATE TABLE `bots` (
 -- Dump dei dati per la tabella `bots`
 --
 
-INSERT INTO `bots` (`id`, `name`) VALUES
+INSERT IGNORE INTO `bots` (`id`, `name`) VALUES
 ('1074276395640954942', 'Beebot Music'),
 ('1098906798016184422', 'Beebot Moderation'),
 ('743625922930016407', 'godj'),
 ('938487470339801169', 'Beebot'),
 ('939876818465488926', 'Beebot Canary'),
 ('983315338886279229', 'Beebot 2');
+
+-- --------------------------------------------------------
+
+--
+-- Struttura della tabella `channel`
+--
+
+CREATE TABLE `channel` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `guild_id` varchar(19) NOT NULL,
+  `bot_id` varchar(19) NOT NULL,
+  `channel_id` varchar(19) NOT NULL,
+  `exp_modifier` double NOT NULL DEFAULT 1,
+  `exp_enabled` tinyint(4) NOT NULL DEFAULT 1,
+  `stats_enabled` tinyint(4) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+--
+-- Dump dei dati per la tabella `channel`
+--
+
+INSERT IGNORE INTO `channel` (`id`, `guild_id`, `bot_id`, `channel_id`, `exp_modifier`, `exp_enabled`, `stats_enabled`) VALUES
+(3, '474935164451946506', '938487470339801169', '961272717120778300', 1.2, 1, 1),
+(22, '608967318789160970', '938487470339801169', '1094186418705793097', 1, 1, 0),
+(23, '608967318789160970', '983315338886279229', '1094186418705793097', 1, 1, 0),
+(24, '608967318789160970', '939876818465488926', '1094186418705793097', 1, 1, 0),
+(25, '608967318789160970', '1098906798016184422', '1094186418705793097', 1, 1, 0),
+(26, '608967318789160970', '1074276395640954942', '1094186418705793097', 1, 1, 0),
+(27, '608967318789160970', '938487470339801169', '1103989963000922122', 1, 1, 0),
+(28, '608967318789160970', '983315338886279229', '1103989963000922122', 1, 1, 0),
+(29, '608967318789160970', '939876818465488926', '1103989963000922122', 1, 1, 0),
+(30, '608967318789160970', '1098906798016184422', '1103989963000922122', 1, 1, 0),
+(31, '608967318789160970', '1074276395640954942', '1103989963000922122', 1, 1, 0),
+(32, '608967318789160970', '938487470339801169', '1132977374099669052', 1, 1, 0),
+(33, '608967318789160970', '983315338886279229', '1132977374099669052', 1, 1, 0),
+(34, '608967318789160970', '939876818465488926', '1132977374099669052', 1, 1, 0),
+(35, '608967318789160970', '1098906798016184422', '1132977374099669052', 1, 1, 0),
+(36, '608967318789160970', '1074276395640954942', '1132977374099669052', 1, 1, 0),
+(37, '474935164451946506', '938487470339801169', '733274067917996123', 0.9, 1, 1),
+(38, '474935164451946506', '938487470339801169', '938513359626715176', 1, 1, 1),
+(39, '474935164451946506', '939876818465488926', '1113453933508169728', 2, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -196,7 +249,7 @@ CREATE TABLE `command` (
 -- Dump dei dati per la tabella `command`
 --
 
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (1, '2023-08-02 16:57:38', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', NULL),
 (2, '2023-08-04 10:14:18', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', NULL),
 (3, '2023-08-04 10:14:31', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', NULL),
@@ -651,7 +704,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (452, '2023-09-01 13:08:43', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', NULL),
 (453, '2023-09-01 13:08:54', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', NULL),
 (454, '2023-09-01 13:09:05', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', NULL);
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (455, '2023-09-01 13:10:30', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', NULL),
 (456, '2023-09-01 13:10:44', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', NULL),
 (457, '2023-09-01 13:11:01', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', NULL),
@@ -1104,7 +1157,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (904, '2023-09-02 11:32:12', 'prefixSlash', '383358222972616705', '474935164451946506', '1074276395640954942', NULL),
 (905, '2023-09-02 11:45:32', 'Unban', '383358222972616705', '474935164451946506', '938487470339801169', NULL),
 (906, '2023-09-02 12:22:31', 'Clear', '440489230968553472', '474935164451946506', '938487470339801169', NULL);
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (907, '2023-09-02 12:27:22', 'helpSlash', '440489230968553472', '474935164451946506', '939876818465488926', NULL),
 (908, '2023-09-02 14:08:58', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', NULL),
 (909, '2023-09-02 14:09:23', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', NULL),
@@ -1544,7 +1597,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (1343, '2023-09-18 22:11:54', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', NULL),
 (1344, '2023-09-18 22:12:14', 'TTS', '707479292644163604', '474935164451946506', '938487470339801169', NULL),
 (1345, '2023-09-18 22:12:47', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', NULL);
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (1346, '2023-09-19 22:40:55', 'Image', '440489230968553472', '474935164451946506', '938487470339801169', NULL),
 (1347, '2023-09-19 22:41:08', 'Clear', '440489230968553472', '474935164451946506', '938487470339801169', NULL),
 (1348, '2023-09-21 09:49:46', 'TTS', '707479292644163604', '474935164451946506', '938487470339801169', NULL),
@@ -1942,7 +1995,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (1740, '2023-10-05 20:10:56', 'TTS', '383358222972616705', '474935164451946506', '983315338886279229', 'let me think'),
 (1741, '2023-10-05 20:10:59', 'TTS', '440489230968553472', '474935164451946506', '938487470339801169', 'de ansuer is?'),
 (1742, '2023-10-05 20:11:13', 'TTS', '383358222972616705', '474935164451946506', '983315338886279229', 'ai don no');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (1743, '2023-10-05 20:11:28', 'TTS', '383358222972616705', '474935164451946506', '983315338886279229', 'ai vuos tinching about satis'),
 (1744, '2023-10-05 20:11:45', 'TTS', '383358222972616705', '474935164451946506', '983315338886279229', 'oor we could play'),
 (1745, '2023-10-05 20:11:53', 'PlaySound', '383358222972616705', '474935164451946506', '983315338886279229', '204'),
@@ -2320,7 +2373,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (2117, '2023-10-06 22:54:28', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', '43'),
 (2118, '2023-10-06 22:54:36', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', '44'),
 (2119, '2023-10-06 22:54:43', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', '45');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (2120, '2023-10-06 22:54:59', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', '46'),
 (2121, '2023-10-06 22:55:43', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', '47'),
 (2122, '2023-10-06 22:55:49', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', '48'),
@@ -2703,7 +2756,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (2499, '2023-10-11 12:35:16', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', 'empty se non ha chiavi'),
 (2500, '2023-10-11 12:35:36', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', 'empty di un map vede se ha le chiavi null'),
 (2501, '2023-10-11 12:36:21', 'infomatchesSlash', '383358222972616705', '474935164451946506', '939876818465488926', '[]');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (2502, '2023-10-11 12:36:41', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', 'era safjqueryu'),
 (2503, '2023-10-11 12:36:47', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', 'non fetchjrow'),
 (2504, '2023-10-11 12:36:57', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', 'prima non lo era'),
@@ -2952,7 +3005,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (2747, '2023-10-11 15:58:43', 'TTS', '440489230968553472', '474935164451946506', '938487470339801169', 'merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio merio epria epria merio'),
 (2748, '2023-10-11 15:58:46', 'Stop', '440489230968553472', '474935164451946506', '938487470339801169', ''),
 (2749, '2023-10-11 22:34:23', 'soundboardSlash', '440489230968553472', '474935164451946506', '939876818465488926', '[OptionMapping[STRING](name=name, value=seFunzionaUccidoDio), OptionMapping[STRING](name=sound-1, value=1), OptionMapping[STRING](name=sound-2, value=169)]');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (2750, '2023-10-11 22:51:24', 'soundboardSlash', '440489230968553472', '474935164451946506', '939876818465488926', '[OptionMapping[STRING](name=name, value=asda), OptionMapping[STRING](name=sound-1, value=94), OptionMapping[STRING](name=sound-2, value=205)]'),
 (2751, '2023-10-11 22:54:13', 'soundboardSlash', '440489230968553472', '474935164451946506', '939876818465488926', '[OptionMapping[STRING](name=name, value=asdadsdasda), OptionMapping[STRING](name=sound-1, value=40)]'),
 (2752, '2023-10-11 22:54:56', 'soundboardSlash', '440489230968553472', '474935164451946506', '939876818465488926', '[OptionMapping[STRING](name=name, value=asdasdasda), OptionMapping[STRING](name=sound-1, value=116)]'),
@@ -3304,7 +3357,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (3098, '2023-10-17 21:43:46', 'apodSlash', '440489230968553472', '474935164451946506', '939876818465488926', '[OptionMapping[STRING](name=date, value=2024-11-01)]'),
 (3099, '2023-10-17 21:44:12', 'apodSlash', '440489230968553472', '474935164451946506', '939876818465488926', '[]'),
 (3100, '2023-10-18 11:17:28', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (3101, '2023-10-18 11:17:38', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=toggle, value=on)]'),
 (3102, '2023-10-18 12:27:32', 'helpSlash', '352192170503045121', '731222545864458260', '938487470339801169', '[]'),
 (3103, '2023-10-18 12:27:43', 'prefixSlash', '352192170503045121', '731222545864458260', '938487470339801169', '[OptionMapping[STRING](name=prefix, value=p)]'),
@@ -3703,7 +3756,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (3496, '2023-10-29 23:12:06', 'PlaySound', '440489230968553472', '474935164451946506', '938487470339801169', 'ossa'),
 (3497, '2023-10-29 23:19:57', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', 'cancer'),
 (3498, '2023-10-29 23:23:15', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', 'mobarog');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (3499, '2023-10-29 23:23:36', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', 'faker'),
 (3500, '2023-10-29 23:23:48', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', 'faker 2'),
 (3501, '2023-10-30 13:41:56', 'Help', '440489230968553472', '474935164451946506', '938487470339801169', ''),
@@ -4105,7 +4158,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (3897, '2023-11-02 14:03:27', 'Query', '383358222972616705', '474935164451946506', '938487470339801169', 'select sum(times) as times, user_id as figli_di_troia from play group by user_id order by times desc limit 10'),
 (3898, '2023-11-02 14:15:11', 'TTS', '383358222972616705', '474935164451946506', '938487470339801169', 'ma get cancer disgusting dog piece of shit compleanno abuser university enjoyer opt chimica unbalanced subject dell\'onissasa ovittaoidar  oid ocrop enacoid nocturne be liker dio mr chcuck figlio di puttana wake the fuck up and become a human being not a Burger King employee h&m cashier zero iq naples liver vesuvio liker wash them with lava'),
 (3899, '2023-11-02 14:15:45', 'Ban', '383358222972616705', '474935164451946506', '938487470339801169', '@leom');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (3900, '2023-11-02 17:26:40', 'TTS', '707479292644163604', '474935164451946506', '938487470339801169', 'noooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo'),
 (3901, '2023-11-02 17:29:16', 'TTS', '707479292644163604', '474935164451946506', '938487470339801169', 'disgusting'),
 (3902, '2023-11-02 17:29:26', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', 'cancer'),
@@ -4476,7 +4529,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (4267, '2023-11-06 15:31:35', 'Stop', '383358222972616705', '608967318789160970', '938487470339801169', ''),
 (4268, '2023-11-06 15:34:43', 'PlaySound', '707479292644163604', '474935164451946506', '938487470339801169', '219'),
 (4269, '2023-11-06 16:25:49', 'PlaySound', '383358222972616705', '608967318789160970', '938487470339801169', '219');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (4270, '2023-11-06 16:26:00', 'PlaySound', '383358222972616705', '608967318789160970', '938487470339801169', 'masterio'),
 (4271, '2023-11-06 16:26:10', 'Ram', '383358222972616705', '608967318789160970', '938487470339801169', ''),
 (4272, '2023-11-06 16:26:12', 'Ram', '383358222972616705', '608967318789160970', '938487470339801169', ''),
@@ -4881,7 +4934,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (4671, '2023-11-11 14:42:52', 'threadcounter', '440489230968553472', '474935164451946506', '938487470339801169', ''),
 (4672, '2023-11-11 14:42:53', 'threadcounter', '383358222972616705', '474935164451946506', '938487470339801169', ''),
 (4673, '2023-11-11 14:42:58', 'stop', '440489230968553472', '474935164451946506', '938487470339801169', '');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (4674, '2023-11-11 14:42:58', 'threadcounter', '440489230968553472', '474935164451946506', '938487470339801169', ''),
 (4675, '2023-11-11 14:42:59', 'threadcounter', '440489230968553472', '474935164451946506', '938487470339801169', ''),
 (4676, '2023-11-11 14:43:01', 'threadcounter', '440489230968553472', '474935164451946506', '938487470339801169', ''),
@@ -5276,7 +5329,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (5065, '2023-11-21 02:25:22', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '185'),
 (5066, '2023-11-21 02:25:34', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', 'arcus ex'),
 (5067, '2023-11-21 02:31:40', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', 'ooo');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (5068, '2023-11-21 09:05:54', 'leaderboard', '352192170503045121', '474935164451946506', '938487470339801169', ''),
 (5069, '2023-11-21 09:06:28', 'calculator', '352192170503045121', '474935164451946506', '938487470339801169', '2986230 + 74395'),
 (5070, '2023-11-21 09:20:08', 'leaderboard', '352192170503045121', '474935164451946506', '938487470339801169', ''),
@@ -5663,7 +5716,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (5451, '2023-12-13 14:50:07', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '192'),
 (5452, '2023-12-13 15:31:32', 'tts', '383358222972616705', '474935164451946506', '938487470339801169', 'no focking way'),
 (5453, '2023-12-13 15:31:49', 'tts', '383358222972616705', '474935164451946506', '938487470339801169', 'non serve il belt');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (5454, '2023-12-13 15:32:01', 'tts', '383358222972616705', '474935164451946506', '938487470339801169', 'butta per terra e poi l\'inserter lo raccoglie'),
 (5455, '2023-12-13 15:32:11', 'tts', '383358222972616705', '474935164451946506', '938487470339801169', 'dove è il main bus?'),
 (5456, '2023-12-13 15:32:17', 'tts', '383358222972616705', '474935164451946506', '938487470339801169', 'reported'),
@@ -6028,7 +6081,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (5815, '2023-12-24 01:10:28', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'combo'),
 (5816, '2023-12-24 01:10:33', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eheh'),
 (5817, '2023-12-24 01:10:37', 'playsound', '440489230968553472', '474935164451946506', '938487470339801169', '204');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (5818, '2023-12-24 01:10:39', 'playsound', '440489230968553472', '474935164451946506', '938487470339801169', '203'),
 (5819, '2023-12-24 01:10:40', 'playsound', '440489230968553472', '474935164451946506', '938487470339801169', '202'),
 (5820, '2023-12-24 01:10:42', 'playsound', '440489230968553472', '474935164451946506', '938487470339801169', '201'),
@@ -6398,7 +6451,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (6184, '2024-01-03 14:39:02', 'playyoutube', '707479292644163604', '474935164451946506', '938487470339801169', 'los pinguinos christmas'),
 (6185, '2024-01-03 18:05:43', 'boostSlash', '298192922241794051', '1191835670445035571', '938487470339801169', '[OptionMapping[CHANNEL](name=channel, value=1192058496460525660)]'),
 (6186, '2024-01-03 18:05:59', 'bugsnotifierSlash', '298192922241794051', '1191835670445035571', '938487470339801169', '[OptionMapping[STRING](name=command, value=calculator), OptionMapping[STRING](name=text, value=bug)]');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (6187, '2024-01-03 18:06:27', 'diceSlash', '298192922241794051', '1191835670445035571', '938487470339801169', '[OptionMapping[STRING](name=text, value=5)]'),
 (6188, '2024-01-03 18:06:29', 'diceSlash', '298192922241794051', '1191835670445035571', '938487470339801169', '[OptionMapping[STRING](name=text, value=5)]'),
 (6189, '2024-01-03 18:06:30', 'diceSlash', '298192922241794051', '1191835670445035571', '938487470339801169', '[OptionMapping[STRING](name=text, value=5)]'),
@@ -6744,7 +6797,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (6529, '2024-01-19 23:21:35', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'scongiuro'),
 (6530, '2024-01-19 23:21:44', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
 (6531, '2024-01-19 23:21:46', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (6532, '2024-01-19 23:21:47', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
 (6533, '2024-01-19 23:21:47', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'ee'),
 (6534, '2024-01-19 23:21:48', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
@@ -7129,7 +7182,7 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (6913, '2024-02-14 17:48:16', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '201'),
 (6914, '2024-02-14 17:48:22', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '202'),
 (6915, '2024-02-14 17:48:32', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '203');
-INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
 (6916, '2024-02-14 17:48:36', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '20'),
 (6917, '2024-02-14 17:48:41', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '204'),
 (6918, '2024-02-14 17:48:56', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '205'),
@@ -7272,7 +7325,299 @@ INSERT INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `a
 (7055, '2024-03-01 21:43:27', 'banSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[USER](name=member, value=352192170503045121)]'),
 (7056, '2024-03-01 21:43:45', 'summoner', '383358222972616705', '474935164451946506', '938487470339801169', ''),
 (7057, '2024-03-01 21:43:51', 'banSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[USER](name=member, value=352192170503045121)]'),
-(7058, '2024-03-01 21:45:04', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', '');
+(7058, '2024-03-01 21:45:04', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7059, '2024-03-01 22:55:26', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7060, '2024-03-01 22:59:37', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7061, '2024-03-01 23:00:23', 'listguild', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7062, '2024-03-01 23:01:01', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '7'),
+(7063, '2024-03-01 23:01:15', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7064, '2024-03-01 23:01:19', 'summoner', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7065, '2024-03-01 23:01:22', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '7'),
+(7066, '2024-03-01 23:01:42', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '5'),
+(7067, '2024-03-01 23:01:53', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '5 474935164451946506'),
+(7068, '2024-03-01 23:03:29', 'tts', '383358222972616705', '474935164451946506', '938487470339801169', 'list'),
+(7069, '2024-03-01 23:03:56', 'tts', '440489230968553472', '474935164451946506', '938487470339801169', 'porco & dio akjdajsdas da'),
+(7070, '2024-03-01 23:04:12', 'tts', '440489230968553472', '474935164451946506', '938487470339801169', '& ciao'),
+(7071, '2024-03-01 23:04:13', 'tts', '383358222972616705', '474935164451946506', '938487470339801169', 'disgusting dog piece of shit compleanno abuser university enjoyer opt chimica unbalanced subject dell\'onissasa ovittaoidar  oid ocrop enacoid nocturne be liker dio mr chcuck figlio di puttana wake the fuck up and become a human being not a Burger King employee h&m cashier zero iq naples liver vesuvio liker wash them with lava'),
+(7072, '2024-03-01 23:04:42', 'ram', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7073, '2024-03-01 23:04:44', 'ping', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7074, '2024-03-01 23:04:49', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'ee'),
+(7075, '2024-03-01 23:04:51', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
+(7076, '2024-03-01 23:04:52', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
+(7077, '2024-03-01 23:04:54', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
+(7078, '2024-03-01 23:04:55', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
+(7079, '2024-03-01 23:04:57', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
+(7080, '2024-03-01 23:05:17', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from sound where id = 40'),
+(7081, '2024-03-01 23:05:29', 'memberinfo', '383358222972616705', '474935164451946506', '938487470339801169', '<@938487470339801169>'),
+(7082, '2024-03-01 23:05:57', 'memberinfo', '383358222972616705', '474935164451946506', '938487470339801169', '<@939876818465488926>'),
+(7083, '2024-03-01 23:07:21', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7084, '2024-03-02 12:44:14', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[]'),
+(7085, '2024-03-02 12:44:32', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[OptionMapping[STRING](name=message, value=yo wp crazy man #level)]'),
+(7086, '2024-03-02 12:44:45', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[]'),
+(7087, '2024-03-02 12:46:40', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[OptionMapping[STRING](name=message, value=yo keria faker guma)]'),
+(7088, '2024-03-02 18:06:21', 'serverinfo', '383358222972616705', '608967318789160970', '938487470339801169', ''),
+(7089, '2024-03-02 18:06:29', 'serverinfo', '383358222972616705', '608967318789160970', '983315338886279229', ''),
+(7090, '2024-03-02 18:06:38', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7091, '2024-03-02 18:06:46', 'printcache', '383358222972616705', '474935164451946506', '983315338886279229', ''),
+(7092, '2024-03-02 18:06:54', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7093, '2024-03-02 18:07:16', 'helpSlash', '383358222972616705', '474935164451946506', '1098906798016184422', '[]'),
+(7094, '2024-03-02 18:07:24', 'serverinfo', '383358222972616705', '474935164451946506', '1098906798016184422', ''),
+(7095, '2024-03-02 18:07:36', 'printcache', '383358222972616705', '474935164451946506', '1098906798016184422', ''),
+(7096, '2024-03-02 18:09:19', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from guild where guild_id = 474935164451946506'),
+(7097, '2024-03-02 18:14:08', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7098, '2024-03-02 18:14:11', 'printcache', '383358222972616705', '474935164451946506', '1098906798016184422', ''),
+(7099, '2024-03-02 18:14:20', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7100, '2024-03-02 18:15:29', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '14'),
+(7101, '2024-03-02 18:15:44', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7102, '2024-03-04 19:46:19', 'playyoutube', '707479292644163604', '474935164451946506', '938487470339801169', 'ferro di checov'),
+(7103, '2024-03-04 19:47:13', 'playyoutube', '707479292644163604', '474935164451946506', '938487470339801169', 'https://www.youtube.com/watch?v=I6WnvAyMg9c'),
+(7104, '2024-03-04 19:47:17', 'skip', '707479292644163604', '474935164451946506', '938487470339801169', ''),
+(7105, '2024-03-04 19:51:33', 'playyoutube', '707479292644163604', '474935164451946506', '938487470339801169', 'tony boy fortuna'),
+(7106, '2024-03-04 19:53:50', 'playyoutube', '707479292644163604', '474935164451946506', '938487470339801169', 'shottini di lean'),
+(7107, '2024-03-04 22:48:34', 'ping', '662465744210231326', '726201794031779852', '938487470339801169', ''),
+(7108, '2024-03-05 08:42:39', 'welcomeSlash', '383358222972616705', '474935164451946506', '1098906798016184422', '[]'),
+(7109, '2024-03-05 08:43:34', 'welcomeSlash', '383358222972616705', '474935164451946506', '1098906798016184422', '[OptionMapping[ROLE](name=role, value=691701297195253811)]'),
+(7110, '2024-03-05 08:43:38', 'welcomeSlash', '383358222972616705', '474935164451946506', '1098906798016184422', '[]'),
+(7111, '2024-03-05 08:44:08', 'welcomeSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7112, '2024-03-05 08:44:14', 'welcomeSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7113, '2024-03-05 08:44:20', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '13'),
+(7114, '2024-03-05 08:44:37', 'leaveSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7115, '2024-03-05 08:44:42', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '13'),
+(7116, '2024-03-05 08:44:58', 'leaveSlash', '383358222972616705', '474935164451946506', '1098906798016184422', '[]'),
+(7117, '2024-03-05 11:48:33', 'help', '383358222972616705', '1214539851861463071', '938487470339801169', ''),
+(7118, '2024-03-05 11:48:43', 'test', '383358222972616705', '1214539851861463071', '938487470339801169', '13'),
+(7119, '2024-03-05 11:49:01', 'welcomeSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=message, value=123), OptionMapping[CHANNEL](name=channel, value=1214539853476405270)]'),
+(7120, '2024-03-05 11:49:28', 'test', '383358222972616705', '1214539851861463071', '938487470339801169', '13'),
+(7121, '2024-03-05 11:49:32', 'prefixSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=prefix, value=p)]'),
+(7122, '2024-03-05 11:49:35', 'help', '383358222972616705', '1214539851861463071', '938487470339801169', ''),
+(7123, '2024-03-05 12:32:41', 'welcomeSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=message, value=123), OptionMapping[CHANNEL](name=channel, value=1214539853476405270)]'),
+(7124, '2024-03-05 12:32:48', 'test', '383358222972616705', '1214539851861463071', '938487470339801169', '13'),
+(7125, '2024-03-05 12:34:00', 'welcomeSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=message, value=123), OptionMapping[CHANNEL](name=channel, value=1214539853476405270)]'),
+(7126, '2024-03-05 12:34:07', 'test', '383358222972616705', '1214539851861463071', '938487470339801169', '13'),
+(7127, '2024-03-05 12:34:11', 'welcomeSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[]'),
+(7128, '2024-03-05 12:34:18', 'test', '383358222972616705', '1214539851861463071', '938487470339801169', '13'),
+(7129, '2024-03-05 12:34:28', 'welcomeSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=message, value=1232), OptionMapping[CHANNEL](name=channel, value=1214539853476405270), OptionMapping[ROLE](name=role, value=1214540000826368013)]'),
+(7130, '2024-03-05 12:34:35', 'test', '383358222972616705', '1214539851861463071', '938487470339801169', '13'),
+(7131, '2024-03-05 12:34:45', 'leaveSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=message, value=123)]'),
+(7132, '2024-03-05 12:34:48', 'test', '383358222972616705', '1214539851861463071', '938487470339801169', '13'),
+(7133, '2024-03-05 12:39:12', 'help', '383358222972616705', '1214539851861463071', '938487470339801169', ''),
+(7134, '2024-03-05 12:39:24', 'prefixSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=prefix, value=p)]'),
+(7135, '2024-03-05 12:39:26', 'help', '383358222972616705', '1214539851861463071', '938487470339801169', ''),
+(7136, '2024-03-05 12:39:29', 'test', '383358222972616705', '1214539851861463071', '938487470339801169', '13'),
+(7137, '2024-03-05 13:07:49', 'help', '383358222972616705', '1214539851861463071', '938487470339801169', ''),
+(7138, '2024-03-05 13:07:57', 'rewardsSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[]'),
+(7139, '2024-03-05 13:08:09', 'levelupSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[]'),
+(7140, '2024-03-05 13:08:19', 'levelupSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=toggle, value=on)]'),
+(7141, '2024-03-05 13:08:25', 'levelupSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[]'),
+(7142, '2024-03-05 13:08:47', 'levelupSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[OptionMapping[STRING](name=message, value=123)]'),
+(7143, '2024-03-05 13:08:58', 'levelupSlash', '383358222972616705', '1214539851861463071', '938487470339801169', '[]'),
+(7144, '2024-03-05 21:08:16', 'playyoutube', '440489230968553472', '474935164451946506', '938487470339801169', 'https://www.youtube.com/shorts/CDid1ijtQzk'),
+(7145, '2024-03-05 21:23:51', 'stop', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7146, '2024-03-05 21:33:33', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7147, '2024-03-05 21:34:10', 'test', '440489230968553472', '474935164451946506', '938487470339801169', '7'),
+(7148, '2024-03-05 21:34:24', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '14'),
+(7149, '2024-03-05 21:34:36', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7150, '2024-03-05 21:35:15', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', '812404348298330142'),
+(7151, '2024-03-05 21:35:32', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * command where guild_id = 812404348298330142'),
+(7152, '2024-03-05 21:35:42', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from command where guild_id = 812404348298330142'),
+(7153, '2024-03-05 21:36:24', 'welcomeSlash', '383358222972616705', '474935164451946506', '1098906798016184422', '[]'),
+(7154, '2024-03-05 21:41:27', 'specialcharSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=command, value=grave_accent)]'),
+(7155, '2024-03-05 21:41:35', 'specialcharSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=command, value=tilde)]'),
+(7156, '2024-03-05 21:42:27', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from blacklist'),
+(7157, '2024-03-05 21:54:13', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '13'),
+(7158, '2024-03-05 22:22:55', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '14'),
+(7159, '2024-03-05 22:23:11', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7160, '2024-03-05 22:23:57', 'printcache', '383358222972616705', '474935164451946506', '983315338886279229', ''),
+(7161, '2024-03-05 22:24:10', 'welcomeSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7162, '2024-03-05 22:24:28', 'welcomeSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=message, value=eeeeeeeeeeeee), OptionMapping[CHANNEL](name=channel, value=1152150402863743036)]'),
+(7163, '2024-03-06 21:08:55', 'playyoutube', '707479292644163604', '474935164451946506', '938487470339801169', 'https://www.youtube.com/watch?v=seeofUsSRJc'),
+(7164, '2024-03-06 21:09:27', 'playyoutube', '291624587278417920', '474935164451946506', '938487470339801169', 'https://www.youtube.com/watch?v=seeofUsSRJc'),
+(7165, '2024-03-06 21:09:38', 'playSlash', '291624587278417920', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=video, value=https://www.youtube.com/watch?v=seeofUsSRJc)]'),
+(7166, '2024-03-06 21:12:59', 'queue', '440489230968553472', '474935164451946506', '938487470339801169', ''),
+(7167, '2024-03-07 16:26:37', 'help', '383358222972616705', '1214539851861463071', '938487470339801169', ''),
+(7168, '2024-03-07 21:04:52', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '1v9 song'),
+(7169, '2024-03-07 21:04:56', 'stop', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7170, '2024-03-07 21:05:48', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'eee'),
+(7171, '2024-03-07 21:05:49', 'stop', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7172, '2024-03-07 21:05:50', 'ram', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7173, '2024-03-07 21:05:54', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7174, '2024-03-07 21:05:57', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7175, '2024-03-07 21:06:01', 'ping', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7176, '2024-03-07 21:16:16', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '1v9 song'),
+(7177, '2024-03-07 21:16:23', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '10 second joke'),
+(7178, '2024-03-07 21:16:26', 'skip', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7179, '2024-03-07 21:16:27', 'queue', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7180, '2024-03-07 21:16:28', 'queue', '440489230968553472', '474935164451946506', '938487470339801169', ''),
+(7181, '2024-03-07 21:16:42', 'tts', '440489230968553472', '474935164451946506', '938487470339801169', 'list'),
+(7182, '2024-03-07 21:16:50', 'queue', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7183, '2024-03-07 21:17:21', 'tts', '440489230968553472', '474935164451946506', '938487470339801169', 'Mary hey buddy HOW THE FUCK AS SCHOOL YOU PIECE OF SHIT HOW WAS IT PORCO DIO'),
+(7184, '2024-03-07 21:17:31', 'playSlash', '586072535280517120', '697504135309820025', '938487470339801169', '[OptionMapping[STRING](name=video, value=Natasha Bedingfield - Unwritten (Official Video) (as featured in Anyone But You))]'),
+(7185, '2024-03-07 21:17:33', 'stop', '440489230968553472', '474935164451946506', '938487470339801169', ''),
+(7186, '2024-03-07 21:19:03', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7187, '2024-03-07 21:20:11', 'serverinfoSlash', '440489230968553472', '474935164451946506', '938487470339801169', '[OptionMapping[INTEGER](name=rolecharnumber, value=32)]'),
+(7188, '2024-03-07 21:21:52', 'queue', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7189, '2024-03-07 21:23:44', 'playSlash', '586507253767471114', '697504135309820025', '938487470339801169', '[OptionMapping[STRING](name=video, value=Natasha Bedingfield - Unwritten (Official Video) (as featured in Anyone But You))]'),
+(7190, '2024-03-07 21:29:59', 'weatherSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=location, value=porto san giorgio)]'),
+(7191, '2024-03-07 21:30:02', 'weatherSlash', '440489230968553472', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=location, value=pisa)]'),
+(7192, '2024-03-07 21:30:18', 'weatherSlash', '440489230968553472', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=location, value=pisa)]'),
+(7193, '2024-03-07 21:30:51', 'summoner', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7194, '2024-03-07 21:45:40', 'queue', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7195, '2024-03-07 21:46:55', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '1v9 song'),
+(7196, '2024-03-07 21:57:38', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7197, '2024-03-07 21:59:57', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7198, '2024-03-07 22:00:09', 'help', '383358222972616705', '474935164451946506', '938487470339801169', 'emojiinfo'),
+(7199, '2024-03-07 22:00:23', 'emojiinfo', '383358222972616705', '474935164451946506', '938487470339801169', '<a:54vI:1215414697277263944>'),
+(7200, '2024-03-07 22:02:12', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7201, '2024-03-07 22:02:29', 'memberinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7202, '2024-03-07 22:03:19', 'channelinfoSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[CHANNEL](name=channel, value=729746548082081842)]'),
+(7203, '2024-03-07 22:04:25', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7204, '2024-03-07 22:04:33', 'leaderboard', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7205, '2024-03-07 22:04:45', 'memberinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7206, '2024-03-07 22:05:37', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select count(time) from command where guild_id = 474935164451946506 AND user_id = 383358222972616705'),
+(7207, '2024-03-07 22:06:32', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select max(max.cont), max.user_id from (select user_id, count(name) as cont from command_analytic group by user_id) max;'),
+(7208, '2024-03-07 22:06:41', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select max(max.cont), max.user_id from (select user_id, count(name) as cont from command group by user_id) max;'),
+(7209, '2024-03-07 22:06:51', 'memberinfo', '383358222972616705', '474935164451946506', '938487470339801169', '1031535221067218965'),
+(7210, '2024-03-07 22:07:27', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select count(time), user_id from command group by user_id'),
+(7211, '2024-03-07 22:08:25', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from command where user_id = 298192922241794051'),
+(7212, '2024-03-07 22:10:36', 'list', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7213, '2024-03-07 22:10:39', 'list', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7214, '2024-03-07 22:11:04', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select sleep(10)'),
+(7215, '2024-03-07 22:11:14', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7216, '2024-03-07 22:13:32', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '1v9 song'),
+(7217, '2024-03-07 22:16:08', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '1v9 song'),
+(7218, '2024-03-07 22:44:51', 'weatherSlash', '291624587278417920', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=location, value=Pescara)]'),
+(7219, '2024-03-07 22:45:16', 'weatherSlash', '707479292644163604', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=location, value=Fermo)]'),
+(7220, '2024-03-07 22:45:41', 'weatherSlash', '707479292644163604', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=location, value=Camerino)]'),
+(7221, '2024-03-07 22:45:45', 'weatherSlash', '291624587278417920', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=location, value=Spoltore)]'),
+(7222, '2024-03-07 22:46:13', 'weatherSlash', '707479292644163604', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=location, value=Camerino Macerata)]'),
+(7223, '2024-03-08 12:37:53', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select sleep(5)'),
+(7224, '2024-03-08 12:37:58', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7225, '2024-03-08 12:39:00', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from *'),
+(7226, '2024-03-08 12:39:12', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from sleep(10)'),
+(7227, '2024-03-08 12:39:23', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'show table'),
+(7228, '2024-03-08 20:51:23', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'mastermind'),
+(7229, '2024-03-08 20:51:27', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'master'),
+(7230, '2024-03-08 20:51:29', 'stop', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7231, '2024-03-08 20:53:46', 'memberinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7232, '2024-03-08 23:01:18', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '1v9 song'),
+(7233, '2024-03-08 23:01:22', 'queue', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7234, '2024-03-08 23:01:24', 'stop', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7235, '2024-03-08 23:01:26', 'disconnect', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7236, '2024-03-08 23:01:28', 'queue', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7237, '2024-03-08 23:06:28', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', 'nocturne'),
+(7238, '2024-03-08 23:06:51', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', 'threashariel'),
+(7239, '2024-03-08 23:07:03', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', 'threshariel'),
+(7240, '2024-03-08 23:35:04', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', '726201794031779852'),
+(7241, '2024-03-08 23:35:40', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7242, '2024-03-08 23:37:03', 'summoner', '383358222972616705', '474935164451946506', '938487470339801169', 'Beastiality #6969'),
+(7243, '2024-03-08 23:49:17', 'livegame', '383358222972616705', '474935164451946506', '938487470339801169', 'sunyxz'),
+(7244, '2024-03-08 23:52:07', 'summoner', '383358222972616705', '474935164451946506', '938487470339801169', 'neku #twewy]'),
+(7245, '2024-03-08 23:52:36', 'summoner', '383358222972616705', '474935164451946506', '938487470339801169', 'neku #twewy'),
+(7246, '2024-03-09 14:09:21', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '1v9 song'),
+(7247, '2024-03-09 14:11:19', 'championSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=champ, value=Varus), OptionMapping[STRING](name=lane, value=ADC)]'),
+(7248, '2024-03-09 14:12:46', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', 'https://youtu.be/HDKRkKzLX3k?si=rg35P_kw8QTIhIEj&t=675'),
+(7249, '2024-03-09 14:12:57', 'playSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=video, value=https://youtu.be/HDKRkKzLX3k?si=rg35P_kw8QTIhIEj&t=675)]'),
+(7250, '2024-03-09 14:45:38', 'playSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=video, value=https://youtu.be/HDKRkKzLX3k?si=YjfpbmoT8OrK-PMW&t=679)]'),
+(7251, '2024-03-09 14:46:59', 'playSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=video, value=https://youtu.be/HDKRkKzLX3k?si=YjfpbmoT8OrK-PMW&t=679), OptionMapping[BOOLEAN](name=force, value=true)]'),
+(7252, '2024-03-09 14:49:49', 'playyoutubeforce', '383358222972616705', '474935164451946506', '938487470339801169', 'https://youtu.be/HDKRkKzLX3k?si=YjfpbmoT8OrK-PMW&t=679'),
+(7253, '2024-03-09 14:49:54', 'stop', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7254, '2024-03-09 14:50:39', 'playyoutubeforce', '383358222972616705', '474935164451946506', '938487470339801169', 'https://youtu.be/HDKRkKzLX3k?si=YjfpbmoT8OrK-PMW&t=679'),
+(7255, '2024-03-09 14:51:00', 'championSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=champ, value=Kai\'Sa), OptionMapping[STRING](name=lane, value=ADC)]'),
+(7256, '2024-03-09 14:58:27', 'playyoutubeforce', '383358222972616705', '474935164451946506', '938487470339801169', 'https://youtu.be/HDKRkKzLX3k?si=YjfpbmoT8OrK-PMW&t=679'),
+(7257, '2024-03-09 14:58:30', 'stop', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7258, '2024-03-09 15:31:45', 'playyoutubeforce', '383358222972616705', '474935164451946506', '938487470339801169', 'https://youtu.be/HDKRkKzLX3k?si=YjfpbmoT8OrK-PMW&t=679'),
+(7259, '2024-03-09 15:33:21', 'championSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=champ, value=Twitch), OptionMapping[STRING](name=lane, value=ADC)]'),
+(7260, '2024-03-09 15:48:10', 'livegame', '383358222972616705', '474935164451946506', '938487470339801169', 'sunyxz'),
+(7261, '2024-03-09 15:48:30', 'summoner', '383358222972616705', '474935164451946506', '938487470339801169', 'mudman113'),
+(7262, '2024-03-09 16:21:29', 'championSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=champ, value=Varus), OptionMapping[STRING](name=lane, value=ADC)]'),
+(7263, '2024-03-09 20:55:27', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', 'https://www.youtube.com/watch?v=l18A5BOTlzE&list=PLICFGh11ocIC4coj0Q-1rQmaeuKZR8QMa');
+INSERT IGNORE INTO `command` (`id`, `time`, `name`, `user_id`, `guild_id`, `bot_id`, `args`) VALUES
+(7264, '2024-03-09 20:55:30', 'queue', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7265, '2024-03-09 21:47:24', 'championSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=champ, value=Jhin), OptionMapping[STRING](name=lane, value=ADC)]'),
+(7266, '2024-03-10 01:24:45', 'help', '1094183958205436005', '474935164451946506', '938487470339801169', ''),
+(7267, '2024-03-10 01:24:50', 'help', '930887271618609173', '474935164451946506', '938487470339801169', ''),
+(7268, '2024-03-10 01:25:13', 'query', '930887271618609173', '474935164451946506', '938487470339801169', 'select sleep(10000000)'),
+(7269, '2024-03-10 01:25:21', 'help', '440489230968553472', '474935164451946506', '938487470339801169', ''),
+(7270, '2024-03-10 01:26:05', 'jelly', '383358222972616705', '474935164451946506', '938487470339801169', '<@930887271618609173>'),
+(7271, '2024-03-10 01:26:19', 'jelly', '383358222972616705', '474935164451946506', '938487470339801169', '<@930887271618609173>'),
+(7272, '2024-03-10 01:26:26', 'help', '383358222972616705', '474935164451946506', '938487470339801169', 'jelly'),
+(7273, '2024-03-10 01:26:42', 'clear', '383358222972616705', '474935164451946506', '938487470339801169', '10'),
+(7274, '2024-03-10 01:26:48', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7275, '2024-03-10 01:27:00', 'randommove', '383358222972616705', '474935164451946506', '938487470339801169', '<@930887271618609173> 50'),
+(7276, '2024-03-10 01:28:37', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '13'),
+(7277, '2024-03-10 01:29:01', 'blacklistSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[INTEGER](name=threshold, value=10), OptionMapping[CHANNEL](name=channel, value=1152150402863743036)]'),
+(7278, '2024-03-10 01:29:05', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '13'),
+(7279, '2024-03-10 01:30:10', 'help', '383358222972616705', '474935164451946506', '938487470339801169', 'blacklist'),
+(7280, '2024-03-10 01:30:23', 'blacklistSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=toggle, value=off)]'),
+(7281, '2024-03-10 23:14:34', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', 'diamanti'),
+(7282, '2024-03-11 11:07:48', 'leaderboard', '383358222972616705', '1191835670445035571', '938487470339801169', ''),
+(7283, '2024-03-11 21:16:48', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[]'),
+(7284, '2024-03-11 21:18:40', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[OptionMapping[CHANNEL](name=channel, value=1094186418705793097), OptionMapping[NUMBER](name=modifier, value=1.3)]'),
+(7285, '2024-03-11 21:20:11', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[OptionMapping[CHANNEL](name=channel, value=1094186418705793097), OptionMapping[NUMBER](name=modifier, value=1.3)]'),
+(7286, '2024-03-11 21:20:45', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[OptionMapping[CHANNEL](name=channel, value=1094186418705793097), OptionMapping[NUMBER](name=modifier, value=1.3)]'),
+(7287, '2024-03-11 21:21:09', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[]'),
+(7288, '2024-03-11 21:22:24', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[OptionMapping[CHANNEL](name=channel, value=1094186418705793097), OptionMapping[NUMBER](name=modifier, value=1.3)]'),
+(7289, '2024-03-11 21:24:48', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[]'),
+(7290, '2024-03-11 21:26:56', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[]'),
+(7291, '2024-03-11 21:28:19', 'levelupSlash', '383358222972616705', '608967318789160970', '939876818465488926', '[]'),
+(7292, '2024-03-11 20:44:50', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7293, '2024-03-11 20:44:59', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from room'),
+(7294, '2024-03-11 20:45:46', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[CHANNEL](name=channel, value=961272717120778300), OptionMapping[NUMBER](name=modifier, value=1.2)]'),
+(7295, '2024-03-11 20:45:52', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7296, '2024-03-11 20:46:00', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from channel'),
+(7297, '2024-03-11 20:47:09', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '15'),
+(7298, '2024-03-11 20:47:16', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7299, '2024-03-11 21:02:38', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7300, '2024-03-11 21:02:48', 'help', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7301, '2024-03-11 21:03:21', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from channel where channel_id = 474935164451946506'),
+(7302, '2024-03-11 21:03:43', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from room where channel_id = 474935164451946506'),
+(7303, '2024-03-11 21:04:06', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from room where room_id = 474935164451946506'),
+(7304, '2024-03-11 21:04:23', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from channel where channel_id = 938513359626715176'),
+(7305, '2024-03-11 21:04:34', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from room where room_id = 938513359626715176'),
+(7306, '2024-03-11 21:05:56', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7307, '2024-03-11 21:06:45', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[CHANNEL](name=channel, value=733274067917996123), OptionMapping[NUMBER](name=modifier, value=0.9)]'),
+(7308, '2024-03-11 21:07:00', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[CHANNEL](name=channel, value=938513359626715176), OptionMapping[STRING](name=toggle, value=off)]'),
+(7309, '2024-03-11 21:07:14', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7310, '2024-03-11 21:09:16', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select messages from experience where user_id = 383358222972616705 and guild_id = 474935164451946506'),
+(7311, '2024-03-11 21:09:30', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select messages from experience where user_id = 383358222972616705 and guild_id = 474935164451946506'),
+(7312, '2024-03-11 22:18:10', 'levelupSlash', '383358222972616705', '474935164451946506', '939876818465488926', '[OptionMapping[CHANNEL](name=channel, value=1113453933508169728), OptionMapping[NUMBER](name=modifier, value=2.0)]'),
+(7313, '2024-03-11 21:24:23', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', 'https://www.youtube.com/watch?v=n6R38pxcfdE&ab_channel=SuperKek'),
+(7314, '2024-03-11 21:26:58', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', '30-0 kassadin'),
+(7315, '2024-03-11 21:27:48', 'playyoutubeforce', '383358222972616705', '474935164451946506', '938487470339801169', 'https://youtu.be/HDKRkKzLX3k?si=Wf7iZRv7HCKKErXN&t=677'),
+(7316, '2024-03-11 21:27:56', 'stop', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7317, '2024-03-11 21:28:35', 'playyoutube', '383358222972616705', '474935164451946506', '938487470339801169', 'https://youtube.com/playlist?list=PLNl9OQRKASG8E4EjhuLumfQ1TV7ZeHTJJ&si=wPCJeNiIdLj2fYra'),
+(7318, '2024-03-11 21:28:37', 'queue', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7319, '2024-03-11 21:31:34', 'playyoutubeforce', '383358222972616705', '474935164451946506', '938487470339801169', 'https://youtu.be/HDKRkKzLX3k?si=N_qOsO4cEgebul8Q&t=1311'),
+(7320, '2024-03-11 21:31:54', 'playsound', '383358222972616705', '474935164451946506', '938487470339801169', 'nuova vita'),
+(7321, '2024-03-11 21:32:06', 'playsound', '707479292644163604', '474935164451946506', '938487470339801169', '192'),
+(7322, '2024-03-11 21:33:07', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '13'),
+(7323, '2024-03-11 21:33:11', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '15'),
+(7324, '2024-03-11 21:33:42', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select * from guild_id = #guild'),
+(7325, '2024-03-11 21:38:18', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '13'),
+(7326, '2024-03-11 21:38:47', 'test', '707479292644163604', '474935164451946506', '938487470339801169', '13'),
+(7327, '2024-03-11 21:38:53', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7328, '2024-03-11 21:39:21', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=toggle, value=on)]'),
+(7329, '2024-03-11 21:39:24', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7330, '2024-03-11 21:39:27', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7331, '2024-03-11 21:39:34', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7332, '2024-03-11 21:39:37', 'test', '383358222972616705', '474935164451946506', '938487470339801169', '13'),
+(7333, '2024-03-11 21:39:47', 'channelinfo', '383358222972616705', '474935164451946506', '938487470339801169', '938513359626715176'),
+(7334, '2024-03-11 21:40:26', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7335, '2024-03-11 21:40:39', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[CHANNEL](name=channel, value=938513359626715176), OptionMapping[STRING](name=toggle, value=on)]'),
+(7336, '2024-03-11 21:40:42', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7337, '2024-03-11 21:40:52', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7338, '2024-03-11 21:41:14', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7339, '2024-03-11 21:41:25', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=toggle, value=off)]'),
+(7340, '2024-03-11 21:41:27', 'printcache', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7341, '2024-03-11 21:41:40', 'levelupSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[OptionMapping[STRING](name=toggle, value=on)]'),
+(7342, '2024-03-11 21:41:47', 'welcomeSlash', '383358222972616705', '474935164451946506', '938487470339801169', '[]'),
+(7343, '2024-03-11 21:43:34', 'ban', '352192170503045121', '474935164451946506', '938487470339801169', '<@707479292644163604>'),
+(7344, '2024-03-11 21:47:12', 'query', '383358222972616705', '474935164451946506', '938487470339801169', 'select count(user_id) from blacklist where user_id = 707479292644163604'),
+(7345, '2024-03-11 21:49:46', 'clear', '440489230968553472', '474935164451946506', '938487470339801169', '6'),
+(7346, '2024-03-11 21:49:58', 'clear', '440489230968553472', '474935164451946506', '938487470339801169', '4'),
+(7347, '2024-03-11 21:55:43', 'serverinfo', '383358222972616705', '474935164451946506', '938487470339801169', ''),
+(7348, '2024-03-11 21:56:03', 'blacklistSlash', '383358222972616705', '1178343116504305776', '938487470339801169', '[OptionMapping[INTEGER](name=threshold, value=4), OptionMapping[CHANNEL](name=channel, value=1178343117871661148)]'),
+(7349, '2024-03-11 22:02:27', 'blacklistSlash', '383358222972616705', '1132694832305934439', '938487470339801169', '[OptionMapping[INTEGER](name=threshold, value=3), OptionMapping[CHANNEL](name=channel, value=1132694833912356946)]');
 
 -- --------------------------------------------------------
 
@@ -7292,9 +7637,10 @@ CREATE TABLE `experience` (
 -- Dump dei dati per la tabella `experience`
 --
 
-INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VALUES
+INSERT IGNORE INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VALUES
 ('1060012586583736380', '983324272627974144', 18, 1, 1),
 ('1090342785141461122', '983324272627974144', 42, 1, 2),
+('1094183958205436005', '474935164451946506', 24, 1, 1),
 ('1099708251207114853', '772754737032069192', 17, 1, 1),
 ('1150041749851492353', '474935164451946506', 43, 1, 2),
 ('1167813862737854464', '518108973824475136', 18, 1, 1),
@@ -7330,13 +7676,13 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('266616957057368065', '474935164451946506', 39, 0, 2),
 ('269119515818852353', '474935164451946506', 22, 0, 1),
 ('269128690997264393', '474935164451946506', 176, 1, 9),
-('269202257675812864', '983324272627974144', 44, 1, 2),
+('269202257675812864', '983324272627974144', 66, 1, 3),
 ('277175827546898434', '474935164451946506', 38, 0, 2),
 ('282848036890083328', '474935164451946506', 41, 0, 2),
 ('283221836139855883', '474935164451946506', 178, 1, 8),
 ('286513493111341056', '474935164451946506', 19, 0, 1),
 ('289491893073477632', '983324272627974144', 18, 1, 1),
-('291624587278417920', '474935164451946506', 28554, 21, 1432),
+('291624587278417920', '474935164451946506', 28569, 21, 1433),
 ('291624587278417920', '518108973824475136', 16, 1, 1),
 ('292535978105765889', '474935164451946506', 46, 0, 2),
 ('293450014993285120', '474935164451946506', 20, 0, 1),
@@ -7371,8 +7717,8 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('349281882958987264', '474935164451946506', 44, 0, 2),
 ('349943320195366912', '474935164451946506', 23, 0, 1),
 ('352192170503045121', '1162886156082487306', 21, 1, 1),
-('352192170503045121', '474935164451946506', 1911, 6, 101),
-('352192170503045121', '608967318789160970', 389, 2, 18),
+('352192170503045121', '474935164451946506', 1934, 6, 102),
+('352192170503045121', '608967318789160970', 437, 2, 20),
 ('352192170503045121', '731222545864458260', 42, 1, 2),
 ('352825398641426434', '474935164451946506', 65, 0, 3),
 ('354982144701104130', '474935164451946506', 272, 2, 14),
@@ -7386,9 +7732,10 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('383358222972616705', '1106615853660766298', 18, 1, 1),
 ('383358222972616705', '1108673762708172811', 75, 1, 4),
 ('383358222972616705', '1162886156082487306', 159, 1, 8),
-('383358222972616705', '1191835670445035571', 1114, 4, 56),
-('383358222972616705', '474935164451946506', 176620, 42, 8830),
-('383358222972616705', '608967318789160970', 67169, 29, 3320),
+('383358222972616705', '1191835670445035571', 1171, 5, 59),
+('383358222972616705', '1214539851861463071', 20, 1, 1),
+('383358222972616705', '474935164451946506', 178565, 43, 8929),
+('383358222972616705', '608967318789160970', 68639, 30, 3386),
 ('385019808938459139', '983324272627974144', 155, 1, 8),
 ('388011880284815360', '474935164451946506', 23, 0, 1),
 ('389059345482121227', '474935164451946506', 16850, 17, 846),
@@ -7419,7 +7766,7 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('433993915763392512', '474935164451946506', 94, 0, 4),
 ('439463077755355147', '474935164451946506', 87, 0, 4),
 ('440489230968553472', '1108673762708172811', 74, 1, 4),
-('440489230968553472', '474935164451946506', 112781, 36, 5653),
+('440489230968553472', '474935164451946506', 113027, 36, 5665),
 ('440489230968553472', '518108973824475136', 109, 1, 5),
 ('440489230968553472', '876606568412639272', 915, 4, 45),
 ('442388112597975052', '474935164451946506', 65, 0, 3),
@@ -7459,7 +7806,7 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('507580895226757132', '474935164451946506', 20, 0, 1),
 ('508363983745581060', '474935164451946506', 41, 0, 2),
 ('511242130606260225', '474935164451946506', 847, 4, 44),
-('511613329618370590', '983324272627974144', 760, 3, 38),
+('511613329618370590', '983324272627974144', 820, 4, 41),
 ('511621674735501312', '474935164451946506', 15, 0, 1),
 ('514899983124791303', '474935164451946506', 39, 0, 2),
 ('518793832402255893', '474935164451946506', 513, 3, 26),
@@ -7496,10 +7843,10 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('573612622306345009', '474935164451946506', 22, 0, 1),
 ('575006065767481347', '474935164451946506', 65, 0, 3),
 ('584089549295058954', '474935164451946506', 38, 0, 2),
-('586072535280517120', '697504135309820025', 536, 3, 26),
+('586072535280517120', '697504135309820025', 554, 3, 27),
 ('586072535280517120', '983324272627974144', 22, 1, 1),
 ('586094001132929046', '697504135309820025', 505, 3, 25),
-('586507253767471114', '697504135309820025', 312, 2, 15),
+('586507253767471114', '697504135309820025', 337, 2, 16),
 ('586507253767471114', '983324272627974144', 40, 1, 2),
 ('587381529580273717', '474935164451946506', 4764, 10, 233),
 ('588644579020898317', '474935164451946506', 65, 0, 3),
@@ -7531,7 +7878,7 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('640882594031861772', '474935164451946506', 221, 1, 11),
 ('647184122628014091', '474935164451946506', 25, 0, 1),
 ('651378690881617930', '474935164451946506', 24, 0, 1),
-('651378690881617930', '983324272627974144', 113, 1, 6),
+('651378690881617930', '983324272627974144', 156, 1, 8),
 ('655763460537450528', '697504135309820025', 424, 2, 20),
 ('655763460537450528', '983324272627974144', 430, 2, 21),
 ('656114234266222592', '474935164451946506', 20, 0, 1),
@@ -7553,7 +7900,7 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('705857177046351883', '518108973824475136', 141, 1, 7),
 ('707174964008321035', '474935164451946506', 18, 0, 1),
 ('707479292644163604', '1106615853660766298', 15, 1, 1),
-('707479292644163604', '474935164451946506', 32413, 22, 1624),
+('707479292644163604', '474935164451946506', 32559, 22, 1631),
 ('709049643203559495', '474935164451946506', 79, 0, 4),
 ('711112770296217651', '983324272627974144', 46, 1, 2),
 ('711563423472680972', '474935164451946506', 19, 0, 1),
@@ -7625,7 +7972,7 @@ INSERT INTO `experience` (`user_id`, `guild_id`, `exp`, `level`, `messages`) VAL
 ('905190611471175760', '697504135309820025', 24, 1, 1),
 ('913251380033110047', '983324272627974144', 23, 1, 1),
 ('916430084791996507', '474935164451946506', 408, 2, 21),
-('930887271618609173', '474935164451946506', 478, 3, 23),
+('930887271618609173', '474935164451946506', 503, 3, 24),
 ('930887271618609173', '608967318789160970', 1116, 4, 49),
 ('935232669724336129', '474935164451946506', 339, 2, 17),
 ('936876439989547039', '474935164451946506', 364, 2, 19),
@@ -7650,7 +7997,7 @@ CREATE TABLE `greeting` (
 -- Dump dei dati per la tabella `greeting`
 --
 
-INSERT INTO `greeting` (`user_id`, `guild_id`, `sound_id`, `bot_id`) VALUES
+INSERT IGNORE INTO `greeting` (`user_id`, `guild_id`, `sound_id`, `bot_id`) VALUES
 ('383358222972616705', '0', 40, '938487470339801169'),
 ('335796793331810305', '474935164451946506', 50, '938487470339801169'),
 ('707479292644163604', '0', 165, '938487470339801169'),
@@ -7679,7 +8026,7 @@ CREATE TABLE `guild` (
 -- Dump dei dati per la tabella `guild`
 --
 
-INSERT INTO `guild` (`guild_id`, `bot_id`, `prefix`, `name_tts`, `language_tts`, `exp_enabled`, `threshold`, `blacklist_channel`, `blacklist_enabled`) VALUES
+INSERT IGNORE INTO `guild` (`guild_id`, `bot_id`, `prefix`, `name_tts`, `language_tts`, `exp_enabled`, `threshold`, `blacklist_channel`, `blacklist_enabled`) VALUES
 ('0', '1074276395640954942', '!', NULL, NULL, 1, 0, NULL, 0),
 ('0', '939876818465488926', '!', NULL, NULL, 1, 0, NULL, 0),
 ('0', '983315338886279229', '%', NULL, NULL, 1, 0, NULL, 0),
@@ -7734,7 +8081,7 @@ INSERT INTO `guild` (`guild_id`, `bot_id`, `prefix`, `name_tts`, `language_tts`,
 ('1132694780703416410', '938487470339801169', '!', NULL, NULL, 0, 0, NULL, 0),
 ('1132694780703416410', '939876818465488926', '$', NULL, NULL, 0, 0, NULL, 0),
 ('1132694780703416410', '983315338886279229', '%', NULL, NULL, 0, 0, NULL, 0),
-('1132694832305934439', '938487470339801169', '!', NULL, NULL, 0, 0, NULL, 0),
+('1132694832305934439', '938487470339801169', '!', NULL, NULL, 0, 3, '1132694833912356946', 1),
 ('1132694832305934439', '939876818465488926', '$', NULL, NULL, 1, 1, '1132694833912356946', 1),
 ('1132694832305934439', '983315338886279229', '%', NULL, NULL, 0, 0, NULL, 0),
 ('1150154886005133492', '939876818465488926', '$', NULL, NULL, 0, 0, NULL, 0),
@@ -7743,7 +8090,7 @@ INSERT INTO `guild` (`guild_id`, `bot_id`, `prefix`, `name_tts`, `language_tts`,
 ('1162886156082487306', '939876818465488926', '$', NULL, NULL, 0, 0, NULL, 0),
 ('1166825736393457735', '939876818465488926', '$', NULL, NULL, 0, 0, NULL, 0),
 ('1178343116504305776', '1074276395640954942', '!', NULL, NULL, 0, 0, NULL, 0),
-('1178343116504305776', '938487470339801169', '!', NULL, NULL, 0, 0, NULL, 0),
+('1178343116504305776', '938487470339801169', '!', NULL, NULL, 0, 4, '1178343117871661148', 1),
 ('1178343116504305776', '939876818465488926', '$', NULL, NULL, 0, 0, NULL, 0),
 ('1178343116504305776', '983315338886279229', '%', NULL, NULL, 0, 0, NULL, 0),
 ('1191835670445035571', '938487470339801169', 'p', 'Pietro', 'it-it', 1, 0, NULL, 0),
@@ -7752,15 +8099,16 @@ INSERT INTO `guild` (`guild_id`, `bot_id`, `prefix`, `name_tts`, `language_tts`,
 ('1194737164202807379', '938487470339801169', '!', NULL, NULL, 0, 0, NULL, 0),
 ('1194737164202807379', '939876818465488926', '$', NULL, NULL, 0, 0, NULL, 0),
 ('1194737164202807379', '983315338886279229', '%', NULL, NULL, 0, 0, NULL, 0),
+('1214539851861463071', '938487470339801169', 'p', NULL, NULL, 1, 0, NULL, 0),
 ('333949691962195969', '938487470339801169', '!', NULL, NULL, 1, 0, NULL, 0),
 ('474935164451946506', '1074276395640954942', '!', 'Mia', 'it-it', 0, 0, NULL, 0),
-('474935164451946506', '1098906798016184422', '&', NULL, NULL, 0, 5, '691005529354665984', 1),
-('474935164451946506', '938487470339801169', 'p', 'Mia', 'it-it', 1, 0, NULL, 0),
+('474935164451946506', '1098906798016184422', '&', NULL, NULL, 0, 1, '691005529354665984', 1),
+('474935164451946506', '938487470339801169', 'p', 'Mia', 'it-it', 1, 10, '1152150402863743036', 1),
 ('474935164451946506', '939876818465488926', '$', 'Mia', 'it-it', 1, 3, '938513359626715176', 1),
 ('474935164451946506', '983315338886279229', '%', 'Pietro', 'it-it', 0, 0, NULL, 0),
 ('518108973824475136', '938487470339801169', '!', NULL, NULL, 1, 0, NULL, 0),
 ('608967318789160970', '1074276395640954942', '!', 'Mia', 'it-it', 0, 0, NULL, 0),
-('608967318789160970', '1098906798016184422', '&', NULL, NULL, 0, 0, NULL, 0),
+('608967318789160970', '1098906798016184422', '!', NULL, NULL, 0, 0, NULL, 0),
 ('608967318789160970', '938487470339801169', 'p', 'Pietro', 'it-it', 1, 3, '1094186418705793097', 1),
 ('608967318789160970', '939876818465488926', '$', 'Pietro', 'it-it', 1, 3, '1094186418705793097', 1),
 ('608967318789160970', '983315338886279229', '%', 'Amy', 'en-us', 0, 0, NULL, 0),
@@ -7794,7 +8142,7 @@ CREATE TABLE `guilds` (
 -- Dump dei dati per la tabella `guilds`
 --
 
-INSERT INTO `guilds` (`id`) VALUES
+INSERT IGNORE INTO `guilds` (`id`) VALUES
 ('0'),
 ('1007678089054134392'),
 ('1071851182160629790'),
@@ -7825,6 +8173,7 @@ INSERT INTO `guilds` (`id`) VALUES
 ('1178343116504305776'),
 ('1191835670445035571'),
 ('1194737164202807379'),
+('1214539851861463071'),
 ('333949691962195969'),
 ('474935164451946506'),
 ('518108973824475136'),
@@ -7858,7 +8207,7 @@ CREATE TABLE `play` (
 -- Dump dei dati per la tabella `play`
 --
 
-INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
+INSERT IGNORE INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('219797089037582337', 165, 1),
 ('291624587278417920', 1, 1),
 ('291624587278417920', 2, 2),
@@ -7980,9 +8329,9 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('371768270472347671', 47, 3),
 ('371768270472347671', 82, 1),
 ('371768270472347671', 111, 13),
-('383358222972616705', 1, 156),
+('383358222972616705', 1, 157),
 ('383358222972616705', 2, 41),
-('383358222972616705', 3, 5),
+('383358222972616705', 3, 6),
 ('383358222972616705', 4, 11),
 ('383358222972616705', 5, 3),
 ('383358222972616705', 6, 11),
@@ -8017,7 +8366,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('383358222972616705', 37, 1),
 ('383358222972616705', 38, 2),
 ('383358222972616705', 39, 1),
-('383358222972616705', 40, 513),
+('383358222972616705', 40, 521),
 ('383358222972616705', 41, 31),
 ('383358222972616705', 42, 1),
 ('383358222972616705', 43, 1),
@@ -8068,7 +8417,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('383358222972616705', 95, 1),
 ('383358222972616705', 96, 10),
 ('383358222972616705', 97, 5),
-('383358222972616705', 98, 59),
+('383358222972616705', 98, 60),
 ('383358222972616705', 99, 32),
 ('383358222972616705', 100, 4),
 ('383358222972616705', 101, 38),
@@ -8149,7 +8498,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('383358222972616705', 179, 20),
 ('383358222972616705', 180, 8),
 ('383358222972616705', 181, 18),
-('383358222972616705', 182, 48),
+('383358222972616705', 182, 50),
 ('383358222972616705', 183, 8),
 ('383358222972616705', 184, 5),
 ('383358222972616705', 185, 12),
@@ -8158,7 +8507,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('383358222972616705', 188, 4),
 ('383358222972616705', 189, 20),
 ('383358222972616705', 190, 63),
-('383358222972616705', 191, 36),
+('383358222972616705', 191, 37),
 ('383358222972616705', 192, 9),
 ('383358222972616705', 193, 45),
 ('383358222972616705', 194, 15),
@@ -8174,6 +8523,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('383358222972616705', 205, 2),
 ('383358222972616705', 206, 6),
 ('383358222972616705', 207, 5),
+('383358222972616705', 208, 1),
 ('431324611968368652', 1, 1),
 ('431324611968368652', 7, 1),
 ('431324611968368652', 11, 1),
@@ -8406,7 +8756,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('707479292644163604', 35, 7),
 ('707479292644163604', 36, 3),
 ('707479292644163604', 37, 15),
-('707479292644163604', 38, 7),
+('707479292644163604', 38, 8),
 ('707479292644163604', 39, 16),
 ('707479292644163604', 40, 16),
 ('707479292644163604', 41, 31),
@@ -8509,7 +8859,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('707479292644163604', 140, 22),
 ('707479292644163604', 141, 19),
 ('707479292644163604', 142, 7),
-('707479292644163604', 143, 430),
+('707479292644163604', 143, 431),
 ('707479292644163604', 144, 5),
 ('707479292644163604', 145, 45),
 ('707479292644163604', 146, 15),
@@ -8525,7 +8875,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('707479292644163604', 157, 5),
 ('707479292644163604', 158, 4),
 ('707479292644163604', 159, 1),
-('707479292644163604', 162, 104),
+('707479292644163604', 162, 105),
 ('707479292644163604', 163, 13),
 ('707479292644163604', 164, 35),
 ('707479292644163604', 165, 9),
@@ -8554,7 +8904,7 @@ INSERT INTO `play` (`user_id`, `sound_id`, `times`) VALUES
 ('707479292644163604', 189, 5),
 ('707479292644163604', 190, 53),
 ('707479292644163604', 191, 3),
-('707479292644163604', 192, 38),
+('707479292644163604', 192, 39),
 ('707479292644163604', 193, 19),
 ('707479292644163604', 194, 18),
 ('707479292644163604', 195, 10),
@@ -8591,7 +8941,7 @@ CREATE TABLE `reward` (
 -- Dump dei dati per la tabella `reward`
 --
 
-INSERT INTO `reward` (`guild_id`, `role_id`, `level`, `message_text`) VALUES
+INSERT IGNORE INTO `reward` (`guild_id`, `role_id`, `level`, `message_text`) VALUES
 ('1191835670445035571', '1199657596836134942', 3, 'Wp #user, now you got #role'),
 ('474935164451946506', '1119582247763329095', 30, 'Insane #user, you are spamming messages like a god'),
 ('474935164451946506', '1119582321947971656', 20, 'yo #user, you have got level #level but you are a piece of shit random compared the real beast'),
@@ -8599,47 +8949,6 @@ INSERT INTO `reward` (`guild_id`, `role_id`, `level`, `message_text`) VALUES
 ('474935164451946506', '735852621147144223', 10, 'im sorry but you live in third world country, so you got #role'),
 ('608967318789160970', '1119912139843452968', 1, 'wef'),
 ('608967318789160970', '732671412870971422', 25, '#user, #level, #role');
-
--- --------------------------------------------------------
-
---
--- Struttura della tabella `room`
---
-
-CREATE TABLE `room` (
-  `guild_id` varchar(19) NOT NULL,
-  `room_id` varchar(19) NOT NULL,
-  `room_name` varchar(255) DEFAULT NULL,
-  `has_exp` tinyint(1) DEFAULT 1,
-  `exp_value` double DEFAULT 1,
-  `has_command_stats` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dump dei dati per la tabella `room`
---
-
-INSERT INTO `room` (`guild_id`, `room_id`, `room_name`, `has_exp`, `exp_value`, `has_command_stats`) VALUES
-('474935164451946506', '1034198380907335720', 'mc', 1, 1, 1),
-('474935164451946506', '1113453933508169728', NULL, 1, 1, 1),
-('474935164451946506', '1121084292945154089', 'beebot', 1, 1, 1),
-('474935164451946506', '691006088639807530', 'afj', 1, 1, 1),
-('474935164451946506', '691006700970311712', 'andromeda', 1, 1, 1),
-('474935164451946506', '691009622571483157', 'r6', 1, 1, 1),
-('474935164451946506', '717461111963648082', 'lol', 1, 1, 1),
-('474935164451946506', '729746548082081842', 'nube', 1, 1, 1),
-('474935164451946506', '733274067917996123', NULL, 1, 1.01, 1),
-('474935164451946506', '742514782615371776', 'ranked', 1, 1, 1),
-('474935164451946506', '911000928176459776', 'lol 2', 1, 1, 1),
-('474935164451946506', '938513359626715176', NULL, 1, 1, 1),
-('608967318789160970', '1094186373134688357', NULL, 1, 1.5, 1),
-('608967318789160970', '1094186418705793097', NULL, 1, 1.1, 0),
-('608967318789160970', '1094193394638671912', 'gumaaaaa', 1, 1, 1),
-('608967318789160970', '1103989963000922122', NULL, 1, 1.2, 0),
-('608967318789160970', '1132977374099669052', NULL, 1, 1.3, 0),
-('608967318789160970', '608968468145897472', 'aaa', 1, 1, 1),
-('608967318789160970', '709845730235252747', 'a', 1, 1, 1),
-('608967318789160970', '709845762133196994', 'bb', 1, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -8661,7 +8970,7 @@ CREATE TABLE `sound` (
 -- Dump dei dati per la tabella `sound`
 --
 
-INSERT INTO `sound` (`id`, `name`, `guild_id`, `user_id`, `extension`, `public`, `time`) VALUES
+INSERT IGNORE INTO `sound` (`id`, `name`, `guild_id`, `user_id`, `extension`, `public`, `time`) VALUES
 (1, 'sot', '474935164451946506', '383358222972616705', 'opus', 1, '2020-07-16 12:56:58'),
 (2, 'bongo', '474935164451946506', '383358222972616705', 'opus', 1, '2020-07-16 12:59:41'),
 (3, 'pizza time', '474935164451946506', '383358222972616705', 'opus', 1, '2022-02-13 22:25:57'),
@@ -8868,7 +9177,8 @@ INSERT INTO `sound` (`id`, `name`, `guild_id`, `user_id`, `extension`, `public`,
 (204, 'elgigante', '1191835670445035571', '298192922241794051', 'mp3', 1, '2024-01-03 18:11:54'),
 (205, 'motoswamp', '474935164451946506', '383358222972616705', 'opus', 1, '2024-01-16 21:38:45'),
 (206, 'madonnina', '474935164451946506', '383358222972616705', 'mp3', 1, '2024-01-20 23:33:54'),
-(207, 'madonnina 2', '474935164451946506', '383358222972616705', 'mp3', 1, '2024-01-20 23:36:03');
+(207, 'madonnina 2', '474935164451946506', '383358222972616705', 'mp3', 1, '2024-01-20 23:36:03'),
+(208, 'keria', '608967318789160970', '383358222972616705', 'mp3', 1, '2024-03-11 10:57:36');
 
 -- --------------------------------------------------------
 
@@ -8886,7 +9196,7 @@ CREATE TABLE `soundboard` (
 -- Dump dei dati per la tabella `soundboard`
 --
 
-INSERT INTO `soundboard` (`id`, `name`, `guild_id`) VALUES
+INSERT IGNORE INTO `soundboard` (`id`, `name`, `guild_id`) VALUES
 (2, '2020', '474935164451946506'),
 (3, 'Fart', '474935164451946506'),
 (4, 'Cough', '474935164451946506'),
@@ -8913,7 +9223,7 @@ CREATE TABLE `soundboard_sounds` (
 -- Dump dei dati per la tabella `soundboard_sounds`
 --
 
-INSERT INTO `soundboard_sounds` (`id`, `sound_id`) VALUES
+INSERT IGNORE INTO `soundboard_sounds` (`id`, `sound_id`) VALUES
 (2, 36),
 (2, 98),
 (2, 99),
@@ -8987,7 +9297,7 @@ CREATE TABLE `summoner` (
 -- Dump dei dati per la tabella `summoner`
 --
 
-INSERT INTO `summoner` (`user_id`, `summoner_id`, `account_id`) VALUES
+INSERT IGNORE INTO `summoner` (`user_id`, `summoner_id`, `account_id`) VALUES
 ('234670519272734721', 'PxBHtQVV2XxBEnM1A_qcGbvVATtPImLd7YzuFfjQ8_SVUfs', 'T4A0HGaXp19tVImNQow0ZnQyDiNqDvbHAXvav9jSnQZaoKA'),
 ('291624587278417920', 'Uh2Y3ZzrLSqijsDII8hTQFWRIDT5vsejInAlKUcW9rt-un4', 'YfNvKQS-iHLY6SGtY-YwhAiihfET-SbZb0r5HOyHGpJf6fo'),
 ('298192922241794051', 'xRKlzqkL2LZhjKMrAh_CJGMjQ_hGPtyRfD2ANp2u7h4y9LA', '4GJvFlwOj5J2WCitGOgbf4_ZXFJsdexdAAH75eMvZRJ0sjc'),
@@ -9016,13 +9326,6 @@ INSERT INTO `summoner` (`user_id`, `summoner_id`, `account_id`) VALUES
 -- Indici per le tabelle `alert`
 --
 ALTER TABLE `alert`
-  ADD PRIMARY KEY (`guild_id`,`bot_id`),
-  ADD KEY `alert_bot_relation` (`bot_id`);
-
---
--- Indici per le tabelle `alert2`
---
-ALTER TABLE `alert2`
   ADD PRIMARY KEY (`id`),
   ADD KEY `alert2_relation_1` (`guild_id`),
   ADD KEY `alert2_relation_2` (`bot_id`);
@@ -9045,6 +9348,12 @@ ALTER TABLE `blacklist`
 -- Indici per le tabelle `bots`
 --
 ALTER TABLE `bots`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indici per le tabelle `channel`
+--
+ALTER TABLE `channel`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -9096,12 +9405,6 @@ ALTER TABLE `reward`
   ADD PRIMARY KEY (`guild_id`,`role_id`);
 
 --
--- Indici per le tabelle `room`
---
-ALTER TABLE `room`
-  ADD PRIMARY KEY (`guild_id`,`room_id`);
-
---
 -- Indici per le tabelle `sound`
 --
 ALTER TABLE `sound`
@@ -9133,28 +9436,34 @@ ALTER TABLE `summoner`
 --
 
 --
--- AUTO_INCREMENT per la tabella `alert2`
+-- AUTO_INCREMENT per la tabella `alert`
 --
-ALTER TABLE `alert2`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+ALTER TABLE `alert`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT per la tabella `alert_role`
 --
 ALTER TABLE `alert_role`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+
+--
+-- AUTO_INCREMENT per la tabella `channel`
+--
+ALTER TABLE `channel`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
 -- AUTO_INCREMENT per la tabella `command`
 --
 ALTER TABLE `command`
-  MODIFY `id` smallint(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7059;
+  MODIFY `id` smallint(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7350;
 
 --
 -- AUTO_INCREMENT per la tabella `sound`
 --
 ALTER TABLE `sound`
-  MODIFY `id` smallint(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=208;
+  MODIFY `id` smallint(6) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=209;
 
 --
 -- AUTO_INCREMENT per la tabella `soundboard`
@@ -9170,13 +9479,6 @@ ALTER TABLE `soundboard`
 -- Limiti per la tabella `alert`
 --
 ALTER TABLE `alert`
-  ADD CONSTRAINT `alert_bot_relation` FOREIGN KEY (`bot_id`) REFERENCES `bots` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `alert_guild_relation` FOREIGN KEY (`guild_id`) REFERENCES `guilds` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Limiti per la tabella `alert2`
---
-ALTER TABLE `alert2`
   ADD CONSTRAINT `alert2_relation_1` FOREIGN KEY (`guild_id`) REFERENCES `guilds` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `alert2_relation_2` FOREIGN KEY (`bot_id`) REFERENCES `bots` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -9184,7 +9486,7 @@ ALTER TABLE `alert2`
 -- Limiti per la tabella `alert_role`
 --
 ALTER TABLE `alert_role`
-  ADD CONSTRAINT `alert_role_relation_1` FOREIGN KEY (`alert_id`) REFERENCES `alert2` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `alert_role_relation_1` FOREIGN KEY (`alert_id`) REFERENCES `alert` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Limiti per la tabella `blacklist`
@@ -9224,12 +9526,6 @@ ALTER TABLE `play`
 --
 ALTER TABLE `reward`
   ADD CONSTRAINT `reward_guild_relation` FOREIGN KEY (`guild_id`) REFERENCES `guilds` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Limiti per la tabella `room`
---
-ALTER TABLE `room`
-  ADD CONSTRAINT `room_guild_relation` FOREIGN KEY (`guild_id`) REFERENCES `guilds` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Limiti per la tabella `sound`
