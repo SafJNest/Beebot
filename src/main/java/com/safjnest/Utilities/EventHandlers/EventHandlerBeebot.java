@@ -13,7 +13,6 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -99,12 +98,6 @@ public class EventHandlerBeebot extends ListenerAdapter {
         DatabaseHandler.deleteReward(event.getRole().getId());
     }
 
-    @Override
-    public void onChannelDelete(ChannelDeleteEvent event){
-        if(event.getChannelType().isAudio()){
-            settings.getServer(event.getGuild().getId()).deleteChannelData(event.getChannel().getId());
-        }
-    }
 
 
 }
