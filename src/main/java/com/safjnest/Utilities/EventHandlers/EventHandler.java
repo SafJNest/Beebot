@@ -31,6 +31,7 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.guild.GuildUnbanEvent;
@@ -493,6 +494,13 @@ public class EventHandler extends ListenerAdapter {
             channel = event.getGuild().getTextChannelById(channel_id);
             String message = boost.getMessage().replace("#user", event.getEntity().getAsMention());
             channel.sendMessage(message).queue();
+        }
+    }
+
+    @Override
+    public void onChannelDelete(ChannelDeleteEvent event){//TODO: mandare un messaggio in caso si cancelli un alert
+        if(!event.getChannelType().isAudio()){
+            gs.getServer(event.getGuild().getId()).deleteChannelData(event.getChannel().getId());
         }
     }
 
