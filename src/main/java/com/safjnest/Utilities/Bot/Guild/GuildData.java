@@ -213,9 +213,8 @@ public class GuildData {
         QueryResult result = DatabaseHandler.getChannelData(String.valueOf(ID), BOT_ID);
         
         if (result == null) { return; }
-
+        System.out.println("[CACHE] Retriving ChannelData from database => " + ID);
         for(ResultRow row: result){
-            System.out.println(row.toString());
             this.channels.put(
                 row.getAsLong("channel_id"),
                 new ChannelData(
@@ -239,6 +238,7 @@ public class GuildData {
         ChannelData cd = this.channels.get(channel_id);
         if (cd == null) {
             cd = new ChannelData(channel_id, this);
+            System.out.println("[CACHE] Caching local ChannelData => " + ID + " | " + channel_id);
             this.channels.put(channel_id, cd);
         }
         return cd;
