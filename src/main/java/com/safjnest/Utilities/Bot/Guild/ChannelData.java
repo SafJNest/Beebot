@@ -117,6 +117,7 @@ public class ChannelData {
 
     private void handleEmptyID() {
         if (this.ID == 0) {
+            System.out.println("[CACHE] Pushing local ChannelData into Database=> " + CHANNEL_ID);
             this.ID = DatabaseHandler.insertChannelData(guildData.getId(), guildData.getBotId(), this.CHANNEL_ID);
         }
     }
