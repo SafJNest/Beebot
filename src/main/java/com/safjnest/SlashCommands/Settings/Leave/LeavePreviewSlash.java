@@ -31,9 +31,6 @@ public class LeavePreviewSlash extends SlashCommand{
             return;
         }
 
-        String leaveMessage = leave.getMessage().replace("#user", event.getUser().getAsMention());
-        leaveMessage = leaveMessage + "\nThis message would be sent to <#" + leave.getChannelId() + ">";
-
-        event.deferReply(false).addContent(leaveMessage).queue();
+        event.deferReply(false).addContent(leave.getFormattedSample(event.getGuild())).queue();
     }
 }
