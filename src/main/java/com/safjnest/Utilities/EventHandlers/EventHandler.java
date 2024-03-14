@@ -10,6 +10,8 @@ import java.util.List;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Bot.Guild.BlacklistData;
+import com.safjnest.Utilities.Bot.Guild.GuildData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
@@ -498,9 +500,36 @@ public class EventHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onChannelDelete(ChannelDeleteEvent event){//TODO: mandare un messaggio in caso si cancelli un alert
+    public void onChannelDelete(ChannelDeleteEvent event){
+        String alertChannel = event.getGuild().getDefaultChannel().getId();
+        GuildData g = gs.getServer(event.getGuild().getId());
         if(!event.getChannelType().isAudio()){
-            gs.getServer(event.getGuild().getId()).deleteChannelData(event.getChannel().getId());
+            String channelID = event.getChannel().getId();
+            if (!g.deleteChannelData(channelID)) {
+                return;
+            }
+            String alertMessage = "";
+            String content = "";
+            HashMap<AlertType, AlertData> alerts = g.getAlerts();
+            BlacklistData bld = g.getBlacklistData();
+            if (alerts != null) {
+                for (AlertData data : alerts.values()) {
+                    if (data.getChannelId() != null && data.getChannelId().equals(channelID)) {
+                        data.setAlertChannel(null);
+                        content += data.getType().getDescription() + ", ";
+                    }
+                }
+            }
+            if (bld != null) {
+                if (bld.getBlackChannelId() != null && bld.getBlackChannelId().equals(channelID)) {
+                    bld.setBlackChannelId(null);
+                    content += "Blacklist";
+                }
+            }
+            if (!content.equals("")) {
+                alertMessage = "These alerts need to be modified as the channel has been canceled:\n" + content;
+                event.getJDA().getTextChannelById(alertChannel).sendMessage(alertMessage).queue();
+            }
         }
     }
 
