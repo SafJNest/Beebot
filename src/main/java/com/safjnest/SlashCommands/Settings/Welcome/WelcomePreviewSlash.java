@@ -31,20 +31,7 @@ public class WelcomePreviewSlash extends SlashCommand{
             event.deferReply(true).addContent("This guild doesn't have a welcome message.").queue();
             return;
         }
-
-        String welcomeMessage = "The welcome message is " + (welcome.isEnabled() ? "enabled" : "disabled") + ":\n" 
-        + "```" + welcome.getMessage().replace("#user", event.getUser().getAsMention()) + "```";
-
-        welcomeMessage = welcomeMessage + "\nThis message would be sent to <#" + welcome.getChannelId() + ">";
-
-        if(welcome.getRoles() != null){
-            welcomeMessage += "\nRoles that would be given to the user:";
-            for (String role : welcome.getRoles().values().toArray(new String[0])) {
-                welcomeMessage += "\n" + event.getGuild().getRoleById(role).getName();
-            }
-        }
-
-        event.deferReply(false).addContent(welcomeMessage).queue();
+        event.deferReply(false).addContent(welcome.getFormattedSample(event.getGuild())).queue();
     }
     
 }

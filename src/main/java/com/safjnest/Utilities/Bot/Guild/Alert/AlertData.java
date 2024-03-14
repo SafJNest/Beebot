@@ -3,6 +3,8 @@ package com.safjnest.Utilities.Bot.Guild.Alert;
 import java.util.HashMap;
 
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
 
 public class AlertData {
 
@@ -180,6 +182,35 @@ public class AlertData {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public String getFormattedSample(Guild guild) {
+        String sampleText = this.message;
+        sampleText = sampleText.replace("#user", "@sunyx");
+        sampleText = sampleText.replace("#level", "117");
+
+        String channelText = "This alert has not a channel set.";
+        if (this.getChannelId() != null) {
+            channelText = "This message would be sent to: " + guild.getTextChannelById(this.getChannelId()).getAsMention();
+        }
+        else if (this.type == AlertType.LEVEL_UP) {
+            channelText = "";
+        }
+
+        String roleText = "";
+        if (this.type == AlertType.WELCOME && this.getRoles() != null) {
+            roleText += "\nRoles that would be given to the user:";
+            for (String role : this.getRoles().values().toArray(new String[0])) {
+                roleText += "\n" + guild.getRoleById(role).getName();
+            }
+        }
+        return
+               "The " + this.type.getDescription() + " is " + (this.enabled ? "enabled" : "disabled") + ":\n"
+               + "```"
+               + sampleText
+               + "```" + "\n"
+               + channelText + "\n"
+               + roleText;
     }
 
     @Override

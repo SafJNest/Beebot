@@ -31,9 +31,6 @@ public class BoostPreviewSlash extends SlashCommand{
             return;
         }
 
-        String boostMessage = boost.getMessage().replace("#user", event.getUser().getAsMention());
-        boostMessage = boostMessage + "\nThis message would be sent to <#" + boost.getChannelId() + ">";
-
-        event.deferReply(false).addContent(boostMessage).queue();
+        event.deferReply(false).addContent(boost.getFormattedSample(event.getGuild())).queue();
     }
 }
