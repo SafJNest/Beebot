@@ -190,16 +190,16 @@ public class AlertData {
         sampleText = sampleText.replace("#level", "117");
 
         String channelText = "This alert has not a channel set.";
-        if (this.getChannelId() != null) {
-            channelText = "This message would be sent to: " + guild.getTextChannelById(this.getChannelId()).getAsMention();
-        }
-        else if (this.type == AlertType.LEVEL_UP) {
+        if (this.type == AlertType.LEVEL_UP) {
             channelText = "";
+        }
+        else if (this.getChannelId() != null) {
+            channelText = "This message would be sent to: " + guild.getTextChannelById(this.getChannelId()).getAsMention() + "\n";
         }
 
         String roleText = "";
         if (this.type == AlertType.WELCOME && this.getRoles() != null) {
-            roleText += "\nRoles that would be given to the user:";
+            roleText += "Roles that would be given to the user:";
             for (String role : this.getRoles().values().toArray(new String[0])) {
                 roleText += "\n" + guild.getRoleById(role).getName();
             }
@@ -208,8 +208,8 @@ public class AlertData {
                "The " + this.type.getDescription() + " is " + (this.enabled ? "enabled" : "disabled") + ":\n"
                + "```"
                + sampleText
-               + "```" + "\n"
-               + channelText + "\n"
+               + "```"
+               + channelText
                + roleText;
     }
 

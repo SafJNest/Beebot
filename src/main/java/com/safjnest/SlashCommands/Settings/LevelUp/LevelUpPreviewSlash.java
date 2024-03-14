@@ -47,7 +47,7 @@ public class LevelUpPreviewSlash extends SlashCommand{
         levelupMessage = levelupMessage.replace("#user", event.getUser().getAsMention());
         levelupMessage = levelupMessage.replace("#level", "117");
 
-        String message = "Level Up message:\n" + levelupMessage;
+        String message = level.getFormattedSample(event.getGuild());
         
         HashMap<Long, ChannelData> channels = gs.getChannels();
 
@@ -64,14 +64,14 @@ public class LevelUpPreviewSlash extends SlashCommand{
         }
 
         if(!expChannels.isEmpty()) {
-            message += "\n\nChannel with exp Modifier:\n";
+            message += "Channel with exp Modifier:\n";
             for(String channel_id : expChannels) {
                 message += event.getGuild().getTextChannelById(channel_id).getAsMention() + " exp: " + channels.get(Long.parseLong(channel_id)).getExpValue() + "\n";
             }
         }
 
         if(!noExpChannels.isEmpty()){
-            message += "\n\nChannel with exp system disabled:\n";
+            message += "\nChannel with exp system disabled:\n";
             for(String channel_id : noExpChannels){
                 message += event.getGuild().getTextChannelById(channel_id).getAsMention() + "\n";
             }
