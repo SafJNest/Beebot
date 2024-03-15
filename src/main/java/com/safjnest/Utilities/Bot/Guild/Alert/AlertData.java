@@ -1,8 +1,11 @@
 package com.safjnest.Utilities.Bot.Guild.Alert;
 
+import java.awt.*;
 import java.util.HashMap;
 
+import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 
@@ -82,6 +85,7 @@ public class AlertData {
     }
     
     public boolean setMessage(String message) {
+        message = DatabaseHandler.fixSQL(message);
         boolean result = DatabaseHandler.setAlertMessage(String.valueOf(this.ID), message);
         if (result) {
             this.message = message;
@@ -211,6 +215,52 @@ public class AlertData {
                + "```"
                + channelText
                + roleText;
+    }
+
+    public EmbedBuilder getSampleEmbed(Guild guild) {
+        String sampleText = this.message;
+        sampleText = sampleText.replace("#user", "@sunyx");
+        sampleText = sampleText.replace("#level", "117");
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(guild.getSelfMember().getEffectiveName(), "https://github.com/SafJNest", guild.getSelfMember().getEffectiveAvatarUrl());
+        eb.setTitle(this.getType().getDescription() + "'s preview");
+        eb.setDescription("```" + sampleText + "```");
+        eb.setColor(Color.decode(BotDataHandler.map.get(guild.getSelfMember().getId()).color));
+        eb.setThumbnail(guild.getSelfMember().getEffectiveAvatarUrl());
+
+        String channelText = "This alert has not a channel set.";
+        if (this.type == AlertType.LEVEL_UP) {
+            channelText = "Level up has not a channel";
+        }
+        else if (this.getChannelId() != null) {
+            channelText = guild.getTextChannelById(this.getChannelId()).getName();
+        }
+        eb.addField("Channel", "```" + channelText + "```", true);
+
+        eb.addField("is Enabled",
+                    (this.isEnabled()
+                        ?"```✅ Yes```"
+                        :"```❌ No```")
+                    , true);
+        
+
+        if (this.type == AlertType.WELCOME) {
+            if (this.getRoles() == null) {
+                eb.addField("Roles", "```Zero roles setted.```", false);
+            }
+            else {
+                String roleText = "```";
+                for (String role : this.getRoles().values().toArray(new String[0])) {
+                    roleText += guild.getRoleById(role).getName() + "\n";
+                }
+                roleText += "```";
+                eb.addField("Roles", roleText, false);
+            }
+        }
+
+
+        return eb;
     }
 
     @Override

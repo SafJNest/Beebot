@@ -11,6 +11,7 @@ import com.safjnest.Utilities.Bot.Guild.ChannelData;
 import com.safjnest.Utilities.Bot.Guild.GuildData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+import net.dv8tion.jda.api.EmbedBuilder;
 
 public class LevelUpPreviewSlash extends SlashCommand{
 
@@ -35,19 +36,10 @@ public class LevelUpPreviewSlash extends SlashCommand{
             return;
         }
 
-
-
         if(level == null){
             event.deferReply(true).addContent("No level up message found.").queue();
             return;
         }
-        
-        String levelupMessage = level.getMessage();
-
-        levelupMessage = levelupMessage.replace("#user", event.getUser().getAsMention());
-        levelupMessage = levelupMessage.replace("#level", "117");
-
-        String message = level.getFormattedSample(event.getGuild());
         
         HashMap<Long, ChannelData> channels = gs.getChannels();
 
@@ -63,20 +55,27 @@ public class LevelUpPreviewSlash extends SlashCommand{
             }
         }
 
+        EmbedBuilder eb = level.getSampleEmbed(event.getGuild());
+        eb.addBlankField(false);
         if(!expChannels.isEmpty()) {
-            message += "Channel with exp Modifier:\n";
+            String modifiedChannels= "";
+
             for(String channel_id : expChannels) {
-                message += event.getGuild().getTextChannelById(channel_id).getAsMention() + " exp: " + channels.get(Long.parseLong(channel_id)).getExpValue() + "\n";
+                modifiedChannels += event.getGuild().getTextChannelById(channel_id).getName() + ": " + channels.get(Long.parseLong(channel_id)).getExpValue() + " exp\n";
             }
+            eb.addField("Modified Exp Channels", "```" + modifiedChannels + "```", true);
         }
 
         if(!noExpChannels.isEmpty()){
-            message += "\nChannel with exp system disabled:\n";
+            String disabledChannels = "";
+
             for(String channel_id : noExpChannels){
-                message += event.getGuild().getTextChannelById(channel_id).getAsMention() + "\n";
+                disabledChannels += event.getGuild().getTextChannelById(channel_id).getName() + " \n";
             }
+
+            eb.addField("Disabled Exp Channels", "```" + disabledChannels + "```", true);
         }
 
-        event.deferReply(false).addContent(message).queue();
+        event.deferReply(false).addEmbeds(eb.build()).queue();
     }
 }

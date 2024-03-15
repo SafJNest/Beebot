@@ -723,7 +723,7 @@ public class DatabaseHandler {
         return ":cannuccia:";
     }
 
-    private static String fixSQL(String s){
+    public static String fixSQL(String s){
         s = s.replace("\"", "\\\"");
         s = s.replace("\'", "\\\'");
         return s;

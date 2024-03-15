@@ -26,11 +26,11 @@ public class LeavePreviewSlash extends SlashCommand{
 
         AlertData leave = gs.getAlert(AlertType.LEAVE);
 
-        if(leave == null || !leave.isValid()) {
+        if(leave == null) {
             event.deferReply(true).addContent("This guild doesn't have a leave message.").queue();
             return;
         }
 
-        event.deferReply(false).addContent(leave.getFormattedSample(event.getGuild())).queue();
+        event.deferReply(false).addEmbeds(leave.getSampleEmbed(event.getGuild()).build()).queue();
     }
 }
