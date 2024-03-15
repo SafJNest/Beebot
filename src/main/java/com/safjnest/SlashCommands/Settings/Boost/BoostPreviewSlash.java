@@ -26,11 +26,11 @@ public class BoostPreviewSlash extends SlashCommand{
 
         AlertData boost = gs.getAlert(AlertType.BOOST);
 
-        if(boost == null || !boost.isValid()) {
+        if(boost == null) {
             event.deferReply(true).addContent("This guild doesn't have a boost message.").queue();
             return;
         }
 
-        event.deferReply(false).addContent(boost.getFormattedSample(event.getGuild())).queue();
+        event.deferReply(false).addEmbeds(boost.getSampleEmbed(event.getGuild()).build()).queue();
     }
 }

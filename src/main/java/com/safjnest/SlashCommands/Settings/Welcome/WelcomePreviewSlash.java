@@ -31,7 +31,8 @@ public class WelcomePreviewSlash extends SlashCommand{
             event.deferReply(true).addContent("This guild doesn't have a welcome message.").queue();
             return;
         }
-        event.deferReply(false).addContent(welcome.getFormattedSample(event.getGuild())).queue();
+        
+        event.deferReply(false).addEmbeds(welcome.getSampleEmbed(event.getGuild()).build()).queue();
     }
     
 }
