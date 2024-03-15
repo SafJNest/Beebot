@@ -1,8 +1,5 @@
 package com.safjnest.Commands.Owner;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -15,7 +12,6 @@ import com.safjnest.Utilities.EXPSystem.ExpSystem;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.utils.FileUpload;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -74,27 +70,6 @@ public class PrintCache extends Command {
         }
         
         MessageChannel channel = event.getChannel();
-        try {
-            if (msg.length() > 2000) {
-                File supp = new File("prefix.txt");
-                FileWriter app;
-                try {
-                    app = new FileWriter(supp);
-                    app.write(msg);
-                    app.flush();
-                    app.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                channel.sendMessage("Too many prefixes to send.").queue();
-                channel.sendFiles(FileUpload.fromData(supp)).queue();
-            } else {
-                channel.sendMessage(msg).queue();
-            }
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-            channel.sendMessage(e.getMessage()).queue();
-        }
+        channel.sendMessage(msg).queue();
     }
 }

@@ -5,7 +5,9 @@ import java.awt.Color;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.TrackData;
 import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -71,6 +73,7 @@ public class PlayYoutube extends Command {
         
         @Override
         public void trackLoaded(AudioTrack track) {
+            track.setUserData(new TrackData(AudioType.AUDIO));
             pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
@@ -90,7 +93,7 @@ public class PlayYoutube extends Command {
         public void playlistLoaded(AudioPlaylist playlist) {
             if(youtubeSearch) {
                 AudioTrack track = playlist.getTracks().get(0);
-                
+                track.setUserData(new TrackData(AudioType.AUDIO));
                 pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());

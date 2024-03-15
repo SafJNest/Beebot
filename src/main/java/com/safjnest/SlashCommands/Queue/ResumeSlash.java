@@ -24,7 +24,7 @@ public class ResumeSlash extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
         User self = event.getJDA().getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().setPaused(false);
+        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().pause(false);
 
         event.deferReply(false).addContent("Playing resumed").queue();
     }
