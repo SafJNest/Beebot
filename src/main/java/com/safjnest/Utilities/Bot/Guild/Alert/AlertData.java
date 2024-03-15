@@ -6,7 +6,6 @@ import java.util.HashMap;
 import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 
 public class AlertData {

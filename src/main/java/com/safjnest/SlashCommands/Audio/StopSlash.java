@@ -24,7 +24,7 @@ public class StopSlash extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
         User self = event.getJDA().getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().stopTrack();
+        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().stop();
         event.deferReply(false).addContent("Playing stopped").queue();
     }
 }

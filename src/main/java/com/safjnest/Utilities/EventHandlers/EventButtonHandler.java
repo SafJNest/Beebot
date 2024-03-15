@@ -155,11 +155,11 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "pause":
 
-                ts.getPlayer().setPaused(true);
+                ts.pause(true);
                 break;
             case "play":
 
-                ts.getPlayer().setPaused(false);
+                ts.pause(false);
                 break;
             case "next":
                 if(event.getButton().getStyle() == ButtonStyle.DANGER)

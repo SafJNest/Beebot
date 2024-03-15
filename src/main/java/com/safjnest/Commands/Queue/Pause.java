@@ -29,7 +29,7 @@ public class Pause extends Command {
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
         User self = event.getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().setPaused(true);
+        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().pause(true);
 
         event.reply("Playing paused");
     }

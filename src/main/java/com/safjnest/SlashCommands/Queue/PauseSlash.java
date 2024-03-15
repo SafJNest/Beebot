@@ -24,7 +24,7 @@ public class PauseSlash extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
         User self = event.getJDA().getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().setPaused(true);
+        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().pause(true);
 
         event.deferReply(false).addContent("Playing paused").queue();
     }

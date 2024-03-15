@@ -29,7 +29,7 @@ public class Stop extends Command {
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
         User self = event.getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().getPlayer().stopTrack();
+        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().stop();
         event.reply("Playing stopped");
     }
 }
