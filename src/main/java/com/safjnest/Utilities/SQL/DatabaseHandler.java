@@ -640,6 +640,14 @@ public class DatabaseHandler {
         return id;
     }
 
+    public static boolean createRewardData(String alertID, int level, boolean temporary) {
+        return runQuery("INSERT INTO alert_reward(alert_id, level, temporary) VALUES('" + alertID + "', '" + level + "', '" + (temporary ? 1 : 0) + "');");
+    }
+
+    public static QueryResult getRewardData(String guild_id) {
+        return safJQuery("SELECT r.id as id, a.id as alert_id, r.level as level, r.temporary as temporary FROM alert as a JOIN alert_reward as r ON a.id = r.alert_id WHERE a.guild_id = '" + guild_id + "';");
+    }
+
     public static boolean deleteAlert(String valueOf) {
         return runQuery("DELETE FROM alert WHERE id = '" + valueOf + "';");
     }

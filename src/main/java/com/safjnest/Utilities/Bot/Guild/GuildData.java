@@ -6,7 +6,9 @@ import java.util.HashMap;
 
 
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertKey;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -42,7 +44,7 @@ public class GuildData {
 
     private BlacklistData blacklistData;
 
-    private HashMap<AlertType, AlertData> alerts;
+    private HashMap<AlertKey, AlertData> alerts;
 
     public GuildData(Long id, String prefix, boolean expSystem, String botId) {
         this.ID = id;
@@ -102,12 +104,13 @@ public class GuildData {
      * If the alert is {@link AlertType#WELCOME WELCOME}, the will be also retrieved the roles, otherwise it will be null.
      * @return
      */
-    public HashMap<AlertType, AlertData> getAlerts() {
+    public HashMap<AlertKey, AlertData> getAlerts() {
         if (this.alerts == null) {
             System.out.println("[CACHE] Retriving AlertData from database => " + ID);
             this.alerts = new HashMap<>();
             QueryResult alertResult = DatabaseHandler.getAlerts(String.valueOf(ID), BOT_ID);
             QueryResult roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID), BOT_ID);
+            QueryResult rewardResult = DatabaseHandler.getRewardData(String.valueOf(ID));
             
             HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
             for (ResultRow row : roleResult) {
@@ -120,31 +123,97 @@ public class GuildData {
                 roles.get(alertId).put(rowId, roleId);
             }
 
+            HashMap<Integer, ResultRow> rewards = new HashMap<>();
+            for (ResultRow row : rewardResult) {
+                rewards.put(row.getAsInt("alert_id"), row);
+            }
+
             for (ResultRow row : alertResult) {
-                AlertData ad = new AlertData(
-                    row.getAsInt("id"),
-                    row.get("message"),
-                    row.get("channel"),
-                    row.getAsBoolean("enabled"),
-                    AlertType.values()[row.getAsInt("type")],
-                    roles.get(row.getAsInt("id"))
-                );
-                this.alerts.put(ad.getType(), ad);
+                switch (row.getAsInt("type")) {
+                    case 4:
+                        RewardData rd = new RewardData(
+                            row.getAsInt("id"),
+                            row.get("message"),
+                            row.getAsBoolean("enabled"),
+                            roles.get(row.getAsInt("id")),
+                            rewards.get(row.getAsInt("id")).getAsInt("level"),
+                            rewards.get(row.getAsInt("id")).getAsBoolean("temporary")
+                        );
+                        this.alerts.put(rd.getKey(), rd);
+                        break;
+                
+                    default:
+                        AlertData ad = new AlertData(
+                            row.getAsInt("id"),
+                            row.get("message"),
+                            row.get("channel"),
+                            row.getAsBoolean("enabled"),
+                            AlertType.values()[row.getAsInt("type")],
+                            roles.get(row.getAsInt("id"))
+                        );
+                        this.alerts.put(ad.getKey(), ad);
+                    break;
+                }
+                
             }
         }
         return this.alerts;
     }
 
     public AlertData getAlert(AlertType type) {
-        return getAlerts().get(type);
+        return getAlerts().get(new AlertKey(type));
     }
+
+    public AlertData getAlertByID(int id) {
+        for (AlertData ad : getAlerts().values()) {
+            if (ad.getID() == id) {
+                return ad;
+            }
+        }
+        return null;
+    }
+
+
+    public RewardData getAlert(AlertType type, int level) {
+        AlertData alert = getAlerts().get(new AlertKey(type, level));
+        if (alert instanceof RewardData) {
+            return (RewardData) alert;
+        } else {
+            return null;
+        }
+    }
+
+    public RewardData getLowerReward(int level) {
+        for (int i = level - 1; i >= 0; i--) {
+            RewardData reward = getAlert(AlertType.REWARD, i);
+            if (reward != null) {
+                return reward;
+            }
+        }
+        return null;
+    }
+
+    public RewardData getHigherReward(int level) {
+        for (int i = level + 1; i <= 100; i++) {
+            RewardData reward = getAlert(AlertType.REWARD, i);
+            if (reward != null) {
+                return reward;
+            }
+        }
+        return null;
+    }
+
 
     public AlertData getWelcome() {
         return getAlert(AlertType.WELCOME);
     }
 
     public boolean deleteAlert(AlertType type) {
-        AlertData toDelete = getAlerts().remove(type);
+        return deleteAlert(type, 0);
+    }
+
+    public boolean deleteAlert(AlertType type, int level) {
+        AlertData toDelete = getAlerts().remove(new AlertKey(type, level));
         if (toDelete == null) {
             return false;
         }

@@ -61,7 +61,7 @@ public class BoostCreateSlash extends SlashCommand {
             return;
         }
 
-        gs.getAlerts().put(AlertType.BOOST, newBoost);
+        gs.getAlerts().put(newBoost.getKey(), newBoost);
 
 
         event.deferReply(false).addContent("Boost message created.").queue();

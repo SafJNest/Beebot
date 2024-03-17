@@ -4,9 +4,9 @@ import com.safjnest.Utilities.Bot.Guild.GuildData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
 import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.ResultRow;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -67,30 +67,48 @@ public class EventHandlerBeebot extends ListenerAdapter {
         if(lvl == ExpSystem.NOT_LEVELED_UP)
             return;
 
-        ResultRow reward = DatabaseHandler.getReward(guild.getId(), lvl);
-        if(!reward.emptyValues()){
-            String message = reward.get("message_text");
-            Role role = guild.getRoleById(reward.get("role_id"));
+        RewardData reward = guildData.getAlert(AlertType.REWARD, lvl);
+        if (reward != null && !reward.isValid()) {
+            String message = reward.getMessage();
+            String[] roles = reward.getRolesAsArray();
             message = message.replace("#user", newGuy.getAsMention());
             message = message.replace("#level", String.valueOf(lvl));
-            message = message.replace("#role", role.getName());
-            guild.addRoleToMember(UserSnowflake.fromId(newGuy.getId()), role).queue();
+            //message = message.replace("#role", role.getName());
+
             channel.sendMessage(message).queue();
+            for (String roleID : roles) {
+                Role role = guild.getRoleById(roleID);
+                if (role == null)
+                    continue;
+                guild.addRoleToMember(UserSnowflake.fromId(newGuy.getId()), role).queue();
+            }
+
+            RewardData toDelete = null;
+            if ((toDelete = guildData.getLowerReward(lvl)) != null && toDelete.isTemporary()) {
+                roles = toDelete.getRolesAsArray();
+                for (String roleID : roles) {
+                    Role role = guild.getRoleById(roleID);
+                    if (role == null)
+                        continue;
+                    guild.removeRoleFromMember(UserSnowflake.fromId(newGuy.getId()), role).queue();
+                }
+            }
             return;
         }
+            
 
         AlertData alert = guildData.getAlert(AlertType.LEVEL_UP);
-        if (alert == null || !alert.isValid()) {
-            channel.sendMessage("Congratulations, you are now level: " + lvl).queue();
+        if (alert != null && alert.isValid()) {
+            String message = alert.getMessage();
+            message = message.replace("#user", newGuy.getAsMention());
+            message = message.replace("#level", String.valueOf(lvl));
+            e.getChannel().asTextChannel().sendMessage(message).queue();
             return;
         }
 
-        String message = alert.getMessage();
-        message = message.replace("#user", newGuy.getAsMention());
-        message = message.replace("#level", String.valueOf(lvl));
-        e.getChannel().asTextChannel().sendMessage(message).queue();
+
+        channel.sendMessage("Congratulations, you are now level: " + lvl).queue();
         return;
-        
     }
 
     @Override

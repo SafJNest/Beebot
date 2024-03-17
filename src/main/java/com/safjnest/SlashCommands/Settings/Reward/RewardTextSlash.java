@@ -1,4 +1,4 @@
-package com.safjnest.SlashCommands.Settings.LevelUp;
+package com.safjnest.SlashCommands.Settings.Reward;
 
 import java.util.Arrays;
 
@@ -7,59 +7,48 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.Bot.Guild.GuildData;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-public class LevelUpTextSlash extends SlashCommand{
-
-    public LevelUpTextSlash(String father){
+public class RewardTextSlash extends SlashCommand {
+    
+    public RewardTextSlash(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
         this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "message", "Level up message", true)
+            new OptionData(OptionType.STRING, "reward_level", "Select the reward to change", true)
+                .setAutoComplete(true),
+            new OptionData(OptionType.STRING, "message", "Welcome message", true)
         );
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String message = event.getOption("message") != null ? event.getOption("message").getAsString().replace("'", "''") : null;
+        String message = event.getOption("message") != null ? event.getOption("message").getAsString() : null;
+        int rewardLevel = event.getOption("reward_level").getAsInt();
 
         String guildId = event.getGuild().getId();
         String botId = event.getJDA().getSelfUser().getId();
 
         GuildData gs = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guildId);
         
-        AlertData level = gs.getAlert(AlertType.LEVEL_UP);
+        RewardData reward = (RewardData) gs.getAlert(AlertType.REWARD, rewardLevel);
 
-
-        if(!gs.isExpSystemEnabled()) {
-            event.deferReply(true).addContent("This guild doesn't have the exp system enabled.").queue();
+        if(reward == null) {
+            event.deferReply(true).addContent("There is no reward set for this level.").queue();
             return;
         }
 
-        if(level == null) {
-            AlertData newLevel = new AlertData(guildId, botId, message);
-            if (newLevel.getID() == 0) {
-                event.deferReply(true).addContent("Something went wrong.").queue();
-                return;
-            }
-
-            gs.getAlerts().put(newLevel.getKey(), newLevel);
-            event.deferReply(false).addContent("Changed level up message.").queue();
-            return;
-        }
-
-
-        if(!level.setMessage(message)) {
+        if(!reward.setMessage(message)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
-        
-        event.deferReply(false).addContent("Changed level up message.").queue();
+
+        event.deferReply(false).addContent("Changed reward message.").queue();
     }
 }

@@ -85,6 +85,7 @@ import com.safjnest.SlashCommands.Settings.*;
 import com.safjnest.SlashCommands.Settings.Boost.BoostSlash;
 import com.safjnest.SlashCommands.Settings.Leave.LeaveSlash;
 import com.safjnest.SlashCommands.Settings.LevelUp.LevelUpSlash;
+import com.safjnest.SlashCommands.Settings.Reward.RewardSlash;
 import com.safjnest.SlashCommands.Settings.Welcome.WelcomeSlash;
 
 import no.stelar7.api.r4j.impl.R4J;
@@ -195,7 +196,7 @@ public class Bot extends ListenerAdapter implements Runnable {
         builder.setOwnerId(ownerID);
         builder.setCoOwnerIds(coOwnersIDs);
         builder.setActivity(activity);
-
+        //builder.forceGuildOnly("608967318789160970");
         
         jda.addEventListener(new ListenerAdapter() {
             @Override
@@ -279,10 +280,10 @@ public class Bot extends ListenerAdapter implements Runnable {
 
 
         if(threadName.equals("beebot"))
-            Collections.addAll(slashCommandsList, new RewardsSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
+            Collections.addAll(slashCommandsList, new RewardSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
 
         if(threadName.equals("beebot canary"))
-            Collections.addAll(slashCommandsList, new LeaderboardSlash(), new LevelUpSlash(gs), new RewardsSlash());
+            Collections.addAll(slashCommandsList, new LeaderboardSlash(), new LevelUpSlash(gs), new RewardSlash());
 
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
