@@ -183,6 +183,10 @@ public class AlertData {
         return roles;
     }
 
+    public String[] getRolesAsArray() {
+        return roles.values().toArray(new String[0]);
+    }
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -260,6 +264,11 @@ public class AlertData {
 
 
         return eb;
+    }
+
+
+    public AlertKey getKey() {
+        return new AlertKey(this.type);
     }
 
     @Override

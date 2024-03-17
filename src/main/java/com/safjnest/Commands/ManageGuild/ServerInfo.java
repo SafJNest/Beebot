@@ -13,6 +13,7 @@ import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertKey;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -49,10 +50,10 @@ public class ServerInfo extends Command{
         }
         String botId = event.getJDA().getSelfUser().getId();
 
-        HashMap<AlertType, AlertData> alerts = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guild.getId()).getAlerts();
-        AlertData welcome = alerts.get(AlertType.WELCOME);
-        AlertData leave = alerts.get(AlertType.LEAVE);
-        AlertData lvlup = alerts.get(AlertType.LEVEL_UP);
+        HashMap<AlertKey, AlertData> alerts = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guild.getId()).getAlerts();
+        AlertData welcome = alerts.get(new AlertKey(AlertType.WELCOME));
+        AlertData leave = alerts.get(new AlertKey(AlertType.LEAVE));
+        AlertData lvlup = alerts.get(new AlertKey(AlertType.LEVEL_UP));
 
         ResultRow settings = DatabaseHandler.getGuildData(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
         

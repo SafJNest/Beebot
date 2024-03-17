@@ -11,10 +11,10 @@ import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.Commands.Queue.Queue;
-import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -40,9 +40,6 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-import net.dv8tion.jda.api.interactions.components.text.TextInput;
-import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
@@ -52,11 +49,6 @@ public class EventButtonHandler extends ListenerAdapter {
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         String buttonId = event.getButton().getId();
-        
-        if(buttonId.startsWith("rewards-")){
-            rewardsButtonEvent(event);
-            return;
-        }
 
         event.deferEdit().queue();
 
@@ -92,6 +84,66 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if(buttonId.startsWith("queue-"))
             queue(event);
+        
+        else if (buttonId.startsWith("reward-"))
+            reward(event);
+    }
+
+
+    public void reward(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-")[1];
+
+        Guild guild = event.getGuild();
+        User self = event.getJDA().getSelfUser();
+
+        Button left = Button.primary("reward-left", "<-");
+        Button right = Button.primary("reward-right", "->");
+        Button center = null;
+
+        String level = "";
+        for (Button b : event.getMessage().getButtons()) {
+            if (b.getLabel().startsWith("Level")) {
+                level = b.getLabel().substring(b.getLabel().indexOf(":") + 2);
+            }
+        }
+        
+        switch (args) {
+            case "right":
+                RewardData nextReward = BotDataHandler.getSettings(self.getId()).getGuildSettings().getServer(guild.getId()).getHigherReward(Integer.parseInt(level));
+                RewardData nextNextReward = BotDataHandler.getSettings(self.getId()).getGuildSettings().getServer(guild.getId()).getHigherReward(nextReward.getLevel());
+                
+                if (nextNextReward == null) {
+                    right = right.asDisabled();
+                    right = right.withStyle(ButtonStyle.DANGER);
+                }
+
+                center = Button.primary("center", "Level: " + nextReward.getLevel());
+                center = center.withStyle(ButtonStyle.SUCCESS);
+                center = center.asDisabled();
+                event.getMessage().editMessageEmbeds(nextReward.getSampleEmbed(guild).build())
+                        .setActionRow(left, center, right)
+                        .queue();
+                break;
+
+            case "left":
+                
+                RewardData previousRewardData = BotDataHandler.getSettings(self.getId()).getGuildSettings().getServer(guild.getId()).getLowerReward(Integer.parseInt(level));
+                RewardData previousPreviousRewardData = BotDataHandler.getSettings(self.getId()).getGuildSettings().getServer(guild.getId()).getLowerReward(previousRewardData.getLevel());
+                if (previousPreviousRewardData == null) {
+                    left = left.asDisabled();
+                    left = left.withStyle(ButtonStyle.DANGER);
+                }
+
+                center = Button.primary("center", "Level: " + previousRewardData.getLevel());
+                center = center.withStyle(ButtonStyle.SUCCESS);
+                center = center.asDisabled();
+                event.getMessage().editMessageEmbeds(previousRewardData.getSampleEmbed(guild).build())
+                        .setActionRow(left, center, right)
+                        .queue();
+
+
+                break;
+        }
     }
 
     public void queue(ButtonInteractionEvent event) {
@@ -694,56 +746,6 @@ public class EventButtonHandler extends ListenerAdapter {
         }
     }
 
-    private void rewardsButtonEvent(ButtonInteractionEvent event) {
-        if(!event.getMember().hasPermission(Permission.ADMINISTRATOR)){
-            event.deferReply(true).addContent("You don't have the permission to do that.").queue();
-            return;
-        }
-        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-        
-        switch (args){
-            case "add":
-                TextInput subject = TextInput.create("rewards-lvl", "Level", TextInputStyle.SHORT)
-                    .setPlaceholder("1")
-                    .setMinLength(1)
-                    .setMaxLength(100) // or setRequiredRange(10, 100)
-                    .build();
-
-                TextInput body = TextInput.create("rewards-message", "Message (write // for no message)", TextInputStyle.PARAGRAPH)
-                        .setPlaceholder("Contratulation #user you have reached level #level so you gain the role: #role")
-                        .setMinLength(2)
-                        .setMaxLength(1000)
-                        .build();
-                
-                TextInput role = TextInput.create("rewards-role", "Role (@rolename)", TextInputStyle.SHORT)
-                        .setPlaceholder("@king")
-                        .setMinLength(2)
-                        .setMaxLength(20)
-                        .build();
-
-                Modal modal = Modal.create("rewards", "Set a new Reward")
-                        .addComponents(ActionRow.of(subject), ActionRow.of(body), ActionRow.of(role))
-                        .build();
-                event.replyModal(modal).queue();
-            break;
-
-            default:
-                if(event.getButton().getId().startsWith("rewards-role-")){
-                    if(event.getButton().getStyle() == ButtonStyle.DANGER){
-                        String roleString = event.getButton().getId().split("-")[2];
-                        DatabaseHandler.deleteReward(roleString);
-                        event.deferEdit().queue();
-                        
-                        RewardsSlash.createEmbed(event.getMessage()).queue();
-                        return;
-                    }
-                    //modify button style into danger
-                    
-                    event.editButton(event.getButton().withStyle(ButtonStyle.DANGER)).queue();
-                }
-            break;
-        }
-    }
 
     private void banUserEvent(ButtonInteractionEvent event) {
         if(!event.getMember().hasPermission(Permission.BAN_MEMBERS)){

@@ -18,6 +18,7 @@ import com.safjnest.Utilities.Bot.Guild.BlacklistData;
 import com.safjnest.Utilities.Bot.Guild.ChannelData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertKey;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -41,6 +42,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.sql.SQLException;
+import java.sql.Statement;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -201,7 +203,7 @@ public class Test extends Command{
                 System.out.println(gs.getServer(e.getGuild().getId()).getBlacklistData().toString());
                 break;
             case 13:
-                HashMap<AlertType, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
+                HashMap<AlertKey, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
                 e.reply("```json\n" + s + "```");
                 BlacklistData bd = gs.getServer(e.getGuild().getId()).getBlacklistData();
@@ -239,6 +241,28 @@ public class Test extends Command{
                 for(ResultRow row : res){
                     query = "INSERT INTO blacklist(guild_id, user_id) VALUES (" + row.get("id") + "," + PermissionHandler.getEpria() + ")";
                     DatabaseHandler.safJQuery(query);
+                }
+                break;
+            case 18:
+                query = "SELECT guild_id, role_id, level, message_text FROM reward";
+                res = DatabaseHandler.safJQuery(query);
+                for(ResultRow row : res){
+                    int id = 0;
+                    java.sql.Connection c = DatabaseHandler.getConnection();
+                    try (Statement stmt = c.createStatement()) {
+                        DatabaseHandler.runQuery(stmt, "INSERT INTO alert(guild_id, bot_id, message, channel, enabled, type) VALUES('" + row.get("guild_id") + "','" + "938487470339801169" + "','" + row.get("message_text") + "','" + null + "', 1, '" + AlertType.REWARD.ordinal() + "');");
+                        id = DatabaseHandler.fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+                        DatabaseHandler.runQuery(stmt, "INSERT INTO alert_reward(alert_id, level, temporary) VALUES(" + id + "," + row.get("level") + "," + 0 + ");");
+                        DatabaseHandler.runQuery(stmt, "INSERT INTO alert_role(alert_id, role_id) VALUES(" + id + "," + row.get("role_id") + ");");
+                        c.commit();
+                    } catch (SQLException ex) {
+                        try {
+                            if(c != null) c.rollback();
+                        } catch(SQLException ee) {
+                            System.out.println(ee.getMessage());
+                        }
+                        System.out.println(ex.getMessage());
+                    }
                 }
                 break;
             default:

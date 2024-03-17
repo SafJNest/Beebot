@@ -66,7 +66,7 @@ public class WelcomeCreateSlash extends SlashCommand{
             return;
         }
 
-        gs.getAlerts().put(AlertType.WELCOME, newWelcome);
+        gs.getAlerts().put(newWelcome.getKey(), newWelcome);
         event.deferReply(false).addContent("Welcome message created.").queue();
     }
 }

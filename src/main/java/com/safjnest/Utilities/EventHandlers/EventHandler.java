@@ -8,13 +8,14 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.Commands.League.Summoner;
-import com.safjnest.SlashCommands.ManageGuild.RewardsSlash;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Bot.Guild.BlacklistData;
 import com.safjnest.Utilities.Bot.Guild.GuildData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Bot.Guild.Alert.AlertKey;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
 import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -174,9 +175,15 @@ public class EventHandler extends ListenerAdapter {
         else if(e.getFullCommandName().equals("TTS"))
             name = "tts";
         
-        else if(e.getFocusedOption().getName().equals("role_remove")) {
+        else if(e.getFocusedOption().getName().equals("role_remove")) 
             name = "alert_role";
-        }
+        
+        else if (e.getFocusedOption().getName().equals("reward_level")) 
+            name = "rewards_level";
+        
+            else if (e.getFocusedOption().getName().equals("reward_roles")) 
+            name = "reward_roles";
+        
              
         switch (name) {
             case "play":
@@ -337,31 +344,54 @@ public class EventHandler extends ListenerAdapter {
                     }
                 }
                 break;
+            case "rewards_level":
+                HashMap<AlertKey, AlertData> alerts = gs.getServer(e.getGuild().getId()).getAlerts();
+                List<String> levels = new ArrayList<>();
+                for (AlertData data : alerts.values()) {
+                    if (data.getType() == AlertType.REWARD)
+                        levels.add(String.valueOf(((RewardData) data).getLevel()));
+                }
+                if (e.getFocusedOption().getValue().equals("")) {
+                    Collections.shuffle(levels);
+                    for (int i = 0; i < levels.size() && i < 10; i++)
+                        choices.add(new Choice(levels.get(i), levels.get(i)));
+                } else {
+                    for (String level : levels) {
+                        if (level.startsWith(e.getFocusedOption().getValue()))
+                            choices.add(new Choice(level, level));
+                    }
+                }
+                break;
+            case "reward_roles":
+                if (e.getOption("reward_level") == null)
+                    return;
+                String rewardLevel = e.getOption("reward_level").getAsString();
+                RewardData reward = gs.getServer(e.getGuild().getId()).getAlert(AlertType.REWARD, Integer.parseInt(rewardLevel));
+                if (reward != null && reward.getRoles() != null) {
+                    HashMap<Integer, String> rewardRoles = reward.getRoles();
+                    List<Role> roles = new ArrayList<>();
+                    for (Role r : e.getGuild().getRoles()) {
+                        if (rewardRoles.containsValue(r.getId()))
+                            roles.add(r);
+                    }
+                    Collections.shuffle(roles);
+                    if (e.getFocusedOption().getValue().equals("")) {
+                        for (int i = 0; i < roles.size() && i < 10; i++)
+                            choices.add(new Choice(roles.get(i).getName(), roles.get(i).getId()));
+                    } else {
+                        for (Role role : roles) {
+                            if (role.getName().toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
+                                choices.add(new Choice(role.getName(), role.getId()));
+                        }
+                    }
+                }
+                break;
         }
         e.replyChoices(choices).queue();
     }
 
     @Override
-    public void onModalInteraction(ModalInteractionEvent event) {
-        if(event.getModalId().startsWith("rewards")){
-            String role = event.getValue("rewards-role").getAsString();
-            String lvl = event.getValue("rewards-lvl").getAsString();
-            String msg = event.getValue("rewards-message").getAsString();
-
-            if(msg.equals("//")) 
-                msg = null;
-            try {
-                role = event.getGuild().getRolesByName(role.substring(1), true).get(0).getId();
-            } catch (Exception e) {
-                event.reply("Role not found").queue();
-                return;
-            }
-
-            DatabaseHandler.insertRewards(event.getGuild().getId(), role, lvl, msg);
-            event.deferEdit().queue();
-            RewardsSlash.createEmbed(event.getMessage()).queue();
-        }
-    }
+    public void onModalInteraction(ModalInteractionEvent event) { }
 
     /**
      * On join of a user (to make the bot welcome the new member)
@@ -510,7 +540,7 @@ public class EventHandler extends ListenerAdapter {
             }
             String alertMessage = "";
             String content = "";
-            HashMap<AlertType, AlertData> alerts = g.getAlerts();
+            HashMap<AlertKey, AlertData> alerts = g.getAlerts();
             BlacklistData bld = g.getBlacklistData();
             if (alerts != null) {
                 for (AlertData data : alerts.values()) {

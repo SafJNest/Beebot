@@ -411,6 +411,50 @@
         }
     },
 
+    "reward": {
+        "alias" : [],
+        "help"  : "Allow to set a reward for the leveling up system. A message will be sent every time a user reach a certain level and one or more roles will be given.",
+        "category" : "Settings",
+        "arguments" : "",
+        "children": {
+            "create": {
+                "alias" : [],
+                "help"  : "Create a reward for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete the reward for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "preview": {
+                "alias" : [],
+                "help"  : "Show all the rewards",
+                "arguments" : "[CommandName]"
+            },
+            "addrole": {
+                "alias" : [],
+                "help"  : "Add a role to a specific reward.",
+                "arguments" : "[CommandName]"
+            },
+            "removerole": {
+                "alias" : [],
+                "help"  : "Remove a role from a specific reward.",
+                "arguments" : "[CommandName]"
+            },
+            "text": {
+                "alias" : [],
+                "help"  : "Change the reward message's text.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Toggle the reward on or off.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
     "leave": {
         "alias" : ["setleave", "leave"],
         "help"  : "Allow to set a message to be sent every time a user left a guild. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetleft #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot. - Write disable to cancel the function.",
