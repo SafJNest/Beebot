@@ -75,7 +75,7 @@ public class Connection extends WebSocketServer {
             case "newPrefix":
                 try {
                     gs.getServer(guildId).setPrefix(parseRequest(message, "prefix"));
-                    DatabaseHandler.insertGuild(guildId, userId, parseRequest(message, "prefix"));
+                    DatabaseHandler.insertGuild(guildId, parseRequest(message, "prefix"));
                     server = "newPrefix-ok"; 
                 } catch (Exception e) {
                     server = "newPrefix-!ok"; 

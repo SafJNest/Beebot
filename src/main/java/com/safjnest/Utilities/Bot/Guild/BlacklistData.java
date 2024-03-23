@@ -46,7 +46,7 @@ public class BlacklistData {
     }
 
     public synchronized boolean setThreshold(int threshold) {
-        boolean result = DatabaseHandler.setBlacklistThreshold(String.valueOf(threshold), String.valueOf(guildData.getId()), guildData.getBotId());
+        boolean result = DatabaseHandler.setBlacklistThreshold(String.valueOf(threshold), String.valueOf(guildData.getId()));
         if (result) {
             this.threshold = threshold;
         }
@@ -54,7 +54,7 @@ public class BlacklistData {
     }
 
     public synchronized boolean setBlackChannelId(String blackChannelId) {
-        boolean result = DatabaseHandler.setBlacklistChannel(blackChannelId, String.valueOf(guildData.getId()), guildData.getBotId());
+        boolean result = DatabaseHandler.setBlacklistChannel(blackChannelId, String.valueOf(guildData.getId()));
         if (result) {
             this.blackChannelId = blackChannelId;
         }
@@ -62,7 +62,7 @@ public class BlacklistData {
     }
 
     public synchronized boolean setBlacklistEnabled(boolean toggle) {
-        boolean result = DatabaseHandler.toggleBlacklist(String.valueOf(guildData.getId()), guildData.getBotId(), toggle);
+        boolean result = DatabaseHandler.toggleBlacklist(String.valueOf(guildData.getId()), toggle);
         if (result) {
             this.blacklist_enabled = toggle;
         }
@@ -70,7 +70,7 @@ public class BlacklistData {
     }
 
     public boolean update() {
-        return DatabaseHandler.enableBlacklist(String.valueOf(guildData.getId()), guildData.getBotId(), String.valueOf(threshold), blackChannelId);
+        return DatabaseHandler.enableBlacklist(String.valueOf(guildData.getId()), String.valueOf(threshold), blackChannelId);
     }
 
     @Override

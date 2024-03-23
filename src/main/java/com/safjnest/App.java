@@ -4,10 +4,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.Collections;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.springframework.boot.SpringApplication;
@@ -26,7 +24,6 @@ import no.stelar7.api.r4j.impl.R4J;
 
 @SpringBootApplication
 public class App {
-    public static ArrayList<Thread> botsArr = new ArrayList<>(); 
     private static TTSHandler tts;
     private static R4J riotApi;
     private static BotDataHandler bs;
@@ -74,11 +71,8 @@ public class App {
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, riotSettings = null;
-        JSONArray bots = null;
-        int waitingTime = 0;
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
-            bots = (JSONArray) settings.get("startup");
             settings = (JSONObject) settings.get("settings");
             SQLSettings = (JSONObject) settings.get("MySQL");
             riotSettings = (JSONObject) settings.get("Riot");
@@ -104,25 +98,15 @@ public class App {
         
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
 
-        waitingTime = Integer.parseInt(settings.get("waitingTime").toString());
-
         System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
         System.out.println("[EPRIA] ID " + PermissionHandler.getEpria());
 
         bs = new BotDataHandler();
 
         if(!isExtremeTesting()) {
-            try {
-                for (int i = 0; i < bots.size(); i++) {
-                    Thread t = new Thread(new Bot(bs, tts, riotApi));
-                    t.setName((String)bots.get(i));
-                    botsArr.add(t);
-                }
-                for(Thread t : botsArr){
-                    t.start();
-                    Thread.sleep(waitingTime); //pebble non riesce a gestire più di un bot che si loada contemporaneamente
-                }
-            } catch (Exception e) {e.printStackTrace(); return;}
+            Thread bc = new Thread(new Bot(bs, tts, riotApi));
+            bc.setName("beebot");
+            bc.start();
         } else{
             Thread bc = new Thread(new Bot(bs, tts, riotApi));
             bc.setName("beebot canary");
@@ -132,26 +116,26 @@ public class App {
 
     public static void shutdown(String bot) {
         System.out.println("Shutting down " + bot);
-        for(int i = 0; i < botsArr.size(); i++){
-            if(botsArr.get(i).getName().equals(bot)){
-                botsArr.get(i).interrupt();
-                botsArr.remove(i);
-            }
-        }
+        // for(int i = 0; i < botsArr.size(); i++){
+        //     if(botsArr.get(i).getName().equals(bot)){
+        //         botsArr.get(i).interrupt();
+        //         botsArr.remove(i);
+        //     }
+        // }
     }
 
     public static void restart(String bot) {
         System.out.println("Shutting down " + bot);
-        for(int i = 0; i < botsArr.size(); i++){
-            if(botsArr.get(i).getName().equals(bot)){
-                botsArr.get(i).interrupt();
-                botsArr.remove(i);
-            }
-        }
-        Thread t = new Thread(new Bot(bs, tts, riotApi));
-        t.setName(bot);
-        t.start();
-        botsArr.add(t);
-        return;
+        // for(int i = 0; i < botsArr.size(); i++){
+        //     if(botsArr.get(i).getName().equals(bot)){
+        //         botsArr.get(i).interrupt();
+        //         botsArr.remove(i);
+        //     }
+        // }
+        // Thread t = new Thread(new Bot(bs, tts, riotApi));
+        // t.setName(bot);
+        // t.start();
+        // botsArr.add(t);
+        // return;
     }
 }

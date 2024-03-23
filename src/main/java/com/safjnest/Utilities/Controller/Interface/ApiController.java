@@ -68,7 +68,7 @@ public class ApiController {
         }
         prefix = prefix.replace("\"", "");
         BotDataHandler.getSettings(id).getGuildSettings().getServer(guildId).setPrefix(prefix);
-        DatabaseHandler.setPrefix(guildId, id, prefix);
+        DatabaseHandler.setPrefix(guildId, prefix);
         return BotDataHandler.getSettings(id).getGuildSettings().getServer(guildId).getPrefix();
     }
 

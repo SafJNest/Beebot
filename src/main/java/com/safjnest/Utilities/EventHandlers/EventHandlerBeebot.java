@@ -1,12 +1,12 @@
 package com.safjnest.Utilities.EventHandlers;
 
+import com.safjnest.Utilities.ExpSystem;
 import com.safjnest.Utilities.Bot.Guild.GuildData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+import com.safjnest.Utilities.Bot.Guild.UserData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
 import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
-import com.safjnest.Utilities.EXPSystem.ExpSystem;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 /**
@@ -62,10 +61,23 @@ public class EventHandlerBeebot extends ListenerAdapter {
             return;
 
         double modifier = guildData.getExpValueRoom(channel.getIdLong());
-        int lvl = farm.receiveMessage(e.getAuthor().getId(), guild.getId(), modifier);
-
-        if(lvl == ExpSystem.NOT_LEVELED_UP)
+        
+        UserData user = guildData.getUserData(newGuy.getIdLong());
+        if (!user.canReceiveExperience()) {
             return;
+        }
+
+        int exp = user.getExperience();
+        int currentLevel = user.getLevel();
+        exp = farm.calculateExp(exp, modifier);
+        int lvl = farm.isLevelUp(exp, currentLevel);
+
+        if(lvl == ExpSystem.NOT_LEVELED_UP) {
+            user.setExpData(exp, currentLevel);
+            return;
+        }
+        user.setExpData(exp, lvl);
+
 
         RewardData reward = guildData.getAlert(AlertType.REWARD, lvl);
         if (reward != null && !reward.isValid()) {
@@ -110,12 +122,5 @@ public class EventHandlerBeebot extends ListenerAdapter {
         channel.sendMessage("Congratulations, you are now level: " + lvl).queue();
         return;
     }
-
-    @Override
-    public void onRoleDelete(RoleDeleteEvent event){
-        DatabaseHandler.deleteReward(event.getRole().getId());
-    }
-
-
 
 }

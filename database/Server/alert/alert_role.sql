@@ -5,5 +5,5 @@ CREATE TABLE
     `role_id` varchar(19) NOT NULL,
     PRIMARY KEY (`id`),
     KEY `alert_role_relation_1` (`alert_id`),
-    CONSTRAINT `alert_role_relation_1` FOREIGN KEY (`alert_id`) REFERENCES `alert2` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-  ) ENGINE = InnoDB AUTO_INCREMENT = 6 DEFAULT CHARSET = latin1
+    CONSTRAINT `alert_role_relation_1` FOREIGN KEY (`alert_id`) REFERENCES `alert` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  ) ENGINE = InnoDB AUTO_INCREMENT = 84 DEFAULT CHARSET = latin1

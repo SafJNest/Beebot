@@ -36,8 +36,8 @@ public class AlertData {
      * @param enabled
      * @param type
      */
-    public AlertData(String guild_id, String bot_id, String message, String channelId, AlertType type) {
-        this.ID = DatabaseHandler.createAlert(guild_id, bot_id, message, channelId, type);
+    public AlertData(String guild_id, String message, String channelId, AlertType type) {
+        this.ID = DatabaseHandler.createAlert(guild_id, message, channelId, type);
         this.message = message;
         this.channelId = channelId;
         this.enabled = true;
@@ -52,8 +52,8 @@ public class AlertData {
      * @param channelId
      * @param roles
      */
-    public AlertData(String guild_id, String bot_id, String message, String channelId, String[] roles) {
-        this.ID = DatabaseHandler.createAlert(guild_id, bot_id, message, channelId, AlertType.WELCOME);
+    public AlertData(String guild_id, String message, String channelId, String[] roles) {
+        this.ID = DatabaseHandler.createAlert(guild_id, message, channelId, AlertType.WELCOME);
         this.message = message;
         this.channelId = channelId;
         this.enabled = true;
@@ -64,11 +64,10 @@ public class AlertData {
     /**
      * Constructor for the level up message
      * @param guild_id
-     * @param bot_id
      * @param message
      */
-    public AlertData(String guild_id, String bot_id, String message) {
-        this.ID = DatabaseHandler.createAlert(guild_id, bot_id, message, null, AlertType.LEVEL_UP);
+    public AlertData(String guild_id, String message) {
+        this.ID = DatabaseHandler.createAlert(guild_id, message, null, AlertType.LEVEL_UP);
         this.message = message;
         this.channelId = null;
         this.enabled = true;
@@ -84,7 +83,6 @@ public class AlertData {
     }
     
     public boolean setMessage(String message) {
-        message = DatabaseHandler.fixSQL(message);
         boolean result = DatabaseHandler.setAlertMessage(String.valueOf(this.ID), message);
         if (result) {
             this.message = message;

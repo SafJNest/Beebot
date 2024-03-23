@@ -7,4 +7,4 @@ CREATE TABLE
     PRIMARY KEY (`id`),
     KEY `alert_reward_relation_1` (`alert_id`),
     CONSTRAINT `alert_reward_relation_1` FOREIGN KEY (`alert_id`) REFERENCES `alert` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-  ) ENGINE = InnoDB DEFAULT CHARSET = latin1
+  ) ENGINE = InnoDB AUTO_INCREMENT = 22 DEFAULT CHARSET = latin1

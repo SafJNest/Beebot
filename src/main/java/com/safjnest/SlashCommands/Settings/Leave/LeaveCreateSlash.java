@@ -54,7 +54,7 @@ public class LeaveCreateSlash extends SlashCommand{
             return;
         }
 
-        AlertData newLeave = new AlertData(guildId, botId, leaveText, channelID, AlertType.LEAVE);
+        AlertData newLeave = new AlertData(guildId, leaveText, channelID, AlertType.LEAVE);
         
         if(newLeave.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

@@ -56,7 +56,7 @@ public class LevelUpPreviewSlash extends SlashCommand{
         }
 
         EmbedBuilder eb = level.getSampleEmbed(event.getGuild());
-        eb.addBlankField(false);
+        eb.addBlankField(true);
         if(!expChannels.isEmpty()) {
             String modifiedChannels= "";
 

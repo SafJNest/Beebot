@@ -55,7 +55,7 @@ public class ServerInfo extends Command{
         AlertData leave = alerts.get(new AlertKey(AlertType.LEAVE));
         AlertData lvlup = alerts.get(new AlertKey(AlertType.LEVEL_UP));
 
-        ResultRow settings = DatabaseHandler.getGuildData(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+        ResultRow settings = DatabaseHandler.getGuildData(event.getGuild().getId());
         
         String welcomeMessageString = null;
         if(welcome != null) {

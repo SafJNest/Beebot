@@ -43,7 +43,7 @@ public class LevelUpTextSlash extends SlashCommand{
         }
 
         if(level == null) {
-            AlertData newLevel = new AlertData(guildId, botId, message);
+            AlertData newLevel = new AlertData(guildId, message);
             if (newLevel.getID() == 0) {
                 event.deferReply(true).addContent("Something went wrong.").queue();
                 return;
