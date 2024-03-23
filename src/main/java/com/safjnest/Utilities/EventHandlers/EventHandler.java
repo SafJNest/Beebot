@@ -98,7 +98,7 @@ public class EventHandler extends ListenerAdapter {
         
         if(cj != null && ((bebyc != null && cj.getId().equals(bebyc.getId())) || bebyc == null)) {
             Member theGuy = e.getMember();
-            ResultRow sound = DatabaseHandler.getGreet(theGuy.getId(), guild.getId(), e.getJDA().getSelfUser().getId());
+            ResultRow sound = DatabaseHandler.getGreet(theGuy.getId(), guild.getId());
             if(sound.emptyValues())
                 return;
 
@@ -129,8 +129,8 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent event){
-        DatabaseHandler.addGuild(event.getGuild().getId());
-        DatabaseHandler.insertGuild(event.getGuild().getId(), event.getJDA().getSelfUser().getId(), PREFIX);
+        System.out.println("[CACHE] Pushing new Guild into Database=> " + event.getGuild().getId());
+        DatabaseHandler.insertGuild(event.getGuild().getId(), PREFIX);
     }
 
 
@@ -142,7 +142,7 @@ public class EventHandler extends ListenerAdapter {
             return;
         String commandName = event.getName() + "Slash";
         String args = event.getOptions().toString();
-        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getJDA().getSelfUser().getId(), event.getMember().getId(), commandName, args);
+        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
     }
 
 
@@ -481,7 +481,7 @@ public class EventHandler extends ListenerAdapter {
         int times = 0;
         times = times + DatabaseHandler.getBannedTimes(event.getUser().getId());
 
-        QueryResult guilds = DatabaseHandler.getGuildByThreshold(times, event.getJDA().getSelfUser().getId(), event.getGuild().getId());
+        QueryResult guilds = DatabaseHandler.getGuildByThreshold(times, event.getGuild().getId());
         if(guilds == null)
             return;
         

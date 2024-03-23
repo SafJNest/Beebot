@@ -524,6 +524,11 @@
                 "alias" : [],
                 "help"  : "Toggle the exp system on and off for the whole guild.",
                 "arguments" : "[CommandName]"
+            },
+            "updatetime": {
+                "alias" : [],
+                "help"  : "Change after how many second you will gain experience",
+                "arguments" : "[CommandName]"
             }
         }
     },

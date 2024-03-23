@@ -26,10 +26,7 @@ public class GuildData {
     /**
      * Server ID 
      */
-    private final Long ID;
-
-    private final String BOT_ID;
-    
+    private final Long ID;    
     /**
      * Prefix Server 
      */
@@ -46,11 +43,14 @@ public class GuildData {
 
     private HashMap<AlertKey, AlertData> alerts;
 
-    public GuildData(Long id, String prefix, boolean expSystem, String botId) {
+    private HashMap<Long, UserData> users;
+
+    public GuildData(Long id, String prefix, boolean expSystem) {
         this.ID = id;
         this.prefix = prefix;
         this.expSystem = expSystem;
-        this.BOT_ID = botId;
+
+        this.users = new HashMap<>();
         retriveChannels();
     }
 
@@ -66,12 +66,9 @@ public class GuildData {
         return expSystem;
     }
 
-    public String getBotId() {
-        return BOT_ID;
-    }
 
     public synchronized boolean setPrefix(String prefix) {
-        boolean result = DatabaseHandler.updatePrefix(String.valueOf(ID), BOT_ID, prefix);
+        boolean result = DatabaseHandler.updatePrefix(String.valueOf(ID), prefix);
         if (result) {
             this.prefix = prefix;
         }
@@ -79,7 +76,7 @@ public class GuildData {
     }
 
     public synchronized boolean setExpSystem(boolean expSystem) {
-        boolean result = DatabaseHandler.toggleLevelUp(String.valueOf(this.ID), this.BOT_ID, expSystem);
+        boolean result = DatabaseHandler.toggleLevelUp(String.valueOf(this.ID), expSystem);
         if (result) {
             this.expSystem = expSystem;
         }
@@ -87,7 +84,7 @@ public class GuildData {
     }
 
     public String toString(){
-        return "ID: " + ID + "| Prefix: " + prefix + " |ExpSystem: " + expSystem;
+        return "ID: " + ID + " | Prefix: " + prefix + " | ExpSystem: " + expSystem;
     }
 
 
@@ -108,8 +105,8 @@ public class GuildData {
         if (this.alerts == null) {
             System.out.println("[CACHE] Retriving AlertData from database => " + ID);
             this.alerts = new HashMap<>();
-            QueryResult alertResult = DatabaseHandler.getAlerts(String.valueOf(ID), BOT_ID);
-            QueryResult roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID), BOT_ID);
+            QueryResult alertResult = DatabaseHandler.getAlerts(String.valueOf(ID));
+            QueryResult roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID));
             QueryResult rewardResult = DatabaseHandler.getRewardData(String.valueOf(ID));
             
             HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
@@ -228,7 +225,7 @@ public class GuildData {
     public BlacklistData getBlacklistData() {
         if (this.blacklistData == null) {
             BlacklistData bd = null;
-            ResultRow result = DatabaseHandler.getGuildData(String.valueOf(ID), BOT_ID);
+            ResultRow result = DatabaseHandler.getGuildData(String.valueOf(ID));
             System.out.println("[CACHE] Retriving BlacklistData from database => " + ID);
             bd = new BlacklistData(
                 result.getAsInt("threshold"),
@@ -279,7 +276,7 @@ public class GuildData {
 
     public void retriveChannels() {
         this.channels = new HashMap<>();
-        QueryResult result = DatabaseHandler.getChannelData(String.valueOf(ID), BOT_ID);
+        QueryResult result = DatabaseHandler.getChannelData(String.valueOf(ID));
         
         if (result == null) { return; }
         System.out.println("[CACHE] Retriving ChannelData from database => " + ID);
@@ -346,6 +343,55 @@ public class GuildData {
     public synchronized boolean setExpValueChannel(Long id, double value){
         return getChannelData(id).setExpModifier(value);
     }
+
+    /* -------------------------------------------------------------------------- */
+    /*                                UserData                                    */
+    /* -------------------------------------------------------------------------- */
+
+    private UserData retriveUserData(long userId) {
+        UserData ud = null;
+        ResultRow result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
+        if (result.emptyValues()) { return null; }
+        System.out.println("[CACHE] Retriving UserData from database => " + ID + " | " + userId);
+        ud = new UserData(
+            result.getAsInt("id"),
+            userId,
+            result.getAsInt("experience"),
+            result.getAsInt("level"),
+            result.getAsInt("messages"),
+            result.getAsInt("update_time"),
+            this
+        );
+        return ud;
+    }
+
+    public UserData getUserData(String userId) {
+        return getUserData(Long.parseLong(userId));
+    }
+
+    public UserData getUserData(long userId) {
+        UserData ud = this.users.get(userId);
+        if (ud != null) {
+            return ud;
+        }
+        ud = retriveUserData(userId);
+        if (ud == null) {
+            ud = new UserData(userId, this);
+            System.out.println("[CACHE] Caching local UserData => " + ID + " | " + userId);
+        }
+        this.users.put(userId, ud);
+        return ud;
+    }
+
+    public HashMap<Long, UserData> getUsers() {
+        return this.users;
+    }
+
+
+
+
+
+
 
 
 

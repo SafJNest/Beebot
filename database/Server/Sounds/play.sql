@@ -5,5 +5,5 @@ CREATE TABLE
     `times` smallint(6) NOT NULL,
     PRIMARY KEY (`user_id`, `sound_id`),
     KEY `play_sound_relation` (`sound_id`),
-    CONSTRAINT `play_sound_relation` FOREIGN KEY (`sound_id`) REFERENCES `sound` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT `play_relation_1` FOREIGN KEY (`sound_id`) REFERENCES `sound` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
   ) ENGINE = InnoDB DEFAULT CHARSET = latin1

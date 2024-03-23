@@ -52,7 +52,7 @@ public class ServerInfoSlash extends SlashCommand{
         String botId = event.getJDA().getSelfUser().getId();
         int roleCharNumber = (event.getOption("roleCharNumber") == null) ? defaultRoleCharNumber : event.getOption("roleCharNumber").getAsInt();
 
-        ResultRow settings = DatabaseHandler.getGuildData(event.getGuild().getId(), event.getJDA().getSelfUser().getId());
+        ResultRow settings = DatabaseHandler.getGuildData(event.getGuild().getId());
 
         HashMap<AlertKey, AlertData> alerts = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guild.getId()).getAlerts();
         AlertData welcome = alerts.get(new AlertKey(AlertType.WELCOME));

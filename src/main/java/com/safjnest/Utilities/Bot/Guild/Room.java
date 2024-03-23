@@ -19,7 +19,7 @@ public class Room {
         
     /**
      * If the room has the exp system
-     * @see com.safjnest.Utilities.EXPSystem.ExpSystem EXPSystem  
+     * @see com.safjnest.Utilities.ExpSystem EXPSystem  
      */
     private boolean expSystem;
 

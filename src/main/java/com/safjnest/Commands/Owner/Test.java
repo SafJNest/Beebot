@@ -67,6 +67,8 @@ public class Test extends Command{
     @Override
     protected void execute(CommandEvent e) {
         String[] args = e.getArgs().split(" ", 2);
+        String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
+        QueryResult res;
         if(args.length == 0 || !SafJNest.intIsParsable(args[0])) return;
         String query = "";
 
@@ -210,6 +212,7 @@ public class Test extends Command{
                 e.reply("```json\n" + bd.toString()+ "```");
                 HashMap<Long, ChannelData> channels = gs.getServer(e.getGuild().getId()).getChannels();
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(gs.getServer(e.getGuild().getId()).getUsers()).toJSONString() + "```");
                 break;
             case 14:
                 for(Guild g : e.getJDA().getGuilds()) {
@@ -224,8 +227,7 @@ public class Test extends Command{
                 break;
             case 16:
                 query = "SELECT guild_id, room_id FROM room WHERE has_command_stats = 0";
-                QueryResult res = DatabaseHandler.safJQuery(query);
-                String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
+                res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
 
                     for (String bot : bots) {
@@ -265,6 +267,16 @@ public class Test extends Command{
                     }
                 }
                 break;
+            case 19:
+            query = "SELECT user_id, guild_id, exp, level, messages FROM experience";
+            res = DatabaseHandler.safJQuery(query);
+            for(ResultRow row : res){
+                for (String bot : bots) {
+                    query = "INSERT INTO user(user_id, guild_id, experience, level, messages, bot_id) VALUES (" + row.get("user_id") + ", " + row.get("guild_id") + ", " + row.get("exp") + ", " + row.get("level") + ", " + row.get("messages") + ", " + bot + ")";
+                    DatabaseHandler.safJQuery(query);
+                }
+            }
+            e.reply("Done");
             default:
                 e.reply("Command does not exist.");
             break;

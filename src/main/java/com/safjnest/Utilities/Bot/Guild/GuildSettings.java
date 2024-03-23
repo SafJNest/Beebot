@@ -19,7 +19,6 @@ public class GuildSettings {
      * <p>The key of the map is the guild's id.
      */
     public HashMap<String, GuildData> cache = new HashMap<>();
-    private String botId;
     private final String PREFIX;
     private final GuildData data;
 
@@ -27,9 +26,8 @@ public class GuildSettings {
      * Default constructor
      * @param input
      */
-    public GuildSettings(GuildData input, String botId, String PREFIX) {
+    public GuildSettings(GuildData input, String PREFIX) {
         data = input;
-        this.botId = botId;
         this.PREFIX = PREFIX;
     }
 
@@ -71,7 +69,7 @@ public class GuildSettings {
      */
     public GuildData retrieveServer(String stringId) {
         System.out.println("[CACHE] Retriving guild from database => " + stringId);
-        ResultRow guildData = DatabaseHandler.getGuildData(stringId, botId);
+        ResultRow guildData = DatabaseHandler.getGuildData(stringId);
         
         if(guildData.emptyValues()) {
             return insertGuild(stringId);
@@ -81,7 +79,7 @@ public class GuildSettings {
         String PREFIX = guildData.get("prefix");
         boolean expEnabled = guildData.getAsBoolean("exp_enabled");
 
-        GuildData guild = new GuildData(guildId, PREFIX, expEnabled, botId);
+        GuildData guild = new GuildData(guildId, PREFIX, expEnabled);
         saveData(guild);
         return guild;
     }
@@ -99,23 +97,23 @@ public class GuildSettings {
      * Always a {@link com.safjnest.Utilities.Bot.Guild.GuildData guildData}, never {@code null}
      */
     public void retrieveAllServers() {
-        QueryResult guilds = DatabaseHandler.getGuildData(botId);
+        QueryResult guilds = DatabaseHandler.getGuildData();
         
         for(ResultRow guildData : guilds){
            Long guildId = guildData.getAsLong("guild_id");
             String PREFIX = guildData.get("prefix");
             boolean expEnabled = guildData.getAsBoolean("exp_enabled");
 
-            GuildData guild = new GuildData(guildId, PREFIX, expEnabled, botId);
+            GuildData guild = new GuildData(guildId, PREFIX, expEnabled);
             saveData(guild);
         }
     }
 
     public GuildData insertGuild(String guildId) {
-        DatabaseHandler.insertGuild(guildId, botId, PREFIX);
+        DatabaseHandler.insertGuild(guildId, PREFIX);
         System.out.println("[ERROR] Missing guild in database => " + guildId);
 
-        GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false, botId);
+        GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false);
         saveData(guild);
         return guild;
     }

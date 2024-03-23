@@ -1,9 +1,9 @@
 package com.safjnest.Commands.ManageGuild;
 
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.ExpSystem;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TableHandler;
-import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 

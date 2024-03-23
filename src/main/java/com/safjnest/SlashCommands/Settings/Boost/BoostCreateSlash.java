@@ -54,7 +54,7 @@ public class BoostCreateSlash extends SlashCommand {
             return;
         }
 
-        AlertData newBoost = new AlertData(guildId, botId, boostText, channelID, AlertType.BOOST);
+        AlertData newBoost = new AlertData(guildId, boostText, channelID, AlertType.BOOST);
         
         if(newBoost.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

@@ -20,6 +20,7 @@ import org.json.simple.parser.JSONParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
@@ -38,7 +39,6 @@ import com.safjnest.Utilities.Bot.BotData;
 import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.Bot.Guild.GuildData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
-import com.safjnest.Utilities.EXPSystem.ExpSystem;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandler;
@@ -185,7 +185,7 @@ public class Bot extends ListenerAdapter implements Runnable {
 
         botId = jda.getSelfUser().getId();
 
-        gs = new GuildSettings(null, botId, PREFIX);
+        gs = new GuildSettings(null, PREFIX);
         ExpSystem farm = new ExpSystem();
         
 
@@ -201,11 +201,12 @@ public class Bot extends ListenerAdapter implements Runnable {
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
-                //gs.retrieveAllServers();
-                /* 
                 for(Guild g : event.getJDA().getGuilds()){
                     g.updateCommands().queue();
                 }
+                //gs.retrieveAllServers();
+                /* 
+                
                 event.getJDA().getGuildById("474935164451946506").getCh
                 */
                 //event.getJDA().getGuildById("474935164451946506").getTextChannelById("938513359626715176").sendMessage("Fired up and ready to ban eeeeeeeeeeeeeeeeeeeeeeeeeepria").queue();
@@ -216,7 +217,6 @@ public class Bot extends ListenerAdapter implements Runnable {
                 System.out.println("[" + threadName + "] INFO no more guild cached correctly");
             }
         });
-        
         builder.setPrefixFunction(event -> {
             if (event.getChannelType() == ChannelType.PRIVATE)
                 return "";
@@ -227,10 +227,17 @@ public class Bot extends ListenerAdapter implements Runnable {
             return null;
         });
 
+        if (threadName.equals("beebot canary")) {
+            builder.setPrefixFunction(event -> {
+                return PREFIX;
+            });
+        }
+
+
         ArrayList<String> beebotsAll = new ArrayList<String>(Arrays.asList("beebot", "beebot 2", "beebot 3", "beebot canary"));
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new PrintCache(gs, farm), new Ping(), new Ram(), new Help(gs), new Prefix(gs));
+        Collections.addAll(commandsList, new PrintCache(gs), new Ping(), new Ram(), new Help(gs), new Prefix(gs));
 
         if(beebotsAll.contains(threadName))
             Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 

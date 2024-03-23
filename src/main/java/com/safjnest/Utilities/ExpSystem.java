@@ -1,11 +1,6 @@
-package com.safjnest.Utilities.EXPSystem;
+package com.safjnest.Utilities;
 
-import java.util.HashMap;
 import java.util.Random;
-
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.ResultRow;
-
 
 /**
  * This class is used to manage the experience system of the bot.
@@ -14,47 +9,15 @@ import com.safjnest.Utilities.SQL.ResultRow;
  */
 public class ExpSystem {
 
-    /**
-     * This HashMap is used to store the users and the time they sent a message.
-     * The key is {@code userId-guildId} and the value is {@link com.safjnest.Utilities.EXPSystem.UserTime UserTime.
-     */
-    private HashMap<String, UserTime> users;
-
     public static final int NOT_LEVELED_UP = -1;
 
     
     /**
      * Constructor for the ExpSystem class.
      */
-    public ExpSystem() {
-        users = new HashMap<>();
-    }
+    public ExpSystem() { }
 
 
-    public HashMap<String, UserTime> getUsers() {
-        return users;
-    }
-
-    /**
-     * This method is used to check if the user can receive experience.
-     * <p>If the user is not cached, it will be added to the cache and will return true.
-     * @param userId
-     * @param guildId
-     * @return
-     */
-    public synchronized int receiveMessage(String userId, String guildId, double modifier) {
-        if(!users.containsKey(userId + "-" + guildId)) {
-            users.put(userId + "-" + guildId, new UserTime());
-            return addExp(userId, guildId, modifier);
-        }
-
-        UserTime user = users.get(userId + "-" + guildId);
-        if (user.canReceiveExperience()) {
-           return addExp(userId, guildId, modifier);
-        }
-        
-        return NOT_LEVELED_UP;
-    }
 
 
     /**
@@ -137,31 +100,16 @@ public class ExpSystem {
         return Math.round((float)ExpSystem.getExpToLvlUp(lvl, exp)/(float)(getExpToReachLvl(lvl))*100);
     }
 
-    /**
-     * This method is used to add the experience to the user.
-     * <p> If the user is not in the database, it will be added. If the user has enough experience to level up, it will be leveled up and the method will
-     * return the new level. If the user is not leveled up, it will return -1.
-     * @param userId
-     * @param guildId
-     * @return
-     * int
-     */
-    public int addExp(String userId, String guildId, double modifer) {
-        ResultRow expData = DatabaseHandler.getExp(guildId, userId);
-        if (expData.emptyValues() && !DatabaseHandler.addExpData(guildId, userId)) 
-            return NOT_LEVELED_UP;
-        
-        int exp = expData.getAsInt("exp") + Math.round((float) ((double) getRandomExp() * modifer));
-        int lvl = expData.getAsInt("level");
-        int msg = expData.getAsInt("messages") + 1;
 
+    public int calculateExp(int exp, double modifer) {
+        return exp + Math.round((float) ((double) getRandomExp() * modifer));
+    }
+
+    public int isLevelUp(int exp, int level) {
         int newLvl = (int) getLevelFromExp(exp);
-
-        if (newLvl > lvl) {
-            DatabaseHandler.updateExp(guildId, userId, exp, newLvl, msg);
+        if (newLvl > level) {
             return newLvl;
         }
-        DatabaseHandler.updateExp(guildId, userId, exp,  msg);
         return NOT_LEVELED_UP;
     }
 }

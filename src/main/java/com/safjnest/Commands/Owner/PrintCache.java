@@ -1,16 +1,13 @@
 package com.safjnest.Commands.Owner;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Bot.Guild.GuildData;
 import com.safjnest.Utilities.Bot.Guild.GuildSettings;
-import com.safjnest.Utilities.EXPSystem.ExpSystem;
 
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 
 /**
@@ -22,9 +19,8 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 public class PrintCache extends Command {
     
     private GuildSettings gs;
-    private ExpSystem es;
 
-    public PrintCache(GuildSettings gs, ExpSystem es) {
+    public PrintCache(GuildSettings gs) {
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -35,7 +31,6 @@ public class PrintCache extends Command {
         this.hidden = true;
 
         this.gs = gs;
-        this.es = es;
     }
 
     @Override
@@ -43,20 +38,13 @@ public class PrintCache extends Command {
         String msg = "";
         msg += "Guilds cached: " + gs.cache.size() + "\n";
 
-        HashMap<String, ArrayList<User>> users = new HashMap<>();
-        for(String s : es.getUsers().keySet()){
-            if(!users.containsKey(s.split("-", 2)[1]))
-                users.put(s.split("-", 2)[1], new ArrayList<>());
-            users.get(s.split("-", 2)[1]).add(event.getJDA().getUserById(s.split("-", 2)[0]));
-        }
-
         for(GuildData gd : gs.cache.values()){
             try {
                 if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot")) {
                     msg += "**" + event.getJDA().getGuildById(gd.getId()).getName() + "**```"
                         + "Prefix: " + gd.getPrefix() + "\n"
                         + "ExpSystem: " + (gd.isExpSystemEnabled() ? "enabled" : "disabled") + "\n"
-                        + "Users: " + es.getUsers().keySet().stream().filter(s -> s.split("-", 2)[1].equals(String.valueOf(gd.getId()))).count() + "\n"
+                        + "Users: " + gd.getUsers().size() + "\n"
                         + "Channels: " + gd.getChannels().size() + "\n"
                         + "Alerts: " + (gd.isAlertsCached() ? "cached" : "not cached") + "\n"
                         + "BlackList: " + (gd.isBlackListCached() ? "cached" : "not cached") + "```";

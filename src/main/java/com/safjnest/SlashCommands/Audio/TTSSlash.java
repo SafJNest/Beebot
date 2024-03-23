@@ -93,7 +93,7 @@ public class TTSSlash extends SlashCommand{
             return;
         }
 
-        ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(guild.getId(), event.getJDA().getSelfUser().getId());
+        ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(guild.getId());
         if(!defaultVoiceRow.emptyValues())
             defaultVoice = defaultVoiceRow.get("name_tts");
 

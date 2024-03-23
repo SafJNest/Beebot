@@ -9,5 +9,5 @@ CREATE TABLE
     `time` timestamp NULL DEFAULT NULL,
     PRIMARY KEY (`id`),
     KEY `sound_guild_relation` (`guild_id`),
-    CONSTRAINT `sound_guild_relation` FOREIGN KEY (`guild_id`) REFERENCES `guilds` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-  ) ENGINE = InnoDB AUTO_INCREMENT = 198 DEFAULT CHARSET = latin1
+    CONSTRAINT `sound_relation_1` FOREIGN KEY (`guild_id`) REFERENCES `guild` (`guild_id`) ON DELETE CASCADE ON UPDATE CASCADE
+  ) ENGINE = InnoDB AUTO_INCREMENT = 209 DEFAULT CHARSET = latin1
