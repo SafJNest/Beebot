@@ -2,6 +2,8 @@ package com.safjnest.Commands.Owner;
 
 
 
+import java.util.ArrayList;
+
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
@@ -35,6 +37,7 @@ public class PrintCache extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
+        ArrayList<String> cache = new ArrayList<>();
         String msg = "";
         msg += "Guilds cached: " + gs.cache.size() + "\n";
 
@@ -48,16 +51,18 @@ public class PrintCache extends Command {
                         + "Channels: " + gd.getChannels().size() + "\n"
                         + "Alerts: " + (gd.isAlertsCached() ? "cached" : "not cached") + "\n"
                         + "BlackList: " + (gd.isBlackListCached() ? "cached" : "not cached") + "```";
-
+                    cache.add(msg);
+                    msg = "";
                 }
 
             } catch (Exception e) {
                continue;
             }
-            
         }
-        
+        System.out.println(cache.size());
         MessageChannel channel = event.getChannel();
-        channel.sendMessage(msg).queue();
+        for(String s : cache){
+            channel.sendMessage(s).queue();
+        }
     }
 }
