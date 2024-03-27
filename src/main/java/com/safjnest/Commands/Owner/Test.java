@@ -30,6 +30,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
 import org.jfree.chart.ChartFactory;
@@ -218,6 +219,12 @@ public class Test extends Command{
                 for(Guild g : e.getJDA().getGuilds()) {
                     gs.getServer(g.getId()).getAlerts();
                     gs.getServer(g.getId()).getBlacklistData();
+                    for(GuildChannel cd : g.getChannels()) {
+                        gs.getServer(g.getId()).getChannelData(cd.getId());
+                    }
+                    for(Member m : g.getMembers()){
+                        gs.getServer(g.getId()).getUserData(m.getId());
+                    }
                 }
                 e.reply("Done");
                 break;
