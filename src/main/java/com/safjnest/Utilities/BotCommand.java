@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Bot;
+package com.safjnest.Utilities;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -3,10 +3,10 @@ package com.safjnest.SlashCommands.Audio.Play;
 import java.awt.Color;
 import java.util.Arrays;
 
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -108,7 +108,7 @@ public class PlayYoutubeSlash extends SlashCommand {
                     eb.setTitle("Added to play:");
                     eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
                     eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                    eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                    eb.setColor(Color.decode(Bot.getColor()));
                     eb.setFooter("Queued by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
 
                 }
@@ -121,7 +121,7 @@ public class PlayYoutubeSlash extends SlashCommand {
                     eb.setTitle("Added to queue:");
                     eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
                     eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                    eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                    eb.setColor(Color.decode(Bot.getColor()));
                     eb.setFooter("Queued by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
 
                 }
@@ -137,7 +137,7 @@ public class PlayYoutubeSlash extends SlashCommand {
                 eb.setTitle("Playlist queued (" + tracks.size() + " tracks):");
                 eb.setDescription("[" + playlist.getName() + "](" + args + ")");
                 eb.setThumbnail("https://img.youtube.com/vi/" + playlist.getTracks().get(0).getIdentifier() + "/hqdefault.jpg");
-                eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+                eb.setColor(Color.decode(Bot.getColor()));
                 eb.setFooter("Queued by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
             }
             event.deferReply(false).addEmbeds(eb.build()).queue();

@@ -6,12 +6,12 @@ import java.io.IOException;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.SoundBoard;
-import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -130,7 +130,7 @@ public class PlaySound extends Command{
             eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
             eb.setTitle("Playing now:");
             eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
-            eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+            eb.setColor(Color.decode(Bot.getColor()));
             eb.setThumbnail(event.getSelfUser().getAvatarUrl());
 
             eb.addField("Author", "```" 

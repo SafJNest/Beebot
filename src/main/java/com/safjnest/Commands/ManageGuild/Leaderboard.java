@@ -1,7 +1,7 @@
 package com.safjnest.Commands.ManageGuild;
 
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.ExpSystem;
+import com.safjnest.Utilities.ExperienceSystem;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.TableHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -55,7 +55,7 @@ public class Leaderboard extends Command {
             lvl = Integer.parseInt(databaseData[i][1]);
             exp = Integer.parseInt(databaseData[i][3]);
             data[i][2] = String.valueOf(lvl);
-            data[i][3] = ExpSystem.getLvlUpPercentage(lvl, exp) + "% (" + ExpSystem.getExpToLvlUp(lvl, exp) + "/" + ExpSystem.getExpToReachLvl(lvl) + ") ";
+            data[i][3] = ExperienceSystem.getLvlUpPercentage(lvl, exp) + "% (" + ExperienceSystem.getExpToLvlUp(lvl, exp) + "/" + ExperienceSystem.getExpToReachLvl(lvl) + ") ";
             data[i][4] = databaseData[i][2];
         }
 

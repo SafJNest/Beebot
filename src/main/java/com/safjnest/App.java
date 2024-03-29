@@ -13,8 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.TTSHandler;
-import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Audio.TTSHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.PalWorld.PalHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -26,8 +25,9 @@ import no.stelar7.api.r4j.impl.R4J;
 public class App {
     private static TTSHandler tts;
     private static R4J riotApi;
-    private static BotDataHandler bs;
     public static String key;
+
+    private static Bot extreme_safj_beebot;
 
     /**
      * Insane beebot core
@@ -38,9 +38,14 @@ public class App {
         return extremeTesting;
     }
 
-    public BotDataHandler getBotSettingsHandler() {
-        return bs;
+    public static TTSHandler getTTS() {
+        return tts;
     }
+
+    public static R4J getRiotApi() {
+        return riotApi;
+    }
+
 
 
     public static void main(String args[]) {
@@ -101,41 +106,19 @@ public class App {
         System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
         System.out.println("[EPRIA] ID " + PermissionHandler.getEpria());
 
-        bs = new BotDataHandler();
 
-        if(!isExtremeTesting()) {
-            Thread bc = new Thread(new Bot(bs, tts, riotApi));
-            bc.setName("beebot");
-            bc.start();
-        } else{
-            Thread bc = new Thread(new Bot(bs, tts, riotApi));
-            bc.setName("beebot canary");
-            bc.start();
-        }
+        extreme_safj_beebot = new Bot();
+        extreme_safj_beebot.il_risveglio_della_bestia();
     }
 
-    public static void shutdown(String bot) {
-        System.out.println("Shutting down " + bot);
-        // for(int i = 0; i < botsArr.size(); i++){
-        //     if(botsArr.get(i).getName().equals(bot)){
-        //         botsArr.get(i).interrupt();
-        //         botsArr.remove(i);
-        //     }
-        // }
+    public static void shutdown() {
+        System.out.println("Shutting down the bot");
+        extreme_safj_beebot.distruzione_demoniaca();
     }
 
-    public static void restart(String bot) {
-        System.out.println("Shutting down " + bot);
-        // for(int i = 0; i < botsArr.size(); i++){
-        //     if(botsArr.get(i).getName().equals(bot)){
-        //         botsArr.get(i).interrupt();
-        //         botsArr.remove(i);
-        //     }
-        // }
-        // Thread t = new Thread(new Bot(bs, tts, riotApi));
-        // t.setName(bot);
-        // t.start();
-        // botsArr.add(t);
-        // return;
+    public static void restart() {
+        System.out.println("Restarting the bot");
+        extreme_safj_beebot.distruzione_demoniaca();
+        extreme_safj_beebot.il_risveglio_della_bestia();
     }
 }

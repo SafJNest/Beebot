@@ -2,7 +2,7 @@ package com.safjnest.SlashCommands.ManageMembers.Blacklist;
 
 
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+import com.safjnest.Utilities.Guild.GuildSettings;
 
 import java.util.ArrayList;
 import java.util.Collections;

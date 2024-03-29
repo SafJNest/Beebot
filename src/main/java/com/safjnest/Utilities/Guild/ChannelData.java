@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Bot.Guild;
+package com.safjnest.Utilities.Guild;
 
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 
@@ -25,7 +25,7 @@ public class ChannelData {
         
     /**
      * If the room has the exp system
-     * @see com.safjnest.Utilities.ExpSystem EXPSystem  
+     * @see com.safjnest.Utilities.ExperienceSystem EXPSystem  
      */
     private boolean expEnabled;
 

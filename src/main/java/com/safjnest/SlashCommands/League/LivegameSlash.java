@@ -21,7 +21,6 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
-import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
 /**
@@ -31,7 +30,7 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 public class LivegameSlash extends SlashCommand {
 
 
-    public LivegameSlash(R4J r){
+    public LivegameSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

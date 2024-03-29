@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Bot.Guild;
+package com.safjnest.Utilities.Guild;
 
 /**
  * Class that stores all the settings for a guild.
@@ -19,7 +19,7 @@ public class Room {
         
     /**
      * If the room has the exp system
-     * @see com.safjnest.Utilities.ExpSystem EXPSystem  
+     * @see com.safjnest.Utilities.ExperienceSystem EXPSystem  
      */
     private boolean expSystem;
 

@@ -9,12 +9,12 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Bot.BotDataHandler;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertKey;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Guild.Alert.AlertKey;
+import com.safjnest.Utilities.Guild.Alert.AlertType;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
 
@@ -48,9 +48,8 @@ public class ServerInfo extends Command{
             event.reply("Couldn't find the specified guild. Please write the id of the guild and make sure the bot is in that guild.");
             return;
         }
-        String botId = event.getJDA().getSelfUser().getId();
 
-        HashMap<AlertKey, AlertData> alerts = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guild.getId()).getAlerts();
+        HashMap<AlertKey, AlertData> alerts = Bot.getGuildData(guild.getId()).getAlerts();
         AlertData welcome = alerts.get(new AlertKey(AlertType.WELCOME));
         AlertData leave = alerts.get(new AlertKey(AlertType.LEAVE));
         AlertData lvlup = alerts.get(new AlertKey(AlertType.LEVEL_UP));
@@ -95,7 +94,7 @@ public class ServerInfo extends Command{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":desktop: **SERVER INFORMATION** :desktop:");
         eb.setThumbnail(guild.getIconUrl());
-        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
 
         eb.addField("Server name", "```" + guild.getName() + "```", true);
 

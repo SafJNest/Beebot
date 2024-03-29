@@ -5,8 +5,8 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -36,7 +36,7 @@ public class AugmentSlash extends SlashCommand {
         AugmentData augment = null;
         
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
         
         for(AugmentData a : RiotHandler.getAugments()){
             if(a.getId().equalsIgnoreCase(aug)){

@@ -1,6 +1,6 @@
 package com.safjnest.Utilities.Bot;
 
-import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.JDA;
 

@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Bot.Guild.Alert;
+package com.safjnest.Utilities.Guild.Alert;
 
 public enum AlertType {
     BOOST("Boost Message", 0),

@@ -9,8 +9,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.safjnest.Utilities.Bot.BotDataHandler;
-import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+
+import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 public class Connection extends WebSocketServer {
@@ -19,14 +19,12 @@ public class Connection extends WebSocketServer {
     private static int TCP_PORT = 8096;
     private Postman postman;
     private GuildSettings gs;
-    private BotDataHandler bs;
     
-    public Connection(JDA jda, GuildSettings gs, BotDataHandler bs){
+    public Connection(JDA jda, GuildSettings gs){
         super(new InetSocketAddress(TCP_PORT));
         this.jda = jda;
         this.gs = gs;
-        this.bs = bs;
-        this.postman = new Postman(jda, gs, bs);
+        this.postman = new Postman(jda, gs);
 
 
     }
@@ -37,7 +35,6 @@ public class Connection extends WebSocketServer {
        */
       jda.getClass();
       gs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-      bs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
   }
     
     @Override

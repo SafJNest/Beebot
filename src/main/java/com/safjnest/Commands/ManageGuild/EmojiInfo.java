@@ -2,8 +2,8 @@ package com.safjnest.Commands.ManageGuild;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotDataHandler;
 
 import java.awt.Color;
 
@@ -51,7 +51,7 @@ public class EmojiInfo extends Command {
 
         EmbedBuilder eb = new EmbedBuilder();
 
-        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
 
         if(isSticker) {
             eb.setTitle(":laughing: "+"**STICKER INFO**"+" :laughing:");

@@ -4,11 +4,11 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotDataHandler;
-import com.safjnest.Utilities.Bot.Guild.GuildData;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
-import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
+import com.safjnest.Utilities.Guild.GuildData;
+import com.safjnest.Utilities.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Guild.Alert.RewardData;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -33,9 +33,8 @@ public class RewardTextSlash extends SlashCommand {
         int rewardLevel = event.getOption("reward_level").getAsInt();
 
         String guildId = event.getGuild().getId();
-        String botId = event.getJDA().getSelfUser().getId();
 
-        GuildData gs = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guildId);
+        GuildData gs = Bot.getGuildData(guildId);
         
         RewardData reward = (RewardData) gs.getAlert(AlertType.REWARD, rewardLevel);
 

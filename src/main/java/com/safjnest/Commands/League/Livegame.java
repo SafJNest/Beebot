@@ -6,8 +6,8 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -138,8 +138,7 @@ public class Livegame extends Command {
 
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(account.getName() + "#" + account.getTag() + "'s Game");
-            builder.setColor(Color.decode(
-                    BotDataHandler.map.get(jda.getSelfUser().getId()).color));
+            builder.setColor(Color.decode(Bot.getColor()));
             builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             String blueSide = "";
             String redSide = "";
@@ -179,8 +178,7 @@ public class Livegame extends Command {
         } catch (Exception e) {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(s.getName() + "'s Game");
-            builder.setColor(Color.decode(
-                    BotDataHandler.map.get(jda.getSelfUser().getId()).color));
+            builder.setColor(Color.decode(Bot.getColor()));
             builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             builder.setDescription("This user is not in a game.");
             return builder;
