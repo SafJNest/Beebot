@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.safjnest.Bot;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 
@@ -19,8 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.Utilities.Bot.BotData;
-import com.safjnest.Utilities.Bot.BotDataHandler;
+
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -35,18 +35,9 @@ public class ApiController {
     @Autowired
     public ApiController() { }
 
-    @GetMapping("/{id}")
-    public String getEmployeeById(@PathVariable String id) {
-        BotData settings = BotDataHandler.getSettings(id);
-        if (settings == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
-        }
-        return settings.prefix;
-    }
-
-    @GetMapping("/{id}/guilds")
-    public ResponseEntity<List<Map<String, String>>> getEmployeeByIdAndGuilds(@PathVariable String id, @RequestBody List<String> ids) {
-        JDA jda = BotDataHandler.getSettings(id).getJda();
+    @GetMapping("/guilds")
+    public ResponseEntity<List<Map<String, String>>> getEmployeeByIdAndGuilds(@RequestBody List<String> ids) {
+        JDA jda = Bot.getJDA();
         List<Map<String, String>> guilds = new ArrayList<>();
         for(String guildId : ids){
             try {
@@ -61,24 +52,20 @@ public class ApiController {
         return ResponseEntity.ok(guilds);
     }
 
-    @PostMapping("/{id}/{guildId}/prefix")
-    public String setPrefix(@PathVariable String id, @PathVariable String guildId, @RequestBody(required = false) String prefix) {
+    @PostMapping("/{guildId}/prefix")
+    public String setPrefix(@PathVariable String guildId, @RequestBody(required = false) String prefix) {
         if (prefix == null || prefix.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prefix is required");
         }
         prefix = prefix.replace("\"", "");
-        BotDataHandler.getSettings(id).getGuildSettings().getServer(guildId).setPrefix(prefix);
-        DatabaseHandler.setPrefix(guildId, prefix);
-        return BotDataHandler.getSettings(id).getGuildSettings().getServer(guildId).getPrefix();
+        boolean response = Bot.getGuildData(guildId).setPrefix(prefix);
+        String responseString = response ? "{\"status\":\"success\"}" : "{\"status\":\"error\"}";
+        return responseString;
     }
 
-    @GetMapping("/{id}/{guildId}")
-    public ResponseEntity<Map<String, String>> getGuild(@PathVariable String id, @PathVariable String guildId) {
-        BotData settings = BotDataHandler.getSettings(id);
-        if (settings == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
-        }
-        JDA jda = settings.getJda();
+    @GetMapping("/{guildId}")
+    public ResponseEntity<Map<String, String>> getGuild(@PathVariable String guildId) {
+        JDA jda = Bot.getJDA();
         Guild g = jda.getGuildById(guildId);
         if (g == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid guild id. Try with another id.");
@@ -90,13 +77,9 @@ public class ApiController {
         return ResponseEntity.ok(guildInfo);
     }
 
-    @GetMapping("/{id}/{guildId}/users")
-    public ResponseEntity<List<Map<String, String>>> getUsers(@PathVariable String id, @PathVariable String guildId) {
-        BotData settings = BotDataHandler.getSettings(id);
-        if (settings == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid endpoint. Try with another id.");
-        }
-        JDA jda = settings.getJda();
+    @GetMapping("{guildId}/users")
+    public ResponseEntity<List<Map<String, String>>> getUsers(@PathVariable String guildId) {
+        JDA jda = Bot.getJDA();
         Guild g = jda.getGuildById(guildId);
         if (g == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unvalid guild id. Try with another id.");
@@ -121,9 +104,6 @@ public class ApiController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No results");
         }
         return ResponseEntity.ok(leaderboard.toList());
-
-
     }
-
 
 }

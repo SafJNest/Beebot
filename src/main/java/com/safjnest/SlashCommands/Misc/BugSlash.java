@@ -3,9 +3,9 @@ package com.safjnest.SlashCommands.Misc;
 import java.awt.Color;
 import java.util.Arrays;
 
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
@@ -41,8 +41,7 @@ public class BugSlash extends SlashCommand {
         eb.setAuthor(event.getUser().getName() + " from " + event.getGuild().getName());
         eb.setThumbnail(event.getUser().getAvatarUrl());
         eb.setDescription(event.getOption("text").getAsString());
-        eb.setColor(Color.decode(
-                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
 
         PermissionHandler.getUntouchables().forEach((id) -> event.getJDA().retrieveUserById(id).complete().openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(eb.build()).queue()));
         event.deferReply(true).addContent("Message sent successfuly").queue();

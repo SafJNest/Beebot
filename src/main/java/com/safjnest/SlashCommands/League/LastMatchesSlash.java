@@ -10,6 +10,7 @@ import java.util.Map;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.App;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -30,7 +31,7 @@ public class LastMatchesSlash extends SlashCommand {
     /**
      * Constructor
      */
-    public LastMatchesSlash(R4J r){
+    public LastMatchesSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -44,7 +45,7 @@ public class LastMatchesSlash extends SlashCommand {
             new OptionData(OptionType.STRING, "user", "Name of the summoner you want to get information on", false),
             new OptionData(OptionType.STRING, "tag", "Tag of the summoner you want to get information on", false)
         );
-        this.r = r;
+        this.r = App.getRiotApi();
     }
 
     /**

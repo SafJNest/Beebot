@@ -1,4 +1,4 @@
-package com.safjnest.Utilities.Bot.Guild;
+package com.safjnest.Utilities.Guild;
 
 import java.time.LocalDateTime;
 

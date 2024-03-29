@@ -4,11 +4,11 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.BotDataHandler;
-import com.safjnest.Utilities.Bot.Guild.GuildData;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Guild.GuildData;
+import com.safjnest.Utilities.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Guild.Alert.AlertType;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -30,9 +30,9 @@ public class WelcomeChannelSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         String channelID;
-        if(event.getOption("channel") != null) 
+        if(event.getOption("channel") != null)
             channelID = event.getOption("channel").getAsString();
-        else if(event.getGuild().getSystemChannel() != null) 
+        else if(event.getGuild().getSystemChannel() != null)
             channelID = event.getGuild().getSystemChannel().getId();
         else {
             event.deferReply(true).addContent("No channel specified and no system channel found.").queue();
@@ -40,9 +40,8 @@ public class WelcomeChannelSlash extends SlashCommand{
         }
 
         String guildId = event.getGuild().getId();
-        String botId = event.getJDA().getSelfUser().getId();
-        
-        GuildData gs = BotDataHandler.getSettings(botId).getGuildSettings().getServer(guildId);
+
+        GuildData gs = Bot.getGuildData(guildId);
 
         AlertData welcome = gs.getAlert(AlertType.WELCOME);
 

@@ -5,7 +5,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.ExpSystem;
+import com.safjnest.Utilities.ExperienceSystem;
 import com.safjnest.Utilities.TableHandler;
 
 import java.util.Arrays;
@@ -61,7 +61,7 @@ public class LeaderboardSlash extends SlashCommand {
             lvl = Integer.parseInt(databaseData[i][1]);
             exp = Integer.parseInt(databaseData[i][3]);
             data[i][2] = String.valueOf(lvl);
-            data[i][3] = ExpSystem.getLvlUpPercentage(lvl, exp) + "% (" + ExpSystem.getExpToLvlUp(lvl, exp) + "/" + ExpSystem.getExpToReachLvl(lvl) + ") ";
+            data[i][3] = ExperienceSystem.getLvlUpPercentage(lvl, exp) + "% (" + ExperienceSystem.getExpToLvlUp(lvl, exp) + "/" + ExperienceSystem.getExpToReachLvl(lvl) + ") ";
             data[i][4] = databaseData[i][2];
         }
 

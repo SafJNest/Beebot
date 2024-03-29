@@ -1,14 +1,13 @@
-package com.safjnest.Utilities.Bot.Guild;
+package com.safjnest.Utilities.Guild;
 
 
 
 import java.util.HashMap;
 
-
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertKey;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
-import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
+import com.safjnest.Utilities.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Guild.Alert.AlertKey;
+import com.safjnest.Utilities.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Guild.Alert.RewardData;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -35,7 +34,7 @@ public class GuildData {
     /**
      * Exp System 
      */
-    private boolean expSystem;
+    private boolean expEnabled;
 
     private HashMap<Long, ChannelData> channels;
 
@@ -48,7 +47,7 @@ public class GuildData {
     public GuildData(Long id, String prefix, boolean expSystem) {
         this.ID = id;
         this.prefix = prefix;
-        this.expSystem = expSystem;
+        this.expEnabled = expSystem;
 
         this.users = new HashMap<>();
         retriveChannels();
@@ -63,7 +62,7 @@ public class GuildData {
     }
 
     public boolean isExpSystemEnabled() {
-        return expSystem;
+        return expEnabled;
     }
 
 
@@ -78,13 +77,13 @@ public class GuildData {
     public synchronized boolean setExpSystem(boolean expSystem) {
         boolean result = DatabaseHandler.toggleLevelUp(String.valueOf(this.ID), expSystem);
         if (result) {
-            this.expSystem = expSystem;
+            this.expEnabled = expSystem;
         }
         return result;
     }
 
     public String toString(){
-        return "ID: " + ID + " | Prefix: " + prefix + " | ExpSystem: " + expSystem;
+        return "ID: " + ID + " | Prefix: " + prefix + " | ExpSystem: " + expEnabled;
     }
 
 

@@ -7,14 +7,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.safjnest.Bot;
 import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
 import com.safjnest.Commands.Queue.Queue;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackScheduler;
-import com.safjnest.Utilities.Bot.BotDataHandler;
-import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
+import com.safjnest.Utilities.Guild.Alert.RewardData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -94,7 +94,6 @@ public class EventButtonHandler extends ListenerAdapter {
         String args = event.getButton().getId().split("-")[1];
 
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
 
         Button left = Button.primary("reward-left", "<-");
         Button right = Button.primary("reward-right", "->");
@@ -109,8 +108,8 @@ public class EventButtonHandler extends ListenerAdapter {
         
         switch (args) {
             case "right":
-                RewardData nextReward = BotDataHandler.getSettings(self.getId()).getGuildSettings().getServer(guild.getId()).getHigherReward(Integer.parseInt(level));
-                RewardData nextNextReward = BotDataHandler.getSettings(self.getId()).getGuildSettings().getServer(guild.getId()).getHigherReward(nextReward.getLevel());
+                RewardData nextReward = Bot.getGuildData(guild.getId()).getHigherReward(Integer.parseInt(level));
+                RewardData nextNextReward = Bot.getGuildData(guild.getId()).getHigherReward(nextReward.getLevel());
                 
                 if (nextNextReward == null) {
                     right = right.asDisabled();
@@ -127,8 +126,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
                 
-                RewardData previousRewardData = BotDataHandler.getSettings(self.getId()).getGuildSettings().getServer(guild.getId()).getLowerReward(Integer.parseInt(level));
-                RewardData previousPreviousRewardData = BotDataHandler.getSettings(self.getId()).getGuildSettings().getServer(guild.getId()).getLowerReward(previousRewardData.getLevel());
+                RewardData previousRewardData = Bot.getGuildData(guild.getId()).getLowerReward(Integer.parseInt(level));
+                RewardData previousPreviousRewardData = Bot.getGuildData(guild.getId()).getLowerReward(previousRewardData.getLevel());
                 if (previousPreviousRewardData == null) {
                     left = left.asDisabled();
                     left = left.withStyle(ButtonStyle.DANGER);
@@ -607,8 +606,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.getUser().getAvatarUrl());
         eb.setTitle("List of " + event.getGuild().getName());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(
-                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
         eb.setDescription("Total Sound: " + sounds.size());
         
         
@@ -695,8 +693,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.getUser().getAvatarUrl());
         eb.setTitle("List of " + event.getJDA().getUserById(userId).getName());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(
-                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
         eb.setDescription("Total Sound: " + sounds.size());
         
 
@@ -765,8 +762,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setAuthor(event.getUser().getName());
         eb.setTitle(theGuy.getUser().getName() + " has been banned");
         eb.setThumbnail(theGuy.getUser().getAvatarUrl());
-        eb.setColor(Color.decode(
-                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
         Button pardon = Button.primary("unban-" + theGuy.getId(), "Pardon");
         event.getGuild().ban(theGuy, 0, TimeUnit.SECONDS).reason("Entered the blacklist").queue(
                     (e) -> event.getMessage().editMessageEmbeds(eb.build()).setActionRow(pardon).queue(),
@@ -795,8 +791,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setAuthor(event.getUser().getName());
         eb.setTitle(theGuy.getUser().getName() + " has been kicked");
         eb.setThumbnail(theGuy.getUser().getAvatarUrl());
-        eb.setColor(Color.decode(
-                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
         event.getGuild().kick(theGuy).reason("Entered the blacklist").queue(
             (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(),
             new ErrorHandler().handle(
@@ -825,8 +820,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setAuthor(event.getUser().getName());
         eb.setTitle(theGuy.getName() + " has been unbanned");
         eb.setThumbnail(theGuy.getAvatarUrl());
-        eb.setColor(Color.decode(
-                BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
 
         event.getGuild().unban(theGuy).queue(
             (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(), 

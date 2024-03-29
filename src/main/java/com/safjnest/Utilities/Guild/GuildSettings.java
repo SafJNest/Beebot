@@ -1,7 +1,8 @@
-package com.safjnest.Utilities.Bot.Guild;
+package com.safjnest.Utilities.Guild;
 
 import java.util.HashMap;
 
+import com.safjnest.Bot;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -15,19 +16,21 @@ import com.safjnest.Utilities.SQL.ResultRow;
  */
 public class GuildSettings {
     /**
-     * {@code HashMap} that contains all the {@link com.safjnest.Utilities.Bot.Guild.GuildData settings} of every guild.
+     * {@code HashMap} that contains all the {@link com.safjnest.Utilities.Guild.GuildData settings} of every guild.
      * <p>The key of the map is the guild's id.
      */
     public HashMap<String, GuildData> cache = new HashMap<>();
     private final String PREFIX;
-    private final GuildData data;
 
     /**
      * Default constructor
      * @param input
      */
-    public GuildSettings(GuildData input, String PREFIX) {
-        data = input;
+    public GuildSettings() {
+        this.PREFIX = Bot.getPrefix();
+    }
+    
+    public GuildSettings(String PREFIX) {
         this.PREFIX = PREFIX;
     }
 
@@ -36,13 +39,11 @@ public class GuildSettings {
      * to search for it in the {@link com.safjnest.Utilities.SQL.SQL mysql database}.
      * @param id Server ID
      * @return
-     * The {@link com.safjnest.Utilities.Bot.Guild.GuildData guildData} if is stored in the cache(or is in the database), otherwise a defult {@link com.safjnest.Utilities.Bot.Guild.GuildData guildData}.
-     * @see {@link com.safjnest.Utilities.Bot.Guild.GuildData guildData and default guildData}
+     * The {@link com.safjnest.Utilities.Guild.GuildData guildData} if is stored in the cache(or is in the database), otherwise a defult {@link com.safjnest.Utilities.Guild.GuildData guildData}.
+     * @see {@link com.safjnest.Utilities.Guild.GuildData guildData and default guildData}
      */
     public GuildData getServer(String id) {
-        if(cache.containsKey(id)) 
-            return cache.get(id);
-        return retrieveServer(id);
+        return cache.containsKey(id) ? cache.get(id) : retrieveServer(id);
     }
 
     /**
@@ -65,7 +66,7 @@ public class GuildSettings {
      * </ul>
      * @param stringId guild's ID
      * @return
-     * Always a {@link com.safjnest.Utilities.Bot.Guild.GuildData guildData}, never {@code null}
+     * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
      */
     public GuildData retrieveServer(String stringId) {
         System.out.println("[CACHE] Retriving guild from database => " + stringId);
@@ -94,7 +95,7 @@ public class GuildSettings {
      * </ul>
      * @param stringId guild's ID
      * @return
-     * Always a {@link com.safjnest.Utilities.Bot.Guild.GuildData guildData}, never {@code null}
+     * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
      */
     public void retrieveAllServers() {
         QueryResult guilds = DatabaseHandler.getGuildData();
@@ -119,19 +120,11 @@ public class GuildSettings {
     }
 
     /**
-     * Saves in the {@link GuildSettings#cache cache} the {@link com.safjnest.Utilities.Bot.Guild.GuildData guildData}
+     * Saves in the {@link GuildSettings#cache cache} the {@link com.safjnest.Utilities.Guild.GuildData guildData}
      * @param guild guildData
      */
     public void saveData(GuildData guild) {
         cache.put(String.valueOf(guild.getId()), guild);
-    }
-
-    public String getId() {
-        return data.getId().toString();
-    }
-
-    public String getPrefix() {
-        return data.getPrefix();
     }
 
     public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {

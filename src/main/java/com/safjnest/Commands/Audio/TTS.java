@@ -10,11 +10,12 @@ import org.voicerss.tts.Voice.Voices;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.App;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.TTSHandler;
 import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Utilities.Audio.TTSHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -41,7 +42,7 @@ public class TTS extends Command{
     
     public static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
     
-    public TTS(TTSHandler tts){
+    public TTS(){
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -49,7 +50,7 @@ public class TTS extends Command{
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
 
-        this.tts = tts;
+        this.tts = App.getTTS();
         this.pm = PlayerManager.get();
 
         voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
@@ -183,7 +184,7 @@ public class TTS extends Command{
         
             eb.setTitle("Playing now:");
             eb.setDescription(event.getArgs());
-            eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+            eb.setColor(Color.decode(Bot.getColor()));
             eb.setThumbnail(event.getSelfUser().getAvatarUrl());
             eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
             

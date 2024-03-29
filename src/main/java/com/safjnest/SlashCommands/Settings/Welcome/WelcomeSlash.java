@@ -6,7 +6,7 @@ import java.util.Collections;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+import com.safjnest.Utilities.Guild.GuildSettings;
 
 public class WelcomeSlash extends SlashCommand{
 

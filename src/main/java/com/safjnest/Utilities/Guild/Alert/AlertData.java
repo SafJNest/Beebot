@@ -1,9 +1,9 @@
-package com.safjnest.Utilities.Bot.Guild.Alert;
+package com.safjnest.Utilities.Guild.Alert;
 
 import java.awt.*;
 import java.util.HashMap;
 
-import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -227,7 +227,7 @@ public class AlertData {
         eb.setAuthor(guild.getSelfMember().getEffectiveName(), "https://github.com/SafJNest", guild.getSelfMember().getEffectiveAvatarUrl());
         eb.setTitle(this.getType().getDescription() + "'s preview");
         eb.setDescription("```" + sampleText + "```");
-        eb.setColor(Color.decode(BotDataHandler.map.get(guild.getSelfMember().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
         eb.setThumbnail(guild.getSelfMember().getEffectiveAvatarUrl());
 
         String channelText = "This alert has not a channel set.";

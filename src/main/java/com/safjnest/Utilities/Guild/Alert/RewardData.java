@@ -1,12 +1,11 @@
-package com.safjnest.Utilities.Bot.Guild.Alert;
+package com.safjnest.Utilities.Guild.Alert;
 
 import java.awt.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
-import com.safjnest.Utilities.Bot.BotDataHandler;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -67,7 +66,7 @@ public class RewardData extends AlertData{
         eb.setAuthor(guild.getSelfMember().getEffectiveName(), "https://github.com/SafJNest", guild.getSelfMember().getEffectiveAvatarUrl());
         eb.setTitle(this.getType().getDescription() + "'s preview");
         eb.setDescription("```" + sampleText + "```");
-        eb.setColor(Color.decode(BotDataHandler.map.get(guild.getSelfMember().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
         eb.setThumbnail(guild.getSelfMember().getEffectiveAvatarUrl());
         
         eb.addField("is Enabled",

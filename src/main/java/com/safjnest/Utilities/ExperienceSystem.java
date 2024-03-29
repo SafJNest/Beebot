@@ -7,26 +7,20 @@ import java.util.Random;
  * <p>
  * The experience system is used to give experience to the users of the bot when they send a message in a server every one minute.
  */
-public class ExpSystem {
+public class ExperienceSystem {
 
     public static final int NOT_LEVELED_UP = -1;
 
+    private static final int MAX_EXPERIENCE = 25;
+    private static final int MIN_EXPERIENCE = 15;
     
     /**
-     * Constructor for the ExpSystem class.
-     */
-    public ExpSystem() { }
-
-
-
-
-    /**
      * This method is used to calculate the experience that the user will receive.
-     * <p> The experience is calculated randomly between 15 and 25.
+     * <p> The experience is calculated randomly between {@link #MIN_EXPERIENCE} and {@link #MAX_EXPERIENCE}.
      * @return
      */
-    public int getRandomExp(){
-        return new Random().nextInt((25 - 15) + 1) + 15;
+    private static int getRandomExp(){
+        return new Random().nextInt((MAX_EXPERIENCE - MIN_EXPERIENCE) + 1) + MAX_EXPERIENCE;
     }
 
 
@@ -57,7 +51,7 @@ public class ExpSystem {
     }
 
     public static int getExpToReachLvl(int lvl){
-        return ExpSystem.getExpToReachLvlFromZero(lvl + 1) - ExpSystem.getExpToReachLvlFromZero(lvl);
+        return ExperienceSystem.getExpToReachLvlFromZero(lvl + 1) - ExperienceSystem.getExpToReachLvlFromZero(lvl);
     }
 
 
@@ -66,7 +60,7 @@ public class ExpSystem {
      * @param exp
      * @return 
      */
-    public static double getLevelFromExp(double exp) {
+    private static double getLevelFromExp(double exp) {
         double epsilon = 1e-6;
         double lvl = 0.0;
         while (true) {
@@ -97,15 +91,15 @@ public class ExpSystem {
     }
 
     public static int getLvlUpPercentage(int lvl, int exp) {
-        return Math.round((float)ExpSystem.getExpToLvlUp(lvl, exp)/(float)(getExpToReachLvl(lvl))*100);
+        return Math.round((float)ExperienceSystem.getExpToLvlUp(lvl, exp)/(float)(getExpToReachLvl(lvl))*100);
     }
 
 
-    public int calculateExp(int exp, double modifer) {
+    public static int calculateExp(int exp, double modifer) {
         return exp + Math.round((float) ((double) getRandomExp() * modifer));
     }
 
-    public int isLevelUp(int exp, int level) {
+    public static int isLevelUp(int exp, int level) {
         int newLvl = (int) getLevelFromExp(exp);
         if (newLvl > level) {
             return newLvl;

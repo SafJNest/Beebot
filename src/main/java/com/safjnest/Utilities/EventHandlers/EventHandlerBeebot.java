@@ -1,12 +1,12 @@
 package com.safjnest.Utilities.EventHandlers;
 
-import com.safjnest.Utilities.ExpSystem;
-import com.safjnest.Utilities.Bot.Guild.GuildData;
-import com.safjnest.Utilities.Bot.Guild.GuildSettings;
-import com.safjnest.Utilities.Bot.Guild.UserData;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertData;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
-import com.safjnest.Utilities.Bot.Guild.Alert.RewardData;
+import com.safjnest.Utilities.ExperienceSystem;
+import com.safjnest.Utilities.Guild.GuildData;
+import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.Utilities.Guild.UserData;
+import com.safjnest.Utilities.Guild.Alert.AlertData;
+import com.safjnest.Utilities.Guild.Alert.AlertType;
+import com.safjnest.Utilities.Guild.Alert.RewardData;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
@@ -27,18 +27,13 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
  * @since 2.1
  */
 public class EventHandlerBeebot extends ListenerAdapter {
-    /**
-     * The ExpSystem object that handles the exp system.
-     */
-    private ExpSystem farm;
-    
-    private GuildSettings settings;
+
+        private GuildSettings settings;
 
     /**
      * Constructor for the TheListenerBeebot class.
      */
-    public EventHandlerBeebot(GuildSettings settings, ExpSystem farm) {
-        this.farm = farm;
+    public EventHandlerBeebot(GuildSettings settings) {
         this.settings = settings;
     }
 
@@ -69,10 +64,10 @@ public class EventHandlerBeebot extends ListenerAdapter {
 
         int exp = user.getExperience();
         int currentLevel = user.getLevel();
-        exp = farm.calculateExp(exp, modifier);
-        int lvl = farm.isLevelUp(exp, currentLevel);
+        exp = ExperienceSystem.calculateExp(exp, modifier);
+        int lvl = ExperienceSystem.isLevelUp(exp, currentLevel);
 
-        if(lvl == ExpSystem.NOT_LEVELED_UP) {
+        if(lvl == ExperienceSystem.NOT_LEVELED_UP) {
             user.setExpData(exp, currentLevel);
             return;
         }

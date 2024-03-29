@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Bot.Guild.GuildData;
-import com.safjnest.Utilities.Bot.Guild.GuildSettings;
+import com.safjnest.Utilities.Guild.GuildData;
+import com.safjnest.Utilities.Guild.GuildSettings;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 
@@ -59,7 +59,7 @@ public class PrintCache extends Command {
                continue;
             }
         }
-        System.out.println(cache.size());
+
         MessageChannel channel = event.getChannel();
         for(String s : cache){
             channel.sendMessage(s).queue();

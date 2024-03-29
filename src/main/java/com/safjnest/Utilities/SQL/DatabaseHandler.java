@@ -10,7 +10,8 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;
-import com.safjnest.Utilities.Bot.Guild.Alert.AlertType;
+
+import com.safjnest.Utilities.Guild.Alert.AlertType;
 
 /**
  * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one

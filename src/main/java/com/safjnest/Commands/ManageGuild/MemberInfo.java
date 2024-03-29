@@ -6,10 +6,10 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.ExpSystem;
+import com.safjnest.Utilities.ExperienceSystem;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Bot.BotDataHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -76,7 +76,7 @@ public class MemberInfo extends Command{
             lvl = userExp.getAsInt("level");
             msg = userExp.getAsInt("messages");
         }
-        String lvlString = String.valueOf(ExpSystem.getExpToLvlUp(lvl, exp) + "/" + (ExpSystem.getExpToReachLvlFromZero(lvl + 1) - ExpSystem.getExpToReachLvlFromZero(lvl)));
+        String lvlString = String.valueOf(ExperienceSystem.getExpToLvlUp(lvl, exp) + "/" + (ExperienceSystem.getExpToReachLvlFromZero(lvl + 1) - ExperienceSystem.getExpToReachLvlFromZero(lvl)));
 
         List<String> activityNames = new ArrayList<String>();
         mentionedMember.getActivities().forEach(activity -> activityNames.add(activity.getName()));
@@ -84,7 +84,7 @@ public class MemberInfo extends Command{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT " + name + "** :busts_in_silhouette:");
         eb.setThumbnail(mentionedMember.getEffectiveAvatarUrl());
-        eb.setColor(Color.decode(BotDataHandler.map.get(event.getJDA().getSelfUser().getId()).color));
+        eb.setColor(Color.decode(Bot.getColor()));
 
         eb.addField("Name", "```" + name + "```", true);
 
