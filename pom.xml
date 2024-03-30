@@ -34,6 +34,11 @@
       <id>jitpack.io</id>
       <url>https://jitpack.io</url>
     </repository>
+    <repository>
+      <id>arbjergDev-snapshots</id>
+      <name>Lavalink Repository</name>
+      <url>https://maven.lavalink.dev/snapshots</url>
+    </repository>
   </repositories>
 
 
@@ -86,11 +91,11 @@
 
 
   <!-- Use a specific commit version -->
-  <dependency>
-      <groupId>com.github.lavalink-devs.lavaplayer</groupId>
+    <dependency>
+      <groupId>dev.arbjerg</groupId>
       <artifactId>lavaplayer</artifactId>
-      <version>727959e9f6</version>
-  </dependency>
+      <version>0eaeee195f0315b2617587aa3537fa202df07ddc-SNAPSHOT</version>
+    </dependency>
     <!-- https://mvnrepository.com/artifact/net.dv8tion/JDA -->
     <dependency>
       <groupId>pw.chew</groupId>
