@@ -9,7 +9,6 @@ import com.safjnest.Bot;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +31,6 @@ import net.dv8tion.jda.api.entities.Guild;
 public class ApiController {
     
 
-    @Autowired
     public ApiController() { }
 
     @GetMapping("/guilds")
