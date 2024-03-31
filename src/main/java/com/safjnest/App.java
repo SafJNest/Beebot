@@ -66,7 +66,7 @@ public class App {
         if (!extremeTesting) {
             SpringApplication app = new SpringApplication(App.class);
             app.setDefaultProperties(Collections.singletonMap("server.port", "8096"));
-            app.run(args);
+            //app.run(args);
         }
         
         new PalHandler();
