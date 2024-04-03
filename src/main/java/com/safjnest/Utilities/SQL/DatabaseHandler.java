@@ -468,7 +468,7 @@ public class DatabaseHandler {
     }
 
     public static boolean insertGuild(String guild_id, String prefix) {
-        String query = "INSERT INTO guild (guild_id, bot_id, PREFIX, exp_enabled, threshold, blacklist_channel) VALUES ('" + guild_id + "', '" + prefix + "', '0', '0', null) ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';";
+        String query = "INSERT INTO guild (guild_id, PREFIX, exp_enabled, threshold, blacklist_channel) VALUES ('" + guild_id + "', '" + prefix + "', '0', '0', null) ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';";
         return runQuery(query);
     }
 
