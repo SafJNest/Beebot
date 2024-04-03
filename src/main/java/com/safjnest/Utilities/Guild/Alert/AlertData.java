@@ -15,15 +15,17 @@ public class AlertData {
     private String channelId;
     private boolean enabled;
     private AlertType type;
+    private boolean isPrivate;
     private HashMap<Integer, String> roles;
 
-    public AlertData(int ID, String message, String channelId, boolean enabled, AlertType type, HashMap<Integer, String> roles) {
+    public AlertData(int ID, String message, String channelId, boolean enabled, boolean isPrivate, AlertType type, HashMap<Integer, String> roles) {
         this.ID = ID;
         this.message = message;
         this.channelId = channelId;
         this.enabled = enabled;
         this.type = type;
         this.roles = roles;
+        this.isPrivate = isPrivate;
     }
 
 
@@ -36,12 +38,13 @@ public class AlertData {
      * @param enabled
      * @param type
      */
-    public AlertData(String guild_id, String message, String channelId, AlertType type) {
-        this.ID = DatabaseHandler.createAlert(guild_id, message, channelId, type);
+    public AlertData(String guild_id, String message, String channelId, boolean isPrivate, AlertType type) {
+        this.ID = DatabaseHandler.createAlert(guild_id, message, channelId, isPrivate, type);
         this.message = message;
         this.channelId = channelId;
         this.enabled = true;
         this.type = type;
+        this.isPrivate = isPrivate;
     }
 
     /**
@@ -52,12 +55,13 @@ public class AlertData {
      * @param channelId
      * @param roles
      */
-    public AlertData(String guild_id, String message, String channelId, String[] roles) {
-        this.ID = DatabaseHandler.createAlert(guild_id, message, channelId, AlertType.WELCOME);
+    public AlertData(String guild_id, String message, String channelId, boolean isPrivate, String[] roles) {
+        this.ID = DatabaseHandler.createAlert(guild_id, message, channelId, isPrivate, AlertType.WELCOME);
         this.message = message;
         this.channelId = channelId;
         this.enabled = true;
         this.type = AlertType.WELCOME;
+        this.isPrivate = isPrivate;
         this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
     }
 
@@ -66,11 +70,12 @@ public class AlertData {
      * @param guild_id
      * @param message
      */
-    public AlertData(String guild_id, String message) {
-        this.ID = DatabaseHandler.createAlert(guild_id, message, null, AlertType.LEVEL_UP);
+    public AlertData(String guild_id, String message, boolean isPrivate) {
+        this.ID = DatabaseHandler.createAlert(guild_id, message, null, isPrivate, AlertType.LEVEL_UP);
         this.message = message;
         this.channelId = null;
         this.enabled = true;
+        this.isPrivate = isPrivate;
         this.type = AlertType.LEVEL_UP;
     }
 
@@ -79,7 +84,7 @@ public class AlertData {
      * @return true if the alert is valid, false otherwise
      */
     public boolean isValid() {
-        return this.message != null && (this.type == AlertType.LEVEL_UP ||  this.channelId != null) && this.enabled;
+        return this.message != null && (this.type == AlertType.LEVEL_UP ||  this.channelId != null || this.isPrivate) && this.enabled;
     }
     
     public boolean setMessage(String message) {
@@ -187,6 +192,10 @@ public class AlertData {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public boolean isPrivate() {
+        return isPrivate;
     }
 
     public String getFormattedSample(Guild guild) {

@@ -24,6 +24,7 @@ public class RewardCreateSlash extends SlashCommand{
             new OptionData(OptionType.STRING, "message", "Leave message", true),
             new OptionData(OptionType.INTEGER, "level", "Level to give the reward", true),
             new OptionData(OptionType.ROLE, "role", "Role to be given.", true),
+            new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", false),
             new OptionData(OptionType.BOOLEAN, "temporary", "If the role is temporary", false)
         );
     }
@@ -34,6 +35,7 @@ public class RewardCreateSlash extends SlashCommand{
         int level = event.getOption("level").getAsInt();
         String roleId = event.getOption("role").getAsRole().getId();
         boolean temporary = event.getOption("temporary") != null ? event.getOption("temporary").getAsBoolean() : false;
+        boolean isPrivate = event.getOption("private") != null ? event.getOption("private").getAsBoolean() : false;
         
         String guildId = event.getGuild().getId();
 
@@ -48,7 +50,7 @@ public class RewardCreateSlash extends SlashCommand{
 
         String[] roles = new String[]{roleId};
 
-        RewardData newReward = RewardData.createRewardData(guildId, message, roles, level, temporary);
+        RewardData newReward = RewardData.createRewardData(guildId, message, isPrivate, roles, level, temporary);
         
         if(newReward.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

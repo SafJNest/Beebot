@@ -581,17 +581,17 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getAlerts(String guild_id) {
-        return safJQuery("SELECT id, message, channel, enabled, type FROM alert WHERE guild_id = '" + guild_id + "';");
+        return safJQuery("SELECT id, message, channel, enabled, private, type FROM alert WHERE guild_id = '" + guild_id + "';");
     }
 
     public static QueryResult getAlertsRoles(String guild_id) {
         return safJQuery("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "';");
     }
 
-    public static int createAlert(String guild_id, String message, String channelId, AlertType type) {
+    public static int createAlert(String guild_id, String message, String channelId, boolean isPrivate, AlertType type) {
         int id = 0;
         try (Statement stmt = c.createStatement()) {
-            runQuery(stmt, "INSERT INTO alert(guild_id, message, channel, enabled, type) VALUES('" + guild_id + "','" + message + "','" + channelId + "', 1, '" + type.ordinal() + "');");
+            runQuery(stmt, "INSERT INTO alert(guild_id, message, channel, enabled, private, type) VALUES('" + guild_id + "','" + message + "','" + channelId + "', 1, " + (isPrivate ? 1 : 0) + ", '" + type.ordinal() + "');");
             id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
             c.commit();
         } catch (SQLException ex) {

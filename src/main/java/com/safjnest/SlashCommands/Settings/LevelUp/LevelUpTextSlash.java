@@ -21,14 +21,15 @@ public class LevelUpTextSlash extends SlashCommand{
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "message", "Level up message", true)
+            new OptionData(OptionType.STRING, "message", "Level up message", true),
+        new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", false)
         );
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
         String message = event.getOption("message") != null ? event.getOption("message").getAsString().replace("'", "''") : null;
-
+        boolean isPrivate = event.getOption("private") != null ? event.getOption("private").getAsBoolean() : false;
         String guildId = event.getGuild().getId();
 
         GuildData gs = Bot.getGuildData(guildId);
@@ -42,7 +43,7 @@ public class LevelUpTextSlash extends SlashCommand{
         }
 
         if(level == null) {
-            AlertData newLevel = new AlertData(guildId, message);
+            AlertData newLevel = new AlertData(guildId, message, isPrivate);
             if (newLevel.getID() == 0) {
                 event.deferReply(true).addContent("Something went wrong.").queue();
                 return;

@@ -15,18 +15,18 @@ public class RewardData extends AlertData{
     private int level;
     private boolean temporary;
     
-    public RewardData(int ID, String message, boolean enabled, HashMap<Integer, String> roles, int level, boolean temporary) {
-        super(ID, message, null, enabled, AlertType.REWARD, roles);
+    public RewardData(int ID, String message, boolean enabled, boolean isPrivate, HashMap<Integer, String> roles, int level, boolean temporary) {
+        super(ID, message, null, enabled, isPrivate, AlertType.REWARD, roles);
         this.level = level;
         this.temporary = temporary;
     }
 
 
-    public static RewardData createRewardData(String guild_id, String message, String[] roles, int level, boolean temporary) {
-        int id = DatabaseHandler.createAlert(guild_id, message, null, AlertType.REWARD);
+    public static RewardData createRewardData(String guild_id, String message, boolean isPrivate, String[] roles, int level, boolean temporary) {
+        int id = DatabaseHandler.createAlert(guild_id, message, null, isPrivate, AlertType.REWARD);
         HashMap<Integer, String> rolesMap = DatabaseHandler.createRolesAlert(String.valueOf(id), roles);
         DatabaseHandler.createRewardData(String.valueOf(id), level, temporary);
-        return new RewardData(id, message, true, rolesMap, level, temporary);
+        return new RewardData(id, message, true, isPrivate, rolesMap, level, temporary);
     }
 
     public int getLevel() {
