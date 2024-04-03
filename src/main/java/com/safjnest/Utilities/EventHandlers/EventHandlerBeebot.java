@@ -121,8 +121,6 @@ public class EventHandlerBeebot extends ListenerAdapter {
             return;
         }
 
-
-        channel.sendMessage("Congratulations, you are now level: " + lvl).queue();
         return;
     }
 
