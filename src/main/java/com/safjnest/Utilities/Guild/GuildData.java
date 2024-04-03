@@ -131,6 +131,7 @@ public class GuildData {
                             row.getAsInt("id"),
                             row.get("message"),
                             row.getAsBoolean("enabled"),
+                            row.getAsBoolean("private"),
                             roles.get(row.getAsInt("id")),
                             rewards.get(row.getAsInt("id")).getAsInt("level"),
                             rewards.get(row.getAsInt("id")).getAsBoolean("temporary")
@@ -144,6 +145,7 @@ public class GuildData {
                             row.get("message"),
                             row.get("channel"),
                             row.getAsBoolean("enabled"),
+                            row.getAsBoolean("private"),
                             AlertType.values()[row.getAsInt("type")],
                             roles.get(row.getAsInt("id"))
                         );

@@ -24,14 +24,16 @@ public class LeaveCreateSlash extends SlashCommand{
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "message", "Leave message", true),
             new OptionData(OptionType.CHANNEL, "channel", "Leave channel (leave out to use the guild's system channel).", false)
-                .setChannelTypes(ChannelType.TEXT)
+                .setChannelTypes(ChannelType.TEXT),
+            new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", true)
         );
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
         String leaveText = event.getOption("message").getAsString();
-        
+        boolean isPrivate = event.getOption("private") != null ? event.getOption("private").getAsBoolean() : false;
+
         String channelID;
         if(event.getOption("channel") != null) 
             channelID = event.getOption("channel").getAsString();
@@ -53,7 +55,7 @@ public class LeaveCreateSlash extends SlashCommand{
             return;
         }
 
-        AlertData newLeave = new AlertData(guildId, leaveText, channelID, AlertType.LEAVE);
+        AlertData newLeave = new AlertData(guildId, leaveText, channelID, isPrivate, AlertType.LEAVE);
         
         if(newLeave.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

@@ -25,6 +25,7 @@ public class WelcomeCreateSlash extends SlashCommand{
             new OptionData(OptionType.STRING, "message", "Welcome message", true),
             new OptionData(OptionType.CHANNEL, "channel", "Welcome channel (leave out to use the guild's system channel).", false)
                 .setChannelTypes(ChannelType.TEXT),
+            new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", false),
             new OptionData(OptionType.ROLE, "role", "Role that will be given to the new members.", false)
         );
     }
@@ -32,6 +33,7 @@ public class WelcomeCreateSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         String welcomeText = event.getOption("message").getAsString();
+        boolean isPrivate = event.getOption("private") != null ? event.getOption("private").getAsBoolean() : false;
 
         String channelID;
         if(event.getOption("channel") != null)
@@ -58,7 +60,7 @@ public class WelcomeCreateSlash extends SlashCommand{
 
         String[] roles = new String[]{roleID};
 
-        AlertData newWelcome = new AlertData(guildId, welcomeText, channelID, roles);
+        AlertData newWelcome = new AlertData(guildId, welcomeText, channelID, isPrivate, roles);
 
         if(newWelcome.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

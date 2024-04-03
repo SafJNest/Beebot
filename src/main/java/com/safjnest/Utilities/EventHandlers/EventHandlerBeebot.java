@@ -82,7 +82,15 @@ public class EventHandlerBeebot extends ListenerAdapter {
             message = message.replace("#level", String.valueOf(lvl));
             //message = message.replace("#role", role.getName());
 
-            channel.sendMessage(message).queue();
+            final String finalMessage = message;
+            if (reward.isPrivate()) {
+                newGuy.openPrivateChannel().queue(channelPrivate -> {
+                    channelPrivate.sendMessage(finalMessage).queue();
+                });
+            } else {
+                channel.sendMessage(finalMessage).queue();
+            }
+            
             for (String roleID : roles) {
                 Role role = guild.getRoleById(roleID);
                 if (role == null)

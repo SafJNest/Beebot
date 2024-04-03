@@ -404,11 +404,18 @@ public class EventHandler extends ListenerAdapter {
         AlertData welcome = gs.getServer(event.getGuild().getId()).getAlert(AlertType.WELCOME);
         if(welcome != null && welcome.isValid()) {
             String channel_id = welcome.getChannelId();
-    
             channel = event.getGuild().getTextChannelById(channel_id);
+
             String message = welcome.getMessage().replace("#user", newGuy.getAsMention());
     
-            channel.sendMessage(message).queue();
+        
+            if (welcome.isPrivate()) {
+                newGuy.openPrivateChannel().queue(channelPrivate -> {
+                    channelPrivate.sendMessage(message).queue();
+                });
+            } else {
+                channel.sendMessage(message).queue();
+            }
                 
             if (welcome.getRoles() != null) {
                 String[] roles = welcome.getRoles().values().toArray(new String[0]);
@@ -461,8 +468,16 @@ public class EventHandler extends ListenerAdapter {
         if(leave != null && leave.isValid()) {
             String channel_id = leave.getChannelId();
             channel = event.getGuild().getTextChannelById(channel_id);
+            
             String message = leave.getMessage().replace("#user", event.getUser().getAsMention());
-            channel.sendMessage(message).queue();
+            if (leave.isPrivate()) {
+                event.getUser().openPrivateChannel().queue(channelPrivate -> {
+                    channelPrivate.sendMessage(message).queue();
+                });
+            } else {
+                channel.sendMessage(message).queue();
+            }
+
         }
         
     }

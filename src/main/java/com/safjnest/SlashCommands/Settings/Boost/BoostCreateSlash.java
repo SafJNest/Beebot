@@ -24,13 +24,15 @@ public class BoostCreateSlash extends SlashCommand {
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "message", "Boost message", true),
             new OptionData(OptionType.CHANNEL, "channel", "Boost channel (leave out to use the guild's system channel).", false)
-                .setChannelTypes(ChannelType.TEXT)
+                .setChannelTypes(ChannelType.TEXT),
+            new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", true)
         );
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
         String boostText = event.getOption("message").getAsString();
+        boolean isPrivate = event.getOption("private") != null ? event.getOption("private").getAsBoolean() : false;
         
         String channelID;
         if(event.getOption("channel") != null) 
@@ -53,7 +55,7 @@ public class BoostCreateSlash extends SlashCommand {
             return;
         }
 
-        AlertData newBoost = new AlertData(guildId, boostText, channelID, AlertType.BOOST);
+        AlertData newBoost = new AlertData(guildId, boostText, channelID, isPrivate, AlertType.BOOST);
         
         if(newBoost.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();
