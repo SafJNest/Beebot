@@ -25,7 +25,7 @@ public class BoostCreateSlash extends SlashCommand {
             new OptionData(OptionType.STRING, "message", "Boost message", true),
             new OptionData(OptionType.CHANNEL, "channel", "Boost channel (leave out to use the guild's system channel).", false)
                 .setChannelTypes(ChannelType.TEXT),
-            new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", true)
+            new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", false)
         );
     }
 
