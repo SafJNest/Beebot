@@ -138,6 +138,9 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
+        if (event.getName().equals("custom_command")) {
+            event.deferReply().setContent("This command is not available yet.").queue();
+        }
         if(!gs.getServer(event.getGuild().getId()).getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         String commandName = event.getName() + "Slash";

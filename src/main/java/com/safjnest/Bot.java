@@ -19,11 +19,13 @@ import org.json.simple.parser.JSONParser;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
@@ -172,9 +174,13 @@ public class Bot extends ListenerAdapter {
             @Override
             public void onReady(ReadyEvent event) {
                 
-                // for(Guild g : event.getJDA().getGuilds()){
-                //     g.updateCommands().queue();
-                // }
+                for(Guild g : event.getJDA().getGuilds()){
+                    if (g.getId().equals("608967318789160970")) {
+                        g.updateCommands()
+                            .addCommands(Commands.slash("custom_command", "Gives the current ping")).queue();
+                    }
+                    //g.updateCommands().queue();
+                }
                 
                 RiotHandler.loadEmoji(event.getJDA());
                 System.out.println("[INFO] custom emoji cached correctly");
