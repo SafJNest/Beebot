@@ -14,10 +14,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.TTSHandler;
+import com.safjnest.Utilities.Guild.CustomCommand.TaskType;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.PalWorld.PalHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
 
@@ -68,6 +70,9 @@ public class App {
             app.setDefaultProperties(Collections.singletonMap("server.port", "8096"));
             //app.run(args);
         }
+        System.out.println(TaskType.fromValue(1));
+
+        System.out.println(OptionType.CHANNEL.ordinal());
         
         new PalHandler();
 

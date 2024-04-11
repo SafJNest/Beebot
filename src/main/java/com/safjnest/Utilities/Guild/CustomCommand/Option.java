@@ -31,6 +31,49 @@ public class Option {
         this.values = values;
     }
 
+    public void addValue(OptionValue value) {
+        values.add(value);
+    }
+
+    public String getId() {
+        return String.valueOf(ID);
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public boolean isRequired() {
+        return isRequired;
+    }
+
+    public OptionType getType() {
+        return type;
+    }
+
+    public List<OptionValue> getValues() {
+        return values;
+    }
+
+    public int getID() {
+        return ID;
+    }
+
+    public String toString() {
+        return "Option{" +
+                "ID=" + ID +
+                ", key='" + key + '\'' +
+                ", description='" + description + '\'' +
+                ", isRequired=" + isRequired +
+                ", type=" + type +
+                ", values=" + values +
+                '}';
+    }
+
 
 
 
