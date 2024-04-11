@@ -2,15 +2,29 @@ package com.safjnest.Utilities.Guild;
 
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
+import com.safjnest.Bot;
 import com.safjnest.Utilities.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Guild.Alert.AlertKey;
 import com.safjnest.Utilities.Guild.Alert.AlertType;
 import com.safjnest.Utilities.Guild.Alert.RewardData;
+import com.safjnest.Utilities.Guild.CustomCommand.CustomCommand;
+import com.safjnest.Utilities.Guild.CustomCommand.Option;
+import com.safjnest.Utilities.Guild.CustomCommand.OptionValue;
+import com.safjnest.Utilities.Guild.CustomCommand.Task;
+import com.safjnest.Utilities.Guild.CustomCommand.TaskType;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
+
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
 
 /**
@@ -44,6 +58,8 @@ public class GuildData {
 
     private HashMap<Long, MemberData> users;
 
+    private HashMap<String, CustomCommand> customCommands;
+
     public GuildData(Long id, String prefix, boolean expSystem) {
         this.ID = id;
         this.prefix = prefix;
@@ -51,6 +67,110 @@ public class GuildData {
 
         this.users = new HashMap<>();
         retriveChannels();
+        retriveCustomCommand();
+    }
+
+    private void retriveCustomCommand() {
+        customCommands = new HashMap<>();
+        /**
+         * Da rifare in maniera più ottimizzata ovviamente, era giusto per ottenere
+         * i dati subito senza starci troppo a pensare.
+         * Anche il codice sotto si può ottimizzare 100x
+         */
+        QueryResult result = DatabaseHandler.safJQuery("SELECT ID,name,description,slash FROM commands WHERE guild_id = " + ID);
+        QueryResult optionResult = DatabaseHandler.safJQuery("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + ")");
+        QueryResult valueResult = DatabaseHandler.safJQuery("SELECT ID,option_id,`key`,value FROM command_option_value WHERE option_id IN (SELECT ID FROM command_option WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + "))");
+        QueryResult taskResult = DatabaseHandler.safJQuery("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + ")");
+        QueryResult taskValueResult = DatabaseHandler.safJQuery("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (SELECT ID FROM command_task WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + "))");
+        QueryResult taskMessage = DatabaseHandler.safJQuery("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (SELECT ID FROM command_task_value WHERE task_id IN (SELECT ID FROM command_task WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + ")))");
+
+        JDA jda = Bot.getJDA();
+
+        for (ResultRow row : result) {
+            int id = row.getAsInt("ID");
+            String name = row.get("name");
+            String description = row.get("description");
+            boolean isSlash = row.getAsBoolean("slash");
+            CustomCommand cc = new CustomCommand(id, name, description, isSlash);
+            for (ResultRow optionRow : optionResult) {
+                if (optionRow.getAsInt("command_id") == id) {
+                    int optionId = optionRow.getAsInt("ID");
+                    String key = optionRow.get("key");
+                    String optionDescription = optionRow.get("description");
+                    boolean isRequired = optionRow.getAsBoolean("required");
+                    OptionType type = OptionType.fromKey(Integer.parseInt(optionRow.get("type")));
+                    List<OptionValue> values = new ArrayList<>();
+                    for (ResultRow valueRow : valueResult) {
+                        if (valueRow.getAsInt("option_id") == optionId) {
+                            values.add(new OptionValue(valueRow.getAsInt("ID"), valueRow.get("key"), valueRow.get("value")));
+                        }
+                    }
+                    Option option = new Option(optionId, key, optionDescription, isRequired, type);
+                    if (!values.isEmpty()) {
+                        option = new Option(optionId, key, optionDescription, isRequired, values);
+                    }
+                    cc.addOption(option);
+                }
+            }
+            for (ResultRow taskRow : taskResult) {
+                if (taskRow.getAsInt("command_id") == id) {
+                    int taskId = taskRow.getAsInt("ID");
+                    TaskType type = TaskType.fromValue(taskRow.getAsInt("type"));
+                    Task task = new Task(taskId, type);
+                    for (ResultRow taskValueRow : taskValueResult) {
+                        if (taskValueRow.getAsInt("task_id") == taskId) {
+                            boolean fromOption = taskValueRow.getAsBoolean("from_option");
+                            String value = taskValueRow.get("value");
+                            if (fromOption) {
+                                value = "#" + value;
+                            }
+                            if (type == TaskType.SEND_MESSAGE) {
+                                for (ResultRow messageRow : taskMessage) {
+                                    if (messageRow.getAsInt("task_value_id") == taskValueRow.getAsInt("ID")) {
+                                        value = messageRow.get("message");
+                                    }
+                                }
+                            }
+                            task.addValue(value);
+                        }
+                    }
+                    cc.addTask(task);
+                }
+            }
+            customCommands.put(name, cc);
+        }
+
+        /*
+         * g.updateCommands()
+             .addCommands(Commands.slash("custom_command", "Gives the current ping")).queue();
+         */
+        Guild g = jda.getGuildById(ID);
+        List<SlashCommandData> commands = new ArrayList<>();
+        for (CustomCommand cc : customCommands.values()) {
+            if (!cc.isSlash()) {
+                continue;
+            }
+
+            if (cc.getOptions().isEmpty()) {
+                SlashCommandData scd = Commands.slash(cc.getName(), cc.getDescription());
+                commands.add(scd);
+                continue;
+            }
+
+            cc.getOptions().forEach(option -> {
+                SlashCommandData scd = Commands.slash(cc.getName(), cc.getDescription());
+                scd.addOption(option.getType(), option.getKey(), option.getDescription());
+                System.out.println(scd.getName());
+                commands.add(scd);
+            });
+        }
+        System.out.println("commands size " + commands.size());
+        g.updateCommands().addCommands(commands).queue();
+    }
+
+
+    public CustomCommand getCustomCommand(String name) {
+        return customCommands.get(name);
     }
 
     public Long getId() {
