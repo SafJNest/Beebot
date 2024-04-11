@@ -60,6 +60,8 @@ public class GuildData {
 
     private HashMap<String, CustomCommand> customCommands;
 
+    private HashMap<String, CustomCommand> customCommands;
+
     public GuildData(Long id, String prefix, boolean expSystem) {
         this.ID = id;
         this.prefix = prefix;
