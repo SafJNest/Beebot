@@ -27,7 +27,6 @@ public class CustomCommand {
     }
 
     public void addOption(Option option) {
-        System.out.println("Adding option: " + option.toString());
         options.add(option);
     }
 

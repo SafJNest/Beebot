@@ -41,5 +41,13 @@ public class QueryResult implements Iterable<ResultRow>{
         }
         return list;
     }
-    
+
+    public List<String> arrayColumn(String column){
+        List<String> list = new ArrayList<>();
+        for(ResultRow row : result){
+            list.add(row.get(column));
+        }
+        return list;
+    }
+
 }

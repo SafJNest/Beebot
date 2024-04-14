@@ -2,7 +2,8 @@ package com.safjnest.Utilities.Guild.CustomCommand;
 
 public enum TaskType {
     SEND_MESSAGE(0),
-    DELETE_CHANNEL(1);
+    DELETE_CHANNEL(1),
+    PLAY_SOUND(2);
 
     private int value;
 
