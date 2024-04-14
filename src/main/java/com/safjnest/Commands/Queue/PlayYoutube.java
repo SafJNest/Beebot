@@ -6,6 +6,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackData;
@@ -74,6 +75,12 @@ public class PlayYoutube extends Command {
         @Override
         public void trackLoaded(AudioTrack track) {
             track.setUserData(new TrackData(AudioType.AUDIO));
+
+            //TODO andrebbe fatta un po' un'analisi degli stakeholder
+            //int seconds = SafJNest.extractSeconds(args);
+            //if(seconds != -1)
+            //    track.setPosition(seconds*1000);
+
             pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
