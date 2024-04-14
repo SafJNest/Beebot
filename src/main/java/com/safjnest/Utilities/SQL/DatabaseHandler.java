@@ -718,6 +718,29 @@ public class DatabaseHandler {
     }
 
 
+    public static QueryResult getAliases(String user_id) {
+        return safJQuery("SELECT id, name, command FROM alias WHERE user_id = '" + user_id + "';");
+    }
+
+    public static int createAlias(String user_id, String name, String command) {
+        int id = 0;
+        try (Statement stmt = c.createStatement()) {
+            runQuery(stmt, "INSERT INTO alias(user_id, name, command) VALUES('" + user_id + "','" + name + "','" + command + "');");
+            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+            c.commit();
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+        }
+        return id;
+    }
+
+
+
 
 
 

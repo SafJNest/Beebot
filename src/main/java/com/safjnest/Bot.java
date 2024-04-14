@@ -11,6 +11,7 @@ import java.io.Reader;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -33,7 +34,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.command.SlashCommand;
-
+import com.safjnest.Utilities.UserData;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandler;
@@ -116,6 +117,10 @@ public class Bot extends ListenerAdapter {
     private int maxPrime;
 
     private static GuildSettings gs;
+    private static HashMap<String, UserData> userData;
+
+
+    private static CommandClient client;
 
     /**
      * Where the magic happens.
@@ -162,6 +167,7 @@ public class Bot extends ListenerAdapter {
         BOT_ID = jda.getSelfUser().getId();
 
         gs = new GuildSettings();
+        userData = new HashMap<String, UserData>();
         
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(helpWord);
@@ -209,7 +215,7 @@ public class Bot extends ListenerAdapter {
 
         Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
             new LastMatches(), new Opgg(), new Calculator(), new Dice(), 
-            new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query());
+            new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query(), new Alias());
   
         
         Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
@@ -261,9 +267,9 @@ public class Bot extends ListenerAdapter {
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         
-        CommandClient client = builder.build();
+        client = builder.build();
         
-        if(!App.isExtremeTesting()) {
+        if(App.isExtremeTesting()) {
             client.setListener(new CommandEventHandler(gs));
         }
 
@@ -271,7 +277,7 @@ public class Bot extends ListenerAdapter {
         jda.addEventListener(new EventHandler(gs, PREFIX));
         jda.addEventListener(new EventButtonHandler());;
 
-        if(!App.isExtremeTesting()){
+        if(App.isExtremeTesting()){
             jda.addEventListener(new EventHandlerBeebot(gs));
             //Connection c = new Connection(jda, gs, bs);
             //c.start();
@@ -319,5 +325,16 @@ public class Bot extends ListenerAdapter {
 
     public static GuildData getGuildData(String id) {
         return gs.getServer(id);
+    }
+
+    public static CommandClient getClient() {
+        return client;
+    }
+
+    public static UserData getUserData(String userId) {
+        if (!userData.containsKey(userId)) {
+            userData.put(userId, new UserData(userId));
+        }
+        return userData.get(userId);
     }
 }

@@ -737,9 +737,9 @@
 
 
 
-    "aliases":{
-        "alias" : ["alias", "ilyas"],
-        "help"  : "Show all commands aliases.",
+    "alias":{
+        "alias" : ["ilyas"],
+        "help"  : "boh",
         "category" : "Miscellaneous",
         "arguments" : "[CommandName]"
     },
