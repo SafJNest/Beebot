@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 
-public class UserData {
+public class MemberData {
     private int ID;
     private final long USER_ID;
     private int experience;
@@ -14,7 +14,7 @@ public class UserData {
     private LocalDateTime lastMessageTime;
     private GuildData guildData;
 
-    public UserData(int ID, long USER_ID, int experience, int level, int messages, int updateTime, GuildData guildData) {
+    public MemberData(int ID, long USER_ID, int experience, int level, int messages, int updateTime, GuildData guildData) {
         this.ID = ID;
         this.USER_ID = USER_ID;
         this.experience = experience;
@@ -25,7 +25,7 @@ public class UserData {
         this.guildData = guildData;
     }
 
-    public UserData(long USER_ID, GuildData guildData) {
+    public MemberData(long USER_ID, GuildData guildData) {
         this.ID = 0;
         this.USER_ID = USER_ID;
         this.experience = 0;

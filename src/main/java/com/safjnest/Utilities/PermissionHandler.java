@@ -219,6 +219,17 @@ public class PermissionHandler {
         return member;
     }
 
+    public static List<Member> getMentionedMembers(CommandEvent event, String name){
+        List<Member> members = new ArrayList<>();
+        if(event.getMessage().getMentions().getMembers().size() > 0)
+            members = event.getMessage().getMentions().getMembers();
+        else
+            try {
+                members.add(event.getGuild().getMemberById(name));
+            } catch (Exception e) {}
+        return members;
+    }
+
     public static Guild getGuild(CommandEvent event, String guildName) {
         Guild guild = null;
         try {

@@ -2,6 +2,7 @@ package com.safjnest.Utilities.Guild;
 
 import java.util.HashMap;
 
+import com.safjnest.App;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -79,7 +80,10 @@ public class GuildSettings {
         Long guildId = guildData.getAsLong("guild_id");
         String PREFIX = guildData.get("prefix");
         boolean expEnabled = guildData.getAsBoolean("exp_enabled");
-
+        if (App.isExtremeTesting()) {
+            PREFIX = Bot.getPrefix();
+        }
+        
         GuildData guild = new GuildData(guildId, PREFIX, expEnabled);
         saveData(guild);
         return guild;

@@ -1,14 +1,21 @@
 package com.safjnest.Utilities.EventHandlers;
 
+import com.jagrosh.jdautilities.command.CommandClient;
+import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Bot;
+
+import com.safjnest.Utilities.AliasData;
 import com.safjnest.Utilities.ExperienceSystem;
+import com.safjnest.Utilities.UserData;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.Guild.UserData;
+import com.safjnest.Utilities.Guild.MemberData;
 import com.safjnest.Utilities.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Guild.Alert.AlertType;
 import com.safjnest.Utilities.Guild.Alert.RewardData;
 
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.UserSnowflake;
@@ -41,12 +48,43 @@ public class EventHandlerBeebot extends ListenerAdapter {
     public void onMessageReceived(MessageReceivedEvent e) {
         if (e.getAuthor().isBot())
             return;
-        
+
         GuildData guildData = settings.getServer(e.getGuild().getId());
-        Guild guild = e.getGuild();
+        UserData userData = Bot.getUserData(e.getAuthor().getId());
         
+        handleAlias(guildData, userData, e);
+        handleExperience(guildData, e);
+    }
+
+    public void handleAlias(GuildData guildData, UserData userData, MessageReceivedEvent e) {
+        String prefix = guildData.getPrefix();
+        Message message = e.getMessage();
+        //BeeMessage newMessage = newBeeMessage(message, newContent);
+        if (!message.getContentRaw().startsWith(prefix))
+            return;
+        
+        String command = message.getContentRaw().substring(prefix.length());
+
+        AliasData alias = userData.getAlias(command);
+        if (alias == null)
+            return;
+        
+        MessageReceivedEvent eventino = new MessageReceivedEvent(e.getJDA(), (long)0, message);
+        
+        CommandClient client = Bot.getClient();
+        CommandEvent newEvent = new CommandEvent(eventino, prefix, alias.getArgs(), client);
+        
+        client.getCommands()
+            .stream()
+            .filter(cmd -> cmd.getName().equals(alias.getBaseCommand()))
+            .findFirst()
+            .ifPresent(cmd -> cmd.run(newEvent));
+    }
+
+    
+    private void handleExperience(GuildData guildData, MessageReceivedEvent e) {
         TextChannel channel = e.getChannel().asTextChannel();
-        
+        Guild guild = e.getGuild();
         User newGuy = e.getAuthor();
 
         if (!guildData.isExpSystemEnabled())
@@ -57,21 +95,21 @@ public class EventHandlerBeebot extends ListenerAdapter {
 
         double modifier = guildData.getExpValueRoom(channel.getIdLong());
         
-        UserData user = guildData.getUserData(newGuy.getIdLong());
-        if (!user.canReceiveExperience()) {
+        MemberData member = guildData.getUserData(newGuy.getIdLong());
+        if (!member.canReceiveExperience()) {
             return;
         }
 
-        int exp = user.getExperience();
-        int currentLevel = user.getLevel();
+        int exp = member.getExperience();
+        int currentLevel = member.getLevel();
         exp = ExperienceSystem.calculateExp(exp, modifier);
         int lvl = ExperienceSystem.isLevelUp(exp, currentLevel);
 
         if(lvl == ExperienceSystem.NOT_LEVELED_UP) {
-            user.setExpData(exp, currentLevel);
+            member.setExpData(exp, currentLevel);
             return;
         }
-        user.setExpData(exp, lvl);
+        member.setExpData(exp, lvl);
 
 
         RewardData reward = guildData.getAlert(AlertType.REWARD, lvl);
@@ -111,7 +149,6 @@ public class EventHandlerBeebot extends ListenerAdapter {
             return;
         }
             
-
         AlertData alert = guildData.getAlert(AlertType.LEVEL_UP);
         if (alert != null && alert.isValid()) {
             String message = alert.getMessage();
@@ -120,8 +157,6 @@ public class EventHandlerBeebot extends ListenerAdapter {
             e.getChannel().asTextChannel().sendMessage(message).queue();
             return;
         }
-
-        return;
     }
 
 }

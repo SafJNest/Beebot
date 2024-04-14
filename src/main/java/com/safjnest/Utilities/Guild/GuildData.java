@@ -42,7 +42,7 @@ public class GuildData {
 
     private HashMap<AlertKey, AlertData> alerts;
 
-    private HashMap<Long, UserData> users;
+    private HashMap<Long, MemberData> users;
 
     public GuildData(Long id, String prefix, boolean expSystem) {
         this.ID = id;
@@ -349,12 +349,12 @@ public class GuildData {
     /*                                UserData                                    */
     /* -------------------------------------------------------------------------- */
 
-    private UserData retriveUserData(long userId) {
-        UserData ud = null;
+    private MemberData retriveUserData(long userId) {
+        MemberData ud = null;
         ResultRow result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
         if (result.emptyValues()) { return null; }
         System.out.println("[CACHE] Retriving UserData from database => " + ID + " | " + userId);
-        ud = new UserData(
+        ud = new MemberData(
             result.getAsInt("id"),
             userId,
             result.getAsInt("experience"),
@@ -366,25 +366,25 @@ public class GuildData {
         return ud;
     }
 
-    public UserData getUserData(String userId) {
+    public MemberData getUserData(String userId) {
         return getUserData(Long.parseLong(userId));
     }
 
-    public UserData getUserData(long userId) {
-        UserData ud = this.users.get(userId);
+    public MemberData getUserData(long userId) {
+        MemberData ud = this.users.get(userId);
         if (ud != null) {
             return ud;
         }
         ud = retriveUserData(userId);
         if (ud == null) {
-            ud = new UserData(userId, this);
+            ud = new MemberData(userId, this);
             System.out.println("[CACHE] Caching local UserData => " + ID + " | " + userId);
         }
         this.users.put(userId, ud);
         return ud;
     }
 
-    public HashMap<Long, UserData> getUsers() {
+    public HashMap<Long, MemberData> getUsers() {
         return this.users;
     }
 
