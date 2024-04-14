@@ -5,9 +5,9 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.PermissionHandler;
 
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 
 /**
@@ -30,53 +30,30 @@ public class RandomMove extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
-        User theGuy = null;
-        List<Member> theGuys = null;
-        List<VoiceChannel> channels = null;
-        VoiceChannel channel = null;
+        List<Member> mentionedMembers = null;
         VoiceChannel startChannel = null;
-        
-        int n;
-        String[] args = event.getArgs().split(" ");
-        if(args[0].equalsIgnoreCase("me"))
-            theGuy = event.getAuthor();
-        
 
-        if(args[0].equalsIgnoreCase("here")){
-            theGuys = event.getMember().getVoiceState().getChannel().getMembers();
-        }else if(event.getMessage().getMentions().getMembers().size() > 0){
-            theGuy = event.getMessage().getMentions().getUsers().get(0);
-        }else{
-            event.reply("You have to mention or write the Id of the one you want to random move");
-            return;
-        }
-        if(theGuy == null)
-            startChannel = event.getGuild().getVoiceChannelById(event.getGuild().getMemberById(event.getAuthor().getId()).getVoiceState().getChannel().getId());
+        List<VoiceChannel> channels = event.getGuild().getVoiceChannels();
+
+        String[] args = event.getArgs().split(" ");
+        int n = Integer.parseInt(args[1]);
+
+        if(args[0].equalsIgnoreCase("here"))
+            mentionedMembers = event.getMember().getVoiceState().getChannel().getMembers();
         else
-            startChannel = event.getGuild().getVoiceChannelById(event.getGuild().getMemberById(theGuy.getId()).getVoiceState().getChannel().getId());
+            mentionedMembers = PermissionHandler.getMentionedMembers(event, args[0]);
+
+        startChannel = event.getGuild().getVoiceChannelById(event.getGuild().getMemberById(mentionedMembers.get(0).getId()).getVoiceState().getChannel().getId());
         
-        n = Integer.parseInt(args[1]);
-        channels = event.getGuild().getVoiceChannels();
-        if(theGuy == null){
-            for(int i = 0; i < n - 1; i++){
-                channel = channels.get((int)(Math.random() * (channels.size()-1)));
-                for(Member member : theGuys){
-                    event.getGuild().moveVoiceMember(member, channel).queue();
-                }
-            }
-            for(Member member : theGuys){
-                event.getGuild().moveVoiceMember(member, startChannel).queue();
-            }
-            return;
+        for(int i = 0; i < n - 1; i++) {
+            VoiceChannel channel = channels.get((int)(Math.random() * (channels.size()-1)));
+            for(Member member : mentionedMembers)
+                event.getGuild().moveVoiceMember(member, channel).queue();
         }
-        for(int i = 0; i < n; i++){
-            channel = channels.get((int)(Math.random() * (channels.size()-1)));
-            event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), channel).queue();
-        }
-        event.getGuild().moveVoiceMember(event.getGuild().getMember(theGuy), startChannel).queue();
+        for(Member member : mentionedMembers)
+            event.getGuild().moveVoiceMember(member, startChannel).queue();
+
         event.getMessage().delete().queue();
         return;
-            
-
     }
 }
