@@ -74,26 +74,38 @@ public class GuildData {
 
     private void retriveCustomCommand() {
         customCommands = new HashMap<>();
-        /**
-         * Da rifare in maniera più ottimizzata ovviamente, era giusto per ottenere
-         * i dati subito senza starci troppo a pensare.
-         * Anche il codice sotto si può ottimizzare 100x
-         */
         QueryResult result = DatabaseHandler.safJQuery("SELECT ID,name,description,slash FROM commands WHERE guild_id = " + ID);
-        QueryResult optionResult = DatabaseHandler.safJQuery("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + ")");
-        QueryResult valueResult = DatabaseHandler.safJQuery("SELECT ID,option_id,`key`,value FROM command_option_value WHERE option_id IN (SELECT ID FROM command_option WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + "))");
-        QueryResult taskResult = DatabaseHandler.safJQuery("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + ")");
-        QueryResult taskValueResult = DatabaseHandler.safJQuery("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (SELECT ID FROM command_task WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + "))");
-        QueryResult taskMessage = DatabaseHandler.safJQuery("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (SELECT ID FROM command_task_value WHERE task_id IN (SELECT ID FROM command_task WHERE command_id IN (SELECT ID FROM commands WHERE guild_id = " + ID + ")))");
+
+        if (result.isEmpty()) {
+            return;
+        }
+        
+        String ids = String.join(", ", result.arrayColumn("ID"));
+        
+        QueryResult optionResult = DatabaseHandler.safJQuery("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (" + ids + ")");
+        
+        QueryResult valueResult = null;
+        if (!optionResult.isEmpty()) {
+            String optionIds = String.join(", ", optionResult.arrayColumn("ID"));
+            valueResult = DatabaseHandler.safJQuery("SELECT ID,option_id,`key`,value FROM command_option_value WHERE option_id IN (" + optionIds + ")");
+        }
+
+        QueryResult taskResult = DatabaseHandler.safJQuery("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (" + ids + ")");
+        String taskIds = String.join(", ", taskResult.arrayColumn("ID"));
+        QueryResult taskValueResult = DatabaseHandler.safJQuery("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (" + taskIds + ")");
+        
+        String taskValueIds = String.join(", ", taskValueResult.arrayColumn("ID"));
+        QueryResult taskMessage = DatabaseHandler.safJQuery("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (" + taskValueIds + ")");
 
         JDA jda = Bot.getJDA();
-
         for (ResultRow row : result) {
             int id = row.getAsInt("ID");
             String name = row.get("name");
             String description = row.get("description");
             boolean isSlash = row.getAsBoolean("slash");
+
             CustomCommand cc = new CustomCommand(id, name, description, isSlash);
+
             for (ResultRow optionRow : optionResult) {
                 if (optionRow.getAsInt("command_id") == id) {
                     int optionId = optionRow.getAsInt("ID");
@@ -146,6 +158,7 @@ public class GuildData {
          * g.updateCommands()
              .addCommands(Commands.slash("custom_command", "Gives the current ping")).queue();
          */
+
         Guild g = jda.getGuildById(ID);
         List<SlashCommandData> commands = new ArrayList<>();
         for (CustomCommand cc : customCommands.values()) {
@@ -166,7 +179,6 @@ public class GuildData {
                 commands.add(scd);
             });
         }
-        System.out.println("commands size " + commands.size());
         g.updateCommands().addCommands(commands).queue();
     }
 

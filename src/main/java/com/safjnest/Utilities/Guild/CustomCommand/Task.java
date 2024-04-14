@@ -1,8 +1,22 @@
 package com.safjnest.Utilities.Guild.CustomCommand;
 
+import java.io.File;
 import java.util.ArrayList;
 
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
+
+import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
+import com.safjnest.Utilities.SQL.ResultRow;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
 public class Task {
@@ -30,9 +44,16 @@ public class Task {
 
     public void execute(CustomCommand command, SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
+        User self = event.getJDA().getSelfUser();
+        Member theGuy = event.getMember();
+
+        AudioChannelUnion  voiceChannel = theGuy.getVoiceState().getChannel();
+
+        
+
         switch (type) {
             case SEND_MESSAGE:
-                event.reply(values.get(0)).queue();
+                event.getChannel().sendMessage(values.get(0)).queue();
                 break;
             case DELETE_CHANNEL:
                 for (String value : values) {
@@ -47,7 +68,37 @@ public class Task {
                     }
                 }
                 break;
-        
+            case PLAY_SOUND:
+                QueryResult sound = DatabaseHandler.getSoundsById(values.get(0));
+                if(sound.isEmpty())
+                    return;
+                
+
+                ResultRow soundRow = sound.get(0);
+
+                PlayerManager pm = PlayerManager.get();
+
+                String path = "rsc" + File.separator + "SoundBoard"+ File.separator + soundRow.get("id") + "." + soundRow.get("extension");
+
+                pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {
+                    @Override
+                    public void trackLoaded(AudioTrack track) {
+                        pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                        guild.getAudioManager().openAudioConnection(voiceChannel);
+                    }
+
+                    @Override
+                    public void playlistLoaded(AudioPlaylist playlist) {}
+                    
+                    @Override
+                    public void noMatches() {}
+
+                    @Override
+                    public void loadFailed(FriendlyException throwable) {
+                        System.out.println("error: " + throwable.getMessage());
+                    }
+                });
+                break;        
             default:
                 break;
         }
