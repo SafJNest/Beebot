@@ -53,7 +53,7 @@ public class Task {
 
         switch (type) {
             case SEND_MESSAGE:
-                event.getChannel().sendMessage(values.get(0)).queue();
+                event.getInteraction().getHook().sendMessage(values.get(0)).queue();
                 break;
             case DELETE_CHANNEL:
                 for (String value : values) {
@@ -77,7 +77,6 @@ public class Task {
                 ResultRow soundRow = sound.get(0);
 
                 PlayerManager pm = PlayerManager.get();
-
                 String path = "rsc" + File.separator + "SoundBoard"+ File.separator + soundRow.get("id") + "." + soundRow.get("extension");
 
                 pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {

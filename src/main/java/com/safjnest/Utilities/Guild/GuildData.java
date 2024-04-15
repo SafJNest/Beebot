@@ -5,6 +5,7 @@ package com.safjnest.Utilities.Guild;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.safjnest.Bot;
 import com.safjnest.Utilities.Guild.Alert.AlertData;
@@ -20,7 +21,6 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
 
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
@@ -60,8 +60,6 @@ public class GuildData {
 
     private HashMap<String, CustomCommand> customCommands;
 
-    private HashMap<String, CustomCommand> customCommands;
-
     public GuildData(Long id, String prefix, boolean expSystem) {
         this.ID = id;
         this.prefix = prefix;
@@ -74,30 +72,16 @@ public class GuildData {
 
     private void retriveCustomCommand() {
         customCommands = new HashMap<>();
-        QueryResult result = DatabaseHandler.safJQuery("SELECT ID,name,description,slash FROM commands WHERE guild_id = " + ID);
+        HashMap<String, QueryResult> commandData = DatabaseHandler.getCustomCommandData(String.valueOf(ID));
+        if (commandData == null) { return; }
 
-        if (result.isEmpty()) {
-            return;
-        }
-        
-        String ids = String.join(", ", result.arrayColumn("ID"));
-        
-        QueryResult optionResult = DatabaseHandler.safJQuery("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (" + ids + ")");
-        
-        QueryResult valueResult = null;
-        if (!optionResult.isEmpty()) {
-            String optionIds = String.join(", ", optionResult.arrayColumn("ID"));
-            valueResult = DatabaseHandler.safJQuery("SELECT ID,option_id,`key`,value FROM command_option_value WHERE option_id IN (" + optionIds + ")");
-        }
+        QueryResult result = commandData.get("commands");
+        QueryResult optionResult = commandData.get("options");
+        QueryResult taskResult = commandData.get("tasks");
+        QueryResult taskValueResult = commandData.get("task_values");
+        QueryResult taskMessage = commandData.get("task_messages");
 
-        QueryResult taskResult = DatabaseHandler.safJQuery("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (" + ids + ")");
-        String taskIds = String.join(", ", taskResult.arrayColumn("ID"));
-        QueryResult taskValueResult = DatabaseHandler.safJQuery("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (" + taskIds + ")");
-        
-        String taskValueIds = String.join(", ", taskValueResult.arrayColumn("ID"));
-        QueryResult taskMessage = DatabaseHandler.safJQuery("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (" + taskValueIds + ")");
 
-        JDA jda = Bot.getJDA();
         for (ResultRow row : result) {
             int id = row.getAsInt("ID");
             String name = row.get("name");
@@ -106,60 +90,65 @@ public class GuildData {
 
             CustomCommand cc = new CustomCommand(id, name, description, isSlash);
 
-            for (ResultRow optionRow : optionResult) {
-                if (optionRow.getAsInt("command_id") == id) {
+            final QueryResult finalValueResult = commandData.get("values");
+            optionResult.stream()
+                .filter(optionRow -> optionRow.getAsInt("command_id") == id)
+                .forEach(optionRow -> {
                     int optionId = optionRow.getAsInt("ID");
                     String key = optionRow.get("key");
                     String optionDescription = optionRow.get("description");
                     boolean isRequired = optionRow.getAsBoolean("required");
                     OptionType type = OptionType.fromKey(Integer.parseInt(optionRow.get("type")));
-                    List<OptionValue> values = new ArrayList<>();
-                    for (ResultRow valueRow : valueResult) {
-                        if (valueRow.getAsInt("option_id") == optionId) {
-                            values.add(new OptionValue(valueRow.getAsInt("ID"), valueRow.get("key"), valueRow.get("value")));
-                        }
-                    }
-                    Option option = new Option(optionId, key, optionDescription, isRequired, type);
-                    if (!values.isEmpty()) {
+            
+                    Option option;
+                    if (!finalValueResult.isEmpty()) {
+                        List<OptionValue> values = finalValueResult.stream()
+                            .filter(valueRow -> valueRow.getAsInt("option_id") == optionId)
+                            .map(valueRow -> new OptionValue(valueRow.getAsInt("ID"), valueRow.get("key"), valueRow.get("value")))
+                            .collect(Collectors.toList());
+            
                         option = new Option(optionId, key, optionDescription, isRequired, values);
+                    } else {
+                        option = new Option(optionId, key, optionDescription, isRequired, type);
                     }
+            
                     cc.addOption(option);
-                }
-            }
-            for (ResultRow taskRow : taskResult) {
-                if (taskRow.getAsInt("command_id") == id) {
+                });
+            
+            taskResult.stream()
+                .filter(taskRow -> taskRow.getAsInt("command_id") == id)
+                .forEach(taskRow -> {
                     int taskId = taskRow.getAsInt("ID");
                     TaskType type = TaskType.fromValue(taskRow.getAsInt("type"));
                     Task task = new Task(taskId, type);
-                    for (ResultRow taskValueRow : taskValueResult) {
-                        if (taskValueRow.getAsInt("task_id") == taskId) {
+            
+                    taskValueResult.stream()
+                        .filter(taskValueRow -> taskValueRow.getAsInt("task_id") == taskId)
+                        .forEach(taskValueRow -> {
                             boolean fromOption = taskValueRow.getAsBoolean("from_option");
                             String value = taskValueRow.get("value");
                             if (fromOption) {
                                 value = "#" + value;
                             }
                             if (type == TaskType.SEND_MESSAGE) {
-                                for (ResultRow messageRow : taskMessage) {
-                                    if (messageRow.getAsInt("task_value_id") == taskValueRow.getAsInt("ID")) {
-                                        value = messageRow.get("message");
-                                    }
-                                }
+                                value = taskMessage.stream()
+                                    .filter(messageRow -> messageRow.getAsInt("task_value_id") == taskValueRow.getAsInt("ID"))
+                                    .map(messageRow -> messageRow.get("message"))
+                                    .findFirst()
+                                    .orElse(value);
                             }
                             task.addValue(value);
-                        }
-                    }
+                        });
                     cc.addTask(task);
-                }
-            }
+                });
             customCommands.put(name, cc);
         }
 
-        /*
-         * g.updateCommands()
-             .addCommands(Commands.slash("custom_command", "Gives the current ping")).queue();
-         */
+        updateCommands();
+    }
 
-        Guild g = jda.getGuildById(ID);
+    private void updateCommands() {
+        Guild g = Bot.getJDA().getGuildById(ID);
         List<SlashCommandData> commands = new ArrayList<>();
         for (CustomCommand cc : customCommands.values()) {
             if (!cc.isSlash()) {
@@ -175,7 +164,6 @@ public class GuildData {
             cc.getOptions().forEach(option -> {
                 SlashCommandData scd = Commands.slash(cc.getName(), cc.getDescription());
                 scd.addOption(option.getType(), option.getKey(), option.getDescription());
-                System.out.println(scd.getName());
                 commands.add(scd);
             });
         }
