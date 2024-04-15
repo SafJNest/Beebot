@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class QueryResult implements Iterable<ResultRow>{
 
@@ -49,5 +50,10 @@ public class QueryResult implements Iterable<ResultRow>{
         }
         return list;
     }
+
+    public Stream<ResultRow> stream() {
+        return result.stream();
+    }
+
 
 }
