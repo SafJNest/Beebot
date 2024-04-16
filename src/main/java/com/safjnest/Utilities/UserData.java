@@ -55,13 +55,13 @@ public class UserData {
         return true;
     }
 
-    public AliasData getAlias(String name) {
-        return aliases.get(name);
-    }
-
     public HashMap<String, AliasData> getAliases() {
         return aliases;
     }
 
+    public boolean deleteAlias(String toDelete) {
+        getAliases().remove(toDelete);
+        return DatabaseHandler.deleteAlias(toDelete);
+    }
 
 }

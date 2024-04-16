@@ -36,6 +36,7 @@ import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.safjnest.Utilities.UserData;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
+import com.safjnest.Utilities.EventHandlers.EventAutoCompleteInteractionHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
@@ -269,16 +270,15 @@ public class Bot extends ListenerAdapter {
         
         client = builder.build();
         
-        if(App.isExtremeTesting()) {
-            client.setListener(new CommandEventHandler(gs));
-        }
+        client.setListener(new CommandEventHandler(gs));
 
         jda.addEventListener(client);
-        jda.addEventListener(new EventHandler(gs, PREFIX));
-        jda.addEventListener(new EventButtonHandler());;
+        jda.addEventListener(new EventHandler());
+        jda.addEventListener(new EventButtonHandler());
+        jda.addEventListener(new EventAutoCompleteInteractionHandler());
+        jda.addEventListener(new EventHandlerBeebot());
 
         if(App.isExtremeTesting()){
-            jda.addEventListener(new EventHandlerBeebot(gs));
             //Connection c = new Connection(jda, gs, bs);
             //c.start();
         }

@@ -739,6 +739,10 @@ public class DatabaseHandler {
         return id;
     }
 
+    public static boolean deleteAlias(String toDelete) {
+        return runQuery("DELETE FROM alias WHERE id = '" + toDelete + "';");
+    }
+
 
 
 
@@ -768,5 +772,4 @@ public class DatabaseHandler {
     public static Connection getConnection(){
         return c;
     }
-
 }
