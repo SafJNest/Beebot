@@ -64,11 +64,10 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        if(!Bot.getGuildSettings().getServer(event.getGuild().getId()).getCommandStatsRoom(event.getChannel().getIdLong()))
-            return;
-        String commandName = event.getName() + "Slash";
-        String args = event.getOptions().toString();
-        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
+        String commandName = event.getName();
+
+        Functions.handleCustomCommand(commandName, event);
+        Functions.updateCommandStatitics(event);
     }
 
     @Override

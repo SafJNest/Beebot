@@ -3,6 +3,7 @@ package com.safjnest.Utilities;
 import java.io.File;
 import java.util.HashMap;
 
+import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
@@ -14,6 +15,8 @@ import com.safjnest.Utilities.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Guild.Alert.AlertKey;
 import com.safjnest.Utilities.Guild.Alert.AlertType;
 import com.safjnest.Utilities.Guild.Alert.RewardData;
+import com.safjnest.Utilities.Guild.CustomCommand.CustomCommand;
+import com.safjnest.Utilities.Guild.CustomCommand.Task;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -31,6 +34,7 @@ import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
@@ -332,6 +336,41 @@ public class Functions {
                 System.out.println("error: " + throwable.getMessage());
             }
         });
+    }
+
+
+    public static void handleCustomCommand(String commandName, SlashCommandInteractionEvent event) {
+        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        CustomCommand command = guild.getCustomCommand(commandName);
+
+        if(command == null) {
+            return;
+        }
+        
+        event.deferReply().queue();
+        for(Task task : command.getTasks()) {
+            task.execute(command, event);
+        }
+    }
+
+    public static void updateCommandStatitics(SlashCommandInteractionEvent event) {
+        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
+            return;
+        
+        String commandName = event.getName();
+        String args = event.getOptions().toString();
+        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
+    }
+
+    public static void updateCommandStatitics(CommandEvent event, Command command) {
+        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
+            return;
+        
+        String commandName = command.getName();
+        String args = event.getArgs();
+        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
     }
 
 

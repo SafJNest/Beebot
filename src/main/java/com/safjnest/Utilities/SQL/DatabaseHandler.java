@@ -745,6 +745,44 @@ public class DatabaseHandler {
 
 
 
+    public static HashMap<String, QueryResult> getCustomCommandData(String guild_id) {
+        HashMap<String, QueryResult> commandData = new HashMap<>();
+        QueryResult result = DatabaseHandler.safJQuery("SELECT ID,name,description,slash FROM commands WHERE guild_id = " + guild_id);
+
+        if (result.isEmpty()) {
+            return null;
+        }
+        commandData.put("commands", result);
+
+        String ids = String.join(", ", result.arrayColumn("ID"));
+        
+        QueryResult optionResult = DatabaseHandler.safJQuery("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (" + ids + ")");
+        commandData.put("options", optionResult);
+
+        QueryResult valueResult = null;
+        if (!optionResult.isEmpty()) {
+            String optionIds = String.join(", ", optionResult.arrayColumn("ID"));
+            valueResult = DatabaseHandler.safJQuery("SELECT ID,option_id,`key`,value FROM command_option_value WHERE option_id IN (" + optionIds + ")");
+            commandData.put("values", valueResult);
+        }
+
+        QueryResult taskResult = DatabaseHandler.safJQuery("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (" + ids + ") order by `order`");
+        commandData.put("tasks", taskResult);
+
+        String taskIds = String.join(", ", taskResult.arrayColumn("ID"));
+        QueryResult taskValueResult = DatabaseHandler.safJQuery("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (" + taskIds + ")");
+        commandData.put("task_values", taskValueResult);
+        
+        String taskValueIds = String.join(", ", taskValueResult.arrayColumn("ID"));
+        QueryResult taskMessage = DatabaseHandler.safJQuery("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (" + taskValueIds + ")");
+        if (!taskMessage.isEmpty()) {
+            commandData.put("task_messages", taskMessage);
+        }
+        return commandData;
+    }
+
+
+
 
 
 
