@@ -47,14 +47,14 @@
 <dependency>
   <groupId>org.springframework.boot</groupId>
   <artifactId>spring-boot-starter-parent</artifactId>
-  <version>3.2.1</version>
+  <version>3.2.4</version>
   <type>pom</type>
 </dependency>
 <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
 <dependency>
   <groupId>org.springframework.boot</groupId>
   <artifactId>spring-boot-starter-web</artifactId>
-  <version>3.2.1</version>
+  <version>3.2.4</version>
 </dependency>
 
 
@@ -67,7 +67,7 @@
   <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-data-jpa</artifactId>
-    <version>3.2.1</version>
+    <version>3.2.4</version>
   </dependency>
 
     <dependency>
