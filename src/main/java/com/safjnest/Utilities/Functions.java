@@ -14,6 +14,8 @@ import com.safjnest.Utilities.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Guild.Alert.AlertKey;
 import com.safjnest.Utilities.Guild.Alert.AlertType;
 import com.safjnest.Utilities.Guild.Alert.RewardData;
+import com.safjnest.Utilities.Guild.CustomCommand.CustomCommand;
+import com.safjnest.Utilities.Guild.CustomCommand.Task;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
@@ -31,6 +33,7 @@ import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
@@ -332,6 +335,21 @@ public class Functions {
                 System.out.println("error: " + throwable.getMessage());
             }
         });
+    }
+
+
+    public static void handleCustomCommand(String commandName, SlashCommandInteractionEvent event) {
+        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        CustomCommand command = guild.getCustomCommand(commandName);
+
+        if(command == null) {
+            return;
+        }
+        
+        event.deferReply().queue();
+        for(Task task : command.getTasks()) {
+            task.execute(command, event);
+        }
     }
 
 
