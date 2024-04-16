@@ -21,11 +21,18 @@
             "password": "b6f0333c60fb00cba040e063402257230c800242fc5fbdb68d490682d54434de"
         },
 
-        "MySQL": {
+        "MariaDB": {
             "HostName": "na01-sql.pebblehost.com",
             "database": "customer_444048_beebot",
             "user": "customer_444048_beebot",
             "password": "ExtremeSafJDatabase117@"
+        },
+
+        "LocalHost": {
+            "HostName": "127.0.0.1",
+            "database": "canary",
+            "user": "root",
+            "password": "root"
         },
 
         "OpenAI" :{
