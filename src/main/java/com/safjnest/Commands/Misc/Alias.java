@@ -31,7 +31,9 @@ public class Alias extends Command {
         User author = event.getAuthor();
         UserData userData = Bot.getUserData(author.getId());
 
-        if(event.getArgs().equals("list")) {
+        String args = event.getArgs();
+
+        if(args.startsWith("list")) {
             StringBuilder aliasList = new StringBuilder();
             userData.getAliases().forEach((name, content) -> 
                 aliasList.append(name).append(": ").append(content.getCommand()).append("\n"));
@@ -39,13 +41,26 @@ public class Alias extends Command {
             return;
         }
 
-        String args = event.getArgs();
-        String aliasName = args.substring(0, args.indexOf(" "));
-        String command = args.substring(args.indexOf(" ") + 1);
-        
-        
+        String[] argss = args.split(" ", 2);
 
-        if (userData.getAlias(aliasName) != null) {
+        if(argss.length < 2) {
+            event.reply("Invalid syntax, valid syntaxes are: *alias* aliasName command | *alias* list | *alias* delete aliasName");
+            return;
+        }
+
+        if(args.startsWith("delete")) {
+            String toDelete = args.split(" ", 2)[1];
+            if(userData.deleteAlias(toDelete))
+                event.reply(toDelete + " deleted");
+            else
+                event.reply("No such alias or error deleting alias " + toDelete);
+            return;
+        }
+
+        String aliasName = args.split(" ", 2)[0];
+        String command = args.split(" ", 2)[1];
+
+        if (userData.getAliases().get(aliasName) != null) {
             event.reply("Alias already exists.");
             return;
         }
@@ -58,5 +73,3 @@ public class Alias extends Command {
         event.reply("Alias created successfully.");
 	}
 }
-
-
