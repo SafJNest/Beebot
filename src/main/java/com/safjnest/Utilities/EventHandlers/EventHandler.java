@@ -139,9 +139,6 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        if (event.getName().equals("custom_command")) {
-            event.deferReply().setContent("This command is not available yet.").queue();
-        }
         if(!gs.getServer(event.getGuild().getId()).getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         String commandName = event.getName() + "Slash";
@@ -150,7 +147,213 @@ public class EventHandler extends ListenerAdapter {
     }
 
 
-    /**
+    @Override
+    public void onModalInteraction(ModalInteractionEvent event) { }
+
+
+
+    public void handleAlert(User theGuy, Guild guild, AlertType type) {
+        MessageChannel channel = null;
+
+        AlertData alert = gs.getServer(guild.getId()).getAlert(type);
+        if (alert == null || !alert.isValid()) {
+            return;
+        }
+
+        String channel_id = alert.getChannelId();
+        if (channel_id == null || channel_id.equals("") || channel_id.equals("null")) {
+            return;
+        }
+
+        channel = guild.getTextChannelById(channel_id);
+        if (channel == null) {
+            return;
+        }
+
+        String message = alert.getMessage().replace("#user", theGuy.getAsMention());
+        if (alert.isPrivate()) {
+            theGuy.openPrivateChannel().queue(channelPrivate -> {
+                channelPrivate.sendMessage(message).queue();
+            });
+        } else {
+            channel.sendMessage(message).queue();
+        }
+
+        if (alert.getRoles() != null) {
+            String[] roles = alert.getRoles().values().toArray(new String[0]);
+            givesRoles(theGuy, guild, roles);
+        }
+    }
+
+
+    public void givesRoles(User theGuy, Guild guild, String[] roles) {
+        if (roles == null || roles.length == 0) {
+            return;
+        }
+        for (String role : roles) {
+            Role r = guild.getRoleById(role);
+            if (r == null) {
+                continue;
+            }
+
+            guild.addRoleToMember(theGuy, r).queue();
+        }
+    }
+
+    public void handleBlacklist(User badGuy, Guild guild) {
+        MessageChannel channel = null;
+        int threshold = gs.getServer(guild.getId()).getThreshold();
+        if(threshold == 0)
+            return;
+        
+        int times = DatabaseHandler.getBlacklistBan(badGuy.getId());
+
+        if(!gs.getServer(guild.getId()).blacklistEnabled() || gs.getServer(guild.getId()).getThreshold() == 0 || gs.getServer(guild.getId()).getThreshold() > times)
+            return;
+        
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(guild.getJDA().getSelfUser().getName());
+        eb.setThumbnail(badGuy.getAvatarUrl());
+        eb.setTitle(":radioactive:Blacklist:radioactive:");
+        eb.setDescription("The new member " + badGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
+
+        channel = guild.getTextChannelById(gs.getServer(guild.getId()).getBlackChannelId());
+
+        Button kick = Button.primary("kick-" + badGuy.getId(), "Kick");
+        Button ban = Button.primary("ban-" + badGuy.getId(), "Ban");
+        Button ignore = Button.primary("ignore-" + badGuy.getId(), "Ignore");
+
+
+        kick = kick.withStyle(ButtonStyle.PRIMARY);
+        ban = ban.withStyle(ButtonStyle.PRIMARY);
+        ignore = ignore.withStyle(ButtonStyle.SUCCESS);
+        channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
+    }
+
+    public void handleBlacklistAlert(User badGuy, Guild guild) {
+        int threshold = gs.getServer(guild.getId()).getThreshold();
+
+        if(threshold == 0)
+            return;
+        
+        DatabaseHandler.insertUserBlacklist(badGuy.getId(), guild.getId());
+
+        int times = 0;
+        times = times + DatabaseHandler.getBannedTimes(badGuy.getId());
+
+        QueryResult guilds = DatabaseHandler.getGuildByThreshold(times, guild.getId());
+        if(guilds == null)
+            return;
+        
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(guild.getJDA().getSelfUser().getName());
+        eb.setThumbnail(badGuy.getAvatarUrl());
+        eb.setTitle(":radioactive:Blacklist:radioactive:");
+        eb.setDescription("The member " + badGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
+        for(ResultRow g : guilds){
+            Guild gg = guild.getJDA().getGuildById(g.get("guild_id"));
+            if(gg.getMemberById(badGuy.getId()) == null)
+                continue;
+
+            TextChannel channel = gg.getTextChannelById(g.get("blacklist_channel"));
+
+            Button kick = Button.primary("kick-" + badGuy.getId(), "Kick");
+            Button ban = Button.primary("ban-" + badGuy.getId(), "Ban");
+            Button ignore = Button.primary("ignore-" + badGuy.getId(), "Ignore");
+
+            kick = kick.withStyle(ButtonStyle.PRIMARY);
+            ban = ban.withStyle(ButtonStyle.PRIMARY);
+            ignore = ignore.withStyle(ButtonStyle.SUCCESS);
+            channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
+        }
+    }
+
+    public void handleChannelDeleteAlert(Guild guild, String channelID) {
+        String alertChannel = guild.getDefaultChannel().getId();
+        GuildData g = gs.getServer(guild.getId());
+        String alertMessage = "";
+        String content = "";
+        HashMap<AlertKey, AlertData> alerts = g.getAlerts();
+        BlacklistData bld = g.getBlacklistData();
+        if (alerts != null) {
+            for (AlertData data : alerts.values()) {
+                if (data.getChannelId() != null && data.getChannelId().equals(channelID)) {
+                    data.setAlertChannel(null);
+                    content += data.getType().getDescription() + ", ";
+                }
+            }
+        }
+        if (bld != null) {
+            if (bld.getBlackChannelId() != null && bld.getBlackChannelId().equals(channelID)) {
+                bld.setBlackChannelId(null);
+                content += "Blacklist";
+            }
+        }
+        if (!content.equals("")) {
+            alertMessage = "These alerts need to be modified as the channel has been canceled:\n" + content;
+            guild.getTextChannelById(alertChannel).sendMessage(alertMessage).queue();
+        }
+    }
+
+
+    @Override
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
+        User newGuy = event.getUser();
+        Guild guild = event.getGuild();
+
+        handleAlert(newGuy, guild, AlertType.WELCOME);//TODO: test
+        handleBlacklist(newGuy, guild); //TODO: test
+    }
+
+    @Override
+    public void onGuildMemberRemove(GuildMemberRemoveEvent event){
+        User oldGuy = event.getUser();
+        Guild guild = event.getGuild();
+
+        handleAlert(oldGuy, guild, AlertType.LEAVE);//TODO: test
+    }
+
+
+    @Override
+    public void onGuildBan(GuildBanEvent event) {
+        User theGuy = event.getUser();
+        Guild guild = event.getGuild();
+
+        handleBlacklistAlert(theGuy, guild);//TODO: test
+        
+    }
+
+    @Override
+    public void onGuildUnban(GuildUnbanEvent event) {
+        User theGuy = event.getUser();
+        DatabaseHandler.deleteBlacklist(event.getGuild().getId(), theGuy.getId());
+    }
+
+    @Override
+    public void onGuildMemberUpdateBoostTime(GuildMemberUpdateBoostTimeEvent event) {
+        User theGuy = event.getUser();
+        Guild guild = event.getGuild();
+
+        handleAlert(theGuy, guild, AlertType.BOOST);//TODO: test
+    }
+
+    @Override
+    public void onChannelDelete(ChannelDeleteEvent event){
+        if(!event.getChannelType().isAudio()){
+            handleChannelDeleteAlert(event.getGuild(), event.getChannel().getId());
+        }
+    }
+
+
+    @Override
+    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
+        if (event.getComponentId().equals("rank-select")) {
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerBySummonerId(event.getValues().get(0));
+            event.deferReply().addEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build()).queue();
+        }
+    }
+
+        /**
      * TODO: rifare questa merda
      */
     @Override
@@ -392,203 +595,6 @@ public class EventHandler extends ListenerAdapter {
                 break;
         }
         e.replyChoices(choices).queue();
-    }
-
-    @Override
-    public void onModalInteraction(ModalInteractionEvent event) { }
-
-    /**
-     * On join of a user (to make the bot welcome the new member)
-     */
-    @Override
-    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
-        MessageChannel channel = null;
-        User newGuy = event.getUser();
-
-        AlertData welcome = gs.getServer(event.getGuild().getId()).getAlert(AlertType.WELCOME);
-        if(welcome != null && welcome.isValid()) {
-            String channel_id = welcome.getChannelId();
-            channel = event.getGuild().getTextChannelById(channel_id);
-
-            String message = welcome.getMessage().replace("#user", newGuy.getAsMention());
-    
-        
-            if (welcome.isPrivate()) {
-                newGuy.openPrivateChannel().queue(channelPrivate -> {
-                    channelPrivate.sendMessage(message).queue();
-                });
-            } else {
-                channel.sendMessage(message).queue();
-            }
-                
-            if (welcome.getRoles() != null) {
-                String[] roles = welcome.getRoles().values().toArray(new String[0]);
-                for (String role : roles) {
-                    event.getGuild().addRoleToMember(newGuy, event.getGuild().getRoleById(role)).queue();
-                }
-            }
-        }
-
-
-        
-
-        /**
-         * Blacklist
-         */
-        int threshold = gs.getServer(event.getGuild().getId()).getThreshold();
-        if(threshold == 0)
-            return;
-        
-        int times = DatabaseHandler.getBlacklistBan(event.getUser().getId());
-
-        if(!gs.getServer(event.getGuild().getId()).blacklistEnabled() || gs.getServer(event.getGuild().getId()).getThreshold() == 0 || gs.getServer(event.getGuild().getId()).getThreshold() > times)
-            return;
-        
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(event.getJDA().getSelfUser().getName());
-        eb.setThumbnail(newGuy.getAvatarUrl());
-        eb.setTitle(":radioactive:Blacklist:radioactive:");
-        eb.setDescription("The new member " + newGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
-
-        channel = event.getGuild().getTextChannelById(gs.getServer(event.getGuild().getId()).getBlackChannelId());
-
-        Button kick = Button.primary("kick-" + newGuy.getId(), "Kick");
-        Button ban = Button.primary("ban-" + newGuy.getId(), "Ban");
-        Button ignore = Button.primary("ignore-" + newGuy.getId(), "Ignore");
-
-
-        kick = kick.withStyle(ButtonStyle.PRIMARY);
-        ban = ban.withStyle(ButtonStyle.PRIMARY);
-        ignore = ignore.withStyle(ButtonStyle.SUCCESS);
-        channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
-        
-    }
-
-    @Override
-    public void onGuildMemberRemove(GuildMemberRemoveEvent event){
-        
-        MessageChannel channel = null;
-        AlertData leave = gs.getServer(event.getGuild().getId()).getAlert(AlertType.LEAVE);
-        if(leave != null && leave.isValid()) {
-            String channel_id = leave.getChannelId();
-            channel = event.getGuild().getTextChannelById(channel_id);
-            
-            String message = leave.getMessage().replace("#user", event.getUser().getAsMention());
-            if (leave.isPrivate()) {
-                event.getUser().openPrivateChannel().queue(channelPrivate -> {
-                    channelPrivate.sendMessage(message).queue();
-                });
-            } else {
-                channel.sendMessage(message).queue();
-            }
-
-        }
-        
-    }
-
-
-    @Override
-    public void onGuildBan(GuildBanEvent event) {
-        User theGuy = event.getUser();
-        int threshold = gs.getServer(event.getGuild().getId()).getThreshold();
-
-        if(threshold == 0)
-            return;
-        
-        DatabaseHandler.insertUserBlacklist(event.getUser().getId(), event.getGuild().getId());
-
-        int times = 0;
-        times = times + DatabaseHandler.getBannedTimes(event.getUser().getId());
-
-        QueryResult guilds = DatabaseHandler.getGuildByThreshold(times, event.getGuild().getId());
-        if(guilds == null)
-            return;
-        
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(event.getJDA().getSelfUser().getName());
-        eb.setThumbnail(theGuy.getAvatarUrl());
-        eb.setTitle(":radioactive:Blacklist:radioactive:");
-        eb.setDescription("The member " + theGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
-        for(ResultRow g : guilds){
-            Guild gg = event.getJDA().getGuildById(g.get("guild_id"));
-            if(gg.getMemberById(theGuy.getId()) == null)
-                continue;
-
-            TextChannel channel = gg.getTextChannelById(g.get("blacklist_channel"));
-
-            Button kick = Button.primary("kick-" + theGuy.getId(), "Kick");
-            Button ban = Button.primary("ban-" + theGuy.getId(), "Ban");
-            Button ignore = Button.primary("ignore-" + theGuy.getId(), "Ignore");
-
-            kick = kick.withStyle(ButtonStyle.PRIMARY);
-            ban = ban.withStyle(ButtonStyle.PRIMARY);
-            ignore = ignore.withStyle(ButtonStyle.SUCCESS);
-            channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
-        }
-        
-    }
-
-    @Override
-    public void onGuildUnban(GuildUnbanEvent event) {
-        User theGuy = event.getUser();
-        DatabaseHandler.deleteBlacklist(event.getGuild().getId(), theGuy.getId());
-    }
-
-    /**
-     * On update of a user's boost time (to make the bot praise the user)
-     */
-    public void onGuildMemberUpdateBoostTime(GuildMemberUpdateBoostTimeEvent event) {
-        MessageChannel channel = null;
-        AlertData boost = gs.getServer(event.getGuild().getId()).getAlert(AlertType.BOOST);
-        if(boost != null && boost.isValid()) {
-            String channel_id = boost.getChannelId();
-            channel = event.getGuild().getTextChannelById(channel_id);
-            String message = boost.getMessage().replace("#user", event.getEntity().getAsMention());
-            channel.sendMessage(message).queue();
-        }
-    }
-
-    @Override
-    public void onChannelDelete(ChannelDeleteEvent event){
-        String alertChannel = event.getGuild().getDefaultChannel().getId();
-        GuildData g = gs.getServer(event.getGuild().getId());
-        if(!event.getChannelType().isAudio()){
-            String channelID = event.getChannel().getId();
-            if (!g.deleteChannelData(channelID)) {
-                return;
-            }
-            String alertMessage = "";
-            String content = "";
-            HashMap<AlertKey, AlertData> alerts = g.getAlerts();
-            BlacklistData bld = g.getBlacklistData();
-            if (alerts != null) {
-                for (AlertData data : alerts.values()) {
-                    if (data.getChannelId() != null && data.getChannelId().equals(channelID)) {
-                        data.setAlertChannel(null);
-                        content += data.getType().getDescription() + ", ";
-                    }
-                }
-            }
-            if (bld != null) {
-                if (bld.getBlackChannelId() != null && bld.getBlackChannelId().equals(channelID)) {
-                    bld.setBlackChannelId(null);
-                    content += "Blacklist";
-                }
-            }
-            if (!content.equals("")) {
-                alertMessage = "These alerts need to be modified as the channel has been canceled:\n" + content;
-                event.getJDA().getTextChannelById(alertChannel).sendMessage(alertMessage).queue();
-            }
-        }
-    }
-
-
-    @Override
-    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
-        if (event.getComponentId().equals("rank-select")) {
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerBySummonerId(event.getValues().get(0));
-            event.deferReply().addEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build()).queue();
-        }
     }
 
 }
