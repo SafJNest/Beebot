@@ -79,7 +79,10 @@ public class App {
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
             settings = (JSONObject) settings.get("settings");
-            SQLSettings = (JSONObject) settings.get("MySQL");
+            SQLSettings = (JSONObject) settings.get("MariaDB");
+            if (App.isExtremeTesting()) {
+                SQLSettings = (JSONObject) settings.get("LocalHost");
+            }
             riotSettings = (JSONObject) settings.get("Riot");
         } catch (Exception e) {
             e.printStackTrace();
