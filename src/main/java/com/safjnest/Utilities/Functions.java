@@ -3,6 +3,7 @@ package com.safjnest.Utilities;
 import java.io.File;
 import java.util.HashMap;
 
+import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
@@ -350,6 +351,26 @@ public class Functions {
         for(Task task : command.getTasks()) {
             task.execute(command, event);
         }
+    }
+
+    public static void updateCommandStatitics(SlashCommandInteractionEvent event) {
+        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
+            return;
+        
+        String commandName = event.getName();
+        String args = event.getOptions().toString();
+        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
+    }
+
+    public static void updateCommandStatitics(CommandEvent event, Command command) {
+        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
+            return;
+        
+        String commandName = command.getName();
+        String args = event.getArgs();
+        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
     }
 
 

@@ -270,7 +270,7 @@ public class Bot extends ListenerAdapter {
         
         client = builder.build();
         
-        client.setListener(new CommandEventHandler(gs));
+        client.setListener(new CommandEventHandler());
 
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler());

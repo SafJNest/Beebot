@@ -67,12 +67,7 @@ public class EventHandler extends ListenerAdapter {
         String commandName = event.getName();
 
         Functions.handleCustomCommand(commandName, event);
-        
-        if(!Bot.getGuildSettings().getServer(event.getGuild().getId()).getCommandStatsRoom(event.getChannel().getIdLong()))
-            return;
-        commandName = event.getName() + "Slash";
-        String args = event.getOptions().toString();
-        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
+        Functions.updateCommandStatitics(event);
     }
 
     @Override
