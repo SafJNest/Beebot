@@ -82,7 +82,7 @@ public class Task {
                 pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack track) {
-                        pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                        pm.getGuildMusicManager(guild, self).getTrackScheduler().play(track, true);
                         guild.getAudioManager().openAudioConnection(voiceChannel);
                     }
 
