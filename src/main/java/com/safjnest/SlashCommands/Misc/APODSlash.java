@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,7 +52,7 @@ public class APODSlash extends SlashCommand {
             if(event.getOption("date") != null)
                 urlString += "&date=" + URLEncoder.encode(event.getOption("date").getAsString(), "UTF-8");
 
-            URL url = new URL(urlString);
+            URL url = Paths.get(urlString).toUri().toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
