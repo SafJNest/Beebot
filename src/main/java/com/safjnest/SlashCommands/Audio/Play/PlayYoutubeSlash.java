@@ -98,9 +98,9 @@ public class PlayYoutubeSlash extends SlashCommand {
                 if(force) {
                     int seconds = SafJNest.extractSeconds(args);
                     if(seconds != -1)
-                        pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track, seconds*1000);
+                        pm.getGuildMusicManager(guild, self).getTrackScheduler().play(track, seconds*1000, true);
                     else
-                        pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                        pm.getGuildMusicManager(guild, self).getTrackScheduler().play(track, true);
 
                     guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
@@ -129,7 +129,7 @@ public class PlayYoutubeSlash extends SlashCommand {
             else {
                 java.util.List<AudioTrack> tracks = playlist.getTracks();
                 for(AudioTrack track : tracks) {
-                    pm.getGuildMusicManager(guild, self).getTrackScheduler().queueNoPlay(track);
+                    pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
                 }
                 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());

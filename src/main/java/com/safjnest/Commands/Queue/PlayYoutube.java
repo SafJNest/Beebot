@@ -9,6 +9,7 @@ import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackData;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -61,6 +62,7 @@ public class PlayYoutube extends Command {
         private final Member author;
         private final String args;
         private final boolean youtubeSearch;
+        private final TrackScheduler ts;
         
         private ResultHandler(CommandEvent event, boolean youtubeSearch) {
             this.event = event;
@@ -69,23 +71,21 @@ public class PlayYoutube extends Command {
             this.author = event.getMember();
             this.args = event.getArgs();
             this.youtubeSearch = youtubeSearch;
+            this.ts = pm.getGuildMusicManager(guild, self).getTrackScheduler();
         }
         
         @Override
         public void trackLoaded(AudioTrack track) {
             track.setUserData(new TrackData(AudioType.AUDIO));
 
-            //TODO andrebbe fatta un po' un'analisi degli stakeholder
-            //int seconds = SafJNest.extractSeconds(args);
-            //if(seconds != -1)
-            //    track.setPosition(seconds*1000);
+            ts.queue(track);
 
-            pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
+            if(!ts.isIn())
+                ts.play(ts.getCurrentTrack());
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
             EmbedBuilder eb = new EmbedBuilder();
-
             eb.setTitle("Added to queue:");
             eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
             eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
@@ -100,7 +100,11 @@ public class PlayYoutube extends Command {
             if(youtubeSearch) {
                 AudioTrack track = playlist.getTracks().get(0);
                 track.setUserData(new TrackData(AudioType.AUDIO));
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().queue(track);
+
+                ts.queue(track);
+
+                if(!ts.isIn())
+                    ts.play(ts.nextTrack());
 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
@@ -117,8 +121,11 @@ public class PlayYoutube extends Command {
             else {
                 java.util.List<AudioTrack> tracks = playlist.getTracks();
                 for(AudioTrack track : tracks) {
-                    pm.getGuildMusicManager(guild, self).getTrackScheduler().queueNoPlay(track);
+                    ts.queue(track);
                 }
+
+                if(!ts.isIn())
+                    ts.play(ts.getCurrentTrack());
 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 

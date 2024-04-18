@@ -7,6 +7,7 @@ import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -68,6 +69,7 @@ public class PlayYoutubeForce extends Command {
         private final Member author;
         private final String args;
         private final boolean youtubeSearch;
+        private final TrackScheduler ts;
         
         private ResultHandler(CommandEvent event, boolean youtubeSearch) {
             this.event = event;
@@ -76,15 +78,16 @@ public class PlayYoutubeForce extends Command {
             this.author = event.getMember();
             this.args = event.getArgs();
             this.youtubeSearch = youtubeSearch;
+            this.ts = pm.getGuildMusicManager(guild, self).getTrackScheduler();
         }
         
         @Override
         public void trackLoaded(AudioTrack track) {
             int seconds = SafJNest.extractSeconds(args);
             if(seconds != -1)
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track, seconds*1000);
+                ts.play(track, seconds*1000, true);
             else
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                ts.play(track, true);
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
@@ -104,7 +107,7 @@ public class PlayYoutubeForce extends Command {
             if(youtubeSearch) {
                 AudioTrack track = playlist.getTracks().get(0);
                 
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                ts.play(track, true);
 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
@@ -122,10 +125,10 @@ public class PlayYoutubeForce extends Command {
                 java.util.List<AudioTrack> tracks = playlist.getTracks();
                 Collections.reverse(tracks);
                 for(AudioTrack track : tracks) {
-                    pm.getGuildMusicManager(guild, self).getTrackScheduler().addTrackToFront(track);
+                    ts.addTrackToFront(track);
                 }
 
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForceNext();
+                ts.play(ts.nextTrack(), true);
 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 

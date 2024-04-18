@@ -321,7 +321,7 @@ public class Functions {
         pm.loadItemOrdered(guild, theGuy, path, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getGuildMusicManager(guild, theGuy).getTrackScheduler().playForce(track);
+                pm.getGuildMusicManager(guild, theGuy).getTrackScheduler().play(track, true);
                 guild.getAudioManager().openAudioConnection(channelJoin);
             }
 

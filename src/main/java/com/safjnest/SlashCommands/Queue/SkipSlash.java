@@ -39,7 +39,7 @@ public class SkipSlash extends SlashCommand{
             return;
         }
 
-        ts.playForce(nextTrack);
+        ts.play(nextTrack, true);
 
         EmbedBuilder eb = new EmbedBuilder();
 
