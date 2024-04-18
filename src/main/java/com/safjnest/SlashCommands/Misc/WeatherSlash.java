@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.awt.Color;
 
@@ -46,7 +47,7 @@ public class WeatherSlash extends SlashCommand {
         
         JSONObject jsonResponse = null;
         try {
-            URL url = new URL("https://api.weatherapi.com/v1/current.json?key=" + weatherApiKey + "&q=" + URLEncoder.encode(locationString, "UTF-8"));
+            URL url = Paths.get("https://api.weatherapi.com/v1/current.json?key=" + weatherApiKey + "&q=" + URLEncoder.encode(locationString, "UTF-8")).toUri().toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 

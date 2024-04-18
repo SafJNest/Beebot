@@ -2,6 +2,7 @@ package com.safjnest.Utilities.LOL;
 
 import java.io.File;
 import java.io.FileReader;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
@@ -103,7 +104,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
      */
     private void loadRunes(){
         try {
-            URL url = new URL(runesURL);
+            URI uri = new URI(runesURL);
+            URL url = uri.toURL();
             String json = IOUtils.toString(url, Charset.forName("UTF-8"));
             JSONParser parser = new JSONParser();
             JSONArray file = (JSONArray) parser.parse(json);
