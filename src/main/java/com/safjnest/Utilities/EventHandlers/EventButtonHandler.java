@@ -201,7 +201,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if(event.getButton().getStyle() == ButtonStyle.DANGER)
                     break;
 
-                ts.playForcePrev();
+                ts.play(ts.prevTrack());
                 startIndex = ts.getIndex();
                 break;
             case "pause":
@@ -216,7 +216,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if(event.getButton().getStyle() == ButtonStyle.DANGER)
                     break;
 
-                ts.playForceNext();
+                    ts.play(ts.nextTrack());
                 startIndex = ts.getIndex();
                 break;
             case "nextpage":
@@ -843,7 +843,7 @@ public class EventButtonHandler extends ListenerAdapter {
         pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().playForce(track);
+                pm.getGuildMusicManager(guild, self).getTrackScheduler().play(track, true);
                 guild.getAudioManager().openAudioConnection(audioChannel);
 
                 String id = args.split("\\.")[0];

@@ -40,7 +40,7 @@ public class PreviousSlash extends SlashCommand{
             return;
         }
 
-        ts.playForce(prevTrack);
+        ts.play(prevTrack, true);
         
         EmbedBuilder eb = new EmbedBuilder();
 
