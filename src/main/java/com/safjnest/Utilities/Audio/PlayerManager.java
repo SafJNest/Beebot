@@ -2,6 +2,7 @@ package com.safjnest.Utilities.Audio;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -46,8 +47,8 @@ public class PlayerManager {
         return audioPlayerManager;
     }
 
-    public void loadItemOrdered(Guild guild, User bot, String trackURL, AudioLoadResultHandler resultHandler) {
+    public Future<Void> loadItemOrdered(Guild guild, User bot, String trackURL, AudioLoadResultHandler resultHandler) {
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild, bot);
-        audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, resultHandler);
+        return audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, resultHandler);
     }
 }

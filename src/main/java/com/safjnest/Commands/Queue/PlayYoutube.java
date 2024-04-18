@@ -79,9 +79,9 @@ public class PlayYoutube extends Command {
             track.setUserData(new TrackData(AudioType.AUDIO));
 
             ts.queue(track);
-
-            if(!ts.isIn())
+            if(!ts.isIn()) {
                 ts.play(ts.getCurrentTrack());
+            }
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
@@ -102,9 +102,10 @@ public class PlayYoutube extends Command {
                 track.setUserData(new TrackData(AudioType.AUDIO));
 
                 ts.queue(track);
-
-                if(!ts.isIn())
-                    ts.play(ts.nextTrack());
+                if(!ts.isIn()) {
+                    ts.play(ts.getCurrentTrack());
+                }
+    
 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
@@ -124,8 +125,10 @@ public class PlayYoutube extends Command {
                     ts.queue(track);
                 }
 
-                if(!ts.isIn())
+                if(!ts.isIn()) {
                     ts.play(ts.getCurrentTrack());
+                }
+    
 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
