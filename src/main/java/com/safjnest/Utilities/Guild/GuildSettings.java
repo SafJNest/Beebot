@@ -2,7 +2,6 @@ package com.safjnest.Utilities.Guild;
 
 import java.util.HashMap;
 
-import com.safjnest.App;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
@@ -21,19 +20,13 @@ public class GuildSettings {
      * <p>The key of the map is the guild's id.
      */
     public HashMap<String, GuildData> cache = new HashMap<>();
-    private final String PREFIX;
 
     /**
      * Default constructor
      * @param input
      */
-    public GuildSettings() {
-        this.PREFIX = Bot.getPrefix();
-    }
+    public GuildSettings() { }
     
-    public GuildSettings(String PREFIX) {
-        this.PREFIX = PREFIX;
-    }
 
     /**
      * This method checks if a guild is in the cache, otherwise will be called {@link GuildSettings#retrieveServer() retrievServer}
@@ -78,13 +71,10 @@ public class GuildSettings {
         }
 
         Long guildId = guildData.getAsLong("guild_id");
-        String PREFIX = guildData.get("prefix");
+        String prefix = guildData.get("prefix");
         boolean expEnabled = guildData.getAsBoolean("exp_enabled");
-        if (App.isExtremeTesting()) {
-            PREFIX = Bot.getPrefix();
-        }
         
-        GuildData guild = new GuildData(guildId, PREFIX, expEnabled);
+        GuildData guild = new GuildData(guildId, prefix, expEnabled);
         saveData(guild);
         return guild;
     }
@@ -115,10 +105,10 @@ public class GuildSettings {
     }
 
     public GuildData insertGuild(String guildId) {
-        DatabaseHandler.insertGuild(guildId, PREFIX);
+        DatabaseHandler.insertGuild(guildId, Bot.getPrefix());
         System.out.println("[ERROR] Missing guild in database => " + guildId);
 
-        GuildData guild = new GuildData(Long.parseLong(guildId), PREFIX, false);
+        GuildData guild = new GuildData(Long.parseLong(guildId), Bot.getPrefix(), false);
         saveData(guild);
         return guild;
     }
