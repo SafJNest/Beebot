@@ -38,7 +38,7 @@ public class Skip extends Command{
             return;
         }
 
-        ts.playForce(nextTrack);
+        ts.play(nextTrack, true);
 
         EmbedBuilder eb = new EmbedBuilder();
 

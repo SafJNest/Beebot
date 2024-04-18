@@ -20,9 +20,6 @@ import java.util.LinkedList;
  */
 public class TrackScheduler extends AudioEventAdapter {
 
-    /**
-     * The queue of the scheduler.
-     */
     private final LinkedList<AudioTrack> queue;
     
     /**
@@ -38,14 +35,8 @@ public class TrackScheduler extends AudioEventAdapter {
      */
     private final AudioPlayer player;
 
-    /**
-     * The index of the current track in the queue.
-     */
     private int currentTrackIndex;
 
-    /**
-     * If the queue is set to repeat.
-     */
     private boolean isRepeat;
 
     /**
@@ -53,119 +44,61 @@ public class TrackScheduler extends AudioEventAdapter {
      */
     private boolean isForced;
 
-    /**
-     * If the player has been stopped.
-     */
     private boolean isStopped;
 
-    /**
-     * If the queue is paused.
-     */
     private boolean isQueuePaused;
 
-    /**
-     * Creates a new TrackScheduler.
-     * 
-     * @param player The audio player.
-     */
+    private boolean isIn;
+
     public TrackScheduler(AudioPlayer player) {
         this.player = player;
         this.queue = new LinkedList<>();
-        
         this.currentTrackIndex = -1;
         this.unshuffledQueue = null;
-        
         this.isRepeat = false;
-        
         this.isForced = false;
-
         this.isStopped = false;
         this.isQueuePaused = false;
     }
 
-    /**
-     * Starts playing a track if there is no track playing.
-     * @param track
-     */
-    public void play(AudioTrack track) {
-        if(player.isPaused()) {
+    public void play(AudioTrack track, boolean forced) {
+        if(player.isPaused())
             player.setPaused(false);
-        }
         isStopped = false;
-        player.startTrack(track, true);
+
+        player.startTrack(track, !forced);
     }
 
-    /**
-     * Starts playing a track if there is no track playing.
-     * @param track
-     */
-    public void play(AudioTrack track, long position) {
-        if(player.isPaused()) {
+    public void play(AudioTrack track, long position, boolean forced) {
+        if(player.isPaused())
             player.setPaused(false);
-        }
+        isStopped = false;
+
         track.setPosition(position);
-        play(track);
+        player.startTrack(track, !forced);
     }
 
-    /**
-     * Starts playing a track even if there is a track playing.
-     * @param track
-     */
-    public void playForce(AudioTrack track, AudioType type) {
-        isForced = (type == AudioType.SOUND);
-        playForce(track);
-    }
-
-    /**
-     * Starts playing a track even if there is a track playing.
-     * @param track
-     */
-    public void playForce(AudioTrack track) {
-        if(player.isPaused()) {
+    public void play(AudioTrack track) {
+        if(player.isPaused())
             player.setPaused(false);
-        }
 
+        isStopped = false;
         player.startTrack(track, false);
     }
 
-
-
-
-    /**
-     * Starts playing a track even if there is a track playing.
-     * @param track
-     * @param position
-     */
-    public void playForce(AudioTrack track, long position) {
-        track.setPosition(position);
-        playForce(track);
+    public void playForce(AudioTrack track, AudioType type) {
+        isForced = (type == AudioType.SOUND);
+        play(track, true);
     }
 
-    /**
-     * Adds a track to the queue and starts playing it if there is no track playing.
-     * @param track
-     * @see #play(AudioTrack)
-     */
+
     public void queue(AudioTrack track) {
-        queue.offer(track);
         if (currentTrackIndex == -1) {
             currentTrackIndex = queue.size() - 1;
         }
-        play(getCurrentTrack());
-    }
-
-    /**
-     * Adds a track to the queue without playing it.
-     * @param track
-     */
-    public void queueNoPlay(AudioTrack track) {
         queue.offer(track);
     }
 
-    /**
-     * Adds a track to the front of the queue.
-     * @param track
-     */
     public void addTrackToFront(AudioTrack track) {
         if (currentTrackIndex < queue.size() - 1) {
             queue.add(currentTrackIndex + 1, track);
@@ -174,9 +107,6 @@ public class TrackScheduler extends AudioEventAdapter {
         }
     }
 
-    /**
-     * Gets the current track without removing it from the queue.
-     */
     public AudioTrack getCurrentTrack() {
         if (currentTrackIndex != -1 && currentTrackIndex < queue.size()) {
             return queue.get(currentTrackIndex).makeClone();
@@ -213,20 +143,6 @@ public class TrackScheduler extends AudioEventAdapter {
         }
 
         return getCurrentTrack();
-    }
-
-    /**
-     * Starts playing the next track even if there is a track playing.
-     */
-    public void playForceNext() {
-        playForce(nextTrack());
-    }
-
-    /**
-     * Starts playing the previous track even if there is a track playing.
-     */
-    public void playForcePrev() {
-        playForce(prevTrack());
     }
 
     public void clearQueue() {
@@ -267,18 +183,18 @@ public class TrackScheduler extends AudioEventAdapter {
         System.out.println(toString() + " [current: " + track.getInfo().title + "] [endReason: " + endReason + "]");
         if (endReason.mayStartNext) {
             if (isRepeat) {
-                playForce(track.makeClone());
+                play(track.makeClone(), true);
                 return;
             }
             else if (isForced) {
                 isForced = false;
                 if (currentTrackIndex != -1 && !isQueuePaused && !isStopped) {
-                    play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition());
+                    play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition(), false);
                 }
                 return;
             }
 
-            play(nextTrack());
+            play(nextTrack(), false);
         } 
 
         if(endReason == AudioTrackEndReason.CLEANUP) {
@@ -292,7 +208,7 @@ public class TrackScheduler extends AudioEventAdapter {
         if(endReason == AudioTrackEndReason.REPLACED) {
             if(isForced) {
                 if (currentTrackIndex != -1 && !isQueuePaused && !isStopped) {
-                    play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition());
+                    play(getCurrentTrack(), queue.get(currentTrackIndex).getPosition(), false);
                 }
             }
         }
@@ -410,6 +326,12 @@ public class TrackScheduler extends AudioEventAdapter {
         return unshuffledQueue != null;
     }
 
+    public boolean isIn() {
+        if(currentTrackIndex == -1) 
+            return false;
+        return true;
+    }
+
     public void pause(boolean pause) {
         TrackData data = player.getPlayingTrack().getUserData(TrackData.class);
         
@@ -427,7 +349,8 @@ public class TrackScheduler extends AudioEventAdapter {
 
     @Override
     public String toString() {
-        return "TrackScheduler [currentTrackIndex=" + currentTrackIndex + ", isRepeat=" + isRepeat + ", isForced=" + isForced + ", isStopped=" + isStopped + ", isQueuePaused=" + isQueuePaused + "]";
+        return "TrackScheduler [currentTrackIndex=" + currentTrackIndex + ", isRepeat=" + isRepeat + ", isForced=" + isForced + ", isStopped=" + isStopped + ", isQueuePaused=" + isQueuePaused +
+                ",\nqueue(" + queue.size() + ")=" + queue.toString() +"]";
     }
 
 }
