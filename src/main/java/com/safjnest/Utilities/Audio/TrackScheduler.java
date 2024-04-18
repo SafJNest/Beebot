@@ -48,7 +48,6 @@ public class TrackScheduler extends AudioEventAdapter {
 
     private boolean isQueuePaused;
 
-    private boolean isIn;
 
     public TrackScheduler(AudioPlayer player) {
         this.player = player;
@@ -65,7 +64,7 @@ public class TrackScheduler extends AudioEventAdapter {
         if(player.isPaused())
             player.setPaused(false);
         isStopped = false;
-
+ 
         player.startTrack(track, !forced);
     }
 
@@ -79,23 +78,14 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void play(AudioTrack track) {
-        if(player.isPaused())
-            player.setPaused(false);
-
-        isStopped = false;
-        player.startTrack(track, false);
+        play(track, false);
     }
 
-    public void playForce(AudioTrack track, AudioType type) {
-        isForced = (type == AudioType.SOUND);
-        play(track, true);
+    public void play(AudioTrack track, AudioType type) {
+        play(track, (type == AudioType.SOUND));
     }
-
 
     public void queue(AudioTrack track) {
-        if (currentTrackIndex == -1) {
-            currentTrackIndex = queue.size() - 1;
-        }
         queue.offer(track);
     }
 
@@ -108,6 +98,9 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public AudioTrack getCurrentTrack() {
+        if (currentTrackIndex == -1) {
+            currentTrackIndex = queue.size() - 1;
+        }
         if (currentTrackIndex != -1 && currentTrackIndex < queue.size()) {
             return queue.get(currentTrackIndex).makeClone();
         }
@@ -147,6 +140,8 @@ public class TrackScheduler extends AudioEventAdapter {
 
     public void clearQueue() {
         queue.clear();
+        unshuffledQueue = null;
+        player.stopTrack();
         currentTrackIndex = -1;
         isForced = false;
         isRepeat = false;

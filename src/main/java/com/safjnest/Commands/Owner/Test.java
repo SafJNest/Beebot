@@ -14,6 +14,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Guild.BlacklistData;
 import com.safjnest.Utilities.Guild.ChannelData;
 import com.safjnest.Utilities.Guild.GuildSettings;
@@ -284,6 +285,12 @@ public class Test extends Command{
                 }
             }
             e.reply("Done");
+                break;
+            case 20:
+                String status = PlayerManager.get().getGuildMusicManager(e.getGuild(), e.getSelfUser()).getTrackScheduler().toString();
+                System.out.println(status);
+                e.reply(status);
+                break;
             default:
                 e.reply("Command does not exist.");
             break;

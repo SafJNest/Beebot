@@ -201,7 +201,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if(event.getButton().getStyle() == ButtonStyle.DANGER)
                     break;
 
-                ts.play(ts.prevTrack());
+                ts.play(ts.prevTrack(), true);
                 startIndex = ts.getIndex();
                 break;
             case "pause":
@@ -216,7 +216,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if(event.getButton().getStyle() == ButtonStyle.DANGER)
                     break;
 
-                    ts.play(ts.nextTrack());
+                    ts.play(ts.nextTrack(), true);
                 startIndex = ts.getIndex();
                 break;
             case "nextpage":
