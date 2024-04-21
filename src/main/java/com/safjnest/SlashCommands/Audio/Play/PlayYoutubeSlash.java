@@ -4,8 +4,10 @@ import java.util.Arrays;
 
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.QueueHandler;
+import com.safjnest.Utilities.Audio.TrackData;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -83,6 +85,7 @@ public class PlayYoutubeSlash extends SlashCommand {
         
         @Override
         public void trackLoaded(AudioTrack track) {
+            track.setUserData(new TrackData(AudioType.AUDIO));
             ts.queue(track);
             if (ts.canPlay()) {
                 ts.moveCursor(ts.getQueue().size(), true);
@@ -98,6 +101,7 @@ public class PlayYoutubeSlash extends SlashCommand {
 
             if(youtubeSearch) {
                 AudioTrack track = playlist.getTracks().get(0);
+                track.setUserData(new TrackData(AudioType.AUDIO));
                 int seconds = SafJNest.extractSeconds(args);
                 if(seconds != -1)
                     track.setPosition(seconds * 1000);
@@ -120,6 +124,7 @@ public class PlayYoutubeSlash extends SlashCommand {
                 java.util.List<AudioTrack> tracks = playlist.getTracks();
                 if (force) {
                     for(AudioTrack track : tracks) {
+                        track.setUserData(new TrackData(AudioType.AUDIO));
                         ts.addTrackToFront(track);
                     }
                     ts.play(ts.moveCursor(1), true);
@@ -127,6 +132,7 @@ public class PlayYoutubeSlash extends SlashCommand {
                 }
                 else {
                     for(AudioTrack track : tracks) {
+                        track.setUserData(new TrackData(AudioType.AUDIO));
                         pm.getGuildMusicManager(guild).getTrackScheduler().queue(track);
                     }
                     
