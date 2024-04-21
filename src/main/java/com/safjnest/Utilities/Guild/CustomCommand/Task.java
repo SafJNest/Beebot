@@ -3,7 +3,6 @@ package com.safjnest.Utilities.Guild.CustomCommand;
 import java.io.File;
 import java.util.ArrayList;
 
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 
 import com.safjnest.Utilities.Audio.PlayerManager;
@@ -44,7 +43,6 @@ public class Task {
 
     public void execute(CustomCommand command, SlashCommandInteractionEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
         Member theGuy = event.getMember();
 
         AudioChannelUnion  voiceChannel = theGuy.getVoiceState().getChannel();
@@ -79,10 +77,10 @@ public class Task {
                 PlayerManager pm = PlayerManager.get();
                 String path = "rsc" + File.separator + "SoundBoard"+ File.separator + soundRow.get("id") + "." + soundRow.get("extension");
 
-                pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {
+                pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack track) {
-                        pm.getGuildMusicManager(guild, self).getTrackScheduler().play(track, true);
+                        pm.getGuildMusicManager(guild).getTrackScheduler().play(track, true);
                         guild.getAudioManager().openAudioConnection(voiceChannel);
                     }
 

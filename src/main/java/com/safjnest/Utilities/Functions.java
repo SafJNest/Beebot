@@ -302,10 +302,8 @@ public class Functions {
     }
 
     public static void handleBotLeave(Guild guild) {
-        User self = guild.getJDA().getSelfUser();
-        
         guild.getAudioManager().closeAudioConnection();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().clearQueue();
+        PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().clearQueue();
     }
 
 
@@ -318,10 +316,10 @@ public class Functions {
 
         String path = "rsc" + File.separator + "SoundBoard"+ File.separator + sound.get("id") + "." + sound.get("extension");
 
-        pm.loadItemOrdered(guild, theGuy, path, new AudioLoadResultHandler() {
+        pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getGuildMusicManager(guild, theGuy).getTrackScheduler().play(track, true);
+                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, true);
                 guild.getAudioManager().openAudioConnection(channelJoin);
             }
 

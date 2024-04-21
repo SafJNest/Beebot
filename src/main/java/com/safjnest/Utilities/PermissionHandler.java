@@ -247,4 +247,10 @@ public class PermissionHandler {
             return false;
         }
     }
+
+    public static String ellipsis(String text, int length){
+        if(text.length() > length)
+            return text.substring(0, length-3) + "...";
+        return text;
+    }
 }

@@ -3,7 +3,6 @@ package com.safjnest.Utilities.EventHandlers;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -11,8 +10,8 @@ import com.safjnest.Bot;
 import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
-import com.safjnest.Commands.Queue.Queue;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.safjnest.Utilities.Guild.Alert.RewardData;
 import com.safjnest.Utilities.LOL.RiotHandler;
@@ -149,10 +148,9 @@ public class EventButtonHandler extends ListenerAdapter {
         String args = event.getButton().getId().split("-")[1];
 
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
 
         PlayerManager pm = PlayerManager.get();
-        TrackScheduler ts = pm.getGuildMusicManager(guild, self).getTrackScheduler();
+        TrackScheduler ts = pm.getGuildMusicManager(guild).getTrackScheduler();
 
 
         int previousIndex = ts.getIndex() - 11;
@@ -198,10 +196,9 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 break;
             case "previous":
-                if(event.getButton().getStyle() == ButtonStyle.DANGER)
-                    break;
-
-                ts.play(ts.prevTrack(), true);
+                if(ts.moveCursor(ts.getQueue().size(), true) == null)
+                    ts.moveCursor(-1);
+                ts.play(ts.getcurrent(), true);
                 startIndex = ts.getIndex();
                 break;
             case "pause":
@@ -213,10 +210,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 ts.pause(false);
                 break;
             case "next":
-                if(event.getButton().getStyle() == ButtonStyle.DANGER)
-                    break;
-
-                    ts.play(ts.nextTrack(), true);
+                ts.play(ts.moveCursor(1), true);
                 startIndex = ts.getIndex();
                 break;
             case "nextpage":
@@ -249,8 +243,6 @@ public class EventButtonHandler extends ListenerAdapter {
             
                 break;
         }
-
-        LinkedList<AudioTrack> queue = ts.getQueue(); 
         
         if(ts.isRepeat()) {
             repeat = repeat.withStyle(ButtonStyle.DANGER);
@@ -259,16 +251,6 @@ public class EventButtonHandler extends ListenerAdapter {
         
         if(ts.isShuffled()) {
             shurima = shurima.withStyle(ButtonStyle.DANGER);
-        }
-
-        if(ts.getIndex() == 0) {
-            previous = previous.withStyle(ButtonStyle.DANGER);
-            previous = previous.asDisabled();
-        }
-
-        if(ts.getIndex() == ts.getQueue().size() - 1) {
-            next = next.withStyle(ButtonStyle.DANGER);
-            next = next.asDisabled();
         }
 
         if(!ts.isPaused()) {
@@ -317,7 +299,7 @@ public class EventButtonHandler extends ListenerAdapter {
         ));
 
         event.getMessage()
-                .editMessageEmbeds(Queue.getEmbed(event.getJDA(), guild, queue, startIndex).build())
+                .editMessageEmbeds(QueueHandler.getEmbed(guild, startIndex).build())
                 .setComponents(rows)
                 .queue();
     }
@@ -833,17 +815,16 @@ public class EventButtonHandler extends ListenerAdapter {
 
     private void soundboardEvent(ButtonInteractionEvent event){
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
         TextChannel textChannel = event.getChannel().asTextChannel();
         AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
         String path = "rsc" + File.separator + "SoundBoard"+ File.separator + args;
 
         PlayerManager pm = PlayerManager.get();
-        pm.loadItemOrdered(guild, self, path, new AudioLoadResultHandler() {
+        pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getGuildMusicManager(guild, self).getTrackScheduler().play(track, true);
+                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, true);
                 guild.getAudioManager().openAudioConnection(audioChannel);
 
                 String id = args.split("\\.")[0];

@@ -287,7 +287,7 @@ public class Test extends Command{
             e.reply("Done");
                 break;
             case 20:
-                String status = PlayerManager.get().getGuildMusicManager(e.getGuild(), e.getSelfUser()).getTrackScheduler().toString();
+                String status = PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().toString();
                 System.out.println(status);
                 e.reply(status);
                 break;

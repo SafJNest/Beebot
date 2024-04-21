@@ -4,9 +4,10 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
 
 
 public class PauseSlash extends SlashCommand {
@@ -23,9 +24,9 @@ public class PauseSlash extends SlashCommand {
     @Override
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().pause(true);
+        PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().pause(true);
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
 
-        event.deferReply(false).addContent("Playing paused").queue();
+        event.getChannel().sendMessageEmbeds(QueueHandler.getEmbed(guild, ts.getIndex()).build()).addComponents(QueueHandler.getQueueButtons(guild)).queue();
     }
 }

@@ -13,7 +13,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
 
 
 public class SkipSlash extends SlashCommand{
@@ -30,9 +29,8 @@ public class SkipSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
-        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
-        AudioTrack nextTrack = ts.nextTrack();
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
+        AudioTrack nextTrack = ts.moveCursor(1);
         
         if(nextTrack == null) {
             event.deferReply(false).addContent("This is the end of the queue").queue();

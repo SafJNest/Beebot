@@ -8,6 +8,7 @@ import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackData;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -18,7 +19,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 
 public class PlayYoutube extends Command {
@@ -37,7 +37,6 @@ public class PlayYoutube extends Command {
 	protected void execute(CommandEvent event) {
         String query = event.getArgs();
         Guild guild = event.getGuild();
-        User self = event.getSelfUser();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
@@ -52,13 +51,12 @@ public class PlayYoutube extends Command {
         }
         
         pm = PlayerManager.get();
-        pm.loadItemOrdered(guild, self, query, new ResultHandler(event, false));
+        pm.loadItemOrdered(guild, query, new ResultHandler(event, false));
     }
 
     private class ResultHandler implements AudioLoadResultHandler {
         private final CommandEvent event;
         private final Guild guild;
-        private final User self;
         private final Member author;
         private final String args;
         private final boolean youtubeSearch;
@@ -67,11 +65,10 @@ public class PlayYoutube extends Command {
         private ResultHandler(CommandEvent event, boolean youtubeSearch) {
             this.event = event;
             this.guild = event.getGuild();
-            this.self = event.getSelfUser();
             this.author = event.getMember();
             this.args = event.getArgs();
             this.youtubeSearch = youtubeSearch;
-            this.ts = pm.getGuildMusicManager(guild, self).getTrackScheduler();
+            this.ts = pm.getGuildMusicManager(guild).getTrackScheduler();
         }
         
         @Override
@@ -79,20 +76,14 @@ public class PlayYoutube extends Command {
             track.setUserData(new TrackData(AudioType.AUDIO));
 
             ts.queue(track);
-            if(!ts.isIn()) {
-                ts.play(ts.getCurrentTrack());
+            if (ts.canPlay()) {
+                ts.moveCursor(ts.getQueue().size(), true);
+                ts.play();
             }
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setTitle("Added to queue:");
-            eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-            eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-            eb.setColor(Color.decode(Bot.getColor()));
-            eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
-
-            event.reply(eb.build());
+            QueueHandler.sendQueueEmbed(guild, event.getChannel());
         }
 
         @Override
@@ -102,34 +93,27 @@ public class PlayYoutube extends Command {
                 track.setUserData(new TrackData(AudioType.AUDIO));
 
                 ts.queue(track);
-                if(!ts.isIn()) {
-                    ts.play(ts.getCurrentTrack());
+                if (ts.canPlay()) {
+                    ts.moveCursor(ts.getQueue().size(), true);
+                    ts.play();
                 }
-    
 
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
-                EmbedBuilder eb = new EmbedBuilder();
-
-                eb.setTitle("Added to queue:");
-                eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-                eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-                eb.setColor(Color.decode(Bot.getColor()));
-                eb.setFooter("Queued by " + event.getAuthor().getEffectiveName(), event.getAuthor().getAvatarUrl());
-
-                event.reply(eb.build());
+                QueueHandler.sendQueueEmbed(guild, event.getChannel());
             }
             else {
                 java.util.List<AudioTrack> tracks = playlist.getTracks();
                 for(AudioTrack track : tracks) {
+                    track.setUserData(new TrackData(AudioType.AUDIO));
                     ts.queue(track);
                 }
 
-                if(!ts.isIn()) {
-                    ts.play(ts.getCurrentTrack());
+                if (ts.canPlay()) {
+                    ts.moveCursor(ts.getQueue().size(), true);
+                    ts.play();
                 }
     
-
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
                 EmbedBuilder eb = new EmbedBuilder();
@@ -147,7 +131,7 @@ public class PlayYoutube extends Command {
         @Override
         public void noMatches() {
             if(!youtubeSearch) {
-                pm.loadItemOrdered(guild, self, "ytsearch:" + args, new ResultHandler(event, true));
+                pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(event, true));
                 return;
             }
             event.reply("No matches");

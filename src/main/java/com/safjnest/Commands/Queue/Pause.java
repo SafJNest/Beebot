@@ -4,9 +4,10 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -28,9 +29,10 @@ public class Pause extends Command {
     @Override
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().pause(true);
+        
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
+        ts.getPlayer().setPaused(true);
 
-        event.reply("Playing paused");
+        QueueHandler.sendQueueEmbed(guild, event.getChannel());
     }
 }
