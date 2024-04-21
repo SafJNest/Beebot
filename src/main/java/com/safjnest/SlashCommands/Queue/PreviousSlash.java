@@ -1,20 +1,13 @@
 package com.safjnest.SlashCommands.Queue;
 
-import java.awt.Color;
-
-
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
 
 
 public class PreviousSlash extends SlashCommand{
@@ -31,10 +24,12 @@ public class PreviousSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getJDA().getSelfUser();
-        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
-        AudioTrack prevTrack = ts.prevTrack();
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         
+        if(ts.moveCursor(ts.getQueue().size(), true) == null)
+            ts.moveCursor(-1);
+        
+        AudioTrack prevTrack = ts.getcurrent();
         if(prevTrack == null) {
             event.deferReply(false).addContent("This is the beginning of the queue").queue();
             return;
@@ -42,17 +37,6 @@ public class PreviousSlash extends SlashCommand{
 
         ts.play(prevTrack, true);
         
-        EmbedBuilder eb = new EmbedBuilder();
-
-        eb.setTitle("Previous Song:");
-        eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
-
-        eb.addField("Lenght", SafJNest.getFormattedDuration(ts.getPlayer().getPlayingTrack().getInfo().length) , true);
-        eb.setFooter("Requested by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
-
-        event.deferReply(false).addEmbeds(eb.build()).queue();
+        event.getChannel().sendMessageEmbeds(QueueHandler.getEmbed(guild, ts.getIndex()).build()).addComponents(QueueHandler.getQueueButtons(guild)).queue();
     }
 }

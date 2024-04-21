@@ -25,4 +25,5 @@
  - [ ] radio o qualche tipo di autoplay [bot 24/7?]
  - [ ] cambiare il layout dell'embed della coda
  - [ ] play file
+ - [ ] when do you want to play this (check euphony)
  

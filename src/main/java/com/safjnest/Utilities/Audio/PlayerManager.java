@@ -10,7 +10,6 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
 
 /**
  * I really would to know what this class does but i think quantum mechanics its
@@ -35,8 +34,8 @@ public class PlayerManager {
         return INSTANCE == null ? (INSTANCE = new PlayerManager()) : INSTANCE;
     }
 
-    public GuildMusicManager getGuildMusicManager(Guild guild, User bot) {
-        return guildMusicManagers.computeIfAbsent(guild.getId()+bot.getId(), (identifier) -> {
+    public GuildMusicManager getGuildMusicManager(Guild guild) {
+        return guildMusicManagers.computeIfAbsent(guild.getId(), (identifier) -> {
             GuildMusicManager musicManager = new GuildMusicManager(audioPlayerManager);
             guild.getAudioManager().setSendingHandler(musicManager.getAudioForwarder());
             return musicManager;
@@ -47,8 +46,8 @@ public class PlayerManager {
         return audioPlayerManager;
     }
 
-    public Future<Void> loadItemOrdered(Guild guild, User bot, String trackURL, AudioLoadResultHandler resultHandler) {
-        GuildMusicManager guildMusicManager = getGuildMusicManager(guild, bot);
+    public Future<Void> loadItemOrdered(Guild guild, String trackURL, AudioLoadResultHandler resultHandler) {
+        GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
         return audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, resultHandler);
     }
 }

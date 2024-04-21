@@ -1,19 +1,13 @@
 package com.safjnest.Commands.Queue;
 
-import java.awt.Color;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
 
 public class Skip extends Command{
     
@@ -29,9 +23,8 @@ public class Skip extends Command{
     @Override
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getSelfUser();
-        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler();
-        AudioTrack nextTrack = ts.nextTrack();
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
+        AudioTrack nextTrack = ts.moveCursor(1);
         
         if(nextTrack == null) {
             event.reply("This is the end of the queue");
@@ -40,17 +33,6 @@ public class Skip extends Command{
 
         ts.play(nextTrack, true);
 
-        EmbedBuilder eb = new EmbedBuilder();
-
-        eb.setTitle("Skipped Song:");
-        eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
-
-        eb.addField("Lenght", SafJNest.getFormattedDuration(ts.getPlayer().getPlayingTrack().getInfo().length) , true);
-        eb.setFooter("Requested by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
-
-        event.reply(eb.build());
+        QueueHandler.sendQueueEmbed(guild, event.getChannel());
     }
 }

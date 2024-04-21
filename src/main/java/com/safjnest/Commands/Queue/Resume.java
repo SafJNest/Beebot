@@ -1,12 +1,14 @@
 package com.safjnest.Commands.Queue;
 
+
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.User;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -28,9 +30,10 @@ public class Resume extends Command {
     @Override
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
-        User self = event.getSelfUser();
-        PlayerManager.get().getGuildMusicManager(guild, self).getTrackScheduler().pause(false);
 
-        event.reply("Playing resumed");
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
+        ts.getPlayer().setPaused(false);
+
+        QueueHandler.sendQueueEmbed(guild, event.getChannel());
     }
 }

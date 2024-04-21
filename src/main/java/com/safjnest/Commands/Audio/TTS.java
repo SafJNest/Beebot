@@ -23,7 +23,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -79,7 +78,6 @@ public class TTS extends Command{
         String speech = event.getArgs();
 
         Guild guild = event.getGuild();
-        User self = event.getSelfUser();
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
 
@@ -152,13 +150,12 @@ public class TTS extends Command{
         
         String ttsFileName = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
 
-        pm.loadItemOrdered(guild, self, ttsFileName, new ResultHandler(event, voice, defaultVoice, language));
+        pm.loadItemOrdered(guild, ttsFileName, new ResultHandler(event, voice, defaultVoice, language));
     }
 
     private class ResultHandler implements AudioLoadResultHandler {
         private final CommandEvent event;
         private final Guild guild;
-        private final User self;
         private final Member author;
         private final String voice;
         private final String defaultVoice;
@@ -167,7 +164,6 @@ public class TTS extends Command{
         private ResultHandler(CommandEvent event, String voice, String defaultVoice, String language) {
             this.event = event;
             this.guild = event.getGuild();
-            this.self = event.getSelfUser();
             this.author = event.getMember();
             this.voice = voice;
             this.defaultVoice = defaultVoice;
@@ -176,7 +172,7 @@ public class TTS extends Command{
         
         @Override
         public void trackLoaded(AudioTrack track) {
-            pm.getGuildMusicManager(guild, self).getTrackScheduler().play(track, true);
+            pm.getGuildMusicManager(guild).getTrackScheduler().play(track, true);
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 

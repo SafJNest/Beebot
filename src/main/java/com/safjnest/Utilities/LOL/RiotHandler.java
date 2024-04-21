@@ -341,7 +341,30 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         return em != null ? emoji.get(name.toLowerCase()).toString() : String.valueOf(name);
     }
 
+    public static String getFormattedEmoji(String name){
+        if(name.equals("0") || name.equals("a0") || name.equals("2202_")) {
+            return ":black_large_square:";
+        }
+
+        if(name.equals("2201_")) {
+            name = "4_";
+        }
+        name = transposeChampionNameForDataDragon(name);
+        CustomEmoji em = emoji.get(name.toLowerCase());     
+        return em != null ? emoji.get(name.toLowerCase()).toString() : String.valueOf(name);
+    }
+
     public static RichCustomEmoji getRichEmoji(JDA jda, String name){
+        if(name.equals("2201_")) {
+            name = "4_";
+        }
+
+        name = transposeChampionNameForDataDragon(name);
+        return emoji.get(name.toLowerCase()).getObject();
+       
+    }
+
+    public static RichCustomEmoji getRichEmoji(String name){
         if(name.equals("2201_")) {
             name = "4_";
         }

@@ -185,7 +185,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 }
             break;
             case "jumpto":
-                List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild(), e.getJDA().getSelfUser()).getTrackScheduler().getQueue();
+                List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue();
                 if (e.getFocusedOption().getValue().equals("")) {
                     //Collections.shuffle(queue);
                     for (int i = 0; i < queue.size() && i < 10; i++)
