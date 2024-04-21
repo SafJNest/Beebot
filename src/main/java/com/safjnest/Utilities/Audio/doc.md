@@ -15,15 +15,15 @@
  - [ ] Il bot smette di playare e non si sbugga
 
 ## Features
- - [ ] mandare embed per i comandi inerenti alla coda
- - [ ] on track end riaggiornare l'embed (salvare id messaggio in trackscheduler? array o solo ultimo)
+ - [x] mandare embed per i comandi inerenti alla coda
+ - [x] on track end riaggiornare l'embed (salvare id messaggio in trackscheduler? array o solo ultimo)
  - [ ] seek bar?
  - [ ] search function
  - [ ] bot playlists
  - [ ] some spotify interaction
  - [ ] Webpwujngbwibig si
  - [ ] radio o qualche tipo di autoplay [bot 24/7?]
- - [ ] cambiare il layout dell'embed della coda
+ - [x] cambiare il layout dell'embed della coda
  - [ ] play file
  - [ ] when do you want to play this (check euphony)
  
