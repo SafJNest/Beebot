@@ -253,18 +253,14 @@ public class TrackScheduler extends AudioEventAdapter {
      */
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-
         // FINISHED: A track finished or died by an exception (mayStartNext = true).
         // LOAD_FAILED: Loading of a track failed (mayStartNext = true).
         if (endReason.mayStartNext) {
             int toMove = isRepeat ? 0 : 1;
             long offset = 0;
             if (isForced && !isRepeat && !isQueuePaused) {
-                AudioTrack defaultTrack = queue.get(currentTrackIndex);
-                offset = defaultTrack.getPosition();
-                defaultTrack.setPosition(0);
-                queue.set(currentTrackIndex, defaultTrack);
                 toMove = 0;
+                offset = getcurrent() != null ? getcurrent().getPosition() : 0;
             }
             
             isForced = false;
@@ -291,6 +287,11 @@ public class TrackScheduler extends AudioEventAdapter {
         // CLEANUP: Player hasn't been queried for a while, if you want you can put a clone of this back to your queue
         if(endReason == AudioTrackEndReason.CLEANUP) {
             System.out.println("The time of thread has come to an end.");
+        }
+
+        if (track.getUserData(TrackData.class).isQueueable()) {
+            track.setPosition(0);
+            queue.set(currentTrackIndex, track);
         }
     }
 
