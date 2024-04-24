@@ -4,6 +4,8 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
+import com.safjnest.Utilities.Audio.TrackScheduler;
 
 import net.dv8tion.jda.api.entities.Guild;
 
@@ -22,8 +24,10 @@ public class ResumeSlash extends SlashCommand {
     @Override
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
-        PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().pause(false);
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
+        
+        ts.pause(false);
 
-        event.deferReply(false).addContent("Playing resumed").queue();
+        QueueHandler.sendQueueEmbed(event);
     }
 }

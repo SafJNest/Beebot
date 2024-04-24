@@ -6,8 +6,8 @@
 /*     */ import java.io.InputStream;
 /*     */ import java.io.OutputStreamWriter;
 /*     */ import java.net.HttpURLConnection;
+/*     */ import java.net.URI;
 /*     */ import java.net.URL;
-import java.nio.file.Paths;
 /*     */ import java.util.ArrayList;
 
 import org.voicerss.tts.Speech.SpeechDataEvent;
@@ -95,7 +95,7 @@ public <T> T speech(VoiceParameters params) throws Exception {
 /*  87 */     validate(params);
 /*     */     
 /*  89 */     
-              URL url = Paths.get(String.valueOf(this._ssl.booleanValue() ? "https" : "http") + "://api.voicerss.org/").toUri().toURL();
+              URL url = new URI(String.valueOf(this._ssl.booleanValue() ? "https" : "http") + "://api.voicerss.org/").toURL();
 /*  90 */     HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 /*  91 */     conn.setRequestMethod("POST");
 /*  92 */     conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");

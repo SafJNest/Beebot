@@ -84,7 +84,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
 
     public boolean canPlay() {
-        return !isQueuePaused && currentTrackIndex == -1;
+        return (currentTrackIndex == -1) || !isQueuePaused;
     }
 
     public void play(AudioTrack track, boolean forced) {
@@ -92,6 +92,7 @@ public class TrackScheduler extends AudioEventAdapter {
             player.setPaused(false);
  
         player.startTrack(track, !forced);
+        
     }
 
     public void play(AudioTrack track, long position, boolean forced) {
@@ -111,7 +112,7 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void play(AudioTrack track, AudioType type) {
-        isForced = type == AudioType.SOUND;
+        isForced = (type == AudioType.SOUND);
         play(track, isForced);
     }
 
@@ -186,6 +187,12 @@ public class TrackScheduler extends AudioEventAdapter {
     public AudioTrack getcurrent() {
         fixIndex();
         return queue.get(currentTrackIndex).makeClone();
+    }
+
+    public AudioTrack getPrev() {
+        if(moveCursor(getQueue().size(), true) == null)
+            moveCursor(-1);
+        return getcurrent();
     }
 
     public boolean checkIndex(int index) {
@@ -289,10 +296,10 @@ public class TrackScheduler extends AudioEventAdapter {
             System.out.println("The time of thread has come to an end.");
         }
 
-        if (track.getUserData(TrackData.class).isQueueable()) {
+        /*if (track.getUserData(TrackData.class).isQueueable()) {
             track.setPosition(0);
             queue.set(currentTrackIndex, track);
-        }
+        } non capisco cosa ci facesse questa cosa qui*/ 
     }
 
     @Override

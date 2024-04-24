@@ -3,6 +3,7 @@ package com.safjnest.Commands.Queue;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackScheduler;
@@ -29,7 +30,7 @@ public class JumpTo extends Command {
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
 
-        if (event.getArgs().isEmpty()) {
+        if (event.getArgs().isEmpty() || !SafJNest.intIsParsable(event.getArgs())) {
             event.reply("Please provide a valid number");
             return;
         }
@@ -41,13 +42,15 @@ public class JumpTo extends Command {
             return;
         }
         else if (position < 0) {
-            event.reply("Please provide a valid number");
+            event.reply("Please provide a positive number");
             return;
         }
+
         position--;
+
         ts.getPlayer().stopTrack();
         ts.play(ts.moveCursor(position - ts.getIndex()));
         
-        QueueHandler.sendQueueEmbed(guild, event.getChannel());
+        QueueHandler.sendQueueEmbed(event);
     }
 }

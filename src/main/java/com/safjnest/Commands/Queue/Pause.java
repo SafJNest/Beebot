@@ -33,6 +33,6 @@ public class Pause extends Command {
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         ts.getPlayer().setPaused(true);
 
-        QueueHandler.sendQueueEmbed(guild, event.getChannel());
+        QueueHandler.sendQueueEmbed(event);
     }
 }

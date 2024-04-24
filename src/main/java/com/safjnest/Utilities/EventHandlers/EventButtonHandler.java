@@ -299,7 +299,7 @@ public class EventButtonHandler extends ListenerAdapter {
         ));
 
         event.getMessage()
-                .editMessageEmbeds(QueueHandler.getEmbed(guild, startIndex).build())
+                .editMessageEmbeds(QueueHandler.getQueueEmbed(guild, startIndex).build())
                 .setComponents(rows)
                 .queue();
     }

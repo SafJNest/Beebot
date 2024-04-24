@@ -1,17 +1,11 @@
 package com.safjnest.SlashCommands.Queue;
-
-import java.awt.Color;
-
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 
 
@@ -33,23 +27,14 @@ public class SkipSlash extends SlashCommand{
         AudioTrack nextTrack = ts.moveCursor(1);
         
         if(nextTrack == null) {
-            event.deferReply(false).addContent("This is the end of the queue").queue();
+            event.deferReply(true).addContent("This is the end of the queue").queue();
             return;
         }
 
         ts.play(nextTrack, true);
 
-        EmbedBuilder eb = new EmbedBuilder();
+        event.deferReply().addEmbeds(QueueHandler.getSkipEmbed(event)).queue();
 
-        eb.setTitle("Skipped Song:");
-        eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
-
-        eb.addField("Lenght", SafJNest.getFormattedDuration(ts.getPlayer().getPlayingTrack().getInfo().length) , true);
-        eb.setFooter("Requested by " + event.getMember().getEffectiveName(), event.getMember().getAvatarUrl());
-
-        event.deferReply(false).addEmbeds(eb.build()).queue();
+        QueueHandler.sendQueueEmbed(event, true);
     }
 }

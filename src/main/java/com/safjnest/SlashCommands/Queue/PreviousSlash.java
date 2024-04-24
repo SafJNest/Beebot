@@ -9,7 +9,6 @@ import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Guild;
 
-
 public class PreviousSlash extends SlashCommand{
     
     public PreviousSlash() {
@@ -25,18 +24,16 @@ public class PreviousSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
-        
-        if(ts.moveCursor(ts.getQueue().size(), true) == null)
-            ts.moveCursor(-1);
-        
-        AudioTrack prevTrack = ts.getcurrent();
+    
+        AudioTrack prevTrack = ts.getPrev();
+
         if(prevTrack == null) {
-            event.deferReply(false).addContent("This is the beginning of the queue").queue();
+            event.deferReply(true).addContent("This is the beginning of the queue").queue();
             return;
         }
 
         ts.play(prevTrack, true);
         
-        event.getChannel().sendMessageEmbeds(QueueHandler.getEmbed(guild, ts.getIndex()).build()).addComponents(QueueHandler.getQueueButtons(guild)).queue();
+        QueueHandler.sendQueueEmbed(event);
     }
 }
