@@ -475,7 +475,7 @@ public class GuildData {
         MemberData ud = null;
         ResultRow result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
         if (result.emptyValues()) { return null; }
-        System.out.println("[CACHE] Retriving UserData from database => " + ID + " | " + userId);
+        System.out.println("[CACHE] Retriving MemberData from database => " + ID + " | " + userId);
         ud = new MemberData(
             result.getAsInt("id"),
             userId,
@@ -500,7 +500,7 @@ public class GuildData {
         ud = retriveUserData(userId);
         if (ud == null) {
             ud = new MemberData(userId, this);
-            System.out.println("[CACHE] Caching local UserData => " + ID + " | " + userId);
+            System.out.println("[CACHE] Caching local MemberData => " + ID + " | " + userId);
         }
         this.users.put(userId, ud);
         return ud;

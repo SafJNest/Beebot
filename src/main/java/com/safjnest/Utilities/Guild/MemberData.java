@@ -21,7 +21,7 @@ public class MemberData {
         this.level = level;
         this.messages = messages;
         this.updateTime = updateTime;
-        this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime);
+        this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
         this.guildData = guildData;
     }
 
@@ -32,7 +32,7 @@ public class MemberData {
         this.level = 1;
         this.messages = 0;
         this.updateTime = 60;
-        this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime);
+        this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
         this.guildData = guildData;
     }
 
