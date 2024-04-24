@@ -34,6 +34,6 @@ public class PreviousSlash extends SlashCommand{
 
         ts.play(prevTrack, true);
         
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event, false);
     }
 }

@@ -52,9 +52,9 @@ public class ResultHandler implements AudioLoadResultHandler {
     }
 
 
-    private void sendQueueEmbed() {
-        if(commandEvent != null) QueueHandler.sendQueueEmbed(commandEvent);
-        else if(slashCommandEvent != null) QueueHandler.sendQueueEmbed(slashCommandEvent, true);
+    private void sendEmbed() {
+        if(commandEvent != null) QueueHandler.sendEmbed(commandEvent, EmbedType.PLAYER);
+        else if(slashCommandEvent != null) QueueHandler.sendEmbed(slashCommandEvent, EmbedType.PLAYER, true);
     }
 
     private void reply(String message) {
@@ -131,7 +131,7 @@ public class ResultHandler implements AudioLoadResultHandler {
 
         guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
-        sendQueueEmbed();
+        sendEmbed();
     }
 
     @Override
@@ -151,7 +151,7 @@ public class ResultHandler implements AudioLoadResultHandler {
         }
         guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
-        sendQueueEmbed();
+        sendEmbed();
     }
 
     @Override

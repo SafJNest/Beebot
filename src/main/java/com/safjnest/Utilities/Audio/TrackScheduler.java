@@ -224,9 +224,18 @@ public class TrackScheduler extends AudioEventAdapter {
         lastMessageSent = message;
     }
 
+    public QueueMessage getMessage() {
+        return lastMessageSent;
+    }
+
     public void deleteMessage() {
         if (lastMessageSent != null)
             lastMessageSent.delete();
+    }
+
+
+    public boolean isQueueable(AudioTrack track) {
+        return track.getUserData(TrackData.class) != null && track.getUserData(TrackData.class).isQueueable();
     }
 
 
@@ -276,7 +285,8 @@ public class TrackScheduler extends AudioEventAdapter {
             if (toPlay != null) 
                 play(toPlay, offset, false);
 
-            lastMessageSent.update();
+            if (isQueueable(track)) 
+                lastMessageSent.update();
         } 
 
         // STOPPED: The player was stopped.
@@ -286,7 +296,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
         // REPLACED: Another track started playing while this had not finished
         if(endReason == AudioTrackEndReason.REPLACED) {
-            if(isForced && track.getUserData(TrackData.class).isQueueable()) {
+            if(isForced && isQueueable(track)) {
                 queue.set(currentTrackIndex, track);
             }
         }
@@ -299,7 +309,7 @@ public class TrackScheduler extends AudioEventAdapter {
         /*if (track.getUserData(TrackData.class).isQueueable()) {
             track.setPosition(0);
             queue.set(currentTrackIndex, track);
-        } non capisco cosa ci facesse questa cosa qui*/ 
+        */
     }
 
     @Override
@@ -322,4 +332,15 @@ public class TrackScheduler extends AudioEventAdapter {
         return "TrackScheduler [currentTrackIndex=" + currentTrackIndex + ", isRepeat=" + isRepeat + ", isForced=" 
             + isForced + ", isQueuePaused=" + isQueuePaused + ",\nqueue(" + queue.size() + ")=" + queue.toString() +"]";
     }
+
+
+	public void movePosition(int seconds) {
+		movePosition((long) (seconds * 1000));
+	}
+
+    public void movePosition(long milliseconds) {
+        if (player.getPlayingTrack() != null) {
+            player.getPlayingTrack().setPosition(player.getPlayingTrack().getPosition() + milliseconds);
+        }
+	}
 }

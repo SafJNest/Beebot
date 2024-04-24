@@ -34,6 +34,6 @@ public class Resume extends Command {
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         ts.getPlayer().setPaused(false);
 
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event);
     }
 }

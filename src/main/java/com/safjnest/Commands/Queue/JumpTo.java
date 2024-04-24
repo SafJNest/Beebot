@@ -51,6 +51,6 @@ public class JumpTo extends Command {
         ts.getPlayer().stopTrack();
         ts.play(ts.moveCursor(position - ts.getIndex()));
         
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event);
     }
 }

@@ -7,7 +7,9 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
+import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.TrackData;
 import com.safjnest.Utilities.Guild.BlacklistData;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.MemberData;
@@ -303,7 +305,9 @@ public class Functions {
 
     public static void handleBotLeave(Guild guild) {
         guild.getAudioManager().closeAudioConnection();
+        
         PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().clearQueue();
+        PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().deleteMessage();
     }
 
 
@@ -319,6 +323,7 @@ public class Functions {
         pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
+                track.setUserData(new TrackData(AudioType.SOUND));
                 pm.getGuildMusicManager(guild).getTrackScheduler().play(track, true);
                 guild.getAudioManager().openAudioConnection(channelJoin);
             }

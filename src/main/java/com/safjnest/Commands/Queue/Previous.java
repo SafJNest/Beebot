@@ -35,6 +35,6 @@ public class Previous extends Command{
 
         ts.play(prevTrack, true);
         
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event);
     }
 }

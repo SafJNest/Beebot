@@ -9,7 +9,6 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -24,6 +23,8 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
+import com.safjnest.Utilities.SafJNest;
+
 public class QueueHandler {
     private static String formatTrack(int index, AudioTrack track) {
         //"**[" + (index + 1) + "]** " + "`-`"  + track.getInfo().title + " - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
@@ -33,6 +34,8 @@ public class QueueHandler {
     public static EmbedBuilder getQueueEmbed(Guild guild) {
         return getQueueEmbed(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex());
     }
+
+
 
     public static EmbedBuilder getQueueEmbed(Guild guild, int startIndex) {
         EmbedBuilder eb = new EmbedBuilder();
@@ -45,8 +48,9 @@ public class QueueHandler {
 
         int index = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex();
 
+        if(index != -1) playingNow = queue.get(index);
+
         if(index != -1 && index == startIndex) {
-            playingNow = queue.get(index);
             startIndex = index + 1;
         }
         
@@ -67,9 +71,42 @@ public class QueueHandler {
         return eb;
     }
 
-    public static List<LayoutComponent> getQueueButtons(Guild guild) {
+    public static EmbedBuilder getPlayerEmbed(Guild guild) {
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
-        int currentIndex = ts.getIndex();
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setAuthor("Player");
+
+        AudioTrack playingNow = ts.getPlayer().getPlayingTrack();
+
+        if (playingNow != null) {
+            eb.setTitle("**" + playingNow.getInfo().title + "**", playingNow.getInfo().uri);
+            eb.setDescription(playingNow.getInfo().author);
+            if(ts.isPaused()) {
+                String position = SafJNest.formatDuration(playingNow.getPosition()) + " / " + SafJNest.formatDuration(playingNow.getInfo().length);
+                eb.addField("Position", position, true);   
+            }
+            else {
+                eb.addField("Length", SafJNest.formatDuration(playingNow.getInfo().length), true);
+            }
+            eb.addField("Queue", (ts.getIndex() + 1) + " / " + (ts.getQueue().size() + 1), true);
+            eb.setThumbnail("https://img.youtube.com/vi/" + playingNow.getInfo().identifier + "/hqdefault.jpg");
+        } 
+        else {
+            eb.setTitle("There is no song playing right now.");
+        } 
+
+        //eb.addField(RiotHandler.getFormattedEmoji("playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
+        return eb;
+    }
+
+    public static List<LayoutComponent> getQueueButtons(Guild guild) {
+        return getQueueButtons(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex());
+    }
+    
+    public static List<LayoutComponent> getQueueButtons(Guild guild, int startIndex) {
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
 
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
@@ -77,15 +114,15 @@ public class QueueHandler {
         Button previous = Button.primary("queue-previous" , " ").withEmoji(RiotHandler.getRichEmoji("previous"));
         Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
         Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji("next"));
-        Button shurima = Button.secondary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji( "shuffle"));
+        Button shurima = Button.secondary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji( "azir"));
         
         if(ts.isRepeat())
-            repeat = repeat.withStyle(ButtonStyle.DANGER);
+            repeat = repeat.withStyle(ButtonStyle.SUCCESS);
         
         if(ts.isShuffled())
-            shurima = shurima.withStyle(ButtonStyle.DANGER);
+            shurima = shurima.withStyle(ButtonStyle.SUCCESS);
 
-        play = ts.isPaused() ? Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji("play")) 
+        play = ts.isPaused() ? Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji("play")).withStyle(ButtonStyle.SUCCESS) 
                              : Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
 
         buttonRows.add(ActionRow.of(
@@ -99,66 +136,156 @@ public class QueueHandler {
         Button previousPage = Button.secondary("queue-previouspage-", " ").withEmoji(RiotHandler.getRichEmoji("leftarrow"));
         Button nextPage = Button.secondary("queue-nextpage-", " ").withEmoji(RiotHandler.getRichEmoji("rightarrow"));
  
-        int previousIndex = ts.getIndex() - 11;
+        int previousIndex = startIndex - 11;
+        int nextIndex = (startIndex < ts.getIndex() && (startIndex + 11) > ts.getIndex()) ? ts.getIndex() : startIndex + 11;
+
         if(previousIndex < 0) 
             previousIndex = 0;
 
-        int nextIndex = ts.getIndex() + 11;
-        if(nextIndex > ts.getQueue().size())
-            nextIndex = ts.getQueue().size() - 1;
-
-        if(currentIndex > ts.getQueue().size())
-            nextPage = nextPage.asDisabled();
-
-        if(previousIndex < 0)
+        if (startIndex == 0) 
             previousPage = previousPage.asDisabled();
+
+        if(nextIndex > ts.getQueue().size())
+            nextPage = nextPage.asDisabled();
 
         nextPage = nextPage.withId("queue-nextpage-" + nextIndex);
         previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
 
+        Button playerButton = Button.secondary("queue-player", " ").withEmoji(RiotHandler.getRichEmoji("list")).withStyle(ButtonStyle.SUCCESS);
+
         buttonRows.add(ActionRow.of(
-            Button.secondary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji("blank")),
+            playerButton,
             previousPage,
             Button.secondary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji("blank")),
             nextPage,
-            Button.secondary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji("bin"))
+            Button.secondary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji("bin")).withStyle(ButtonStyle.DANGER)
         ));
 
         return buttonRows;
     }
 
-    public static void sendQueueEmbed(CommandEvent event) {
+    public static List<LayoutComponent> getPlayerButtons(Guild guild) {
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
+
+        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+
+        Button repeat = Button.secondary("player-repeat", " ").withEmoji(RiotHandler.getRichEmoji("repeat"));
+        Button previous = Button.primary("player-previous" , " ").withEmoji(RiotHandler.getRichEmoji("previous"));
+        Button play = Button.primary("player-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
+        Button next = Button.primary("player-next", " ").withEmoji(RiotHandler.getRichEmoji("next"));
+        Button shurima = Button.secondary("player-shurima", " ").withEmoji(RiotHandler.getRichEmoji( "shuffle"));
+        
+        if(ts.isRepeat())
+            repeat = repeat.withStyle(ButtonStyle.SUCCESS);
+        
+        if(ts.isShuffled())
+            shurima = shurima.withStyle(ButtonStyle.SUCCESS);
+
+        play = ts.isPaused() ? Button.primary("player-play", " ").withEmoji(RiotHandler.getRichEmoji("play")).withStyle(ButtonStyle.SUCCESS) 
+                             : Button.primary("player-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
+
+        buttonRows.add(ActionRow.of(
+            repeat,
+            previous,
+            play,
+            next,
+            shurima
+        ));
+
+        Button rewind = Button.secondary("player-rewind", " ").withEmoji(RiotHandler.getRichEmoji("rewind10"));
+        Button forward = Button.secondary("player-forward", " ").withEmoji(RiotHandler.getRichEmoji("fastforward30"));
+
+        Button playerButton = Button.secondary("player-queue", " ").withEmoji(RiotHandler.getRichEmoji("list"));
+
+        buttonRows.add(ActionRow.of(
+            playerButton,
+            rewind,
+            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji("blank")),
+            forward,
+            Button.secondary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji("blank"))
+        ));
+
+        return buttonRows;
+    }
+
+    public static void sendEmbed(CommandEvent event, EmbedType type) {
         Guild guild = event.getGuild();
         MessageChannel channel = event.getChannel();
         
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         ts.deleteMessage();
         
-        channel.sendMessageEmbeds(getQueueEmbed(guild, ts.getIndex()).build()).addComponents(getQueueButtons(guild)).queue(message -> {
-            ts.setMessage(new QueueMessage(message));
+        channel.sendMessageEmbeds(getEmbed(guild, type).build()).addComponents(getButtons(guild, type)).queue(message -> {
+            ts.setMessage(new QueueMessage(message, type));
         });
     }
 
-    public static void sendQueueEmbed(SlashCommandEvent event, boolean sendSeparate) {
+    public static void sendEmbed(CommandEvent event) {
+        QueueMessage message = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getMessage();
+        EmbedType type = message != null ? message.getType() : EmbedType.PLAYER;
+
+        sendEmbed(event, type);
+    }
+
+    public static void sendEmbed(SlashCommandEvent event, boolean sendSeparate) {
+        QueueMessage message = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getMessage();
+        EmbedType type = message != null ? message.getType() : EmbedType.PLAYER;
+
+        sendEmbed(event, type, sendSeparate);
+        
+    }
+
+    public static void sendEmbed(SlashCommandEvent event, EmbedType type, boolean sendSeparate) {
         Guild guild = event.getGuild();
 
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         ts.deleteMessage();
 
         if(sendSeparate) {
-            event.getChannel().sendMessageEmbeds(getQueueEmbed(guild, ts.getIndex()).build()).setComponents(getQueueButtons(guild)).queue(thresh -> {
-                ts.setMessage(new QueueMessage(thresh));
+            event.getChannel().sendMessageEmbeds(getEmbed(guild, type).build()).setComponents(getButtons(guild, type)).queue(hook -> {
+                ts.setMessage(new QueueMessage(hook, type));
             });
         }
         else {
-            event.deferReply().addEmbeds(getQueueEmbed(guild, ts.getIndex()).build()).setComponents(getQueueButtons(guild)).queue(thresh -> {
-                ts.setMessage(new QueueMessage(thresh));
+            event.deferReply().addEmbeds(getEmbed(guild, type).build()).setComponents(getButtons(guild, type)).queue(hook -> {
+                ts.setMessage(new QueueMessage(hook, type));
             });
         }
     }
 
-    public static void sendQueueEmbed(SlashCommandEvent event) {
-        sendQueueEmbed(event, false);
+    public static void sendEmbed(SlashCommandEvent event, EmbedType type) {
+        sendEmbed(event, type, false);
+    }
+
+
+    public static List<LayoutComponent> getButtons(Guild guild, EmbedType type) {
+        switch (type) {
+            case PLAYER:
+                return getPlayerButtons(guild); 
+            case QUEUE:
+                return getQueueButtons(guild);
+            default:
+                throw new IllegalStateException("Unknown type");
+        }
+    }
+
+    public static EmbedBuilder getEmbed(Guild guild, EmbedType type) {
+        switch (type) {
+            case PLAYER:
+                return getPlayerEmbed(guild); 
+            case QUEUE:
+                return getQueueEmbed(guild);
+            default:
+                throw new IllegalStateException("Unknown type");
+        }
+    }
+
+    public static List<LayoutComponent> getButtons(Guild guild) {
+        return getButtons(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getMessage().getType());
+    }
+    
+    public static EmbedBuilder getEmbed(Guild guild) {
+        return getEmbed(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getMessage().getType());
     }
 
 
@@ -180,7 +307,6 @@ public class QueueHandler {
         eb.setAuthor("Queued by " + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
         eb.setTitle("Track queued:");
         eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-        eb.addField("Lenght", SafJNest.getFormattedDuration(track.getInfo().length) , true);
         eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
         eb.setColor(Color.decode(Bot.getColor()));
 

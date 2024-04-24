@@ -3,6 +3,7 @@ package com.safjnest.Commands.Queue;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.Audio.EmbedType;
 import com.safjnest.Utilities.Audio.QueueHandler;
 
 public class Queue extends Command{
@@ -18,6 +19,6 @@ public class Queue extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event, EmbedType.QUEUE);
     }
 }

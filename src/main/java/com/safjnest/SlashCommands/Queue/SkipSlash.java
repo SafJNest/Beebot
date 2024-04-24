@@ -35,6 +35,6 @@ public class SkipSlash extends SlashCommand{
 
         event.deferReply().addEmbeds(QueueHandler.getSkipEmbed(event)).queue();
 
-        QueueHandler.sendQueueEmbed(event, true);
+        QueueHandler.sendEmbed(event, true);
     }
 }
