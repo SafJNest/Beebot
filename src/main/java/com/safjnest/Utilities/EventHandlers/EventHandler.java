@@ -39,6 +39,7 @@ public class EventHandler extends ListenerAdapter {
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent e) {
         Guild guild = e.getGuild();
         User self = e.getJDA().getSelfUser();
+        User userJoined = e.getMember().getUser();
 
         AudioChannel channelJoined = e.getChannelJoined();
         AudioChannel channelLeft = e.getChannelLeft();
@@ -52,7 +53,7 @@ public class EventHandler extends ListenerAdapter {
         
         if (channelJoined != null && 
             (connectChannel == null || channelJoined.getId().equals(connectChannel.getId()))) {
-            Functions.handleGreetSound(channelJoined, self, guild);
+            Functions.handleGreetSound(channelJoined, userJoined, guild);
         }
     }
 
