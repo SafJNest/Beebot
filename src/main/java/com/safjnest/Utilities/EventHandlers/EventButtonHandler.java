@@ -10,6 +10,7 @@ import com.safjnest.Bot;
 import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Commands.League.Opgg;
 import com.safjnest.Commands.League.Summoner;
+import com.safjnest.Utilities.Audio.EmbedType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackScheduler;
@@ -86,6 +87,9 @@ public class EventButtonHandler extends ListenerAdapter {
         
         else if (buttonId.startsWith("reward-"))
             reward(event);
+        
+        else if (buttonId.startsWith("player-"))
+            player(event);
     }
 
 
@@ -161,24 +165,6 @@ public class EventButtonHandler extends ListenerAdapter {
         if(nextIndex > ts.getQueue().size())
             nextIndex = ts.getQueue().size() - 1;
 
-        // for (Button b : event.getMessage().getButtons()) {
-        //     if(b.getId().split("-")[1].equalsIgnoreCase("previouspage"))
-        //         previousIndex = Integer.parseInt(b.getId().split("-", 3)[2]);
-
-        //     if(b.getId().split("-")[1].equalsIgnoreCase("nextpage"))
-        //         nextIndex = Integer.parseInt(b.getId().split("-", 3)[2]);
-            
-        // }
-
-        Button repeat = Button.secondary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "repeat"));  
-        Button previous = Button.primary("queue-previous", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "previous"));
-        Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
-        Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "next"));
-        Button shurima = Button.secondary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "shuffle"));
-
-        
-
-        java.util.List<LayoutComponent> rows = new ArrayList<>();
         int startIndex = ts.getIndex(); 
 
         switch (args) {
@@ -239,67 +225,81 @@ public class EventButtonHandler extends ListenerAdapter {
             case "clear":
                 ts.clearQueue();
                 break;
+            case "player":
+                ts.getMessage().setType(EmbedType.PLAYER);
+                break;
             default:
             
                 break;
         }
         
-        if(ts.isRepeat()) {
-            repeat = repeat.withStyle(ButtonStyle.DANGER);
-        }
-            
+        List<LayoutComponent> rows = QueueHandler.getButtons(guild);
+        if (ts.getMessage().getType() == EmbedType.QUEUE)
+            rows = QueueHandler.getQueueButtons(guild, startIndex);
+
+        EmbedBuilder eb = QueueHandler.getEmbed(guild);
+        if (ts.getMessage().getType() == EmbedType.QUEUE)
+            eb = QueueHandler.getQueueEmbed(guild, startIndex);
         
-        if(ts.isShuffled()) {
-            shurima = shurima.withStyle(ButtonStyle.DANGER);
-        }
-
-        if(!ts.isPaused()) {
-            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "pause"));
-        } else {
-            play = Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "play"));
-        }
-        
-        rows.add(ActionRow.of(
-            repeat,
-            previous,
-            play,
-            next,
-            shurima
-        ));
-
-
-        Button previousPage = Button.secondary("queue-previouspage-" + previousIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "leftarrow"));
-        Button nextPage = Button.secondary("queue-nextpage-" + nextIndex, " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "rightarrow"));
-
-        if(startIndex > ts.getQueue().size()) {
-            startIndex = ts.getQueue().size() - 1;
-            nextPage = nextPage.asDisabled();
-        }
-        
-        if(startIndex < ts.getIndex() && (startIndex + 11) > ts.getIndex()) { 
-            nextIndex = ts.getIndex();
-        }
-        else {
-            nextIndex = startIndex + 11;
-        }
-
-        if(previousIndex < 0) {
-            previousPage = previousPage.asDisabled();
-        }
-
-        nextPage = nextPage.withId("queue-nextpage-" + nextIndex);
-        previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
-
-        rows.add(ActionRow.of(
-            Button.secondary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
-            previousPage,
-            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "blank")),
-            nextPage,
-            Button.secondary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji(event.getJDA(), "bin"))
-        ));
 
         event.getMessage()
-                .editMessageEmbeds(QueueHandler.getQueueEmbed(guild, startIndex).build())
+                .editMessageEmbeds(eb.build())
+                .setComponents(rows)
+                .queue();
+    }
+
+    public void player(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-")[1];
+
+        Guild guild = event.getGuild();
+
+        PlayerManager pm = PlayerManager.get();
+        TrackScheduler ts = pm.getGuildMusicManager(guild).getTrackScheduler();
+
+
+        switch (args) {
+            case "repeat":
+                ts.setRepeat(!ts.isRepeat());
+            
+                break;
+            case "rewind":
+                ts.movePosition(-10);
+
+                break;
+            case "previous":
+                if(ts.moveCursor(ts.getQueue().size(), true) == null)
+                    ts.moveCursor(-1);
+                ts.play(ts.getcurrent(), true);
+                break;
+            case "pause":
+                ts.pause(true);
+                break;
+            case "play":
+                ts.pause(false);
+                break;
+            case "next":
+                ts.play(ts.moveCursor(1), true);
+                break;
+            case "forward":
+                ts.movePosition(30);
+
+                break;
+            case "shurima":
+                if(!ts.isShuffled()) 
+                    ts.shuffleQueue();
+                else
+                    ts.unshuffleQueue();
+                break;
+            case "queue":
+                ts.getMessage().setType(EmbedType.QUEUE);
+            default: 
+                break;
+        }
+        
+        List<LayoutComponent> rows = QueueHandler.getButtons(guild);
+
+        event.getMessage()
+                .editMessageEmbeds(QueueHandler.getEmbed(guild).build())
                 .setComponents(rows)
                 .queue();
     }

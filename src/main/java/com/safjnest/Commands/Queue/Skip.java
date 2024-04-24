@@ -35,6 +35,6 @@ public class Skip extends Command{
 
         event.reply(QueueHandler.getSkipEmbed(event));
         
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event);
     }
 }

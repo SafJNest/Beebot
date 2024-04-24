@@ -27,6 +27,6 @@ public class PauseSlash extends SlashCommand {
         
         ts.pause(true);
 
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event, false);
     }
 }

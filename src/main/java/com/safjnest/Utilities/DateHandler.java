@@ -1,6 +1,8 @@
 //THIS CLASS WAS JUST TOO INSANE TO BE USED.
 package com.safjnest.Utilities;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -67,6 +69,44 @@ public class DateHandler {
         }
         if(years == 0 && months == 0 && days == 0 && hours == 0 && minutes == 0 && seconds == 0)
             finalDate += "less than a second ";
+        finalDate += "ago)";
+        return finalDate;
+    }
+
+    public static String getTimePassed(LocalDateTime date) {
+        LocalDateTime now = LocalDateTime.now();
+        Duration duration = Duration.between(date, now);
+        long years = duration.toDays() / 365;
+        long months = duration.toDays() % 365 / 30;
+        long days = duration.toDays() % 365 % 30;
+        long hours = duration.toHours() % 24;
+        long minutes = duration.toMinutes() % 60;
+        long seconds = duration.getSeconds() % 60;
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy' 'HH:mm");
+        String finalDate = dtf.format(date) + " (";
+
+        if (years != 0) {
+            finalDate += years + (years == 1 ? " year " : " years ");
+        }
+        if (months != 0) {
+            finalDate += months + (months == 1 ? " month " : " months ");
+        }
+        if (days != 0 && years == 0 && months == 0) {
+            finalDate += days + (days == 1 ? " day " : " days ");
+        }
+        if (hours != 0 && years == 0 && months == 0 && days == 0) {
+            finalDate += hours + (hours == 1 ? " hour " : " hours ");
+        }
+        if (minutes != 0 && years == 0 && months == 0 && days == 0 && hours == 0) {
+            finalDate += minutes + (minutes == 1 ? " minute " : " minutes ");
+        }
+        if (seconds != 0 && years == 0 && months == 0 && days == 0 && hours == 0 && minutes == 0) {
+            finalDate += seconds + (seconds == 1 ? " second " : " seconds ");
+        }
+        if (years == 0 && months == 0 && days == 0 && hours == 0 && minutes == 0 && seconds == 0) {
+            finalDate += "less than a second ";
+        }
         finalDate += "ago)";
         return finalDate;
     }

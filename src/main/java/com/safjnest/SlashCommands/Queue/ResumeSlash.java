@@ -28,6 +28,6 @@ public class ResumeSlash extends SlashCommand {
         
         ts.pause(false);
 
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event, false);
     }
 }

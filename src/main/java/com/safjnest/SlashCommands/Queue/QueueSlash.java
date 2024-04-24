@@ -19,6 +19,6 @@ public class QueueSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        QueueHandler.sendQueueEmbed(event);
+        QueueHandler.sendEmbed(event, false);
     }
 }
