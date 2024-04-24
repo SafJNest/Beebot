@@ -25,11 +25,9 @@ public class Previous extends Command{
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
-        
-        if(ts.moveCursor(ts.getQueue().size(), true) == null)
-            ts.moveCursor(-1);
     
-        AudioTrack prevTrack = ts.getcurrent();
+        AudioTrack prevTrack = ts.getPrev();
+
         if(prevTrack == null) {
             event.reply("This is the beginning of the queue");
             return;
@@ -37,6 +35,6 @@ public class Previous extends Command{
 
         ts.play(prevTrack, true);
         
-        QueueHandler.sendQueueEmbed(guild, event.getChannel());
+        QueueHandler.sendQueueEmbed(event);
     }
 }

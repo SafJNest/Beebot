@@ -33,6 +33,8 @@ public class Skip extends Command{
 
         ts.play(nextTrack, true);
 
-        QueueHandler.sendQueueEmbed(guild, event.getChannel());
+        event.reply(QueueHandler.getSkipEmbed(event));
+        
+        QueueHandler.sendQueueEmbed(event);
     }
 }

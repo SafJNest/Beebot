@@ -5,20 +5,24 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.LOL.RiotHandler;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-
 
 public class QueueHandler {
     private static String formatTrack(int index, AudioTrack track) {
@@ -26,11 +30,11 @@ public class QueueHandler {
         return "`" + (index + 1) + "`" + "\u00A0\u00A0" + PermissionHandler.ellipsis(track.getInfo().title, 49);
     }
 
-    public static EmbedBuilder getEmbed(Guild guild) {
-        return getEmbed(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex());
+    public static EmbedBuilder getQueueEmbed(Guild guild) {
+        return getQueueEmbed(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex());
     }
 
-    public static EmbedBuilder getEmbed(Guild guild, int startIndex) {
+    public static EmbedBuilder getQueueEmbed(Guild guild, int startIndex) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Color.decode(Bot.getColor()));
         eb.setAuthor("Queue");
@@ -57,10 +61,8 @@ public class QueueHandler {
         } 
         else {
             eb.setTitle("There is no song playing right now.");
-
         } 
         
-
         eb.addField(RiotHandler.getFormattedEmoji("playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
         return eb;
     }
@@ -77,21 +79,14 @@ public class QueueHandler {
         Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji("next"));
         Button shurima = Button.secondary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji( "shuffle"));
         
-        if(ts.isRepeat()) {
+        if(ts.isRepeat())
             repeat = repeat.withStyle(ButtonStyle.DANGER);
-        }
-            
         
-        if(ts.isShuffled()) {
+        if(ts.isShuffled())
             shurima = shurima.withStyle(ButtonStyle.DANGER);
-        }
 
-        if(!ts.isPaused()) {
-            play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
-        } else {
-            play = Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji("play"));
-        }
-
+        play = ts.isPaused() ? Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji("play")) 
+                             : Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
 
         buttonRows.add(ActionRow.of(
             repeat,
@@ -101,29 +96,25 @@ public class QueueHandler {
             shurima
         ));
 
-
         Button previousPage = Button.secondary("queue-previouspage-", " ").withEmoji(RiotHandler.getRichEmoji("leftarrow"));
         Button nextPage = Button.secondary("queue-nextpage-", " ").withEmoji(RiotHandler.getRichEmoji("rightarrow"));
  
         int previousIndex = ts.getIndex() - 11;
-        if(previousIndex < 0)
+        if(previousIndex < 0) 
             previousIndex = 0;
 
         int nextIndex = ts.getIndex() + 11;
         if(nextIndex > ts.getQueue().size())
             nextIndex = ts.getQueue().size() - 1;
 
-        if(currentIndex > ts.getQueue().size()) {
+        if(currentIndex > ts.getQueue().size())
             nextPage = nextPage.asDisabled();
-        }
 
-        if(previousIndex < 0) {
+        if(previousIndex < 0)
             previousPage = previousPage.asDisabled();
-        }
 
         nextPage = nextPage.withId("queue-nextpage-" + nextIndex);
         previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
-
 
         buttonRows.add(ActionRow.of(
             Button.secondary("queue-blank", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji("blank")),
@@ -132,24 +123,95 @@ public class QueueHandler {
             nextPage,
             Button.secondary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji("bin"))
         ));
+
         return buttonRows;
     }
 
-    public static void sendQueueEmbed(Guild guild, MessageChannel channel) {
+    public static void sendQueueEmbed(CommandEvent event) {
+        Guild guild = event.getGuild();
+        MessageChannel channel = event.getChannel();
+        
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         ts.deleteMessage();
         
-        channel.sendMessageEmbeds(getEmbed(guild, ts.getIndex()).build()).addComponents(getQueueButtons(guild)).queue(message -> {
+        channel.sendMessageEmbeds(getQueueEmbed(guild, ts.getIndex()).build()).addComponents(getQueueButtons(guild)).queue(message -> {
             ts.setMessage(new QueueMessage(message));
         });
     }
 
-    public static void sendQueueEmbed(SlashCommandEvent event, Guild guild) {
+    public static void sendQueueEmbed(SlashCommandEvent event, boolean sendSeparate) {
+        Guild guild = event.getGuild();
+
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         ts.deleteMessage();
-        
-        event.deferReply().addEmbeds(getEmbed(guild, ts.getIndex()).build()).setComponents(getQueueButtons(guild)).queue(thresh -> {
-            ts.setMessage(new QueueMessage(thresh));
-        });
+
+        if(sendSeparate) {
+            event.getChannel().sendMessageEmbeds(getQueueEmbed(guild, ts.getIndex()).build()).setComponents(getQueueButtons(guild)).queue(thresh -> {
+                ts.setMessage(new QueueMessage(thresh));
+            });
+        }
+        else {
+            event.deferReply().addEmbeds(getQueueEmbed(guild, ts.getIndex()).build()).setComponents(getQueueButtons(guild)).queue(thresh -> {
+                ts.setMessage(new QueueMessage(thresh));
+            });
+        }
+    }
+
+    public static void sendQueueEmbed(SlashCommandEvent event) {
+        sendQueueEmbed(event, false);
+    }
+
+
+    public static MessageEmbed getPlaylistEmbed(Member author, AudioPlaylist playlist, String playlistLink) {
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setAuthor("Queued by " + author.getEffectiveName(), author.getEffectiveAvatarUrl(), author.getEffectiveAvatarUrl());
+        eb.setTitle("Playlist queued (" + playlist.getTracks().size() + " tracks):");
+        eb.setDescription("[" + playlist.getName() + "](" + playlistLink + ")");
+        eb.setThumbnail("https://img.youtube.com/vi/" + playlist.getTracks().get(0).getIdentifier() + "/hqdefault.jpg");
+        eb.setColor(Color.decode(Bot.getColor()));
+
+        return eb.build();
+    }
+
+    public static MessageEmbed getTrackEmbed(Member author, AudioTrack track) {
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setAuthor("Queued by " + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
+        eb.setTitle("Track queued:");
+        eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
+        eb.addField("Lenght", SafJNest.getFormattedDuration(track.getInfo().length) , true);
+        eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
+        eb.setColor(Color.decode(Bot.getColor()));
+
+        return eb.build();
+    }
+
+    public static MessageEmbed getSkipEmbed(CommandEvent event) {
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler();
+
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setAuthor("Skipped by " + event.getMember().getEffectiveName(), "https://discord.com/users/" + event.getMember().getId(), event.getMember().getEffectiveAvatarUrl());
+        eb.setTitle("Skipped Song:");
+        eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
+        eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+        eb.setColor(Color.decode(Bot.getColor()));
+
+        return eb.build();
+    }
+
+    public static MessageEmbed getSkipEmbed(SlashCommandEvent event) {
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler();
+
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setAuthor("Skipped by " + event.getMember().getEffectiveName(), "https://discord.com/users/" + event.getMember().getId(), event.getMember().getEffectiveAvatarUrl());
+        eb.setTitle("Skipped Song:");
+        eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
+        eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+        eb.setColor(Color.decode(Bot.getColor()));
+
+        return eb.build();
     }
 }

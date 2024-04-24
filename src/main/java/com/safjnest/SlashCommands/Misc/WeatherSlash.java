@@ -5,9 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.awt.Color;
 
@@ -47,7 +48,7 @@ public class WeatherSlash extends SlashCommand {
         
         JSONObject jsonResponse = null;
         try {
-            URL url = Paths.get("https://api.weatherapi.com/v1/current.json?key=" + weatherApiKey + "&q=" + URLEncoder.encode(locationString, "UTF-8")).toUri().toURL();
+            URL url = new URI("https://api.weatherapi.com/v1/current.json?key=" + weatherApiKey + "&q=" + URLEncoder.encode(locationString, "UTF-8")).toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
@@ -69,7 +70,7 @@ public class WeatherSlash extends SlashCommand {
             JSONParser JsonParser = new JSONParser();
             jsonResponse = (JSONObject) JsonParser.parse(response.toString());
 
-        } catch (IOException | org.json.simple.parser.ParseException e) {
+        } catch (IOException | org.json.simple.parser.ParseException | URISyntaxException e) {
             e.printStackTrace();
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;

@@ -34,6 +34,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.command.SlashCommand;
+
 import com.safjnest.Utilities.UserData;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventAutoCompleteInteractionHandler;
@@ -43,17 +44,10 @@ import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
 import com.safjnest.Utilities.LOL.RiotHandler;
+
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Owner.*;
-import com.safjnest.Commands.Owner.Shutdown;
-import com.safjnest.Commands.Queue.JumpTo;
-import com.safjnest.Commands.Queue.Pause;
-import com.safjnest.Commands.Queue.PlayYoutube;
-import com.safjnest.Commands.Queue.PlayYoutubeForce;
-import com.safjnest.Commands.Queue.Previous;
-import com.safjnest.Commands.Queue.Queue;
-import com.safjnest.Commands.Queue.Resume;
-import com.safjnest.Commands.Queue.Skip;
+import com.safjnest.Commands.Queue.*;
 import com.safjnest.Commands.Settings.*;
 import com.safjnest.Commands.Math.*;
 import com.safjnest.Commands.Audio.*;
@@ -73,13 +67,7 @@ import com.safjnest.SlashCommands.ManageMembers.Blacklist.BlacklistSlash;
 import com.safjnest.SlashCommands.ManageMembers.Move.MoveSlash;
 import com.safjnest.SlashCommands.Math.*;
 import com.safjnest.SlashCommands.Misc.*;
-import com.safjnest.SlashCommands.Queue.DownloadSoundSlash;
-import com.safjnest.SlashCommands.Queue.JumpToSlash;
-import com.safjnest.SlashCommands.Queue.PauseSlash;
-import com.safjnest.SlashCommands.Queue.PreviousSlash;
-import com.safjnest.SlashCommands.Queue.QueueSlash;
-import com.safjnest.SlashCommands.Queue.ResumeSlash;
-import com.safjnest.SlashCommands.Queue.SkipSlash;
+import com.safjnest.SlashCommands.Queue.*;
 import com.safjnest.SlashCommands.Settings.*;
 import com.safjnest.SlashCommands.Settings.Boost.BoostSlash;
 import com.safjnest.SlashCommands.Settings.Leave.LeaveSlash;
@@ -119,7 +107,6 @@ public class Bot extends ListenerAdapter {
 
     private static GuildSettings gs;
     private static HashMap<String, UserData> userData;
-
 
     private static CommandClient client;
 
@@ -260,10 +247,7 @@ public class Bot extends ListenerAdapter {
         );
 
 
-        
         Collections.addAll(slashCommandsList, new RewardSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
-
-
 
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
@@ -289,7 +273,6 @@ public class Bot extends ListenerAdapter {
     public void distruzione_demoniaca(){
         jda.shutdown();
     }
-
 
 
 

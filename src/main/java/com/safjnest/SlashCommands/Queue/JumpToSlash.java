@@ -44,6 +44,6 @@ public class JumpToSlash extends SlashCommand {
         ts.getPlayer().stopTrack();
         ts.play(ts.moveCursor(position - ts.getIndex()));
         
-        event.getChannel().sendMessageEmbeds(QueueHandler.getEmbed(guild, ts.getIndex()).build()).addComponents(QueueHandler.getQueueButtons(guild)).queue();
+        QueueHandler.sendQueueEmbed(event);
 	}
 }

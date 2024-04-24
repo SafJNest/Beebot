@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
-import java.nio.file.Paths;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -29,7 +29,7 @@ public class MobalyticsHandler {
      */
     public static String getChampioStats(String champName, String lane) {
         try {
-            URL url = Paths.get("https://widget.mobalytics.gg/lol/graphql/v1/query").toUri().toURL();
+            URL url = new URI("https://widget.mobalytics.gg/lol/graphql/v1/query").toURL();
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("POST");
             con.setRequestProperty("Content-Type", "application/json");

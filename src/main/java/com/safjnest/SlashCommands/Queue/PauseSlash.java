@@ -9,7 +9,6 @@ import com.safjnest.Utilities.Audio.TrackScheduler;
 
 import net.dv8tion.jda.api.entities.Guild;
 
-
 public class PauseSlash extends SlashCommand {
 
     public PauseSlash(){
@@ -24,9 +23,10 @@ public class PauseSlash extends SlashCommand {
     @Override
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
-        PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().pause(true);
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
+        
+        ts.pause(true);
 
-        event.getChannel().sendMessageEmbeds(QueueHandler.getEmbed(guild, ts.getIndex()).build()).addComponents(QueueHandler.getQueueButtons(guild)).queue();
+        QueueHandler.sendQueueEmbed(event);
     }
 }

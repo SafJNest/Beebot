@@ -33,7 +33,7 @@ public class QueueMessage {
     }
 
     public void update() {
-        EmbedBuilder eb = QueueHandler.getEmbed(guild);
+        EmbedBuilder eb = QueueHandler.getQueueEmbed(guild);
         List<LayoutComponent> buttons = QueueHandler.getQueueButtons(guild);
 
         if (hook != null) {

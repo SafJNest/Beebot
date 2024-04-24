@@ -13,6 +13,7 @@
  - [x] Se cancelli la coda, rimane la traccia
  - [x] Se cancelli la coda dopo lo shurima, lo shuffle rimane :azir:
  - [ ] Il bot smette di playare e non si sbugga
+ - [ ] non so neanche se chiamarlo bug ma quando metti in pausa qualcosa poi skippi si sente un millisecondo della canzone prima e se provo a cambiare l'ordine del mettere in pausa e startare la track nel play() in trackscheduler non parte proprio la track 
 
 ## Features
  - [x] mandare embed per i comandi inerenti alla coda
@@ -26,4 +27,5 @@
  - [x] cambiare il layout dell'embed della coda
  - [ ] play file
  - [ ] when do you want to play this (check euphony)
+ - [ ] download the audio
  

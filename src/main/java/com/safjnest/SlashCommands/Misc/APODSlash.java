@@ -6,9 +6,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,7 +53,7 @@ public class APODSlash extends SlashCommand {
             if(event.getOption("date") != null)
                 urlString += "&date=" + URLEncoder.encode(event.getOption("date").getAsString(), "UTF-8");
 
-            URL url = Paths.get(urlString).toUri().toURL();
+            URL url = new URI(urlString).toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
@@ -74,7 +75,7 @@ public class APODSlash extends SlashCommand {
             JSONParser JsonParser = new JSONParser();
             jsonResponse = (JSONObject) JsonParser.parse(response.toString());
 
-        } catch (IOException | org.json.simple.parser.ParseException e) {
+        } catch (IOException | org.json.simple.parser.ParseException | URISyntaxException e) {
             e.printStackTrace();
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
