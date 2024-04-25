@@ -90,7 +90,7 @@ public class QueueHandler {
             else {
                 eb.addField("Length", SafJNest.formatDuration(playingNow.getInfo().length), true);
             }
-            eb.addField("Queue", (ts.getIndex() + 1) + " / " + (ts.getQueue().size() + 1), true);
+            eb.addField("Queue", (ts.getIndex() + 1) + " / " + (ts.getQueue().size()), true);
             eb.setThumbnail("https://img.youtube.com/vi/" + playingNow.getInfo().identifier + "/hqdefault.jpg");
         } 
         else {
