@@ -196,7 +196,7 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public boolean checkIndex(int index) {
-        if (index < 0 || index >= queue.size()) {
+        if (queue.isEmpty() || index < 0 || index > queue.size()) {
             return false;
         }
         return queue.get(index) != null;
@@ -285,7 +285,7 @@ public class TrackScheduler extends AudioEventAdapter {
             if (toPlay != null) 
                 play(toPlay, offset, false);
 
-            if (isQueueable(track)) 
+            if (isQueueable(track) && lastMessageSent != null) 
                 lastMessageSent.update();
         } 
 
