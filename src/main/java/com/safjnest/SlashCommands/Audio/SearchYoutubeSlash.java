@@ -15,6 +15,8 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.ResultHandler;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeClientConfig;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
 import com.sedmelluq.discord.lavaplayer.tools.ExceptionTools;
@@ -26,9 +28,12 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.utils.FileUpload;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -37,9 +42,8 @@ import net.dv8tion.jda.api.utils.FileUpload;
  */
 public class SearchYoutubeSlash extends SlashCommand {
     private final HttpInterfaceManager httpInterfaceManager = HttpClientTools.createCookielessThreadLocalManager();
-    private final int resultNumber = 5;
 
-    public SearchYoutubeSlash(){
+    public SearchYoutubeSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -64,7 +68,6 @@ public class SearchYoutubeSlash extends SlashCommand {
                         .withRootField("params", "EgIQAUICCAE=").setAttribute(httpInterface);
                 StringEntity payload = new StringEntity(clientConfig.toJsonString(), "UTF-8");
                 post.setEntity(payload);
-                System.out.println(post.getEntity());
                 CloseableHttpResponse response = httpInterface.execute(post);
 
                 try {
@@ -110,6 +113,7 @@ public class SearchYoutubeSlash extends SlashCommand {
     }
 
     private List<AudioTrackInfo> extractSearchPage(JsonBrowser jsonBrowser) throws IOException {
+        System.out.println(jsonBrowser.format());
         ArrayList<AudioTrackInfo> list = new ArrayList<AudioTrackInfo>();
         jsonBrowser.get("contents").get("sectionListRenderer").get("contents").values().forEach((content) -> {
             content.get("itemSectionRenderer").get("contents").values().forEach((jsonTrack) -> {
@@ -143,33 +147,64 @@ public class SearchYoutubeSlash extends SlashCommand {
         }
     }
 
-    private EmbedBuilder getSearchEmbed(Member author, String query) {
-        //String[] searchResult = new String[resultNumber];
-        
-
+    private EmbedBuilder getSearchEmbed(Member author, String query, List<AudioTrackInfo> searchResultList) {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setAuthor("Search by" + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
         eb.setTitle("Search for: " + query);
-        //eb.setDescription();
+
+        for(AudioTrackInfo info : searchResultList) {
+            eb.appendDescription(info.title + "\n");
+        }
+
         //eb.setThumbnail();
         eb.setColor(Bot.getColor());
 
         return eb;
     }
 
+    private StringSelectMenu.Builder getMenu(List<AudioTrackInfo> searchResultList) {
+        StringSelectMenu.Builder mb = StringSelectMenu.create("menu:id");
+
+        for(AudioTrackInfo info : searchResultList) {
+            mb.addOption(info.title, info.identifier);
+        }
+        
+        return mb;
+    }
+
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        String query = event.getOption("query").toString();
-        StringBuilder searchResult = new StringBuilder();
-        search(query).forEach(trackInfo -> {
-            searchResult.append(trackInfo.title).append(" ");
-        });
-        String finalResult = searchResult.toString();
+        String query = event.getOption("query").getAsString();
+        List<AudioTrackInfo> searchResultList = search(query);
 
-        event.replyFiles(FileUpload.fromData(
-                finalResult.getBytes(StandardCharsets.UTF_8),
-                "search.txt")).queue();
+        MenuListener fileListener = new MenuListener(event);
+        event.getJDA().addEventListener(fileListener);
+        
 
+        event.replyEmbeds(getSearchEmbed(event.getMember(), query, searchResultList).build())
+             .addComponents(ActionRow.of(getMenu(searchResultList).build()));
     }    
+}
+
+class MenuListener extends ListenerAdapter {
+
+    private SlashCommandEvent slashEvent;
+
+    public MenuListener(SlashCommandEvent slashEvent) {
+        this.slashEvent = slashEvent;
+    }
+
+    @Override
+    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
+        if (event.getComponentId().equals("menu:id")) {
+            List<String> selected = event.getValues();
+            event.reply("Your selection was processed").queue();
+            event.editMessage("It was selected").setReplace(true).queue();
+
+            PlayerManager pm = PlayerManager.get();
+
+            pm.loadItemOrdered(event.getGuild(), selected.get(0), new ResultHandler(slashEvent, pm, false, selected.get(0), false));
+        }
+    }
 }
