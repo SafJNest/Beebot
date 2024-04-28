@@ -45,8 +45,8 @@ public class QueueMessage {
     }
 
     public void update() {
-        EmbedBuilder eb = QueueHandler.getEmbed(guild);
-        List<LayoutComponent> buttons = QueueHandler.getButtons(guild);
+        EmbedBuilder eb = QueueHandler.getEmbed(guild, type);
+        List<LayoutComponent> buttons = QueueHandler.getButtons(guild, type);
 
         if (hook != null) {
             hook.editOriginalEmbeds(eb.build()).setComponents(buttons).queue();
