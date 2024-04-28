@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.Audio.List;
 
-import java.awt.Color;
 import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -51,7 +50,7 @@ public class ListUserSlash extends SlashCommand{
         eb.setAuthor(mentionedUser.getName(), "https://github.com/SafJNest", mentionedUser.getAvatarUrl());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setTitle("List of " + mentionedUser.getName());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         QueryResult sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
                            ? DatabaseHandler.getlistUserSounds(mentionedUser.getId()) 

@@ -10,7 +10,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Arrays;
-import java.awt.Color;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -102,7 +101,7 @@ public class WeatherSlash extends SlashCommand {
         eb.setTitle("**Weather in **" + locationName);
         eb.setDescription(conditionText);
         eb.setThumbnail("https:" + iconURL);
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         eb.addField("Temperature", temp_c + " C", true);
         eb.addField("Feels like", feelslike_c + " C", true);

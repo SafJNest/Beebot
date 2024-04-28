@@ -1,6 +1,5 @@
 package com.safjnest.Utilities.EventHandlers;
 
-import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -588,7 +587,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.getUser().getAvatarUrl());
         eb.setTitle("List of " + event.getGuild().getName());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         eb.setDescription("Total Sound: " + sounds.size());
         
         
@@ -675,7 +674,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.getUser().getAvatarUrl());
         eb.setTitle("List of " + event.getJDA().getUserById(userId).getName());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         eb.setDescription("Total Sound: " + sounds.size());
         
 
@@ -744,7 +743,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setAuthor(event.getUser().getName());
         eb.setTitle(theGuy.getUser().getName() + " has been banned");
         eb.setThumbnail(theGuy.getUser().getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         Button pardon = Button.primary("unban-" + theGuy.getId(), "Pardon");
         event.getGuild().ban(theGuy, 0, TimeUnit.SECONDS).reason("Entered the blacklist").queue(
                     (e) -> event.getMessage().editMessageEmbeds(eb.build()).setActionRow(pardon).queue(),
@@ -773,7 +772,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setAuthor(event.getUser().getName());
         eb.setTitle(theGuy.getUser().getName() + " has been kicked");
         eb.setThumbnail(theGuy.getUser().getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         event.getGuild().kick(theGuy).reason("Entered the blacklist").queue(
             (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(),
             new ErrorHandler().handle(
@@ -802,7 +801,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setAuthor(event.getUser().getName());
         eb.setTitle(theGuy.getName() + " has been unbanned");
         eb.setThumbnail(theGuy.getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         event.getGuild().unban(theGuy).queue(
             (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(), 

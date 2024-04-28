@@ -1,7 +1,5 @@
 package com.safjnest.Commands.Audio;
 
-import java.awt.Color;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
@@ -46,7 +44,7 @@ public class List extends Command {
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setTitle("List of " + event.getGuild().getName());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         QueryResult sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId());
 

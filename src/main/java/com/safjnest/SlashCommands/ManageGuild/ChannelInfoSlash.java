@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.ManageGuild;
 
-import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
 
@@ -45,7 +44,7 @@ public class ChannelInfoSlash extends SlashCommand {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setTitle("**CHANNEL INFO**");
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         eb.addField("Channel name", "```" + gc.getName() + "```", true);   
         eb.addField("Channel ID", "```" + gc.getId() + "```", true); 

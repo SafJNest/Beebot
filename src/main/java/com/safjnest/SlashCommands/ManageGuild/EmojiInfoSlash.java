@@ -5,7 +5,6 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 
-import java.awt.Color;
 import java.util.Arrays;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -54,7 +53,7 @@ public class EmojiInfoSlash extends SlashCommand {
         }
         EmbedBuilder eb = new EmbedBuilder();
 
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         if(isSticker){
             eb.setTitle(":laughing: "+"**STICKER INFO**"+" :laughing:");

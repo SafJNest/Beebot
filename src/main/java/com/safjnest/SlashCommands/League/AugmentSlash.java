@@ -15,8 +15,6 @@ import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-import java.awt.Color;
-
 public class AugmentSlash extends SlashCommand {
 
     public AugmentSlash(){
@@ -36,7 +34,7 @@ public class AugmentSlash extends SlashCommand {
         AugmentData augment = null;
         
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         
         for(AugmentData a : RiotHandler.getAugments()){
             if(a.getId().equalsIgnoreCase(aug)){

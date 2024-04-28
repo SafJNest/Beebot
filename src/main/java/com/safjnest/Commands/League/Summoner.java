@@ -1,7 +1,5 @@
 package com.safjnest.Commands.League;
 
-import java.awt.Color;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
@@ -94,7 +92,7 @@ public class Summoner extends Command {
         
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(account.getName() + "#" + account.getTag());
-        builder.setColor(Color.decode(Bot.getColor()));
+        builder.setColor(Bot.getColor());
         builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
 
         String userId = DatabaseHandler.getUserIdByLOLAccountId(s.getAccountId());

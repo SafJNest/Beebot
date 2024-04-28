@@ -1,7 +1,5 @@
 package com.safjnest.SlashCommands.Audio.List;
 
-import java.awt.Color;
-
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
@@ -42,7 +40,7 @@ public class ListGuildSlash extends SlashCommand{
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest", event.getUser().getAvatarUrl());
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setTitle("List of " + event.getGuild().getName());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         QueryResult sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId());
 

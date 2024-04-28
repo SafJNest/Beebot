@@ -1,6 +1,5 @@
 package com.safjnest.Utilities.Audio;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +38,7 @@ public class QueueHandler {
 
     public static EmbedBuilder getQueueEmbed(Guild guild, int startIndex) {
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         eb.setAuthor("Queue");
 
         LinkedList<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getQueue();
@@ -75,7 +74,7 @@ public class QueueHandler {
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         eb.setAuthor("Player");
 
         AudioTrack playingNow = ts.getPlayer().getPlayingTrack();
@@ -296,7 +295,7 @@ public class QueueHandler {
         eb.setTitle("Playlist queued (" + playlist.getTracks().size() + " tracks):");
         eb.setDescription("[" + playlist.getName() + "](" + playlistLink + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + playlist.getTracks().get(0).getIdentifier() + "/hqdefault.jpg");
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         return eb.build();
     }
@@ -308,7 +307,7 @@ public class QueueHandler {
         eb.setTitle("Track queued:");
         eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         return eb.build();
     }
@@ -322,7 +321,7 @@ public class QueueHandler {
         eb.setTitle("Skipped Song:");
         eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         return eb.build();
     }
@@ -336,7 +335,7 @@ public class QueueHandler {
         eb.setTitle("Skipped Song:");
         eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         return eb.build();
     }

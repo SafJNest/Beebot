@@ -1,5 +1,5 @@
 package com.safjnest.Commands.League;
-import java.awt.Color;
+
 import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -42,7 +42,7 @@ public class Augment extends Command {
 
         EmbedBuilder eb = new EmbedBuilder();
         
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         
         AugmentData augment = null;
         for(AugmentData a : augments){

@@ -12,6 +12,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.awt.Color;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -47,6 +48,7 @@ import com.safjnest.Utilities.LOL.RiotHandler;
 
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Owner.*;
+import com.safjnest.Commands.Owner.Shutdown;
 import com.safjnest.Commands.Queue.*;
 import com.safjnest.Commands.Settings.*;
 import com.safjnest.Commands.Math.*;
@@ -92,7 +94,7 @@ public class Bot extends ListenerAdapter {
     private static JDA jda;
     private static String PREFIX;
     private static String BOT_ID;
-    private static String color;
+    private static Color color;
     
     private Activity activity;
     private String ownerID;
@@ -134,7 +136,7 @@ public class Bot extends ListenerAdapter {
         PREFIX = discordSettings.get("prefix").toString();
         activity = Activity.playing(MessageFormat.format(discordSettings.get("activity").toString().replace("{0}", PREFIX), PREFIX));
         token = discordSettings.get("discordToken").toString();
-        color = discordSettings.get("embedColor").toString();
+        color = Color.decode(discordSettings.get("embedColor").toString());
         ownerID = discordSettings.get("ownerID").toString();
         coOwnersIDs = toStringArray((JSONArray) discordSettings.get("coOwnersIDs"));
         helpWord = discordSettings.get("helpWord").toString();
@@ -162,6 +164,7 @@ public class Bot extends ListenerAdapter {
         builder.setOwnerId(ownerID);
         builder.setCoOwnerIds(coOwnersIDs);
         builder.setActivity(activity);
+        builder.forceGuildOnly("876606568412639272");
         //builder.forceGuildOnly("608967318789160970");
         
         jda.addEventListener(new ListenerAdapter() {
@@ -243,7 +246,7 @@ public class Bot extends ListenerAdapter {
         Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), 
             new ListSlash(), new PlaySlash(), new UploadSlash(), new TTSSlash(), new StopSlash(), 
             new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash(),
-            new QueueSlash(), new SkipSlash(), new PreviousSlash(), new JumpToSlash()
+            new QueueSlash(), new SkipSlash(), new PreviousSlash(), new JumpToSlash(), new SearchYoutubeSlash()
         );
 
 
@@ -298,7 +301,7 @@ public class Bot extends ListenerAdapter {
         return BOT_ID;
     }
 
-    public static String getColor() {
+    public static Color getColor() {
         return color;
     }
 

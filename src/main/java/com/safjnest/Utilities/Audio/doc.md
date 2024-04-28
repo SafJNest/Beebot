@@ -18,7 +18,7 @@
 ## Features
  - [x] mandare embed per i comandi inerenti alla coda
  - [x] on track end riaggiornare l'embed (salvare id messaggio in trackscheduler? array o solo ultimo)
- - [ ] seek bar?
+ - [x] seek bar?
  - [ ] search function
  - [ ] bot playlists
  - [ ] some spotify interaction

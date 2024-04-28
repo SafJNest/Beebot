@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.Audio.Play;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -128,7 +127,7 @@ public class PlaySoundSlash extends SlashCommand{
             eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest", event.getMember().getAvatarUrl());
             eb.setTitle("Playing now:");
             eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
-            eb.setColor(Color.decode(Bot.getColor()));
+            eb.setColor(Bot.getColor());
             eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
 
             eb.addField("Author", "```" 

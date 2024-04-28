@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.Audio;
 
-import java.awt.Color;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -156,7 +155,7 @@ public class TTSSlash extends SlashCommand{
         
             eb.setTitle("Playing now:");
             eb.setDescription(event.getOption("text").getAsString());
-            eb.setColor(Color.decode(Bot.getColor()));
+            eb.setColor(Bot.getColor());
             eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
             eb.setAuthor(event.getMember().getEffectiveName(), "https://github.com/SafJNest", event.getMember().getAvatarUrl());
             

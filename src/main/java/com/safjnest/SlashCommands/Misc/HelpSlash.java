@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.Misc;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -158,7 +157,7 @@ public class HelpSlash extends SlashCommand {
 
             eb.setFooter("In arguments [] is a required field and () is an optional field", null);
         }
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", event.getJDA().getSelfUser().getAvatarUrl());
         event.deferReply(false).addEmbeds(eb.build()).queue();
     }

@@ -1,6 +1,5 @@
 package com.safjnest.Commands.Misc;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -151,7 +150,7 @@ public class Help extends Command {
 
             eb.setFooter("In arguments [] is a required field and () is an optional field", null);
         }
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", event.getJDA().getSelfUser().getAvatarUrl());
         event.reply(eb.build());
     }

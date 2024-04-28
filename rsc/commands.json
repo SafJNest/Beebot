@@ -245,6 +245,14 @@
         "arguments" : "[CommandName]"
     },
 
+    "searchyoutube": {
+        "alias" : ["search"],
+        "help"  : "Search youtube for videos.",
+        "longhelp"  : "Search youtube for videos.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
 
 
 

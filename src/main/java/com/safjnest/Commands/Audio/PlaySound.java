@@ -1,6 +1,5 @@
 package com.safjnest.Commands.Audio;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 
@@ -126,7 +125,7 @@ public class PlaySound extends Command{
             eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
             eb.setTitle("Playing now:");
             eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
-            eb.setColor(Color.decode(Bot.getColor()));
+            eb.setColor(Bot.getColor());
             eb.setThumbnail(event.getSelfUser().getAvatarUrl());
 
             eb.addField("Author", "```" 

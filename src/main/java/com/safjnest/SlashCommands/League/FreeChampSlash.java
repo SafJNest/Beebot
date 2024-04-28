@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.League;
 
-import java.awt.Color;
 import java.io.File;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -38,7 +37,7 @@ public class FreeChampSlash extends SlashCommand {
             
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getMember().getEffectiveName());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         eb.setTitle("Current free champion rotation:");
 
         String s = "";

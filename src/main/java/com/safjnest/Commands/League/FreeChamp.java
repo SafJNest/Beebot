@@ -1,6 +1,5 @@
 package com.safjnest.Commands.League;
 
-import java.awt.Color;
 import java.io.File;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -44,7 +43,7 @@ public class FreeChamp extends Command {
             
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         eb.setTitle("Current free champion rotation:");
 
         String s = "";

@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.Misc;
 
-import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -104,7 +103,7 @@ public class APODSlash extends SlashCommand {
         eb.setAuthor("Astronomy Picture of the Day");
         eb.setTitle(title, apodUrl);
         eb.setDescription(explanation);
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         if(type.equals("image")) {
             eb.setImage(jsonResponse.get("hdurl").toString());

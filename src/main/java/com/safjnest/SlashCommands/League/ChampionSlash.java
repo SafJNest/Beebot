@@ -3,8 +3,6 @@ package com.safjnest.SlashCommands.League;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import java.awt.Color;
-
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
@@ -216,7 +214,7 @@ public class ChampionSlash extends SlashCommand {
         
 
 
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         
         
         champName = RiotHandler.transposeChampionNameForDataDragon(champName);

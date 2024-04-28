@@ -1,6 +1,5 @@
 package com.safjnest.Commands.ManageGuild;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,7 +83,7 @@ public class MemberInfo extends Command{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT " + name + "** :busts_in_silhouette:");
         eb.setThumbnail(mentionedMember.getEffectiveAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         eb.addField("Name", "```" + name + "```", true);
 
