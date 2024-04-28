@@ -1,6 +1,5 @@
 package com.safjnest.Commands.ManageGuild;
 
-import java.awt.Color;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -51,7 +50,7 @@ public class ChannelInfo extends Command {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setTitle("**CHANNEL INFO**");
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         eb.addField("Channel name", "```" + gc.getName() + "```", true);   
         eb.addField("Channel ID", "```" + gc.getId() + "```", true); 

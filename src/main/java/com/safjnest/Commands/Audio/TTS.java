@@ -180,7 +180,7 @@ public class TTS extends Command{
         
             eb.setTitle("Playing now:");
             eb.setDescription(event.getArgs());
-            eb.setColor(Color.decode(Bot.getColor()));
+            eb.setColor(Bot.getColor());
             eb.setThumbnail(event.getSelfUser().getAvatarUrl());
             eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
             

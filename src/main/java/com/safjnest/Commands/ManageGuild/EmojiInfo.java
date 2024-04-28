@@ -5,8 +5,6 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 
-import java.awt.Color;
-
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;
 import net.dv8tion.jda.api.entities.sticker.Sticker;
@@ -51,7 +49,7 @@ public class EmojiInfo extends Command {
 
         EmbedBuilder eb = new EmbedBuilder();
 
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         if(isSticker) {
             eb.setTitle(":laughing: "+"**STICKER INFO**"+" :laughing:");

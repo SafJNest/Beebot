@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.Misc;
 
-import java.awt.Color;
 import java.io.File;
 import java.util.Arrays;
 
@@ -60,7 +59,7 @@ public class MsgSlash extends SlashCommand {
         eb.setThumbnail(thumb);
         eb.setAuthor(author);
         eb.setDescription(event.getOption("msg").getAsString());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         
         if(event.getOption("anonym") != null && event.getOption("anonym").getAsBoolean()){
             theGuy.openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessageEmbeds(

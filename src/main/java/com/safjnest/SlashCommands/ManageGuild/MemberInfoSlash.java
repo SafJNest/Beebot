@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.ManageGuild;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -91,7 +90,7 @@ public class MemberInfoSlash extends SlashCommand{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT " + name + "** :busts_in_silhouette:");
         eb.setThumbnail(mentionedMember.getAvatarUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         eb.addField("Name", "```" + name + "```", true);
 

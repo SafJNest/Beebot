@@ -1,6 +1,5 @@
 package com.safjnest.Commands.League;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -138,7 +137,7 @@ public class Livegame extends Command {
 
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(account.getName() + "#" + account.getTag() + "'s Game");
-            builder.setColor(Color.decode(Bot.getColor()));
+            builder.setColor(Bot.getColor());
             builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             String blueSide = "";
             String redSide = "";
@@ -178,7 +177,7 @@ public class Livegame extends Command {
         } catch (Exception e) {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(s.getName() + "'s Game");
-            builder.setColor(Color.decode(Bot.getColor()));
+            builder.setColor(Bot.getColor());
             builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             builder.setDescription("This user is not in a game.");
             return builder;

@@ -3,7 +3,6 @@ package com.safjnest.SlashCommands.Audio.Soundboard;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.awt.Color;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -50,7 +49,7 @@ public class SoundboardSelectSlash extends SlashCommand{
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setTitle("Soundboard: " + soundboardName);
         eb.setDescription("Press a button to play a sound");
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
         
         List<LayoutComponent> rows = new ArrayList<>();
         List<Button> row = new ArrayList<>();

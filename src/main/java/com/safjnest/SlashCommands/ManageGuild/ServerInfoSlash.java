@@ -1,6 +1,5 @@
 package com.safjnest.SlashCommands.ManageGuild;
 
-import java.awt.Color;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -98,7 +97,7 @@ public class ServerInfoSlash extends SlashCommand{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":desktop: **SERVER INFORMATION** :desktop:");
         eb.setThumbnail(guild.getIconUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         eb.addField("Server name", "```" + guild.getName() + "```", true);
 

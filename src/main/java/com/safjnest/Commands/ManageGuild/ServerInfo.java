@@ -1,6 +1,5 @@
 package com.safjnest.Commands.ManageGuild;
 
-import java.awt.Color;
 import java.util.HashMap;
 import java.util.List;
 
@@ -94,7 +93,7 @@ public class ServerInfo extends Command{
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle(":desktop: **SERVER INFORMATION** :desktop:");
         eb.setThumbnail(guild.getIconUrl());
-        eb.setColor(Color.decode(Bot.getColor()));
+        eb.setColor(Bot.getColor());
 
         eb.addField("Server name", "```" + guild.getName() + "```", true);
 
