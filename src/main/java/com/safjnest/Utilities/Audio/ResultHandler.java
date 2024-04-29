@@ -106,7 +106,7 @@ public class ResultHandler implements AudioLoadResultHandler {
         if(commandEvent != null) 
             pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(commandEvent, true, isForced));
         else if(slashCommandEvent != null) 
-            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(slashCommandEvent, true, args, isForced, ReplyType.SEPARATED));
+            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(slashCommandEvent, true, args, isForced, replyType));
     }
 
 

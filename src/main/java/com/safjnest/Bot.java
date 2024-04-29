@@ -46,7 +46,6 @@ import com.safjnest.Utilities.LOL.RiotHandler;
 
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Owner.*;
-import com.safjnest.Commands.Owner.Shutdown;
 import com.safjnest.Commands.Queue.*;
 import com.safjnest.Commands.Settings.*;
 import com.safjnest.Commands.Math.*;

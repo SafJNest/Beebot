@@ -1,7 +1,7 @@
 package com.safjnest.SlashCommands.Settings;
 
-import com.safjnest.Commands.Audio.TTS;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.Audio.TTSVoices;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -34,8 +34,8 @@ public class SetVoiceSlash extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         String voice= null, language = null;
 
-        for(String key : TTS.voices.keySet()){
-            if(TTS.voices.get(key).contains(event.getOption("voice").getAsString())){
+        for(String key : TTSVoices.getVoices().keySet()){
+            if(TTSVoices.getVoices().get(key).contains(event.getOption("voice").getAsString())){
                 language = key;
                 voice = event.getOption("voice").getAsString();
                 break;

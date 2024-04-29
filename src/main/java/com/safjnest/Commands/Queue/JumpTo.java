@@ -34,20 +34,11 @@ public class JumpTo extends Command {
             event.reply("Please provide a valid number");
             return;
         }
+
+        int position = Integer.parseInt(event.getArgs());
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
 
-        int position = Integer.parseInt(event.getArgs()) - 1;
-        if (position > ts.getQueue().size()) {
-            event.reply("There are only " + ts.getQueue().size() + " songs in the queue");
-            return;
-        }
-        else if (position < 0) {
-            event.reply("Please provide a positive number");
-            return;
-        }
-
         position--;
-
         ts.getPlayer().stopTrack();
         ts.play(ts.moveCursor(position - ts.getIndex()));
         

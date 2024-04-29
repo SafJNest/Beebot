@@ -55,6 +55,6 @@ public class PlayYoutubeSlash extends SlashCommand {
             return;
         }
         
-        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, search, isForced, ReplyType.SEPARATED));
+        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, search, isForced, ReplyType.REPLY));
     }
 }

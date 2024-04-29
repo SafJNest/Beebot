@@ -325,13 +325,13 @@ public class QueueHandler {
         return eb.build();
     }
 
-    public static MessageEmbed getSkipEmbed(CommandEvent event) {
-        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler();
+    public static MessageEmbed getSkipEmbed(Guild guild, Member author) {
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
 
         EmbedBuilder eb = new EmbedBuilder();
 
-        eb.setAuthor("Skipped by " + event.getMember().getEffectiveName(), "https://discord.com/users/" + event.getMember().getId(), event.getMember().getEffectiveAvatarUrl());
-        eb.setTitle("Skipped Song:");
+        eb.setAuthor("Skipped by " + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
+        eb.setTitle("Skipped to:");
         eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
         eb.setColor(Bot.getColor());
@@ -339,13 +339,13 @@ public class QueueHandler {
         return eb.build();
     }
 
-    public static MessageEmbed getSkipEmbed(SlashCommandEvent event) {
-        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler();
+    public static MessageEmbed getPrevEmbed(Guild guild, Member author) {
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
 
         EmbedBuilder eb = new EmbedBuilder();
 
-        eb.setAuthor("Skipped by " + event.getMember().getEffectiveName(), "https://discord.com/users/" + event.getMember().getId(), event.getMember().getEffectiveAvatarUrl());
-        eb.setTitle("Skipped Song:");
+        eb.setAuthor("Previous by " + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
+        eb.setTitle("Previous to:");
         eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
         eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
         eb.setColor(Bot.getColor());

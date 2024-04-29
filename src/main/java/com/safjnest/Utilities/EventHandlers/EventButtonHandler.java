@@ -155,7 +155,6 @@ public class EventButtonHandler extends ListenerAdapter {
         PlayerManager pm = PlayerManager.get();
         TrackScheduler ts = pm.getGuildMusicManager(guild).getTrackScheduler();
 
-
         int previousIndex = ts.getIndex() - 11;
         if(previousIndex < 0)
             previousIndex = 0;
@@ -169,29 +168,23 @@ public class EventButtonHandler extends ListenerAdapter {
         switch (args) {
             case "repeat":
                 ts.setRepeat(!ts.isRepeat());
-            
                 break;
             case "previouspage":
                 startIndex = Integer.parseInt(event.getButton().getId().split("-", 3)[2]);
-                if(startIndex < 0)
+                if (startIndex < 0)
                     startIndex = 0;
-                
+
                 previousIndex = (startIndex == ts.getIndex() ? 0 : startIndex - 11);
                 nextIndex = startIndex + 11;
-
                 break;
             case "previous":
-                if(ts.moveCursor(ts.getQueue().size(), true) == null)
-                    ts.moveCursor(-1);
-                ts.play(ts.getcurrent(), true);
+                ts.play(ts.getPrevious(), true);
                 startIndex = ts.getIndex();
                 break;
             case "pause":
-
                 ts.pause(true);
                 break;
             case "play":
-
                 ts.pause(false);
                 break;
             case "next":
@@ -200,26 +193,23 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "nextpage":
                 startIndex = Integer.parseInt(event.getButton().getId().split("-")[2]);
-
                 nextIndex = startIndex + 11;
                 previousIndex = startIndex - 11;
-
                 break;
             case "shurima":
-                if(!ts.isShuffled()) 
+                if (!ts.isShuffled())
                     ts.shuffleQueue();
                 else
                     ts.unshuffleQueue();
-                    
+
                 startIndex = ts.getIndex();
                 previousIndex = startIndex - 11;
-                if(previousIndex < 0)
+                if (previousIndex < 0)
                     previousIndex = 0;
 
                 nextIndex = startIndex + 11;
-                if(nextIndex > ts.getQueue().size())
+                if (nextIndex > ts.getQueue().size())
                     nextIndex = ts.getQueue().size() - 1;
-                
                 break;
             case "clear":
                 ts.clearQueue();
@@ -228,7 +218,6 @@ public class EventButtonHandler extends ListenerAdapter {
                 ts.getMessage().setType(EmbedType.PLAYER);
                 break;
             default:
-            
                 break;
         }
         
@@ -239,12 +228,9 @@ public class EventButtonHandler extends ListenerAdapter {
         EmbedBuilder eb = QueueHandler.getEmbed(guild);
         if (ts.getMessage().getType() == EmbedType.QUEUE)
             eb = QueueHandler.getQueueEmbed(guild, startIndex);
-        
 
-        event.getMessage()
-                .editMessageEmbeds(eb.build())
-                .setComponents(rows)
-                .queue();
+        event.getMessage().editMessageEmbeds(eb.build())
+                .setComponents(rows).queue();
     }
 
     public void player(ButtonInteractionEvent event) {
@@ -255,20 +241,15 @@ public class EventButtonHandler extends ListenerAdapter {
         PlayerManager pm = PlayerManager.get();
         TrackScheduler ts = pm.getGuildMusicManager(guild).getTrackScheduler();
 
-
         switch (args) {
             case "repeat":
                 ts.setRepeat(!ts.isRepeat());
-            
                 break;
             case "rewind":
                 ts.movePosition(-10);
-
                 break;
             case "previous":
-                if(ts.moveCursor(ts.getQueue().size(), true) == null)
-                    ts.moveCursor(-1);
-                ts.play(ts.getcurrent(), true);
+                ts.play(ts.getPrevious(), true);
                 break;
             case "pause":
                 ts.pause(true);
@@ -281,26 +262,23 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "forward":
                 ts.movePosition(30);
-
                 break;
             case "shurima":
-                if(!ts.isShuffled()) 
+                if (!ts.isShuffled())
                     ts.shuffleQueue();
                 else
                     ts.unshuffleQueue();
                 break;
             case "queue":
                 ts.getMessage().setType(EmbedType.QUEUE);
-            default: 
+            default:
                 break;
         }
         
         List<LayoutComponent> rows = QueueHandler.getButtons(guild);
 
-        event.getMessage()
-                .editMessageEmbeds(QueueHandler.getEmbed(guild).build())
-                .setComponents(rows)
-                .queue();
+        event.getMessage().editMessageEmbeds(QueueHandler.getEmbed(guild).build())
+                .setComponents(rows).queue();
     }
 
     public void lolButtonEvent(ButtonInteractionEvent event) {

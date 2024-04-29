@@ -1,12 +1,9 @@
 package com.safjnest.Commands.Audio;
 
-import java.awt.Color;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.Map.Entry;
-
-import org.voicerss.tts.Voice.Voices;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -16,6 +13,7 @@ import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TTSHandler;
+import com.safjnest.Utilities.Audio.TTSVoices;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -39,7 +37,7 @@ public class TTS extends Command{
     private TTSHandler tts;
     private PlayerManager pm;
     
-    public static final HashMap<String, Set<String>> voices = new HashMap<String, Set<String>>();
+    public final HashMap<String, Set<String>> voices;
     
     public TTS(){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -51,25 +49,7 @@ public class TTS extends Command{
 
         this.tts = App.getTTS();
         this.pm = PlayerManager.get();
-
-        voices.put(Voices.Arabic_Egypt.id, Set.of(Voices.Arabic_Egypt.array));
-        voices.put(Voices.Chinese_China.id, Set.of(Voices.Chinese_China.array));
-        voices.put(Voices.Dutch_Netherlands.id, Set.of(Voices.Dutch_Netherlands.array));
-        voices.put(Voices.English_GreatBritain.id, Set.of(Voices.English_GreatBritain.array));
-        voices.put(Voices.English_India.id, Set.of(Voices.English_India.array));
-        voices.put(Voices.English_UnitedStates.id, Set.of(Voices.English_UnitedStates.array));
-        voices.put(Voices.French_France.id, Set.of(Voices.French_France.array));
-        voices.put(Voices.German_Germany.id, Set.of(Voices.German_Germany.array));
-        voices.put(Voices.Greek.id, Set.of(Voices.Greek.array));
-        voices.put(Voices.Italian.id, Set.of(Voices.Italian.array));
-        voices.put(Voices.Japanese.id, Set.of(Voices.Japanese.array));
-        voices.put(Voices.Korean.id, Set.of(Voices.Korean.array));
-        voices.put(Voices.Polish.id, Set.of(Voices.Polish.array));
-        voices.put(Voices.Portuguese_Portugal.id, Set.of(Voices.Portuguese_Portugal.array));
-        voices.put(Voices.Romanian.id, Set.of(Voices.Romanian.array));
-        voices.put(Voices.Russian.id, Set.of(Voices.Russian.array));
-        voices.put(Voices.Swedish.id, Set.of(Voices.Swedish.array));
-        voices.put(Voices.Spanish_Spain.id, Set.of(Voices.Spanish_Spain.array));
+        this.voices = TTSVoices.getVoices();
     }
 
     @Override
@@ -90,18 +70,20 @@ public class TTS extends Command{
 
         if(firstWord.equalsIgnoreCase("list")) {
             EmbedBuilder eb = new EmbedBuilder();
+
             eb.setTitle("Available languages:");
-            eb.setColor(new Color(255, 196, 0));
+            eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+            eb.setColor(Bot.getColor());
+
             for(Entry<String, Set<String>> entry : voices.entrySet()){
-                StringBuilder lang = new StringBuilder();
+                String lang = "**" + entry.getKey().toUpperCase() + "**:\n";
                 StringBuilder voiceString = new StringBuilder();
-                lang.append("**" + entry.getKey().toUpperCase() + "**:\n");
-                for(String s : entry.getValue()){
-                    voiceString.append(s + " - ");
-                }
+                for(String s : entry.getValue())
+                    voiceString.append(s).append(" - ");
+                voiceString.setLength(voiceString.length() - 3);
                 eb.addField(lang.toString(), voiceString.toString(), true);
             }
-            eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+            event.reply(TTSVoices.getFormattedVoices());
             event.reply(eb.build());
             return;
         }

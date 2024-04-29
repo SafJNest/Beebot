@@ -108,7 +108,7 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void play() {
-        play(getcurrent());
+        play(getCurrent());
     }
 
     public void play(AudioTrack track, AudioType type) {
@@ -184,19 +184,19 @@ public class TrackScheduler extends AudioEventAdapter {
         }
     }
 
-    public AudioTrack getcurrent() {
+    public AudioTrack getCurrent() {
         fixIndex();
         return queue.get(currentTrackIndex).makeClone();
     }
 
-    public AudioTrack getPrev() {
+    public AudioTrack getPrevious() {
         if(moveCursor(getQueue().size(), true) == null)
             moveCursor(-1);
-        return getcurrent();
+        return getCurrent();
     }
 
     public boolean checkIndex(int index) {
-        if (queue.isEmpty() || index < 0 || index > queue.size()) {
+        if (queue.isEmpty() || index < 0 || index >= queue.size()) {
             return false;
         }
         return queue.get(index) != null;
@@ -208,11 +208,11 @@ public class TrackScheduler extends AudioEventAdapter {
             return null;
         }
         currentTrackIndex += value;
-        return getcurrent();
+        return getCurrent();
     }
 
     public AudioTrack moveCursor(int value, boolean checkQueue) {
-        if(checkQueue && currentTrackIndex == -1 && !getQueue().isEmpty()) {
+        if (!checkQueue || (checkQueue && currentTrackIndex == -1 && !getQueue().isEmpty())) {
             return moveCursor(value);
         }
         return null;
@@ -276,7 +276,7 @@ public class TrackScheduler extends AudioEventAdapter {
             long offset = 0;
             if (isForced && !isRepeat && !isQueuePaused) {
                 toMove = 0;
-                offset = getcurrent() != null ? getcurrent().getPosition() : 0;
+                offset = getCurrent() != null ? getCurrent().getPosition() : 0;
             }
             
             isForced = false;
@@ -301,15 +301,24 @@ public class TrackScheduler extends AudioEventAdapter {
             }
         }
 
-        // CLEANUP: Player hasn't been queried for a while, if you want you can put a clone of this back to your queue
-        if(endReason == AudioTrackEndReason.CLEANUP) {
-            System.out.println("The time of thread has come to an end.");
-        }
+        terminator3LeMacchineRibelli(endReason);
 
         /*if (track.getUserData(TrackData.class).isQueueable()) {
             track.setPosition(0);
             queue.set(currentTrackIndex, track);
         */
+    }
+
+    /**
+     * @deprecated
+     */
+    @Deprecated
+    public void terminator3LeMacchineRibelli(AudioTrackEndReason endReason) {
+        // CLEANUP: Player hasn't been queried for a while, if you want you can put a clone of this back to your queue
+        if(endReason == AudioTrackEndReason.CLEANUP) {
+            System.out.println("The time of thread has come to an end.");
+            //Player.distruzione_demoniaca();
+        }
     }
 
     @Override

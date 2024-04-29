@@ -47,7 +47,6 @@ public class App {
     }
 
 
-
     public static void main(String args[]) {
         
         SafJNest.bee();
@@ -108,7 +107,6 @@ public class App {
 
         System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
         System.out.println("[EPRIA] ID " + PermissionHandler.getEpria());
-
 
         extreme_safj_beebot = new Bot();
         extreme_safj_beebot.il_risveglio_della_bestia();
