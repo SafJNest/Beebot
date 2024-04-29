@@ -39,6 +39,6 @@ public class PlayYoutube extends Command {
             return;
         }
 
-        pm.loadItemOrdered(guild, search, new ResultHandler(event, pm, false, false));
+        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, false));
     }
 }

@@ -32,7 +32,7 @@ public class App {
     /**
      * Insane beebot core
      */
-    private static boolean extremeTesting = true;
+    private static boolean extremeTesting = false;
 
     public static boolean isExtremeTesting() {
         return extremeTesting;

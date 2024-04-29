@@ -4,6 +4,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.QueueHandler;
+import com.safjnest.Utilities.Audio.ReplyType;
 
 
 public class QueueSlash extends SlashCommand{
@@ -19,6 +20,6 @@ public class QueueSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        QueueHandler.sendEmbed(event, false);
+        QueueHandler.sendEmbed(event, ReplyType.REPLY);
     }
 }

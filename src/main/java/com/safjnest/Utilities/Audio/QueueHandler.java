@@ -207,6 +207,13 @@ public class QueueHandler {
         return buttonRows;
     }
 
+    public static void sendEmbed(CommandEvent event) {
+        QueueMessage message = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getMessage();
+        EmbedType type = message != null ? message.getType() : EmbedType.PLAYER;
+
+        sendEmbed(event, type);
+    }
+
     public static void sendEmbed(CommandEvent event, EmbedType type) {
         Guild guild = event.getGuild();
         MessageChannel channel = event.getChannel();
@@ -219,42 +226,48 @@ public class QueueHandler {
         });
     }
 
-    public static void sendEmbed(CommandEvent event) {
+    
+
+
+    public static void sendEmbed(SlashCommandEvent event, EmbedType type) {
+        sendEmbed(event, type, ReplyType.REPLY);
+    }
+
+    public static void sendEmbed(SlashCommandEvent event, ReplyType replyType) {
         QueueMessage message = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getMessage();
         EmbedType type = message != null ? message.getType() : EmbedType.PLAYER;
 
-        sendEmbed(event, type);
+        sendEmbed(event, type, replyType);
     }
 
-    public static void sendEmbed(SlashCommandEvent event, boolean sendSeparate) {
-        QueueMessage message = PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getMessage();
-        EmbedType type = message != null ? message.getType() : EmbedType.PLAYER;
-
-        sendEmbed(event, type, sendSeparate);
-        
-    }
-
-    public static void sendEmbed(SlashCommandEvent event, EmbedType type, boolean sendSeparate) {
+    public static void sendEmbed(SlashCommandEvent event, EmbedType type, ReplyType replyType) {
         Guild guild = event.getGuild();
 
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         ts.deleteMessage();
 
-        if(sendSeparate) {
-            event.getChannel().sendMessageEmbeds(getEmbed(guild, type).build()).setComponents(getButtons(guild, type)).queue(hook -> {
-                ts.setMessage(new QueueMessage(hook, type));
-            });
-        }
-        else {
-            event.deferReply().addEmbeds(getEmbed(guild, type).build()).setComponents(getButtons(guild, type)).queue(hook -> {
-                ts.setMessage(new QueueMessage(hook, type));
-            });
+        switch (replyType) {
+            case REPLY:
+                event.deferReply().addEmbeds(getEmbed(guild, type).build()).setComponents(getButtons(guild, type)).queue(hook -> {
+                    ts.setMessage(new QueueMessage(hook, type));
+                });
+                break;
+            case MODIFY:
+                event.getHook().editOriginalEmbeds(getEmbed(guild, type).build()).setComponents(getButtons(guild, type)).queue(hook -> {
+                    ts.setMessage(new QueueMessage(hook, type));
+                });
+                break;
+            case SEPARATED:
+                event.getChannel().sendMessageEmbeds(getEmbed(guild, type).build()).setComponents(getButtons(guild, type)).queue(hook -> {
+                    ts.setMessage(new QueueMessage(hook, type));
+                });
+                break;
+            default:
+                break;
         }
     }
 
-    public static void sendEmbed(SlashCommandEvent event, EmbedType type) {
-        sendEmbed(event, type, false);
-    }
+    
 
 
     public static List<LayoutComponent> getButtons(Guild guild, EmbedType type) {

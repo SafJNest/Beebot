@@ -46,6 +46,6 @@ public class PlayYoutubeForce extends Command {
             return;
         }
         
-        pm.loadItemOrdered(guild, search, new ResultHandler(event, pm, false, true));
+        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, true));
     }
 }

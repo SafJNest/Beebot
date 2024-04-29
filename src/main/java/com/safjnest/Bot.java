@@ -164,7 +164,7 @@ public class Bot extends ListenerAdapter {
         builder.setActivity(activity);
         //builder.forceGuildOnly("876606568412639272"); //server di leon
         //builder.forceGuildOnly("608967318789160970"); //guitarrin
-        builder.forceGuildOnly("474935164451946506"); //safj
+        //builder.forceGuildOnly("474935164451946506"); //safj
         
         jda.addEventListener(new ListenerAdapter() {
             @Override
