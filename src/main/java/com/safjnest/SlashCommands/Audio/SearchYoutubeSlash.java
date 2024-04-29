@@ -15,7 +15,9 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.ReplyType;
 import com.safjnest.Utilities.Audio.ResultHandler;
 import com.sedmelluq.discord.lavaplayer.source.youtube.YoutubeClientConfig;
 import com.sedmelluq.discord.lavaplayer.tools.DataFormatTools;
@@ -113,7 +115,6 @@ public class SearchYoutubeSlash extends SlashCommand {
     }
 
     private List<AudioTrackInfo> extractSearchPage(JsonBrowser jsonBrowser) throws IOException {
-        System.out.println(jsonBrowser.format());
         ArrayList<AudioTrackInfo> list = new ArrayList<AudioTrackInfo>();
         jsonBrowser.get("contents").get("sectionListRenderer").get("contents").values().forEach((content) -> {
             content.get("itemSectionRenderer").get("contents").values().forEach((jsonTrack) -> {
@@ -153,21 +154,21 @@ public class SearchYoutubeSlash extends SlashCommand {
         eb.setAuthor("Search by" + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
         eb.setTitle("Search for: " + query);
 
-        for(AudioTrackInfo info : searchResultList) {
-            eb.appendDescription(info.title + "\n");
+        for(int i = 0; i < searchResultList.size(); i++) {
+            eb.appendDescription("`" + (i+1) + "` " + searchResultList.get(i).title + "\n");
         }
 
-        //eb.setThumbnail();
         eb.setColor(Bot.getColor());
 
         return eb;
     }
 
-    private StringSelectMenu.Builder getMenu(List<AudioTrackInfo> searchResultList) {
-        StringSelectMenu.Builder mb = StringSelectMenu.create("menu:id");
+    private StringSelectMenu.Builder getMenu(Member author, List<AudioTrackInfo> searchResultList) {
+        String menuId = "menu:" + author.getId() + "-" + SafJNest.getJSalt(4);
+        StringSelectMenu.Builder mb = StringSelectMenu.create(menuId);
 
-        for(AudioTrackInfo info : searchResultList) {
-            mb.addOption(info.title, info.identifier);
+        for(int i = 0; i < searchResultList.size(); i++) {
+            mb.addOption((i+1) + " - " + searchResultList.get(i).title, searchResultList.get(i).identifier);
         }
         
         return mb;
@@ -177,34 +178,41 @@ public class SearchYoutubeSlash extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         String query = event.getOption("query").getAsString();
         List<AudioTrackInfo> searchResultList = search(query);
-
-        MenuListener fileListener = new MenuListener(event);
-        event.getJDA().addEventListener(fileListener);
+        StringSelectMenu.Builder menu = getMenu(event.getMember(), searchResultList);
         
+        MenuListener fileListener = new MenuListener(event, menu.getId());
+        event.getJDA().addEventListener(fileListener);
 
         event.replyEmbeds(getSearchEmbed(event.getMember(), query, searchResultList).build())
-             .addComponents(ActionRow.of(getMenu(searchResultList).build()));
+             .addComponents(ActionRow.of(menu.build())).queue();
     }    
 }
 
 class MenuListener extends ListenerAdapter {
 
     private SlashCommandEvent slashEvent;
+    private String menuID;
 
-    public MenuListener(SlashCommandEvent slashEvent) {
+    public MenuListener(SlashCommandEvent slashEvent, String menuID) {
         this.slashEvent = slashEvent;
+        this.menuID = menuID;
     }
 
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
-        if (event.getComponentId().equals("menu:id")) {
+        if (event.getComponentId().equals(menuID)) {
             List<String> selected = event.getValues();
-            event.reply("Your selection was processed").queue();
-            event.editMessage("It was selected").setReplace(true).queue();
-
+            
+            event.deferEdit().queue();
+            
             PlayerManager pm = PlayerManager.get();
 
-            pm.loadItemOrdered(event.getGuild(), selected.get(0), new ResultHandler(slashEvent, pm, false, selected.get(0), false));
+            event.getHook().editOriginalComponents().queue();
+
+            pm.loadItemOrdered(event.getGuild(), selected.get(0),
+                    new ResultHandler(slashEvent, false, selected.get(0), false, ReplyType.MODIFY));
+            
+            event.getJDA().removeEventListener(this);
         }
     }
 }

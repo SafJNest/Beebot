@@ -25,53 +25,88 @@ public class ResultHandler implements AudioLoadResultHandler {
     private final boolean isSearch;
 
     private final boolean isForced;
+    private final ReplyType replyType;
     
 
-    public ResultHandler(CommandEvent commandEvent, PlayerManager pm, boolean isSearch, boolean isForced) {
+    public ResultHandler(CommandEvent commandEvent, boolean isSearch, boolean isForced) {
         this.commandEvent = commandEvent;
         this.slashCommandEvent = null;
         this.guild = commandEvent.getGuild();
         this.author = commandEvent.getMember();
         this.args = commandEvent.getArgs();
         this.isSearch = isSearch;
-        this.pm = pm;
+        this.pm = PlayerManager.get();
         this.ts = pm.getGuildMusicManager(guild).getTrackScheduler();
         this.isForced = isForced;
+        this.replyType = ReplyType.SEPARATED;
     }
 
-    public ResultHandler(SlashCommandEvent slashCommandEvent, PlayerManager pm, boolean isSearch, String args, boolean isForced) {
+    public ResultHandler(SlashCommandEvent slashCommandEvent, boolean isSearch, String args, boolean isForced, ReplyType replyType) {
         this.commandEvent = null;
         this.slashCommandEvent = slashCommandEvent;
         this.guild = slashCommandEvent.getGuild();
         this.author = slashCommandEvent.getMember();
         this.args = args;
         this.isSearch = isSearch;
-        this.pm = pm;
+        this.pm = PlayerManager.get();
         this.ts = pm.getGuildMusicManager(guild).getTrackScheduler();
         this.isForced = isForced;
+        this.replyType = replyType;
     }
 
 
     private void sendEmbed() {
         if(commandEvent != null) QueueHandler.sendEmbed(commandEvent, EmbedType.PLAYER);
-        else if(slashCommandEvent != null) QueueHandler.sendEmbed(slashCommandEvent, EmbedType.PLAYER, true);
+        else if(slashCommandEvent != null) QueueHandler.sendEmbed(slashCommandEvent, EmbedType.PLAYER, ReplyType.SEPARATED);
+    }
+
+    private void replySlash(String message) {
+        switch (replyType) {
+            case REPLY:
+                slashCommandEvent.reply(message).queue();
+                break;
+            case MODIFY:
+                slashCommandEvent.getHook().editOriginal(message).queue();
+                break;
+            case SEPARATED:
+                slashCommandEvent.getHook().sendMessage(message).queue();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void replyEmbedsSlash(MessageEmbed messageEmbed) {
+        switch (replyType) {
+            case REPLY:
+                slashCommandEvent.replyEmbeds(messageEmbed).queue();
+                break;
+            case MODIFY:
+                slashCommandEvent.getHook().editOriginalEmbeds(messageEmbed).queue();
+                break;
+            case SEPARATED:
+                slashCommandEvent.getHook().sendMessageEmbeds(messageEmbed).queue();
+                break;
+            default:
+                break;
+        }
     }
 
     private void reply(String message) {
         if(commandEvent != null) commandEvent.reply(message);
-        else if(slashCommandEvent != null) slashCommandEvent.reply(message).queue();
+        else if(slashCommandEvent != null) replySlash(message);
     }
 
     private void reply(MessageEmbed messageEmbed) {
         if(commandEvent != null) commandEvent.reply(messageEmbed);
-        else if(slashCommandEvent != null) slashCommandEvent.replyEmbeds(messageEmbed).queue();
+        else if(slashCommandEvent != null) replyEmbedsSlash(messageEmbed);
     }
 
     private void search() {
         if(commandEvent != null) 
-            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(commandEvent, pm, true, isForced));
+            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(commandEvent, true, isForced));
         else if(slashCommandEvent != null) 
-            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(slashCommandEvent, pm, true, args, isForced));
+            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(slashCommandEvent, true, args, isForced, ReplyType.SEPARATED));
     }
 
 

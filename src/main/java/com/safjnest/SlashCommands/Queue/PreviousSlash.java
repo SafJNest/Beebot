@@ -5,6 +5,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.QueueHandler;
+import com.safjnest.Utilities.Audio.ReplyType;
 import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Guild;
@@ -34,6 +35,6 @@ public class PreviousSlash extends SlashCommand{
 
         ts.play(prevTrack, true);
         
-        QueueHandler.sendEmbed(event, false);
+        QueueHandler.sendEmbed(event, ReplyType.REPLY);
     }
 }

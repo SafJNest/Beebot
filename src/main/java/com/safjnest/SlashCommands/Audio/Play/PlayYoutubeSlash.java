@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.ReplyType;
 import com.safjnest.Utilities.Audio.ResultHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -54,6 +55,6 @@ public class PlayYoutubeSlash extends SlashCommand {
             return;
         }
         
-        pm.loadItemOrdered(guild, search, new ResultHandler(event, pm, false, search, isForced));
+        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, search, isForced, ReplyType.SEPARATED));
     }
 }
