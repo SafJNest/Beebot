@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.ReplyType;
@@ -37,6 +38,11 @@ public class JumpToSlash extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
+
+        if(!SafJNest.intIsParsable(event.getOption("position").getAsString())) {
+            event.deferReply().addContent("Write a number or use the autocomplete").queue();
+            return;
+        }
 
         int position = Integer.parseInt(event.getOption("position").getAsString());
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();

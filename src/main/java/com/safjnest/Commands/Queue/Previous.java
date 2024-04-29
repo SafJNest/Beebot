@@ -6,7 +6,6 @@ import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackScheduler;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.entities.Guild;
 
@@ -25,15 +24,10 @@ public class Previous extends Command{
     protected void execute(CommandEvent event) {
         Guild guild = event.getGuild();
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
-    
-        AudioTrack prevTrack = ts.getPrev();
 
-        if(prevTrack == null) {
-            event.reply("This is the beginning of the queue");
-            return;
-        }
+        ts.play(ts.getPrevious(), true);
 
-        ts.play(prevTrack, true);
+        event.reply(QueueHandler.getPrevEmbed(guild, event.getMember()));
         
         QueueHandler.sendEmbed(event);
     }

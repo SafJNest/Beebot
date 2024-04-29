@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.safjnest.Bot;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.Audio.TTSVoices;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.Alert.AlertData;
 import com.safjnest.Utilities.Guild.Alert.AlertKey;
@@ -24,9 +25,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 
-
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
-    
 
     @Override
     public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
@@ -35,34 +34,38 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
         String name = e.getName();
         
-        if(e.getFullCommandName().equals("soundboard create") || e.getFocusedOption().getName().startsWith("sound-"))
-            name = "play";
-        
-        else if(e.getFocusedOption().getName().equals("sound_add"))
+        if (e.getFullCommandName().equals("soundboard create") 
+            || e.getFocusedOption().getName().startsWith("sound-"))
             name = "play";
 
-        else if(e.getFocusedOption().getName().equals("sound_remove"))
+        else if (e.getFocusedOption().getName().equals("sound_add"))
+            name = "play";
+
+        else if (e.getFocusedOption().getName().equals("sound_remove"))
             name = "sound_remove";
 
-        else if(e.getFullCommandName().equals("soundboard select") || e.getFocusedOption().getName().equals("soundboard_name") || e.getFullCommandName().equals("soundboard remove") || e.getFullCommandName().equals("soundboard delete"))
+        else if (e.getFullCommandName().equals("soundboard select")
+                || e.getFocusedOption().getName().equals("soundboard_name")
+                || e.getFullCommandName().equals("soundboard remove")
+                || e.getFullCommandName().equals("soundboard delete"))
             name = "soundboard_select";
-        
-        else if(e.getFullCommandName().equals("customizesound"))
+
+        else if (e.getFullCommandName().equals("customizesound"))
             name = "user_sound";
 
-        else if(e.getFullCommandName().equals("bugsnotifier"))
+        else if (e.getFullCommandName().equals("bugsnotifier"))
             name = "help";
 
-        else if(e.getFullCommandName().equals("TTS"))
+        else if (e.getFullCommandName().equals("TTS"))
             name = "tts";
-        
-        else if(e.getFocusedOption().getName().equals("role_remove")) 
+
+        else if (e.getFocusedOption().getName().equals("role_remove"))
             name = "alert_role";
-        
-        else if (e.getFocusedOption().getName().equals("reward_level")) 
+
+        else if (e.getFocusedOption().getName().equals("reward_level"))
             name = "rewards_level";
-        
-            else if (e.getFocusedOption().getName().equals("reward_roles")) 
+
+        else if (e.getFocusedOption().getName().equals("reward_roles"))
             name = "reward_roles";
         
              
@@ -72,7 +75,8 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                     for (ResultRow sound : DatabaseHandler.getGuildRandomSound(e.getGuild().getId()))
                         choices.add(new Choice(sound.get("name"), sound.get("id")));
                 } else {
-                    for (ResultRow sound : DatabaseHandler.getFocusedGuildSound(e.getGuild().getId(), e.getFocusedOption().getValue()))
+                    for (ResultRow sound : DatabaseHandler.getFocusedGuildSound(e.getGuild().getId(),
+                            e.getFocusedOption().getValue()))
                         choices.add(new Choice(sound.get("name"), sound.get("id")));
                 }
 
@@ -82,7 +86,8 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                     for (ResultRow sound : DatabaseHandler.getUserRandomSound(e.getGuild().getId()))
                         choices.add(new Choice(sound.get("name"), sound.get("id")));
                 } else {
-                    for (ResultRow sound : DatabaseHandler.getFocusedUserSound(e.getGuild().getId(), e.getFocusedOption().getValue()))
+                    for (ResultRow sound : DatabaseHandler.getFocusedUserSound(e.getGuild().getId(),
+                            e.getFocusedOption().getValue()))
                         choices.add(new Choice(sound.get("name"), sound.get("id")));
                 }
 
@@ -135,8 +140,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                         }
                     } else {
                         for (int i = 0; i < augments.size() && max < 10; i++) {
-                            if (augments.get(i).getName().toLowerCase()
-                                    .startsWith(e.getFocusedOption().getValue().toLowerCase())) {
+                            if (augments.get(i).getName().toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())) {
                                 choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
                                 max++;
                             }
@@ -144,7 +148,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                     }
                 }
                 break;
-                
+
             case "soundboard_select":
                 if (e.getFocusedOption().getValue().equals("")) {
                     for (ResultRow sound : DatabaseHandler.getRandomSoundboard(e.getGuild().getId()))
@@ -175,33 +179,39 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                     for (ResultRow greet : DatabaseHandler.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), e.getFocusedOption().getValue()))
                         choices.add(new Choice(greet.get("name") + " (" + greet.get("id") + ")", greet.get("id")));
                 }
-            break;
+                break;
             case "tts":
+                List<String> voices = TTSVoices.getVoiceList();
                 if (e.getFocusedOption().getValue().equals("")) {
-                    //TODO non ho voglia
-                    //TODO nemmeno io
+                    for (int i = 0; i < voices.size() && i < 25; i++) {
+                        choices.add(new Choice(voices.get(i), voices.get(i)));
+                    }
                 } else {
-
-                }
-            break;
-            case "jumpto":
-                List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue();
-                if (e.getFocusedOption().getValue().equals("")) {
-                    //Collections.shuffle(queue);
-                    for (int i = 0; i < queue.size() && i < 10; i++)
-                        choices.add(new Choice(queue.get(i).getInfo().title, String.valueOf(i + 1)));
-                } else {
-                    String query = e.getFocusedOption().getValue().toLowerCase();
-
-                    int max = 0;
-                    for (int i = 0; i < queue.size() && max < 10; i++) {
-                        String title = queue.get(i).getInfo().title.toLowerCase();
-                        if (title.contains(query)) {
-                            choices.add(new Choice("[" + (i+1) +"] " + queue.get(i).getInfo().title, String.valueOf(i)));
+                    for (int i = 0, max = 0; i < voices.size() && max < 25; i++) {
+                        if (voices.get(i).contains(e.getFocusedOption().getValue())) {
+                            choices.add(new Choice(voices.get(i), voices.get(i)));
                             max++;
                         }
                     }
                 }
+                break;
+            case "jumpto":
+                List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue();
+                if (e.getFocusedOption().getValue().equals("")) {
+                    for (int i = 0; i < queue.size() && i < 10; i++)
+                        choices.add(new Choice("[" + (i + 1) + "] " + queue.get(i).getInfo().title, String.valueOf(i + 1)));
+                } else {
+                    String query = e.getFocusedOption().getValue().toLowerCase();
+
+                    for (int i = 0, max = 0; i < queue.size() && max < 10; i++) {
+                        String title = "[" + (i + 1) + "] " + queue.get(i).getInfo().title;
+                        if (title.toLowerCase().contains(query)) {
+                            choices.add(new Choice(title, String.valueOf(i + 1)));
+                            max++;
+                        }
+                    }
+                }
+                break;
             case "alert_role":
                 AlertData alert = guildData.getAlert(AlertType.WELCOME);
                 if (alert != null && alert.getRoles() != null) {
@@ -211,7 +221,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                         if (alertRoles.containsValue(r.getId()))
                             roles.add(r);
                     }
-                    
+
                     Collections.shuffle(roles);
                     if (e.getFocusedOption().getValue().equals("")) {
                         for (int i = 0; i < roles.size() && i < 10; i++)
@@ -221,7 +231,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                             if (role.getName().toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
                                 choices.add(new Choice(role.getName(), role.getId()));
                         }
-                    
+
                     }
                 }
                 break;
@@ -268,6 +278,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 }
                 break;
         }
+
         e.replyChoices(choices).queue();
     }
 }

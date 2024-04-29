@@ -9,7 +9,6 @@ import com.safjnest.Utilities.Audio.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Guild;
 
-
 public class SkipSlash extends SlashCommand{
     
     public SkipSlash() {
@@ -24,18 +23,22 @@ public class SkipSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         Guild guild = event.getGuild();
+        
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
         AudioTrack nextTrack = ts.moveCursor(1);
         
-        if(nextTrack == null) {
-            event.deferReply(true).addContent("This is the end of the queue").queue();
-            return;
-        }
-
         ts.play(nextTrack, true);
 
-        event.deferReply().addEmbeds(QueueHandler.getSkipEmbed(event)).queue();
+        ReplyType replyType;
 
-        QueueHandler.sendEmbed(event, ReplyType.SEPARATED);
+        if(nextTrack != null) {
+            event.deferReply().addEmbeds(QueueHandler.getSkipEmbed(guild, event.getMember())).queue();
+            replyType = ReplyType.SEPARATED;
+        }
+        else {
+            replyType = ReplyType.REPLY;
+        }
+
+        QueueHandler.sendEmbed(event, replyType);
     }
 }
