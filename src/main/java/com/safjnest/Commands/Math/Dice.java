@@ -87,7 +87,6 @@ public class Dice extends Command {
                     // Rolling the dice
                     int rollCount = 0;
                     while (rollCount < diceCount) {
-                        System.out.println(diceSides);
                         int roll =  RANDOM.nextInt(diceSides) + 1;
                         if (explode && roll >= explodeValue) {
                             total += roll;
