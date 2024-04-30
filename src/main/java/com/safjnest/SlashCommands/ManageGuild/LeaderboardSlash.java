@@ -38,7 +38,7 @@ public class LeaderboardSlash extends SlashCommand {
         int limit = (event.getOption("limit") != null) ? event.getOption("limit").getAsInt() : 10;
 
         QueryResult users = DatabaseHandler.getUsersByExp(event.getGuild().getId(), limit);
-        System.out.println(users.size());
+        
         if(users.isEmpty()) {
             event.reply("```No Results```");
             return;

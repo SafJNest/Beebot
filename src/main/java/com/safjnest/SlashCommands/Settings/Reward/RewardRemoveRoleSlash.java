@@ -43,7 +43,7 @@ public class RewardRemoveRoleSlash extends SlashCommand {
             event.deferReply(true).addContent("There is no reward set for this level.").queue();
             return;
         }
-        System.out.println(rewardLevel + " " + roleID);
+        
         if (reward.getRoles() == null || !reward.getRoles().containsValue(roleID)) {
             event.deferReply(true).addContent("This role is not set as reward").queue();
             return;

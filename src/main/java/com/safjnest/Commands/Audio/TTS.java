@@ -83,7 +83,7 @@ public class TTS extends Command{
                 voiceString.setLength(voiceString.length() - 3);
                 eb.addField(lang.toString(), voiceString.toString(), true);
             }
-            event.reply(TTSVoices.getFormattedVoices());
+            
             event.reply(eb.build());
             return;
         }
