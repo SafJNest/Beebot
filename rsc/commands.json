@@ -145,12 +145,20 @@
         "arguments" : "[CommandName]"
     },
 
+    "player":{
+        "alias" : ["pl"],
+        "help"  : "Show the current player.",
+        "longhelp": "Show the current player.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]"
+    },
+
     "queue":{
         "alias" : ["q"],
         "help"  : "Show the current queue.",
         "longhelp": "Show the current queue.",
         "category" : "Audio Queue",
-        "arguments" : "[CommandName] [track]"
+        "arguments" : "[CommandName]"
     },
 
     "skip":{

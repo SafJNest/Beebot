@@ -272,21 +272,27 @@ public class TrackScheduler extends AudioEventAdapter {
         // FINISHED: A track finished or died by an exception (mayStartNext = true).
         // LOAD_FAILED: Loading of a track failed (mayStartNext = true).
         if (endReason.mayStartNext) {
-            int toMove = isRepeat ? 0 : 1;
-            long offset = 0;
-            if (isForced && !isRepeat && !isQueuePaused) {
-                toMove = 0;
-                offset = getCurrent() != null ? getCurrent().getPosition() : 0;
-            }
-            
+            int toMove = isRepeat || !isQueueable(track) ? 0 : 1;
+            long trackPosition = (isRepeat || !isQueueable(track)) && (queue.get(currentTrackIndex) == null) ? 0 : queue.get(currentTrackIndex).getPosition();
+
+            /*
+            System.out.println("track: " + track.getInfo().title 
+                          + " | isRepeat: " + isRepeat 
+                          + " | isForced: " + isForced 
+                          + " | isQueuePaused: " + isQueuePaused 
+                          + " | isQueuable: " + isQueueable(track) 
+                          + " | current position: " + (queue.get(currentTrackIndex) != null ? queue.get(currentTrackIndex).getPosition() : 0)
+                          + " | toMove: " + toMove 
+                          + " | position: " + trackPosition);
+            */
+
             isForced = false;
 
             AudioTrack toPlay = moveCursor(toMove);
-            if (toPlay != null) 
-                play(toPlay, offset, false);
 
-            if (isQueueable(track) && lastMessageSent != null) 
-                lastMessageSent.update();
+            if(toPlay != null) play(toPlay, trackPosition, false);
+            if(lastMessageSent != null) lastMessageSent.update();
+            if(!isQueueable(track) && isQueuePaused) pause(true);
         } 
 
         // STOPPED: The player was stopped.
@@ -297,16 +303,13 @@ public class TrackScheduler extends AudioEventAdapter {
         // REPLACED: Another track started playing while this had not finished
         if(endReason == AudioTrackEndReason.REPLACED) {
             if(isForced && isQueueable(track)) {
+                //System.out.println("Inside the replaced if: " + getCurrent().getInfo().title + " -> " + track.getInfo().title);
                 queue.set(currentTrackIndex, track);
             }
         }
 
-        terminator3LeMacchineRibelli(endReason);
+        //terminator3LeMacchineRibelli(endReason);
 
-        /*if (track.getUserData(TrackData.class).isQueueable()) {
-            track.setPosition(0);
-            queue.set(currentTrackIndex, track);
-        */
     }
 
     /**
