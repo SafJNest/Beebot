@@ -206,8 +206,8 @@ public class Bot extends ListenerAdapter {
 
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
-            new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Queue(), new Skip(), new Previous(), new PlayYoutubeForce(),
-            new JumpTo()
+            new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
+            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo()
         );
         
         
@@ -237,7 +237,7 @@ public class Bot extends ListenerAdapter {
         Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), 
             new ListSlash(), new PlaySlash(), new UploadSlash(), new TTSSlash(), new StopSlash(), 
             new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash(),
-            new QueueSlash(), new SkipSlash(), new PreviousSlash(), new JumpToSlash(), new SearchYoutubeSlash()
+            new PlayerSlash(), new QueueSlash(), new SkipSlash(), new PreviousSlash(), new JumpToSlash(), new SearchYoutubeSlash()
         );
 
 

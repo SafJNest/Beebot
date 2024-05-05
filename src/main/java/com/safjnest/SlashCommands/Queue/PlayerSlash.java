@@ -8,9 +8,9 @@ import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.ReplyType;
 
 
-public class QueueSlash extends SlashCommand{
+public class PlayerSlash extends SlashCommand{
     
-    public QueueSlash() {
+    public PlayerSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");
@@ -21,6 +21,6 @@ public class QueueSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        QueueHandler.sendEmbed(event, EmbedType.QUEUE, ReplyType.REPLY);
+        QueueHandler.sendEmbed(event, EmbedType.PLAYER, ReplyType.REPLY);
     }
 }

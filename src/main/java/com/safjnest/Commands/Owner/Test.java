@@ -68,16 +68,21 @@ public class Test extends Command{
 
     @Override
     protected void execute(CommandEvent e) {
-        String[] args = e.getArgs().split(" ", 2);
         String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
         QueryResult res;
-        if(args.length == 0 || !SafJNest.intIsParsable(args[0])) return;
         String query = "";
+
+        String args[] = e.getArgs().split(" ", 2);
 
         //File soundBoard = new File("rsc" + File.separator + "SoundBoard");
         //File[] files = soundBoard.listFiles();
-        switch (Integer.parseInt(args[0])){
-            case 1:
+        switch (args[0]){
+            case "list":
+                e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
+                    + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler");
+            break;
+            case "timer":
                 Timer timer = new Timer();
                 /* 
                 LocalDate currentDate = LocalDate.now();
@@ -104,35 +109,40 @@ public class Test extends Command{
                 timer.schedule(new MonthlyTask(), initialDelay, period);
             break;
 
-            case 2:
+            case "chart":
                 createAndSaveChartAsPNG();
             break;
-            case 3:
-                for(Member m : e.getJDA().getGuildById("943974473370062948").getMembers()){
+            case "members":
+                for(Member m : e.getJDA().getGuildById(args[1]).getMembers()){
                     System.out.println(m.getEffectiveName() + " " + m.getId());
                 }
             break;
-            case 4:
+            case "prime":
                 e.reply(SafJNest.getRandomPrime(Integer.parseInt(args[1])).toString());
             break;
-            case 5:
-                String invites = "";
-                for(Invite invite : e.getJDA().getGuildById(args[1]).retrieveInvites().complete()) {
-                    invites += "code: " + invite.getCode() 
-                        + " - max age: " + invite.getMaxAge() + "s"
-                        + " - max uses: " + invite.getMaxUses() 
-                        + " - uses: " + invite.getUses()
-                        + ((invite.getChannel() != null) ? (" - channel: " + invite.getChannel().getName()) : "")
-                        + ((invite.getGroup() != null) ? (" - group: " + invite.getGroup().getName()) : "")
-                        + " - inviter: " + invite.getInviter().getGlobalName()
-                        + " - target type: " + invite.getTargetType()
-                        + ((invite.getTarget() != null && invite.getTarget().getUser() != null) ? (" - target user: " + invite.getTarget().getUser().getName()) : "")
-                        + " - is temporary: " + invite.isTemporary()
-                        + " - time created: " + "<t:" + invite.getTimeCreated().toEpochSecond() + ":d>" + "\n";
+            case "getInvites":
+                Guild guildd = e.getJDA().getGuildById(args[1]);
+                StringBuilder invites = new StringBuilder();
+                for(Invite invite : guildd.retrieveInvites().complete()) {
+                    invites.append("code: " + invite.getCode() 
+                              + " - max age: " + invite.getMaxAge() + "s"
+                              + " - max uses: " + invite.getMaxUses() 
+                              + " - uses: " + invite.getUses()
+                            + ((invite.getChannel() != null) 
+                             ? (" - channel: " + invite.getChannel().getName()) : "")
+                            + ((invite.getGroup() != null) 
+                             ? (" - group: " + invite.getGroup().getName()) : "")
+                              + " - inviter: " + invite.getInviter().getGlobalName()
+                              + " - target type: " + invite.getTargetType()
+                            + ((invite.getTarget() != null && invite.getTarget().getUser() != null) 
+                             ? (" - target user: " + invite.getTarget().getUser().getName()) : "")
+                              + " - is temporary: " + invite.isTemporary()
+                              + " - time created: " + "<t:" + invite.getTimeCreated().toEpochSecond() + ":d>" + "\n");
                 }
-                e.reply("here are the invites for " + e.getJDA().getGuildById(args[1]).getName() + " (" + e.getJDA().getGuildById(args[1]).getId() + "):\n" + invites);
+
+                e.reply("here are the invites for " + guildd.getName() + " (" + guildd.getId() + "):\n" + invites);
             break;
-            case 6:
+            case "createInvite":
                 String invitess = "";
                 for(Invite invite : e.getJDA().getGuildById(args[1]).retrieveInvites().complete()) {
                     invitess += invite.getUrl() + "\n";
@@ -143,7 +153,7 @@ public class Test extends Command{
                     e.reply("here is the created invite:\n" + invitess);
                 }
             break;
-            case 7:
+            case "getGuildsWithInvites":
                 User self = e.getJDA().getSelfUser();
                 List<Guild> guilds = new ArrayList<>(e.getJDA().getGuilds());
                 guilds.sort((g1, g2) -> {
@@ -163,7 +173,7 @@ public class Test extends Command{
                 }
                 e.reply("Guilds with invites:\n" + guildlist);
             break;
-            case 8:
+            case "getLolItems":
                 System.out.println("eee");
                 String ss = "";
                 for (Item item : RiotHandler.getRiotApi().getDDragonAPI().getItems().values()) {
@@ -175,7 +185,7 @@ public class Test extends Command{
                 e.reply(ss);
 
             break;
-            case 9:
+            case "renameFile":
                 // for(File file : files){
                 //     String name = file.getName().split("\\.")[0];
                 //     String extension = file.getName().split("\\.")[1];
@@ -184,7 +194,7 @@ public class Test extends Command{
 
                 // }
             break;
-            case 10:
+            case "renameFiles":
                 // for(File file : files){
                 //     String name = file.getName().split("\\.")[0];
                 //     String extension = file.getName().split("\\.")[1];
@@ -196,17 +206,17 @@ public class Test extends Command{
 
                 // }
             break;
-            case 11:
+            case "closeDatabase":
                 try {
                     DatabaseHandler.getConnection().close();
                 } catch (SQLException e1) {
                     e1.printStackTrace();
                 }
             break;
-            case 12:
+            case "getBlacklist":
                 System.out.println(gs.getServer(e.getGuild().getId()).getBlacklistData().toString());
                 break;
-            case 13:
+            case "printJson":
                 HashMap<AlertKey, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
                 e.reply("```json\n" + s + "```");
@@ -216,7 +226,7 @@ public class Test extends Command{
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
                 e.reply("```json\n" + new JSONObject(gs.getServer(e.getGuild().getId()).getUsers()).toJSONString() + "```");
                 break;
-            case 14:
+            case "cacheThings":
                 for(Guild g : e.getJDA().getGuilds()) {
                     gs.getServer(g.getId()).getAlerts();
                     gs.getServer(g.getId()).getBlacklistData();
@@ -229,15 +239,14 @@ public class Test extends Command{
                 }
                 e.reply("Done");
                 break;
-            case 15:
+            case "getServer":
                 String sss = new JSONObject(gs.getServer(e.getGuild().getId()).getChannels()).toJSONString();
                 e.reply("```json\n" + sss + "```");
                 break;
-            case 16:
+            case "stats":
                 query = "SELECT guild_id, room_id FROM room WHERE has_command_stats = 0";
                 res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
-
                     for (String bot : bots) {
                         query = "INSERT INTO channel(guild_id, channel_id, bot_id, stats_enabled) VALUES (" + row.get("guild_id") + ", "+ row.get("room_id") +", " + bot + ", 0)";
                         DatabaseHandler.safJQuery(query);
@@ -245,7 +254,7 @@ public class Test extends Command{
                 }
                 e.reply("Done");
                 break;
-            case 17:
+            case "insertEpriaInBlacklist":
                 query = "SELECT id FROM guilds";
                 res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
@@ -253,7 +262,7 @@ public class Test extends Command{
                     DatabaseHandler.safJQuery(query);
                 }
                 break;
-            case 18:
+            case "insertAlert":
                 query = "SELECT guild_id, role_id, level, message_text FROM reward";
                 res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
@@ -275,7 +284,7 @@ public class Test extends Command{
                     }
                 }
                 break;
-            case 19:
+            case "insertUser":
             query = "SELECT user_id, guild_id, exp, level, messages FROM experience";
             res = DatabaseHandler.safJQuery(query);
             for(ResultRow row : res){
@@ -286,13 +295,13 @@ public class Test extends Command{
             }
             e.reply("Done");
                 break;
-            case 20:
+            case "trackScheduler":
                 String status = PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().toString();
                 System.out.println(status);
                 e.reply(status);
                 break;
             default:
-                e.reply("Command does not exist.");
+                e.reply("Command does not exist (use list to list the commands).");
             break;
         }
     }  
