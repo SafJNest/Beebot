@@ -37,25 +37,25 @@ public class SummonerDisconnectSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        try {
-            QueryResult accountIds = DatabaseHandler.getLOLAccountsByUserId(event.getMember().getId());
-            if(accountIds == null){
-                event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help setsummoner").queue();
-                return;
-            }
-            for(ResultRow id : accountIds){
-                if(RiotHandler.getSummonerByAccountId(id.get("account_id")).getName().equalsIgnoreCase(event.getOption("sum").getAsString())){;
-                    DatabaseHandler.deleteLOLaccount(event.getMember().getId(), id.get("account_id"));
-                    event.deferReply(false).addContent("Summoner removed").queue();
-                    return;
-                }
-            }
-            event.deferReply(false).addContent("Summoner not found").queue();
-            return;
+        // try {
+        //     QueryResult accountIds = DatabaseHandler.getLOLAccountsByUserId(event.getMember().getId());
+        //     if(accountIds == null){
+        //         event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help setsummoner").queue();
+        //         return;
+        //     }
+        //     for(ResultRow id : accountIds){
+        //         if(RiotHandler.getSummonerByAccountId(id.get("account_id")).getName().equalsIgnoreCase(event.getOption("sum").getAsString())){;
+        //             DatabaseHandler.deleteLOLaccount(event.getMember().getId(), id.get("account_id"));
+        //             event.deferReply(false).addContent("Summoner removed").queue();
+        //             return;
+        //         }
+        //     }
+        //     event.deferReply(false).addContent("Summoner not found").queue();
+        //     return;
             
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
 	}
 

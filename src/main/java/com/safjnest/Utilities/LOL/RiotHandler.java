@@ -17,7 +17,11 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CustomEmoji;
+import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.LOL.Runes.PageRunes;
 import com.safjnest.Utilities.LOL.Runes.Rune;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -25,6 +29,9 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.Command.Choice;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.impl.R4J;
@@ -201,51 +208,41 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
 
-    public static String getAccountIdByName(String name){
-        try {
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, name).getAccountId();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     public static int getNumberOfProfile(String discordId){
         try { 
             return Integer.valueOf(DatabaseHandler.getLolProfilesCount(discordId));
         } catch (Exception e) { return 0; }
     }
 
-    public static Summoner getSummonerByName(String nameAccount, String tag){
+    public static Summoner getSummonerByName(String nameAccount, String tag, LeagueShard shard){
         try {
-            String puiid = riotApi.getAccountAPI().getAccountByTag(RegionShard.EUROPE, nameAccount, tag).getPUUID();
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(LeagueShard.EUW1, puiid);  
-        } catch (Exception e) {
-            return getSummonerByName(nameAccount);
-        }
-    }
-
-    /**
-     * @param nameAccount
-     * @return
-     */
-    @Deprecated
-    public static Summoner getSummonerByName(String nameAccount){
-        try {
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, nameAccount);
+            String puiid = riotApi.getAccountAPI().getAccountByTag(getRegionFromServer(shard), nameAccount, tag).getPUUID();
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puiid);  
         } catch (Exception e) {
             return null;
         }
     }
 
-    public static Summoner getSummonerBySummonerId(String id){
+    public static RegionShard getRegionFromServer(LeagueShard shard) {
+        return shard.toRegionShard();
+    }
+
+    public static LeagueShard getShardFromOrdinal(int ordinal){
+        System.out.println(ordinal);
+        return LeagueShard.values()[ordinal];
+    }
+
+
+
+    public static Summoner getSummonerBySummonerId(String id, LeagueShard shard){
         try { 
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerById(LeagueShard.EUW1, id);
-        } catch (Exception e) { return null; }
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerById(shard, id);
+        } catch (Exception e) {return null; }
     }
     
-    public static Summoner getSummonerByAccountId(String id){
+    public static Summoner getSummonerByAccountId(String id, LeagueShard shard){
         try { 
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, id);
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, id);
         } catch (Exception e) { return null; }
     }
 
@@ -265,7 +262,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         String stats = "";
         for(int i = 0; i < 2; i++){
             try {
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
                     stats = getStatsByEntry(jda, entry);
 
@@ -278,7 +275,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         String stats = "";
         for(int i = 0; i < 2; i++){
             try {
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(LeagueShard.EUW1, s.getSummonerId()).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
                     stats = getStatsByEntry(jda, entry);
             } catch (Exception e) { }
@@ -427,5 +424,59 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             }
         }
         return null;
+    }
+
+    public static Summoner getSummonerByArgs(CommandEvent event) {
+        String args = event.getArgs();
+        GuildData guild = Bot.getGuildData(event.getGuild().getId());
+
+        if (args.isEmpty()) {
+            return getSummonerFromDB(event.getAuthor().getId());
+        }
+
+        if (event.getMessage().getMentions().getMembers().size() != 0) {
+            return getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
+        }
+
+        String name = "";
+        String tag = "";
+        if (!args.contains("#")) {
+            name = args;
+            tag = "EUW";
+        } else {
+            name = args.split("#", 2)[0];
+            tag = args.split("#", 2)[1];
+        }
+
+        return getSummonerByName(name, tag, guild.getLeagueShard());
+    }
+
+    public static Summoner getSummonerByArgs(SlashCommandEvent event) {
+        GuildData guild = Bot.getGuildData(event.getGuild().getId());
+        
+        if (event.getOption("summoner") == null && event.getOption("user") == null) {
+            return getSummonerFromDB(event.getUser().getId());
+        }
+
+        if (event.getOption("user") != null) {
+            return getSummonerFromDB(event.getOption("user").getAsUser().getId());
+        }
+
+        LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guild.getLeagueShard();
+        String name = event.getOption("summoner").getAsString();
+        String tag = (event.getOption("tag") != null) ? event.getOption("tag").getAsString() : shard.name();
+        return getSummonerByName(name, tag, shard);
+    }
+
+    public static OptionData getLeagueShardOptions() {
+        Choice[] choices = new Choice[LeagueShard.values().length];
+        for (int i = 0; i < LeagueShard.values().length; i++) {
+            choices[i] = new Choice(LeagueShard.values()[i].commonName(), String.valueOf(i));
+        }
+
+
+        return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", false)
+                    .addChoices(choices);
+                    
     }
 }

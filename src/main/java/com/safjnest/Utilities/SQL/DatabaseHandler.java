@@ -481,7 +481,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getLolAccounts(String user_id) {
-        return safJQuery("SELECT summoner_id FROM summoner WHERE user_id = '" + user_id + "';");
+        return safJQuery("SELECT summoner_id, account_id, league_shard FROM summoner WHERE user_id = '" + user_id + "';");
     }
 
     public static boolean toggleLevelUp(String guild_id, boolean toggle) {

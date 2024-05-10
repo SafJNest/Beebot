@@ -16,6 +16,8 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
+import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -34,8 +36,10 @@ public class OpggSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "user", "Name of the summoner you want to get information on", false),
-            new OptionData(OptionType.STRING, "tag", "Tag of the summoner you want to get information on", false));
+            new OptionData(OptionType.STRING, "summoner", "Name of the summoner you want to get information on", false),
+            new OptionData(OptionType.STRING, "tag", "Tag of the summoner you want to get information on", false),
+            RiotHandler.getLeagueShardOptions(),
+            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false));
     }
 
     /**
@@ -51,29 +55,20 @@ public class OpggSlash extends SlashCommand {
         
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         event.deferReply(false).queue();
-        if(event.getOption("user") == null){
-            s = RiotHandler.getSummonerFromDB(event.getUser().getId());
-            if(s == null){
-                event.getHook().editOriginal("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).").queue();
-                return;
-            }
-            searchByUser = true;
-            center = Button.primary("match-center", s.getName());
-            center = center.asDisabled();
-        }else{
-            String name = event.getOption("summoner").getAsString();
-            String tag = (event.getOption("tag") != null) ? event.getOption("tag").getAsString() : "";
-            s = RiotHandler.getSummonerByName(name, tag);
-            if(s == null){
-                event.reply("Couldn't find the specified summoner.");
-                return;
-            }
-            
+
+        s = RiotHandler.getSummonerByArgs(event);
+        if(s == null){
+            event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
+            return;
         }
         
         EmbedBuilder builder = Opgg.createEmbed(s, event.getJDA());
         
         if(searchByUser && RiotHandler.getNumberOfProfile(event.getUser().getId()) > 1){
+            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+            center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+            center = center.asDisabled();
+            
             WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
             action.setComponents(ActionRow.of(left, center, right)).queue();
             return;
