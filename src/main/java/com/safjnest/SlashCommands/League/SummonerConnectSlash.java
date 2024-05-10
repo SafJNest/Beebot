@@ -38,13 +38,13 @@ public class SummonerConnectSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        try {
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("sum").getAsString());
-            DatabaseHandler.addLOLAccount(event.getMember().getId(), s.getSummonerId(), s.getAccountId());
-            event.deferReply(false).addContent("Connected " + s.getName() + " to your profile.").queue();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("sum").getAsString());
+        //     DatabaseHandler.addLOLAccount(event.getMember().getId(), s.getSummonerId(), s.getAccountId());
+        //     event.deferReply(false).addContent("Connected " + s.getName() + " to your profile.").queue();
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
 	}
 

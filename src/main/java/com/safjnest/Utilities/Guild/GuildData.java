@@ -25,6 +25,8 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 
 
 /**
@@ -60,6 +62,10 @@ public class GuildData {
 
     private HashMap<String, CustomCommand> customCommands;
 
+    private LeagueShard leagueShard;
+
+    private RegionShard reagionShard;
+
     public GuildData(Long id, String prefix, boolean expSystem) {
         this.ID = id;
         this.prefix = prefix;
@@ -68,6 +74,9 @@ public class GuildData {
         this.users = new HashMap<>();
         retriveChannels();
         retriveCustomCommand();
+
+        this.leagueShard = LeagueShard.EUW1;
+        this.reagionShard = RegionShard.EUROPE;
     }
 
     private void retriveCustomCommand() {
@@ -202,6 +211,14 @@ public class GuildData {
             this.expEnabled = expSystem;
         }
         return result;
+    }
+
+    public LeagueShard getLeagueShard() {
+        return this.leagueShard;
+    }
+
+    public RegionShard getRegionShard() {
+        return this.reagionShard;
     }
 
     public String toString(){

@@ -11,7 +11,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.LOL.RiotHandler;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -45,27 +45,17 @@ public class LastMatches extends Command {
 	protected void execute(CommandEvent event) {
         HashMap<String, Integer> played = new HashMap<>();
         int gamesToAnalyze = 20;
-        String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        if(args.equals("")){
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, DatabaseHandler.getLOLAccountIdByUserId(event.getAuthor().getId()));
-            } catch (Exception e) {
-               event.reply("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).");
-               return;
-            }
+        
+        
+        s = RiotHandler.getSummonerByArgs(event);
+        if(s == null){
+            event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
+            return;
         }
-        else if(event.getMessage().getMentions().getMembers().size() != 0){
-            try {
-                s = r.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, DatabaseHandler.getLOLAccountIdByUserId(event.getMessage().getMentions().getMembers().get(0).getId()));
-            } catch (Exception e) {
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " has not connected his Riot account.");
-                return;
-            }
-        }
-        else{
-            s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, args);
-        }
+
+        LeagueShard shard = s.getPlatform();
+        RegionShard region = RiotHandler.getRegionFromServer(shard);
 
         int gamesNumber = gamesToAnalyze;
         try {
@@ -73,11 +63,11 @@ public class LastMatches extends Command {
                 String ss = s.getLeagueGames().get().get(i);
                 try {
                     String mySide = "";  
-                    for(MatchParticipant searchMe : r.getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, ss).getParticipants()){
+                    for(MatchParticipant searchMe : r.getLoLAPI().getMatchAPI().getMatch(region, ss).getParticipants()){
                         if(searchMe.getSummonerId().equals(s.getSummonerId()))
                         mySide = searchMe.getTeam().commonName();
                     }
-                    for(MatchParticipant sum : r.getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, ss).getParticipants()){
+                    for(MatchParticipant sum : r.getLoLAPI().getMatchAPI().getMatch(region, ss).getParticipants()){
                         String sumId = sum.getSummonerId();
                         if(sum.getTeam().commonName().equals(mySide) && !sum.getSummonerId().equals(s.getSummonerId())){
                             if(!played.containsKey(sumId))
