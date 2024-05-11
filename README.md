@@ -29,9 +29,6 @@ Finally, the bot includes several commands related to the popular game League of
 ## ***Build with***
 - Java version 17
 
-## **License**
-Copyright (c) 22 Giugno anno 0, SafJNest. MIT License.
-
 ## ***Contacts***
 ### Lorenzo Sanseverino 
 - Founder and CEO of SafJNest
