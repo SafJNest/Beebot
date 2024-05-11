@@ -90,7 +90,7 @@ public class Livegame extends Command {
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(
                                     account.getName().toUpperCase(), 
-                                    p.getSummonerId() + "-" + s.getPlatform().commonName()).withEmoji(icon));
+                                    p.getSummonerId() + "#" + s.getPlatform().name()).withEmoji(icon));
             }
 
             StringSelectMenu menu = StringSelectMenu.create("rank-select")
@@ -112,7 +112,7 @@ public class Livegame extends Command {
         } catch (Exception e) {
             e.printStackTrace();
             builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users, accounts);
-            if (RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
+            if (theGuy != null && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
                 event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
                 return;
             }

@@ -991,6 +991,13 @@
         "arguments" : "[CommandName] [summonerName] (n games to analyze)"
     },
 
+    "region":{
+        "alias" : ["shard"],
+        "help"  : "Select the default league of legends region.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [region]"
+    },
+
 
 
 

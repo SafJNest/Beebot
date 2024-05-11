@@ -18,12 +18,17 @@ import com.safjnest.Utilities.Guild.Alert.RewardData;
 import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
@@ -68,7 +73,10 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else if (e.getFocusedOption().getName().equals("reward_roles"))
             name = "reward_roles";
         
-             
+        else if (e.getFocusedOption().getName().equals("personal_summoner"))
+            name = "personal_summoner";
+        
+
         switch (name) {
             case "play":
                 if (e.getFocusedOption().getValue().equals("")) {
@@ -276,6 +284,32 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                         }
                     }
                 }
+                break;
+            case "personal_summoner":
+                QueryResult accounts = DatabaseHandler.getLolAccounts(e.getUser().getId());
+                R4J r4j = RiotHandler.getRiotApi();
+                if (accounts.isEmpty()) {
+                    return;
+                }
+
+                HashMap<String, String> accountNames = new HashMap<>();
+                for (ResultRow account : accounts) {
+                    LeagueShard shard = LeagueShard.values()[account.getAsInt("league_shard")];
+                    Summoner summoner = RiotHandler.getSummonerByAccountId(account.get("account_id"), shard);
+                    RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
+                    accountNames.put(account.get("account_id"), riotAccount.getName() + "#" + riotAccount.getTag());
+                }
+
+                if (e.getFocusedOption().getValue().equals("")) {
+                    accountNames.forEach((k, v) -> choices.add(new Choice(v, k)));  
+                } else {
+                    accountNames.forEach((k, v) -> {
+                        if (v.toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
+                            choices.add(new Choice(v, k));
+                    });
+                }
+
+
                 break;
         }
 

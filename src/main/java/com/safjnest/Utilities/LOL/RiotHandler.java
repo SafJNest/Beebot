@@ -25,6 +25,7 @@ import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.LOL.Runes.PageRunes;
 import com.safjnest.Utilities.LOL.Runes.Rune;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.SQL.ResultRow;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -202,9 +203,12 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 
     public static Summoner getSummonerFromDB(String discordId){
-        try { 
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.EUW1, DatabaseHandler.getLOLAccountIdByUserId(discordId)); 
-        } catch (Exception e) { return null; }
+        try {
+            ResultRow account = DatabaseHandler.getLOLAccountIdByUserId(discordId);
+            LeagueShard shard = LeagueShard.values()[Integer.valueOf(account.get("league_shard"))];
+
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
+        } catch (Exception e) {return null;}
     }
 
 
@@ -228,7 +232,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
     public static LeagueShard getShardFromOrdinal(int ordinal){
-        System.out.println(ordinal);
         return LeagueShard.values()[ordinal];
     }
 
@@ -381,7 +384,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
     public static String getEmojiId(JDA jda, String name){
         name = transposeChampionNameForDataDragon(name);
-        return emoji.get(String.valueOf(name)).getId();
+        CustomEmoji em = emoji.get(name.toLowerCase());
+        return em != null ? em.getId() : name;
     }
 
     public static String[] getForbiddenServers() {
@@ -468,15 +472,19 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         return getSummonerByName(name, tag, shard);
     }
 
-    public static OptionData getLeagueShardOptions() {
+    public static OptionData getLeagueShardOptions(boolean required) {
         Choice[] choices = new Choice[LeagueShard.values().length];
         for (int i = 0; i < LeagueShard.values().length; i++) {
             choices[i] = new Choice(LeagueShard.values()[i].commonName(), String.valueOf(i));
         }
 
 
-        return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", false)
+        return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", required)
                     .addChoices(choices);
                     
+    }
+
+    public static OptionData getLeagueShardOptions() {
+        return getLeagueShardOptions(false);
     }
 }
