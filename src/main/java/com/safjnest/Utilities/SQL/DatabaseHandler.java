@@ -13,6 +13,8 @@ import java.util.HashMap;
 
 import com.safjnest.Utilities.Guild.Alert.AlertType;
 
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+
 /**
  * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
  * of the biggest caterpies ever made
@@ -421,9 +423,9 @@ public class DatabaseHandler {
         return fetchJRow("SELECT name_tts, language_tts FROM guild WHERE guild_id = '" + guild_id + "';");
     }
 
-    public static String getLOLAccountIdByUserId(String user_id){
-        String query = "SELECT account_id FROM summoner WHERE user_id = '" + user_id + "';";
-        return fetchJRow(query).get("account_id");
+    public static ResultRow getLOLAccountIdByUserId(String user_id){
+        String query = "SELECT account_id, league_shard FROM summoner WHERE user_id = '" + user_id + "';";
+        return fetchJRow(query);
     }
 
     public static QueryResult getLOLAccountsByUserId(String user_id){
@@ -437,8 +439,8 @@ public class DatabaseHandler {
 
     
 
-    public static boolean addLOLAccount(String user_id, String summoner_id, String account_id){
-        String query = "INSERT INTO summoner(user_id, summoner_id, account_id) VALUES('" + user_id + "','" + summoner_id + "','" + account_id + "');";
+    public static boolean addLOLAccount(String user_id, String summoner_id, String account_id, LeagueShard shard) {
+        String query = "INSERT INTO summoner(user_id, summoner_id, account_id, league_shard) VALUES('" + user_id + "','" + summoner_id + "','" + account_id + "','" + shard.ordinal() + "');";
         return runQuery(query);
     }
 
@@ -458,7 +460,7 @@ public class DatabaseHandler {
     }
     
     public static ResultRow getGuildData(String guild_id) {
-        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild WHERE guild_id = '" + guild_id + "';";
+        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
         return fetchJRow(query);
     }
 
@@ -481,7 +483,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getLolAccounts(String user_id) {
-        return safJQuery("SELECT summoner_id FROM summoner WHERE user_id = '" + user_id + "';");
+        return safJQuery("SELECT summoner_id, account_id, league_shard FROM summoner WHERE user_id = '" + user_id + "';");
     }
 
     public static boolean toggleLevelUp(String guild_id, boolean toggle) {
@@ -779,6 +781,10 @@ public class DatabaseHandler {
             commandData.put("task_messages", taskMessage);
         }
         return commandData;
+    }
+
+    public static boolean updateShard(String valueOf, LeagueShard shard) {
+        return runQuery("UPDATE guild SET league_shard = '" + shard.ordinal() + "' WHERE guild_id = '" + valueOf + "';");
     }
 
 

@@ -70,7 +70,7 @@ public class MemberInfoSlash extends SlashCommand{
         }
         else {
             for(ResultRow lolAccount : lolAccounts) {
-                lolAccountsString += RiotHandler.getSummonerBySummonerId(lolAccount.get("summoner_id")).getName() + " - ";
+                lolAccountsString += RiotHandler.getSummonerBySummonerId(lolAccount.get("summoner_id"), RiotHandler.getShardFromOrdinal(lolAccount.getAsInt("league_shard"))).getName() + " - ";
             }
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);
         }

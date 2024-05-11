@@ -35,50 +35,24 @@ public class Summoner extends Command {
         Button right = Button.primary("lol-right", "->");
         Button center = Button.primary("lol-center", "f");
 
-        boolean searchByUser = false;
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         User theGuy = null;
-        if(args.equals("")){
-            s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
-            searchByUser = true;
-            if(s == null){
-                event.reply("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).");
-                return;
-            }
-            theGuy = event.getAuthor();
-        }
-        else if(event.getMessage().getMentions().getMembers().size() != 0){
-            s = RiotHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
-            searchByUser = true;
-            theGuy = event.getMessage().getMentions().getUsers().get(0);
-            if(s == null){
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " doesn't have a Riot account connected.");
-                return;
-            }
-        }else{
-            String name = "";
-            String tag = "";
-            if (!args.contains("#")){
-                name = args;
-                tag = "EUW";
-            }
-            else {
-                name = args.split("#", 2)[0];
-                tag = args.split("#", 2)[1];
-            }
-            s = RiotHandler.getSummonerByName(name, tag);
-            if(s == null){
-                event.reply("Couldn't find the specified summoner. Remember to use the tag!");
-                return;
-            }
-        }
+
+
+        if(args.equals("")) theGuy = event.getAuthor();    
+        else if(event.getMessage().getMentions().getMembers().size() != 0) theGuy = event.getMessage().getMentions().getUsers().get(0);
         
-        EmbedBuilder builder = createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s);
-        
-        if(searchByUser && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
-            searchByUser = true;
-            center = Button.primary("center", s.getName());
+        s = RiotHandler.getSummonerByArgs(event);
+        if(s == null){
+            event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
+            return;
+        }
+
+        EmbedBuilder builder = createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s);        
+        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
+            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+            center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
             return;

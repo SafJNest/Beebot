@@ -42,8 +42,10 @@ public class LastMatchesSlash extends SlashCommand {
             new OptionData(OptionType.INTEGER, "games", "Number of games to analyze", true)
                 .setMinValue(1)
                 .setMaxValue(20),
-            new OptionData(OptionType.STRING, "user", "Name of the summoner you want to get information on", false),
-            new OptionData(OptionType.STRING, "tag", "Tag of the summoner you want to get information on", false)
+            new OptionData(OptionType.STRING, "summoner", "Name of the summoner you want to get information on", false),
+            new OptionData(OptionType.STRING, "tag", "Tag of the summoner you want to get information on", false),
+            RiotHandler.getLeagueShardOptions(),
+            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );
         this.r = App.getRiotApi();
     }
@@ -57,22 +59,15 @@ public class LastMatchesSlash extends SlashCommand {
         HashMap<String, Integer> played = new HashMap<>();
         int gamesToAnalyze = event.getOption("games").getAsInt();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-
-         if(event.getOption("user") == null){
-            s = RiotHandler.getSummonerFromDB(event.getUser().getId());
-            if(s == null){
-                event.getHook().editOriginal("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).").queue();
-                return;
-            }
-        }else{
-            String name = event.getOption("user").getAsString();
-            String tag = (event.getOption("user") != null) ? event.getOption("tag").getAsString() : "";
-            s = RiotHandler.getSummonerByName(name, tag);
-            if(s == null){
-                event.reply("Couldn't find the specified summoner.");
-                return;
-            }
+        
+        s = RiotHandler.getSummonerByArgs(event);
+        if(s == null){
+            event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
+            return;
         }
+
+        LeagueShard shard = s.getPlatform();
+        RegionShard region = RiotHandler.getRegionFromServer(shard);
 
         int gamesNumber = gamesToAnalyze;
         try {
@@ -80,11 +75,11 @@ public class LastMatchesSlash extends SlashCommand {
                 String ss = s.getLeagueGames().get().get(i);
                 try {
                     String mySide = "";  
-                    for(MatchParticipant searchMe : r.getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, ss).getParticipants()){
+                    for(MatchParticipant searchMe : r.getLoLAPI().getMatchAPI().getMatch(region, ss).getParticipants()){
                         if(searchMe.getSummonerId().equals(s.getSummonerId()))
                         mySide = searchMe.getTeam().commonName();
                     }
-                    for(MatchParticipant sum : r.getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, ss).getParticipants()){
+                    for(MatchParticipant sum : r.getLoLAPI().getMatchAPI().getMatch(region, ss).getParticipants()){
                         String sumId = sum.getSummonerId();
                         if(sum.getTeam().commonName().equals(mySide) && !sum.getSummonerId().equals(s.getSummonerId())){
                             if(!played.containsKey(sumId))

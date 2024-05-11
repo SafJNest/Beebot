@@ -5,10 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.QueryResult;
-import com.safjnest.Utilities.SQL.ResultRow;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -29,7 +26,8 @@ public class SummonerDisconnectSlash extends SlashCommand {
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sum", "Name of the summoner you want to disconnect to the bot", true));
+            new OptionData(OptionType.STRING, "personal_summoner", "Accont to disconnect", true)
+                .setAutoComplete(true));
     }
 
     /**
@@ -37,26 +35,14 @@ public class SummonerDisconnectSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        try {
-            QueryResult accountIds = DatabaseHandler.getLOLAccountsByUserId(event.getMember().getId());
-            if(accountIds == null){
-                event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help setsummoner").queue();
-                return;
-            }
-            for(ResultRow id : accountIds){
-                if(RiotHandler.getSummonerByAccountId(id.get("account_id")).getName().equalsIgnoreCase(event.getOption("sum").getAsString())){;
-                    DatabaseHandler.deleteLOLaccount(event.getMember().getId(), id.get("account_id"));
-                    event.deferReply(false).addContent("Summoner removed").queue();
-                    return;
-                }
-            }
-            event.deferReply(false).addContent("Summoner not found").queue();
+        String account_id = event.getOption("personal_summoner") != null ? event.getOption("personal_summoner").getAsString() : ""; 
+        if (account_id.isEmpty()) {
+            event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help summoner").queue();
             return;
-            
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
+        System.out.println(account_id);
+        DatabaseHandler.deleteLOLaccount(event.getMember().getId(), account_id);
+        event.deferReply(false).addContent("Summoner removed").queue();
 	}
 
 }

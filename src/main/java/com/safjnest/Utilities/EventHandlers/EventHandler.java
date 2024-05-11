@@ -21,6 +21,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -123,7 +124,10 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
         if (event.getComponentId().equals("rank-select")) {
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerBySummonerId(event.getValues().get(0));
+            System.out.println(event.getValues().get(0));
+            String summonerId = event.getValues().get(0).split("#")[0];
+            String platform =  event.getValues().get(0).split("#")[1];
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerBySummonerId(summonerId, LeagueShard.valueOf(platform));
             event.deferReply().addEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build()).queue();
         }
     }

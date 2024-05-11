@@ -11,7 +11,6 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.impl.R4J;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -19,7 +18,6 @@ import no.stelar7.api.r4j.impl.R4J;
  */
 public class SummonerConnectSlash extends SlashCommand {
     
-    private R4J r;
     /**
      * Constructor
      */
@@ -29,22 +27,32 @@ public class SummonerConnectSlash extends SlashCommand {
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sum", "Name of the summoner you want to connect to the bot", true));
-        this.r = RiotHandler.getRiotApi();
+            new OptionData(OptionType.STRING, "summoner", "Name of the summoner you want to get information on", true),
+            new OptionData(OptionType.STRING, "tag", "Tag of the summoner you want to get information on", false),
+            RiotHandler.getLeagueShardOptions());
     }
 
     /**
      * This method is called every time a member executes the command.
      */
-	@Override
+	@SuppressWarnings("unused")
+    @Override
 	protected void execute(SlashCommandEvent event) {
-        try {
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = r.getLoLAPI().getSummonerAPI().getSummonerByName(LeagueShard.EUW1, event.getOption("sum").getAsString());
-            DatabaseHandler.addLOLAccount(event.getMember().getId(), s.getSummonerId(), s.getAccountId());
-            event.deferReply(false).addContent("Connected " + s.getName() + " to your profile.").queue();
-        } catch (Exception e) {
-            e.printStackTrace();
+        event.deferReply(false).queue();
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerByArgs(event);
+
+        if(s == null){
+            event.getHook().editOriginal("Couldn't find the specified summoner. Remember to use the tag or connect an account.").queue();
+            return;
         }
+
+        String name = event.getOption("summoner").getAsString();
+        String tag = event.getOption("tag").getAsString();
+
+        LeagueShard shard = s.getPlatform();
+
+        DatabaseHandler.addLOLAccount(event.getMember().getId(), s.getSummonerId(), s.getAccountId(), shard);
+        event.getHook().editOriginal("Connected " + name + " #" + tag + " to your profile.").queue();
 
 	}
 

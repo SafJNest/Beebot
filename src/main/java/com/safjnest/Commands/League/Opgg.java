@@ -16,6 +16,7 @@ import com.safjnest.Utilities.LOL.RiotHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
@@ -51,48 +52,22 @@ public class Opgg extends Command {
         Button right = Button.primary("match-right", "->");
         Button center = Button.primary("match-center", "f");
 
-        boolean searchByUser = false;
-        String args = event.getArgs();
+
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        if(args.equals("")){
-            s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
-            if(s == null){
-                event.reply("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).");
-                return;
-            }
-            searchByUser = true;
-            center = Button.primary("center", s.getName());
-            center = center.asDisabled();
-            
-        }
-        else if(event.getMessage().getMentions().getMembers().size() != 0){
-            s = RiotHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
-            if(s == null){
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName() + " doesn't have a Riot account connected.");
-                return;
-            }
-        }else{
-            String name = "";
-            String tag = "";
-            if (!args.contains("#")){
-                name = args;
-                tag = "EUW";
-            }
-            else {
-                name = args.split("#", 2)[0];
-                tag = args.split("#", 2)[1];
-            }
-            s = RiotHandler.getSummonerByName(name, tag);
-            if(s == null){
-                event.reply("Couldn't find the specified summoner. Remember to use the tag!");
-                return;
-            }
+
+        s = RiotHandler.getSummonerByArgs(event);
+        if(s == null){
+            event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
+            return;
         }
         
         
         EmbedBuilder builder = createEmbed(s, event.getJDA());
         
-        if(searchByUser && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+        if(RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+            center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+            center = center.asDisabled();
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
             return;
         }
@@ -104,7 +79,10 @@ public class Opgg extends Command {
     
     
     public static EmbedBuilder createEmbed(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s , JDA jda){
-        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+        LeagueShard shard = s.getPlatform();
+        RegionShard region = RiotHandler.getRegionFromServer(shard);
+
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, s.getPUUID());
         EmbedBuilder eb = new EmbedBuilder();
         MatchParticipant me = null;
         LOLMatch match = null;
@@ -114,7 +92,10 @@ public class Opgg extends Command {
         for(int i = 0; i < 5; i++){
             try {
                 
-                match = r4j.getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, s.getLeagueGames().get().get(i));
+                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, s.getLeagueGames().get().get(i));
+                if (match.getParticipants().size() == 0)
+                    continue; //riot di merda che quando crasha il game lascia dati sporchi
+
                 for(MatchParticipant mp : match.getParticipants()){
                     if(mp.getSummonerId().equals(s.getSummonerId())){
                         me = mp;
@@ -123,12 +104,12 @@ public class Opgg extends Command {
                 ArrayList<String> blue = new ArrayList<>();
                 ArrayList<String> red = new ArrayList<>();
                 for(MatchParticipant searchMe : match.getParticipants()){
-                    RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, searchMe.getPuuid());
+                    RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(region, searchMe.getPuuid());
                     if(searchMe.getSummonerId().equals(s.getSummonerId()))
                         me = searchMe;
                     String supp = RiotHandler.getFormattedEmoji(jda, searchMe.getChampionName()) 
                                     + " " 
-                                    + (searchMe.getSummonerName().equals(me.getSummonerName()) 
+                                    + (searchMe.getPuuid().equals(me.getPuuid()) 
                                         ? "**" + searchAccount.getName()+ "#" + searchAccount.getTag() + "**" 
                                         : searchAccount.getName()+ "#" + searchAccount.getTag());
     
@@ -165,10 +146,10 @@ public class Opgg extends Command {
                         prova.put("teamminions", new ArrayList<>());
                         int cont = 0;
                         for(MatchParticipant mt : match.getParticipants()){
-                            RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, mt.getPuuid());
+                            RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(region, mt.getPuuid());
 
                             String nameAccount = searchAccount.getName()+ "#" + searchAccount.getTag();
-                            String name = ((mt.getSummonerName().equals(s.getName())) ? "**" + nameAccount + "**" : nameAccount);
+                            String name = ((mt.getPuuid().equals(s.getPUUID())) ? "**" + nameAccount + "**" : nameAccount);
                             if(cont < 2){
                                 prova.get("teamscuttles").add(RiotHandler.getFormattedEmoji(jda, "teamscuttles") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
                             }

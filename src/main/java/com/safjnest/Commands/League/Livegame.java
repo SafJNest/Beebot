@@ -11,12 +11,14 @@ import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.requests.restaction.MessageCreateAction;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
@@ -49,60 +51,46 @@ public class Livegame extends Command {
         Button right = Button.primary("rank-right", "->");
         Button center = Button.primary("rank-center", "f");
 
-        boolean searchByUser = false;
-        String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        User theGuy = null;
 
-        if (args.equals("")) {
-            s = RiotHandler.getSummonerFromDB(event.getAuthor().getId());
-            if (s == null) {
-                event.reply("You dont have a Riot account connected, check /help setUser (or write the name of a summoner).");
-                return;
-            }
-            searchByUser = true;
-            center = Button.primary("center", s.getName());
-            center = center.asDisabled();
+        if(event.getArgs().equals("")) theGuy = event.getAuthor();    
+        else if(event.getMessage().getMentions().getMembers().size() != 0) theGuy = event.getMessage().getMentions().getUsers().get(0);
 
-        } else if (event.getMessage().getMentions().getMembers().size() != 0) {
-            s = RiotHandler.getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
-            if (s == null) {
-                event.reply(event.getMessage().getMentions().getMembers().get(0).getEffectiveName()
-                        + " doesn't have a Riot account connected.");
-                return;
-            }
-        } else {
-            String name = "";
-            String tag = "";
-            if (!args.contains("#")){
-                name = args;
-                tag = "EUW";
-            }
-            else {
-                name = args.split("#", 2)[0];
-                tag = args.split("#", 2)[1];
-            }
-            s = RiotHandler.getSummonerByName(name, tag);
-            if(s == null){
-                event.reply("Couldn't find the specified summoner. Remember to use the tag!");
-                return;
-            }
+        s = RiotHandler.getSummonerByArgs(event);
+        if(s == null){
+            event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
+            return;
         }
+        LeagueShard shard = s.getPlatform();
+        RegionShard region = RiotHandler.getRegionFromServer(shard);
+        
         List<SpectatorParticipant> users = null;
+        List<RiotAccount> accounts = new ArrayList<>();
+
+        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
+            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+            center = Button.primary("rank-center-" + s.getPUUID() + "#" + s.getPlatform().commonName(), account.getName());
+            center = center.asDisabled();
+        }
+
         EmbedBuilder builder = null;
         try {
             users = s.getCurrentGame().getParticipants();
-            builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users);
         
             ArrayList<SelectOption> options = new ArrayList<>();
             for(SpectatorParticipant p : users){
+                RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, p.getPuuid());
+                accounts.add(account);
+
                 Emoji icon = Emoji.fromCustom(
                     RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
                     Long.parseLong(RiotHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
                     false);
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(
-                                    p.getSummonerName().toUpperCase(), 
-                                    p.getSummonerId()).withEmoji(icon));
+                                    account.getName().toUpperCase(), 
+                                    p.getSummonerId() + "#" + s.getPlatform().name()).withEmoji(icon));
             }
 
             StringSelectMenu menu = StringSelectMenu.create("rank-select")
@@ -111,7 +99,8 @@ public class Livegame extends Command {
                 .addOptions(options)
                 .build();
 
-            if (searchByUser && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
+            builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users, accounts);
+            if (theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1) {
                 MessageCreateAction action = event.getChannel().sendMessageEmbeds(builder.build());
                 action.addComponents(ActionRow.of(menu));
                 action.addComponents(ActionRow.of(left, center, right));
@@ -121,8 +110,9 @@ public class Livegame extends Command {
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(menu).queue();
                 
         } catch (Exception e) {
-            builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users);
-            if (searchByUser && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
+            e.printStackTrace();
+            builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users, accounts);
+            if (theGuy != null && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
                 event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
                 return;
             }
@@ -131,9 +121,15 @@ public class Livegame extends Command {
 
     }
 
-    public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s, List<SpectatorParticipant> users) {
+    public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s, List<SpectatorParticipant> users, List<RiotAccount> accounts) {
         try {
-            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+            RiotAccount account = null;
+            for(RiotAccount a : accounts){
+                if(a.getPUUID().equals(s.getPUUID())){
+                    account = a;
+                    break;
+                }
+            }
 
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(account.getName() + "#" + account.getTag() + "'s Game");
@@ -142,19 +138,22 @@ public class Livegame extends Command {
             String blueSide = "";
             String redSide = "";
             for (SpectatorParticipant partecipant : users) {
+                account = accounts.stream().filter(a -> a.getPUUID().equals(partecipant.getPuuid())).findFirst().orElse(null);
+
+
                 String sum = RiotHandler.getFormattedEmoji(
                         jda,
                         RiotHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
-                        + " " + partecipant.getSummonerName();
+                        + " " + account.getName().toUpperCase();
                 String stats = "";
                 if (s.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) {
 
-                    stats = RiotHandler.getFlexStats(jda, RiotHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
+                    stats = RiotHandler.getFlexStats(jda, RiotHandler.getSummonerBySummonerId(partecipant.getSummonerId(), s.getPlatform()));
                     stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "
                             + stats.substring(stats.lastIndexOf(":") + 1);
 
                 } else {
-                    stats = RiotHandler.getSoloQStats(jda, RiotHandler.getSummonerBySummonerId(partecipant.getSummonerId()));
+                    stats = RiotHandler.getSoloQStats(jda, RiotHandler.getSummonerBySummonerId(partecipant.getSummonerId(), s.getPlatform()));
                     stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "
                             + stats.substring(stats.lastIndexOf(":") + 1);
                 }
