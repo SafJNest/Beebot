@@ -15,18 +15,6 @@ In addition, the developers have also created two additional bots, Beebot 2 and 
 
 - Prefix: *!*
 
-**Beebot 2**
-
-- Prefix:  https://discord.com/oauth2/authorize?client_id=983315338886279229&scope=bot
-
-- Prefix: *%*
-
-**Beebot Music**
-
-- Prefix:  https://discord.com/oauth2/authorize?client_id=1074276395640954942&scope=bot
-
-- Prefix: *!*
-
 ## ***Functionality***
 
 ### **Music Playback**
@@ -48,78 +36,6 @@ Finally, the bot includes several commands related to the popular game League of
 ## ***Build with***
 - Java version 17
 
-## ***Hosted by***
-- PebbleHost
-
-## ***Maven***
-### ***JDA***
-```xml
-<repository>
-      <id>dv8tion</id>
-      <name>m2-dv8tion</name>
-      <url>https://m2.dv8tion.net/releases</url>
-</repository>
-<dependency>
-      <groupId>net.dv8tion</groupId>
-      <artifactId>JDA</artifactId>
-      <version>5.0.0-beta.6</version>
-</dependency>
-```
-### ***JDA CHEWTILS***
-```xml
-<repository>
-      <id>chew</id>
-      <name>m2-chew</name>
-      <url>https://m2.chew.pro/snapshots</url>
-</repository>
-<dependency>
-      <groupId>pw.chew</groupId>
-      <artifactId>jda-chewtils</artifactId>
-      <version>2.0-SNAPSHOT</version>
-      <scope>compile</scope>
-      <type>pom</type>
-</dependency>
-```
-### ***LAVAPLAYER***
-```xml
- <dependency>
-      <groupId>com.sedmelluq</groupId>
-      <artifactId>lavaplayer</artifactId>
-      <version>1.3.78</version>
-    </dependency>
-```
-### ***SQL***
-```xml
-<dependency>
-    <groupId>org.postgresql</groupId>
-    <artifactId>postgresql</artifactId>
-    <version>42.5.4</version>
-</dependency>
-<!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
-<dependency>
-  <groupId>mysql</groupId>
-  <artifactId>mysql-connector-java</artifactId>
-  <version>8.0.32</version>
-</dependency>
-```
-
-### ***League Of Legends API***
-```xml
-<dependency>
-  <groupId>com.github.stelar7</groupId>
-  <artifactId>R4J</artifactId>
-  <version>2.2.9</version>
-</dependency>
-```
-
-### ***Youtube API***
-```xml
-<dependency>
-  <groupId>com.google.apis</groupId>
-  <artifactId>google-api-services-youtube</artifactId>
-  <version>v3-rev222-1.25.0</version>
-</dependency>
-```
 ## **License**
 Copyright (c) 22 Giugno anno 0, 2022, SafJNest and/or its affiliates. All rights reserved. SAFJNEST PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
 
