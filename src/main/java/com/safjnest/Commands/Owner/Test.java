@@ -219,6 +219,7 @@ public class Test extends Command{
             case "printJson":
                 HashMap<AlertKey, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
+                e.reply("```json\n" + gs.getServer(e.getGuild().getId()).toString() + "```");
                 e.reply("```json\n" + s + "```");
                 BlacklistData bd = gs.getServer(e.getGuild().getId()).getBlacklistData();
                 e.reply("```json\n" + bd.toString()+ "```");

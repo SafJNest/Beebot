@@ -221,8 +221,21 @@ public class GuildData {
         return this.reagionShard;
     }
 
+    public synchronized boolean setLeagueShard(LeagueShard shard) {
+        boolean result = DatabaseHandler.updateShard(String.valueOf(ID), shard);
+        if (result) {
+            this.leagueShard = shard;
+            setRegionShard(shard.toRegionShard());
+        }
+        return result;
+    }
+
+    public synchronized void setRegionShard(RegionShard shard) {
+        this.reagionShard = shard;
+    }
+
     public String toString(){
-        return "ID: " + ID + " | Prefix: " + prefix + " | ExpSystem: " + expEnabled;
+        return "{ID: " + ID + ", Prefix: " + prefix + ", ExpSystem: " + expEnabled + ", Shard: " + leagueShard + "}";
     }
 
 

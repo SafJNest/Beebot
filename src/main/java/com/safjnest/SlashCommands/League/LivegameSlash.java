@@ -66,7 +66,7 @@ public class LivegameSlash extends SlashCommand {
             return;
         }
 
-        if(RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
+        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
             RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
             center = Button.primary("rank-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
@@ -94,7 +94,7 @@ public class LivegameSlash extends SlashCommand {
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(
                                     account.getName().toUpperCase(), 
-                                    p.getSummonerId()).withEmoji(icon));
+                                    p.getSummonerId() + "#" + s.getPlatform().name()).withEmoji(icon));
             }
 
             StringSelectMenu menu = StringSelectMenu.create("rank-select")
@@ -105,7 +105,7 @@ public class LivegameSlash extends SlashCommand {
 
             builder = Livegame.createEmbed(event.getJDA(), event.getMember().getId(), s, users, accounts);
 
-            if (RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
+            if (theGuy != null && RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
                 WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
                         action.setComponents(ActionRow.of(menu),
                                             ActionRow.of(left, center, right)).queue();
@@ -116,7 +116,7 @@ public class LivegameSlash extends SlashCommand {
                 
         } catch (Exception e) {
             builder = Livegame.createEmbed(event.getJDA(), event.getMember().getId(), s, users, accounts);
-            if (RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
+            if (theGuy != null && RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
                 WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
                         action.setComponents(ActionRow.of(left, center, right))
                         .queue();

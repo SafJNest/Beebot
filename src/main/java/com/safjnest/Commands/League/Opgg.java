@@ -97,7 +97,6 @@ public class Opgg extends Command {
                     continue; //riot di merda che quando crasha il game lascia dati sporchi
 
                 for(MatchParticipant mp : match.getParticipants()){
-                    System.out.println(mp.getSummonerId() + " " + s.getSummonerId());
                     if(mp.getSummonerId().equals(s.getSummonerId())){
                         me = mp;
                     }

@@ -222,7 +222,7 @@ public class Bot extends ListenerAdapter {
         Collections.addAll(slashCommandsList, new SummonerSlash(), new AugmentSlash(), new FreeChampSlash(), 
             new LivegameSlash(), new LastMatchesSlash(), 
             new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
-            new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey), new SpecialCharSlash()
+            new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey), new SpecialCharSlash(), new RegionSlash()
         );
         
         

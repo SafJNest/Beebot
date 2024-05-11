@@ -7,6 +7,8 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.QueryResult;
 import com.safjnest.Utilities.SQL.ResultRow;
 
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+
 
 
 /**
@@ -73,8 +75,9 @@ public class GuildSettings {
         Long guildId = guildData.getAsLong("guild_id");
         String prefix = guildData.get("prefix");
         boolean expEnabled = guildData.getAsBoolean("exp_enabled");
+        LeagueShard shard = LeagueShard.values()[Integer.parseInt(guildData.get("league_shard"))];
         
-        GuildData guild = new GuildData(guildId, prefix, expEnabled);
+        GuildData guild = new GuildData(guildId, prefix, expEnabled, shard);
         saveData(guild);
         return guild;
     }
@@ -95,11 +98,12 @@ public class GuildSettings {
         QueryResult guilds = DatabaseHandler.getGuildData();
         
         for(ResultRow guildData : guilds){
-           Long guildId = guildData.getAsLong("guild_id");
-            String PREFIX = guildData.get("prefix");
+            Long guildId = guildData.getAsLong("guild_id");
+            String prefix = guildData.get("prefix");
             boolean expEnabled = guildData.getAsBoolean("exp_enabled");
-
-            GuildData guild = new GuildData(guildId, PREFIX, expEnabled);
+            LeagueShard shard = LeagueShard.valueOf(guildData.get("league_shard"));
+        
+            GuildData guild = new GuildData(guildId, prefix, expEnabled, shard);
             saveData(guild);
         }
     }
@@ -108,7 +112,7 @@ public class GuildSettings {
         DatabaseHandler.insertGuild(guildId, Bot.getPrefix());
         System.out.println("[ERROR] Missing guild in database => " + guildId);
 
-        GuildData guild = new GuildData(Long.parseLong(guildId), Bot.getPrefix(), true);
+        GuildData guild = new GuildData(Long.parseLong(guildId), Bot.getPrefix(), true, LeagueShard.EUW1);
         saveData(guild);
         return guild;
     }

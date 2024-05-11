@@ -362,9 +362,8 @@ public class EventButtonHandler extends ListenerAdapter {
         Button right = Button.primary("match-right", "->");
         Button center = null;
 
-        String nameSum = "";
+
         String puuid = "";
-        String platform = "";
         int index = 0;
 
         for (Button b : event.getMessage().getButtons()) {
@@ -436,9 +435,7 @@ public class EventButtonHandler extends ListenerAdapter {
         Button right = Button.primary("rank-right", "->");
         Button center = null;
 
-        String nameSum = "";
         String puuid = "";
-        String platform = "";
         int index = 0;
 
         for (Button b : event.getMessage().getButtons()) {
