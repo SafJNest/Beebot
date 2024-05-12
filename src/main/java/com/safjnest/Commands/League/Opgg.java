@@ -144,40 +144,61 @@ public class Opgg extends Command {
                         prova.put("teamporos", new ArrayList<>());
                         prova.put("teamkrugs", new ArrayList<>());
                         prova.put("teamminions", new ArrayList<>());
-                        int cont = 0;
+
+                        prova.put("teamsentinels", new ArrayList<>());
+                        prova.put("teamgromps", new ArrayList<>());
+                        prova.put("teamraptors", new ArrayList<>());
+                        prova.put("teamwolves", new ArrayList<>());
+
+                        HashMap<Integer, String> positions = new HashMap<>();
+                        
                         for(MatchParticipant mt : match.getParticipants()){
                             RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(region, mt.getPuuid());
-
-                            String nameAccount = searchAccount.getName()+ "#" + searchAccount.getTag();
-                            String name = ((mt.getPuuid().equals(s.getPUUID())) ? "**" + nameAccount + "**" : nameAccount);
-                            if(cont < 2){
-                                prova.get("teamscuttles").add(RiotHandler.getFormattedEmoji(jda, "teamscuttles") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
+                            //String nameAccount = searchAccount.getName()+ "#" + searchAccount.getTag();
+                            //String name = ((mt.getPuuid().equals(s.getPUUID())) ? "**" + nameAccount + "**" : nameAccount);
+                            String name = "";
+                            String team = "";
+                            switch (mt.getPlayerSubteamId()) {
+                                case 1:
+                                    team = "teamporos";
+                                break;
+                                case 2:
+                                    team = "teamminions";
+                                break;
+                                case 3:
+                                    team = "teamscuttles";
+                                break;
+                                case 4:
+                                    team = "teamkrugs";
+                                break;
+                                case 5:
+                                    team = "teamraptors";
+                                break;
+                                case 6:
+                                    team = "teamsentinels";
+                                break;
+                                case 7:
+                                    team = "teamwolves";
+                                break;
+                                case 8:
+                                    team = "teamgromps";
+                                break;
                             }
-                            if(cont >= 2 && cont < 4){
-                                prova.get("teamporos").add(RiotHandler.getFormattedEmoji(jda, "teamporos") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
-                            }
-                            if(cont >= 4 && cont < 6){
-                                prova.get("teamkrugs").add(RiotHandler.getFormattedEmoji(jda, "teamkrugs") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
-                            }
-                            if(cont >= 6 ){
-                                prova.get("teamminions").add(RiotHandler.getFormattedEmoji(jda, "teamminions") + " " + RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) +name);
-                            }
-                            cont++;
+                            prova.get(team).add(RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) + name);
+                            positions.put(mt.getPlacement(), team);
                         }
                         String blueTeam = "";
                         String redTeam = "";
-                        blueTeam = ""
-                                    + prova.get("teamminions").get(0)  + "\n"
-                                    + prova.get("teamminions").get(1)+ "\n\n"
-                                    + prova.get("teamkrugs").get(0) + "\n"
-                                    + prova.get("teamkrugs").get(1) + "\n";
-                        redTeam = ""
-                                + prova.get("teamporos").get(0) + "\n"
-                                + prova.get("teamporos").get(1) + "\n\n"
-                                + prova.get("teamscuttles").get(0) + "\n"
-                                + prova.get("teamscuttles").get(1) + "\n";
-                        eb.addField("Participant", blueTeam, true);
-                        eb.addField("Participant", redTeam, true);
+                        for (int j = 1; j <= 8; j++) {
+                            String team = positions.get(j);
+                            String space = j % 2 == 0 ? "\n\n" : "\n";
+                            if (j <= 4)
+                                blueTeam += RiotHandler.getFormattedEmoji(jda, team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
+                            else
+                                redTeam += RiotHandler.getFormattedEmoji(jda, team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
+                        }
+                        eb.addField("Top 4", blueTeam, true);
+                        eb.addField("Others", redTeam, true);
                     break;
 
                     default:
