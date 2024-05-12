@@ -35,7 +35,6 @@ public class SummonerConnectSlash extends SlashCommand {
     /**
      * This method is called every time a member executes the command.
      */
-	@SuppressWarnings("unused")
     @Override
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();

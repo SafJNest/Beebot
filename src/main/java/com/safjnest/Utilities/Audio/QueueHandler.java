@@ -3,6 +3,15 @@ package com.safjnest.Utilities.Audio;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.json.JSONObject;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -30,11 +39,143 @@ public class QueueHandler {
         return "`" + (index + 1) + "`" + "\u00A0\u00A0" + PermissionHandler.ellipsis(track.getInfo().title, 49);
     }
 
-    public static EmbedBuilder getQueueEmbed(Guild guild) {
-        return getQueueEmbed(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex());
+    public static String extractSoundcloudTrackId(String url) {
+        Pattern pattern = Pattern.compile("\\btracks:(\\d+)\\b");
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
+
+    public static String extractBandcampTrackId(String session) {
+        Pattern pattern = Pattern.compile("t\\d+");
+        Matcher matcher = pattern.matcher(session);
+        if (matcher.find()) {
+            return matcher.group().substring(1);
+        }
+        return null;
+    }
+
+    public static String getSoundcloudThumbnailUrl(AudioTrack track) {
+        String clientId = "SkNjMmSOqCCKdQohdskaTGJvEncaJpga";
+        String trackId = extractSoundcloudTrackId(track.getIdentifier());
+        String apiUrl = String.format("https://api-v2.soundcloud.com/tracks/%s?client_id=%s", trackId, clientId);
+
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.getForEntity(apiUrl, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful())
+            return null;
+        
+        return new JSONObject(response.getBody()).getString("artwork_url");
+    }
+
+    public static String getBandcampThumbnailUrl(AudioTrack track) {
+        String apiUrl = String.format(track.getIdentifier());
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.HEAD, null, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful())
+            return null;
+        
+        HttpHeaders responseHeaders = response.getHeaders();
+        List<String> cookies = responseHeaders.get(HttpHeaders.SET_COOKIE);
+
+        String sessionCookie = null;
+
+        if (cookies != null) {
+            for (String cookie : cookies) {
+                java.net.HttpCookie httpCookie = java.net.HttpCookie.parse(cookie).get(0);
+                if (httpCookie.getName().equals("session")) {
+                    sessionCookie = cookie;
+                    break;
+                }
+            }
+        }
+
+        HttpHeaders requestHeaders = new HttpHeaders();
+        requestHeaders.add(HttpHeaders.COOKIE, sessionCookie);
+        HttpEntity<String> entity = new HttpEntity<>(requestHeaders);
+
+        response = restTemplate.exchange(apiUrl, HttpMethod.HEAD, entity, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful())
+            return null;
+        
+        responseHeaders = response.getHeaders();
+        cookies = responseHeaders.get(HttpHeaders.SET_COOKIE);
+
+        String session = null;
+
+        if (cookies != null) {
+            for (String cookie : cookies) {
+                java.net.HttpCookie httpCookie = java.net.HttpCookie.parse(cookie).get(0);
+                if (httpCookie.getName().equals("session")) {
+                    session = httpCookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        String trackId = extractBandcampTrackId(session);
+
+        apiUrl = String.format("http://bandcamp.com/api/mobile/24/tralbum_details?band_id=1&tralbum_type=t&tralbum_id=%s", trackId);
+
+        response = restTemplate.getForEntity(apiUrl, String.class);
+
+        String artId = String.valueOf(new JSONObject(response.getBody()).getInt("art_id"));
+
+        String artFormat = "2"; //formats: 100:  3, 124:  8, 135:  15, 138:  12, 150:  7, 172:  11, 210:  9, 300:  4, 350:  2, 368:  14, 380:  13, 700:  5, 1200: 10, 1500: 1
+
+        return "http://f4.bcbits.com/img/a" + artId + "_" + artFormat + ".jpg";
+    }
+
+    private static String getThumbnail(AudioTrack track) {
+        String thumbnailURL = track.getUserData(TrackData.class).getThumbnailUrl();
+
+        if(thumbnailURL != null) {
+            return thumbnailURL;
+        }
+
+        switch (track.getSourceManager().getSourceName()) {
+            case "youtube":
+                thumbnailURL = "https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg";
+                break;
+
+            case "soundcloud":
+                thumbnailURL = getSoundcloudThumbnailUrl(track);
+                break;
+
+            case "bandcamp":
+                thumbnailURL = getBandcampThumbnailUrl(track);
+                break;
+
+            case "vimeo":
+                thumbnailURL = null;
+                break;
+
+            case "twitch":
+                thumbnailURL = null;
+                break;
+        
+            default:
+                thumbnailURL = null;
+                break;
+        }
+
+        track.getUserData(TrackData.class).setThumbnailUrl(thumbnailURL);
+
+        return thumbnailURL;
     }
 
 
+
+    public static EmbedBuilder getQueueEmbed(Guild guild) {
+        return getQueueEmbed(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex());
+    }
 
     public static EmbedBuilder getQueueEmbed(Guild guild, int startIndex) {
         EmbedBuilder eb = new EmbedBuilder();
@@ -90,7 +231,7 @@ public class QueueHandler {
                 eb.addField("Length", SafJNest.formatDuration(playingNow.getInfo().length), true);
             }
             eb.addField("Queue", (ts.getIndex() + 1) + " / " + (ts.getQueue().size()), true);
-            eb.setThumbnail("https://img.youtube.com/vi/" + playingNow.getInfo().identifier + "/hqdefault.jpg");
+            eb.setThumbnail(getThumbnail(playingNow));
         } 
         else {
             eb.setTitle("There is no song playing right now.");
@@ -267,7 +408,7 @@ public class QueueHandler {
         }
     }
 
-    
+
 
 
     public static List<LayoutComponent> getButtons(Guild guild, EmbedType type) {
@@ -307,7 +448,7 @@ public class QueueHandler {
         eb.setAuthor("Queued by " + author.getEffectiveName(), author.getEffectiveAvatarUrl(), author.getEffectiveAvatarUrl());
         eb.setTitle("Playlist queued (" + playlist.getTracks().size() + " tracks):");
         eb.setDescription("[" + playlist.getName() + "](" + playlistLink + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + playlist.getTracks().get(0).getIdentifier() + "/hqdefault.jpg");
+        eb.setThumbnail(getThumbnail(playlist.getTracks().get(0)));
         eb.setColor(Bot.getColor());
 
         return eb.build();
@@ -319,11 +460,13 @@ public class QueueHandler {
         eb.setAuthor("Queued by " + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
         eb.setTitle("Track queued:");
         eb.setDescription("[" + track.getInfo().title + "](" + track.getInfo().uri + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + track.getIdentifier() + "/hqdefault.jpg");
+        eb.setThumbnail(getThumbnail(track));
         eb.setColor(Bot.getColor());
 
         return eb.build();
     }
+
+    
 
     public static MessageEmbed getSkipEmbed(Guild guild, Member author) {
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
@@ -333,7 +476,7 @@ public class QueueHandler {
         eb.setAuthor("Skipped by " + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
         eb.setTitle("Skipped to:");
         eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+        eb.setThumbnail(getThumbnail(ts.getPlayer().getPlayingTrack()));
         eb.setColor(Bot.getColor());
 
         return eb.build();
@@ -347,7 +490,7 @@ public class QueueHandler {
         eb.setAuthor("Previous by " + author.getEffectiveName(), "https://discord.com/users/" + author.getId(), author.getEffectiveAvatarUrl());
         eb.setTitle("Previous to:");
         eb.setDescription("[" + ts.getPlayer().getPlayingTrack().getInfo().title + "](" + ts.getPlayer().getPlayingTrack().getInfo().uri + ")");
-        eb.setThumbnail("https://img.youtube.com/vi/" + ts.getPlayer().getPlayingTrack().getIdentifier() + "/hqdefault.jpg");
+        eb.setThumbnail(getThumbnail(ts.getPlayer().getPlayingTrack()));
         eb.setColor(Bot.getColor());
 
         return eb.build();

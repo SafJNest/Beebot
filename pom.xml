@@ -45,43 +45,58 @@
 
 
   <dependencies>
-<dependency>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-starter-parent</artifactId>
-  <version>3.2.5</version>
-  <type>pom</type>
-</dependency>
-<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
-<dependency>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-starter-web</artifactId>
-  <version>3.2.5</version>
-</dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-parent</artifactId>
+      <version>3.2.5</version>
+      <type>pom</type>
+    </dependency>
 
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <version>3.2.5</version>
+    </dependency>
 
-<dependency>
-  <groupId>com.h2database</groupId>
-  <artifactId>h2</artifactId>
-  <version>2.2.224</version>
-  <scope>runtime</scope>
-</dependency>
-  <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-data-jpa</artifactId>
-    <version>3.2.5</version>
-  </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+      <version>3.2.5</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-json</artifactId>
+      <version>3.2.5</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.17.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>2.2.224</version>
+      <scope>runtime</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.10</version>
     </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.13.1</version>
       <scope>test</scope>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/com.sedmelluq/lavaplayer
     <dependency>
       <groupId>com.sedmelluq</groupId>
@@ -90,13 +105,13 @@
     </dependency>
     -->
 
-
-  <!-- Use a specific commit version -->
+    <!-- Use a specific commit version -->
     <dependency>
       <groupId>dev.arbjerg</groupId>
       <artifactId>lavaplayer</artifactId>
       <version>0eaeee195f0315b2617587aa3537fa202df07ddc-SNAPSHOT</version>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/net.dv8tion/JDA -->
     <dependency>
       <groupId>pw.chew</groupId>
@@ -105,28 +120,27 @@
       <scope>compile</scope>
       <type>pom</type>
     </dependency>
+
     <dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
       <version>5.0.0-beta.20</version>
     </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-      <version>2.15.2</version>
-    </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-shade-plugin -->
     <dependency>
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-shade-plugin</artifactId>
       <version>3.2.4</version>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>2.0.11</version>
     </dependency>
+
     <!--
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -134,34 +148,40 @@
       <version>2.0.11</version>
     </dependency> 
     -->
+
     <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
     <dependency>
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
       <version>2.3.1</version>
     </dependency>
+
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
       <artifactId>json-simple</artifactId>
       <version>1.1.1</version>
     </dependency>
+
     <dependency>
       <groupId>org.gagravarr</groupId>
       <artifactId>vorbis-java</artifactId>
       <version>0.8</version>
       <type>pom</type>
     </dependency>
+
      <dependency>
-        <groupId>org.jfree</groupId>
-        <artifactId>jfreechart</artifactId>
-        <version>1.5.4</version>
+      <groupId>org.jfree</groupId>
+      <artifactId>jfreechart</artifactId>
+      <version>1.5.4</version>
     </dependency>
+
     <dependency>
       <groupId>org.gagravarr</groupId>
       <artifactId>vorbis-java-core</artifactId>
       <version>0.8</version>
       <type>jar</type>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss
     <dependency>
       <groupId>org.openhab.voice</groupId>
@@ -170,50 +190,58 @@
       <scope>system</scope>
       <systemPath>${basedir}/rsc/jar/voicerss_tts.jar</systemPath>
     </dependency>-->
+
     <dependency>
       <groupId>org.gagravarr</groupId>
       <artifactId>vorbis-java-parent</artifactId>
       <version>0.8</version>
       <type>pom</type>
     </dependency>
+
     <!-- https://mvnrepository.com/artifact/com.google.apis/google-api-services-youtube -->
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-youtube</artifactId>
       <version>v3-rev222-1.25.0</version>
     </dependency>
+
     <dependency>
 	    <groupId>com.github.stelar7</groupId>
 	    <artifactId>R4J</artifactId>
 	    <version>2.5.2</version>
 	  </dependency>
+
     <!-- https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client -->
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
       <version>3.1.4</version>
     </dependency>
+
     <dependency>
       <groupId>com.vdurmont</groupId>
       <artifactId>emoji-java</artifactId>
       <version>5.1.1</version>
     </dependency>
+    
     <!--  https://mvnrepository.com/artifact/org.json/json  -->
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
       <version>20231013</version>
     </dependency>
-  <dependency>
-    <groupId>org.java-websocket</groupId>
-    <artifactId>Java-WebSocket</artifactId>
-    <version>1.5.4</version>
-  </dependency>
-  <dependency>
-    <groupId>org.apache.commons</groupId>
-    <artifactId>commons-text</artifactId>
-    <version>1.10.0</version>
-  </dependency>
+
+    <dependency>
+      <groupId>org.java-websocket</groupId>
+      <artifactId>Java-WebSocket</artifactId>
+      <version>1.5.4</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-text</artifactId>
+      <version>1.10.0</version>
+    </dependency>
   </dependencies>
 
   <build>
