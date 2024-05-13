@@ -11,6 +11,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DateHandler;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -107,7 +108,7 @@ public class Opgg extends Command {
                     RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(region, searchMe.getPuuid());
                     if(searchMe.getSummonerId().equals(s.getSummonerId()))
                         me = searchMe;
-                    String supp = RiotHandler.getFormattedEmoji(jda, searchMe.getChampionName()) 
+                    String supp = CustomEmojiHandler.getFormattedEmoji(jda, searchMe.getChampionName()) 
                                     + " " 
                                     + (searchMe.getPuuid().equals(me.getPuuid()) 
                                         ? "**" + searchAccount.getName()+ "#" + searchAccount.getTag() + "**" 
@@ -130,11 +131,11 @@ public class Opgg extends Command {
 
                     case CHERRY:
                         
-                        content = RiotHandler.getFormattedEmoji(jda, me.getChampionName()) + kda +"\n"
+                        content = CustomEmojiHandler.getFormattedEmoji(jda, me.getChampionName()) + kda +"\n"
                         + date + " | **"+ getFormattedDuration((match.getGameDuration()))  + "**\n"
-                        + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner1Id()) + "_") + RiotHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment1())) + " " + RiotHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment2())) + "\n"
-                        + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner2Id()) + "_") + RiotHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment3())) + " " + RiotHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment4())) + "\n"
-                        + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem0())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem1())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem2())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem3())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem4())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem5())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem6()));
+                        + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner1Id()) + "_") + CustomEmojiHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment1())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment2())) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner2Id()) + "_") + CustomEmojiHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment3())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, "a" + String.valueOf(me.getPlayerAugment4())) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem6()));
                        
                         eb.addField(
                             "ARENA: " + (me.didWin() ? "WIN" : "LOSE") , content, true);
@@ -153,7 +154,6 @@ public class Opgg extends Command {
                         HashMap<Integer, String> positions = new HashMap<>();
                         
                         for(MatchParticipant mt : match.getParticipants()){
-                            //RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(region, mt.getPuuid());
                             //String nameAccount = searchAccount.getName()+ "#" + searchAccount.getTag();
                             //String name = ((mt.getPuuid().equals(s.getPUUID())) ? "**" + nameAccount + "**" : nameAccount);
                             String name = "";
@@ -184,7 +184,7 @@ public class Opgg extends Command {
                                     team = "teamgromps";
                                 break;
                             }
-                            prova.get(team).add(RiotHandler.getFormattedEmoji(jda, mt.getChampionName()) + name);
+                            prova.get(team).add(CustomEmojiHandler.getFormattedEmoji(jda, mt.getChampionName()) + name);
                             positions.put(mt.getPlacement(), team);
                         }
                         String blueTeam = "";
@@ -193,20 +193,20 @@ public class Opgg extends Command {
                             String team = positions.get(j);
                             String space = j % 2 == 0 ? "\n\n" : "\n";
                             if (j <= 4)
-                                blueTeam += RiotHandler.getFormattedEmoji(jda, team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
+                                blueTeam += CustomEmojiHandler.getFormattedEmoji(jda, team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
                             else
-                                redTeam += RiotHandler.getFormattedEmoji(jda, team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
+                                redTeam += CustomEmojiHandler.getFormattedEmoji(jda, team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
                         }
                         eb.addField("Top 4", blueTeam, true);
                         eb.addField("Others", redTeam, true);
                     break;
 
                     default:
-                     content = RiotHandler.getFormattedEmoji(jda, me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
+                     content = CustomEmojiHandler.getFormattedEmoji(jda, me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
                                 + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
-                                + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, jda, 0) + "\n"
-                                + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, jda, 1) + "\n"
-                                + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem0())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem1())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem2())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem3())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem4())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem5())) + " " + RiotHandler.getFormattedEmoji(jda, String.valueOf(me.getItem6()));
+                                + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, jda, 0) + "\n"
+                                + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, jda, 1) + "\n"
+                                + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(jda, String.valueOf(me.getItem6()));
                                 eb.addField(
                                     match.getQueue().commonName() + ": " + (me.didWin() ? "WIN" : "LOSE") , content, true);
                                 String blueS = "";
@@ -241,9 +241,9 @@ public class Opgg extends Command {
         String prova = "";
         PerkStyle perkS = me.getPerks().getPerkStyles().get(row);
 
-        prova += RiotHandler.getFormattedEmoji(jda, RiotHandler.getFatherRune(perkS.getSelections().get(0).getPerk()));
+        prova += CustomEmojiHandler.getFormattedEmoji(jda, RiotHandler.getFatherRune(perkS.getSelections().get(0).getPerk()));
         for (PerkSelection perk : perkS.getSelections()) {
-            prova += RiotHandler.getFormattedEmoji(jda, perk.getPerk());
+            prova += CustomEmojiHandler.getFormattedEmoji(jda, perk.getPerk());
         }
         return prova;
 

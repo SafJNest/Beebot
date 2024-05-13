@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -67,7 +68,7 @@ public class Augment extends Command {
             return;
         }
         
-        RichCustomEmoji emoji = RiotHandler.getRichEmoji(event.getJDA(), "a"+augment.getId());
+        RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji(event.getJDA(), "a"+augment.getId());
         eb.setTitle(augment.getName().toUpperCase() + " (" + augment.getId() + ")");
         eb.setDescription(augment.getFormattedDesc());
         eb.setThumbnail(emoji.getImageUrl());

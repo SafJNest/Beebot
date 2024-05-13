@@ -17,7 +17,6 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.LOL.RiotHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -32,6 +31,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 
 public class QueueHandler {
     private static String formatTrack(int index, AudioTrack track) {
@@ -207,7 +207,7 @@ public class QueueHandler {
             eb.setTitle("There is no song playing right now.");
         } 
         
-        eb.addField(RiotHandler.getFormattedEmoji("playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
+        eb.addField(CustomEmojiHandler.getFormattedEmoji("playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
         return eb;
     }
 
@@ -253,11 +253,11 @@ public class QueueHandler {
 
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
-        Button repeat = Button.secondary("queue-repeat", " ").withEmoji(RiotHandler.getRichEmoji("repeat"));
-        Button previous = Button.primary("queue-previous" , " ").withEmoji(RiotHandler.getRichEmoji("previous"));
-        Button play = Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
-        Button next = Button.primary("queue-next", " ").withEmoji(RiotHandler.getRichEmoji("next"));
-        Button shurima = Button.secondary("queue-shurima", " ").withEmoji(RiotHandler.getRichEmoji( "azir"));
+        Button repeat = Button.secondary("queue-repeat", " ").withEmoji(CustomEmojiHandler.getRichEmoji("repeat"));
+        Button previous = Button.primary("queue-previous" , " ").withEmoji(CustomEmojiHandler.getRichEmoji("previous"));
+        Button play = Button.primary("queue-pause", " ").withEmoji(CustomEmojiHandler.getRichEmoji("pause"));
+        Button next = Button.primary("queue-next", " ").withEmoji(CustomEmojiHandler.getRichEmoji("next"));
+        Button shurima = Button.secondary("queue-shurima", " ").withEmoji(CustomEmojiHandler.getRichEmoji( "azir"));
         
         if(ts.isRepeat())
             repeat = repeat.withStyle(ButtonStyle.SUCCESS);
@@ -265,8 +265,8 @@ public class QueueHandler {
         if(ts.isShuffled())
             shurima = shurima.withStyle(ButtonStyle.SUCCESS);
 
-        play = ts.isPaused() ? Button.primary("queue-play", " ").withEmoji(RiotHandler.getRichEmoji("play")).withStyle(ButtonStyle.SUCCESS) 
-                             : Button.primary("queue-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
+        play = ts.isPaused() ? Button.primary("queue-play", " ").withEmoji(CustomEmojiHandler.getRichEmoji("play")).withStyle(ButtonStyle.SUCCESS) 
+                             : Button.primary("queue-pause", " ").withEmoji(CustomEmojiHandler.getRichEmoji("pause"));
 
         buttonRows.add(ActionRow.of(
             repeat,
@@ -276,8 +276,8 @@ public class QueueHandler {
             shurima
         ));
 
-        Button previousPage = Button.secondary("queue-previouspage-", " ").withEmoji(RiotHandler.getRichEmoji("leftarrow"));
-        Button nextPage = Button.secondary("queue-nextpage-", " ").withEmoji(RiotHandler.getRichEmoji("rightarrow"));
+        Button previousPage = Button.secondary("queue-previouspage-", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button nextPage = Button.secondary("queue-nextpage-", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
  
         int previousIndex = startIndex - 11;
         int nextIndex = (startIndex < ts.getIndex() && (startIndex + 11) > ts.getIndex()) ? ts.getIndex() : startIndex + 11;
@@ -294,14 +294,14 @@ public class QueueHandler {
         nextPage = nextPage.withId("queue-nextpage-" + nextIndex);
         previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
 
-        Button playerButton = Button.secondary("queue-player", " ").withEmoji(RiotHandler.getRichEmoji("list")).withStyle(ButtonStyle.SUCCESS);
+        Button playerButton = Button.secondary("queue-player", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list")).withStyle(ButtonStyle.SUCCESS);
 
         buttonRows.add(ActionRow.of(
             playerButton,
             previousPage,
-            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji("blank")),
+            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(CustomEmojiHandler.getRichEmoji("blank")),
             nextPage,
-            Button.secondary("queue-clear", " ").withEmoji(RiotHandler.getRichEmoji("bin")).withStyle(ButtonStyle.DANGER)
+            Button.secondary("queue-clear", " ").withEmoji(CustomEmojiHandler.getRichEmoji("bin")).withStyle(ButtonStyle.DANGER)
         ));
 
         return buttonRows;
@@ -312,11 +312,11 @@ public class QueueHandler {
 
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
-        Button repeat = Button.secondary("player-repeat", " ").withEmoji(RiotHandler.getRichEmoji("repeat"));
-        Button previous = Button.primary("player-previous" , " ").withEmoji(RiotHandler.getRichEmoji("previous"));
-        Button play = Button.primary("player-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
-        Button next = Button.primary("player-next", " ").withEmoji(RiotHandler.getRichEmoji("next"));
-        Button shurima = Button.secondary("player-shurima", " ").withEmoji(RiotHandler.getRichEmoji( "shuffle"));
+        Button repeat = Button.secondary("player-repeat", " ").withEmoji(CustomEmojiHandler.getRichEmoji("repeat"));
+        Button previous = Button.primary("player-previous" , " ").withEmoji(CustomEmojiHandler.getRichEmoji("previous"));
+        Button play = Button.primary("player-pause", " ").withEmoji(CustomEmojiHandler.getRichEmoji("pause"));
+        Button next = Button.primary("player-next", " ").withEmoji(CustomEmojiHandler.getRichEmoji("next"));
+        Button shurima = Button.secondary("player-shurima", " ").withEmoji(CustomEmojiHandler.getRichEmoji( "shuffle"));
         
         if(ts.isRepeat())
             repeat = repeat.withStyle(ButtonStyle.SUCCESS);
@@ -324,8 +324,8 @@ public class QueueHandler {
         if(ts.isShuffled())
             shurima = shurima.withStyle(ButtonStyle.SUCCESS);
 
-        play = ts.isPaused() ? Button.primary("player-play", " ").withEmoji(RiotHandler.getRichEmoji("play")).withStyle(ButtonStyle.SUCCESS) 
-                             : Button.primary("player-pause", " ").withEmoji(RiotHandler.getRichEmoji("pause"));
+        play = ts.isPaused() ? Button.primary("player-play", " ").withEmoji(CustomEmojiHandler.getRichEmoji("play")).withStyle(ButtonStyle.SUCCESS) 
+                             : Button.primary("player-pause", " ").withEmoji(CustomEmojiHandler.getRichEmoji("pause"));
 
         buttonRows.add(ActionRow.of(
             repeat,
@@ -335,17 +335,17 @@ public class QueueHandler {
             shurima
         ));
 
-        Button rewind = Button.secondary("player-rewind", " ").withEmoji(RiotHandler.getRichEmoji("rewind10"));
-        Button forward = Button.secondary("player-forward", " ").withEmoji(RiotHandler.getRichEmoji("fastforward30"));
+        Button rewind = Button.secondary("player-rewind", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rewind10"));
+        Button forward = Button.secondary("player-forward", " ").withEmoji(CustomEmojiHandler.getRichEmoji("fastforward30"));
 
-        Button playerButton = Button.secondary("player-queue", " ").withEmoji(RiotHandler.getRichEmoji("list"));
+        Button playerButton = Button.secondary("player-queue", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list"));
 
         buttonRows.add(ActionRow.of(
             playerButton,
             rewind,
-            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji("blank")),
+            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(CustomEmojiHandler.getRichEmoji("blank")),
             forward,
-            Button.secondary("queue-blank2", " ").asDisabled().withEmoji(RiotHandler.getRichEmoji("blank"))
+            Button.secondary("queue-blank2", " ").asDisabled().withEmoji(CustomEmojiHandler.getRichEmoji("blank"))
         ));
 
         return buttonRows;

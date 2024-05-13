@@ -15,6 +15,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.Guild.BlacklistData;
 import com.safjnest.Utilities.Guild.ChannelData;
 import com.safjnest.Utilities.Guild.GuildSettings;
@@ -179,7 +180,7 @@ public class Test extends Command{
                 for (Item item : RiotHandler.getRiotApi().getDDragonAPI().getItems().values()) {
                     System.out.println(item.getId());
                     if (item != null)
-                        ss += RiotHandler.getFormattedEmoji(e.getJDA(), item.getId()) + "-";
+                        ss += CustomEmojiHandler.getFormattedEmoji(e.getJDA(), item.getId()) + "-";
                 }
                 System.out.println("efee");
                 e.reply(ss);
@@ -213,35 +214,35 @@ public class Test extends Command{
                     e1.printStackTrace();
                 }
             break;
-            case "getblacklist":
-                System.out.println(gs.getServer(e.getGuild().getId()).getBlacklistData().toString());
+            case "getBlacklist":
+                System.out.println(gs.getGuild(e.getGuild().getId()).getBlacklistData().toString());
                 break;
-            case "printjson":
-                HashMap<AlertKey, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
+            case "printJson":
+                HashMap<AlertKey, AlertData> prova = gs.getGuild(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
-                e.reply("```json\n" + gs.getServer(e.getGuild().getId()).toString() + "```");
+                e.reply("```json\n" + gs.getGuild(e.getGuild().getId()).toString() + "```");
                 e.reply("```json\n" + s + "```");
-                BlacklistData bd = gs.getServer(e.getGuild().getId()).getBlacklistData();
+                BlacklistData bd = gs.getGuild(e.getGuild().getId()).getBlacklistData();
                 e.reply("```json\n" + bd.toString()+ "```");
-                HashMap<Long, ChannelData> channels = gs.getServer(e.getGuild().getId()).getChannels();
+                HashMap<Long, ChannelData> channels = gs.getGuild(e.getGuild().getId()).getChannels();
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(gs.getServer(e.getGuild().getId()).getUsers()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(gs.getGuild(e.getGuild().getId()).getUsers()).toJSONString() + "```");
                 break;
             case "cachethings":
                 for(Guild g : e.getJDA().getGuilds()) {
-                    gs.getServer(g.getId()).getAlerts();
-                    gs.getServer(g.getId()).getBlacklistData();
+                    gs.getGuild(g.getId()).getAlerts();
+                    gs.getGuild(g.getId()).getBlacklistData();
                     for(GuildChannel cd : g.getChannels()) {
-                        gs.getServer(g.getId()).getChannelData(cd.getId());
+                        gs.getGuild(g.getId()).getChannelData(cd.getId());
                     }
                     for(Member m : g.getMembers()){
-                        gs.getServer(g.getId()).getUserData(m.getId());
+                        gs.getGuild(g.getId()).getUserData(m.getId());
                     }
                 }
                 e.reply("Done");
                 break;
-            case "getserver":
-                String sss = new JSONObject(gs.getServer(e.getGuild().getId()).getChannels()).toJSONString();
+            case "getServer":
+                String sss = new JSONObject(gs.getGuild(e.getGuild().getId()).getChannels()).toJSONString();
                 e.reply("```json\n" + sss + "```");
                 break;
             case "stats":

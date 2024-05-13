@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.LOL.AugmentData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
@@ -43,7 +44,7 @@ public class AugmentSlash extends SlashCommand {
             }
         }
         
-        RichCustomEmoji emoji = RiotHandler.getRichEmoji(event.getJDA(), "a"+augment.getId());
+        RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji(event.getJDA(), "a"+augment.getId());
         eb.setTitle(augment.getName().toUpperCase() + " (" + augment.getId() + ")");
         eb.setDescription(augment.getFormattedDesc());
         eb.setThumbnail(emoji.getImageUrl());

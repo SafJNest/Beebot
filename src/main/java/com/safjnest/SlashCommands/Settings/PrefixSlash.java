@@ -29,7 +29,7 @@ public class PrefixSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(gs.getServer(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
+        if(gs.getGuild(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
             event.deferReply(false).addContent("The new Prefix is " + event.getOption("prefix").getAsString()).queue();
         else
             event.deferReply(true).addContent("Error").queue();   

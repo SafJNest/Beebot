@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -85,7 +86,7 @@ public class Livegame extends Command {
 
                 Emoji icon = Emoji.fromCustom(
                     RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
-                    Long.parseLong(RiotHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
+                    Long.parseLong(CustomEmojiHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
                     false);
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(
@@ -141,7 +142,7 @@ public class Livegame extends Command {
                 account = accounts.stream().filter(a -> a.getPUUID().equals(partecipant.getPuuid())).findFirst().orElse(null);
 
 
-                String sum = RiotHandler.getFormattedEmoji(
+                String sum = CustomEmojiHandler.getFormattedEmoji(
                         jda,
                         RiotHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
                         + " " + account.getName().toUpperCase();

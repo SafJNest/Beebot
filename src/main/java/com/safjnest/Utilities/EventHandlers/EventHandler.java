@@ -2,7 +2,6 @@ package com.safjnest.Utilities.EventHandlers;
 
 import com.safjnest.Bot;
 import com.safjnest.Commands.League.Summoner;
-import com.safjnest.Utilities.Functions;
 import com.safjnest.Utilities.Guild.Alert.AlertType;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -60,8 +59,7 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent event){
-        System.out.println("[CACHE] Pushing new Guild into Database=> " + event.getGuild().getId());
-        DatabaseHandler.insertGuild(event.getGuild().getId(), Bot.getPrefix());
+        Bot.getGuildData(event.getGuild().getId());
     }
 
     @Override

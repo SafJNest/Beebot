@@ -1,4 +1,4 @@
-package com.safjnest.Utilities;
+package com.safjnest.Utilities.CustomEmoji;
 
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 

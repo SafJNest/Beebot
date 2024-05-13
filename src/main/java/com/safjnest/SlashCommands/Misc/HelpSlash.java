@@ -51,7 +51,7 @@ public class HelpSlash extends SlashCommand {
     @Override
     protected void execute(SlashCommandEvent event) {
         String inputCommand = (event.getOption("command") == null) ? "" : event.getOption("command").getAsString();
-        String prefix = gs.getServer(event.getGuild().getId()).getPrefix();
+        String prefix = gs.getGuild(event.getGuild().getId()).getPrefix();
         EmbedBuilder eb = new EmbedBuilder();
 
         HashMap<String, BotCommand> commands = new HashMap<>();

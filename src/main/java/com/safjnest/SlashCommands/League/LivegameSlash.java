@@ -8,6 +8,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Commands.League.Livegame;
 import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -89,7 +90,7 @@ public class LivegameSlash extends SlashCommand {
 
                 Emoji icon = Emoji.fromCustom(
                     RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
-                    Long.parseLong(RiotHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
+                    Long.parseLong(CustomEmojiHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
                     false);
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(

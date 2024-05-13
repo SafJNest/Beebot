@@ -9,7 +9,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.io.IOUtils;
@@ -20,7 +19,7 @@ import org.json.simple.parser.JSONParser;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.Bot;
-import com.safjnest.Utilities.CustomEmoji;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.LOL.Runes.PageRunes;
 import com.safjnest.Utilities.LOL.Runes.Rune;
@@ -28,8 +27,6 @@ import com.safjnest.Utilities.SQL.DatabaseHandler;
 import com.safjnest.Utilities.SQL.ResultRow;
 
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -76,13 +73,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
      */
     private static String[] champions;
 
-    private static String[] ids = {"1106615853660766298", "1106615897952636930", "1106615926578761830", "1106615956685475991", "1106648612039041064", "1108673762708172811", "1117059269901164636", "1117060300592664677", "1117060763182452746", "1123678509693423738", "1131573980944416768", "1132405368119627869", "1132694780703416410", "1132694832305934439","1132636113568280636", "1132636703883014154", "1178343116504305776", "1188786505544630362", "1194737164202807379", "1239279325472100452"};
-    
-
     private static ArrayList<AugmentData> augments = new ArrayList<>();
-
-    private static HashMap<String, CustomEmoji> emoji = new HashMap<>();
-
 
     public RiotHandler(R4J riotApi, String dataDragonVersion){
         RiotHandler.riotApi = riotApi;
@@ -174,18 +165,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-
-    public static void loadEmoji(JDA jda) {
-        List<String> emojiServers = List.of(ids);
-        for(Guild guild : jda.getGuilds()){
-            if (emojiServers.contains(guild.getId())) {
-                for(RichCustomEmoji em : guild.getEmojis()){
-                    emoji.put(em.getName().toLowerCase(), new CustomEmoji(em.getId(), guild.getId(), em.getName(), em));
-                }
-            }
         }
     }
 
@@ -287,7 +266,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
     private static String getStatsByEntry(JDA jda, LeagueEntry entry){
-        return getFormattedEmoji(jda, entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
+        return CustomEmojiHandler.getFormattedEmoji(jda, entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
         + entry.getWins() + "W/"+entry.getLosses()+"L\n"
         + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
     }
@@ -300,8 +279,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         try {
             for(ChampionMastery mastery : s.getChampionMasteries()){
                 if(cont == nChamp){
-                    masteryString += (mastery.getChampionLevel() > 4) ? RiotHandler.getFormattedEmoji(jda, "mastery" + mastery.getChampionLevel()) + " " : "";
-                    masteryString +=  RiotHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
+                    masteryString += (mastery.getChampionLevel() > 4) ? CustomEmojiHandler.getFormattedEmoji(jda, "mastery" + mastery.getChampionLevel()) + " " : "";
+                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
                                     + " **[" + mastery.getChampionLevel()+ "]** " 
                                     + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName() 
                                     + " " + df.format(mastery.getChampionPoints()) 
@@ -319,7 +298,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
                 if(partecipant.getSummonerId().equals(s.getSummonerId()))
-                    return "Playing a " + s.getCurrentGame().getGameQueueConfig().commonName()+ " as " + getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                    return "Playing a " + s.getCurrentGame().getGameQueueConfig().commonName()+ " as " + CustomEmojiHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
             }
         } catch (Exception e) {
             return "Not in a game";
@@ -327,70 +306,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         return "Not in a game";
     }
 
-
-    public static String getFormattedEmoji(JDA jda, String name){
-        if(name.equals("0") || name.equals("a0") || name.equals("2202_")) {
-            return ":black_large_square:";
-        }
-
-        if(name.equals("2201_")) {
-            name = "4_";
-        }
-        name = transposeChampionNameForDataDragon(name);
-        CustomEmoji em = emoji.get(name.toLowerCase());     
-        return em != null ? emoji.get(name.toLowerCase()).toString() : String.valueOf(name);
-    }
-
-    public static String getFormattedEmoji(String name){
-        if(name.equals("0") || name.equals("a0") || name.equals("2202_")) {
-            return ":black_large_square:";
-        }
-
-        if(name.equals("2201_")) {
-            name = "4_";
-        }
-        name = transposeChampionNameForDataDragon(name);
-        CustomEmoji em = emoji.get(name.toLowerCase());     
-        return em != null ? emoji.get(name.toLowerCase()).toString() : String.valueOf(name);
-    }
-
-    public static RichCustomEmoji getRichEmoji(JDA jda, String name){
-        if(name.equals("2201_")) {
-            name = "4_";
-        }
-
-        name = transposeChampionNameForDataDragon(name);
-        return emoji.get(name.toLowerCase()).getObject();
-       
-    }
-
-    public static RichCustomEmoji getRichEmoji(String name){
-        if(name.equals("2201_")) {
-            name = "4_";
-        }
-
-        name = transposeChampionNameForDataDragon(name);
-        return emoji.get(name.toLowerCase()).getObject();
-       
-    }
-
-    public static String getFormattedEmoji(JDA jda, int name){
-        if(name == 0) {
-            return ":black_large_square:";
-        }
-        String ss = emoji.get(String.valueOf(name)).toString();            
-        return ss != null ? ss : String.valueOf(name);
-    }
-
-    public static String getEmojiId(JDA jda, String name){
-        name = transposeChampionNameForDataDragon(name);
-        CustomEmoji em = emoji.get(name.toLowerCase());
-        return em != null ? em.getId() : name;
-    }
-
-    public static String[] getForbiddenServers() {
-        return ids;
-    }
 
     /**
      * Get the champion name that is more similar to the input such as "Kha'Zix" -> "Khazix"

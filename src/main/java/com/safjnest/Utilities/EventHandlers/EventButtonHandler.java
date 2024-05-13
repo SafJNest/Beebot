@@ -13,6 +13,7 @@ import com.safjnest.Utilities.Audio.EmbedType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.QueueHandler;
 import com.safjnest.Utilities.Audio.TrackScheduler;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.Guild.Alert.RewardData;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
@@ -487,7 +488,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         riotAccounts.add(a);
                         Emoji icon = Emoji.fromCustom(
                                 RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
-                                Long.parseLong(RiotHandler.getEmojiId(event.getJDA(),
+                                Long.parseLong(CustomEmojiHandler.getEmojiId(event.getJDA(),
                                         RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId())
                                                 .getName())),
                                 false);
@@ -547,7 +548,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         riotAccounts.add(a);
                         Emoji icon = Emoji.fromCustom(
                                 RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
-                                Long.parseLong(RiotHandler.getEmojiId(event.getJDA(),
+                                Long.parseLong(CustomEmojiHandler.getEmojiId(event.getJDA(),
                                         RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId())
                                                 .getName())),
                                 false);

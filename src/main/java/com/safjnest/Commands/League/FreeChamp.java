@@ -6,7 +6,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.LOL.RiotHandler;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -49,7 +49,7 @@ public class FreeChamp extends Command {
         String s = "";
         int cont = 1;
         for(StaticChampion ce : c.getFreeChampions()){
-            s += RiotHandler.getFormattedEmoji(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
+            s += CustomEmojiHandler.getFormattedEmoji(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
             if(cont % 10 == 0){
                 eb.addField("", s, true);
                 cont = 0;
