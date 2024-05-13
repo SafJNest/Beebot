@@ -1,9 +1,6 @@
 package com.safjnest.Utilities.EventHandlers;
 
 import com.safjnest.Bot;
-
-
-import com.safjnest.Utilities.Functions;
 import com.safjnest.Utilities.UserData;
 import com.safjnest.Utilities.Guild.GuildData;
 

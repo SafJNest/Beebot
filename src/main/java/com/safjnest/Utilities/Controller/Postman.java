@@ -58,7 +58,7 @@ public class Postman {
 
     public String getPrefix(String userId, String guilId){
         
-        String list = "{\"prefix\":" + "\"" + gs.getServer(userId).getPrefix() + "\"" + "}";
+        String list = "{\"prefix\":" + "\"" + gs.getGuild(userId).getPrefix() + "\"" + "}";
         return list;
     }
     
