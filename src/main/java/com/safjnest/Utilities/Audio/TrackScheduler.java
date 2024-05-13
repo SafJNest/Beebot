@@ -273,7 +273,7 @@ public class TrackScheduler extends AudioEventAdapter {
         // LOAD_FAILED: Loading of a track failed (mayStartNext = true).
         if (endReason.mayStartNext) {
             int toMove = isRepeat || !isQueueable(track) ? 0 : 1;
-            long trackPosition = (isRepeat || !isQueueable(track)) && (queue.get(currentTrackIndex) == null) ? 0 : queue.get(currentTrackIndex).getPosition();
+            long trackPosition = (isRepeat || !isQueueable(track)) && (checkIndex(currentTrackIndex)) ? queue.get(currentTrackIndex).getPosition() : 0;
 
             /*
             System.out.println("track: " + track.getInfo().title 
