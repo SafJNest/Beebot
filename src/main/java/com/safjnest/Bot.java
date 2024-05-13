@@ -33,8 +33,8 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.command.SlashCommand;
-
 import com.safjnest.Utilities.UserData;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 import com.safjnest.Utilities.EventHandlers.CommandEventHandler;
 import com.safjnest.Utilities.EventHandlers.EventAutoCompleteInteractionHandler;
 import com.safjnest.Utilities.EventHandlers.EventButtonHandler;
@@ -42,7 +42,6 @@ import com.safjnest.Utilities.EventHandlers.EventHandler;
 import com.safjnest.Utilities.EventHandlers.EventHandlerBeebot;
 import com.safjnest.Utilities.Guild.GuildData;
 import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.LOL.RiotHandler;
 
 import com.safjnest.Commands.Misc.*;
 import com.safjnest.Commands.Owner.*;
@@ -170,7 +169,7 @@ public class Bot extends ListenerAdapter {
             public void onReady(ReadyEvent event) {
                 //g.updateCommands().queue();
                 
-                RiotHandler.loadEmoji(event.getJDA());
+                new CustomEmojiHandler();
                 System.out.println("[INFO] custom emoji cached correctly");
                 System.out.println("[INFO] no more guild cached correctly");
             }
@@ -180,7 +179,7 @@ public class Bot extends ListenerAdapter {
             if (event.getChannelType() == ChannelType.PRIVATE)
                 return "";
             if (event.isFromGuild()) {
-                GuildData gd = gs.getServer(event.getGuild().getId());
+                GuildData gd = gs.getGuild(event.getGuild().getId());
                 return gd == null ? PREFIX : gd.getPrefix();
             }
             return null;
@@ -301,7 +300,7 @@ public class Bot extends ListenerAdapter {
     }
 
     public static GuildData getGuildData(String id) {
-        return gs.getServer(id);
+        return gs.getGuild(id);
     }
 
     public static CommandClient getClient() {

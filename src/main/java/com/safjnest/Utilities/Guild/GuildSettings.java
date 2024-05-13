@@ -12,7 +12,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 
 /**
- * Class that stores in a {@link GuildSettings#cache cache} all the settings for a guild.
+ * Class that stores in a {@link GuildSettings#cache guilds} all the settings for a guild.
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  */
@@ -21,7 +21,7 @@ public class GuildSettings {
      * {@code HashMap} that contains all the {@link com.safjnest.Utilities.Guild.GuildData settings} of every guild.
      * <p>The key of the map is the guild's id.
      */
-    public HashMap<String, GuildData> cache = new HashMap<>();
+    private HashMap<String, GuildData> guilds = new HashMap<>();
 
     /**
      * Default constructor
@@ -38,8 +38,8 @@ public class GuildSettings {
      * The {@link com.safjnest.Utilities.Guild.GuildData guildData} if is stored in the cache(or is in the database), otherwise a defult {@link com.safjnest.Utilities.Guild.GuildData guildData}.
      * @see {@link com.safjnest.Utilities.Guild.GuildData guildData and default guildData}
      */
-    public GuildData getServer(String id) {
-        return cache.containsKey(id) ? cache.get(id) : retrieveServer(id);
+    public GuildData getGuild(String id) {
+        return guilds.containsKey(id) ? guilds.get(id) : retriveGuild(id);
     }
 
     /**
@@ -48,8 +48,8 @@ public class GuildSettings {
      * @param id
      * @return
      */
-    public GuildData getServerIfCached(String id) {
-        return cache.get(id);
+    public GuildData getGuildIfCached(String id) {
+        return guilds.get(id);
     }
 
     /**
@@ -64,7 +64,7 @@ public class GuildSettings {
      * @return
      * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
      */
-    public GuildData retrieveServer(String stringId) {
+    public GuildData retriveGuild(String stringId) {
         System.out.println("[CACHE] Retriving guild from database => " + stringId);
         ResultRow guildData = DatabaseHandler.getGuildData(stringId);
         
@@ -78,7 +78,7 @@ public class GuildSettings {
         LeagueShard shard = LeagueShard.values()[Integer.parseInt(guildData.get("league_shard"))];
         
         GuildData guild = new GuildData(guildId, prefix, expEnabled, shard);
-        saveData(guild);
+        saveGuild(guild);
         return guild;
     }
 
@@ -94,7 +94,7 @@ public class GuildSettings {
      * @return
      * Always a {@link com.safjnest.Utilities.Guild.GuildData guildData}, never {@code null}
      */
-    public void retrieveAllServers() {
+    public void retrieveAllGuilds() {
         QueryResult guilds = DatabaseHandler.getGuildData();
         
         for(ResultRow guildData : guilds){
@@ -104,7 +104,7 @@ public class GuildSettings {
             LeagueShard shard = LeagueShard.valueOf(guildData.get("league_shard"));
         
             GuildData guild = new GuildData(guildId, prefix, expEnabled, shard);
-            saveData(guild);
+            saveGuild(guild);
         }
     }
 
@@ -113,7 +113,7 @@ public class GuildSettings {
         System.out.println("[ERROR] Missing guild in database => " + guildId);
 
         GuildData guild = new GuildData(Long.parseLong(guildId), Bot.getPrefix(), true, LeagueShard.EUW1);
-        saveData(guild);
+        saveGuild(guild);
         return guild;
     }
 
@@ -121,8 +121,12 @@ public class GuildSettings {
      * Saves in the {@link GuildSettings#cache cache} the {@link com.safjnest.Utilities.Guild.GuildData guildData}
      * @param guild guildData
      */
-    public void saveData(GuildData guild) {
-        cache.put(String.valueOf(guild.getId()), guild);
+    private void saveGuild(GuildData guild) {
+        guilds.put(String.valueOf(guild.getId()), guild);
+    }
+
+    public HashMap<String, GuildData> getGuilds() {
+        return guilds;
     }
 
     public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {

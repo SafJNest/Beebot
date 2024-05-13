@@ -39,7 +39,7 @@ public class Help extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        String prefix = gs.getServer(event.getGuild().getId()).getPrefix();
+        String prefix = gs.getGuild(event.getGuild().getId()).getPrefix();
         String inputCommand = event.getArgs();
         EmbedBuilder eb = new EmbedBuilder();
 

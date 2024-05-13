@@ -6,7 +6,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.LOL.RiotHandler;
+import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
@@ -39,7 +39,7 @@ public class ListGuild extends Command {
         });
         
         String list = "Here is the list of guilds the bot is in (ordered by join date): \n";
-        List<String> forbidden = List.of(RiotHandler.getForbiddenServers());
+        List<String> forbidden = List.of(CustomEmojiHandler.getForbiddenServers());
         for(Guild guild : guilds){
             if (!forbidden.contains(guild.getId())) {
                 list += "<t:" + guild.getMember(self).getTimeJoined().toEpochSecond() + ":d> - **" + guild.getName() + "** (" + guild.getId() + ")\n";

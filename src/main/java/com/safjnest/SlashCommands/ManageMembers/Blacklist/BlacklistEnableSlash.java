@@ -37,7 +37,7 @@ public class BlacklistEnableSlash extends SlashCommand{
         String threshold = event.getOption("threshold").getAsString();
         String channelId = event.getOption("channel").getAsChannel().getId();
 
-        if (!gs.getServer(event.getGuild().getId()).setBlackListData(Integer.parseInt(threshold), channelId)) {
+        if (!gs.getGuild(event.getGuild().getId()).setBlackListData(Integer.parseInt(threshold), channelId)) {
             event.deferReply(false).addContent("Something went wrong.").queue();
             return;  
         }

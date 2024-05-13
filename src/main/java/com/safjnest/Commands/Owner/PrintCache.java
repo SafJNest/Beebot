@@ -39,9 +39,9 @@ public class PrintCache extends Command {
     protected void execute(CommandEvent event) {
         ArrayList<String> cache = new ArrayList<>();
         String msg = "";
-        msg += "Guilds cached: " + gs.cache.size() + "\n";
+        msg += "Guilds cached: " + gs.getGuilds().size() + "\n";
 
-        for(GuildData gd : gs.cache.values()){
+        for(GuildData gd : gs.getGuilds().values()){
             try {
                 if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot")) {
                     msg += "**" + event.getJDA().getGuildById(gd.getId()).getName() + "**```"

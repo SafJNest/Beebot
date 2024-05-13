@@ -36,7 +36,7 @@ public class Prefix extends Command{
         }
         String guildId = event.getGuild().getId();
         
-        if(gs.getServer(guildId).setPrefix(prefix)){
+        if(gs.getGuild(guildId).setPrefix(prefix)){
             event.reply("The new prefix is: " + prefix);
         }
         else
