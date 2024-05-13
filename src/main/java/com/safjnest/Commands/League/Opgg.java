@@ -153,7 +153,7 @@ public class Opgg extends Command {
                         HashMap<Integer, String> positions = new HashMap<>();
                         
                         for(MatchParticipant mt : match.getParticipants()){
-                            RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(region, mt.getPuuid());
+                            //RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(region, mt.getPuuid());
                             //String nameAccount = searchAccount.getName()+ "#" + searchAccount.getTag();
                             //String name = ((mt.getPuuid().equals(s.getPUUID())) ? "**" + nameAccount + "**" : nameAccount);
                             String name = "";

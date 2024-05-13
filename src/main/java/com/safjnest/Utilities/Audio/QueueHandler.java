@@ -154,7 +154,7 @@ public class QueueHandler {
                 break;
 
             case "vimeo":
-                thumbnailURL = null;
+                thumbnailURL = "https://vumbnail.com/" + track.getIdentifier() + ".jpg";
                 break;
 
             case "twitch":
@@ -200,9 +200,9 @@ public class QueueHandler {
         }
 
         if (playingNow != null) {
-            eb.setTitle(formatTrack(index, playingNow));
+            eb.setTitle(formatTrack(index, playingNow), playingNow.getInfo().uri);
             eb.setDescription(playingNow.getInfo().author);
-        } 
+        }
         else {
             eb.setTitle("There is no song playing right now.");
         } 
@@ -223,6 +223,9 @@ public class QueueHandler {
         if (playingNow != null) {
             eb.setTitle("**" + playingNow.getInfo().title + "**", playingNow.getInfo().uri);
             eb.setDescription(playingNow.getInfo().author);
+
+            eb.addField("", "", false);
+            
             if(ts.isPaused()) {
                 String position = SafJNest.formatDuration(playingNow.getPosition()) + " / " + SafJNest.formatDuration(playingNow.getInfo().length);
                 eb.addField("Position", position, true);   
@@ -363,7 +366,7 @@ public class QueueHandler {
         ts.deleteMessage();
         
         channel.sendMessageEmbeds(getEmbed(guild, type).build()).addComponents(getButtons(guild, type)).queue(message -> {
-            ts.setMessage(new QueueMessage(message, type));
+            ts.setMessage(new QueueMessage(message, type)); 
         });
     }
 

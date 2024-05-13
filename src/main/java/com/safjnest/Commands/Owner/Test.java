@@ -76,7 +76,7 @@ public class Test extends Command{
 
         //File soundBoard = new File("rsc" + File.separator + "SoundBoard");
         //File[] files = soundBoard.listFiles();
-        switch (args[0]){
+        switch (args[0].toLowerCase()){
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
@@ -120,7 +120,7 @@ public class Test extends Command{
             case "prime":
                 e.reply(SafJNest.getRandomPrime(Integer.parseInt(args[1])).toString());
             break;
-            case "getInvites":
+            case "getinvites":
                 Guild guildd = e.getJDA().getGuildById(args[1]);
                 StringBuilder invites = new StringBuilder();
                 for(Invite invite : guildd.retrieveInvites().complete()) {
@@ -142,7 +142,7 @@ public class Test extends Command{
 
                 e.reply("here are the invites for " + guildd.getName() + " (" + guildd.getId() + "):\n" + invites);
             break;
-            case "createInvite":
+            case "createinvite":
                 String invitess = "";
                 for(Invite invite : e.getJDA().getGuildById(args[1]).retrieveInvites().complete()) {
                     invitess += invite.getUrl() + "\n";
@@ -153,7 +153,7 @@ public class Test extends Command{
                     e.reply("here is the created invite:\n" + invitess);
                 }
             break;
-            case "getGuildsWithInvites":
+            case "getguildswithinvites":
                 User self = e.getJDA().getSelfUser();
                 List<Guild> guilds = new ArrayList<>(e.getJDA().getGuilds());
                 guilds.sort((g1, g2) -> {
@@ -173,7 +173,7 @@ public class Test extends Command{
                 }
                 e.reply("Guilds with invites:\n" + guildlist);
             break;
-            case "getLolItems":
+            case "getlolitems":
                 System.out.println("eee");
                 String ss = "";
                 for (Item item : RiotHandler.getRiotApi().getDDragonAPI().getItems().values()) {
@@ -185,7 +185,7 @@ public class Test extends Command{
                 e.reply(ss);
 
             break;
-            case "renameFile":
+            case "renamefile":
                 // for(File file : files){
                 //     String name = file.getName().split("\\.")[0];
                 //     String extension = file.getName().split("\\.")[1];
@@ -194,7 +194,7 @@ public class Test extends Command{
 
                 // }
             break;
-            case "renameFiles":
+            case "renamefiles":
                 // for(File file : files){
                 //     String name = file.getName().split("\\.")[0];
                 //     String extension = file.getName().split("\\.")[1];
@@ -206,17 +206,17 @@ public class Test extends Command{
 
                 // }
             break;
-            case "closeDatabase":
+            case "closedatabase":
                 try {
                     DatabaseHandler.getConnection().close();
                 } catch (SQLException e1) {
                     e1.printStackTrace();
                 }
             break;
-            case "getBlacklist":
+            case "getblacklist":
                 System.out.println(gs.getServer(e.getGuild().getId()).getBlacklistData().toString());
                 break;
-            case "printJson":
+            case "printjson":
                 HashMap<AlertKey, AlertData> prova = gs.getServer(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
                 e.reply("```json\n" + gs.getServer(e.getGuild().getId()).toString() + "```");
@@ -227,7 +227,7 @@ public class Test extends Command{
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
                 e.reply("```json\n" + new JSONObject(gs.getServer(e.getGuild().getId()).getUsers()).toJSONString() + "```");
                 break;
-            case "cacheThings":
+            case "cachethings":
                 for(Guild g : e.getJDA().getGuilds()) {
                     gs.getServer(g.getId()).getAlerts();
                     gs.getServer(g.getId()).getBlacklistData();
@@ -240,7 +240,7 @@ public class Test extends Command{
                 }
                 e.reply("Done");
                 break;
-            case "getServer":
+            case "getserver":
                 String sss = new JSONObject(gs.getServer(e.getGuild().getId()).getChannels()).toJSONString();
                 e.reply("```json\n" + sss + "```");
                 break;
@@ -255,7 +255,7 @@ public class Test extends Command{
                 }
                 e.reply("Done");
                 break;
-            case "insertEpriaInBlacklist":
+            case "insertepriainblacklist":
                 query = "SELECT id FROM guilds";
                 res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
@@ -263,7 +263,7 @@ public class Test extends Command{
                     DatabaseHandler.safJQuery(query);
                 }
                 break;
-            case "insertAlert":
+            case "insertalert":
                 query = "SELECT guild_id, role_id, level, message_text FROM reward";
                 res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
@@ -285,7 +285,7 @@ public class Test extends Command{
                     }
                 }
                 break;
-            case "insertUser":
+            case "insertuser":
             query = "SELECT user_id, guild_id, exp, level, messages FROM experience";
             res = DatabaseHandler.safJQuery(query);
             for(ResultRow row : res){
@@ -296,10 +296,17 @@ public class Test extends Command{
             }
             e.reply("Done");
                 break;
-            case "trackScheduler":
+            case "trackscheduler":
                 String status = PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().toString();
                 System.out.println(status);
                 e.reply(status);
+                break;
+
+            case "getrawmessage":
+                e.reply(e.getChannel().getIterableHistory().complete().get(1).getContentRaw());
+                break;
+            case "getrawembed":
+                e.reply(e.getChannel().getIterableHistory().complete().get(1).getEmbeds().get(0).toData().toString());
                 break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
