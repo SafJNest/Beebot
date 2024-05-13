@@ -1,4 +1,4 @@
-package com.safjnest.Utilities;
+package com.safjnest.Utilities.EventHandlers;
 
 import java.io.File;
 import java.util.HashMap;
@@ -7,6 +7,9 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Bot;
+import com.safjnest.Utilities.AliasData;
+import com.safjnest.Utilities.ExperienceSystem;
+import com.safjnest.Utilities.UserData;
 import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TrackData;
@@ -149,7 +152,7 @@ public class Functions {
     public static void handleAlert(User theGuy, Guild guild, AlertType type) {
         MessageChannel channel = null;
 
-        AlertData alert = Bot.getGuildSettings().getServer(guild.getId()).getAlert(type);
+        AlertData alert = Bot.getGuildSettings().getGuild(guild.getId()).getAlert(type);
         if (alert == null || !alert.isValid()) {
             return;
         }
@@ -196,7 +199,7 @@ public class Functions {
 
     public static void handleBlacklist(User badGuy, Guild guild) {
         MessageChannel channel = null;
-        GuildData guildData = Bot.getGuildSettings().getServer(guild.getId());
+        GuildData guildData = Bot.getGuildSettings().getGuild(guild.getId());
 
 
         int threshold = guildData.getThreshold();
@@ -228,7 +231,7 @@ public class Functions {
     }
 
     public static void handleBlacklistAlert(User badGuy, Guild guild) {
-        GuildData guildData = Bot.getGuildSettings().getServer(guild.getId());
+        GuildData guildData = Bot.getGuildSettings().getGuild(guild.getId());
         int threshold = guildData.getThreshold();
 
         if(threshold == 0)
@@ -267,7 +270,7 @@ public class Functions {
     }
 
     public static void handleChannelDeleteAlert(Guild guild, String channelID) {
-        GuildData g = Bot.getGuildSettings().getServer(guild.getId());
+        GuildData g = Bot.getGuildSettings().getGuild(guild.getId());
 
         String alertChannel = guild.getDefaultChannel().getId();
         String alertMessage = "";
@@ -343,7 +346,7 @@ public class Functions {
 
 
     public static void handleCustomCommand(String commandName, SlashCommandInteractionEvent event) {
-        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        GuildData guild = Bot.getGuildSettings().getGuild(event.getGuild().getId());
         CustomCommand command = guild.getCustomCommand(commandName);
 
         if(command == null) {
@@ -357,7 +360,7 @@ public class Functions {
     }
 
     public static void updateCommandStatitics(SlashCommandInteractionEvent event) {
-        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        GuildData guild = Bot.getGuildSettings().getGuild(event.getGuild().getId());
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         
@@ -367,7 +370,7 @@ public class Functions {
     }
 
     public static void updateCommandStatitics(CommandEvent event, Command command) {
-        GuildData guild = Bot.getGuildSettings().getServer(event.getGuild().getId());
+        GuildData guild = Bot.getGuildSettings().getGuild(event.getGuild().getId());
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         
