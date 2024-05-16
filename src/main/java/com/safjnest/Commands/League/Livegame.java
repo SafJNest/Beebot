@@ -71,7 +71,7 @@ public class Livegame extends Command {
 
         if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
             RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
-            center = Button.primary("rank-center-" + s.getPUUID() + "#" + s.getPlatform().commonName(), account.getName());
+            center = Button.primary("rank-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
         }
 

@@ -9,6 +9,7 @@ import java.util.HashMap;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.DateHandler;
 import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
@@ -16,6 +17,7 @@ import com.safjnest.Utilities.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -56,6 +58,10 @@ public class Opgg extends Command {
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
 
+        User theGuy = null;
+        if(event.getArgs().equals("")) theGuy = event.getAuthor();    
+        else if(event.getMessage().getMentions().getMembers().size() != 0) theGuy = event.getMessage().getMentions().getUsers().get(0);
+
         s = RiotHandler.getSummonerByArgs(event);
         if(s == null){
             event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
@@ -65,7 +71,7 @@ public class Opgg extends Command {
         
         EmbedBuilder builder = createEmbed(s, event.getJDA());
         
-        if(RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1){
+        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
             RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
             center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
@@ -88,7 +94,9 @@ public class Opgg extends Command {
         MatchParticipant me = null;
         LOLMatch match = null;
         R4J r4j = RiotHandler.getRiotApi();
+
         eb.setAuthor(account.getName() + "#" + account.getTag());
+        eb.setColor(Bot.getColor());
         
         for(int i = 0; i < 5; i++){
             try {
@@ -105,19 +113,14 @@ public class Opgg extends Command {
                 ArrayList<String> blue = new ArrayList<>();
                 ArrayList<String> red = new ArrayList<>();
                 for(MatchParticipant searchMe : match.getParticipants()){
-                    RiotAccount searchAccount = r4j.getAccountAPI().getAccountByPUUID(region, searchMe.getPuuid());
-                    if(searchMe.getSummonerId().equals(s.getSummonerId()))
-                        me = searchMe;
-                    String supp = CustomEmojiHandler.getFormattedEmoji(jda, searchMe.getChampionName()) 
-                                    + " " 
-                                    + (searchMe.getPuuid().equals(me.getPuuid()) 
-                                        ? "**" + searchAccount.getName()+ "#" + searchAccount.getTag() + "**" 
-                                        : searchAccount.getName()+ "#" + searchAccount.getTag());
-    
+                    String partecipantString = CustomEmojiHandler.getFormattedEmoji(jda, searchMe.getChampionName()) 
+                                                + " " 
+                                                + searchMe.getKills() + "/" + searchMe.getDeaths() + "/" + searchMe.getAssists(); 
+
                     if(searchMe.getTeam() == TeamType.BLUE)
-                        blue.add(supp);
+                        blue.add(partecipantString);
                     else
-                        red.add(supp);
+                        red.add(partecipantString);
                 }
     
                 String kda = me.getKills() + "/" + me.getDeaths()+ "/" + me.getAssists();
@@ -126,7 +129,7 @@ public class Opgg extends Command {
                 ZoneOffset offset = ZoneOffset.UTC;
                 OffsetDateTime offsetDateTime = instant.atOffset(offset);
                 String date = DateHandler.formatDate(offsetDateTime);
-                date = date.substring(date.indexOf("(")+1, date.indexOf(")"));
+                date = "<t:" + ((match.getGameCreation()/1000) + match.getGameDurationAsDuration().getSeconds()) + ":R>";
                 switch (match.getQueue()){
 
                     case CHERRY:
@@ -154,8 +157,6 @@ public class Opgg extends Command {
                         HashMap<Integer, String> positions = new HashMap<>();
                         
                         for(MatchParticipant mt : match.getParticipants()){
-                            //String nameAccount = searchAccount.getName()+ "#" + searchAccount.getTag();
-                            //String name = ((mt.getPuuid().equals(s.getPUUID())) ? "**" + nameAccount + "**" : nameAccount);
                             String name = "";
                             String team = "";
                             switch (mt.getPlayerSubteamId()) {
