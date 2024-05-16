@@ -279,7 +279,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         try {
             for(ChampionMastery mastery : s.getChampionMasteries()){
                 if(cont == nChamp){
-                    masteryString += (mastery.getChampionLevel() > 4) ? CustomEmojiHandler.getFormattedEmoji(jda, "mastery" + mastery.getChampionLevel()) + " " : "";
+                    int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+                    masteryString += CustomEmojiHandler.getFormattedEmoji(jda, "mastery" + level) + " ";
                     masteryString +=  CustomEmojiHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
                                     + " **[" + mastery.getChampionLevel()+ "]** " 
                                     + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName() 
@@ -401,5 +402,13 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
     public static OptionData getLeagueShardOptions() {
         return getLeagueShardOptions(false);
+    }
+
+    public static double getKDA(int kills, int deaths, int assists){
+        double kda = 0;
+        if (deaths == 0)
+            kda =  kills + assists;
+        kda =  (double) (kills + assists) / deaths;
+        return Math.round(kda * 100.0) / 100.0;
     }
 }
