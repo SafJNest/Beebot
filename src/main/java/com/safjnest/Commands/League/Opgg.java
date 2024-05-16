@@ -240,7 +240,6 @@ public class Opgg extends Command {
     private static String getFormattedRunes(MatchParticipant me, JDA jda, int row) {
         String prova = "";
         PerkStyle perkS = me.getPerks().getPerkStyles().get(row);
-
         prova += CustomEmojiHandler.getFormattedEmoji(jda, RiotHandler.getFatherRune(perkS.getSelections().get(0).getPerk()));
         for (PerkSelection perk : perkS.getSelections()) {
             prova += CustomEmojiHandler.getFormattedEmoji(jda, perk.getPerk());
