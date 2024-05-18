@@ -455,7 +455,7 @@ public class EventButtonHandler extends ListenerAdapter {
         RegionShard region = null;
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-
+        RiotAccount account = null;
         switch (args) {
 
             case "right":
@@ -470,10 +470,10 @@ public class EventButtonHandler extends ListenerAdapter {
                 else
                     index += 1;
 
-                
-
                 s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(index).getAsInt("league_shard")));
-                center = Button.primary("rank-center-" + s.getPUUID() + "#" + s.getPlatform().commonName(), s.getName());
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+                riotAccounts.add(account);
+                center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
 
                 shard = s.getPlatform();
@@ -533,8 +533,8 @@ public class EventButtonHandler extends ListenerAdapter {
                     index -= 1;
 
                 s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(index).getAsInt("league_shard")));
-                center = Button.primary("rank-center-" + s.getPUUID() + "#" + s.getPlatform().commonName(), s.getName());
-                center = center.asDisabled();
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+                center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 
                 shard = s.getPlatform();
                 region = RiotHandler.getRegionFromServer(shard);

@@ -69,9 +69,10 @@ public class Livegame extends Command {
         List<SpectatorParticipant> users = null;
         List<RiotAccount> accounts = new ArrayList<>();
 
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+        accounts.add(account);
         if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
-            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
-            center = Button.primary("rank-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
+            center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
         }
 
@@ -81,7 +82,7 @@ public class Livegame extends Command {
         
             ArrayList<SelectOption> options = new ArrayList<>();
             for(SpectatorParticipant p : users){
-                RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, p.getPuuid());
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, p.getPuuid());
                 accounts.add(account);
 
                 Emoji icon = Emoji.fromCustom(
@@ -111,9 +112,8 @@ public class Livegame extends Command {
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(menu).queue();
                 
         } catch (Exception e) {
-            e.printStackTrace();
             builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users, accounts);
-            if (theGuy != null && RiotHandler.getNumberOfProfile(event.getAuthor().getId()) > 1) {
+            if (theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1) {
                 event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
                 return;
             }
@@ -123,14 +123,14 @@ public class Livegame extends Command {
     }
 
     public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s, List<SpectatorParticipant> users, List<RiotAccount> accounts) {
-        try {
-            RiotAccount account = null;
-            for(RiotAccount a : accounts){
-                if(a.getPUUID().equals(s.getPUUID())){
-                    account = a;
-                    break;
-                }
+        RiotAccount account = null;
+        for(RiotAccount a : accounts){
+            if(a.getPUUID().equals(s.getPUUID())){
+                account = a;
+                break;
             }
+        }
+        try {
 
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(account.getName() + "#" + account.getTag() + "'s Game");
@@ -172,11 +172,12 @@ public class Livegame extends Command {
 
             builder.addField("**BLUE SIDE**", blueSide, false);
             builder.addField("**RED SIDE**", redSide, true);
+            builder.setFooter("For every gamemode would be use the SOLOQ ranked data. Flex would be shown only if the game is a Flex game.");
             return builder;
 
         } catch (Exception e) {
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(s.getName() + "'s Game");
+            builder.setTitle(account.getName() + "#" + account.getTag() + "'s Game");
             builder.setColor(Bot.getColor());
             builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             builder.setDescription("This user is not in a game.");

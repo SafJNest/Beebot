@@ -67,9 +67,9 @@ public class LivegameSlash extends SlashCommand {
             return;
         }
 
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
         if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
-            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
-            center = Button.primary("rank-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
+            center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
         }
 
@@ -78,6 +78,8 @@ public class LivegameSlash extends SlashCommand {
         
         List<SpectatorParticipant> users = null;
         List<RiotAccount> accounts = new ArrayList<>();
+
+        accounts.add(account);
         
         EmbedBuilder builder = null;
         try {
@@ -85,7 +87,7 @@ public class LivegameSlash extends SlashCommand {
         
             ArrayList<SelectOption> options = new ArrayList<>();
             for(SpectatorParticipant p : users){
-                RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, p.getPuuid());
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, p.getPuuid());
                 accounts.add(account);
 
                 Emoji icon = Emoji.fromCustom(

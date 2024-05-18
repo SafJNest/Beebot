@@ -70,8 +70,9 @@ public class Summoner extends Command {
         builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
 
         String userId = DatabaseHandler.getUserIdByLOLAccountId(s.getAccountId());
+        System.out.println(userId);
         if(userId != null){
-            User theGuy = jda.getUserById(userId);
+            User theGuy = jda.retrieveUserById(userId).complete();
             builder.addField("User:", theGuy.getName(), true);
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
             builder.addBlankField(true);
