@@ -112,14 +112,18 @@ public class ResultHandler implements AudioLoadResultHandler {
 
     private void queue(AudioTrack track, boolean isForced, int seconds) {
         if(isForced) {
+            ts.addTrackToFront(track);
+
+            ts.moveCursor(1);
+
             if(seconds != -1)
                 track.setPosition(seconds * 1000);
 
-            ts.addTrackToFront(track);
-            ts.play(ts.moveCursor(1), true);
+            ts.play(track, true);
         }
         else {
             ts.queue(track);
+            
             if (ts.canPlay()) {
                 ts.moveCursor(ts.getQueue().size(), true);
                 ts.play();

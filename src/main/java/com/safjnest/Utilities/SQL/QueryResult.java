@@ -55,5 +55,10 @@ public class QueryResult implements Iterable<ResultRow>{
         return result.stream();
     }
 
+    @Override
+    public String toString() {
+        return result.toString();
+    }
+
 
 }

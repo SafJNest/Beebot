@@ -131,9 +131,10 @@ public class TrackScheduler extends AudioEventAdapter {
 
     public void clearQueue() {
         queue.clear();
-        unshuffledQueue = null;
         player.stopTrack();
+        
         currentTrackIndex = -1;
+        unshuffledQueue = null;
         isForced = false;
         isRepeat = false;
     }
