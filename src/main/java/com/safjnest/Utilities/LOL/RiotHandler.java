@@ -266,7 +266,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
     private static String getStatsByEntry(JDA jda, LeagueEntry entry){
-        return CustomEmojiHandler.getFormattedEmoji(jda, entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
+        return CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
         + entry.getWins() + "W/"+entry.getLosses()+"L\n"
         + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
     }
@@ -280,8 +280,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             for(ChampionMastery mastery : s.getChampionMasteries()){
                 if(cont == nChamp){
                     int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
-                    masteryString += CustomEmojiHandler.getFormattedEmoji(jda, "mastery" + level) + " ";
-                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
+                    masteryString += CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " ";
+                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
                                     + " **[" + mastery.getChampionLevel()+ "]** " 
                                     + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName() 
                                     + " " + df.format(mastery.getChampionPoints()) 
@@ -299,7 +299,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
                 if(partecipant.getSummonerId().equals(s.getSummonerId()))
-                    return "Playing a " + s.getCurrentGame().getGameQueueConfig().commonName()+ " as " + CustomEmojiHandler.getFormattedEmoji(jda, riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                    return "Playing a " + s.getCurrentGame().getGameQueueConfig().commonName()+ " as " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
             }
         } catch (Exception e) {
             return "Not in a game";

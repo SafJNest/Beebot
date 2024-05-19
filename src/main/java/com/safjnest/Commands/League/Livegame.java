@@ -87,7 +87,7 @@ public class Livegame extends Command {
 
                 Emoji icon = Emoji.fromCustom(
                     RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
-                    Long.parseLong(CustomEmojiHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
+                    Long.parseLong(CustomEmojiHandler.getEmojiId(RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
                     false);
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(
@@ -143,7 +143,6 @@ public class Livegame extends Command {
 
 
                 String sum = CustomEmojiHandler.getFormattedEmoji(
-                        jda,
                         RiotHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
                         + " " + account.getName().toUpperCase();
                 String stats = "";

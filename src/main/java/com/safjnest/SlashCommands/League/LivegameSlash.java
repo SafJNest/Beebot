@@ -92,7 +92,7 @@ public class LivegameSlash extends SlashCommand {
 
                 Emoji icon = Emoji.fromCustom(
                     RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
-                    Long.parseLong(CustomEmojiHandler.getEmojiId(event.getJDA(), RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
+                    Long.parseLong(CustomEmojiHandler.getEmojiId(RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
                     false);
                 if(!p.getSummonerId().equals(s.getSummonerId()))
                     options.add(SelectOption.of(

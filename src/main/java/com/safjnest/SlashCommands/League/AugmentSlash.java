@@ -44,7 +44,7 @@ public class AugmentSlash extends SlashCommand {
             }
         }
         
-        RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji(event.getJDA(), "a"+augment.getId());
+        RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji("a"+augment.getId());
         eb.setTitle(augment.getName().toUpperCase() + " (" + augment.getId() + ")");
         eb.setDescription(augment.getFormattedDesc());
         eb.setThumbnail(emoji.getImageUrl());

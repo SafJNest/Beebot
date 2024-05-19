@@ -488,9 +488,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         riotAccounts.add(a);
                         Emoji icon = Emoji.fromCustom(
                                 RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
-                                Long.parseLong(CustomEmojiHandler.getEmojiId(event.getJDA(),
-                                        RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId())
-                                                .getName())),
+                                Long.parseLong(CustomEmojiHandler.getEmojiId(RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())),
                                 false);
                         if (!p.getSummonerId().equals(s.getSummonerId()))
                             options.add(SelectOption.of(
@@ -548,9 +546,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         riotAccounts.add(a);
                         Emoji icon = Emoji.fromCustom(
                                 RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
-                                Long.parseLong(CustomEmojiHandler.getEmojiId(event.getJDA(),
-                                        RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId())
-                                                .getName())),
+                                Long.parseLong(CustomEmojiHandler.getEmojiId(RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())),
                                 false);
                         if (!p.getSummonerId().equals(s.getSummonerId()))
                             options.add(SelectOption.of(

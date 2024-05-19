@@ -184,7 +184,7 @@ public class Test extends Command{
                 for (Item item : RiotHandler.getRiotApi().getDDragonAPI().getItems().values()) {
                     System.out.println(item.getId());
                     if (item != null)
-                        ss += CustomEmojiHandler.getFormattedEmoji(e.getJDA(), item.getId()) + "-";
+                        ss += CustomEmojiHandler.getFormattedEmoji(item.getId()) + "-";
                 }
                 System.out.println("efee");
                 e.reply(ss);
@@ -331,6 +331,9 @@ public class Test extends Command{
 
                 conduit.getEventManager().onEvent(StreamOnlineEvent.class, System.out::println);
 
+            case "reloademoji":
+                CustomEmojiHandler.loadEmoji();
+                e.reply("Done");
                 break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");

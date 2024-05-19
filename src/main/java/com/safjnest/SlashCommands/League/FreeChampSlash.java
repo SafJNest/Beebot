@@ -43,7 +43,7 @@ public class FreeChampSlash extends SlashCommand {
         String s = "";
         int cont = 1;
         for(StaticChampion ce : c.getFreeChampions()){
-            s += CustomEmojiHandler.getFormattedEmoji(event.getJDA(), ce.getName()) + " **" + ce.getName()+"**\n";
+            s += CustomEmojiHandler.getFormattedEmoji(ce.getName()) + " **" + ce.getName()+"**\n";
             if(cont % 10 == 0){
                 eb.addField("", s, true);
                 cont = 0;
