@@ -11,12 +11,14 @@ import org.json.simple.parser.JSONParser;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import com.github.philippheuer.events4j.api.domain.IEventSubscription;
 import com.safjnest.Utilities.PermissionHandler;
 import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.TTSHandler;
 import com.safjnest.Utilities.LOL.RiotHandler;
 import com.safjnest.Utilities.PalWorld.PalHandler;
 import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.Utilities.Twitch.TwitchConduit;
 
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
@@ -74,11 +76,12 @@ public class App {
         System.out.println("[System]: System Entropy: " + secureRandom.getProvider());//thx copilot
         
         JSONParser parser = new JSONParser();
-        JSONObject settings = null, SQLSettings = null, riotSettings = null;
+        JSONObject settings = null, SQLSettings = null, riotSettings = null, twitchSettings = null;
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
             settings = (JSONObject) settings.get("settings");
             SQLSettings = (JSONObject) settings.get("MariaDB");
+            twitchSettings = (JSONObject) settings.get("Twitch");
             if (App.isExtremeTesting()) {
                 SQLSettings = (JSONObject) settings.get("LocalHost");
             }
@@ -94,6 +97,17 @@ public class App {
             SQLSettings.get("user").toString(), 
             SQLSettings.get("password").toString()
         );
+
+        /*
+        new TwitchConduit(
+            twitchSettings.get("clientId").toString(), 
+            twitchSettings.get("clientSecret").toString()
+        );
+        TwitchConduit.registerSubEvent("126371014");
+        for(IEventSubscription sub : TwitchConduit.getRegisteredSubEvents()) {
+            System.out.println(sub.getId());
+        }
+        */
         
         riotApi = null;
         try {

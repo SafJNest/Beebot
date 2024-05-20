@@ -10,6 +10,10 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
+import com.github.twitch4j.eventsub.socket.IEventSubConduit;
+import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
+import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.Utilities.PermissionHandler;
@@ -306,8 +310,27 @@ public class Test extends Command{
             case "getrawmessage":
                 e.reply(e.getChannel().getIterableHistory().complete().get(1).getContentRaw());
                 break;
+
             case "getrawembed":
                 e.reply(e.getChannel().getIterableHistory().complete().get(1).getEmbeds().get(0).toData().toString());
+                break;
+
+            case "twitch":
+                IEventSubConduit conduit = null;
+                try {
+                    conduit = TwitchConduitSocketPool.create(spec -> {
+                        spec.clientId("***REMOVED***");
+                        spec.clientSecret("***REMOVED***");
+                        spec.poolShards(1);
+                    });
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+                
+                conduit.register(SubscriptionTypes.STREAM_ONLINE, b -> b.broadcasterUserId("126371014").build());
+
+                conduit.getEventManager().onEvent(StreamOnlineEvent.class, System.out::println);
+
                 break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");

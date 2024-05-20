@@ -253,4 +253,23 @@ public class PermissionHandler {
             return text.substring(0, length-3) + "...";
         return text;
     }
+
+    public static String escapeString(String text){
+        if (text == null) {
+            return null;
+        }
+
+        StringBuilder escapedString = new StringBuilder();
+
+        for (char c : text.toCharArray()) {
+            if (c == '*' || c == '_' || c == '~') {
+                escapedString.append('\\');
+            }
+            escapedString.append(c);
+        }
+
+        return escapedString.toString();
+    }
+
+    
 }

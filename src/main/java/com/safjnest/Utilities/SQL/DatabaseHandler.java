@@ -787,6 +787,10 @@ public class DatabaseHandler {
         return runQuery("UPDATE guild SET league_shard = '" + shard.ordinal() + "' WHERE guild_id = '" + valueOf + "';");
     }
 
+    public static QueryResult getTwitchSubscriptions(String streamer_id) {
+        return safJQuery("SELECT guild_id, channel_id, role_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "';");
+    }
+
 
 
 
