@@ -112,7 +112,7 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void play(AudioTrack track, AudioType type) {
-        isForced = (type == AudioType.SOUND);
+        isForced = (type != AudioType.AUDIO);
         play(track, isForced);
     }
 
@@ -304,7 +304,6 @@ public class TrackScheduler extends AudioEventAdapter {
         // REPLACED: Another track started playing while this had not finished
         if(endReason == AudioTrackEndReason.REPLACED) {
             if(isForced && isQueueable(track)) {
-                //System.out.println("Inside the replaced if: " + getCurrent().getInfo().title + " -> " + track.getInfo().title);
                 queue.set(currentTrackIndex, track);
             }
         }
