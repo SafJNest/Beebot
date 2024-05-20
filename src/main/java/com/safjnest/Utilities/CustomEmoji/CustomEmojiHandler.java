@@ -19,7 +19,7 @@ public class CustomEmojiHandler {
         loadEmoji();
     }
 
-    private static void loadEmoji() {
+    public static void loadEmoji() {
         JDA jda = Bot.getJDA();
         List<String> emojiServers = List.of(ids);
 
