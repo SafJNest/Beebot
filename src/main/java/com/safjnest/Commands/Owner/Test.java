@@ -330,7 +330,7 @@ public class Test extends Command{
                 conduit.register(SubscriptionTypes.STREAM_ONLINE, b -> b.broadcasterUserId("126371014").build());
 
                 conduit.getEventManager().onEvent(StreamOnlineEvent.class, System.out::println);
-
+                break;
             case "reloademoji":
                 CustomEmojiHandler.loadEmoji();
                 e.reply("Done");
