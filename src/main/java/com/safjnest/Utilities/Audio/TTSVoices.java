@@ -48,6 +48,18 @@ public class TTSVoices {
         return voiceList;
     }
 
+    public static List<String[]> getVoiceArray() {
+        List<String[]> voiceArray = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : voices.entrySet()) {
+            String language = entry.getKey();
+            Set<String> voiceNames = entry.getValue();
+            for (String voiceName : voiceNames) {
+                voiceArray.add(new String[] {language, voiceName});
+            }
+        }
+        return voiceArray;
+    }
+
     public static String getFormattedVoices() {
         StringBuilder formattedVoices = new StringBuilder();
         for(String voice : getVoiceList())

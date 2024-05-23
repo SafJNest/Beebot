@@ -38,7 +38,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         ArrayList<Choice> choices = new ArrayList<>();
         String name = e.getName();
-        
+
         if (e.getFullCommandName().equals("soundboard create") 
             || e.getFocusedOption().getName().startsWith("sound-"))
             name = "play";
@@ -61,7 +61,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else if (e.getFullCommandName().equals("bugsnotifier"))
             name = "help";
 
-        else if (e.getFullCommandName().equals("TTS"))
+        else if (e.getFocusedOption().getName().equals("voice"))
             name = "tts";
 
         else if (e.getFocusedOption().getName().equals("role_remove"))
@@ -189,17 +189,15 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 }
                 break;
             case "tts":
-                List<String> voices = TTSVoices.getVoiceList();
+                List<String[]> voices = TTSVoices.getVoiceArray();
                 if (e.getFocusedOption().getValue().equals("")) {
-                    for (int i = 0; i < voices.size() && i < 25; i++) {
-                        choices.add(new Choice(voices.get(i), voices.get(i)));
-                    }
+                    Collections.shuffle(voices);
+                    for (int i = 0; i < 10; i++)
+                        choices.add(new Choice(voices.get(i)[0] + " - " + voices.get(i)[1], voices.get(i)[1]));
                 } else {
-                    for (int i = 0, max = 0; i < voices.size() && max < 25; i++) {
-                        if (voices.get(i).contains(e.getFocusedOption().getValue())) {
-                            choices.add(new Choice(voices.get(i), voices.get(i)));
-                            max++;
-                        }
+                    for (String[] voice : voices) {
+                        if ((voice[0] + " " + voice[1]).toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
+                            choices.add(new Choice(voice[0] + " - " + voice[1], voice[1]));
                     }
                 }
                 break;
