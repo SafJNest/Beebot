@@ -14,8 +14,7 @@ import com.safjnest.Utilities.SafJNest;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TTSHandler;
 import com.safjnest.Utilities.Audio.TTSVoices;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.ResultRow;
+import com.safjnest.Utilities.Guild.GuildData;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -55,10 +54,11 @@ public class TTSSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String voice = null, defaultVoice = null, language = null;
+        String voice = null, language = null;
         String speech = event.getOption("text").getAsString();
 
         Guild guild = event.getGuild();
+        GuildData guildData = Bot.getGuildData(guild.getId());
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
@@ -72,12 +72,12 @@ public class TTSSlash extends SlashCommand{
             return;
         }
 
-        ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(guild.getId());
-        if(!defaultVoiceRow.emptyValues())
-            defaultVoice = defaultVoiceRow.get("name_tts");
+        String defaultVoice = guildData.getVoice();
+        String defaultLanguage = guildData.getLanguage();
 
         if(event.getOption("voice") != null) {
             String possibleVoice = event.getOption("voice").getAsString();
+            System.out.println(possibleVoice);
             for(String key : voices.keySet()) {
                 if(voices.get(key).contains(possibleVoice)) {
                     language = key;
@@ -87,15 +87,9 @@ public class TTSSlash extends SlashCommand{
             }
         }
 
-        if(voice == null) {
-            if(defaultVoice != null) {
-                voice = defaultVoice;
-                language = defaultVoiceRow.get("language_tts");
-            }
-            else {
-                voice = "mia";
-                language = "it-it";
-            }
+        if(voice == null && defaultVoice != null) {
+            voice = defaultVoice;
+            language = defaultLanguage;
         }
 
         File file = new File("rsc" + File.separator + "tts");

@@ -11,11 +11,12 @@ import com.safjnest.App;
 import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.SafJNest;
+import com.safjnest.Utilities.Audio.AudioType;
 import com.safjnest.Utilities.Audio.PlayerManager;
 import com.safjnest.Utilities.Audio.TTSHandler;
 import com.safjnest.Utilities.Audio.TTSVoices;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.ResultRow;
+import com.safjnest.Utilities.Audio.TrackData;
+import com.safjnest.Utilities.Guild.GuildData;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -54,10 +55,11 @@ public class TTS extends Command{
 
     @Override
     protected void execute(CommandEvent event) {
-        String voice = null, defaultVoice = null, language = null;
+        String voice = null, language = null;
         String speech = event.getArgs();
 
         Guild guild = event.getGuild();
+        GuildData guildData = Bot.getGuildData(guild.getId());
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
 
@@ -98,9 +100,8 @@ public class TTS extends Command{
             return;
         }
 
-        ResultRow defaultVoiceRow = DatabaseHandler.getDefaultVoice(guild.getId());
-        if(!defaultVoiceRow.emptyValues())
-            defaultVoice = defaultVoiceRow.get("name_tts");
+        String defaultVoice = guildData.getVoice();
+        String defaultLanguage = guildData.getLanguage();
 
         for(String key : voices.keySet()){
             if(voices.get(key).contains(firstWord)) {
@@ -113,15 +114,10 @@ public class TTS extends Command{
         if(voice != null){
             speech = speech.split(" ", 2)[1];
         }
-        else {
-            if(defaultVoice != null) {
-                voice = defaultVoice;
-                language = defaultVoiceRow.get("language_tts");
-            }
-            else {
-                voice = "Mia";
-                language = "it-it";
-            }
+        else if (defaultVoice != null) {
+            voice = defaultVoice;
+            language = defaultLanguage;
+            
         }
 
         File file = new File("rsc" + File.separator + "tts");
@@ -154,6 +150,7 @@ public class TTS extends Command{
         
         @Override
         public void trackLoaded(AudioTrack track) {
+            track.setUserData(new TrackData(AudioType.SOUND));
             pm.getGuildMusicManager(guild).getTrackScheduler().play(track, true);
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());

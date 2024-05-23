@@ -1,13 +1,15 @@
 package com.safjnest.SlashCommands.Settings;
 
+import com.safjnest.Bot;
 import com.safjnest.Utilities.CommandsLoader;
 import com.safjnest.Utilities.Audio.TTSVoices;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -18,6 +20,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
  * @since 1.3
  */
 public class SetVoiceSlash extends SlashCommand {
+    private final HashMap<String, Set<String>> voices;
 
     public SetVoiceSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -27,17 +30,21 @@ public class SetVoiceSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(this.name, "category"));
         this.arguments = new CommandsLoader().getString(this.name, "arguments");
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "voice", "Voice name", true));
+            new OptionData(OptionType.STRING, "voice", "Voice name", true)
+                .setAutoComplete(true));
+        
+        this.voices = TTSVoices.getVoices();
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
         String voice= null, language = null;
 
-        for(String key : TTSVoices.getVoices().keySet()){
-            if(TTSVoices.getVoices().get(key).contains(event.getOption("voice").getAsString())){
+
+        voice = event.getOption("voice").getAsString();
+        for(String key : voices.keySet()) {
+            if(voices.get(key).contains(voice)) {
                 language = key;
-                voice = event.getOption("voice").getAsString();
                 break;
             }
         }
@@ -46,7 +53,10 @@ public class SetVoiceSlash extends SlashCommand {
             return;
         }
 
-        DatabaseHandler.updateVoiceGuild(event.getGuild().getId(), language, voice);
+        if (!Bot.getGuildData(event.getGuild().getId()).setVoice(voice, language)) {
+            event.deferReply(true).addContent("There was an error while changing the voice.").queue();
+            return;
+        }
 
         event.deferReply(false).addContent("Voice set to " + voice + " (" + language + ")").queue();
     }

@@ -52,6 +52,10 @@ public class GuildData {
      */
     private boolean expEnabled;
 
+    private String voice;
+
+    private String language;
+
     private HashMap<Long, ChannelData> channels;
 
     private BlacklistData blacklistData;
@@ -72,6 +76,7 @@ public class GuildData {
         this.expEnabled = expSystem;
 
         this.users = new HashMap<>();
+        retriveTTSSettings();
         retriveChannels();
         retriveCustomCommand();
 
@@ -127,6 +132,37 @@ public class GuildData {
 
     public synchronized void setRegionShard(RegionShard shard) {
         this.reagionShard = shard;
+    }
+
+    private void retriveTTSSettings() {
+        ResultRow result = DatabaseHandler.getDefaultVoice(String.valueOf(ID));
+        
+        if (result.emptyValues()) {
+            this.voice = "John";
+            this.language = "en-us";
+            return;
+        }
+
+
+        this.voice = result.get("name_tts");
+        this.language = result.get("language_tts");
+    }
+
+    public String getVoice() {
+        return this.voice;
+    }
+
+    public String getLanguage() {
+        return this.language;
+    }
+
+    public synchronized boolean setVoice(String voice, String language) {
+        boolean result = DatabaseHandler.updateVoiceGuild(String.valueOf(ID), language, voice);
+        if (result) {
+            this.voice = voice;
+            this.language = language;
+        }
+        return result;
     }
 
     public String toString(){
