@@ -78,11 +78,11 @@ public class MemberInfoSlash extends SlashCommand{
         ResultRow userExp = DatabaseHandler.getUserExp(id, event.getGuild().getId());
         int exp = 0, lvl = 0, msg = 0;
         if(userExp != null) {
-            exp = userExp.getAsInt("exp");
+            exp = userExp.getAsInt("experience");
             lvl = userExp.getAsInt("level");
             msg = userExp.getAsInt("messages");
         }
-        String lvlString = String.valueOf(ExperienceSystem.getExpToLvlUp(lvl, exp) + "/" + (ExperienceSystem.getExpToReachLvlFromZero(lvl + 1) - ExperienceSystem.getExpToReachLvlFromZero(lvl)));
+        String lvlString = ExperienceSystem.getExpToLvlUp(lvl, exp) + "/" + ExperienceSystem.getExpToReachLvl(lvl);
 
         List<String> activityNames = new ArrayList<String>();
         mentionedMember.getActivities().forEach(activity -> activityNames.add(activity.getName()));
