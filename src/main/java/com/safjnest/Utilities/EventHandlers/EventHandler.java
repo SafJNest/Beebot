@@ -122,7 +122,6 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onStringSelectInteraction(StringSelectInteractionEvent event) {
         if (event.getComponentId().equals("rank-select")) {
-            System.out.println(event.getValues().get(0));
             String summonerId = event.getValues().get(0).split("#")[0];
             String platform =  event.getValues().get(0).split("#")[1];
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerBySummonerId(summonerId, LeagueShard.valueOf(platform));

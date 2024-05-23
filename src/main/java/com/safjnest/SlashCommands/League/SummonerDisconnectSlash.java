@@ -40,7 +40,6 @@ public class SummonerDisconnectSlash extends SlashCommand {
             event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help summoner").queue();
             return;
         }
-        System.out.println(account_id);
         DatabaseHandler.deleteLOLaccount(event.getMember().getId(), account_id);
         event.deferReply(false).addContent("Summoner removed").queue();
 	}

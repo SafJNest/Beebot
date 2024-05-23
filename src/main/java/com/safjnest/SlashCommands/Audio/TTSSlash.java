@@ -77,7 +77,6 @@ public class TTSSlash extends SlashCommand{
 
         if(event.getOption("voice") != null) {
             String possibleVoice = event.getOption("voice").getAsString();
-            System.out.println(possibleVoice);
             for(String key : voices.keySet()) {
                 if(voices.get(key).contains(possibleVoice)) {
                     language = key;
