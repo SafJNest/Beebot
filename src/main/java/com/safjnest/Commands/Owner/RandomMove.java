@@ -1,11 +1,11 @@
-package com.safjnest.Commands.Owner;
+package com.safjnest.commands.Owner;
 
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.PermissionHandler;
 
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;

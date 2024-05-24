@@ -1,12 +1,12 @@
-package com.safjnest.Commands.Audio;
+package com.safjnest.commands.Audio;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.QueryResult;
-import com.safjnest.Utilities.SQL.ResultRow;
+import com.safjnest.core.Bot;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.ResultRow;
+import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;

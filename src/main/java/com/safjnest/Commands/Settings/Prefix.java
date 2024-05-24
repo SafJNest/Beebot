@@ -1,9 +1,9 @@
-package com.safjnest.Commands.Settings;
+package com.safjnest.commands.Settings;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.Permission;
 
@@ -14,9 +14,9 @@ import net.dv8tion.jda.api.Permission;
  * @since 1.1
  */
 public class Prefix extends Command{
-    private GuildSettings gs;
+    private GuildDataHandler gs;
     
-    public Prefix(GuildSettings gs){
+    public Prefix(GuildDataHandler gs){
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

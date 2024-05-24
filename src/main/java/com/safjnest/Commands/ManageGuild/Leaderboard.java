@@ -1,12 +1,11 @@
-package com.safjnest.Commands.ManageGuild;
+package com.safjnest.commands.ManageGuild;
 
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.ExperienceSystem;
-import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.TableHandler;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.QueryResult;
-
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.ExperienceSystem;
+import com.safjnest.util.SafJNest;
+import com.safjnest.util.TableHandler;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 

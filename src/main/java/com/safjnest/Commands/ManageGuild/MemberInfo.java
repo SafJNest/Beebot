@@ -1,18 +1,18 @@
-package com.safjnest.Commands.ManageGuild;
+package com.safjnest.commands.ManageGuild;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.ExperienceSystem;
-import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.LOL.RiotHandler;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.QueryResult;
-import com.safjnest.Utilities.SQL.ResultRow;
+import com.safjnest.core.Bot;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.ResultRow;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.ExperienceSystem;
+import com.safjnest.util.PermissionHandler;
+import com.safjnest.util.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;

@@ -1,11 +1,11 @@
-package com.safjnest.Commands.Queue;
+package com.safjnest.commands.Queue;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.QueueHandler;
-import com.safjnest.Utilities.Audio.TrackScheduler;
+import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.core.audio.QueueHandler;
+import com.safjnest.core.audio.TrackScheduler;
+import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Guild;
 

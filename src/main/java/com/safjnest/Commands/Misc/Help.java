@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Misc;
+package com.safjnest.commands.Misc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,11 +7,11 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.BotCommand;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.core.Bot;
+import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.BotCommand;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -26,8 +26,8 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  */
 public class Help extends Command {
 
-    GuildSettings gs;
-    public Help(GuildSettings gs) {
+    GuildDataHandler gs;
+    public Help(GuildDataHandler gs) {
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

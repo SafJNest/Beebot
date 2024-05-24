@@ -1,4 +1,4 @@
-package com.safjnest.Commands.League;
+package com.safjnest.commands.League;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,8 +10,8 @@ import java.util.Map;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.LOL.RiotHandler;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.LOL.RiotHandler;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;

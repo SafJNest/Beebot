@@ -1,9 +1,9 @@
-package com.safjnest.Commands.Audio;
+package com.safjnest.commands.Audio;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Audio.PlayerManager;
+import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Guild;
 

@@ -1,9 +1,9 @@
-package com.safjnest.Commands.Owner;
+package com.safjnest.commands.Owner;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
-import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.util.CommandsLoader;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>

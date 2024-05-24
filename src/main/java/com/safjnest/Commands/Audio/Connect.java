@@ -1,8 +1,8 @@
-package com.safjnest.Commands.Audio;
+package com.safjnest.commands.Audio;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.util.CommandsLoader;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>

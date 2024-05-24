@@ -1,12 +1,12 @@
-package com.safjnest.Commands.Misc;
+package com.safjnest.commands.Misc;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
-import net.dv8tion.jda.api.entities.User;
+import com.safjnest.core.Bot;
+import com.safjnest.model.UserData;
+import com.safjnest.util.CommandsLoader;
 
-import com.safjnest.Utilities.UserData;
+import net.dv8tion.jda.api.entities.User;
 
 /**
  * Mega alias command

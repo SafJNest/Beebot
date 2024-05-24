@@ -1,8 +1,8 @@
-package com.safjnest.Commands.Misc;
+package com.safjnest.commands.Misc;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.util.CommandsLoader;
 
 /**
  * The commands shows the ping of the bot.

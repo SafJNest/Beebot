@@ -11,11 +11,12 @@ import org.json.simple.parser.JSONParser;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.Audio.TTSHandler;
-import com.safjnest.Utilities.LOL.RiotHandler;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.core.Bot;
+import com.safjnest.core.audio.tts.TTSHandler;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.util.PermissionHandler;
+import com.safjnest.util.SafJNest;
+import com.safjnest.util.LOL.RiotHandler;
 
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
@@ -31,7 +32,7 @@ public class App {
     /**
      * Insane beebot core
      */
-    private static boolean extremeTesting = false;
+    private static boolean extremeTesting = true;
 
     public static boolean isExtremeTesting() {
         return extremeTesting;

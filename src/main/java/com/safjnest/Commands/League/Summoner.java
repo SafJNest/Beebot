@@ -1,11 +1,11 @@
-package com.safjnest.Commands.League;
+package com.safjnest.commands.League;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.LOL.RiotHandler;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
+import com.safjnest.core.Bot;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;

@@ -1,13 +1,13 @@
-package com.safjnest.Commands.Owner;
+package com.safjnest.commands.Owner;
 
 import java.nio.charset.StandardCharsets;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.TableHandler;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.QueryResult;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.TableHandler;
 
 import net.dv8tion.jda.api.utils.FileUpload;
 

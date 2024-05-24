@@ -1,11 +1,11 @@
-package com.safjnest.Commands.Math;
+package com.safjnest.commands.Math;
 
 
 import java.util.Stack;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.util.CommandsLoader;
 
 /**
  * This class is used to calculate the result of a mathematical expression.

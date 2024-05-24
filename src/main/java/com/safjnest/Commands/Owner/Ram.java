@@ -1,8 +1,8 @@
-package com.safjnest.Commands.Owner;
+package com.safjnest.commands.Owner;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.util.CommandsLoader;
 
 /**
  * The commands sends the information about the ram usage of the bot.

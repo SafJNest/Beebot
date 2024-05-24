@@ -1,12 +1,12 @@
-package com.safjnest.Commands.Owner;
+package com.safjnest.commands.Owner;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;

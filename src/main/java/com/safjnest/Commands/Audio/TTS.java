@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Audio;
+package com.safjnest.commands.Audio;
 
 import java.io.File;
 import java.util.HashMap;
@@ -8,15 +8,15 @@ import java.util.Map.Entry;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.Audio.AudioType;
-import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.TTSHandler;
-import com.safjnest.Utilities.Audio.TTSVoices;
-import com.safjnest.Utilities.Audio.TrackData;
-import com.safjnest.Utilities.Guild.GuildData;
+import com.safjnest.core.Bot;
+import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.core.audio.TrackData;
+import com.safjnest.core.audio.tts.TTSHandler;
+import com.safjnest.core.audio.tts.TTSVoices;
+import com.safjnest.core.audio.types.AudioType;
+import com.safjnest.model.guild.GuildData;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.SafJNest;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;

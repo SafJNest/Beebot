@@ -1,4 +1,4 @@
-package com.safjnest.Commands.League;
+package com.safjnest.commands.League;
 
 
 import java.time.Instant;
@@ -9,11 +9,11 @@ import java.util.HashMap;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.DateHandler;
-import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
-import com.safjnest.Utilities.LOL.RiotHandler;
+import com.safjnest.core.Bot;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.DateHandler;
+import com.safjnest.util.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;

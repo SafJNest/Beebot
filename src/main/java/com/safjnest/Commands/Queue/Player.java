@@ -1,10 +1,10 @@
-package com.safjnest.Commands.Queue;
+package com.safjnest.commands.Queue;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Audio.EmbedType;
-import com.safjnest.Utilities.Audio.QueueHandler;
+import com.safjnest.core.audio.QueueHandler;
+import com.safjnest.core.audio.types.EmbedType;
+import com.safjnest.util.CommandsLoader;
 
 public class Player extends Command{
     

@@ -1,4 +1,4 @@
-package com.safjnest.Commands.ManageGuild;
+package com.safjnest.commands.ManageGuild;
 
 import java.util.HashMap;
 import java.util.List;
@@ -8,14 +8,14 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.Guild.Alert.AlertData;
-import com.safjnest.Utilities.Guild.Alert.AlertKey;
-import com.safjnest.Utilities.Guild.Alert.AlertType;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.ResultRow;
+import com.safjnest.core.Bot;
+import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.model.guild.alert.AlertKey;
+import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.ResultRow;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 

@@ -1,19 +1,19 @@
-package com.safjnest.Commands.Audio;
+package com.safjnest.commands.Audio;
 
 import java.io.File;
 import java.io.IOException;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.Audio.AudioType;
-import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.Audio.SoundBoard;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.QueryResult;
-import com.safjnest.Utilities.SQL.ResultRow;
+import com.safjnest.core.Bot;
+import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.types.AudioType;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.ResultRow;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.SafJNest;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;

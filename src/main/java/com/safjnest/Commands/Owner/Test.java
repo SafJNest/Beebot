@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Owner;
+package com.safjnest.commands.Owner;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -16,20 +16,20 @@ import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.PermissionHandler;
-import com.safjnest.Utilities.SafJNest;
-import com.safjnest.Utilities.Audio.PlayerManager;
-import com.safjnest.Utilities.CustomEmoji.CustomEmojiHandler;
-import com.safjnest.Utilities.Guild.BlacklistData;
-import com.safjnest.Utilities.Guild.ChannelData;
-import com.safjnest.Utilities.Guild.GuildSettings;
-import com.safjnest.Utilities.Guild.Alert.AlertData;
-import com.safjnest.Utilities.Guild.Alert.AlertKey;
-import com.safjnest.Utilities.Guild.Alert.AlertType;
-import com.safjnest.Utilities.LOL.RiotHandler;
-import com.safjnest.Utilities.SQL.DatabaseHandler;
-import com.safjnest.Utilities.SQL.QueryResult;
-import com.safjnest.Utilities.SQL.ResultRow;
+import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.model.guild.BlacklistData;
+import com.safjnest.model.guild.ChannelData;
+import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.model.guild.alert.AlertKey;
+import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.ResultRow;
+import com.safjnest.util.PermissionHandler;
+import com.safjnest.util.SafJNest;
+import com.safjnest.util.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
@@ -58,9 +58,9 @@ import java.sql.Statement;
  */
 public class Test extends Command{
 
-    private GuildSettings gs;
+    private GuildDataHandler gs;
 
-    public Test(GuildSettings gs){
+    public Test(GuildDataHandler gs){
         this.name = "test";
         this.aliases = new String[]{"wip"};
         this.help = "";

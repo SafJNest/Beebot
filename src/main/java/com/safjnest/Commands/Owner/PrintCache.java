@@ -1,4 +1,4 @@
-package com.safjnest.Commands.Owner;
+package com.safjnest.commands.Owner;
 
 
 
@@ -6,9 +6,9 @@ import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.Guild.GuildData;
-import com.safjnest.Utilities.Guild.GuildSettings;
+import com.safjnest.model.guild.GuildData;
+import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 
@@ -20,9 +20,9 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
  */
 public class PrintCache extends Command {
     
-    private GuildSettings gs;
+    private GuildDataHandler gs;
 
-    public PrintCache(GuildSettings gs) {
+    public PrintCache(GuildDataHandler gs) {
         this.name = this.getClass().getSimpleName().toLowerCase();
         this.aliases = new CommandsLoader().getArray(this.name, "alias");
         this.help = new CommandsLoader().getString(this.name, "help");

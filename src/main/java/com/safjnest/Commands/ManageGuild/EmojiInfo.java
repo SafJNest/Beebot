@@ -1,9 +1,9 @@
-package com.safjnest.Commands.ManageGuild;
+package com.safjnest.commands.ManageGuild;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.Bot;
-import com.safjnest.Utilities.CommandsLoader;
+import com.safjnest.core.Bot;
+import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.CustomEmoji;

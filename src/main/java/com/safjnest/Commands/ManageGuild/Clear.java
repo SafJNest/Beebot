@@ -1,11 +1,11 @@
-package com.safjnest.Commands.ManageGuild;
+package com.safjnest.commands.ManageGuild;
 
 import java.util.List;
 
-import com.safjnest.Utilities.CommandsLoader;
-import com.safjnest.Utilities.SafJNest;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
