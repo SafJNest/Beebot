@@ -75,6 +75,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         else if (e.getFocusedOption().getName().equals("personal_summoner"))
             name = "personal_summoner";
+
+        else if (e.getFocusedOption().getName().equals("champion"))
+            name = "champion";
         
 
         switch (name) {

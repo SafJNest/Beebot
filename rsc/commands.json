@@ -998,6 +998,13 @@
         "arguments" : "[CommandName] [region]"
     },
 
+    "ultimatebravery": {
+        "alias" : ["ub", "bravery"],
+        "help"  : "Show a random build for a champion.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [champion]"
+    },
+
 
 
 

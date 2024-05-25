@@ -57,6 +57,7 @@ import com.safjnest.commands.League.slash.LivegameSlash;
 import com.safjnest.commands.League.slash.OpggSlash;
 import com.safjnest.commands.League.slash.RegionSlash;
 import com.safjnest.commands.League.slash.SummonerSlash;
+import com.safjnest.commands.League.slash.UltimateBraverySlash;
 import com.safjnest.commands.ManageGuild.*;
 import com.safjnest.commands.ManageGuild.slash.ChannelInfoSlash;
 import com.safjnest.commands.ManageGuild.slash.ClearSlash;
@@ -210,7 +211,9 @@ public class Bot extends ListenerAdapter {
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
-                //g.updateCommands().queue();
+                // jda.getGuilds().forEach(guild -> {
+                //     guild.updateCommands().queue();
+                // });
                 
                 new CustomEmojiHandler();
                 System.out.println("[INFO] custom emoji cached correctly");
@@ -239,7 +242,7 @@ public class Bot extends ListenerAdapter {
 
         Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
             new LastMatches(), new Opgg(), new Calculator(), new Dice(), 
-            new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query(), new Alias());
+            new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query(), new Alias(), new UltimateBravery());
   
         
         Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
@@ -264,7 +267,7 @@ public class Bot extends ListenerAdapter {
         Collections.addAll(slashCommandsList, new SummonerSlash(), new AugmentSlash(), new FreeChampSlash(), 
             new LivegameSlash(), new LastMatchesSlash(), 
             new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
-            new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey), new SpecialCharSlash(), new RegionSlash()
+            new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey), new SpecialCharSlash(), new RegionSlash(), new UltimateBraverySlash()
         );
         
         

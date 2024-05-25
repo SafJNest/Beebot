@@ -1,7 +1,11 @@
 package com.safjnest.util.LOL;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -36,6 +40,7 @@ import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 
@@ -411,4 +416,132 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         kda =  (double) (kills + assists) / deaths;
         return Math.round(kda * 100.0) / 100.0;
     }
+
+
+
+    public static String getBraveryBuildJSON(int level, String[] roles, String[] champions) {
+        try {
+            URL url = new URI("https://api2.ultimate-bravery.net/bo/api/ultimate-bravery/v1/classic/dataset").toURL();
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setRequestProperty("Accept", "application/json");
+            con.setDoOutput(true);
+            String jsonInputString = "{\"map\": 11,\"level\": " + level + ",\"roles\": [" + String.join(",", roles) +"],\"language\": \"en\",\"champions\": [" + String.join(",", champions) + "]}";
+            System.out.println(jsonInputString);
+            try (OutputStream os = con.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            String json = null;
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(con.getInputStream(), "utf-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                json = response.toString();
+            }
+            return json;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        
+    }
+
+    public static String getBraveryBuildJSON() {
+        int lvl = 20;
+        String[] roles = {"0", "1", "2", "3", "4"};
+        String[] champs = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> String.valueOf(champ.getId())).toArray(String[]::new);
+        return getBraveryBuildJSON(lvl, roles, champs);
+    }
+
+
+    public static StaticChampion getChampionByName(String name) {
+        StaticChampion champ = null;
+        for (StaticChampion c : riotApi.getDDragonAPI().getChampions().values()) {
+            if (c.getName().equalsIgnoreCase(name)) {
+                champ = c;
+                break;
+            }
+        }
+        return champ;
+        
+    }
+
+    public static String convertSpellToId(String name) {
+        String id = "";
+        switch (name) {
+            case "Flash":
+                id = "4";
+            break;
+            case "Heal":
+                id = "7";
+            break;
+            case "Barrier":
+                id = "21";
+            break;
+            case "Ghost":
+                id = "6";
+            break;
+            case "Exhaust":
+                id = "3";
+            break;
+            case "Teleport":
+                id = "12";
+            break;
+            case "Ignite":
+                id = "14";
+            break;
+            case "Cleanse":
+                id = "1";
+            break;
+            case "Smite":
+                id = "11";
+            break;
+            case "Mark":
+                id = "32";
+            break;
+            case "Dash":
+                id = "30";
+            break;
+            case "Clarity":
+                id = "13";
+            break;
+            case "Garrison":
+                id = "17";
+            break;
+            case "To the King!":
+                id = "31";
+            break;
+        }
+        return id;
+    }
+
+    public static String convertRuneRootToId(String name) {
+        name = name.toLowerCase();
+        String id = "";
+        switch (name) {
+            case "precision":
+                id = "8000";
+            break;
+            case "domination":
+                id = "8100";
+            break;
+            case "sorcery":
+                id = "8200";
+            break;
+            case "resolve":
+                id = "8400";
+            break;
+            case "inspiration":
+                id = "8300";
+            break;
+        }
+        return id;
+    }
+
 }
