@@ -428,7 +428,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             con.setRequestProperty("Accept", "application/json");
             con.setDoOutput(true);
             String jsonInputString = "{\"map\": 11,\"level\": " + level + ",\"roles\": [" + String.join(",", roles) +"],\"language\": \"en\",\"champions\": [" + String.join(",", champions) + "]}";
-            System.out.println(jsonInputString);
             try (OutputStream os = con.getOutputStream()) {
                 byte[] input = jsonInputString.getBytes("utf-8");
                 os.write(input, 0, input.length);
