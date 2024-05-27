@@ -3,6 +3,7 @@ package com.safjnest.commands.Audio;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
@@ -31,14 +32,16 @@ public class List extends Command {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        Button left = Button.danger("list-left", "<-");
+        Button left = Button.danger("list-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         left = left.asDisabled();
 
-        Button right = Button.primary("list-right", "->");
+        Button right = Button.primary("list-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
         Button center = Button.primary("list-center", "Page: 1");
         center = center.withStyle(ButtonStyle.SUCCESS);
         center = center.asDisabled();
+
+        Button order = Button.secondary("list-order", " ").withEmoji(CustomEmojiHandler.getRichEmoji("clock"));
 
         EmbedBuilder eb = new  EmbedBuilder();
         eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
@@ -62,6 +65,6 @@ public class List extends Command {
             right = right.asDisabled();
         }
         
-        event.getChannel().sendMessageEmbeds(eb.build()).addActionRow(left, center, right).queue();
+        event.getChannel().sendMessageEmbeds(eb.build()).addActionRow(left, center, right, order).queue();
     }
 }

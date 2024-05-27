@@ -240,6 +240,12 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC LIMIT " + limit);
     }
 
+    public static QueryResult getlistGuildSounds(String guild_id, String orderBy) {
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY " + orderBy +" ASC ");
+    }
+
+
+
     public static QueryResult getGuildRandomSound(String guild_id){
         return safJQuery("SELECT name, id FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
     }
@@ -252,8 +258,16 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' ORDER BY name ASC");
     }
 
+    public static QueryResult getlistUserSoundsTime(String user_id) {
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' ORDER BY time ASC");
+    }
+
     public static QueryResult getlistUserSounds(String user_id, String guild_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY name ASC");
+    }
+
+    public static QueryResult getlistUserSoundsTime(String user_id, String guild_id) {
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY time ASC");
     }
 
     public static QueryResult getFocusedGuildSound(String guild_id, String like){

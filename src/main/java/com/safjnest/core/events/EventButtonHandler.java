@@ -584,11 +584,20 @@ public class EventButtonHandler extends ListenerAdapter {
         int page = 1;
         int cont = 0;
 
-        Button left = Button.primary("list-left", "<-");
-        Button right = Button.primary("list-right", "->");
-        Button center = null;
+        Button left = Button.primary("list-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("list-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button order = Button.secondary("list-order", " ").withEmoji(CustomEmojiHandler.getRichEmoji("clock"));
 
-        QueryResult sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId());
+        Button center = null;
+        
+        boolean timeOrder = false;
+        for (Button b : event.getMessage().getButtons()) {
+            if (b.getId().startsWith("list-order"))
+                timeOrder = b.getStyle() == ButtonStyle.SUCCESS;
+        }
+        order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
+
+        QueryResult sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
@@ -597,7 +606,6 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setColor(Bot.getColor());
         eb.setDescription("Total Sound: " + sounds.size());
-        
         
         switch (args) {
 
@@ -621,9 +629,6 @@ public class EventButtonHandler extends ListenerAdapter {
                 center = Button.primary("center", "Page: " + (page + 1));
                 center = center.withStyle(ButtonStyle.SUCCESS);
                 center = center.asDisabled();
-                event.getMessage().editMessageEmbeds(eb.build())
-                        .setActionRow(left, center, right)
-                        .queue();
                 break;
 
             case "left":
@@ -648,11 +653,44 @@ public class EventButtonHandler extends ListenerAdapter {
                 center = Button.primary("center", "Page: " + (page - 1));
                 center = center.withStyle(ButtonStyle.SUCCESS);
                 center = center.asDisabled();
-                event.getMessage().editMessageEmbeds(eb.build())
-                        .setActionRow(left, center, right)
-                        .queue();
+                break;
+
+            case "order":
+                timeOrder = !timeOrder;
+
+                order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
+                sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
+
+                for (Button b : event.getMessage().getButtons()) {
+                    if (b.getLabel().startsWith("Page"))
+                        page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
+                }
+
+                cont = 24 * (page - 1);
+                while (cont < (24 * page) && cont < sounds.size()) {
+                    String locket = (!sounds.get(cont).getAsBoolean("public")) ? ":lock:" : "";
+                    eb.addField("**"+sounds.get(cont).get("name")+"**" + locket, "ID: " + sounds.get(cont).get("id"), true);
+                    cont++;
+                }
+
+                if (24 * (page + 1) >= sounds.size()) {
+                    right = right.asDisabled();
+                    right = right.withStyle(ButtonStyle.DANGER);
+                }
+
+                if (page == 1) {
+                    left = left.asDisabled();
+                    left = left.withStyle(ButtonStyle.DANGER);
+                }
+
+                center = Button.primary("center", "Page: " + (page));
+                center = center.withStyle(ButtonStyle.SUCCESS);
+                center = center.asDisabled();
                 break;
         }
+        event.getMessage().editMessageEmbeds(eb.build())
+                        .setActionRow(left, center, right, order)
+                        .queue();
     }
 
     public void listUserButtonEvent(ButtonInteractionEvent event) {
@@ -662,9 +700,17 @@ public class EventButtonHandler extends ListenerAdapter {
         int cont = 0;
         String userId = "";
 
-        Button left = Button.primary("listuser-left", "<-");
-        Button right = Button.primary("listuser-right", "->");
+        Button left = Button.primary("listuser-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("listuser-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button order = Button.secondary("listuser-order", " ").withEmoji(CustomEmojiHandler.getRichEmoji("clock"));
         Button center = null;
+
+        boolean timeOrder = false;
+        for (Button b : event.getMessage().getButtons()) {
+            if (b.getId().startsWith("listuser-order"))
+                timeOrder = b.getStyle() == ButtonStyle.SUCCESS;
+        }
+        order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
 
         for (Button b : event.getMessage().getButtons()) {
             if (b.getLabel().startsWith("Page")) {
@@ -672,10 +718,16 @@ public class EventButtonHandler extends ListenerAdapter {
                 userId = b.getId().split("-")[2];
             }
         }
-
-        QueryResult sounds = (userId.equals(event.getMember().getId())) 
-                           ? DatabaseHandler.getlistUserSounds(userId) 
-                           : DatabaseHandler.getlistUserSounds(userId, event.getGuild().getId());
+        QueryResult sounds = null;
+        if (!timeOrder) {
+            sounds = (userId.equals(event.getMember().getId())) 
+                               ? DatabaseHandler.getlistUserSounds(userId) 
+                               : DatabaseHandler.getlistUserSounds(userId, event.getGuild().getId());
+        } else {
+            sounds = (userId.equals(event.getMember().getId())) 
+                               ? DatabaseHandler.getlistUserSoundsTime(userId) 
+                               : DatabaseHandler.getlistUserSoundsTime(userId, event.getGuild().getId());
+        }
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
@@ -703,9 +755,6 @@ public class EventButtonHandler extends ListenerAdapter {
                 center = Button.primary("listuser-center-" + userId, "Page: " + (page + 1));
                 center = center.withStyle(ButtonStyle.SUCCESS);
                 center = center.asDisabled();
-                event.getMessage().editMessageEmbeds(eb.build())
-                        .setActionRow(left, center, right)
-                        .queue();
                 break;
 
             case "left":
@@ -725,11 +774,52 @@ public class EventButtonHandler extends ListenerAdapter {
                 center = Button.primary("listuser-center-" + userId, "Page: " + (page - 1));
                 center = center.withStyle(ButtonStyle.SUCCESS);
                 center = center.asDisabled();
-                event.getMessage().editMessageEmbeds(eb.build())
-                        .setActionRow(left, center, right)
-                        .queue();
+                break;
+            case "order":
+                timeOrder = !timeOrder;
+
+                order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
+                if (!timeOrder) {
+                    sounds = (userId.equals(event.getMember().getId())) 
+                                       ? DatabaseHandler.getlistUserSounds(userId) 
+                                       : DatabaseHandler.getlistUserSounds(userId, event.getGuild().getId());
+                } else {
+                    sounds = (userId.equals(event.getMember().getId())) 
+                                       ? DatabaseHandler.getlistUserSoundsTime(userId) 
+                                       : DatabaseHandler.getlistUserSoundsTime(userId, event.getGuild().getId());
+                }
+
+                for (Button b : event.getMessage().getButtons()) {
+                    if (b.getLabel().startsWith("Page"))
+                        page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
+                }
+
+                cont = 24 * (page - 1);
+                while (cont < (24 * page) && cont < sounds.size()) {
+                    String locket = (!sounds.get(cont).getAsBoolean("public")) ? ":lock:" : "";
+                    eb.addField("**"+sounds.get(cont).get("name")+"**" + locket, "ID: " + sounds.get(cont).get("id"), true);
+                    cont++;
+                }
+
+                if (24 * (page + 1) >= sounds.size()) {
+                    right = right.asDisabled();
+                    right = right.withStyle(ButtonStyle.DANGER);
+                }
+
+                if (page == 1) {
+                    left = left.asDisabled();
+                    left = left.withStyle(ButtonStyle.DANGER);
+                }
+
+                center = Button.primary("listuser-center-" + userId, "Page: " + (page));
+                center = center.withStyle(ButtonStyle.SUCCESS);
+                center = center.asDisabled();
                 break;
         }
+
+        event.getMessage().editMessageEmbeds(eb.build())
+            .setActionRow(left, center, right, order)
+            .queue();
     }
 
 
