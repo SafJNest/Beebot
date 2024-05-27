@@ -26,10 +26,8 @@ class TwitchEventsHandler {
 
             EmbedBuilder eb = new EmbedBuilder();
 
-            //eb.setAuthor();
             eb.setTitle(PermissionHandler.escapeString(event.getBroadcasterUserName() + " is live on: https://www.twitch.tv/" + event.getBroadcasterUserLogin()));
             eb.setDescription("oid");
-            //eb.setThumbnail(getThumbnail(ts.getPlayer().getPlayingTrack()));
             eb.setColor(Bot.getColor());
 
             channel.sendMessage(role != null ? role.getAsMention() : "").addEmbeds(eb.build()).queue();

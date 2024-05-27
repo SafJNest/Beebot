@@ -17,6 +17,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.Twitch.TwitchClient;
 
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
@@ -32,7 +33,7 @@ public class App {
     /**
      * Insane beebot core
      */
-    private static boolean extremeTesting = true;
+    private static boolean extremeTesting = false;
 
     public static boolean isExtremeTesting() {
         return extremeTesting;
@@ -95,16 +96,16 @@ public class App {
             SQLSettings.get("password").toString()
         );
 
-        /*
-        new TwitchConduit(
+        
+        new TwitchClient(
             twitchSettings.get("clientId").toString(), 
             twitchSettings.get("clientSecret").toString()
         );
-        TwitchConduit.registerSubEvent("126371014");
-        for(IEventSubscription sub : TwitchConduit.getRegisteredSubEvents()) {
-            System.out.println(sub.getId());
-        }
-        */
+        TwitchClient.init();
+
+        //TwitchConduit.registerSubEvent("126371014"); //Sunny314_
+        //TwitchClient.registerSubEvent("164078841"); //leon4117
+
         
         riotApi = null;
         try {
