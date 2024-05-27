@@ -1,4 +1,4 @@
-package com.safjnest.controller.Interface;
+package com.safjnest.controller.api;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;

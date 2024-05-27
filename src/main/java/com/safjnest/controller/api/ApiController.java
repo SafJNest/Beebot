@@ -1,4 +1,4 @@
-package com.safjnest.controller.Interface;
+package com.safjnest.controller.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
