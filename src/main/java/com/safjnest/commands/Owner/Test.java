@@ -16,6 +16,7 @@ import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -221,7 +222,7 @@ public class Test extends Command{
             case "getBlacklist":
                 System.out.println(gs.getGuild(e.getGuild().getId()).getBlacklistData().toString());
                 break;
-            case "printJson":
+            case "13":
                 HashMap<AlertKey, AlertData> prova = gs.getGuild(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
                 e.reply("```json\n" + gs.getGuild(e.getGuild().getId()).toString() + "```");
@@ -334,6 +335,22 @@ public class Test extends Command{
             case "reloademoji":
                 CustomEmojiHandler.loadEmoji();
                 e.reply("Done");
+                break;
+            case "disablecommands":
+                e.getGuild().getTextChannels().forEach(c -> {
+                    Bot.getGuildData(e.getGuild()).getChannelData(c.getId()).setCommand(false);
+                });
+                break;
+            case "disablecommand":
+                Bot.getGuildData(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(false);
+                break;
+            case "enablecommand":
+                Bot.getGuildData(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(true);
+                break;
+            case "enablecommands":
+                e.getGuild().getTextChannels().forEach(c -> {
+                    Bot.getGuildData(e.getGuild()).getChannelData(c.getId()).setCommand(true);
+                });
                 break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
