@@ -101,7 +101,8 @@ public class App {
             twitchSettings.get("clientId").toString(), 
             twitchSettings.get("clientSecret").toString()
         );
-        TwitchClient.init();
+        
+        if (!App.isExtremeTesting()) TwitchClient.init();
 
         //TwitchConduit.registerSubEvent("126371014"); //Sunny314_
         //TwitchClient.registerSubEvent("164078841"); //leon4117
