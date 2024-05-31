@@ -35,6 +35,10 @@ public class QueryResult implements Iterable<ResultRow>{
         return result.isEmpty();
     }
 
+    public int getAffectedRows(){
+        return result.size();
+    }
+
     public List<Map<String, String>> toList(){
         List<Map<String, String>> list = new ArrayList<>();
         for(ResultRow row : result){
