@@ -1,8 +1,7 @@
 package com.safjnest.model.guild;
 
-import java.util.HashMap;
-
 import com.safjnest.core.Bot;
+import com.safjnest.core.CacheMap;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
@@ -21,7 +20,7 @@ public class GuildDataHandler {
      * {@code HashMap} that contains all the {@link com.safjnest.model.Guild.GuildData settings} of every guild.
      * <p>The key of the map is the guild's id.
      */
-    private HashMap<String, GuildData> guilds = new HashMap<>();
+    private CacheMap<String, GuildData> guilds = new CacheMap<>();
 
     /**
      * Default constructor
@@ -125,7 +124,7 @@ public class GuildDataHandler {
         guilds.put(String.valueOf(guild.getId()), guild);
     }
 
-    public HashMap<String, GuildData> getGuilds() {
+    public CacheMap<String, GuildData> getGuilds() {
         return guilds;
     }
 

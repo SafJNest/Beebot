@@ -352,6 +352,10 @@ public class Test extends Command{
                     Bot.getGuildData(e.getGuild()).getChannelData(c.getId()).setCommand(true);
                 });
                 break;
+            case "cachesize":
+                Bot.getGuildSettings().getGuilds().setMaxSize(Integer.parseInt(args[1]));
+                e.reply("New cache max size: " + args[1]);
+                break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;

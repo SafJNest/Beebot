@@ -3,9 +3,11 @@ package com.safjnest.commands.Owner;
 
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.util.CommandsLoader;
@@ -39,12 +41,13 @@ public class PrintCache extends Command {
     protected void execute(CommandEvent event) {
         ArrayList<String> cache = new ArrayList<>();
         String msg = "";
-        msg += "Guilds cached: " + gs.getGuilds().size() + "\n";
-
-        for(GuildData gd : gs.getGuilds().values()){
+        msg += "Guilds cached: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n";
+        List<String> forbidden = List.of(CustomEmojiHandler.getForbiddenServers());
+        for(GuildData gd : gs.getGuilds().values(false)){
             try {
-                if(!event.getJDA().getGuildById(gd.getId()).getName().startsWith("Beebot")) {
-                    msg += "**" + event.getJDA().getGuildById(gd.getId()).getName() + "**```"
+                if(!forbidden.contains(String.valueOf(gd.getId()))) {
+                    long time = gs.getGuilds().getExpirationTime(gd.getID());
+                    msg += "**" + event.getJDA().getGuildById(gd.getId()).getName() + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
                         + "Prefix: " + gd.getPrefix() + "\n"
                         + "ExpSystem: " + (gd.isExpSystemEnabled() ? "enabled" : "disabled") + "\n"
                         + "Users: " + gd.getUsers().size() + "\n"

@@ -695,6 +695,10 @@ public class DatabaseHandler {
         return runQuery("UPDATE channel SET exp_enabled = '" + (toggle ? 1 : 0) + "' WHERE id = '" + ID + "';");
     }
 
+    public static boolean setChannelCommandEnabled(int ID, boolean toggle) {
+        return runQuery("UPDATE channel SET stats_enabled = '" + (toggle ? 1 : 0) + "' WHERE id = '" + ID + "';");
+    }
+
     public static boolean deleteChannelData(int ID) {
         return runQuery("DELETE FROM channel WHERE id = '" + ID + "';");
     }

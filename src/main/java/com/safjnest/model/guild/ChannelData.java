@@ -83,6 +83,16 @@ public class ChannelData {
         return statisticsEnabled;
     }
 
+    public boolean setCommand(boolean enabled) {
+        handleEmptyID();
+        
+        boolean result = DatabaseHandler.setChannelCommandEnabled(this.ID, enabled);
+        if (result) {
+            this.statisticsEnabled = enabled;
+        }
+        return result;
+    }
+
 
     public double getExpValue() {
         return expModifier;

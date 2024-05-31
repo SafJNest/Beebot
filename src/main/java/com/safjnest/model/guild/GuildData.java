@@ -88,6 +88,10 @@ public class GuildData {
         return ID;
     }
 
+    public String getID() {
+        return String.valueOf(ID);
+    }
+
     public String getPrefix() {
         return prefix;
     }
