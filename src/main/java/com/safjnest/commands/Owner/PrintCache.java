@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
@@ -40,17 +41,30 @@ public class PrintCache extends Command {
     @Override
     protected void execute(CommandEvent event) {
         ArrayList<String> cache = new ArrayList<>();
+        
+        int totalUsers = 0;
+        int totalChannels = 0;
+        int totalAlerts = 0;
+        int totalBlackList = 0;
+        
+        
+        
+        
+        
         String msg = "";
-        msg += "Guilds cached: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n";
         List<String> forbidden = List.of(CustomEmojiHandler.getForbiddenServers());
         for(GuildData gd : gs.getGuilds().values(false)){
             try {
                 if(!forbidden.contains(String.valueOf(gd.getId()))) {
                     long time = gs.getGuilds().getExpirationTime(gd.getID());
+                    totalUsers += gd.getUsers().size();
+                    totalChannels += gd.getChannels().size();
+                    totalAlerts += gd.isAlertsCached() ? 1 : 0;
+                    totalBlackList += gd.isBlackListCached() ? 1 : 0;
                     msg += "**" + event.getJDA().getGuildById(gd.getId()).getName() + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
                         + "Prefix: " + gd.getPrefix() + "\n"
                         + "ExpSystem: " + (gd.isExpSystemEnabled() ? "enabled" : "disabled") + "\n"
-                        + "Users: " + gd.getUsers().size() + "\n"
+                        + "Members: " + gd.getUsers().size() + "\n"
                         + "Channels: " + gd.getChannels().size() + "\n"
                         + "Alerts: " + (gd.isAlertsCached() ? "cached" : "not cached") + "\n"
                         + "BlackList: " + (gd.isBlackListCached() ? "cached" : "not cached") + "```";
@@ -63,9 +77,19 @@ public class PrintCache extends Command {
             }
         }
 
+        String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
+            + "Total Users: " + Bot.getUsers().size() + "\n"
+            + "Total Members: " + totalUsers + "\n"
+            + "Total Channels: " + totalChannels + "\n"
+            + "Total Alerts: " + totalAlerts + "\n"
+            + "Total BlackList: " + totalBlackList + "```";
+        cache.add(0, header);
+
         MessageChannel channel = event.getChannel();
         for(String s : cache){
             channel.sendMessage(s).queue();
         }
+
+        
     }
 }

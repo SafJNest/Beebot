@@ -317,4 +317,8 @@ public class Bot extends ListenerAdapter {
         }
         return userData.get(userId);
     }
+
+    public static HashMap<String, UserData> getUsers() {
+        return userData;
+    }
 }

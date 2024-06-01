@@ -233,7 +233,7 @@ public class Test extends Command{
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
                 e.reply("```json\n" + new JSONObject(gs.getGuild(e.getGuild().getId()).getUsers()).toJSONString() + "```");
                 break;
-            case "cachethings":
+            case "14":
                 for(Guild g : e.getJDA().getGuilds()) {
                     gs.getGuild(g.getId()).getAlerts();
                     gs.getGuild(g.getId()).getBlacklistData();
