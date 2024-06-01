@@ -377,7 +377,7 @@ public class GuildData {
                     row.getAsBoolean("exp_enabled"),
                     row.getAsDouble("exp_modifier"),
                     row.getAsBoolean("stats_enabled"),
-                    this
+                    this.getID()
                 )
             );
         }
@@ -391,7 +391,7 @@ public class GuildData {
     public ChannelData getChannelData(long channel_id) {
         ChannelData cd = this.channels.get(channel_id);
         if (cd == null) {
-            cd = new ChannelData(channel_id, this);
+            cd = new ChannelData(channel_id, this.getID());
             System.out.println("[CACHE] Caching local ChannelData => " + ID + " | " + channel_id);
             this.channels.put(channel_id, cd);
         }
@@ -448,7 +448,7 @@ public class GuildData {
             result.getAsInt("level"),
             result.getAsInt("messages"),
             result.getAsInt("update_time"),
-            this
+            this.getID()
         );
         return ud;
     }
@@ -464,7 +464,7 @@ public class GuildData {
         }
         ud = retriveUserData(userId);
         if (ud == null) {
-            ud = new MemberData(userId, this);
+            ud = new MemberData(userId, this.getID());
             System.out.println("[CACHE] Caching local MemberData => " + ID + " | " + userId);
         }
         this.users.put(userId, ud);

@@ -39,7 +39,7 @@ public class ChannelData {
      */
     private boolean statisticsEnabled;
 
-    private GuildData guildData;
+    private final String GUILD_ID;
     
     /**
      * Defaul Constructor
@@ -49,22 +49,22 @@ public class ChannelData {
      * @param expValue
      * @param command
      */
-    public ChannelData(int ID, long CHANNEL_ID, boolean expSystem, double expValue, boolean command, GuildData guildData) {
+    public ChannelData(int ID, long CHANNEL_ID, boolean expSystem, double expValue, boolean command, String GUILD_ID) {
         this.ID = ID;
         this.CHANNEL_ID = CHANNEL_ID;
         this.expEnabled = expSystem;
         this.expModifier = expValue;
         this.statisticsEnabled = command;
-        this.guildData = guildData;
+        this.GUILD_ID = GUILD_ID;
     }
 
-    public ChannelData(long CHANNEL_ID, GuildData guildData) {
+    public ChannelData(long CHANNEL_ID, String GUILD_ID) {
         this.ID = 0;
         this.CHANNEL_ID = CHANNEL_ID;
         this.expEnabled = true;
         this.expModifier = 1;
         this.statisticsEnabled = true;
-        this.guildData = guildData;
+        this.GUILD_ID = GUILD_ID;
     }
 
     public int getId() {
@@ -128,7 +128,7 @@ public class ChannelData {
     private void handleEmptyID() {
         if (this.ID == 0) {
             System.out.println("[CACHE] Pushing local ChannelData into Database=> " + CHANNEL_ID);
-            this.ID = DatabaseHandler.insertChannelData(guildData.getId(), this.CHANNEL_ID);
+            this.ID = DatabaseHandler.insertChannelData(Long.valueOf(this.GUILD_ID), this.CHANNEL_ID);
         }
     }
 

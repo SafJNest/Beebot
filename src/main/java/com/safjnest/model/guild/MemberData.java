@@ -12,9 +12,9 @@ public class MemberData {
     private int messages;
     private int updateTime;
     private LocalDateTime lastMessageTime;
-    private GuildData guildData;
+    private final String GUILD_ID;
 
-    public MemberData(int ID, long USER_ID, int experience, int level, int messages, int updateTime, GuildData guildData) {
+    public MemberData(int ID, long USER_ID, int experience, int level, int messages, int updateTime, String GUILD_ID) {
         this.ID = ID;
         this.USER_ID = USER_ID;
         this.experience = experience;
@@ -22,10 +22,10 @@ public class MemberData {
         this.messages = messages;
         this.updateTime = updateTime;
         this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
-        this.guildData = guildData;
+        this.GUILD_ID = GUILD_ID;
     }
 
-    public MemberData(long USER_ID, GuildData guildData) {
+    public MemberData(long USER_ID, String GUILD_ID) {
         this.ID = 0;
         this.USER_ID = USER_ID;
         this.experience = 0;
@@ -33,13 +33,13 @@ public class MemberData {
         this.messages = 0;
         this.updateTime = 60;
         this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
-        this.guildData = guildData;
+        this.GUILD_ID = GUILD_ID;
     }
 
     private void handleEmptyID() {
         if (this.ID == 0) {
             System.out.println("[CACHE] Pushing local UserData into Database=> " + this.USER_ID);
-            this.ID = DatabaseHandler.insertUserData(guildData.getId(), this.USER_ID);
+            this.ID = DatabaseHandler.insertUserData(Long.valueOf(this.GUILD_ID), this.USER_ID);
         }
     }
 
