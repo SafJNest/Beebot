@@ -53,7 +53,7 @@ public class EventHandler extends ListenerAdapter {
             Functions.handleBotLeave(guild);
         
         if (channelJoined != null && 
-            (connectChannel == null || channelJoined.getId().equals(connectChannel.getId()))) {
+            (connectChannel == null || channelJoined.getId().equals(connectChannel.getId())) && !userJoined.isBot()) {
             Functions.handleGreetSound(channelJoined, userJoined, guild);
         }
     }

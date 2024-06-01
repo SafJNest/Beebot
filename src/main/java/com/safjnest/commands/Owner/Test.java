@@ -356,6 +356,14 @@ public class Test extends Command{
                 Bot.getGuildSettings().getGuilds().setMaxSize(Integer.parseInt(args[1]));
                 e.reply("New cache max size: " + args[1]);
                 break;
+            case "userdata":
+                try {
+                    e.reply(Bot.getUserData(args[1]).toString());
+                } catch (Exception e1) {
+                    e.reply(Bot.getUserData(e.getAuthor().getId()).toString());
+                }
+                
+                break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;

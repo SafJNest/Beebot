@@ -185,10 +185,10 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             case "greet":
                 if (e.getFocusedOption().getValue().equals("")) {
                     for (ResultRow greet : DatabaseHandler.getlistGuildSounds(e.getGuild().getId(), 25))
-                        choices.add(new Choice(greet.get("name"), greet.get("id")));
+                        choices.add(new Choice(greet.get("name"), greet.get("id") + "." + greet.get("extension")));
                 } else {
                     for (ResultRow greet : DatabaseHandler.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), e.getFocusedOption().getValue()))
-                        choices.add(new Choice(greet.get("name") + " (" + greet.get("id") + ")", greet.get("id")));
+                        choices.add(new Choice(greet.get("name") + " (" + greet.get("id") + ")", greet.get("id") + "." + greet.get("extension")));
                 }
                 break;
             case "tts":

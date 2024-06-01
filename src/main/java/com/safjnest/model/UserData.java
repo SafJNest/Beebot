@@ -12,11 +12,20 @@ public class UserData {
     private HashMap<String, AliasData> aliases;
     private HashMap<String, String> riotAccounts;
 
+    private String globalGreetId;
+    private HashMap<String, String> guildGreetIds;
+
     public UserData(String USER_ID) {
         this.USER_ID = USER_ID;
         retriveAlies();
         retriveRiotAccounts();
+
+        globalGreetId = null;
+        guildGreetIds = new HashMap<>();
     }
+
+
+    /* -------------------------------------------------------------------------- */
 
     private void retriveAlies() {
         this.aliases = new HashMap<>();
@@ -41,6 +50,13 @@ public class UserData {
         }
     }
 
+    @Override
+    public String toString() {
+        return "UserData {USER_ID=" + USER_ID + ", aliases=" + aliases.toString() + ", riotAccounts=" + riotAccounts.toString()
+                + ", globalGreetId=" + globalGreetId + ", guildGreetIds=" + guildGreetIds.toString() + "}";
+    }
+
+
     /* -------------------------------------------------------------------------- */
     /*                                    AliasData                               */
     /* -------------------------------------------------------------------------- */
@@ -62,6 +78,54 @@ public class UserData {
     public boolean deleteAlias(String toDelete) {
         getAliases().remove(toDelete);
         return DatabaseHandler.deleteAlias(toDelete);
+    }
+
+
+    /* -------------------------------------------------------------------------- */
+    /*                                    Greet                                   */
+    /* -------------------------------------------------------------------------- */
+
+    public String getGreet(String guildId) {
+        if (guildGreetIds.containsKey(guildId)) {
+            return guildGreetIds.get(guildId).isEmpty() ? getGlobalGreet() : guildGreetIds.get(guildId);
+        }
+        ResultRow possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
+
+        if (possibleGreet.emptyValues()) {
+            guildGreetIds.put(guildId, "");
+            return getGlobalGreet();
+        }
+
+        String guildGreet = possibleGreet.get("id") + "." + possibleGreet.get("extension");
+        guildGreetIds.put(guildId, guildGreet);
+
+        return guildGreet;
+    }
+
+    public String getGlobalGreet() {
+        if (globalGreetId == null) {
+            ResultRow possibleGreet = DatabaseHandler.getGlobalGreet(USER_ID);
+            if (possibleGreet.emptyValues()) {
+                return null;
+            }
+            globalGreetId = possibleGreet.get("id") + "." + possibleGreet.get("extension");
+        }
+        return globalGreetId;
+    }
+
+    public boolean setGreet(String guildId, String soundId, String extension) {
+        if (guildId.equals("0")) globalGreetId = soundId + "." + extension;
+        else guildGreetIds.put(guildId, soundId + "." + extension);
+        return DatabaseHandler.setGreet(this.USER_ID, guildId, soundId);
+    }
+
+    public boolean unsetGreet(String guildId) {
+        if (guildId.equals("0")) {
+            globalGreetId = null;
+        } else {
+            guildGreetIds.remove(guildId);
+        }
+        return DatabaseHandler.deleteGreet(this.USER_ID, guildId);
     }
 
 }

@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.core.Bot;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -36,7 +36,13 @@ public class GreetSetSlash extends SlashCommand {
 
         String guildId = (event.getOption("global") != null && event.getOption("global").getAsBoolean()) ? "0" : event.getGuild().getId();
 
-        DatabaseHandler.setGreet(event.getUser().getId(), guildId, sound);
+        String soundId = sound.split("\\.")[0];
+        String extension = sound.split("\\.")[1];
+
+        if (!Bot.getUserData(event.getUser().getId()).setGreet(guildId, soundId, extension)) {
+            event.deferReply(false).addContent("An error occurred while setting the greet").queue();
+            return;
+        }
 
         event.deferReply(false).addContent("Greet has been set").queue();
     }

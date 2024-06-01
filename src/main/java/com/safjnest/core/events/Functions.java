@@ -315,13 +315,15 @@ public class Functions {
 
 
     public static void handleGreetSound(AudioChannel channelJoin, User theGuy, Guild guild) {
-        ResultRow sound = DatabaseHandler.getGreet(theGuy.getId(), guild.getId());
-        if(sound.emptyValues())
+        String sound = Bot.getUserData(theGuy.getId()).getGreet(guild.getId());
+
+        if(sound == null)
             return;
 
         PlayerManager pm = PlayerManager.get();
 
-        String path = "rsc" + File.separator + "SoundBoard"+ File.separator + sound.get("id") + "." + sound.get("extension");
+        String path = "rsc" + File.separator + "SoundBoard"+ File.separator + sound;
+
 
         pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
             @Override
