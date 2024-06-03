@@ -39,10 +39,16 @@ public class QueueMessage {
     }
 
     public void delete() {
-        if (hook != null) {
-            hook.deleteOriginal().queue();
+        if (hook != null && hook.isExpired()) {
+            hook.deleteOriginal().queue(
+                null,
+                error -> System.out.println("Error deleting message: " + error.getMessage())
+            );
         } else if (message != null) {
-            message.delete().queue();
+            message.delete().queue(
+                null,
+                error -> System.out.println("Error deleting message: " + error.getMessage())
+            );
         }
     }
 
