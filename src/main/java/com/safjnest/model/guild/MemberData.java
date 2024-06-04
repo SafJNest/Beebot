@@ -3,6 +3,8 @@ package com.safjnest.model.guild;
 import java.time.LocalDateTime;
 
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.log.LoggerIDpair;
 
 public class MemberData {
     private int ID;
@@ -38,7 +40,7 @@ public class MemberData {
 
     private void handleEmptyID() {
         if (this.ID == 0) {
-            System.out.println("[CACHE] Pushing local UserData into Database=> " + this.USER_ID);
+            BotLogger.info("Pushing local UserData into Database => {0}", new LoggerIDpair(String.valueOf(this.USER_ID), LoggerIDpair.IDType.USER));
             this.ID = DatabaseHandler.insertUserData(Long.valueOf(this.GUILD_ID), this.USER_ID);
         }
     }

@@ -4,6 +4,8 @@
 	<!-- Configure Twitch4J logger level -->
 	<logger name="com.github.twitch4j" level="INFO"/>
 
+	<conversionRule conversionWord="colorLevel" converterClass="com.safjnest.util.BotLoggerColorConverter" />
+
 	<!-- Appender Configuration [Console] -->
 	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
 		<encoder>
@@ -24,6 +26,18 @@
 			<MaxFileSize>10MB</MaxFileSize>
 		</triggeringPolicy>
 	</appender>
+
+	<!-- Appender Configuration [BotLogger] -->
+	<appender name="BOTLOGGER" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%colorLevel - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- Configure BotLogger logger level -->
+	<logger name="com.safjnest.util.BotLogger" level="TRACE" additivity="false">
+		<appender-ref ref="BOTLOGGER"/>
+	</logger>
 
 	<!-- Appender Output Configuration -->
 	<root level="info">

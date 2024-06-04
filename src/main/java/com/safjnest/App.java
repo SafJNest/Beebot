@@ -18,6 +18,7 @@ import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.LOL.RiotHandler;
 import com.safjnest.util.Twitch.TwitchClient;
+import com.safjnest.util.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;
@@ -51,15 +52,16 @@ public class App {
     public static void main(String args[]) {
         
         SafJNest.bee();
+        new BotLogger("Beebot", null);
 
         if(args.length > 0) {
             if(args[0].equalsIgnoreCase("true")) {
                 extremeTesting = true;
-                System.out.println("[INFO] Beebot Canary is turning to outplay jelly");
+                BotLogger.info("Beebot Canary is turning to outplay jelly");
             }
             else if(args[0].equalsIgnoreCase("false")) {
                 extremeTesting = false;
-                System.out.println("[INFO] Beebot is set to normal mode");
+                BotLogger.info("Beebot is set to normal mode");
             }
         }
 
@@ -71,7 +73,7 @@ public class App {
         
 
         SecureRandom secureRandom = new SecureRandom();
-        System.out.println("[System]: System Entropy: " + secureRandom.getProvider());//thx copilot
+        BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider());
         
         JSONParser parser = new JSONParser();
         JSONObject settings = null, SQLSettings = null, riotSettings = null, twitchSettings = null;
@@ -111,27 +113,27 @@ public class App {
         riotApi = null;
         try {
             riotApi = new R4J(new APICredentials(riotSettings.get("riotKey").toString()));
-            System.out.println("[R4J] INFO Connection Successful!");
+            BotLogger.info("[R4J] Connection Successful!");
         } catch (Exception e) {
-            System.out.println("[R4J] INFO Annodam Not Successful!");
+            BotLogger.error("[R4J] Annodam Not Successful!");
         }
         
         new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
 
-        System.out.println("[CANNUCCIA] INFO " + DatabaseHandler.getCannuccia());
-        System.out.println("[EPRIA] ID " + PermissionHandler.getEpria());
+        BotLogger.info("[CANNUCCIA] " + DatabaseHandler.getCannuccia());
+        BotLogger.info("[EPRIA] ID " + PermissionHandler.getEpria());
 
         extreme_safj_beebot = new Bot();
         extreme_safj_beebot.il_risveglio_della_bestia();
     }
 
     public static void shutdown() {
-        System.out.println("Shutting down the bot");
+        BotLogger.trace("Shutting down the bot");
         extreme_safj_beebot.distruzione_demoniaca();
     }
 
     public static void restart() {
-        System.out.println("Restarting the bot");
+        BotLogger.trace("Restarting the bot");
         extreme_safj_beebot.distruzione_demoniaca();
         extreme_safj_beebot.il_risveglio_della_bestia();
     }

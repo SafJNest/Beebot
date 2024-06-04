@@ -5,6 +5,8 @@ import com.safjnest.core.CacheMap;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
+import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.log.LoggerIDpair;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -64,7 +66,7 @@ public class GuildDataHandler {
      * Always a {@link com.safjnest.model.Guild.GuildData guildData}, never {@code null}
      */
     public GuildData retriveGuild(String stringId) {
-        System.out.println("[CACHE] Retriving guild from database => " + stringId);
+        BotLogger.info("Retriving guild from database => {0}", new LoggerIDpair(stringId, LoggerIDpair.IDType.GUILD));
         ResultRow guildData = DatabaseHandler.getGuildData(stringId);
         
         if(guildData.emptyValues()) {
@@ -109,7 +111,7 @@ public class GuildDataHandler {
 
     public GuildData insertGuild(String guildId) {
         DatabaseHandler.insertGuild(guildId, Bot.getPrefix());
-        System.out.println("[ERROR] Missing guild in database => " + guildId);
+        BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
 
         GuildData guild = new GuildData(Long.parseLong(guildId), Bot.getPrefix(), true, LeagueShard.EUW1);
         saveGuild(guild);

@@ -6,6 +6,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.PermissionHandler;
+import com.safjnest.util.log.BotLogger;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -22,7 +23,7 @@ class TwitchEventsHandler {
             TextChannel channel = guild.getTextChannelById(guildRow.get("channel_id"));
             Role role = guildRow.get("role_id") != null ? guild.getRoleById(guildRow.get("role_id")) : null;
 
-            System.out.println("user login: " + event.getBroadcasterUserLogin());
+            BotLogger.trace("[TWITCH] user login: " + event.getBroadcasterUserLogin());
 
             EmbedBuilder eb = new EmbedBuilder();
 

@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.HashMap;
 
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.util.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -51,11 +52,12 @@ public class DatabaseHandler {
             Class.forName("org.mariadb.jdbc.Driver");
             c = DriverManager.getConnection("jdbc:mariadb://" + hostName + "/" + database + "?autoReconnect=true", user, password);
             c.setAutoCommit(false);
-            System.out.println("[SQL] INFO Connection to the extreme db successful!");
+            BotLogger.info("[SQL] Connection to the extreme db successful!");
+            
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            System.out.println("[SQL] ERROR Connection to the extreme db failed!");
+            BotLogger.error("[SQL] Connection to the extreme db failed!");
         }
     }
 

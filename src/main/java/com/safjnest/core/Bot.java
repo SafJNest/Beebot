@@ -70,6 +70,7 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.log.BotLogger;
 
 /**
  * Main class of the bot.
@@ -118,7 +119,7 @@ public class Bot extends ListenerAdapter {
         JSONParser parser = new JSONParser();
         JSONObject settings = null, discordSettings = null, settingsSettings = null;
 
-        String name = App.isExtremeTesting() ? "beebot canary" : "beebot";
+        String name = App.isExtremeTesting() ? "beebot 117" : "beebot";
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
             discordSettings = (JSONObject) settings.get(name);
@@ -168,10 +169,10 @@ public class Bot extends ListenerAdapter {
                 // jda.getGuilds().forEach(guild -> {
                 //     guild.updateCommands().queue();
                 // });
-                
+
                 new CustomEmojiHandler();
-                System.out.println("[INFO] custom emoji cached correctly");
-                System.out.println("[INFO] no more guild cached correctly");
+                BotLogger.debug("[JDA] Custom emoji cached correctly");
+                BotLogger.info("[JDA] No more guild cached correctly");
             }
         });
 

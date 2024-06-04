@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
+import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.log.LoggerIDpair;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
@@ -70,12 +72,17 @@ public class GuildData {
 
     private RegionShard reagionShard;
 
+    private LoggerIDpair loggerIDpair;
+
     public GuildData(Long id, String prefix, boolean expSystem, LeagueShard shard) {
         this.ID = id;
         this.prefix = prefix;
         this.expEnabled = expSystem;
 
         this.users = new HashMap<>();
+        
+        this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
+
         retriveTTSSettings();
         retriveChannels();
         retriveCustomCommand();
@@ -189,7 +196,7 @@ public class GuildData {
      */
     public HashMap<AlertKey, AlertData> getAlerts() {
         if (this.alerts == null) {
-            System.out.println("[CACHE] Retriving AlertData from database => " + ID);
+            BotLogger.debug("Retriving AlertData from database => {0}", loggerIDpair);
             this.alerts = new HashMap<>();
             QueryResult alertResult = DatabaseHandler.getAlerts(String.valueOf(ID));
             QueryResult roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID));
@@ -314,7 +321,8 @@ public class GuildData {
         if (this.blacklistData == null) {
             BlacklistData bd = null;
             ResultRow result = DatabaseHandler.getGuildData(String.valueOf(ID));
-            System.out.println("[CACHE] Retriving BlacklistData from database => " + ID);
+
+            BotLogger.debug("Retriving BlacklistData from database => {0}", loggerIDpair);
             bd = new BlacklistData(
                 result.getAsInt("threshold"),
                 result.get("blacklist_channel"),
@@ -365,9 +373,9 @@ public class GuildData {
     public void retriveChannels() {
         this.channels = new HashMap<>();
         QueryResult result = DatabaseHandler.getChannelData(String.valueOf(ID));
-        
         if (result == null) { return; }
-        System.out.println("[CACHE] Retriving ChannelData from database => " + ID);
+
+        BotLogger.debug("Retriving ChannelData from database => {0}", loggerIDpair);
         for(ResultRow row: result){
             this.channels.put(
                 row.getAsLong("channel_id"),
@@ -392,7 +400,7 @@ public class GuildData {
         ChannelData cd = this.channels.get(channel_id);
         if (cd == null) {
             cd = new ChannelData(channel_id, this.getID());
-            System.out.println("[CACHE] Caching local ChannelData => " + ID + " | " + channel_id);
+            BotLogger.debug("Caching local ChannelData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(channel_id), LoggerIDpair.IDType.CHANNEL));
             this.channels.put(channel_id, cd);
         }
         return cd;
@@ -440,7 +448,8 @@ public class GuildData {
         MemberData ud = null;
         ResultRow result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
         if (result.emptyValues()) { return null; }
-        System.out.println("[CACHE] Retriving MemberData from database => " + ID + " | " + userId);
+
+        BotLogger.debug("Retriving MemberData from database => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
         ud = new MemberData(
             result.getAsInt("id"),
             userId,
@@ -465,7 +474,7 @@ public class GuildData {
         ud = retriveUserData(userId);
         if (ud == null) {
             ud = new MemberData(userId, this.getID());
-            System.out.println("[CACHE] Caching local MemberData => " + ID + " | " + userId);
+            BotLogger.debug("Caching local MemberData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
         }
         this.users.put(userId, ud);
         return ud;

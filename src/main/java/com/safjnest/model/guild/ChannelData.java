@@ -1,6 +1,8 @@
 package com.safjnest.model.guild;
 
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.log.LoggerIDpair;
 
 /**
  * Class that stores all the settings for a guild.
@@ -127,7 +129,7 @@ public class ChannelData {
 
     private void handleEmptyID() {
         if (this.ID == 0) {
-            System.out.println("[CACHE] Pushing local ChannelData into Database=> " + CHANNEL_ID);
+            BotLogger.debug("Pushing local ChannelData into Database => {0}", new LoggerIDpair(String.valueOf(this.CHANNEL_ID), LoggerIDpair.IDType.CHANNEL));
             this.ID = DatabaseHandler.insertChannelData(Long.valueOf(this.GUILD_ID), this.CHANNEL_ID);
         }
     }

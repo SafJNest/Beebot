@@ -42,12 +42,12 @@ public class QueueMessage {
         if (hook != null && hook.isExpired()) {
             hook.deleteOriginal().queue(
                 null,
-                error -> System.out.println("Error deleting message: " + error.getMessage())
+                error -> BotLogger.error("Error deleting message: " + error.getMessage())
             );
         } else if (message != null) {
             message.delete().queue(
                 null,
-                error -> System.out.println("Error deleting message: " + error.getMessage())
+                error -> BotLogger.error("Error deleting message: " + error.getMessage())
             );
         }
     }

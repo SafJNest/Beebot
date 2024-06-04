@@ -13,6 +13,7 @@ import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.ConduitList;
 import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
+import com.safjnest.util.log.BotLogger;
 
 public class TwitchClient {
     private static String clientId;
@@ -42,13 +43,13 @@ public class TwitchClient {
             conduit.getEventManager().onEvent(StreamOnlineEvent.class, TwitchEventsHandler::onStreamOnlineEvent);
             
         } catch (Exception e1) {
-            System.out.println("[ERROR] Could not connect to twitch");
+            BotLogger.error("[TWITCH] Could not connect to twitch");
             e1.printStackTrace();
         }
     }
 
     public static void createConduit() {
-        System.out.println("creating conduit...");
+        BotLogger.trace("[TWITCH] Creating conduit...");
         try {
             conduit = TwitchConduitSocketPool.create(spec -> {
                 spec.clientId(clientId);
@@ -59,13 +60,13 @@ public class TwitchClient {
             conduit.getEventManager().onEvent(StreamOnlineEvent.class, TwitchEventsHandler::onStreamOnlineEvent);
             
         } catch (Exception e1) {
-            System.out.println("[ERROR] Could not connect to twitch");
+            BotLogger.error("[TWITCH] Could not connect to twitch");
             e1.printStackTrace();
         }
     }
 
     public static void init() {
-        System.out.println("creating helix...");
+        BotLogger.trace("[TWITCH] Creating helix...");
         client = TwitchClientBuilder.builder()
             .withEnableHelix(true)
             .withClientId(clientId)

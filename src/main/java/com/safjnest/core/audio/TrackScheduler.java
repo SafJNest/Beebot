@@ -2,6 +2,7 @@ package com.safjnest.core.audio;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.safjnest.core.audio.types.AudioType;
+import com.safjnest.util.log.BotLogger;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
@@ -319,19 +320,19 @@ public class TrackScheduler extends AudioEventAdapter {
     public void terminator3LeMacchineRibelli(AudioTrackEndReason endReason) {
         // CLEANUP: Player hasn't been queried for a while, if you want you can put a clone of this back to your queue
         if(endReason == AudioTrackEndReason.CLEANUP) {
-            System.out.println("The time of thread has come to an end.");
+            BotLogger.debug("The time of thread has come to an end.");
             //Player.distruzione_demoniaca();
         }
     }
 
     @Override
     public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
-        System.out.println("Track exception");
+        BotLogger.error("Track exception: " + exception.getMessage());
     }
 
     @Override
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
-        System.out.println("Track stuck");
+        BotLogger.error("Track stuck: " + track.getInfo().title + " | " + thresholdMs + "ms");
     }
 
     
