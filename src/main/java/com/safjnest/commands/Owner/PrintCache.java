@@ -12,6 +12,7 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 
@@ -82,7 +83,10 @@ public class PrintCache extends Command {
             + "Total Members: " + totalUsers + "\n"
             + "Total Channels: " + totalChannels + "\n"
             + "Total Alerts: " + totalAlerts + "\n"
-            + "Total BlackList: " + totalBlackList + "```";
+            + "Total BlackList: " + totalBlackList + "\n\n"
+            + "Other bot information\n"
+            + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
+            + "League Version: " + RiotHandler.getVersion() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
