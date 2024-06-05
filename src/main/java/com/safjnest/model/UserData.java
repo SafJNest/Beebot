@@ -2,6 +2,7 @@ package com.safjnest.model;
 
 import java.util.HashMap;
 
+import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
@@ -53,6 +54,10 @@ public class UserData {
         for(ResultRow row: result){
             riotAccounts.put(row.get("account"), row.get("account"));
         }
+    }
+
+    public String getName() {
+        return Bot.getJDA().getUserById(USER_ID).getName();
     }
 
     @Override

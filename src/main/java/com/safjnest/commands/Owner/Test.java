@@ -18,6 +18,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.ChannelData;
@@ -362,7 +363,18 @@ public class Test extends Command{
                 } catch (Exception e1) {
                     e.reply(Bot.getUserData(e.getAuthor().getId()).toString());
                 }
-                
+                break;
+            case "usersdata":
+                String users = "";
+                for (UserData ud : Bot.getUsers().values(false)) {
+                    users += ud.getName() + "-";
+                }
+                e.reply(users);
+                break;
+            case "clearcache":
+                Bot.getGuildSettings().getGuilds().clear();
+                Bot.getUsers().clear();
+                e.reply("Cache cleared");
                 break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");

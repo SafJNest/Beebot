@@ -78,7 +78,7 @@ public class PrintCache extends Command {
         }
 
         String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
-            + "Total Users: " + Bot.getUsers().size() + "\n"
+            + "Total Users: " + Bot.getUsers().size() + " / " + Bot.getUsers().getMaxSize() + "\n"
             + "Total Members: " + totalUsers + "\n"
             + "Total Channels: " + totalChannels + "\n"
             + "Total Alerts: " + totalAlerts + "\n"
