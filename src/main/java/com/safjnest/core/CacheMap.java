@@ -26,10 +26,17 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
         this.MAX_EXPIRATION_MILLISECOND = MAX_EXPIRATION_MILLISECOND;
         this.MAX_SIZE = MAX_SIZE;
         
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        this.scheduledTasks = new ConcurrentHashMap<>();
+        init();
+    }
 
-        this.expirationQueue = new PriorityQueue<>(Comparator.comparing(scheduledTasks::get));
+    public CacheMap(int MAX_SIZE) {
+        super();
+        
+        this.DEFAULT_EXPIRATION_MILLISECOND = 12L * 60 * 60 * 1000;
+        this.MAX_EXPIRATION_MILLISECOND = 24L * 60 * 60 * 1000;
+        this.MAX_SIZE = MAX_SIZE;
+
+        init();
     }
 
     public CacheMap() {
@@ -40,11 +47,22 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
 
         this.MAX_SIZE = 117;
 
+        init();
+    }
+
+    /* -------------------------------------------------------------------------- */
+
+    private void init() {
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         this.scheduledTasks = new ConcurrentHashMap<>();
 
         this.expirationQueue = new PriorityQueue<>(Comparator.comparing(scheduledTasks::get));
     }
+
+
+    /* -------------------------------------------------------------------------- */
+    /*                                   Overrides                                */
+    /* -------------------------------------------------------------------------- */
 
     @SuppressWarnings("unchecked")
     @Override
@@ -78,6 +96,28 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
         cancelScheduledTask((K)key);
         return super.remove(key);
     }
+
+    @Override
+    public void clear() {
+        super.clear();
+        expirationQueue.clear();
+        scheduledTasks.values().forEach(task -> task.cancel(false));
+        scheduledTasks.clear();
+    }
+
+    @Override
+    public Collection<V> values() {
+        return values(true);
+    }
+
+    public Collection<V> values(boolean update) {
+        if (update) scheduledTasks.keySet().forEach(this::updateTime);
+        return super.values();
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                              Inside methods                                */
+    /* -------------------------------------------------------------------------- */
 
     private synchronized void updateTime(K key) {
         long def_time = DEFAULT_EXPIRATION_MILLISECOND;
@@ -113,23 +153,9 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
         return expirationTime;
     }
 
-    public long getExpirationTime(K key) {
-        ScheduledFuture<?> task = scheduledTasks.get(key);
-        if (task != null) {
-            return task.getDelay(TimeUnit.MILLISECONDS);
-        }
-        return -1;
-    }
-
-    @Override
-    public Collection<V> values() {
-        return values(true);
-    }
-
-    public Collection<V> values(boolean update) {
-        if (update) scheduledTasks.keySet().forEach(this::updateTime);
-        return super.values();
-    }
+    /* -------------------------------------------------------------------------- */
+    /*                                   Utilites                                 */
+    /* -------------------------------------------------------------------------- */
 
     public void setMaxSize(int size) {
         if (size < this.MAX_SIZE) {
@@ -147,6 +173,14 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
 
     public int getMaxSize() {
         return MAX_SIZE;
+    }
+
+    public long getExpirationTime(K key) {
+        ScheduledFuture<?> task = scheduledTasks.get(key);
+        if (task != null) {
+            return task.getDelay(TimeUnit.MILLISECONDS);
+        }
+        return -1;
     }
 
 }
