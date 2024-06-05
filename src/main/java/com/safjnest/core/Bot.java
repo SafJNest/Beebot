@@ -11,7 +11,6 @@ import java.io.Reader;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.awt.Color;
 
 import org.json.simple.JSONArray;
@@ -103,7 +102,7 @@ public class Bot extends ListenerAdapter {
     private int maxPrime;
 
     private static GuildDataHandler gs;
-    private static HashMap<String, UserData> userData;
+    private static CacheMap<String, UserData> userData;
 
     private static CommandClient client;
 
@@ -152,7 +151,7 @@ public class Bot extends ListenerAdapter {
         BOT_ID = jda.getSelfUser().getId();
 
         gs = new GuildDataHandler();
-        userData = new HashMap<String, UserData>();
+        userData = new CacheMap<String, UserData>(20);
         
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(helpWord);
@@ -319,7 +318,7 @@ public class Bot extends ListenerAdapter {
         return userData.get(userId);
     }
 
-    public static HashMap<String, UserData> getUsers() {
+    public static CacheMap<String, UserData> getUsers() {
         return userData;
     }
 }
