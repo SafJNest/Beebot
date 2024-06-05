@@ -90,10 +90,10 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         BotLogger.info("[R4J-Champions] Champions Successful! Thresh is ready to grab :)");
 
         loadRunes();
-        BotLogger.info("[R4J-Runes] INFO Runes Successful! Ryze is happy :)");
+        BotLogger.info("[R4J-Runes] Runes Successful! Ryze is happy :)");
 
         loadAguments();
-        BotLogger.info("[R4J-Augments] INFO Augments Successful! Viktor is proud :)");
+        BotLogger.info("[R4J-Augments] Augments Successful! Viktor is proud :)");
     }
 
     private void loadChampions(){

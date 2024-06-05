@@ -19,6 +19,9 @@ public class UserData {
 
     public UserData(String USER_ID) {
         this.USER_ID = USER_ID;
+        
+        BotLogger.debug("Retriving UserData => {0}", new LoggerIDpair(USER_ID, LoggerIDpair.IDType.USER));
+        
         retriveAlies();
         retriveRiotAccounts();
 
@@ -31,10 +34,10 @@ public class UserData {
 
     private void retriveAlies() {
         this.aliases = new HashMap<>();
-        QueryResult result = DatabaseHandler.getAliases(USER_ID);
         
+        QueryResult result = DatabaseHandler.getAliases(USER_ID);
         if (result == null) { return; }
-        BotLogger.debug("Retriving Aliases from database => {0}", new LoggerIDpair(USER_ID, LoggerIDpair.IDType.USER));
+
         for(ResultRow row: result){
             AliasData alias = new AliasData(row.getAsInt("ID"), row.get("name"), row.get("command"));
             aliases.put(row.get("name"), alias);
@@ -46,7 +49,6 @@ public class UserData {
         QueryResult result = DatabaseHandler.getLOLAccountsByUserId(USER_ID);
         if (result == null) { return; }
 
-        BotLogger.debug("Retriving Riot Accounts from database => {0}", new LoggerIDpair(USER_ID, LoggerIDpair.IDType.USER));
         this.riotAccounts = new HashMap<>();
         for(ResultRow row: result){
             riotAccounts.put(row.get("account"), row.get("account"));
