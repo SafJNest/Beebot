@@ -3,12 +3,26 @@ package com.safjnest.util.log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.joran.spi.JoranException;
+
 public class BotLogger {
 
     private static Logger logger;
     public BotLogger(String name, String resourceBundleName) {
         logger = LoggerFactory.getLogger(BotLogger.class);
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.reset();
 
+        JoranConfigurator configurator = new JoranConfigurator();
+        configurator.setContext(context);
+
+        try {
+            configurator.doConfigure("rsc/logback.xml");
+        } catch (JoranException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
