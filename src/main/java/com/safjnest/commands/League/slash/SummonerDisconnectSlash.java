@@ -4,7 +4,8 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.core.Bot;
+import com.safjnest.model.UserData;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -40,7 +41,18 @@ public class SummonerDisconnectSlash extends SlashCommand {
             event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help summoner").queue();
             return;
         }
-        DatabaseHandler.deleteLOLaccount(event.getMember().getId(), account_id);
+
+        UserData data = Bot.getUserData(event.getMember().getId());
+        if (!data.getRiotAccounts().containsKey(account_id)) {
+            event.deferReply(false).addContent("This account is not connected to your profile.").queue();
+            return;
+        }
+
+        if (!data.deleteRiotAccount(account_id)) {
+            event.deferReply(false).addContent("Something went wrong while disconnecting your account.").queue();
+            return;
+        }
+
         event.deferReply(false).addContent("Summoner removed").queue();
 	}
 

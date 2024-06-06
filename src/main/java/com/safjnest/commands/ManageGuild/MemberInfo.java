@@ -1,13 +1,13 @@
 package com.safjnest.commands.ManageGuild;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.ExperienceSystem;
@@ -17,6 +17,9 @@ import com.safjnest.util.LOL.RiotHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -56,14 +59,16 @@ public class MemberInfo extends Command{
 
         String permissionNames = PermissionHandler.getFilteredPermissionNames(mentionedMember).toString();
 
-        QueryResult lolAccounts = DatabaseHandler.getLolAccounts(id);
+        HashMap<String, String> lolAccounts = Bot.getUserData(id).getRiotAccounts();
         String lolAccountsString = "";
-        if(lolAccounts.isEmpty()) {
+        if(lolAccounts == null || lolAccounts.isEmpty()) {
             lolAccountsString = mentionedMember.getEffectiveName() + " has not connected a riot account.";
         }
         else {
-            for(ResultRow lolAccount : lolAccounts) {
-                lolAccountsString += RiotHandler.getSummonerBySummonerId(lolAccount.get("summoner_id"), RiotHandler.getShardFromOrdinal(lolAccount.getAsInt("league_shard"))).getName() + " - ";
+            for(String account : lolAccounts.keySet()) {
+                Summoner s = RiotHandler.getSummonerByAccountId(account, LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))]);
+                RiotAccount riotAccount = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))].toRegionShard(), s.getPUUID());
+                lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
             }
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);
         }

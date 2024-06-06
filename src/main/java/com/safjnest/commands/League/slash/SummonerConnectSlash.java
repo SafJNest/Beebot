@@ -4,7 +4,8 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.core.Bot;
+import com.safjnest.model.UserData;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
 
@@ -45,12 +46,21 @@ public class SummonerConnectSlash extends SlashCommand {
             return;
         }
 
-        String name = event.getOption("summoner").getAsString();
-        String tag = event.getOption("tag").getAsString();
-
         LeagueShard shard = s.getPlatform();
+        String name = event.getOption("summoner").getAsString();
+        String tag = event.getOption("tag") != null ? event.getOption("tag").getAsString() : shard.name();
 
-        DatabaseHandler.addLOLAccount(event.getMember().getId(), s.getSummonerId(), s.getAccountId(), shard);
+        UserData data = Bot.getUserData(event.getMember().getId());
+        if(data.getRiotAccounts().containsKey(s.getAccountId())){
+            event.getHook().editOriginal("This account is already connected to your profile.").queue();
+            return;
+        }
+
+        if (!data.addRiotAccount(s)) {
+            event.getHook().editOriginal("Something went wrong while connecting your account.").queue();
+            return;
+        }
+
         event.getHook().editOriginal("Connected " + name + " #" + tag + " to your profile.").queue();
 
 	}

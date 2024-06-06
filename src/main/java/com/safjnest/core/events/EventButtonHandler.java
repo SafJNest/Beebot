@@ -2,6 +2,7 @@ package com.safjnest.core.events;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -304,24 +305,34 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid);
-        QueryResult accounts = DatabaseHandler.getLolAccounts(user_id);
+        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
         
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        int i = 0;
+        String account_id = "";
         switch (args) {
 
             case "right":
 
-                for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(i).getAsInt("league_shard"))).getAccountId().equals(puuid))
+                for (String k : accounts.keySet()) {
+                    if (RiotHandler.getSummonerByAccountId(k, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getAccountId().equals(puuid)) {
+                        account_id = k;
                         index = i;
+                        break;
+                    }
+                    i++;
                 }
 
+                
                 if ((index + 1) == accounts.size())
                     index = 0;
                 else
                     index += 1;
 
-                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(index).getAsInt("league_shard")));
+                account_id = (String) accounts.keySet().toArray()[index];
+
+                System.out.println(index + " " + accounts.size());
+                s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
                 center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
@@ -334,9 +345,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
 
-                for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(i).getAsInt("league_shard"))).getAccountId().equals(puuid))
+                for (String k : accounts.keySet()) {
+                    if (RiotHandler.getSummonerByAccountId(k, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getAccountId().equals(puuid)) {
+                        account_id = k;
                         index = i;
+                        break;
+                    }
+                    i++;
                 }
 
                 if (index == 0)
@@ -344,7 +359,9 @@ public class EventButtonHandler extends ListenerAdapter {
                 else
                     index -= 1;
 
-                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(index).getAsInt("league_shard")));
+                account_id = (String) accounts.keySet().toArray()[index];
+
+                s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
                 center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
@@ -374,7 +391,10 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid);
-        QueryResult accounts = DatabaseHandler.getLolAccounts(user_id);
+        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
+        
+        int i = 0;
+        String account_id = "";
 
         RiotAccount account = null;
 
@@ -383,9 +403,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "right":
 
-                for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(i).getAsInt("league_shard"))).getAccountId().equals(puuid))
+                for (String k : accounts.keySet()) {
+                    if (RiotHandler.getSummonerByAccountId(k, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getAccountId().equals(puuid)) {
+                        account_id = k;
                         index = i;
+                        break;
+                    }
+                    i++;
                 }
 
                 if ((index + 1) == accounts.size())
@@ -393,8 +417,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 else
                     index += 1;
 
-
-                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(index).getAsInt("league_shard")));
+                account_id = (String) accounts.keySet().toArray()[index];
+                s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
                 center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
@@ -407,9 +431,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
 
-                for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(i).getAsInt("league_shard"))).getAccountId().equals(puuid))
+                for (String k : accounts.keySet()) {
+                    if (RiotHandler.getSummonerByAccountId(k, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getAccountId().equals(puuid)) {
+                        account_id = k;
                         index = i;
+                        break;
+                    }
+                    i++;
                 }
 
                 if (index == 0)
@@ -417,7 +445,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 else
                     index -= 1;
 
-                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(index).getAsInt("league_shard")));
+                account_id = (String) accounts.keySet().toArray()[index];
+                s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
                 center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
@@ -446,7 +475,10 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid);
-        QueryResult accounts = DatabaseHandler.getLolAccounts(user_id);
+        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
+        
+        int i = 0;
+        String account_id = "";
 
         List<SpectatorParticipant> users = null;
         List<RiotAccount> riotAccounts = new ArrayList<>();
@@ -460,9 +492,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "right":
 
-                for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(i).getAsInt("league_shard"))).getAccountId().equals(puuid))
+                for (String k : accounts.keySet()) {
+                    if (RiotHandler.getSummonerByAccountId(k, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getAccountId().equals(puuid)) {
+                        account_id = k;
                         index = i;
+                        break;
+                    }
+                    i++;
                 }
 
                 if ((index + 1) == accounts.size())
@@ -470,7 +506,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 else
                     index += 1;
 
-                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(index).getAsInt("league_shard")));
+                account_id = (String) accounts.keySet().toArray()[index];
+                s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
                 riotAccounts.add(account);
                 center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
@@ -520,9 +557,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
 
-                for (int i = 0; i < accounts.size(); i++) {
-                    if (RiotHandler.getSummonerBySummonerId(accounts.get(i).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(i).getAsInt("league_shard"))).getAccountId().equals(puuid))
+                for (String k : accounts.keySet()) {
+                    if (RiotHandler.getSummonerByAccountId(k, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getAccountId().equals(puuid)) {
+                        account_id = k;
                         index = i;
+                        break;
+                    }
+                    i++;
                 }
 
                 if (index == 0)
@@ -530,7 +571,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 else
                     index -= 1;
 
-                s = RiotHandler.getSummonerBySummonerId(accounts.get(index).get("summoner_id"), RiotHandler.getShardFromOrdinal(accounts.get(index).getAsInt("league_shard")));
+                account_id = (String) accounts.keySet().toArray()[index];
+                s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
                 center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 

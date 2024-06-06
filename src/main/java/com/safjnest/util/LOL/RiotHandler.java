@@ -23,10 +23,9 @@ import org.json.simple.parser.JSONParser;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
+import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
 import com.safjnest.util.LOL.Runes.PageRunes;
 import com.safjnest.util.LOL.Runes.Rune;
 import com.safjnest.util.log.BotLogger;
@@ -191,19 +190,39 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
     }
 
 
+    /**
+     * @deprecated
+     * @param discordId
+     * @return
+     */
     public static Summoner getSummonerFromDB(String discordId){
-        try {
-            ResultRow account = DatabaseHandler.getLOLAccountIdByUserId(discordId);
-            LeagueShard shard = LeagueShard.values()[Integer.valueOf(account.get("league_shard"))];
+        // try {
+        //     ResultRow account = DatabaseHandler.getLOLAccountIdByUserId(discordId);
+        //     LeagueShard shard = LeagueShard.values()[Integer.valueOf(account.get("league_shard"))];
 
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
+        //     return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
+        // } catch (Exception e) {return null;}
+        return getSummonerByUserData(Bot.getUserData(discordId));
+    }
+
+    public static Summoner getSummonerByUserData(UserData user){
+        try {
+            HashMap<String, String> accounts = user.getRiotAccounts();
+            if (accounts == null || accounts.size() == 0) return null;
+
+            String firstAccount = accounts.keySet().stream().findFirst().get();
+             LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(firstAccount))];
+
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, firstAccount);
         } catch (Exception e) {return null;}
     }
+
+    
 
 
     public static int getNumberOfProfile(String discordId){
         try { 
-            return Integer.valueOf(DatabaseHandler.getLolProfilesCount(discordId));
+            return Bot.getUserData(discordId).getRiotAccounts().size();
         } catch (Exception e) { return 0; }
     }
 
@@ -546,6 +565,10 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
             break;
         }
         return id;
+    }
+
+    public Summoner getSummonerFromString(String account_id, String shard) {
+        return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.values()[Integer.valueOf(shard)], account_id);
     }
 
 }

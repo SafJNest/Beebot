@@ -439,13 +439,9 @@ public class DatabaseHandler {
         return fetchJRow("SELECT name_tts, language_tts FROM guild WHERE guild_id = '" + guild_id + "';");
     }
 
-    public static ResultRow getLOLAccountIdByUserId(String user_id){
-        String query = "SELECT account_id, league_shard FROM summoner WHERE user_id = '" + user_id + "';";
-        return fetchJRow(query);
-    }
-
+    
     public static QueryResult getLOLAccountsByUserId(String user_id){
-        String query = "SELECT account_id FROM summoner WHERE user_id = '" + user_id + "';";
+        String query = "SELECT account_id, league_shard FROM summoner WHERE user_id = '" + user_id + "';";
         return safJQuery(query);
     }
 
@@ -463,11 +459,6 @@ public class DatabaseHandler {
     public static boolean deleteLOLaccount(String user_id, String account_id){
         String query = "DELETE FROM summoner WHERE account_id = '" + account_id + "' and user_id = '" + user_id + "';";
         return runQuery(query);
-    }
-
-    public static String getLolProfilesCount(String user_id){
-        String query = "SELECT count(user_id) as count FROM summoner WHERE user_id = '" + user_id + "';";
-        return fetchJRow(query).get("count");
     }
 
     public static QueryResult getGuildData(){
@@ -498,9 +489,7 @@ public class DatabaseHandler {
         return safJQuery("SELECT user_id, messages, level, experience as exp from user WHERE guild_id = '" + guild_id + "' order by experience DESC limit " + limit + ";");
     }
 
-    public static QueryResult getLolAccounts(String user_id) {
-        return safJQuery("SELECT summoner_id, account_id, league_shard FROM summoner WHERE user_id = '" + user_id + "';");
-    }
+
 
     public static boolean toggleLevelUp(String guild_id, boolean toggle) {
         return runQuery("INSERT INTO guild(guild_id, exp_enabled) VALUES ('" + guild_id + "', '" + (toggle ? "1" : "0") + "') ON DUPLICATE KEY UPDATE exp_enabled = '" + (toggle ? "1" : "0") + "';");

@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.LOL.AugmentData;
 import com.safjnest.util.LOL.RiotHandler;
@@ -287,18 +286,20 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 }
                 break;
             case "personal_summoner":
-                QueryResult accounts = DatabaseHandler.getLolAccounts(e.getUser().getId());
+                HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
                 R4J r4j = RiotHandler.getRiotApi();
-                if (accounts.isEmpty()) {
+                if (accounts == null || accounts.isEmpty()) {
                     return;
                 }
-
+                
                 HashMap<String, String> accountNames = new HashMap<>();
-                for (ResultRow account : accounts) {
-                    LeagueShard shard = LeagueShard.values()[account.getAsInt("league_shard")];
-                    Summoner summoner = RiotHandler.getSummonerByAccountId(account.get("account_id"), shard);
+                for (String k : accounts.keySet()) {
+                    String account_id = k;
+
+                    LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(account_id))];
+                    Summoner summoner = RiotHandler.getSummonerByAccountId(account_id, shard);
                     RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
-                    accountNames.put(account.get("account_id"), riotAccount.getName() + "#" + riotAccount.getTag());
+                    accountNames.put(account_id, riotAccount.getName() + "#" + riotAccount.getTag());
                 }
 
                 if (e.getFocusedOption().getValue().equals("")) {

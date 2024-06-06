@@ -9,6 +9,8 @@ import com.safjnest.sql.ResultRow;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+
 public class UserData {
     
     private final String USER_ID;
@@ -33,29 +35,6 @@ public class UserData {
 
     /* -------------------------------------------------------------------------- */
 
-    private void retriveAlies() {
-        this.aliases = new HashMap<>();
-        
-        QueryResult result = DatabaseHandler.getAliases(USER_ID);
-        if (result == null) { return; }
-
-        for(ResultRow row: result){
-            AliasData alias = new AliasData(row.getAsInt("ID"), row.get("name"), row.get("command"));
-            aliases.put(row.get("name"), alias);
-        }
-
-    }
-
-    private void retriveRiotAccounts() {
-        QueryResult result = DatabaseHandler.getLOLAccountsByUserId(USER_ID);
-        if (result == null) { return; }
-
-        this.riotAccounts = new HashMap<>();
-        for(ResultRow row: result){
-            riotAccounts.put(row.get("account"), row.get("account"));
-        }
-    }
-
     public String getName() {
         return Bot.getJDA().getUserById(USER_ID).getName();
     }
@@ -70,6 +49,19 @@ public class UserData {
     /* -------------------------------------------------------------------------- */
     /*                                    AliasData                               */
     /* -------------------------------------------------------------------------- */
+
+    private void retriveAlies() {
+        this.aliases = new HashMap<>();
+        
+        QueryResult result = DatabaseHandler.getAliases(USER_ID);
+        if (result == null) { return; }
+
+        for(ResultRow row: result){
+            AliasData alias = new AliasData(row.getAsInt("ID"), row.get("name"), row.get("command"));
+            aliases.put(row.get("name"), alias);
+        }
+
+    }
 
     public boolean addAlias(String name, String command) {
         int id = DatabaseHandler.createAlias(USER_ID, name, command);
@@ -136,6 +128,39 @@ public class UserData {
             guildGreetIds.remove(guildId);
         }
         return DatabaseHandler.deleteGreet(this.USER_ID, guildId);
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                                    LOL                                     */
+    /* -------------------------------------------------------------------------- */
+
+    private void retriveRiotAccounts() {
+        QueryResult result = DatabaseHandler.getLOLAccountsByUserId(USER_ID);
+        if (result == null) { return; }
+
+        this.riotAccounts = new HashMap<>();
+        for(ResultRow row: result){
+            riotAccounts.put(row.get("account_id"), row.get("league_shard"));
+        }
+    }
+
+
+    public HashMap<String, String> getRiotAccounts() {
+        return riotAccounts;
+    }
+
+    public boolean addRiotAccount(Summoner s) {
+        boolean result = DatabaseHandler.addLOLAccount(USER_ID, s.getSummonerId(), s.getAccountId(), s.getPlatform());
+        if (result) riotAccounts.put(s.getAccountId(), String.valueOf(s.getPlatform().ordinal()));
+        
+        return result;
+    }
+
+    public boolean deleteRiotAccount(String account_id) {
+        boolean result = DatabaseHandler.deleteLOLaccount(USER_ID, account_id);
+        if (result) riotAccounts.remove(account_id);
+        
+        return result;
     }
 
 }
