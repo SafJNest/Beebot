@@ -30,7 +30,8 @@ public class MoveChannelSlash extends SlashCommand{
                 .setChannelTypes(ChannelType.VOICE),
             new OptionData(OptionType.CHANNEL, "destroom", "Destination Room", false)
                 .setChannelTypes(ChannelType.VOICE),
-            new OptionData(OptionType.USER, "destuser", "Destination user", false));
+            new OptionData(OptionType.USER, "destuser", "Destination user", false),
+            new OptionData(OptionType.BOOLEAN, "swap", "Swap the users in the rooms you are moving", false));
     }
 
     @Override
@@ -54,11 +55,29 @@ public class MoveChannelSlash extends SlashCommand{
             }
             channel = destGuy.getVoiceState().getChannel().asVoiceChannel();
         }
+
+        boolean swap = event.getOption("swap") != null && event.getOption("swap").getAsBoolean();
+        
+        VoiceChannel oldChannel = null;
+        List<Member> destGuys = null;
+        if (swap) {
+            oldChannel = event.getMember().getVoiceState().getChannel().asVoiceChannel();
+            destGuys = channel.getMembers();
+        }
+        
         
         theGuys = event.getGuild().getVoiceChannelById(event.getOption("room").getAsChannel().getId()).getMembers();
         for(Member member : theGuys){
             event.getGuild().moveVoiceMember(member, channel).queue();
         }
+
+        if (swap) {
+            for(Member member : destGuys){
+                event.getGuild().moveVoiceMember(member, oldChannel).queue();
+            }
+        }
+
+        
         event.deferReply(false).addContent("Moved  "+theGuys.size() +" users in:        "+ channel.getName() + ".").queue();
 
     }
