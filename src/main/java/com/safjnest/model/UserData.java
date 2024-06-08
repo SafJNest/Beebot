@@ -9,6 +9,7 @@ import com.safjnest.sql.ResultRow;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
+import net.dv8tion.jda.api.entities.User;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 public class UserData {
@@ -36,13 +37,18 @@ public class UserData {
     /* -------------------------------------------------------------------------- */
 
     public String getName() {
-        return Bot.getJDA().getUserById(USER_ID).getName();
+        User possibleUser = Bot.getJDA().getUserById(USER_ID) != null ? Bot.getJDA().getUserById(USER_ID) : Bot.getJDA().retrieveUserById(USER_ID).complete();
+        return possibleUser != null ? possibleUser.getName() : "Unknown";
     }
 
     @Override
     public String toString() {
         return "UserData {USER_ID=" + USER_ID + ", aliases=" + aliases.toString() + ", riotAccounts=" + riotAccounts.toString()
                 + ", globalGreetId=" + globalGreetId + ", guildGreetIds=" + guildGreetIds.toString() + "}";
+    }
+
+    public String getId() {
+        return USER_ID;
     }
 
 
@@ -129,6 +135,11 @@ public class UserData {
         }
         return DatabaseHandler.deleteGreet(this.USER_ID, guildId);
     }
+
+    public HashMap<String, String> getGreets() {
+        return guildGreetIds != null ? guildGreetIds : new HashMap<>();
+    }
+
 
     /* -------------------------------------------------------------------------- */
     /*                                    LOL                                     */
