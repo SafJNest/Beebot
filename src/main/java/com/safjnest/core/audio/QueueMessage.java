@@ -40,7 +40,7 @@ public class QueueMessage {
     }
 
     public void delete() {
-        if (hook != null && hook.isExpired()) {
+        if (hook != null && !hook.isExpired()) {
             hook.deleteOriginal().queue(
                 null,
                 error -> BotLogger.error("Error deleting message: " + error.getMessage())

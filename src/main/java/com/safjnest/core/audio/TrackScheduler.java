@@ -166,6 +166,8 @@ public class TrackScheduler extends AudioEventAdapter {
 
 
     public void pause(boolean pause) {
+        if (player.getPlayingTrack() == null) return;
+
         TrackData data = player.getPlayingTrack().getUserData(TrackData.class);
         
         player.setPaused(pause);
@@ -231,8 +233,10 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void deleteMessage() {
-        if (lastMessageSent != null)
+        if (lastMessageSent != null) {
             lastMessageSent.delete();
+            lastMessageSent = null;
+        }
     }
 
 
