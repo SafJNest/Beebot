@@ -3,6 +3,7 @@ package com.safjnest.commands.League;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
@@ -34,6 +35,7 @@ public class Summoner extends Command {
         Button left = Button.primary("lol-left", "<-");
         Button right = Button.primary("lol-right", "->");
         Button center = Button.primary("lol-center", "f");
+        Button refresh = Button.primary("lol-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 
         String args = event.getArgs();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
@@ -50,15 +52,17 @@ public class Summoner extends Command {
         }
 
         EmbedBuilder builder = createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s);        
+        
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+        center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+        center = center.asDisabled();
+        
         if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
-            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
-            center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
-            center = center.asDisabled();
-            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right, refresh).queue();
             return;
         }
+        event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(center, refresh).queue();
 
-        event.reply(builder.build());
 	}
 
     public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){

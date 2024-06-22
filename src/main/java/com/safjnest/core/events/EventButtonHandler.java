@@ -3,7 +3,9 @@ package com.safjnest.core.events;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
@@ -53,6 +55,8 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import net.dv8tion.jda.api.utils.FileUpload;
+import no.stelar7.api.r4j.basic.calling.DataCall;
+import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
@@ -425,6 +429,7 @@ public class EventButtonHandler extends ListenerAdapter {
         Button left = Button.primary("lol-left", "<-");
         Button right = Button.primary("lol-right", "->");
         Button center = null;
+        Button refresh = Button.primary("lol-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 
         String puuid = "";
 
@@ -435,6 +440,7 @@ public class EventButtonHandler extends ListenerAdapter {
         for (Button b : event.getMessage().getButtons()) {
             if (!b.getLabel().equals("->") && !b.getLabel().equals("<-")) {
                 puuid = b.getId().split("-", 3)[2].substring(0, b.getId().split("-", 3)[2].indexOf("#"));
+                break;
             }
         }
 
@@ -472,7 +478,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 
                 event.getMessage()
                         .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build())
-                        .setActionRow(left, center, right)
+                        .setActionRow(left, center, right, refresh)
                         .queue();
                 break;
 
@@ -501,8 +507,58 @@ public class EventButtonHandler extends ListenerAdapter {
                 
                 event.getMessage()
                         .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build())
-                        .setActionRow(left, center, right)
+                        .setActionRow(left, center, right, refresh)
                         .queue();
+                break;
+            case "refresh":
+                //center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+                //get accountId and platform
+                String accountId = "";
+                String platform = "";
+                for (Button b : event.getMessage().getButtons()) {
+                    if (!b.getLabel().equals("->") && !b.getLabel().equals("<-")) {
+                        String[] parts = b.getId().split("-", 3);
+                        System.out.println(parts[2]);
+                        accountId = parts[2].substring(0, parts[2].indexOf("#"));
+                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
+                        break;
+                    }
+                }
+
+                s = RiotHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+
+                Map<String, Object> data = new LinkedHashMap<>();
+                data.put("platform", s.getPlatform());
+                data.put("accountid", accountId);                
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ACCOUNT, data);
+
+                data.remove("accountid");
+                data.put("id", s.getSummonerId());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ID, data);
+
+                data.remove("id");
+                data.put("puuid", s.getPUUID());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_PUUID, data);
+
+                data.put("platform", s.getPlatform().toRegionShard());
+                data.put("puuid", s.getPUUID());
+                DataCall.getCacheProvider().clear(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, data);
+
+
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+                center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+                center = center.asDisabled();
+                if (user_id.isEmpty() || event.getMessage().getButtonById("lol-left") == null) {
+                    event.getMessage()
+                            .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build())
+                            .setActionRow(center, refresh)
+                            .queue();
+                } else {
+                    event.getMessage()
+                            .editMessageEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build())
+                            .setActionRow(left, center, right, refresh)
+                            .queue();
+                }
                 break;
         }
     }
