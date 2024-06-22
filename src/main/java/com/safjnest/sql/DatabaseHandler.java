@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.HashMap;
 
+import com.safjnest.model.Sound.Tag;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.util.log.BotLogger;
 
@@ -253,7 +254,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getUserRandomSound(String user_id){
-        return safJQuery("SELECT name, id FROM sound WHERE user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
+        return safJQuery("SELECT name, id, guild_id FROM sound WHERE user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
     public static QueryResult getlistUserSounds(String user_id) {
@@ -277,7 +278,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getFocusedUserSound(String user_id, String like){
-        return safJQuery("SELECT name, id FROM sound WHERE name LIKE '" + like + "%' OR id LIKE '" + like + "%' AND user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
+        return safJQuery("SELECT name, id, guild_id FROM sound WHERE (name LIKE '" + like + "%' OR id LIKE '" + like + "%') AND user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
     public static QueryResult getFocusedListUserSounds(String user_id, String guild_id, String like) {
@@ -297,6 +298,10 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
 
+    public static ResultRow getSoundById(String id) {
+        return fetchJRow("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "'");
+    } 
+
     public static QueryResult getSoundsByName(String name, String guild_id, String author_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
@@ -306,11 +311,11 @@ public class DatabaseHandler {
     }
 
     public static ResultRow getAuthorSoundById(String id, String user_id) {
-        return fetchJRow("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id = '" + id + "' AND user_id = '" + user_id + "'");
+        return fetchJRow("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "' AND user_id = '" + user_id + "'");
     }
 
     public static ResultRow getAuthorSoundByName(String name, String user_id) {
-        return fetchJRow("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE name = '" + name + "' AND user_id = '" + user_id + "'");
+        return fetchJRow("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE name = '" + name + "' AND user_id = '" + user_id + "'");
     }
 
     public static String insertSound(String name, String guild_id, String user_id, String extension, boolean isPublic) {
@@ -332,6 +337,14 @@ public class DatabaseHandler {
 
     public static boolean updateSound(String id, String name, boolean isPublic) {
         return runQuery("UPDATE sound SET name = '" + name + "', public = '" + (isPublic ? "1" : "0") + "' WHERE id = '" + id + "';");
+    }
+
+    public static boolean updateSound(String id, String name) {
+        return runQuery("UPDATE sound SET name = '" + name + "' WHERE id = '" + id + "';");
+    }
+
+    public static boolean updateSound(String id, boolean isPublic) {
+        return runQuery("UPDATE sound SET public = '" + (isPublic ? "1" : "0") + "' WHERE id = '" + id + "';");
     }
 
     public static boolean deleteSound(String id) {
@@ -386,6 +399,14 @@ public class DatabaseHandler {
 
     public static QueryResult getFocusedSoundFromSounboard(String id, String like){
         return safJQuery("SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '" + like + "%' AND ss.id = '" + id);
+    }
+
+    public static QueryResult extremeSoundResearch(String query) {
+        return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE MATCH(s.name) AGAINST ('" + query + "') OR t.name = '" + query + "' LIMIT 30;");
+    }
+
+    public static QueryResult extremeSoundResearch(String query, String user_id) {
+        return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.user_id = " + user_id + " AND (MATCH(s.name) AGAINST ('" + query + "') OR t.name = '" + query + "') LIMIT 30;");
     }
 
 
@@ -809,6 +830,52 @@ public class DatabaseHandler {
         return safJQuery("SELECT guild_id, channel_id, role_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "';");
     }
 
+    public static QueryResult getSoundTags(String sound_id) {
+        return safJQuery("SELECT ts.tag_id as id,t.name as name FROM tag_sounds ts JOIN tag t ON ts.tag_id = t.id WHERE ts.sound_id = '" + sound_id + "';");
+    }
+
+    public static ResultRow getTag(String tag_id) {
+        return fetchJRow("SELECT name FROM tag WHERE id = '" + tag_id + "';");
+    }
+
+    public static boolean setSoundTags(String sound_id, Tag[] tags) {
+        String values = "";
+        for(Tag tag : tags) {
+            if (tag.getId() != 0) values += "('" + sound_id + "', '" + tag.getId() + "'), ";
+        }
+        if (!values.isEmpty()) {
+            values = values.substring(0, values.length() - 2);
+        }
+        runQuery("DELETE FROM tag_sounds WHERE sound_id = '" + sound_id + "';");
+        return runQuery("INSERT INTO tag_sounds(sound_id, tag_id) VALUES " + values + ";");
+    }
+
+    public static int insertTag(String tag) {
+        int id = 0;
+        try (Statement stmt = c.createStatement()) {
+            PreparedStatement ps = c.prepareStatement("SELECT * FROM tag WHERE name = ?;");
+            ps.setString(1, tag);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                id = rs.getInt("id");
+            } else{
+                ps = c.prepareStatement("INSERT INTO tag(name) VALUES(?);");
+                ps.setString(1, tag);
+                ps.executeUpdate();
+                id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+                c.commit();
+            }
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+        }
+        return id;
+    }
+
 
 
 
@@ -838,4 +905,5 @@ public class DatabaseHandler {
     public static Connection getConnection(){
         return c;
     }
+
 }

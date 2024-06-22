@@ -72,7 +72,9 @@ public class EventHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onModalInteraction(ModalInteractionEvent event) { }
+    public void onModalInteraction(ModalInteractionEvent event) {
+        Functions.handleModals(event);
+    }
 
     @Override
     public void onGuildMemberJoin(GuildMemberJoinEvent event) {

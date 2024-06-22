@@ -1,14 +1,17 @@
 package com.safjnest.commands.Owner;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ThreadLocalRandom;
 
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.IEventSubConduit;
@@ -16,6 +19,8 @@ import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.UserData;
@@ -49,9 +54,15 @@ import org.json.simple.JSONObject;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import java.sql.Timestamp;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -376,6 +387,74 @@ public class Test extends Command{
                 Bot.getUsers().clear();
                 e.reply("Cache cleared");
                 break;
+            case "spotify":
+                String csvFile = "rsc/testing/spotify.csv";
+                CSVReader reader = null;
+                try {
+                    reader = new CSVReader(new FileReader(csvFile));
+                    String[] line;
+                    int cont = 0;
+                    java.sql.Connection c = DatabaseHandler.getConnection();
+                    while ((line = reader.readNext()) != null) {
+                        String nome_song = line[2];
+                        Timestamp time = getRandomTimestamp();
+                        String user_id = new String[] {"440489230968553472", "383358222972616705"}[(int) (Math.random() * 1)];
+                        try (PreparedStatement pstmt = c.prepareStatement("INSERT INTO sound(name, guild_id, user_id, extension, public, time) VALUES (?, ?, ?, ?, ?, ?)")) {
+                            pstmt.setString(1, nome_song);
+                            pstmt.setString(2, "474935164451946506");
+                            pstmt.setString(3, user_id);
+                            pstmt.setString(4, "mp3");
+                            pstmt.setInt(5, 1);
+                            pstmt.setTimestamp(6, time);
+                            pstmt.executeUpdate();
+                            c.commit();
+                        } catch (SQLException ex) {
+                            System.out.println("Error: " + nome_song + " " + time + " " + user_id);
+                            try {
+                                if(c != null) c.rollback();
+                            } catch(SQLException eee) {
+                                System.out.println(eee.getMessage());
+                            }
+                            System.out.println(ex.getMessage());
+                        }
+                        cont++;
+                        System.out.println(cont);
+                    }
+
+                } catch (IOException | CsvValidationException ee) {
+                    ee.printStackTrace();
+                } finally {
+                    if (reader != null) {
+                        try {
+                            reader.close();
+                        } catch (IOException ee) {
+                            ee.printStackTrace();
+                        }
+                    }
+                }
+                break;
+            case "dizionario":
+                try (BufferedReader br = new BufferedReader(new FileReader("rsc/testing/dictionary_ita.txt"))) {
+                    String word;
+                    while ((word = br.readLine()) != null) {
+                        String query1 = "INSERT INTO tag(name) VALUES ('" + word + "');";
+                        DatabaseHandler.runQuery(query1);
+                    }
+                } catch (IOException ee) {}
+                
+                
+                break;
+            case "tagsounds":
+                int max_sound = 32767;
+                int max_tag = 98111;
+                for (int i = 1; i <= max_sound; i++) {
+                    for (int j = 0; j < 5; j++) {
+                        int tag_id = (int) (Math.random() * max_tag) + 1;
+                        String query1 = "INSERT INTO tag_sounds(sound_id, tag_id) VALUES (" + i + ", " + tag_id + ");";
+                        DatabaseHandler.runQuery(query1);
+                    }
+                    System.out.println(i);
+                }
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;
@@ -428,6 +507,17 @@ public class Test extends Command{
         }
 
         return dataset;
+    }
+
+    private static Timestamp getRandomTimestamp() {
+        long startOf2022 = LocalDateTime.of(2022, 1, 1, 0, 0)
+                .atZone(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli();
+        long now = Instant.now().toEpochMilli();
+    
+        long randomTime = ThreadLocalRandom.current().nextLong(startOf2022, now);
+        return new Timestamp(randomTime);
     }
 
 }

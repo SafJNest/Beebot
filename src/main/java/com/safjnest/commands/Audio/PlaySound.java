@@ -1,22 +1,16 @@
 package com.safjnest.commands.Audio;
 
 import java.io.File;
-import java.io.IOException;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.SoundBoard;
 import com.safjnest.core.audio.types.AudioType;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.model.Sound;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.SafJNest;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -32,7 +26,6 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
  * @since 1.0
  */
 public class PlaySound extends Command{
-    private final String path = "rsc" + File.separator + "SoundBoard"+ File.separator;
     private PlayerManager pm;
 
     public PlaySound() {
@@ -67,49 +60,34 @@ public class PlaySound extends Command{
             return;
         }
         
-        QueryResult sounds = fileName.matches("[0123456789]*") 
-                           ? DatabaseHandler.getSoundsById(fileName, guild.getId(), event.getAuthor().getId()) 
-                           : DatabaseHandler.getSoundsByName(fileName, guild.getId(), event.getAuthor().getId());
+        Sound sound = SoundBoard.getSoundByString(fileName, guild, event.getAuthor());
 
-        if(sounds.isEmpty()) {
+        if(sound == null) {
             event.reply("Couldn't find a sound with that name/id.");
             return;
         }
-
-        ResultRow toPlay = null;
-        for(ResultRow sound : sounds) {
-            if(sound.get("guild_id").equals(guild.getId())) {
-                toPlay = sound;
-                break;
-            }
-        }
-        
-        if(toPlay == null)
-            toPlay = sounds.get((int)(Math.random() * sounds.size()));
 
         File soundBoard = new File("rsc" + File.separator + "SoundBoard");
 
         if(!soundBoard.exists())
             soundBoard.mkdirs();
 
-        fileName = path + toPlay.get("id") + "." + toPlay.get("extension");
+        fileName = sound.getPath();
 
-        pm.loadItemOrdered(guild, fileName, new ResultHandler(event, toPlay, fileName));
+        pm.loadItemOrdered(guild, fileName, new ResultHandler(event, sound, fileName));
     }
 
     private class ResultHandler implements AudioLoadResultHandler {
         private final CommandEvent event;
         private final Guild guild;
         private final Member author;
-        private final ResultRow toPlay;
-        private final String fileName;
+        private final Sound sound;
         
-        private ResultHandler(CommandEvent event, ResultRow toPlay, String fileName) {
+        private ResultHandler(CommandEvent event, Sound sound, String fileName) {
             this.event = event;
             this.guild = event.getGuild();
             this.author = event.getMember();
-            this.toPlay = toPlay;
-            this.fileName = fileName;
+            this.sound = sound;
         }
         
         @Override
@@ -118,47 +96,11 @@ public class PlaySound extends Command{
 
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
 
-            DatabaseHandler.updateUserPlays(toPlay.get("id"), event.getAuthor().getId());
-            ResultRow plays = DatabaseHandler.getPlays(toPlay.get("id"), event.getAuthor().getId());
+            sound.increaseUserPlays(author.getId());
 
-            EmbedBuilder eb = new EmbedBuilder();
-            eb.setAuthor(event.getAuthor().getName(), "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
-            eb.setTitle("Playing now:");
-            eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") " + ((toPlay.getAsBoolean("public")) ? ":public:" : ":private:") + "```");
-            eb.setColor(Bot.getColor());
-            eb.setThumbnail(event.getSelfUser().getAvatarUrl());
+            sound.setTrack(track);
 
-            eb.addField("Author", "```" 
-                + event.getJDA().getUserById(toPlay.get("user_id")).getName() 
-            + "```", true);
-
-            try {
-                eb.addField("Lenght", "```"
-                    + (toPlay.get("extension").equals("opus") 
-                    ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(fileName)))*1000)
-                    : SafJNest.getFormattedDuration(track.getInfo().length))
-                + "```", true);
-            } catch (IOException e) {e.printStackTrace();}
-
-            eb.addField("Format", "```" 
-                + toPlay.get("extension").toUpperCase() 
-            + "```", true);
-
-            eb.addField("Guild", "```" 
-                + event.getJDA().getGuildById(toPlay.get("guild_id")).getName() 
-            + "```", true);
-
-            eb.addField("Played", "```" 
-                + plays.get("totalTimes") 
-                + (plays.get("totalTimes").equals("1") ? " time" : " times") 
-                + " (yours: "+plays.get("timesByUser") + ")"
-            + "```", true);
-
-            eb.addField("Creation time", 
-                "<t:" + toPlay.getAsEpochSecond("time") + ":f>"  + " | <t:" + toPlay.getAsEpochSecond("time") + ":R>",
-            false);
-
-            event.reply(eb.build());
+            event.reply(SoundBoard.getSoundEmbed(sound, author.getUser()).build());
         }
 
         @Override

@@ -54,7 +54,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 || e.getFullCommandName().equals("soundboard delete"))
             name = "soundboard_select";
 
-        else if (e.getFullCommandName().equals("customizesound"))
+        else if (e.getFocusedOption().getName().equals("user_sound"))
             name = "user_sound";
 
         else if (e.getFullCommandName().equals("bugsnotifier"))
@@ -78,7 +78,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else if (e.getFocusedOption().getName().equals("champion"))
             name = "champion";
         
-
         switch (name) {
             case "play":
                 if (e.getFocusedOption().getValue().equals("")) {
@@ -93,12 +92,17 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 break;
             case "user_sound":
                 if (e.getFocusedOption().getValue().equals("")) {
-                    for (ResultRow sound : DatabaseHandler.getUserRandomSound(e.getGuild().getId()))
-                        choices.add(new Choice(sound.get("name"), sound.get("id")));
+                    for (ResultRow sound : DatabaseHandler.getUserRandomSound(e.getUser().getId())) {
+                        String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
+                        String label = sound.get("id") + ": " + sound.get("name") + " (" + server_name + ")";
+                        choices.add(new Choice(label, sound.get("id")));
+                    }
                 } else {
-                    for (ResultRow sound : DatabaseHandler.getFocusedUserSound(e.getGuild().getId(),
-                            e.getFocusedOption().getValue()))
-                        choices.add(new Choice(sound.get("name"), sound.get("id")));
+                    for (ResultRow sound : DatabaseHandler.getFocusedUserSound(e.getUser().getId(), e.getFocusedOption().getValue())) {
+                            String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
+                            String label = sound.get("id") + ": " + sound.get("name") + " (" + server_name + ")";
+                            choices.add(new Choice(label, sound.get("id")));
+                        }
                 }
 
                 break;

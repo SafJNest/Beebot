@@ -1,5 +1,6 @@
 package com.safjnest.sql;
 
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -75,6 +76,16 @@ public class ResultRow {
             return dateTime.toEpochSecond(java.time.ZoneOffset.UTC);
         } catch (Exception e) {
             return 0;
+        }
+    }
+
+    public Timestamp getAsTimestamp(String columnName){
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime dateTime = LocalDateTime.parse(row.get(columnName), formatter);
+            return Timestamp.valueOf(dateTime);
+        } catch (Exception e) {
+            return null;
         }
     }
 

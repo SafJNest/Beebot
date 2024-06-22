@@ -6,17 +6,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+
+
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.commands.Audio.slash.CustomizeSoundSlash;
 import com.safjnest.commands.League.Livegame;
 import com.safjnest.commands.League.Opgg;
 import com.safjnest.commands.League.Summoner;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
+import com.safjnest.core.audio.SoundBoard;
 import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.EmbedType;
+import com.safjnest.model.Sound;
+import com.safjnest.model.Sound.Tag;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.RewardData;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -41,8 +47,12 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
+import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
@@ -53,6 +63,17 @@ public class EventButtonHandler extends ListenerAdapter {
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
         String buttonId = event.getButton().getId();
+
+        if (buttonId.startsWith("sound-")) {
+            sound(event);
+            return;
+        }
+        
+        else if (buttonId.startsWith("tag")) {
+            tag(event);
+            return;
+        }
+        
 
         event.deferEdit().queue();
 
@@ -94,6 +115,119 @@ public class EventButtonHandler extends ListenerAdapter {
         
         else if (buttonId.startsWith("player-"))
             player(event);
+        
+    }
+
+    public void tag(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-", 4)[1];
+        String soundId = event.getButton().getId().split("-", 4)[2];
+        String tagId = event.getButton().getId().split("-", 4)[3];
+
+        boolean tagSwitch = true;
+        switch (args) {
+            case "back":
+                tagSwitch = false;
+                break;
+            case "name":
+                TextInput subject = TextInput.create("tag-name", "Tag Name", TextInputStyle.SHORT)
+                .setPlaceholder("Change Tag")
+                .setMaxLength(20)
+                .build();
+
+                Modal modal = Modal.create("tag-" + soundId + "-" + tagId, "Customize Your Sound")
+                        .addComponents(ActionRow.of(subject))
+                        .build();
+
+                event.replyModal(modal).queue();
+                
+                event.getMessage().delete().queue();
+                return;
+            case "delete":
+                Sound s = SoundBoard.getSoundById(soundId);
+                Tag[] tags = s.getTags();
+                for (int i = 0; i < tags.length; i++) {
+                    if (tags[i].getId() == Integer.parseInt(tagId)) {
+                        tags[i] = new Sound().new Tag();
+                        break;
+                    }
+                }
+                s.setTags(tags);
+                tagSwitch = false;
+                break;
+            default:
+                break;
+        }
+
+        List<LayoutComponent> buttons = tagSwitch ? SoundBoard.getTagButton(soundId, args) : SoundBoard.getSoundButton(soundId);
+        event.deferEdit().queue();
+        event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundId).build())
+                        .setComponents(buttons)
+                        .queue();
+
+    }
+
+    public void sound(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-", 3)[1];
+        String soundId = "";
+        for (Button b : event.getMessage().getButtons()) {
+            if (b.getLabel().startsWith("ID"))
+                soundId = b.getLabel().substring(b.getLabel().indexOf(":") + 2);
+        }
+
+        Button clicked = event.getButton();
+        
+        Sound soundData = SoundBoard.getSoundById(soundId);
+        int tagId = 0;
+
+        if (!soundData.getUserId().equals(event.getUser().getId())) {
+            event.deferReply(true).addContent("You can only modify your own sounds").queue();
+            return;
+        }
+
+        boolean tagSwitch = false;
+
+        switch (args) {
+            case "name":
+                TextInput subject = TextInput.create("sound-name", "Sound Name ( " + soundData.getName() + " )", TextInputStyle.SHORT)
+                    .setPlaceholder("New Sound Name")
+                    .setMaxLength(100)
+                    .build();
+
+                Modal modal = Modal.create("sound-" + soundId, "Customize Your Sound")
+                        .addComponents(ActionRow.of(subject))
+                        .build();
+
+                event.replyModal(modal).queue();
+                
+                event.getMessage().delete().queue();
+                return;
+            case "private":
+                boolean isPrivate = !soundData.isPublic();
+                DatabaseHandler.updateSound(soundData.getId(), soundData.getName(), isPrivate);
+                break;
+            case "delete":
+                DatabaseHandler.deleteSound(soundData.getId());
+                
+                event.getMessage().delete().queue();
+                event.deferReply(true).addContent("Sound Deleted").queue();
+                break;
+            case "tag":
+                if (clicked.getStyle() == ButtonStyle.PRIMARY) tagId = Integer.parseInt(clicked.getId().split("-")[2]);
+                tagSwitch = true;
+                break;
+            case "download":
+                File file = new File(soundData.getPath());
+                event.getChannel().sendFiles(FileUpload.fromData(file)).queue();
+                break;
+        }
+
+        List<LayoutComponent> buttons = tagSwitch ? SoundBoard.getTagButton(soundId, String.valueOf(tagId)) : SoundBoard.getSoundButton(soundId); 
+
+        event.deferEdit().queue();
+        event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundId).build())
+                        .setComponents(buttons)
+                        .queue();
+
     }
 
 
@@ -331,7 +465,6 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 account_id = (String) accounts.keySet().toArray()[index];
 
-                System.out.println(index + " " + accounts.size());
                 s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
                 center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());

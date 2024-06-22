@@ -41,6 +41,7 @@ import com.safjnest.commands.Audio.slash.Greet.GreetSlash;
 import com.safjnest.commands.Audio.slash.List.ListSlash;
 import com.safjnest.commands.Audio.slash.Play.PlaySlash;
 import com.safjnest.commands.Audio.slash.Soundboard.SoundboardSlash;
+import com.safjnest.commands.Audio.slash.search.SearchSlash;
 import com.safjnest.commands.League.*;
 import com.safjnest.commands.League.slash.*;
 import com.safjnest.commands.ManageGuild.*;
@@ -236,7 +237,7 @@ public class Bot extends ListenerAdapter {
         Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), 
             new ListSlash(), new PlaySlash(), new UploadSlash(), new TTSSlash(), new StopSlash(), 
             new SetVoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash(),
-            new PlayerSlash(), new QueueSlash(), new SkipSlash(), new PreviousSlash(), new JumpToSlash(), new SearchYoutubeSlash()
+            new PlayerSlash(), new QueueSlash(), new SkipSlash(), new PreviousSlash(), new JumpToSlash(), new SearchSlash()
         );
 
 

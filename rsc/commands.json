@@ -261,6 +261,28 @@
         "arguments" : "[CommandName]"
     },
 
+    "search": {
+        "alias" : ["search"],
+        "help"  : "Search youtube for videos.",
+        "longhelp"  : "Search youtube for videos.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "youtube": {
+                "alias" : [],
+                "help"  : "Search youtube for videos.",
+                "longhelp"  : "Search youtube for videos.",
+                "arguments" : "[CommandName]"
+            }, 
+            "sound": {
+                "alias" : [],
+                "help"  : "Search a sound from the soundboard.",
+                "longhelp"  : "Search a sound from the soundboard.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
 
 
 

@@ -1,10 +1,15 @@
 package com.safjnest.commands.Audio.slash;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.model.Sound;
+import com.safjnest.model.Sound.Tag;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
@@ -33,7 +38,12 @@ public class UploadSlash extends SlashCommand{
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "name", "Sound name", true),
             new OptionData(OptionType.ATTACHMENT, "file", "Sound file (mp3 or opus)", true),
-            new OptionData(OptionType.BOOLEAN, "public", "true or false", false)
+            new OptionData(OptionType.BOOLEAN, "public", "true or false", false),
+            new OptionData(OptionType.STRING, "tag-1", "Tag", false),
+            new OptionData(OptionType.STRING, "tag-2", "Tag", false),
+            new OptionData(OptionType.STRING, "tag-3", "Tag", false),
+            new OptionData(OptionType.STRING, "tag-4", "Tag", false),
+            new OptionData(OptionType.STRING, "tag-5", "Tag", false)
         );
     }
     
@@ -76,6 +86,18 @@ public class UploadSlash extends SlashCommand{
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
+
+        List<Tag> tags = new ArrayList<>();
+        for(int i = 1; i <= 5; i++){
+            if(event.getOption("tag-" + i) != null){
+                String tagName = event.getOption("tag-" + i) != null ? event.getOption("tag-" + i).getAsString() : "";
+                if(tagName.length() > 0){
+                    int tagId = DatabaseHandler.insertTag(tagName);
+                    tags.add(new Sound().new Tag(tagId, tagName));
+                }
+            }
+        }
+        if (tags.size() > 0) SoundBoard.getSoundById(id).setTags(tags.toArray(new Tag[tags.size()]));
 
         File saveFile = new File("rsc" + File.separator + "SoundBoard" + File.separator + (id + "." + attachment.getFileExtension()));
 
