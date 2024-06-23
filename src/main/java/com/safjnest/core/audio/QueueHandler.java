@@ -137,9 +137,11 @@ public class QueueHandler {
     private static String getThumbnail(AudioTrack track) {
         String thumbnailURL = track.getUserData(TrackData.class).getThumbnailUrl();
 
-        if(thumbnailURL != null) {
-            return thumbnailURL;
-        }
+        if(thumbnailURL != null) return thumbnailURL;
+        
+
+        thumbnailURL = track.getInfo().artworkUrl;
+        if (thumbnailURL != null && !thumbnailURL.isEmpty()) return thumbnailURL;
 
         switch (track.getSourceManager().getSourceName()) {
             case "youtube":
