@@ -32,4 +32,6 @@ rsc/tts/*
 .idea/
 l4j8cache/
 
+config.properties
+
 /TODO
