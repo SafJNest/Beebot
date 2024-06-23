@@ -119,7 +119,7 @@ public class Bot extends ListenerAdapter {
         JSONParser parser = new JSONParser();
         JSONObject settings = null, discordSettings = null, settingsSettings = null;
 
-        String name = App.isExtremeTesting() ? "beebot 117" : "beebot";
+        String name = App.isExtremeTesting() ? App.getProperty("bot") : "beebot";
         try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
             settings = (JSONObject) parser.parse(reader);
             discordSettings = (JSONObject) settings.get(name);

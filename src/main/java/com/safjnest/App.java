@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.Properties;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -29,15 +30,17 @@ public class App {
     private static R4J riotApi;
     public static String key;
 
+    private static Properties properties;
+
     private static Bot extreme_safj_beebot;
 
     /**
      * Insane beebot core
      */
-    private static boolean extremeTesting = false;
+    private static boolean EXTREME_TESTING;
 
     public static boolean isExtremeTesting() {
-        return extremeTesting;
+        return EXTREME_TESTING;
     }
 
     public static TTSHandler getTTS() {
@@ -54,18 +57,12 @@ public class App {
         SafJNest.bee();
         new BotLogger("Beebot", null);
 
-        if(args.length > 0) {
-            if(args[0].equalsIgnoreCase("true")) {
-                extremeTesting = true;
-                BotLogger.info("Beebot Canary is turning to outplay jelly");
-            }
-            else if(args[0].equalsIgnoreCase("false")) {
-                extremeTesting = false;
-                BotLogger.info("Beebot is set to normal mode");
-            }
-        }
 
-        if (!extremeTesting) {
+        EXTREME_TESTING = getPropertyAsBoolean("testing");
+        if (EXTREME_TESTING) BotLogger.info("Beebot is in testing mode");
+        else BotLogger.info("Beebot is in normal mode");
+
+        if (!EXTREME_TESTING) {
             SpringApplication app = new SpringApplication(App.class);
             app.setDefaultProperties(Collections.singletonMap("server.port", "8096"));
             //app.run(args);
@@ -136,5 +133,24 @@ public class App {
         BotLogger.trace("Restarting the bot");
         extreme_safj_beebot.distruzione_demoniaca();
         extreme_safj_beebot.il_risveglio_della_bestia();
+    }
+
+    public static String getProperty(String key) {
+        if (properties == null) propertiesLoader();
+        return properties.getProperty(key);
+    }
+
+    public static boolean getPropertyAsBoolean(String key) {
+        return Boolean.parseBoolean(getProperty(key));
+    }
+
+    private static void propertiesLoader() {
+        properties = new Properties();
+        try {
+            properties.load(new FileReader("config.properties"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }
