@@ -26,8 +26,16 @@ public class PlayerManager {
     private AudioPlayerManager audioPlayerManager = new DefaultAudioPlayerManager();
 
     public PlayerManager() {
+        loadYoutube();
+
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
         AudioSourceManagers.registerLocalSource(audioPlayerManager);
+    }
+
+    private void loadYoutube() {
+        dev.lavalink.youtube.YoutubeAudioSourceManager youtubeAudioSourceManager = new dev.lavalink.youtube.YoutubeAudioSourceManager();
+        audioPlayerManager.registerSourceManager(youtubeAudioSourceManager);
+        //add focking rotator
     }
 
     public static PlayerManager get() {
