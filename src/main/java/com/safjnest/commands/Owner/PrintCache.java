@@ -10,6 +10,8 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.CacheMap;
+import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.model.Sound;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -59,6 +61,9 @@ public class PrintCache extends Command {
             case "user":
                 printUsers();
                 break;
+            case "sound":
+                printSounds();
+                break;
             case "guildsize":
                 Bot.getGuildSettings().getGuilds().setMaxSize(Integer.valueOf(args[1]));
                 event.reply("Guild size set to " + args[1]);
@@ -67,9 +72,14 @@ public class PrintCache extends Command {
                 Bot.getUsers().setMaxSize(Integer.valueOf(args[1]));
                 event.reply("User size set to " + args[1]);
                 break;
+            case "soundsize":
+                SoundBoard.getSoundCache().setMaxSize(Integer.valueOf(args[1]));
+                event.reply("Sound size set to " + args[1]);
+                break;
             case "clear":
                 Bot.getGuildSettings().getGuilds().clear();
                 Bot.getUsers().clear();
+                SoundBoard.getSoundCache().clear();
                 event.reply("Cache cleared");
                 break;
             default:
@@ -114,6 +124,7 @@ public class PrintCache extends Command {
 
         String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
             + "Total Users: " + Bot.getUsers().size() + " / " + Bot.getUsers().getMaxSize() + "\n"
+            + "Total Sounds: " + SoundBoard.getSoundCache().size() + " / " + SoundBoard.getSoundCache().getMaxSize() + "\n"
             + "Total Members: " + totalUsers + "\n"
             + "Total Channels: " + totalChannels + "\n"
             + "Total Alerts: " + totalAlerts + "\n"
@@ -175,6 +186,40 @@ public class PrintCache extends Command {
         for(String s : cache){
             channel.sendMessage(s).queue();
         }
+
+    }
+
+
+    private void printSounds() {
+        ArrayList<String> cache = new ArrayList<>();
+        CacheMap<String, Sound> sounds = SoundBoard.getSoundCache();
+
+        String msg = "";
+        for(Sound s : sounds.values(false)) {
+            long time = sounds.getExpirationTime(s.getId());
+
+            msg += "**" + s.getName() + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
+                + "Name: " + s.getName() + "(" + s.getId() + ")" + "\n"
+                + "Guild: " + Bot.getJDA().getGuildById(s.getGuildId()).getName() + "\n"
+                + "Users: " + Bot.getJDA().retrieveUserById(s.getUserId()).complete().getName() + "```";
+            cache.add(msg);
+            msg = "";
+        }
+
+        String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
+        + "Total Users: " + Bot.getUsers().size() + " / " + Bot.getUsers().getMaxSize() + "\n"
+        + "Total Sounds: " + SoundBoard.getSoundCache().size() + " / " + SoundBoard.getSoundCache().getMaxSize() + "\n"
+        + "Other bot information\n"
+        + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
+        + "League Version: " + RiotHandler.getVersion() + "```";
+
+        cache.add(0, header);
+
+        MessageChannel channel = event.getChannel();
+        for(String s : cache){
+            channel.sendMessage(s).queue();
+        }
+
 
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
+import com.safjnest.core.audio.SoundBoard;
 import com.safjnest.core.audio.tts.TTSHandler;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.PermissionHandler;
@@ -94,6 +95,8 @@ public class App {
             SQLSettings.get("user").toString(), 
             SQLSettings.get("password").toString()
         );
+
+        new SoundBoard();
 
         
         new TwitchClient(

@@ -11,7 +11,9 @@ import org.gagravarr.ogg.OggFile;
 import org.gagravarr.opus.OpusFile;
 import org.gagravarr.opus.OpusStatistics;
 
+import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.core.Bot;
+import com.safjnest.core.CacheMap;
 import com.safjnest.model.Sound;
 import com.safjnest.model.Sound.Tag;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -34,6 +36,16 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
  */
 public class SoundBoard {
 
+    private static CacheMap<String, Sound> soundCache;
+
+    public SoundBoard() {
+        soundCache = new CacheMap<>(10L * 60 * 60 * 60, 10L * 60 * 60 * 60, 100);
+    }   
+
+    public static CacheMap<String, Sound> getSoundCache() {
+        return soundCache;
+    }
+
     public static OpusFile getOpus(String path) throws IOException{
         File initialFile = new File(path);
         InputStream targetStream = new FileInputStream(initialFile);
@@ -51,6 +63,21 @@ public class SoundBoard {
     public static double getOpusDuration(String path) throws IOException {
         OpusFile opus = getOpus(path);
         return getOpusDuration(opus);
+    }
+
+    public static long getMP3Duration(String filePath) {
+        try {
+            Mp3File mp3file = new Mp3File(filePath);
+            if (mp3file.hasId3v2Tag()) {
+                // Duration in seconds
+                return mp3file.getLengthInSeconds();
+            } else {
+                throw new Exception("MP3 file does not have an ID3v2 tag.");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 
     public static Sound getSoundByString(String regex, Guild guild, User user) {
@@ -79,10 +106,12 @@ public class SoundBoard {
     }
 
     public static Sound getSoundById(String sound_id) {
+        Sound sound = soundCache.get(sound_id);
+        if (sound != null) return sound;
+        
         ResultRow soundData = DatabaseHandler.getSoundById(sound_id);
-        if (soundData == null) {
-            return null;
-        }
+        if (soundData == null) return null;
+        
         QueryResult tags = DatabaseHandler.getSoundTags(sound_id);
         List<Sound.Tag> tagList = new ArrayList<>();
         if (!tags.isEmpty()) {
@@ -97,7 +126,9 @@ public class SoundBoard {
             }
         }
 
-        return new Sound(soundData.get("id"), soundData.get("guild_id"), soundData.get("user_id"), soundData.get("name"), soundData.get("extension"), soundData.getAsBoolean("public"), soundData.getAsTimestamp("time"), tagList.toArray(new Sound.Tag[tagList.size()])); 
+        sound = new Sound(soundData.get("id"), soundData.get("guild_id"), soundData.get("user_id"), soundData.get("name"), soundData.get("extension"), soundData.getAsBoolean("public"), soundData.getAsTimestamp("time"), tagList.toArray(new Sound.Tag[tagList.size()]));
+        soundCache.put(sound_id, sound);
+        return soundCache.get(sound_id); 
     }
 
 
@@ -105,7 +136,7 @@ public class SoundBoard {
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
         ResultRow soundData = DatabaseHandler.getSoundById(sound);
-        System.out.println(soundData.toString());
+
         Button id = Button.primary("sound-id", "ID: " + sound).asDisabled();
         Button name = Button.secondary("sound-name", soundData.get("name")).withEmoji(CustomEmojiHandler.getRichEmoji("wavesound"));
         Button isPrivate = Button.secondary("sound-private", " ").withEmoji(CustomEmojiHandler.getRichEmoji("lock"));
@@ -182,28 +213,26 @@ public class SoundBoard {
             + Bot.getJDA().getUserById(sound.getUserId()).getName() 
         + "```", true);
 
-        try {
-            eb.addField("Lenght", "```"
-                + (sound.isOpus()
-                ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(sound.getPath())))*1000)
-                : SafJNest.getFormattedDuration(sound.getAsTrack().getInfo().length))
-            + "```", true);
-        } catch (IOException e) {e.printStackTrace();}
 
-        eb.addField("Format", "```" 
-            + sound.getExtension().toUpperCase() 
+        String formattedDuration = "";
+        try {
+            if (sound.getAsTrack() != null) formattedDuration = SafJNest.getFormattedDuration(sound.getAsTrack().getDuration());
+            else if (sound.getExtension().equals("opus")) formattedDuration = SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(sound.getPath())))*1000);
+            else formattedDuration = SafJNest.getFormattedDuration((Math.round(SoundBoard.getMP3Duration(sound.getPath())))*1000);
+        } catch (IOException e) {
+            formattedDuration = "Error";
+        }
+
+        eb.addField("Lenght", "```"
+        + formattedDuration
         + "```", true);
+
+
 
         eb.addField("Guild", "```" 
             + Bot.getJDA().getGuildById(sound.getGuildId()).getName() 
         + "```", true);
 
-        int[] plays = sound.getPlays(author.getId());
-        eb.addField("Played", "```" 
-            + plays[0]
-            + (plays[0] == 1 ? " time" : " times") 
-            + " (yours: "+ plays[1] + ")"
-        + "```", true);
 
         Tag[] tags = sound.getTags();
         StringBuilder tagList = new StringBuilder();
@@ -211,16 +240,34 @@ public class SoundBoard {
             if (!tag.getName().isBlank()) tagList.append(tag.getName()).append(", ");
         }
 
-
-        eb.addField("Tags", "```"
-            + (!tagList.isEmpty() ? tagList.toString().substring(0, tagList.length() - 2) : " ")
-            + "```", false);
+        if (!tagList.isEmpty() && tagList.length() > 2) {
+            eb.addField("Tags", "```"
+                + tagList.toString().substring(0, tagList.length() - 2)
+                + "```", false);
+        }
 
         eb.addField("Creation time", 
             "<t:" + sound.getTimestampSecond() + ":f>"  + " | <t:" + sound.getTimestampSecond() + ":R>",
         false);
 
+        int[] plays = sound.getPlays(author.getId());
+        eb.setFooter("Listened: " + plays[1] + (plays[1] == 1 ? " time" : " times") + " (" + plays[0] + " total)");
+
         return eb;
+    }
+
+    public static List<LayoutComponent> getSoundEmbedButtons(Sound sound) {
+        int[] likes = sound.getLikesDislikes();
+        Button like = Button.primary("soundplay-like-" + sound.getId(), String.valueOf(likes[0])).withEmoji(CustomEmojiHandler.getRichEmoji("like"));
+        Button dislike = Button.danger("soundplay-dislike-"+ sound.getId(), String.valueOf(likes[1])).withEmoji(CustomEmojiHandler.getRichEmoji("dislike"));
+
+        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+        buttonRows.add(ActionRow.of(
+            like,
+            dislike
+        ));
+
+        return buttonRows; 
     }
 
 }
