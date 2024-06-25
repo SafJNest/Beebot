@@ -100,7 +100,7 @@ public class PlaySound extends Command{
 
             sound.setTrack(track);
 
-            event.reply(SoundBoard.getSoundEmbed(sound, author.getUser()).build());
+            event.getChannel().sendMessageEmbeds(SoundBoard.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundBoard.getSoundEmbedButtons(sound)).queue();
         }
 
         @Override

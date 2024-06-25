@@ -6,8 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.SoundBoard;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.model.Sound;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -40,39 +39,29 @@ public class CustomizeSoundSlash extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         String fileName = event.getOption("user_sound").getAsString();
 
-        ResultRow toPlay = fileName.matches("[0123456789]*") 
-                           ? DatabaseHandler.getAuthorSoundById(fileName, event.getMember().getId()) 
-                           : DatabaseHandler.getAuthorSoundByName(fileName, event.getMember().getId());
+        Sound sound = SoundBoard.getSoundByString(fileName, event.getGuild(), event.getUser());
 
-        if(toPlay == null) {
+        if(sound == null) {
             event.reply("Couldn't find a sound with that name/id (you can only change one of your sounds).");
             return;
         }
 
-        ResultRow plays = DatabaseHandler.getPlays(toPlay.get("id"), event.getUser().getId());
-        EmbedBuilder eb = getEmbed(event.getUser(), toPlay, plays);
+        EmbedBuilder eb = getEmbed(event.getUser(), sound);
 
-        event.replyEmbeds(eb.build()).setComponents(SoundBoard.getSoundButton(toPlay.get("id"))).queue();
+        event.replyEmbeds(eb.build()).setComponents(SoundBoard.getSoundButton(sound.getId())).queue();
         
     }
 
-    public static EmbedBuilder getEmbed(User user, String sound) {
-        ResultRow toPlay = DatabaseHandler.getSoundById(sound);
-        ResultRow plays = DatabaseHandler.getPlays(sound, user.getId());
-        return getEmbed(user, toPlay, plays);
-    }
-
-
-    public static EmbedBuilder getEmbed(User user, ResultRow toPlay, ResultRow plays) {
+    public static EmbedBuilder getEmbed(User user, Sound sound) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(user.getName(), "https://github.com/SafJNest", user.getAvatarUrl());
         eb.setTitle("Customize sound");
-        eb.setDescription("```" + toPlay.get("name") + " (ID: " + toPlay.get("id") + ") "  + "```");
+        eb.setDescription("```" + sound.getName() + " (ID: " + sound.getId() + ") "  + "```");
         eb.setColor(Bot.getColor());
         eb.setThumbnail(Bot.getJDA().getSelfUser().getAvatarUrl());
 
         eb.addField("Creation time", 
-            "<t:" + toPlay.getAsEpochSecond("time") + ":f>"  + " | <t:" + toPlay.getAsEpochSecond("time") + ":R>",
+            "<t:" + sound.getTimestampSecond() + ":f>"  + " | <t:" + sound.getTimestampSecond() + ":R>",
         false);
 
         return eb;

@@ -104,7 +104,7 @@ public class PlaySoundSlash extends SlashCommand{
 
 
 
-            event.deferReply(false).addEmbeds(SoundBoard.getSoundEmbed(sound, author.getUser()).build()).queue();
+            event.deferReply(false).addEmbeds(SoundBoard.getSoundEmbed(sound, author.getUser()).build()).addComponents(SoundBoard.getSoundEmbedButtons(sound)).queue();
         }
 
         @Override
