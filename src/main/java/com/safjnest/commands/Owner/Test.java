@@ -23,10 +23,13 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.model.Sound;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.ChannelData;
+import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
@@ -43,6 +46,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
@@ -455,6 +459,32 @@ public class Test extends Command{
                     }
                     System.out.println(i);
                 }
+            case "soundsgozzing":
+                query = "SELECT id from sound";
+                QueryResult res1 = DatabaseHandler.safJQuery(query);
+                List<Sound> sounds = new ArrayList<>();
+                for(ResultRow row : res1){
+                    sounds.add(SoundBoard.getSoundById(row.get("id")));
+                }
+                for (Guild g : e.getJDA().getGuilds()) {
+                    for (Member m : g.getMembers()) {
+                        for (Sound soun : sounds) {
+                            soun.increaseUserPlays(m.getId());
+                        }
+                    }
+                }
+            case "dbsgozz":
+                for (Guild g : e.getJDA().getGuilds()) {
+                    GuildData gd = Bot.getGuildData(g);
+                    for (Member m : g.getMembers()) {
+                        gd.getUserData(m.getId()).setUpdateTime(61);
+                    }
+                    for (TextChannel tc : g.getTextChannels()) {
+                        gd.getChannelData(tc.getId()).setExpEnabled(true);
+                    }
+                }
+
+                break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;
