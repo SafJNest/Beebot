@@ -253,8 +253,8 @@ public class DatabaseHandler {
         return safJQuery("SELECT name, id FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getUserRandomSound(String user_id){
-        return safJQuery("SELECT name, id, guild_id FROM sound WHERE user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
+    public static QueryResult getUserSound(String user_id){
+        return safJQuery("SELECT name, id, guild_id, extension FROM sound WHERE user_id = '" + user_id + "';");
     }
 
     public static QueryResult getlistUserSounds(String user_id) {
@@ -282,7 +282,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getFocusedListUserSounds(String user_id, String guild_id, String like) {
-        return safJQuery("SELECT name, id FROM sound WHERE name LIKE '" + like + "%' OR id LIKE '" + like + "%' AND (user_id = '" + user_id + "' OR (guild_id = '" + guild_id + "' AND public = 1)) ORDER BY RAND() LIMIT 25;");
+        return safJQuery("SELECT name, id, guild_id, extension FROM sound WHERE name LIKE '" + like + "%' OR id LIKE '" + like + "%' AND (user_id = '" + user_id + "' OR guild_id = '" + guild_id + "') ORDER BY RAND() LIMIT 25;");
     }
 
     public static QueryResult getSoundsById(String... sound_ids) {
@@ -382,23 +382,23 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getSoundsFromSoundBoard(String id) {
-        return safJQuery("select soundboard_sounds.sound_id, sound.extension, sound.name from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "'");
+        return safJQuery("select soundboard_sounds.sound_id as sound_id, sound.extension as extension, sound.name as name, sound.guild_id as guild_id from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "'");
     }
 
     public static ResultRow getSoundboardByID(String id) {
         return fetchJRow("select name from soundboard where id = '" + id + "'");
     }
     
-    public static QueryResult getRandomSoundboard(String guild_id) {
-        return safJQuery("SELECT name, id FROM soundboard WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
+    public static QueryResult getRandomSoundboard(String guild_id, String user_id) {
+        return safJQuery("SELECT name, id, guild_id FROM soundboard WHERE guild_id = '" + guild_id + "' OR user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getFocusedSoundboard(String guild_id, String like){
-        return safJQuery("SELECT name, id FROM soundboard WHERE name LIKE '" + like + "%' AND guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
+    public static QueryResult getFocusedSoundboard(String guild_id, String user_id, String like){
+        return safJQuery("SELECT name, id, guild_id FROM soundboard WHERE name LIKE '" + like + "%' AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "') ORDER BY RAND() LIMIT 25;");
     }
 
     public static QueryResult getFocusedSoundFromSounboard(String id, String like){
-        return safJQuery("SELECT s.name, s.id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '" + like + "%' AND ss.id = '" + id);
+        return safJQuery("SELECT s.name as name, s.id as sound_id, s.guild_id as guild_id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '" + like + "%' AND ss.id = '" + id + "' ORDER BY RAND() LIMIT 25;");
     }
 
     public static QueryResult extremeSoundResearch(String query) {
@@ -875,6 +875,22 @@ public class DatabaseHandler {
         }
         return id;
     }
+
+    public static ResultRow getLikeDislike(String sound_id) {
+        return fetchJRow("SELECT"
+            + "(SELECT SUM(`like`) FROM play WHERE sound_id = '" + sound_id + "') AS likes,"
+            + "(SELECT SUM(dislike) FROM play WHERE sound_id = '" + sound_id + "') AS dislikes;");
+    }
+
+
+    public static boolean setLikeDislike(String sound_id, String user_id, boolean like, boolean dislike) {
+        return runQuery("INSERT INTO play(user_id, sound_id, `like`, dislike) VALUES('" + user_id + "','" + sound_id + "', " + (like ? 1 : 0) + ", " + (dislike ? 1 : 0) + ") ON DUPLICATE KEY UPDATE `like` = " + (like ? 1 : 0) + ", dislike = " + (dislike ? 1 : 0) + ";");
+    }
+
+    public static ResultRow hasInterectedSound(String sound_id, String user_id) {
+        return fetchJRow("SELECT `like`, dislike FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
+    }
+
 
 
 

@@ -120,12 +120,40 @@ public class EventButtonHandler extends ListenerAdapter {
         else if (buttonId.startsWith("player-"))
             player(event);
         
+        else if (buttonId.startsWith("soundplay-"))
+            soundplay(event);
+        
+    }
+
+
+    public void soundplay (ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-", 3)[1];
+        String soundId = event.getButton().getId().split("-", 3)[2];
+
+        Sound sound = SoundBoard.getSoundById(soundId);
+
+        switch (args) {
+            case "like":
+                sound.like(event.getUser().getId(), !sound.hasLiked(event.getUser().getId()));
+                break;
+            case "dislike":
+                sound.dislike(event.getUser().getId(), !sound.hasDisliked(event.getUser().getId()));
+                break;
+            default:
+                break;
+        }
+
+        event.getMessage().editMessageEmbeds(SoundBoard.getSoundEmbed(sound, event.getUser()).build())
+                .setComponents(SoundBoard.getSoundEmbedButtons(sound))
+                .queue();
     }
 
     public void tag(ButtonInteractionEvent event) {
         String args = event.getButton().getId().split("-", 4)[1];
         String soundId = event.getButton().getId().split("-", 4)[2];
         String tagId = event.getButton().getId().split("-", 4)[3];
+
+        Sound soundData = SoundBoard.getSoundById(soundId);
 
         boolean tagSwitch = true;
         switch (args) {
@@ -164,7 +192,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         List<LayoutComponent> buttons = tagSwitch ? SoundBoard.getTagButton(soundId, args) : SoundBoard.getSoundButton(soundId);
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundId).build())
+        event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundData).build())
                         .setComponents(buttons)
                         .queue();
 
@@ -228,7 +256,7 @@ public class EventButtonHandler extends ListenerAdapter {
         List<LayoutComponent> buttons = tagSwitch ? SoundBoard.getTagButton(soundId, String.valueOf(tagId)) : SoundBoard.getSoundButton(soundId); 
 
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundId).build())
+        event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundData).build())
                         .setComponents(buttons)
                         .queue();
 
@@ -518,7 +546,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 for (Button b : event.getMessage().getButtons()) {
                     if (!b.getLabel().equals("->") && !b.getLabel().equals("<-")) {
                         String[] parts = b.getId().split("-", 3);
-                        System.out.println(parts[2]);
+
                         accountId = parts[2].substring(0, parts[2].indexOf("#"));
                         platform = parts[2].substring(parts[2].indexOf("#") + 1);
                         break;

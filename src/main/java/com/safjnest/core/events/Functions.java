@@ -392,13 +392,15 @@ public class Functions {
         String args = id.split("-", 2)[1];
         id = id.split("-", 2)[0];
 
+
         EmbedBuilder eb = null;
         switch (id) {
             case "sound":
+                Sound sound = SoundBoard.getSoundById(args);
                 String newName = event.getValue("sound-name").getAsString();
-                DatabaseHandler.updateSound(args, newName);
+                sound.setName(newName);
 
-                eb = CustomizeSoundSlash.getEmbed(event.getUser(), args);
+                eb = CustomizeSoundSlash.getEmbed(event.getUser(), sound);
                 event.deferReply().addEmbeds(eb.build()).addComponents(SoundBoard.getSoundButton(args)).queue();
 
 
@@ -420,7 +422,7 @@ public class Functions {
                 
                 s.setTags(tags);
 
-                eb = CustomizeSoundSlash.getEmbed(event.getUser(), args.split("-")[0]);
+                eb = CustomizeSoundSlash.getEmbed(event.getUser(), s);
                 event.deferReply().addEmbeds(eb.build()).addComponents(SoundBoard.getSoundButton(args.split("-")[0])).queue();
 
 

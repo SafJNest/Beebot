@@ -165,6 +165,40 @@ public class Sound {
     }
 
 
+    public int[] getLikesDislikes() {
+        ResultRow likes = DatabaseHandler.getLikeDislike(this.ID);
+        if (likes.emptyValues()) return new int[] {0, 0};
+
+        return new int[] {likes.getAsInt("likes"), likes.getAsInt("dislikes")};
+    }
+
+    public boolean like(String userId) {
+        return like(userId, true);
+    }
+    
+    public boolean dislike(String userId) {
+        return dislike(userId, true);
+    }
+    
+
+
+    public boolean like(String userId, boolean like) {
+        return DatabaseHandler.setLikeDislike(this.ID, userId, like, false);
+    }
+
+    public boolean dislike(String userId, boolean dislike) {
+        return DatabaseHandler.setLikeDislike(this.ID, userId, false, dislike);
+    }
+
+    public boolean hasLiked(String userId) {
+        return DatabaseHandler.hasInterectedSound(this.ID, userId).getAsBoolean("like");
+    }
+
+    public boolean hasDisliked(String userId) {
+        return DatabaseHandler.hasInterectedSound(this.ID, userId).getAsBoolean("dislike");
+    }
+
+
     @Override
     public String toString() {
         return "ID: " + ID + "\n" +
