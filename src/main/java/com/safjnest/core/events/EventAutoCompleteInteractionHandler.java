@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.LOL.AugmentData;
 import com.safjnest.util.LOL.RiotHandler;
@@ -31,12 +32,368 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
-    @Override
-    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {
-        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+
+    private boolean isFocused;
+    private String value;
+
+    private final int MAX_CHOICES = 25;
+
+    /**
+     * Sound upload by the user and present in the current guild
+     * @param e
+     * @return
+     */
+    private ArrayList<Choice> playSound(CommandAutoCompleteInteractionEvent e) {
+
+        ArrayList<Choice> choices = new ArrayList<>();
+
+        QueryResult sounds = null;
+        if (isFocused) sounds = DatabaseHandler.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), value);
+        else sounds = DatabaseHandler.getlistUserSounds(e.getUser().getId(), e.getGuild().getId()).shuffle().limit(MAX_CHOICES);
+
+        for (ResultRow sound : sounds) {
+            String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
+            String label = sound.get("id") + ": " + sound.get("name") + " (" + server_name + ")";
+            choices.add(new Choice(label, sound.get("id")));
+        }
+        return choices;
+
+    }
+
+
+    private ArrayList<Choice> userSound(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+        QueryResult sounds = null;
         
+        if (isFocused) sounds = DatabaseHandler.getFocusedUserSound(e.getUser().getId(), value);
+        else sounds = DatabaseHandler.getUserSound(e.getUser().getId()).shuffle().limit(MAX_CHOICES);
+
+        for (ResultRow sound : sounds) {
+            String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
+            String label = sound.get("id") + ": " + sound.get("name") + " (" + server_name + ")";
+            choices.add(new Choice(label, sound.get("id")));
+        }
+
+        return choices;
+    } 
+
+
+    private ArrayList<Choice> help(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+        
+        List<Command> allCommands = e.getJDA().retrieveCommands().complete();
+        
+        if (isFocused) {
+            for (Command c : allCommands) {
+                if (c.getName().startsWith(value))
+                    choices.add(new Choice(c.getName(), c.getName()));
+            }
+        }
+        else {
+            Collections.shuffle(allCommands);
+            for (int i = 0; i < MAX_CHOICES; i++)
+                choices.add(new Choice(allCommands.get(i).getName(), allCommands.get(i).getName()));
+        }
+
+        return choices;    
+    }
+
+    
+    private ArrayList<Choice> champion(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+        List<String> champions = Arrays.asList(RiotHandler.getChampions());
+
+        if (isFocused) {
+            int max = 0;
+            for (int i = 0; i < champions.size() && max < MAX_CHOICES; i++) {
+                if (champions.get(i).toLowerCase().startsWith(value.toLowerCase())) {
+                    choices.add(new Choice(champions.get(i), champions.get(i)));
+                    max++;
+                }
+            }
+        } else {
+            Collections.shuffle(champions);
+            for (int i = 0; i < MAX_CHOICES; i++)
+                choices.add(new Choice(champions.get(i), champions.get(i)));
+        }
+
+        return choices;
+    }
+
+
+    private ArrayList<Choice> augment(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+        List<AugmentData> augments = RiotHandler.getAugments();
+
+        if (isFocused) {
+            int max = 0;
+            for (int i = 0; i < augments.size() && max < MAX_CHOICES; i++) {
+                String augmentName = augments.get(i).getName().toLowerCase();
+                String augmentId = augments.get(i).getId();
+
+                if (augmentName.startsWith(value.toLowerCase()) || augmentId.startsWith(value)){
+                    choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
+                    max++;
+                }
+            }
+        } else {
+            Collections.shuffle(augments);
+            for (int i = 0; i < MAX_CHOICES; i++)
+                choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
+        }
+
+        return choices;
+    }
+
+    private ArrayList<Choice> soundboard(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+        
+        QueryResult soundboards = null;
+        if (!isFocused) soundboards = DatabaseHandler.getRandomSoundboard(e.getGuild().getId(), e.getUser().getId());
+        else soundboards = DatabaseHandler.getFocusedSoundboard(e.getGuild().getId(), e.getUser().getId(), value);
+
+        for (ResultRow soundboard : soundboards) {
+            String server_name = Bot.getJDA().getGuildById(soundboard.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(soundboard.get("guild_id")).getName();
+            String label = soundboard.get("name") + " (" + server_name + ")";
+            choices.add(new Choice(label, soundboard.get("id")));
+        }
+
+        return choices;
+    }
+
+
+    private ArrayList<Choice> soundboardSound(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+        if (e.getOption("name") == null)
+            return null;
+        
+        String soundboardId = e.getOption("name").getAsString();
+
+        QueryResult sounds = null;
+
+        if (isFocused) sounds = DatabaseHandler.getFocusedSoundFromSounboard(soundboardId, value);
+        else sounds = DatabaseHandler.getSoundsFromSoundBoard(soundboardId);
+
+        for (ResultRow sound : sounds) {
+            String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
+            String label = sound.get("name") + " (" + server_name + ")";
+            System.out.println(label);
+            choices.add(new Choice(label, sound.get("sound_id")));
+        }
+
+        return choices;
+
+    }
+
+    private ArrayList<Choice> greet(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+
+        QueryResult sounds = null;
+        if (isFocused) sounds = DatabaseHandler.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), e.getFocusedOption().getValue());
+        else sounds = DatabaseHandler.getlistGuildSounds(e.getGuild().getId(), 25);
+
+        for (ResultRow sound : sounds) {
+            String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
+            String label = sound.get("name") + " (" + sound.get("id") + ") - " + server_name;
+            choices.add(new Choice(label, sound.get("id") + "." + sound.get("extension")));
+        }
+
+        return choices;
+    }
+
+
+    private ArrayList<Choice> tts(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+        List<String[]> voices = TTSVoices.getVoiceArray();
+
+        if (isFocused) {
+            for (String[] voice : voices) {
+                if ((voice[0] + " " + voice[1]).toLowerCase().contains(value.toLowerCase()))
+                    choices.add(new Choice(voice[0] + " - " + voice[1], voice[1]));
+            }
+        }
+        else {
+            Collections.shuffle(voices);
+            for (int i = 0; i < 10; i++)
+                choices.add(new Choice(voices.get(i)[0] + " - " + voices.get(i)[1], voices.get(i)[1]));
+        }
+
+        return choices;
+    }
+
+
+    private ArrayList<Choice> jump(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+        
+        List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue();
+
+        if (isFocused) {
+            for (int i = 0, max = 0; i < queue.size() && max < MAX_CHOICES; i++) {
+                String title = "[" + (i + 1) + "] " + queue.get(i).getInfo().title;
+                if (title.toLowerCase().contains(value.toLowerCase())) {
+                    choices.add(new Choice(title, String.valueOf(i + 1)));
+                    max++;
+                }
+            }
+        }
+        else {
+            for (int i = 0; i < queue.size() && i < MAX_CHOICES; i++)
+                choices.add(new Choice("[" + (i + 1) + "] " + queue.get(i).getInfo().title, String.valueOf(i + 1)));
+        }
+
+        return choices;
+    }
+
+
+    private ArrayList<Choice> alert(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>(); 
+        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+
+        AlertData alert = guildData.getAlert(AlertType.WELCOME);
+
+        if (alert == null || alert.getRoles() == null)
+            return choices;
+
+        HashMap<Integer, String> alertRoles = alert.getRoles();  
+
+        List<Role> roles = new ArrayList<>();
+        for (Role r : e.getGuild().getRoles()) {
+            if (alertRoles.containsValue(r.getId()))
+                roles.add(r);
+        }
+
+        Collections.shuffle(roles);
+        if (isFocused) {
+            for (Role role : roles) {
+                if (role.getName().toLowerCase().contains(value.toLowerCase()))
+                    choices.add(new Choice(role.getName(), role.getId()));
+            }
+        }
+        else {
+            for (Role role : roles) 
+                choices.add(new Choice(role.getName(), role.getId()));
+        }
+        return choices;
+    }
+
+
+    private ArrayList<Choice> rewardsLevel(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>(); 
+        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+
+        HashMap<AlertKey, AlertData> alerts = guildData.getAlerts();
+        List<String> levels = new ArrayList<>();
+        
+        for (AlertData data : alerts.values()) {
+            if (data.getType() == AlertType.REWARD)
+                levels.add(String.valueOf(((RewardData) data).getLevel()));
+        }
+
+
+        if (isFocused) {
+            for (String level : levels) {
+                if (level.startsWith(value))
+                    choices.add(new Choice(level, level));
+            }
+        } else {
+            Collections.shuffle(levels);
+            for (int i = 0; i < levels.size() && i < MAX_CHOICES; i++)
+                choices.add(new Choice(levels.get(i), levels.get(i)));
+        }
+
+        return choices;
+    
+    }
+
+
+    private ArrayList<Choice> rewardRole(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>(); 
+        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+
+        if (e.getOption("reward_level") == null) return choices;;
+
+        String rewardLevel = e.getOption("reward_level").getAsString();
+        RewardData reward = guildData.getAlert(AlertType.REWARD, Integer.parseInt(rewardLevel));
+        if (reward == null || reward.getRoles() == null) return choices;
+        
+        HashMap<Integer, String> rewardRoles = reward.getRoles();
+        List<Role> roles = new ArrayList<>();
+        for (Role r : e.getGuild().getRoles()) {
+            if (rewardRoles.containsValue(r.getId()))
+                roles.add(r);
+        }
+
+        Collections.shuffle(roles);
+        if (isFocused) {
+            for (Role role : roles) {
+                if (role.getName().toLowerCase().contains(value.toLowerCase()))
+                    choices.add(new Choice(role.getName(), role.getId()));
+            }
+        }
+        else {
+            for (int i = 0; i < roles.size() && i < MAX_CHOICES; i++)
+            choices.add(new Choice(roles.get(i).getName(), roles.get(i).getId())); 
+        }
+
+        return choices;
+    }
+
+
+    private ArrayList<Choice> summoner(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+        HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
+        R4J r4j = RiotHandler.getRiotApi();
+
+        if (accounts == null || accounts.isEmpty()) {
+            return choices;
+        }
+        
+        HashMap<String, String> accountNames = new HashMap<>();
+        for (String k : accounts.keySet()) {
+            String account_id = k;
+
+            LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(account_id))];
+            Summoner summoner = RiotHandler.getSummonerByAccountId(account_id, shard);
+            RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
+            accountNames.put(account_id, riotAccount.getName() + "#" + riotAccount.getTag());
+        }
+
+        ArrayList<Choice> personal = new ArrayList<>();
+        
+        if (isFocused) {
+            accountNames.forEach((k, v) -> {
+                if (v.toLowerCase().contains(value.toLowerCase())) personal.add(new Choice(v, k));
+            });
+        }
+        else accountNames.forEach((k, v) -> personal.add(new Choice(v, k)));
+
+        return personal;
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @Override
+    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {        
         ArrayList<Choice> choices = new ArrayList<>();
         String name = e.getName();
+
+        this.isFocused = !e.getFocusedOption().getValue().isEmpty();
+        this.value = e.getFocusedOption().getValue();
 
         if (e.getFullCommandName().equals("soundboard create") 
             || e.getFocusedOption().getName().startsWith("sound-"))
@@ -80,242 +437,52 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         switch (name) {
             case "play":
-                if (e.getFocusedOption().getValue().equals("")) {
-                    for (ResultRow sound : DatabaseHandler.getGuildRandomSound(e.getGuild().getId()))
-                        choices.add(new Choice(sound.get("name"), sound.get("id")));
-                } else {
-                    for (ResultRow sound : DatabaseHandler.getFocusedGuildSound(e.getGuild().getId(),
-                            e.getFocusedOption().getValue()))
-                        choices.add(new Choice(sound.get("name"), sound.get("id")));
-                }
+                choices = playSound(e);
 
                 break;
             case "user_sound":
-                if (e.getFocusedOption().getValue().equals("")) {
-                    for (ResultRow sound : DatabaseHandler.getUserRandomSound(e.getUser().getId())) {
-                        String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
-                        String label = sound.get("id") + ": " + sound.get("name") + " (" + server_name + ")";
-                        choices.add(new Choice(label, sound.get("id")));
-                    }
-                } else {
-                    for (ResultRow sound : DatabaseHandler.getFocusedUserSound(e.getUser().getId(), e.getFocusedOption().getValue())) {
-                            String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
-                            String label = sound.get("id") + ": " + sound.get("name") + " (" + server_name + ")";
-                            choices.add(new Choice(label, sound.get("id")));
-                        }
-                }
+                choices = userSound(e);
 
                 break;
             case "help":
-                List<Command> allCommands = e.getJDA().retrieveCommands().complete();
-                if (e.getFocusedOption().getValue().equals("")) {
-                    Collections.shuffle(allCommands);
-                    for (int i = 0; i < 10; i++)
-                        choices.add(new Choice(allCommands.get(i).getName(), allCommands.get(i).getName()));
-                } else {
-                    for (Command c : allCommands) {
-                        if (c.getName().startsWith(e.getFocusedOption().getValue()))
-                            choices.add(new Choice(c.getName(), c.getName()));
-                    }
-                }
+                choices = help(e);
                 break;
 
             case "champion":
-                List<String> champions = Arrays.asList(RiotHandler.getChampions());
-                if (e.getFocusedOption().getValue().equals("")) {
-                    Collections.shuffle(champions);
-                    for (int i = 0; i < 10; i++)
-                        choices.add(new Choice(champions.get(i), champions.get(i)));
-                } else {
-                    int max = 0;
-                    for (int i = 0; i < champions.size() && max < 10; i++) {
-                        if (champions.get(i).toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())) {
-                            choices.add(new Choice(champions.get(i), champions.get(i)));
-                            max++;
-                        }
-                    }
-                }
+                choices = champion(e);
                 break;
 
             case "infoaugment":
-                List<AugmentData> augments = RiotHandler.getAugments();
-                if (e.getFocusedOption().getValue().equals("")) {
-                    Collections.shuffle(augments);
-                    for (int i = 0; i < 10; i++)
-                        choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
-                } else {
-                    int max = 0;
-                    if (e.getFocusedOption().getValue().matches("\\d+")) {
-                        for (int i = 0; i < augments.size() && max < 10; i++) {
-                            if (augments.get(i).getId().startsWith(e.getFocusedOption().getValue())) {
-                                choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
-                                max++;
-                            }
-                        }
-                    } else {
-                        for (int i = 0; i < augments.size() && max < 10; i++) {
-                            if (augments.get(i).getName().toLowerCase().startsWith(e.getFocusedOption().getValue().toLowerCase())) {
-                                choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
-                                max++;
-                            }
-                        }
-                    }
-                }
+                choices = augment(e);
                 break;
 
             case "soundboard_select":
-                if (e.getFocusedOption().getValue().equals("")) {
-                    for (ResultRow sound : DatabaseHandler.getRandomSoundboard(e.getGuild().getId()))
-                        choices.add(new Choice(sound.get("name"), sound.get("id")));
-                } else {
-                    for (ResultRow sound : DatabaseHandler.getFocusedSoundboard(e.getGuild().getId(), e.getFocusedOption().getValue()))
-                        choices.add(new Choice(sound.get("name"), sound.get("id")));
-                }
+                choices = soundboard(e);
                 break;
             case "sound_remove":
-                if (e.getOption("name") == null)
-                    return;
-                String soundboardId = e.getOption("name").getAsString();
-                if (e.getFocusedOption().getValue().equals("")) {
-                    for (ResultRow sound : DatabaseHandler.getSoundsFromSoundBoard(soundboardId))
-                        choices.add(new Choice(sound.get("sound.name"), sound.get("soundboard_sounds.sound_id")));
-                } else {
-                    for (ResultRow sound : DatabaseHandler.getFocusedSoundFromSounboard(soundboardId, e.getFocusedOption().getValue()))
-                        choices.add(new Choice(sound.get("s.name"), sound.get("s.id")));
-                }
+                choices = soundboardSound(e);
                 break;
 
             case "greet":
-                if (e.getFocusedOption().getValue().equals("")) {
-                    for (ResultRow greet : DatabaseHandler.getlistGuildSounds(e.getGuild().getId(), 25))
-                        choices.add(new Choice(greet.get("name"), greet.get("id") + "." + greet.get("extension")));
-                } else {
-                    for (ResultRow greet : DatabaseHandler.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), e.getFocusedOption().getValue()))
-                        choices.add(new Choice(greet.get("name") + " (" + greet.get("id") + ")", greet.get("id") + "." + greet.get("extension")));
-                }
+                choices = greet(e);
                 break;
             case "tts":
-                List<String[]> voices = TTSVoices.getVoiceArray();
-                if (e.getFocusedOption().getValue().equals("")) {
-                    Collections.shuffle(voices);
-                    for (int i = 0; i < 10; i++)
-                        choices.add(new Choice(voices.get(i)[0] + " - " + voices.get(i)[1], voices.get(i)[1]));
-                } else {
-                    for (String[] voice : voices) {
-                        if ((voice[0] + " " + voice[1]).toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
-                            choices.add(new Choice(voice[0] + " - " + voice[1], voice[1]));
-                    }
-                }
+                choices = tts(e);
                 break;
             case "jumpto":
-                List<AudioTrack> queue = PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue();
-                if (e.getFocusedOption().getValue().equals("")) {
-                    for (int i = 0; i < queue.size() && i < 10; i++)
-                        choices.add(new Choice("[" + (i + 1) + "] " + queue.get(i).getInfo().title, String.valueOf(i + 1)));
-                } else {
-                    String query = e.getFocusedOption().getValue().toLowerCase();
-
-                    for (int i = 0, max = 0; i < queue.size() && max < 10; i++) {
-                        String title = "[" + (i + 1) + "] " + queue.get(i).getInfo().title;
-                        if (title.toLowerCase().contains(query)) {
-                            choices.add(new Choice(title, String.valueOf(i + 1)));
-                            max++;
-                        }
-                    }
-                }
+                choices = jump(e);
                 break;
             case "alert_role":
-                AlertData alert = guildData.getAlert(AlertType.WELCOME);
-                if (alert != null && alert.getRoles() != null) {
-                    HashMap<Integer, String> alertRoles = alert.getRoles();
-                    List<Role> roles = new ArrayList<>();
-                    for (Role r : e.getGuild().getRoles()) {
-                        if (alertRoles.containsValue(r.getId()))
-                            roles.add(r);
-                    }
-
-                    Collections.shuffle(roles);
-                    if (e.getFocusedOption().getValue().equals("")) {
-                        for (int i = 0; i < roles.size() && i < 10; i++)
-                            choices.add(new Choice(roles.get(i).getName(), roles.get(i).getId()));
-                    } else {
-                        for (Role role : roles) {
-                            if (role.getName().toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
-                                choices.add(new Choice(role.getName(), role.getId()));
-                        }
-
-                    }
-                }
+                choices = alert(e);
                 break;
             case "rewards_level":
-                HashMap<AlertKey, AlertData> alerts = guildData.getAlerts();
-                List<String> levels = new ArrayList<>();
-                for (AlertData data : alerts.values()) {
-                    if (data.getType() == AlertType.REWARD)
-                        levels.add(String.valueOf(((RewardData) data).getLevel()));
-                }
-                if (e.getFocusedOption().getValue().equals("")) {
-                    Collections.shuffle(levels);
-                    for (int i = 0; i < levels.size() && i < 10; i++)
-                        choices.add(new Choice(levels.get(i), levels.get(i)));
-                } else {
-                    for (String level : levels) {
-                        if (level.startsWith(e.getFocusedOption().getValue()))
-                            choices.add(new Choice(level, level));
-                    }
-                }
+                choices = rewardsLevel(e);
                 break;
             case "reward_roles":
-                if (e.getOption("reward_level") == null)
-                    return;
-                String rewardLevel = e.getOption("reward_level").getAsString();
-                RewardData reward = guildData.getAlert(AlertType.REWARD, Integer.parseInt(rewardLevel));
-                if (reward != null && reward.getRoles() != null) {
-                    HashMap<Integer, String> rewardRoles = reward.getRoles();
-                    List<Role> roles = new ArrayList<>();
-                    for (Role r : e.getGuild().getRoles()) {
-                        if (rewardRoles.containsValue(r.getId()))
-                            roles.add(r);
-                    }
-                    Collections.shuffle(roles);
-                    if (e.getFocusedOption().getValue().equals("")) {
-                        for (int i = 0; i < roles.size() && i < 10; i++)
-                            choices.add(new Choice(roles.get(i).getName(), roles.get(i).getId()));
-                    } else {
-                        for (Role role : roles) {
-                            if (role.getName().toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
-                                choices.add(new Choice(role.getName(), role.getId()));
-                        }
-                    }
-                }
+                choices = rewardRole(e);
                 break;
             case "personal_summoner":
-                HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
-                R4J r4j = RiotHandler.getRiotApi();
-                if (accounts == null || accounts.isEmpty()) {
-                    return;
-                }
-                
-                HashMap<String, String> accountNames = new HashMap<>();
-                for (String k : accounts.keySet()) {
-                    String account_id = k;
-
-                    LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(account_id))];
-                    Summoner summoner = RiotHandler.getSummonerByAccountId(account_id, shard);
-                    RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
-                    accountNames.put(account_id, riotAccount.getName() + "#" + riotAccount.getTag());
-                }
-
-                if (e.getFocusedOption().getValue().equals("")) {
-                    accountNames.forEach((k, v) -> choices.add(new Choice(v, k)));  
-                } else {
-                    accountNames.forEach((k, v) -> {
-                        if (v.toLowerCase().contains(e.getFocusedOption().getValue().toLowerCase()))
-                            choices.add(new Choice(v, k));
-                    });
-                }
-
-
+                choices = summoner(e);
                 break;
         }
 

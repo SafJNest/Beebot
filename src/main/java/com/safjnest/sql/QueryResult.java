@@ -59,6 +59,21 @@ public class QueryResult implements Iterable<ResultRow>{
         return result.stream();
     }
 
+    public QueryResult shuffle(){
+        List<ResultRow> shuffled = new ArrayList<>(result);
+        java.util.Collections.shuffle(shuffled);
+        QueryResult qr = new QueryResult();
+        qr.result = shuffled;
+        return qr;
+    }
+
+    public QueryResult limit(int limit){
+        QueryResult qr = new QueryResult();
+        qr.result = result.subList(0, Math.min(limit, result.size()));
+        return qr;
+    }
+
+
     @Override
     public String toString() {
         return result.toString();
