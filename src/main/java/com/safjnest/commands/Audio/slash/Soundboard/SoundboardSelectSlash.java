@@ -1,22 +1,17 @@
 package com.safjnest.commands.Audio.slash.Soundboard;
 
-import java.util.ArrayList;
+
 import java.util.Arrays;
-import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
+
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.util.CommandsLoader;
 
-import net.dv8tion.jda.api.EmbedBuilder;
+
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -40,27 +35,7 @@ public class SoundboardSelectSlash extends SlashCommand{
 	@Override
 	protected void execute(SlashCommandEvent event) {
         String soundboardID = event.getOption("name").getAsString();
-
-        QueryResult sounds = DatabaseHandler.getSoundsFromSoundBoard(soundboardID);
-
-        String soundboardName = DatabaseHandler.getSoundboardByID(soundboardID).get("name");
-
-        EmbedBuilder eb = new  EmbedBuilder();
-        eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setTitle("Soundboard: " + soundboardName);
-        eb.setDescription("Press a button to play a sound");
-        eb.setColor(Bot.getColor());
+        SoundHandler.composeSoundboard(event, soundboardID).queue();
         
-        List<LayoutComponent> rows = new ArrayList<>();
-        List<Button> row = new ArrayList<>();
-        for (int i = 0; i < sounds.size(); i++) {
-            row.add(Button.primary("soundboard-" + sounds.get(i).get("sound_id") + "." + sounds.get(i).get("extension"), sounds.get(i).get("name")));
-            if (row.size() == 5 || i == sounds.size() - 1) {
-                rows.add(ActionRow.of(row));
-                row = new ArrayList<>();
-            }
-        }
-
-        event.deferReply(false).addEmbeds(eb.build()).setComponents(rows).queue();
     }
 }

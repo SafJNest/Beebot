@@ -11,6 +11,7 @@ import org.gagravarr.ogg.OggFile;
 import org.gagravarr.opus.OpusFile;
 import org.gagravarr.opus.OpusStatistics;
 
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.core.Bot;
 import com.safjnest.core.CacheMap;
@@ -28,23 +29,28 @@ import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 
 /**
  * Contains the methods to manage the soundboard.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.1
  */
-public class SoundBoard {
+public class SoundHandler {
 
     private static CacheMap<String, Sound> soundCache;
 
-    public SoundBoard() {
+    public SoundHandler() {
         soundCache = new CacheMap<>(10L * 60 * 60 * 60, 10L * 60 * 60 * 60, 100);
     }   
 
     public static CacheMap<String, Sound> getSoundCache() {
         return soundCache;
     }
+
+    /* -------------------------------------------------------------------------- */
+    /*                              Sound Files                                   */
+    /* -------------------------------------------------------------------------- */
 
     public static OpusFile getOpus(String path) throws IOException{
         File initialFile = new File(path);
@@ -79,6 +85,10 @@ public class SoundBoard {
             return 0;
         }
     }
+
+    /* -------------------------------------------------------------------------- */
+    /*                             Extract Sound                                  */
+    /* -------------------------------------------------------------------------- */
 
     public static Sound getSoundByString(String regex, Guild guild, User user) {
         QueryResult sounds = regex.matches("[0123456789]*") 
@@ -131,6 +141,63 @@ public class SoundBoard {
         return soundCache.get(sound_id); 
     }
 
+    public static List<Sound> getSoundsByIds(String[] sound_ids) {
+        List<Sound> sounds = new ArrayList<>();
+        for (String sound_id : sound_ids) {
+            Sound sound = soundCache.get(sound_id);
+            if (sound != null) {
+                sounds.add(sound);
+            }
+        }
+        if (sounds.size() == sound_ids.length) return sounds;
+
+        QueryResult soundsResult = DatabaseHandler.getSoundsById(sound_ids);
+        QueryResult tags = DatabaseHandler.getSoundsTags(sound_ids);
+
+        for (ResultRow soundData : soundsResult) {
+            List<Sound.Tag> tagList = new ArrayList<>();
+            for (ResultRow tag : tags) {
+                if (tag.get("sound_id").equals(soundData.get("id"))) {
+                    tagList.add(new Sound().new Tag(tag.getAsInt("id"), tag.get("name")));
+                }
+            }
+
+            if (tagList.size() != 5) {
+                for (int i = tagList.size(); i < 5; i++) {
+                    tagList.add(new Sound().new Tag(0, ""));
+                }
+            }
+
+            Sound sound = new Sound(soundData.get("id"), soundData.get("guild_id"), soundData.get("user_id"), soundData.get("name"), soundData.get("extension"), soundData.getAsBoolean("public"), soundData.getAsTimestamp("time"), tagList.toArray(new Sound.Tag[tagList.size()]));
+            soundCache.put(sound.getId(), sound);
+        }
+
+        sounds = new ArrayList<>();
+        for (String sound_id : sound_ids) {
+            sounds.add(soundCache.get(sound_id));
+        }
+        return sounds;
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                             Extract Tag                                    */
+    /* -------------------------------------------------------------------------- */
+
+    public static Tag getTagById(String tag_id) {
+        ResultRow tagData = DatabaseHandler.getTag(tag_id);
+        if (tagData == null) return null;
+        return new Sound().new Tag(tagData.getAsInt("id"), tagData.get("name"));
+    }
+
+    public static Tag getTagByName(String tag_name) {
+        int tag_id  = DatabaseHandler.insertTag(tag_name.toLowerCase());
+        return getTagById(String.valueOf(tag_id));
+    }
+
+
+    /* -------------------------------------------------------------------------- */
+    /*                             Sound Embed                                    */
+    /* -------------------------------------------------------------------------- */
 
     public static List<LayoutComponent> getSoundButton(String sound) {
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
@@ -217,8 +284,8 @@ public class SoundBoard {
         String formattedDuration = "";
         try {
             if (sound.getAsTrack() != null) formattedDuration = SafJNest.getFormattedDuration(sound.getAsTrack().getDuration());
-            else if (sound.getExtension().equals("opus")) formattedDuration = SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(sound.getPath())))*1000);
-            else formattedDuration = SafJNest.getFormattedDuration((Math.round(SoundBoard.getMP3Duration(sound.getPath())))*1000);
+            else if (sound.getExtension().equals("opus")) formattedDuration = SafJNest.getFormattedDuration((Math.round(SoundHandler.getOpusDuration(sound.getPath())))*1000);
+            else formattedDuration = SafJNest.getFormattedDuration((Math.round(SoundHandler.getMP3Duration(sound.getPath())))*1000);
         } catch (IOException e) {
             formattedDuration = "Error";
         }
@@ -268,6 +335,45 @@ public class SoundBoard {
         ));
 
         return buttonRows; 
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /*                             SoundBoard                                     */
+    /* -------------------------------------------------------------------------- */
+
+
+    public static List<Sound> getSoundboardSounds(String soundboardID) {
+        QueryResult sounds = DatabaseHandler.getSoundsFromSoundBoard(soundboardID);
+        return getSoundsByIds(sounds.arrayColumn("sound_id").toArray(new String[0]));
+    }
+
+    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardID) {
+        String name = DatabaseHandler.getSoundboardByID(soundboardID).get("name");
+        List<Sound> soundList = getSoundboardSounds(soundboardID);
+        return composeSoundboard(event, name, soundList);
+    }
+
+
+    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, List<Sound> sounds) {
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(event.getUser().getName() + " requested:", "https://github.com/SafJNest", event.getUser().getAvatarUrl());
+        eb.setTitle("**" + name + "**");
+        eb.setThumbnail(Bot.getJDA().getSelfUser().getAvatarUrl());
+        eb.setDescription("Press a button to play a sound");
+        eb.setColor(Bot.getColor());
+        eb.setFooter(sounds.size() + " sounds");
+        
+        List<LayoutComponent> rows = new ArrayList<>();
+        List<Button> row = new ArrayList<>();
+        for (int i = 0; i < sounds.size(); i++) {
+            row.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(), sounds.get(i).getName()));
+            if (row.size() == 5 || i == sounds.size() - 1) {
+                rows.add(ActionRow.of(row));
+                row = new ArrayList<>();
+            }
+        }
+
+        return event.deferReply().addEmbeds(eb.build()).setComponents(rows);
     }
 
 }

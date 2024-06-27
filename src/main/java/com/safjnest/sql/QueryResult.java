@@ -55,6 +55,30 @@ public class QueryResult implements Iterable<ResultRow>{
         return list;
     }
 
+    public List<?> arrayColumn(String column, Class<?> clazz){
+        List<Object> list = new ArrayList<>();
+        for(ResultRow row : result){
+            switch (clazz.getSimpleName()) {
+                case "Integer":
+                    list.add(row.getAsInt(column));
+                    break;
+                case "Long":
+                    list.add(row.getAsLong(column));
+                    break;
+                case "Boolean":
+                    list.add(row.getAsBoolean(column));
+                    break;
+                case "Double":
+                    list.add(row.getAsDouble(column));
+                    break;
+                default:
+                    list.add(row.get(column));
+                    break;
+            }
+        }
+        return list;
+    }
+
     public Stream<ResultRow> stream() {
         return result.stream();
     }

@@ -23,7 +23,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.model.Sound;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -258,6 +258,7 @@ public class Test extends Command{
                     }
                     for(Member m : g.getMembers()){
                         gs.getGuild(g.getId()).getUserData(m.getId());
+                        Bot.getUserData(m.getId());
                     }
                 }
                 e.reply("Done");
@@ -464,7 +465,7 @@ public class Test extends Command{
                 QueryResult res1 = DatabaseHandler.safJQuery(query);
                 List<Sound> sounds = new ArrayList<>();
                 for(ResultRow row : res1){
-                    sounds.add(SoundBoard.getSoundById(row.get("id")));
+                    sounds.add(SoundHandler.getSoundById(row.get("id")));
                 }
                 for (Guild g : e.getJDA().getGuilds()) {
                     for (Member m : g.getMembers()) {

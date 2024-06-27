@@ -834,8 +834,17 @@ public class DatabaseHandler {
         return safJQuery("SELECT ts.tag_id as id,t.name as name FROM tag_sounds ts JOIN tag t ON ts.tag_id = t.id WHERE ts.sound_id = '" + sound_id + "';");
     }
 
+    public static QueryResult getSoundsTags(String ...sound_id) {
+        StringBuilder sb = new StringBuilder();
+        for(String sound : sound_id) {
+            sb.append("'" + sound + "', ");
+        }
+        sb.setLength(sb.length() - 2);
+        return safJQuery("SELECT ts.sound_id as sound_id, ts.tag_id as tag_id, t.name as name FROM tag_sounds ts JOIN tag t ON ts.tag_id = t.id WHERE ts.sound_id IN (" + sb.toString() + ");");
+    }
+
     public static ResultRow getTag(String tag_id) {
-        return fetchJRow("SELECT name FROM tag WHERE id = '" + tag_id + "';");
+        return fetchJRow("SELECT id, name FROM tag WHERE id = '" + tag_id + "';");
     }
 
     public static boolean setSoundTags(String sound_id, Tag[] tags) {

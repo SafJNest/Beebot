@@ -20,7 +20,7 @@ import com.safjnest.commands.League.Summoner;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
-import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.model.Sound;
@@ -130,7 +130,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String args = event.getButton().getId().split("-", 3)[1];
         String soundId = event.getButton().getId().split("-", 3)[2];
 
-        Sound sound = SoundBoard.getSoundById(soundId);
+        Sound sound = SoundHandler.getSoundById(soundId);
 
         switch (args) {
             case "like":
@@ -143,8 +143,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        event.getMessage().editMessageEmbeds(SoundBoard.getSoundEmbed(sound, event.getUser()).build())
-                .setComponents(SoundBoard.getSoundEmbedButtons(sound))
+        event.getMessage().editMessageEmbeds(SoundHandler.getSoundEmbed(sound, event.getUser()).build())
+                .setComponents(SoundHandler.getSoundEmbedButtons(sound))
                 .queue();
     }
 
@@ -153,7 +153,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String soundId = event.getButton().getId().split("-", 4)[2];
         String tagId = event.getButton().getId().split("-", 4)[3];
 
-        Sound soundData = SoundBoard.getSoundById(soundId);
+        Sound soundData = SoundHandler.getSoundById(soundId);
 
         boolean tagSwitch = true;
         switch (args) {
@@ -175,7 +175,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.getMessage().delete().queue();
                 return;
             case "delete":
-                Sound s = SoundBoard.getSoundById(soundId);
+                Sound s = SoundHandler.getSoundById(soundId);
                 Tag[] tags = s.getTags();
                 for (int i = 0; i < tags.length; i++) {
                     if (tags[i].getId() == Integer.parseInt(tagId)) {
@@ -190,7 +190,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        List<LayoutComponent> buttons = tagSwitch ? SoundBoard.getTagButton(soundId, args) : SoundBoard.getSoundButton(soundId);
+        List<LayoutComponent> buttons = tagSwitch ? SoundHandler.getTagButton(soundId, args) : SoundHandler.getSoundButton(soundId);
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundData).build())
                         .setComponents(buttons)
@@ -208,7 +208,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         Button clicked = event.getButton();
         
-        Sound soundData = SoundBoard.getSoundById(soundId);
+        Sound soundData = SoundHandler.getSoundById(soundId);
         int tagId = 0;
 
         if (!soundData.getUserId().equals(event.getUser().getId())) {
@@ -253,7 +253,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        List<LayoutComponent> buttons = tagSwitch ? SoundBoard.getTagButton(soundId, String.valueOf(tagId)) : SoundBoard.getSoundButton(soundId); 
+        List<LayoutComponent> buttons = tagSwitch ? SoundHandler.getTagButton(soundId, String.valueOf(tagId)) : SoundHandler.getSoundButton(soundId); 
 
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundData).build())

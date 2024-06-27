@@ -7,18 +7,14 @@ import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
+import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.model.Sound;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
 import com.safjnest.util.CommandsLoader;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -64,25 +60,8 @@ public class SoundboardCreateSlash extends SlashCommand{
             DatabaseHandler.insertSoundBoard(soundboardName, event.getGuild().getId(), soundIDs.toArray(new String[0]));
         }
 
-        QueryResult sounds = DatabaseHandler.getSoundsById(soundIDs.toArray(new String[0]));
+        List<Sound> sounds = SoundHandler.getSoundsByIds(soundIDs.toArray(new String[0]));
+        SoundHandler.composeSoundboard(event, soundboardName, sounds).queue();
 
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(event.getMember().getUser().getName());
-        eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-        eb.setTitle("Soundboard: " + soundboardName);
-        eb.setDescription("Press a button to play a sound");
-        eb.setColor(Bot.getColor());
-
-        List<LayoutComponent> rows = new ArrayList<>();
-        List<Button> row = new ArrayList<>();
-        for (int i = 0; i < sounds.size(); i++) {
-            row.add(Button.primary("soundboard-" + sounds.get(i).get("id") + "." + sounds.get(i).get("extension"), sounds.get(i).get("name")));
-            if (row.size() == 5 || i == sounds.size() - 1) {
-                rows.add(ActionRow.of(row));
-                row = new ArrayList<>();
-            }
-        }
-
-        event.deferReply(false).addEmbeds(eb.build()).setComponents(rows).queue();
     }    
 }

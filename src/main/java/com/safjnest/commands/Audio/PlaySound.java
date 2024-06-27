@@ -5,7 +5,7 @@ import java.io.File;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.Sound;
 import com.safjnest.util.CommandsLoader;
@@ -60,7 +60,7 @@ public class PlaySound extends Command{
             return;
         }
         
-        Sound sound = SoundBoard.getSoundByString(fileName, guild, event.getAuthor());
+        Sound sound = SoundHandler.getSoundByString(fileName, guild, event.getAuthor());
 
         if(sound == null) {
             event.reply("Couldn't find a sound with that name/id.");
@@ -100,7 +100,7 @@ public class PlaySound extends Command{
 
             sound.setTrack(track);
 
-            event.getChannel().sendMessageEmbeds(SoundBoard.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundBoard.getSoundEmbedButtons(sound)).queue();
+            event.getChannel().sendMessageEmbeds(SoundHandler.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundHandler.getSoundEmbedButtons(sound)).queue();
         }
 
         @Override

@@ -8,7 +8,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.Sound;
 import com.safjnest.model.Sound.Tag;
@@ -143,7 +143,7 @@ public class SearchSoundSlash extends SlashCommand {
                 }
     
                 List<String> selected = event.getValues();
-                Sound sound = SoundBoard.getSoundById(selected.get(0));
+                Sound sound = SoundHandler.getSoundById(selected.get(0));
     
                 String fileName = sound.getPath();
                 PlayerManager.get().loadItemOrdered(guild, fileName, new ResultHandler(slashEvent, sound, fileName));
@@ -188,7 +188,7 @@ public class SearchSoundSlash extends SlashCommand {
                 try {
                     eb.addField("Lenght", "```"
                         + (sound.isOpus()
-                        ? SafJNest.getFormattedDuration((Math.round(SoundBoard.getOpusDuration(fileName)))*1000)
+                        ? SafJNest.getFormattedDuration((Math.round(SoundHandler.getOpusDuration(fileName)))*1000)
                         : SafJNest.getFormattedDuration(track.getInfo().length))
                     + "```", true);
                 } catch (IOException e) {e.printStackTrace();}

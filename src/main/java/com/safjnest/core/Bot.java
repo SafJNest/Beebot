@@ -152,7 +152,7 @@ public class Bot extends ListenerAdapter {
         BOT_ID = jda.getSelfUser().getId();
 
         gs = new GuildDataHandler();
-        userData = new CacheMap<String, UserData>(20);
+        userData = new CacheMap<String, UserData>(50);
         
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(helpWord);

@@ -10,7 +10,7 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.CacheMap;
-import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.model.Sound;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -73,13 +73,13 @@ public class PrintCache extends Command {
                 event.reply("User size set to " + args[1]);
                 break;
             case "soundsize":
-                SoundBoard.getSoundCache().setMaxSize(Integer.valueOf(args[1]));
+                SoundHandler.getSoundCache().setMaxSize(Integer.valueOf(args[1]));
                 event.reply("Sound size set to " + args[1]);
                 break;
             case "clear":
                 Bot.getGuildSettings().getGuilds().clear();
                 Bot.getUsers().clear();
-                SoundBoard.getSoundCache().clear();
+                SoundHandler.getSoundCache().clear();
                 event.reply("Cache cleared");
                 break;
             default:
@@ -124,7 +124,7 @@ public class PrintCache extends Command {
 
         String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
             + "Total Users: " + Bot.getUsers().size() + " / " + Bot.getUsers().getMaxSize() + "\n"
-            + "Total Sounds: " + SoundBoard.getSoundCache().size() + " / " + SoundBoard.getSoundCache().getMaxSize() + "\n"
+            + "Total Sounds: " + SoundHandler.getSoundCache().size() + " / " + SoundHandler.getSoundCache().getMaxSize() + "\n"
             + "Total Members: " + totalUsers + "\n"
             + "Total Channels: " + totalChannels + "\n"
             + "Total Alerts: " + totalAlerts + "\n"
@@ -192,7 +192,7 @@ public class PrintCache extends Command {
 
     private void printSounds() {
         ArrayList<String> cache = new ArrayList<>();
-        CacheMap<String, Sound> sounds = SoundBoard.getSoundCache();
+        CacheMap<String, Sound> sounds = SoundHandler.getSoundCache();
 
         String msg = "";
         for(Sound s : sounds.values(false)) {
@@ -208,7 +208,7 @@ public class PrintCache extends Command {
 
         String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
         + "Total Users: " + Bot.getUsers().size() + " / " + Bot.getUsers().getMaxSize() + "\n"
-        + "Total Sounds: " + SoundBoard.getSoundCache().size() + " / " + SoundBoard.getSoundCache().getMaxSize() + "\n"
+        + "Total Sounds: " + SoundHandler.getSoundCache().size() + " / " + SoundHandler.getSoundCache().getMaxSize() + "\n"
         + "Other bot information\n"
         + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
         + "League Version: " + RiotHandler.getVersion() + "```";

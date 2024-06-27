@@ -5,7 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.model.Sound;
 import com.safjnest.util.CommandsLoader;
 
@@ -39,7 +39,7 @@ public class CustomizeSoundSlash extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         String fileName = event.getOption("user_sound").getAsString();
 
-        Sound sound = SoundBoard.getSoundByString(fileName, event.getGuild(), event.getUser());
+        Sound sound = SoundHandler.getSoundByString(fileName, event.getGuild(), event.getUser());
 
         if(sound == null) {
             event.reply("Couldn't find a sound with that name/id (you can only change one of your sounds).");
@@ -48,7 +48,7 @@ public class CustomizeSoundSlash extends SlashCommand {
 
         EmbedBuilder eb = getEmbed(event.getUser(), sound);
 
-        event.replyEmbeds(eb.build()).setComponents(SoundBoard.getSoundButton(sound.getId())).queue();
+        event.replyEmbeds(eb.build()).setComponents(SoundHandler.getSoundButton(sound.getId())).queue();
         
     }
 

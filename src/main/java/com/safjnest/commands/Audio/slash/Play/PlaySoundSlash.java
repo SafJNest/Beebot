@@ -6,7 +6,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.Sound;
 import com.safjnest.util.CommandsLoader;
@@ -63,7 +63,7 @@ public class PlaySoundSlash extends SlashCommand{
             return;
         }
         
-        Sound sound = SoundBoard.getSoundByString(fileName, guild, event.getUser());
+        Sound sound = SoundHandler.getSoundByString(fileName, guild, event.getUser());
 
         if(sound == null) {
             event.reply("Couldn't find a sound with that name/id.");
@@ -104,7 +104,7 @@ public class PlaySoundSlash extends SlashCommand{
 
 
 
-            event.deferReply(false).addEmbeds(SoundBoard.getSoundEmbed(sound, author.getUser()).build()).addComponents(SoundBoard.getSoundEmbedButtons(sound)).queue();
+            event.deferReply(false).addEmbeds(SoundHandler.getSoundEmbed(sound, author.getUser()).build()).addComponents(SoundHandler.getSoundEmbedButtons(sound)).queue();
         }
 
         @Override

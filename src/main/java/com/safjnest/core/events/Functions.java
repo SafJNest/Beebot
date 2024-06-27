@@ -13,7 +13,7 @@ import com.safjnest.util.ExperienceSystem;
 import com.safjnest.commands.Audio.slash.CustomizeSoundSlash;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundBoard;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.AliasData;
@@ -396,24 +396,26 @@ public class Functions {
         EmbedBuilder eb = null;
         switch (id) {
             case "sound":
-                Sound sound = SoundBoard.getSoundById(args);
+                Sound sound = SoundHandler.getSoundById(args);
                 String newName = event.getValue("sound-name").getAsString();
                 sound.setName(newName);
 
                 eb = CustomizeSoundSlash.getEmbed(event.getUser(), sound);
-                event.deferReply().addEmbeds(eb.build()).addComponents(SoundBoard.getSoundButton(args)).queue();
+                event.deferReply().addEmbeds(eb.build()).addComponents(SoundHandler.getSoundButton(args)).queue();
 
 
                 break;
 
             case "tag":        
                 String newTagName = event.getValue("tag-name").getAsString();
-                int tag = DatabaseHandler.insertTag(newTagName.toLowerCase());
-                Sound s = SoundBoard.getSoundById(args.split("-")[0]);
+                
+                Tag tag = SoundHandler.getTagByName(newTagName);
+                Sound s = SoundHandler.getSoundById(args.split("-")[0]);
+                
                 Tag[] tags = s.getTags();
                 for (int i = 0; i < tags.length; i++) {
                     if (tags[i].getId() == Integer.parseInt(args.split("-")[1])) {
-                        tags[i] = new Sound().new Tag(tag, newTagName);
+                        tags[i] = tag;
                         break;
                     }
                 }
@@ -423,7 +425,7 @@ public class Functions {
                 s.setTags(tags);
 
                 eb = CustomizeSoundSlash.getEmbed(event.getUser(), s);
-                event.deferReply().addEmbeds(eb.build()).addComponents(SoundBoard.getSoundButton(args.split("-")[0])).queue();
+                event.deferReply().addEmbeds(eb.build()).addComponents(SoundHandler.getSoundButton(args.split("-")[0])).queue();
 
 
                 break;
