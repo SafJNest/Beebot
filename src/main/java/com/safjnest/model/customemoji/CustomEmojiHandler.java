@@ -38,7 +38,7 @@ public class CustomEmojiHandler {
     }
 
     public static String getFormattedEmoji(String name){
-        if(name.equals("0") || name.equals("a0") || name.equals("2202_")) {
+        if(name.equals("0") || name.equals("a0")) {
             return ":black_large_square:";
         }
 

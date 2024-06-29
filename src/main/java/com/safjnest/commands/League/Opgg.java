@@ -133,7 +133,7 @@ public class Opgg extends Command {
                 switch (match.getQueue()){
 
                     case CHERRY:
-                        
+
                         content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda +"\n"
                         + date + " | **"+ getFormattedDuration((match.getGameDuration()))  + "**\n"
                         + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner1Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment1())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment2())) + "\n"
