@@ -107,6 +107,10 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         return dataDragonVersion;
     }
 
+    public static void setVersion(String version) {
+        dataDragonVersion = version;
+    }
+
     /**
      * Load all the runes data into {@link #runesHandler runesHandler}
      */

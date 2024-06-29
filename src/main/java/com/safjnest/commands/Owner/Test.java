@@ -486,6 +486,10 @@ public class Test extends Command{
                 }
 
                 break;
+            case "lolversion":
+                RiotHandler.setVersion(args[1]);
+                e.reply("new version: " + RiotHandler.getVersion());
+                break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;
