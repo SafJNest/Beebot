@@ -902,6 +902,13 @@
         "arguments" : "[CommandName]"
     },
 
+    "twitch":{
+        "alias" : ["twitchoid"],
+        "help"  : "Create a subscription.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName]"
+    },
+
 
 
 

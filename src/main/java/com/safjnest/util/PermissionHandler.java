@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 
@@ -14,6 +16,7 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
+
 
 /**
  * This class handles all matters related to discord permissions.
@@ -271,5 +274,30 @@ public class PermissionHandler {
         return escapedString.toString();
     }
 
-    
+    private static String escapePart(String part) {
+        return part.replace("*", "\\*")
+                   .replace("_", "\\_")
+                   .replace("~", "\\~");
+    }
+
+    public static String escapeDiscordChars(String input) {
+        if (input == null) {
+            return null;
+        }
+
+        Pattern linkPattern = Pattern.compile("https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{2,4}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)");
+        Matcher matcher = linkPattern.matcher(input);
+
+        StringBuilder result = new StringBuilder();
+        int lastEnd = 0;
+
+        while (matcher.find()) {
+            result.append(escapePart(input.substring(lastEnd, matcher.start())));
+            result.append(matcher.group());
+            lastEnd = matcher.end();
+        }
+        result.append(escapePart(input.substring(lastEnd)));
+
+        return result.toString();
+    }
 }

@@ -93,13 +93,9 @@ public class PlaySound extends Command{
         @Override
         public void trackLoaded(AudioTrack track) {
             pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
-
             guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
-
             sound.increaseUserPlays(author.getId());
-
             sound.setTrack(track);
-
             event.getChannel().sendMessageEmbeds(SoundHandler.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundHandler.getSoundEmbedButtons(sound)).queue();
         }
 

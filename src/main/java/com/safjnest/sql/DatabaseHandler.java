@@ -827,7 +827,24 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getTwitchSubscriptions(String streamer_id) {
-        return safJQuery("SELECT guild_id, channel_id, role_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "';");
+        return safJQuery("SELECT guild_id, channel_id, role_id, streamer_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "';");
+    }
+
+    public static boolean setTwitchSubscriptions(String streamer_id, String guild_id, String channel_id, String role_id) {
+        String sql = "INSERT INTO twitch_subscription(streamer_id, guild_id, channel_id, role_id) VALUES(?, ?, ?, ?);";
+        try {
+            PreparedStatement pstmt = c.prepareStatement(sql);
+            pstmt.setObject(1, streamer_id);
+            pstmt.setObject(2, guild_id);
+            pstmt.setObject(3, channel_id);
+            pstmt.setObject(4, role_id);
+    
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
     }
 
     public static QueryResult getSoundTags(String sound_id) {

@@ -211,7 +211,7 @@ public class Bot extends ListenerAdapter {
         );
         
         
-        Collections.addAll(commandsList, new Leaderboard(), new Test(gs));
+        Collections.addAll(commandsList, new Leaderboard(), new Test(gs), new Twitch());
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
@@ -230,7 +230,7 @@ public class Bot extends ListenerAdapter {
             new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(), 
             new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), 
             new PermissionsSlash(), new ModifyNicknameSlash(), new WelcomeSlash(gs), new LeaveSlash(), new BoostSlash(), 
-            new BlacklistSlash(gs)
+            new BlacklistSlash(gs), new TwitchSlash()
         );
 
         

@@ -97,19 +97,13 @@ public class App {
         );
 
         new SoundHandler();
-
         
         new TwitchClient(
             twitchSettings.get("clientId").toString(), 
             twitchSettings.get("clientSecret").toString()
         );
-        
-        if (!App.isExtremeTesting()) TwitchClient.init();
+        TwitchClient.init();
 
-        //TwitchConduit.registerSubEvent("126371014"); //Sunny314_
-        //TwitchClient.registerSubEvent("164078841"); //leon4117
-
-        
         riotApi = null;
         try {
             riotApi = new R4J(new APICredentials(riotSettings.get("riotKey").toString()));
