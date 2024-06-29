@@ -1,4 +1,4 @@
-package com.safjnest.commands.Misc.slash;
+package com.safjnest.commands.Misc.slash.twitch;
 
 import java.util.Arrays;
 
@@ -14,20 +14,19 @@ import com.safjnest.util.Twitch.TwitchClient;
 
 import com.safjnest.sql.DatabaseHandler;
 
-public class TwitchSlash extends SlashCommand{
+public class TwitchLinkSlash extends SlashCommand{
 
-    public TwitchSlash(){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
+    public TwitchLinkSlash(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
+        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
+        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "streamer", "Streamer's username", true),
             new OptionData(OptionType.CHANNEL, "channel", "Channel", true)
                 .setChannelTypes(ChannelType.TEXT),
-            new OptionData(OptionType.ROLE, "role", "Role that will be pinged when the live goes on", false)
+            new OptionData(OptionType.STRING, "message", "The message that would be sent when the live goes on", false)
         );
     }
 
@@ -35,7 +34,7 @@ public class TwitchSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String streamerUsername = event.getOption("streamer").getAsString();
         String channel = event.getOption("channel").getAsChannel().getId();
-        String role = event.getOption("role") == null ? null : event.getOption("role").getAsRole().getId();
+        String message = event.getOption("message") == null ? null : event.getOption("message").getAsString();
 
         String streamerId = TwitchClient.getStreamerId(streamerUsername);
 
@@ -45,7 +44,7 @@ public class TwitchSlash extends SlashCommand{
         }
 
         TwitchClient.registerSubEvent(streamerId);
-        DatabaseHandler.setTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, role);
+        DatabaseHandler.setTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, message);
 
         event.reply("Twitch subscription registered").queue();
     }

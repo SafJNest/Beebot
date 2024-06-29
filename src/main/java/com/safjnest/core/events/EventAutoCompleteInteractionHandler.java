@@ -12,6 +12,7 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.LOL.AugmentData;
 import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.Twitch.TwitchClient;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.tts.TTSVoices;
@@ -375,6 +376,28 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     }
 
+    private ArrayList<Choice> streamer(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+        QueryResult streamers = DatabaseHandler.getTwitchSubscriptionsGuild(e.getGuild().getId());
+        List<com.github.twitch4j.helix.domain.User> users = TwitchClient.getStreamers(streamers.arrayColumn("streamer_id"));
+
+        if (isFocused) {
+            for (com.github.twitch4j.helix.domain.User user : users) {
+                if (user.getDisplayName().toLowerCase().contains(value.toLowerCase()))
+                    choices.add(new Choice(user.getDisplayName(), user.getId()));
+            }
+        }
+        else {
+            for (com.github.twitch4j.helix.domain.User user : users)
+                choices.add(new Choice(user.getDisplayName(), user.getLogin()));
+        }
+
+
+        return choices;
+
+    }
+
 
 
 
@@ -434,6 +457,10 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         else if (e.getFocusedOption().getName().equals("champion"))
             name = "champion";
+
+        else if (e.getFocusedOption().getName().equals("streamer"))
+            name = "streamer_name";
+
         
         switch (name) {
             case "play":
@@ -483,6 +510,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 break;
             case "personal_summoner":
                 choices = summoner(e);
+                break;
+            case "streamer_name":
+                choices = streamer(e);
                 break;
         }
 

@@ -104,6 +104,8 @@ public class App {
         );
         TwitchClient.init();
 
+        //TwitchClient.registerSubEvent("126371014");
+
         riotApi = null;
         try {
             riotApi = new R4J(new APICredentials(riotSettings.get("riotKey").toString()));

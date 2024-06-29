@@ -827,17 +827,21 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getTwitchSubscriptions(String streamer_id) {
-        return safJQuery("SELECT guild_id, channel_id, role_id, streamer_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "';");
+        return safJQuery("SELECT guild_id, channel_id, message, streamer_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "';");
     }
 
-    public static boolean setTwitchSubscriptions(String streamer_id, String guild_id, String channel_id, String role_id) {
-        String sql = "INSERT INTO twitch_subscription(streamer_id, guild_id, channel_id, role_id) VALUES(?, ?, ?, ?);";
+    public static QueryResult getTwitchSubscriptionsGuild(String guild_id) {
+        return safJQuery("SELECT guild_id, channel_id, message, streamer_id FROM twitch_subscription WHERE guild_id = '" + guild_id + "';");
+    }
+
+    public static boolean setTwitchSubscriptions(String streamer_id, String guild_id, String channel_id, String message) {
+        String sql = "INSERT INTO twitch_subscription(streamer_id, guild_id, channel_id, message) VALUES(?, ?, ?, ?);";
         try {
             PreparedStatement pstmt = c.prepareStatement(sql);
             pstmt.setObject(1, streamer_id);
             pstmt.setObject(2, guild_id);
             pstmt.setObject(3, channel_id);
-            pstmt.setObject(4, role_id);
+            pstmt.setObject(4, message);
     
             pstmt.executeUpdate();
             return true;
@@ -845,6 +849,10 @@ public class DatabaseHandler {
             System.out.println(e.getMessage());
             return false;
         }
+    }
+
+    public static boolean deleteTwitchSubscription(String streamer_id, String guild_id) {
+        return runQuery("DELETE FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "' AND guild_id = '" + guild_id + "';");
     }
 
     public static QueryResult getSoundTags(String sound_id) {

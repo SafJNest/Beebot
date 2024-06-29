@@ -69,7 +69,7 @@ public class TwitchClient {
                 return;
             }
         }
-            
+        BotLogger.trace("[TWITCH] Registering subscription for " + streamerId);
         conduit.register(SubscriptionTypes.STREAM_ONLINE, b -> b.broadcasterUserId(streamerId).build());
     }
 
@@ -100,6 +100,23 @@ public class TwitchClient {
         if (streams.size() == 0) return null;
 
         return streams.get(0);
+    }
+
+    public static List<User> getStreamers(List<String> streamerIds) {
+        return TwitchClient.getClient().getHelix().getUsers(null, streamerIds, null).execute().getUsers();
+    }
+
+    public static void unregisterSubEvent(String streamerId) {
+        EventSubSubscription toUnregiter = null;
+        for(EventSubSubscription sub : getSubscriptionsList().getSubscriptions()) {
+            if (((ChannelEventSubCondition) sub.getCondition()).getBroadcasterUserId().equals(streamerId)) {
+                toUnregiter = sub;
+                break;
+            }
+        }
+        if (toUnregiter == null) return;
+        BotLogger.trace("[TWITCH] Unregistering subscription for " + streamerId);
+        conduit.unregister(toUnregiter);
     }
 
 }

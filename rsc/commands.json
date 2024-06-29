@@ -906,7 +906,19 @@
         "alias" : ["twitchoid"],
         "help"  : "Create a subscription.",
         "category" : "Miscellaneous",
-        "arguments" : "[CommandName]"
+        "arguments" : "[CommandName]",
+        "children": {
+            "link": {
+                "alias" : [],
+                "help"  : "Link a streamer",
+                "arguments" : "[CommandName]"
+            },
+            "unlink": {
+                "alias" : [],
+                "help"  : "Unlink a streamer",
+                "arguments" : "[CommandName]"
+            }
+        }
     },
 
 

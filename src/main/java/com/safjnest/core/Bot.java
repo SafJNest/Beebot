@@ -54,6 +54,7 @@ import com.safjnest.commands.Math.*;
 import com.safjnest.commands.Math.slash.*;
 import com.safjnest.commands.Misc.*;
 import com.safjnest.commands.Misc.slash.*;
+import com.safjnest.commands.Misc.slash.twitch.TwitchSlash;
 import com.safjnest.commands.Owner.*;
 import com.safjnest.commands.Owner.Shutdown;
 import com.safjnest.commands.Queue.*;
