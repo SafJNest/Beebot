@@ -1,8 +1,6 @@
 package com.safjnest.util.Twitch;
 
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.helix.domain.User;
@@ -28,10 +26,6 @@ class TwitchEventsHandler {
         User streamer = TwitchClient.getStreamer(event.getBroadcasterUserLogin());
         Stream stream = TwitchClient.getStream(event.getBroadcasterUserId());
 
-        Instant instant = stream.getStartedAtInstant(); 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy h:mm a").withZone(ZoneId.systemDefault());
-        String formattedDate = formatter.format(instant);
-
         String liveUrl = "https://www.twitch.tv/" + streamer.getLogin();
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -41,7 +35,8 @@ class TwitchEventsHandler {
         eb.addField("Game", stream.getGameName(), true);
         eb.setColor(Bot.getColor());
         eb.setImage(stream.getThumbnailUrl(400, 225));
-        eb.setFooter("Twitch • " + formattedDate, "https://static-00.iconduck.com/assets.00/twitch-icon-512x512-ws2eyit3.png");
+        eb.setFooter("Twitch", "https://static-00.iconduck.com/assets.00/twitch-icon-512x512-ws2eyit3.png");
+        eb.setTimestamp(Instant.now());
 
         for (ResultRow guildRow : result) {
             Guild guild = Bot.getJDA().getGuildById(guildRow.get("guild_id"));
