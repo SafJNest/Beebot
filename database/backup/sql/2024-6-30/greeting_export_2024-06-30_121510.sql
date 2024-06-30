@@ -1,0 +1,9 @@
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('474935164451946506', 46, '888109986973106306');
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('474935164451946506', 50, '335796793331810305');
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('0', 165, '707479292644163604');
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('474935164451946506', 171, '440489230968553472');
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('474935164451946506', 186, '345307975788920842');
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('474935164451946506', 211, '352192170503045121');
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('474935164451946506', 211, '383358222972616705');
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('608967318789160970', 211, '383358222972616705');
+insert into `greeting` (`guild_id`, `sound_id`, `user_id`) values ('474935164451946506', 211, '930887271618609173');

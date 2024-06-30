@@ -43,6 +43,12 @@ public class TwitchLinkSlash extends SlashCommand{
             return;
         }
 
+        if (!DatabaseHandler.getTwitchSubscriptionsGuild(streamerId, event.getGuild().getId()).emptyValues()) {
+            DatabaseHandler.updateTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, message);
+            event.reply("Twitch subscription updated").queue();
+            return;
+        }
+
         TwitchClient.registerSubEvent(streamerId);
         DatabaseHandler.setTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, message);
 

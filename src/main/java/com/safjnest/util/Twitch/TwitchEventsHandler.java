@@ -19,8 +19,6 @@ import com.github.twitch4j.helix.domain.Stream;
 class TwitchEventsHandler {
 
     public static void onStreamOnlineEvent(StreamOnlineEvent event) {
-        System.out.println("registered sub 0: " + TwitchClient.getRegisteredSubEvents().get(0).getId());
-
         BotLogger.trace("[TWITCH] " + event.getBroadcasterUserName() + " is now live on Twitch!");
         
         QueryResult result = DatabaseHandler.getTwitchSubscriptions(event.getBroadcasterUserId());

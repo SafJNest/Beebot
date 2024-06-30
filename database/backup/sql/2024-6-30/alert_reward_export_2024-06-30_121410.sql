@@ -1,0 +1,11 @@
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (48, 10, 3, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (49, 11, 30, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (50, 12, 20, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (51, 13, 1, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (52, 14, 10, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (53, 15, 1, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (54, 16, 25, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (55, 18, 22, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (56, 19, 2, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (57, 20, 6, 0);
+insert into `alert_reward` (`alert_id`, `id`, `level`, `temporary`) values (59, 21, 4, 0);

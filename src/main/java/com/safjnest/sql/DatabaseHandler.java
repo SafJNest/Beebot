@@ -834,6 +834,10 @@ public class DatabaseHandler {
         return safJQuery("SELECT guild_id, channel_id, message, streamer_id FROM twitch_subscription WHERE guild_id = '" + guild_id + "';");
     }
 
+    public static ResultRow getTwitchSubscriptionsGuild(String streamer_id, String guild_id) {
+        return fetchJRow("SELECT guild_id, channel_id, message, streamer_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "' AND guild_id = '" + guild_id + "';");
+    }
+
     public static boolean setTwitchSubscriptions(String streamer_id, String guild_id, String channel_id, String message) {
         String sql = "INSERT INTO twitch_subscription(streamer_id, guild_id, channel_id, message) VALUES(?, ?, ?, ?);";
         try {
@@ -845,6 +849,23 @@ public class DatabaseHandler {
     
             pstmt.executeUpdate();
             return true;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean updateTwitchSubscriptions(String streamer_id, String guild_id, String channel_id, String message) {
+        String sql = "UPDATE twitch_subscription SET channel_id = ?, message = ? WHERE streamer_id = ? AND guild_id = ?;";
+        try {
+            PreparedStatement pstmt = c.prepareStatement(sql);
+            pstmt.setObject(1, channel_id);
+            pstmt.setObject(2, message);
+            pstmt.setObject(3, streamer_id);
+            pstmt.setObject(4, guild_id);
+
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0; // Returns true if at least one row was updated
         } catch (SQLException e) {
             System.out.println(e.getMessage());
             return false;
