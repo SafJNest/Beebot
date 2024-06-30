@@ -58,7 +58,6 @@ public class App {
         SafJNest.bee();
         new BotLogger("Beebot", null);
 
-
         EXTREME_TESTING = getPropertyAsBoolean("testing");
         if (EXTREME_TESTING) BotLogger.info("Beebot is in testing mode");
         else BotLogger.info("Beebot is in normal mode");
@@ -103,8 +102,6 @@ public class App {
             twitchSettings.get("clientSecret").toString()
         );
         TwitchClient.init();
-
-        //TwitchClient.registerSubEvent("126371014");
 
         riotApi = null;
         try {

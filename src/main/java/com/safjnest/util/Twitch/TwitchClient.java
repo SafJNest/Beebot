@@ -7,7 +7,6 @@ import com.github.twitch4j.ITwitchClient;
 import com.github.twitch4j.TwitchClientBuilder;
 import com.github.twitch4j.eventsub.Conduit;
 import com.github.twitch4j.eventsub.EventSubSubscription;
-import com.github.twitch4j.eventsub.condition.ChannelEventSubCondition;
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
@@ -37,13 +36,13 @@ public class TwitchClient {
     }
 
     public static void init() {
-        BotLogger.trace("[TWITCH] Creating helix...");
+        BotLogger.trace("[TWITCH] Creating twitch client...");
         client = TwitchClientBuilder.builder()
             .withEnableHelix(true)
             .withClientId(clientId)
             .withClientSecret(clientSecret)
             .build();
-
+        
         try {
             conduit = TwitchConduitSocketPool.create(spec -> {
                 spec.clientId(clientId);
@@ -57,20 +56,27 @@ public class TwitchClient {
                 }
             });
         } catch (Exception e1) {
-            BotLogger.error("[TWITCH] Could not connect to twitch");
+            BotLogger.error("[TWITCH] Error connecting to twitch");
             e1.printStackTrace();
         }
         conduit.getEventManager().onEvent(StreamOnlineEvent.class, TwitchEventsHandler::onStreamOnlineEvent);
     }
 
-    public static void registerSubEvent(String streamerId) {
-        for(EventSubSubscription sub : getSubscriptionsList().getSubscriptions()) {
-            if (((ChannelEventSubCondition) sub.getCondition()).getBroadcasterUserId().equals(streamerId)) {
-                return;
-            }
-        }
+    public static void registerSubEvent(String streamerId) {        
+        if(client.getHelix().getEventSubSubscriptions(null, null, null, streamerId, null, null).execute().getSubscriptions().size() > 0) 
+            return;
+        
         BotLogger.trace("[TWITCH] Registering subscription for " + streamerId);
         conduit.register(SubscriptionTypes.STREAM_ONLINE, b -> b.broadcasterUserId(streamerId).build());
+    }
+
+    public static void unregisterSubEvent(String streamerId) {
+        List<EventSubSubscription> subs = client.getHelix().getEventSubSubscriptions(null, null, null, streamerId, null, null).execute().getSubscriptions();
+        if(subs.size() == 0)
+            return;
+
+        BotLogger.trace("[TWITCH] Unregistering subscription for " + streamerId);
+        conduit.unregister(subs.get(0));
     }
 
     public static List<IEventSubscription> getRegisteredSubEvents() {
@@ -105,18 +111,4 @@ public class TwitchClient {
     public static List<User> getStreamers(List<String> streamerIds) {
         return TwitchClient.getClient().getHelix().getUsers(null, streamerIds, null).execute().getUsers();
     }
-
-    public static void unregisterSubEvent(String streamerId) {
-        EventSubSubscription toUnregiter = null;
-        for(EventSubSubscription sub : getSubscriptionsList().getSubscriptions()) {
-            if (((ChannelEventSubCondition) sub.getCondition()).getBroadcasterUserId().equals(streamerId)) {
-                toUnregiter = sub;
-                break;
-            }
-        }
-        if (toUnregiter == null) return;
-        BotLogger.trace("[TWITCH] Unregistering subscription for " + streamerId);
-        conduit.unregister(toUnregiter);
-    }
-
 }
