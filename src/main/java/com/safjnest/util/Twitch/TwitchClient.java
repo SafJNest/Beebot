@@ -9,6 +9,7 @@ import com.github.twitch4j.eventsub.Conduit;
 import com.github.twitch4j.eventsub.EventSubSubscription;
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
+import com.github.twitch4j.eventsub.socket.events.EventSocketConnectionStateEvent;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
@@ -39,6 +40,7 @@ public class TwitchClient {
         BotLogger.trace("[TWITCH] Creating twitch client...");
         client = TwitchClientBuilder.builder()
             .withEnableHelix(true)
+            .withEnableEventSocket(true)
             .withClientId(clientId)
             .withClientSecret(clientSecret)
             .build();
@@ -60,6 +62,7 @@ public class TwitchClient {
             e1.printStackTrace();
         }
         conduit.getEventManager().onEvent(StreamOnlineEvent.class, TwitchEventsHandler::onStreamOnlineEvent);
+        conduit.getEventManager().onEvent(EventSocketConnectionStateEvent.class, TwitchEventsHandler::onSocketConnectionStateEvent);
     }
 
     public static void registerSubEvent(String streamerId) {        

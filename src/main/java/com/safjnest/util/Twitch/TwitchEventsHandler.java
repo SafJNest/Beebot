@@ -3,6 +3,7 @@ package com.safjnest.util.Twitch;
 import java.time.Instant;
 
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
+import com.github.twitch4j.eventsub.socket.events.EventSocketConnectionStateEvent;
 import com.github.twitch4j.helix.domain.User;
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
@@ -50,5 +51,9 @@ class TwitchEventsHandler {
 
             channel.sendMessage(message).addEmbeds(eb.build()).queue();
         }
+    }
+
+    public static void onSocketConnectionStateEvent(EventSocketConnectionStateEvent event) {
+        BotLogger.trace("[TWITCH] Socket connection state changed: " + event.getState().name());        
     }
 }
