@@ -240,6 +240,38 @@ public class EventButtonHandler extends ListenerAdapter {
             case "dislike":
                 sound.dislike(event.getUser().getId(), !sound.hasDisliked(event.getUser().getId()));
                 break;
+            case "replay":
+
+                PlayerManager pm = PlayerManager.get();
+                Guild guild = event.getGuild();
+                String path = sound.getPath();
+                AudioChannel channelJoin = event.getMember().getVoiceState().getChannel();
+                if (channelJoin == null)  return;
+
+                sound.increaseUserPlays(event.getUser().getId());
+     
+                pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
+                    @Override
+                    public void trackLoaded(AudioTrack track) {
+                        if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);
+        
+                        track.setUserData(new TrackData(AudioType.SOUND));
+                        pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
+                    }
+        
+                    @Override
+                    public void playlistLoaded(AudioPlaylist playlist) {}
+                    
+                    @Override
+                    public void noMatches() {}
+        
+                    @Override
+                    public void loadFailed(FriendlyException throwable) {
+                        System.out.println("error: " + throwable.getMessage());
+                    }
+                });
+                break;
+
             default:
                 break;
         }

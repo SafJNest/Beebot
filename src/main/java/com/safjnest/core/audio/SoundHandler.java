@@ -202,13 +202,13 @@ public class SoundHandler {
     public static List<LayoutComponent> getSoundButton(String sound) {
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
-        ResultRow soundData = DatabaseHandler.getSoundById(sound);
+        Sound soundData = SoundHandler.getSoundById(sound);
 
         Button id = Button.primary("sound-id", "ID: " + sound).asDisabled();
-        Button name = Button.secondary("sound-name", soundData.get("name")).withEmoji(CustomEmojiHandler.getRichEmoji("wavesound"));
+        Button name = Button.secondary("sound-name", soundData.getName()).withEmoji(CustomEmojiHandler.getRichEmoji("wavesound"));
         Button isPrivate = Button.secondary("sound-private", " ").withEmoji(CustomEmojiHandler.getRichEmoji("lock"));
 
-        if (soundData.getAsBoolean("public")) {
+        if (soundData.isPublic()) {
             isPrivate = Button.success("sound-private", " ").withEmoji(CustomEmojiHandler.getRichEmoji("lock"));
         }
 
@@ -225,22 +225,13 @@ public class SoundHandler {
             delete
         ));
 
-        QueryResult tags = DatabaseHandler.getSoundTags(sound);
+        Tag[] tags = soundData.getTags();
         List<Button> tagButtons = new ArrayList<>();
-        if (tags != null) {
-            for (ResultRow tag : tags) {
-                tagButtons.add(Button.primary("sound-tag-" + tag.get("id"), tag.get("name")).withEmoji(CustomEmojiHandler.getRichEmoji("tag")));
-            }
-            if (tagButtons.size() != 5) {
-                for (int i = tagButtons.size(); i < 5; i++) {
-                    tagButtons.add(Button.secondary("sound-tag-empty-" + i, " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")));
-                }
-            }
-        }
-        else {
-            for (int i = 0; i < 5; i++) {
-                tagButtons.add(Button.secondary("sound-tag-empty-" + i, " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")));
-            }
+        int n = 0;
+        for (Tag tag : tags) {
+            if (tag.getId() == 0) tagButtons.add(Button.secondary("sound-tag-empty-" + n, " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")));
+            else tagButtons.add(Button.primary("sound-tag-" + sound + "-" + tag.getId(), tag.getName()).withEmoji(CustomEmojiHandler.getRichEmoji("tag")));
+            n++;
         }
 
         buttonRows.add(ActionRow.of(tagButtons));
@@ -327,11 +318,13 @@ public class SoundHandler {
         int[] likes = sound.getLikesDislikes();
         Button like = Button.primary("soundplay-like-" + sound.getId(), String.valueOf(likes[0])).withEmoji(CustomEmojiHandler.getRichEmoji("like"));
         Button dislike = Button.danger("soundplay-dislike-"+ sound.getId(), String.valueOf(likes[1])).withEmoji(CustomEmojiHandler.getRichEmoji("dislike"));
+        Button replay = Button.success("soundplay-replay-"+ sound.getId(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
         buttonRows.add(ActionRow.of(
             like,
-            dislike
+            dislike,
+            replay
         ));
 
         return buttonRows; 
