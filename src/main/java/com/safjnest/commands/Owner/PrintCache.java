@@ -18,6 +18,7 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.Twitch.TwitchClient;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -64,6 +65,9 @@ public class PrintCache extends Command {
             case "sound":
                 printSounds();
                 break;
+            case "twitch":
+                printTwitch();
+                break;
             case "guildsize":
                 Bot.getGuildSettings().getGuilds().setMaxSize(Integer.valueOf(args[1]));
                 event.reply("Guild size set to " + args[1]);
@@ -86,6 +90,31 @@ public class PrintCache extends Command {
                 break;
         }
                 
+    }
+
+    private void printTwitch() {
+        String msg = "";
+        ArrayList<String> cache = new ArrayList<>();
+        CacheMap<String, com.github.twitch4j.helix.domain.User> streamers = TwitchClient.getStreamersCache();
+        for(String s : streamers.keySet()) {
+            long time = streamers.getExpirationTime(s);
+
+            msg += "**" + s + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
+                + "name: " + streamers.get(s).getDisplayName() + "```";
+            cache.add(msg);
+            msg = "";
+        }
+
+        String header = "**Tier god information about the insane beebots cache**```" + "Total Streamer: " + streamers.size() + " / " + streamers.getMaxSize() + "\n"
+            + "Other bot information\n"
+            + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
+            + "League Version: " + RiotHandler.getVersion() + "```";
+        cache.add(0, header);
+
+        MessageChannel channel = event.getChannel();
+        for(String s : cache){
+            channel.sendMessage(s).queue();
+        }
     }
 
     private void printGuilds() {

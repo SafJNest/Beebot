@@ -13,10 +13,12 @@ import java.util.concurrent.TimeUnit;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.Twitch.TwitchClient;
 import com.safjnest.commands.Audio.slash.CustomizeSoundSlash;
 import com.safjnest.commands.League.Livegame;
 import com.safjnest.commands.League.Opgg;
 import com.safjnest.commands.League.Summoner;
+import com.safjnest.commands.Misc.slash.twitch.TwitchMenuSlash;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
@@ -62,6 +64,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+
 public class EventButtonHandler extends ListenerAdapter {
 
     @Override
@@ -77,9 +80,25 @@ public class EventButtonHandler extends ListenerAdapter {
             tag(event);
             return;
         }
+
+        else if (buttonId.startsWith("twitch")) {
+            twitch(event);
+            return;
+        }
         
 
         event.deferEdit().queue();
+
+        /* like this
+        switch (buttonId.substring(0, buttonId.indexOf("-"))) {
+            case "lol":
+                lolButtonEvent(event);
+                break;
+        
+            default:
+                break;
+        }
+        */
 
         if (buttonId.startsWith("lol-")) 
             lolButtonEvent(event);
@@ -123,6 +142,88 @@ public class EventButtonHandler extends ListenerAdapter {
         else if (buttonId.startsWith("soundplay-"))
             soundplay(event);
         
+    }
+
+    public void twitch(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-", 3)[1];
+        String streamerId = event.getButton().getId().split("-", 3).length > 2 ? event.getButton().getId().split("-", 3)[2] : "0";
+
+
+        TextInput messageInput = null, channelInput = null;
+        Modal modal = null;
+        switch (args) {
+            case "streamerId":
+                event.deferEdit().queue();
+                event.getMessage().editMessageEmbeds(TwitchMenuSlash.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
+                        .setComponents(TwitchMenuSlash.getTwitchStreamerButtons(streamerId))
+                        .queue();
+                break;
+            case "addSub":
+                TextInput streamerInput = TextInput.create("twitch-streamer", "Streamer name", TextInputStyle.SHORT)
+                    .setPlaceholder("sunny314_")
+                    .setMaxLength(100)
+                    .build();
+
+                messageInput = TextInput.create("twitch-changeMessage", "New Message", TextInputStyle.PARAGRAPH)
+                    .setPlaceholder("Hello #streamer is now live!")
+                    .setMaxLength(1000)
+                    .build();
+
+                channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
+                    .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
+                    .setMaxLength(100)
+                    .build();
+
+                modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
+                    .addComponents(ActionRow.of(streamerInput), ActionRow.of(messageInput), ActionRow.of(channelInput))
+                    .build();
+
+                event.replyModal(modal).queue();
+                break;
+            case "back":
+                event.deferEdit().queue();
+                event.getMessage().editMessageEmbeds(TwitchMenuSlash.getTwitchEmbed().build())
+                        .setComponents(TwitchMenuSlash.getTwitchButtons(event.getGuild().getId()))
+                        .queue();
+                break;
+            case "changeMessage":
+                messageInput = TextInput.create("twitch-changeMessage", "New Message", TextInputStyle.PARAGRAPH)
+                .setPlaceholder("Hello #streamer is now live!")
+                .setMaxLength(1000)
+                .build();
+
+                modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
+                        .addComponents(ActionRow.of(messageInput))
+                        .build();
+
+                event.replyModal(modal).queue();
+                break;
+            case "changeChannel":
+                channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
+                    .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
+                    .setMaxLength(100)
+                    .build();
+
+                modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
+                        .addComponents(ActionRow.of(channelInput))
+                        .build();
+
+                event.replyModal(modal).queue();
+                break;
+            case "delete":
+                DatabaseHandler.deleteTwitchSubscription(streamerId, event.getGuild().getId());
+
+                if (DatabaseHandler.getTwitchSubscriptions(streamerId).getAffectedRows() == 0)
+                    TwitchClient.unregisterSubEvent(streamerId);
+                    
+                event.deferEdit().queue();
+                event.getMessage().editMessageEmbeds(TwitchMenuSlash.getTwitchEmbed().build())
+                        .setComponents(TwitchMenuSlash.getTwitchButtons(event.getGuild().getId()))
+                        .queue();
+                break;
+            default:
+                break;
+        }
     }
 
 

@@ -917,6 +917,11 @@
                 "alias" : [],
                 "help"  : "Unlink a streamer",
                 "arguments" : "[CommandName]"
+            },
+            "menu": {
+                "alias" : [],
+                "help"  : "Unlink a streamer",
+                "arguments" : "[CommandName]"
             }
         }
     },

@@ -10,16 +10,12 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.ExperienceSystem;
-import com.safjnest.commands.Audio.slash.CustomizeSoundSlash;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.AliasData;
-import com.safjnest.model.Sound;
 import com.safjnest.model.UserData;
-import com.safjnest.model.Sound.Tag;
 import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
@@ -43,7 +39,6 @@ import net.dv8tion.jda.api.entities.UserSnowflake;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -385,53 +380,6 @@ public class Functions {
         String commandName = command.getName();
         String args = event.getArgs();
         DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
-    }
-
-    public static void handleModals(ModalInteractionEvent event) {
-        String id = event.getModalId();
-        String args = id.split("-", 2)[1];
-        id = id.split("-", 2)[0];
-
-
-        EmbedBuilder eb = null;
-        switch (id) {
-            case "sound":
-                Sound sound = SoundHandler.getSoundById(args);
-                String newName = event.getValue("sound-name").getAsString();
-                sound.setName(newName);
-
-                eb = CustomizeSoundSlash.getEmbed(event.getUser(), sound);
-                event.deferReply().addEmbeds(eb.build()).addComponents(SoundHandler.getSoundButton(args)).queue();
-
-
-                break;
-
-            case "tag":        
-                String newTagName = event.getValue("tag-name").getAsString();
-                
-                Tag tag = SoundHandler.getTagByName(newTagName);
-                Sound s = SoundHandler.getSoundById(args.split("-")[0]);
-                
-                Tag[] tags = s.getTags();
-                for (int i = 0; i < tags.length; i++) {
-                    if (tags[i].getId() == Integer.parseInt(args.split("-")[1])) {
-                        tags[i] = tag;
-                        break;
-                    }
-                }
-
-                
-                
-                s.setTags(tags);
-
-                eb = CustomizeSoundSlash.getEmbed(event.getUser(), s);
-                event.deferReply().addEmbeds(eb.build()).addComponents(SoundHandler.getSoundButton(args.split("-")[0])).queue();
-
-
-                break;
-            default:
-                break;
-        }
     }
 
 

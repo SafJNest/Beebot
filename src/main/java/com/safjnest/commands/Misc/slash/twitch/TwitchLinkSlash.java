@@ -34,9 +34,9 @@ public class TwitchLinkSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String streamerUsername = event.getOption("streamer").getAsString();
         String channel = event.getOption("channel").getAsChannel().getId();
-        String message = event.getOption("message") == null ? null : event.getOption("message").getAsString();
+        String message = event.getOption("message") == null ? "" : event.getOption("message").getAsString();
 
-        String streamerId = TwitchClient.getStreamerId(streamerUsername);
+        String streamerId = TwitchClient.getStreamerByName(streamerUsername).getId();
 
         if(streamerId == null){
             event.reply("Streamer not found").queue();
@@ -44,8 +44,8 @@ public class TwitchLinkSlash extends SlashCommand{
         }
 
         if (!DatabaseHandler.getTwitchSubscriptionsGuild(streamerId, event.getGuild().getId()).emptyValues()) {
-            DatabaseHandler.updateTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, message);
-            event.reply("Twitch subscription updated").queue();
+            DatabaseHandler.updateTwitchSubscription(streamerId, event.getGuild().getId(), channel, message);
+            event.reply("Twitch subscription already existed for this streamer in this server so it got updated").queue();
             return;
         }
 

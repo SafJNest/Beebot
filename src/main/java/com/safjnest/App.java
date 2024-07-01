@@ -101,6 +101,9 @@ public class App {
             twitchSettings.get("clientId").toString(), 
             twitchSettings.get("clientSecret").toString()
         );
+
+        if(isExtremeTesting()) {}
+        System.out.println(isExtremeTesting());
         TwitchClient.init();
 
         riotApi = null;

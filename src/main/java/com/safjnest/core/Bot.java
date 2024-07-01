@@ -169,6 +169,13 @@ public class Bot extends ListenerAdapter {
                 // jda.getGuilds().forEach(guild -> {
                 //     guild.updateCommands().queue();
                 // });
+                // SubcommandData sub = new SubcommandData("menu", "Add a new twitch channel");
+                // SlashCommandData scd = Commands.slash("twitch", "ffff").addSubcommands(
+                //     sub
+                // );
+                // jda.getGuildById("474935164451946506").updateCommands().addCommands(
+                //         scd
+                // ).queue();
 
                 new CustomEmojiHandler();
                 BotLogger.debug("[JDA] Custom emoji cached correctly");
@@ -210,8 +217,7 @@ public class Bot extends ListenerAdapter {
             new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo()
         );
         
-        
-        Collections.addAll(commandsList, new Leaderboard(), new Test(gs), new Twitch());
+        Collections.addAll(commandsList, new Leaderboard(), new Test(gs));
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
@@ -255,6 +261,7 @@ public class Bot extends ListenerAdapter {
         jda.addEventListener(new EventButtonHandler());
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventHandlerBeebot());
+        jda.addEventListener(new EventModalInteractionHandler());
 
         if(App.isExtremeTesting()){
             //Connection c = new Connection(jda, gs, bs);

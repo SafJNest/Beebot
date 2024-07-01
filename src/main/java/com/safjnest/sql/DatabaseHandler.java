@@ -855,7 +855,7 @@ public class DatabaseHandler {
         }
     }
 
-    public static boolean updateTwitchSubscriptions(String streamer_id, String guild_id, String channel_id, String message) {
+    public static boolean updateTwitchSubscriptionOld(String streamer_id, String guild_id, String channel_id, String message) {
         String sql = "UPDATE twitch_subscription SET channel_id = ?, message = ? WHERE streamer_id = ? AND guild_id = ?;";
         try {
             PreparedStatement pstmt = c.prepareStatement(sql);
@@ -863,6 +863,47 @@ public class DatabaseHandler {
             pstmt.setObject(2, message);
             pstmt.setObject(3, streamer_id);
             pstmt.setObject(4, guild_id);
+
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean updateTwitchSubscription(String streamer_id, String guild_id, String channel_id, String message) {
+        StringBuilder sql = new StringBuilder("UPDATE twitch_subscription SET ");
+        boolean first = true;
+    
+        if (channel_id != null) {
+            sql.append("channel_id = ?");
+            first = false;
+        }
+
+        if (message != null) {
+            if (!first) {
+                sql.append(", ");
+            }
+            sql.append("message = ?");
+        }
+        sql.append(" WHERE streamer_id = ? AND guild_id = ?;");
+        
+        try {
+            PreparedStatement pstmt = c.prepareStatement(sql.toString());
+    
+            int parameterIndex = 1;
+    
+            if (channel_id != null) {
+                pstmt.setObject(parameterIndex++, channel_id);
+            }
+    
+            if (message != null) {
+                pstmt.setObject(parameterIndex++, message);
+            }
+    
+            pstmt.setObject(parameterIndex++, streamer_id);
+            pstmt.setObject(parameterIndex, guild_id);
 
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0; // Returns true if at least one row was updated

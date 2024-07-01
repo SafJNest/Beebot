@@ -24,7 +24,7 @@ class TwitchEventsHandler {
         
         QueryResult result = DatabaseHandler.getTwitchSubscriptions(event.getBroadcasterUserId());
         
-        User streamer = TwitchClient.getStreamer(event.getBroadcasterUserLogin());
+        User streamer = TwitchClient.getStreamerByName(event.getBroadcasterUserLogin());
 
         
 

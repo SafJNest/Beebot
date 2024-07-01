@@ -32,8 +32,6 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
-
-
     private boolean isFocused;
     private String value;
 
@@ -380,7 +378,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         QueryResult streamers = DatabaseHandler.getTwitchSubscriptionsGuild(e.getGuild().getId());
-        List<com.github.twitch4j.helix.domain.User> users = TwitchClient.getStreamers(streamers.arrayColumn("streamer_id"));
+        List<com.github.twitch4j.helix.domain.User> users = TwitchClient.getStreamersById(streamers.arrayColumn("streamer_id"));
 
         if (isFocused) {
             for (com.github.twitch4j.helix.domain.User user : users) {

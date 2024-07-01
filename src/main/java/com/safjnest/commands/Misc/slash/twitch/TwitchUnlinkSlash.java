@@ -30,7 +30,7 @@ public class TwitchUnlinkSlash extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String streamerUsername = event.getOption("streamer").getAsString();
         
-        String streamerId = TwitchClient.getStreamerId(streamerUsername);
+        String streamerId = TwitchClient.getStreamerByName(streamerUsername).getId();
 
         if(streamerId == null){
             event.reply("Streamer not found").queue();

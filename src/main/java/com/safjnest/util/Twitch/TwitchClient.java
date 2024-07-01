@@ -14,6 +14,7 @@ import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
+import com.safjnest.core.CacheMap;
 import com.safjnest.util.log.BotLogger;
 
 public class TwitchClient {
@@ -23,9 +24,17 @@ public class TwitchClient {
     private static ITwitchClient client = null;
     private static TwitchConduitSocketPool conduit = null;
 
+    private static CacheMap<String, User> streamersCache;
+
     public TwitchClient(String clientId, String clientSecret) {
         TwitchClient.clientId = clientId;
         TwitchClient.clientSecret = clientSecret;
+
+        streamersCache = new CacheMap<>(1000L * 60, 1000L * 60, 100);
+    }
+
+    public static CacheMap<String, User> getStreamersCache() {
+        return streamersCache;
     }
 
     public static ITwitchClient getClient() {
@@ -90,18 +99,37 @@ public class TwitchClient {
         return client.getHelix().getEventSubSubscriptions(null, null, null, null, null, null).execute();
     }
 
-    public static String getStreamerId(String streamerName) {
-        User streamer = getStreamer(streamerName);
-        if (streamer == null) return null;
-
-        return streamer.getId();
-    }
-
-    public static User getStreamer(String streamerName) {
+    public static User getStreamerByName(String streamerName) {
         List<User> users = TwitchClient.getClient().getHelix().getUsers(null, null, List.of(streamerName)).execute().getUsers();
         if (users.size() == 0) return null;
 
-        return users.get(0);
+        User user = users.get(0);
+        streamersCache.put(user.getId(), user);
+
+        return user;
+    }
+
+    public static List<User> getStreamersById(List<String> streamerIds) {
+        if (streamersCache.keySet().containsAll(streamerIds)) {
+            return streamersCache.get(streamerIds);
+        }
+
+        List<String> notCached = streamerIds.stream().filter(id -> !streamersCache.keySet().contains(id)).toList();
+        List<User> users = TwitchClient.getClient().getHelix().getUsers(null, notCached, null).execute().getUsers();
+     
+        for (User user : users) {
+            streamersCache.put(user.getId(), user);
+        }
+
+        return streamersCache.get(streamerIds);
+    }
+
+    public static User getStreamerById(String streamerId) {
+        List<User> streamer = getStreamersById(List.of(streamerId));
+        if(streamer.size() == 0) {
+            return null;
+        }
+        return streamer.get(0);
     }
 
     public static Stream getStream(String streamId) {
@@ -111,7 +139,5 @@ public class TwitchClient {
         return streams.get(0);
     }
 
-    public static List<User> getStreamers(List<String> streamerIds) {
-        return TwitchClient.getClient().getHelix().getUsers(null, streamerIds, null).execute().getUsers();
-    }
+    
 }

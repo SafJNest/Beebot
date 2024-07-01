@@ -1,5 +1,8 @@
 package com.safjnest.core;
 
+
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.PriorityQueue;
@@ -74,6 +77,18 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
         return value;
     }
 
+    public List<V> get(List<K> keys) {
+        List<V> values = new ArrayList<>();
+        keys.forEach(key -> {
+            V value = get(key);
+            if (value != null) {
+                updateTime(key);
+                values.add(value);
+            }
+        });
+        return values;
+    }
+
     @Override
     public V put(K key, V value) {
         updateTime(key);
@@ -89,6 +104,7 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
 
         return current;
     }
+    
 
     @SuppressWarnings("unchecked")
     @Override

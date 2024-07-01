@@ -17,7 +17,6 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
-import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -69,11 +68,6 @@ public class EventHandler extends ListenerAdapter {
 
         Functions.handleCustomCommand(commandName, event);
         Functions.updateCommandStatitics(event);
-    }
-
-    @Override
-    public void onModalInteraction(ModalInteractionEvent event) {
-        Functions.handleModals(event);
     }
 
     @Override
