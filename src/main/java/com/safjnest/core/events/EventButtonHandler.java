@@ -23,7 +23,9 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
 import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.TrackScheduler;
+import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.model.Sound;
 import com.safjnest.model.Sound.Tag;
@@ -308,15 +310,14 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.getMessage().delete().queue();
                 return;
             case "delete":
-                Sound s = SoundHandler.getSoundById(soundId);
-                Tag[] tags = s.getTags();
+                Tag[] tags = soundData.getTags();
                 for (int i = 0; i < tags.length; i++) {
                     if (tags[i].getId() == Integer.parseInt(tagId)) {
                         tags[i] = new Sound().new Tag();
                         break;
                     }
                 }
-                s.setTags(tags);
+                soundData.setTags(tags);
                 tagSwitch = false;
                 break;
             default:
@@ -368,7 +369,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 return;
             case "private":
                 boolean isPrivate = !soundData.isPublic();
-                DatabaseHandler.updateSound(soundData.getId(), soundData.getName(), isPrivate);
+                soundData.setPublic(isPrivate);
                 break;
             case "delete":
                 DatabaseHandler.deleteSound(soundData.getId());
