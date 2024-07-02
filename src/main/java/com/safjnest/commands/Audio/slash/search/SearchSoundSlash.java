@@ -1,6 +1,5 @@
 package com.safjnest.commands.Audio.slash.search;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -11,10 +10,6 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.Sound;
-import com.safjnest.model.Sound.Tag;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
@@ -59,13 +54,13 @@ public class SearchSoundSlash extends SlashCommand {
         String query = event.getOption("query").getAsString();
         String author = event.getOption("author") == null ? null : event.getOption("author").getAsUser().getId();
 
-        QueryResult result = author == null ? DatabaseHandler.extremeSoundResearch(query) : DatabaseHandler.extremeSoundResearch(query, author);
+        List<Sound> sounds = SoundHandler.searchSound(query, author);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor("Search by" + event.getUser().getName(), "https://discord.com/users/" + event.getUser().getId(), event.getUser().getEffectiveAvatarUrl());
         eb.setTitle("Search for: " + query);
 
-        if (result.isEmpty()) {
+        if (sounds.isEmpty()) {
             eb.setDescription("No results found");
             eb.setColor(Bot.getColor());
             event.replyEmbeds(eb.build()).queue();
@@ -76,11 +71,13 @@ public class SearchSoundSlash extends SlashCommand {
         StringBuilder field1 = new StringBuilder();
         StringBuilder field2 = new StringBuilder();
         
-        for (ResultRow sound : result) {
+        for (Sound sound : sounds) {
+            String label = sound.getName();
+
             if (count <= 15) {
-                field1.append("`").append(count).append("` ").append(sound.get("name")).append("\n");
-            } else if (count <= 30) {
-                field2.append("`").append(count).append("` ").append(sound.get("name")).append("\n");
+                field1.append("`").append(count).append("` ").append(label).append("\n");
+            } else if (count <= 25) {
+                field2.append("`").append(count).append("` ").append(label).append("\n");
             }
             count++;
         }
@@ -97,10 +94,10 @@ public class SearchSoundSlash extends SlashCommand {
         StringSelectMenu.Builder mb = StringSelectMenu.create(menuId);
 
         count = 1;
-        for (ResultRow sound : result) {
-            String label = count + " - " + sound.get("name");
+        for (Sound sound : sounds) {
+            String label = count + " - " + sound.getName();
             label = PermissionHandler.ellipsis(label, 100);
-            mb.addOption(label, sound.get("id"));
+            mb.addOption(label, sound.getId());
             count++;
         }
         MenuListener fileListener = new MenuListener(event, mb.getId());
@@ -145,8 +142,7 @@ public class SearchSoundSlash extends SlashCommand {
                 List<String> selected = event.getValues();
                 Sound sound = SoundHandler.getSoundById(selected.get(0));
     
-                String fileName = sound.getPath();
-                PlayerManager.get().loadItemOrdered(guild, fileName, new ResultHandler(slashEvent, sound, fileName));
+                PlayerManager.get().loadItemOrdered(guild, sound.getPath(), new ResultHandler(slashEvent, sound));
                 
             }
         }
@@ -156,14 +152,12 @@ public class SearchSoundSlash extends SlashCommand {
             private final Guild guild;
             private final Member author;
             private final Sound sound;
-            private final String fileName;
             
-            private ResultHandler(SlashCommandEvent event, Sound sound, String fileName) {
+            private ResultHandler(SlashCommandEvent event, Sound sound) {
                 this.event = event;
                 this.guild = event.getGuild();
                 this.author = event.getMember();
                 this.sound = sound;
-                this.fileName = fileName;
             }
             
             @Override
@@ -173,59 +167,8 @@ public class SearchSoundSlash extends SlashCommand {
                 guild.getAudioManager().openAudioConnection(author.getVoiceState().getChannel());
     
                 sound.increaseUserPlays(author.getId());
-    
-                EmbedBuilder eb = new EmbedBuilder();
-                eb.setAuthor(author.getEffectiveName(), "https://github.com/SafJNest", author.getEffectiveAvatarUrl());
-                eb.setTitle("Playing now:");
-                eb.setDescription("```" + sound.getName() + " (ID: " + sound.getId() + ") " + ((sound.isPublic()) ? ":public:" : ":private:") + "```");
-                eb.setColor(Bot.getColor());
-                eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
-    
-                eb.addField("Author", "```" 
-                    + event.getJDA().getUserById(sound.getUserId()).getName() 
-                + "```", true);
-    
-                try {
-                    eb.addField("Lenght", "```"
-                        + (sound.isOpus()
-                        ? SafJNest.getFormattedDuration((Math.round(SoundHandler.getOpusDuration(fileName)))*1000)
-                        : SafJNest.getFormattedDuration(track.getInfo().length))
-                    + "```", true);
-                } catch (IOException e) {e.printStackTrace();}
-    
-                eb.addField("Format", "```" 
-                    + sound.getExtension().toUpperCase() 
-                + "```", true);
-    
-                eb.addField("Guild", "```" 
-                    + event.getJDA().getGuildById(sound.getGuildId()).getName() 
-                + "```", true);
-    
-                int[] plays = sound.getPlays(author.getId());
-                eb.addField("Played", "```" 
-                    + plays[0]
-                    + (plays[0] == 1 ? " time" : " times") 
-                    + " (yours: "+ plays[1] + ")"
-                + "```", true);
-    
-                Tag[] tags = sound.getTags();
-                StringBuilder tagList = new StringBuilder();
-                for(Tag tag : tags) {
-                    if (!tag.getName().isBlank()) tagList.append(tag.getName()).append(", ");
-                }
-    
-    
-                eb.addField("Tags", "```"
-                    + tagList.toString().substring(0, tagList.length() - 2)
-                    + "```", false);
-    
-                eb.addField("Creation time", 
-                    "<t:" + sound.getTimestampSecond() + ":f>"  + " | <t:" + sound.getTimestampSecond() + ":R>",
-                false);
-                
-                menuEvent.deferEdit().queue();
-                menuEvent.getMessage().delete().queue();
-                menuEvent.getChannel().sendMessageEmbeds(eb.build()).queue();
+                    
+                menuEvent.editMessageEmbeds(SoundHandler.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundHandler.getSoundEmbedButtons(sound)).queue();
             }
     
             @Override

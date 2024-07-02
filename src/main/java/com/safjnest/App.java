@@ -103,7 +103,6 @@ public class App {
         );
 
         if(isExtremeTesting()) {}
-        System.out.println(isExtremeTesting());
         TwitchClient.init();
 
         riotApi = null;

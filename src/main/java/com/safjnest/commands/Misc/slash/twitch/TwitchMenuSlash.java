@@ -72,7 +72,6 @@ public class TwitchMenuSlash extends SlashCommand{
     public static EmbedBuilder getTwitchStreamerEmbed(String StreamerId, String guildId) {
         ResultRow sub = DatabaseHandler.getTwitchSubscriptionsGuild(StreamerId, guildId);
         com.github.twitch4j.helix.domain.User streamer = TwitchClient.getStreamerById(StreamerId);
-        System.out.println(sub.toString());
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Bot.getColor());
         eb.setTitle(streamer.getDisplayName(), "https://twitch.tv/" + streamer.getLogin());
