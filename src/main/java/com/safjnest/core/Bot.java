@@ -140,6 +140,8 @@ public class Bot extends ListenerAdapter {
         weatherApiKey = settingsSettings.get("weatherApiKey").toString();
         nasaApiKey = settingsSettings.get("nasaApiKey").toString();
 
+        BotLogger.warning(discordSettings.get("info").toString());
+
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
                 GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,

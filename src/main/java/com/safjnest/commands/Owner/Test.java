@@ -469,12 +469,18 @@ public class Test extends Command{
                     sounds.add(SoundHandler.getSoundById(row.get("id")));
                 }
                 for (Guild g : e.getJDA().getGuilds()) {
+                    System.out.println(g.getName());
+                    String query1 = "INSERT INTO play(user_id, sound_id, times)";
+                    List<String> values = new ArrayList<>();
                     for (Member m : g.getMembers()) {
                         for (Sound soun : sounds) {
-                            soun.increaseUserPlays(m.getId());
+                            values.add("(" + m.getId() + ", " + soun.getId() + ", " + 1 + ")");
                         }
                     }
+                    query1 += " VALUES " + String.join(", ", values) + "ON DUPLICATE KEY UPDATE times = times + 1;";
+                    DatabaseHandler.safJQuery(query1);
                 }
+                break;
             case "dbsgozz":
                 for (Guild g : e.getJDA().getGuilds()) {
                     GuildData gd = Bot.getGuildData(g);

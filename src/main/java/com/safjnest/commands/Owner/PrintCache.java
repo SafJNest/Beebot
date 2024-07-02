@@ -230,7 +230,9 @@ public class PrintCache extends Command {
             msg += "**" + s.getName() + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
                 + "Name: " + s.getName() + "(" + s.getId() + ")" + "\n"
                 + "Guild: " + Bot.getJDA().getGuildById(s.getGuildId()).getName() + "\n"
-                + "Users: " + Bot.getJDA().retrieveUserById(s.getUserId()).complete().getName() + "```";
+                + "User: " + Bot.getJDA().retrieveUserById(s.getUserId()).complete().getName() + "\n"
+                + "Tags: " + s.getFormattedTags() + "\n"
+                + "```";
             cache.add(msg);
             msg = "";
         }

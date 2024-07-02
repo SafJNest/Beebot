@@ -15,6 +15,7 @@ import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
 import com.safjnest.core.CacheMap;
+import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
 
 public class TwitchClient {
@@ -30,7 +31,7 @@ public class TwitchClient {
         TwitchClient.clientId = clientId;
         TwitchClient.clientSecret = clientSecret;
 
-        streamersCache = new CacheMap<>(1000L * 60, 1000L * 60, 100);
+        streamersCache = new CacheMap<>(TimeConstant.MINUTE, TimeConstant.MINUTE, 100);
     }
 
     public static CacheMap<String, User> getStreamersCache() {

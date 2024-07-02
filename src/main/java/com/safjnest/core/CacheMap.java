@@ -12,6 +12,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.safjnest.util.TimeConstant;
+
 public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
     private final long DEFAULT_EXPIRATION_MILLISECOND;
     private final long MAX_EXPIRATION_MILLISECOND;
@@ -35,8 +37,8 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
     public CacheMap(int MAX_SIZE) {
         super();
         
-        this.DEFAULT_EXPIRATION_MILLISECOND = 12L * 60 * 60 * 1000;
-        this.MAX_EXPIRATION_MILLISECOND = 24L * 60 * 60 * 1000;
+        this.DEFAULT_EXPIRATION_MILLISECOND = TimeConstant.HOUR * 12;
+        this.MAX_EXPIRATION_MILLISECOND = TimeConstant.HOUR * 24;
         this.MAX_SIZE = MAX_SIZE;
 
         init();
@@ -45,8 +47,8 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
     public CacheMap() {
         super();
         
-        this.DEFAULT_EXPIRATION_MILLISECOND = 12L * 60 * 60 * 1000;
-        this.MAX_EXPIRATION_MILLISECOND = 24L * 60 * 60 * 1000;
+        this.DEFAULT_EXPIRATION_MILLISECOND = TimeConstant.HOUR * 12;
+        this.MAX_EXPIRATION_MILLISECOND = TimeConstant.HOUR * 24;
 
         this.MAX_SIZE = 117;
 
@@ -87,6 +89,10 @@ public class CacheMap<K, V> extends ConcurrentHashMap<K, V>{
             }
         });
         return values;
+    }
+
+    public List<V> get(K[] keys) {
+        return get(List.of(keys));
     }
 
     @Override
