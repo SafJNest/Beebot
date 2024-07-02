@@ -281,6 +281,10 @@ public class DatabaseHandler {
         return safJQuery("SELECT name, id, guild_id FROM sound WHERE (name LIKE '" + like + "%' OR id LIKE '" + like + "%') AND user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
+    public static QueryResult getUserGuildSounds(String user_id, String guild_id) {
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' OR guild_id = '" + guild_id + "' ORDER BY name ASC");
+    }
+
     public static QueryResult getFocusedListUserSounds(String user_id, String guild_id, String like) {
         return safJQuery("SELECT name, id, guild_id, extension FROM sound WHERE name LIKE '" + like + "%' OR id LIKE '" + like + "%' AND (user_id = '" + user_id + "' OR guild_id = '" + guild_id + "') ORDER BY RAND() LIMIT 25;");
     }
@@ -291,7 +295,7 @@ public class DatabaseHandler {
             sb.append(sound_id + ", ");
         sb.setLength(sb.length() - 2);
 
-        return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE id IN (" + sb.toString() + ");");
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id IN (" + sb.toString() + ");");
     }
 
     public static QueryResult getSoundsById(String id, String guild_id, String author_id) {
@@ -402,16 +406,17 @@ public class DatabaseHandler {
     }
 
     public static QueryResult extremeSoundResearch(String query) {
-        return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE MATCH(s.name) AGAINST ('" + query + "') OR t.name = '" + query + "' LIMIT 30;");
+        return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.name like '%" + query + "%' OR t.name like '%" + query + "%';");
+        //return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE MATCH(s.name) AGAINST ('" + query + "') OR t.name like '%" + query + "%';");
     }
 
     public static QueryResult extremeSoundResearch(String query, String user_id) {
-        return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.user_id = " + user_id + " AND (MATCH(s.name) AGAINST ('" + query + "') OR t.name = '" + query + "') LIMIT 30;");
+        return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.user_id = " + user_id + " AND (MATCH(s.name) AGAINST ('" + query + "') OR t.name like '%" + query + "%');");
     }
 
 
 
-    public static boolean insertSoundBoard(String name, String guild_id, String... sound_ids) {
+    public static boolean insertSoundBoard(String name, String guild_id, String user_id, String... sound_ids) {
         if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
 
         StringBuilder sb = new StringBuilder();
@@ -421,7 +426,7 @@ public class DatabaseHandler {
         sb.setLength(sb.length() - 2);
         
         try (Statement stmt = c.createStatement()) {
-            runQuery(stmt, "INSERT INTO soundboard (name, guild_id) VALUES ('" + name + "', '" + guild_id + "'); ");
+            runQuery(stmt, "INSERT INTO soundboard (name, guild_id, user_id) VALUES ('" + name + "', '" + guild_id + "', '" + user_id + "'); ");
             runQuery(stmt, "INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
             c.commit();
             return true;

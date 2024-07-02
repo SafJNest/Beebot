@@ -48,7 +48,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         QueryResult sounds = null;
         if (isFocused) sounds = DatabaseHandler.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), value);
-        else sounds = DatabaseHandler.getlistUserSounds(e.getUser().getId(), e.getGuild().getId()).shuffle().limit(MAX_CHOICES);
+        else sounds = DatabaseHandler.getUserGuildSounds(e.getUser().getId(), e.getGuild().getId()).shuffle().limit(MAX_CHOICES);
 
         for (ResultRow sound : sounds) {
             String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
@@ -178,7 +178,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         for (ResultRow sound : sounds) {
             String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
             String label = sound.get("name") + " (" + server_name + ")";
-            System.out.println(label);
             choices.add(new Choice(label, sound.get("sound_id")));
         }
 

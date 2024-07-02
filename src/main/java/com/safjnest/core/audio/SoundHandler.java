@@ -5,7 +5,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;//everybody was mocking you?
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+
 
 import org.gagravarr.ogg.OggFile;
 import org.gagravarr.opus.OpusFile;
@@ -22,6 +25,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.TimeConstant;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -30,6 +34,8 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
+
+import java.util.regex.Pattern;
 
 /**
  * Contains the methods to manage the soundboard.
@@ -41,7 +47,7 @@ public class SoundHandler {
     private static CacheMap<String, Sound> soundCache;
 
     public SoundHandler() {
-        soundCache = new CacheMap<>(10L * 60 * 60 * 60, 10L * 60 * 60 * 60, 100);
+        soundCache = new CacheMap<>(TimeConstant.MINUTE * 5, TimeConstant.MINUTE * 10, 100);
     }   
 
     public static CacheMap<String, Sound> getSoundCache() {
@@ -116,49 +122,25 @@ public class SoundHandler {
     }
 
     public static Sound getSoundById(String sound_id) {
-        Sound sound = soundCache.get(sound_id);
-        if (sound != null) return sound;
-        
-        ResultRow soundData = DatabaseHandler.getSoundById(sound_id);
-        if (soundData == null) return null;
-        
-        QueryResult tags = DatabaseHandler.getSoundTags(sound_id);
-        List<Sound.Tag> tagList = new ArrayList<>();
-        if (!tags.isEmpty()) {
-            for (ResultRow tag : tags) {
-                tagList.add(new Sound().new Tag(tag.getAsInt("id"), tag.get("name")));
-            }
-        }
-
-        if (tagList.size() != 5) {
-            for (int i = tagList.size(); i < 5; i++) {
-                tagList.add(new Sound().new Tag(0, ""));
-            }
-        }
-
-        sound = new Sound(soundData.get("id"), soundData.get("guild_id"), soundData.get("user_id"), soundData.get("name"), soundData.get("extension"), soundData.getAsBoolean("public"), soundData.getAsTimestamp("time"), tagList.toArray(new Sound.Tag[tagList.size()]));
-        soundCache.put(sound_id, sound);
-        return soundCache.get(sound_id); 
+        if (soundCache.keySet().contains(sound_id)) return soundCache.get(sound_id);
+        Sound sound = getSoundsByIds(new String[] {sound_id}).get(0);
+        return sound;
     }
 
     public static List<Sound> getSoundsByIds(String[] sound_ids) {
-        List<Sound> sounds = new ArrayList<>();
-        for (String sound_id : sound_ids) {
-            Sound sound = soundCache.get(sound_id);
-            if (sound != null) {
-                sounds.add(sound);
-            }
-        }
-        if (sounds.size() == sound_ids.length) return sounds;
+        if (soundCache.keySet().containsAll(List.of(sound_ids))) 
+            return soundCache.get(sound_ids);
+        
+        List<String> notCached = List.of(sound_ids).stream().filter(id -> !soundCache.keySet().contains(id)).toList();
 
-        QueryResult soundsResult = DatabaseHandler.getSoundsById(sound_ids);
-        QueryResult tags = DatabaseHandler.getSoundsTags(sound_ids);
+        QueryResult soundsResult = DatabaseHandler.getSoundsById(notCached.toArray(new String[0]));
+        QueryResult tags = DatabaseHandler.getSoundsTags(notCached.toArray(new String[0]));
 
         for (ResultRow soundData : soundsResult) {
             List<Sound.Tag> tagList = new ArrayList<>();
             for (ResultRow tag : tags) {
                 if (tag.get("sound_id").equals(soundData.get("id"))) {
-                    tagList.add(new Sound().new Tag(tag.getAsInt("id"), tag.get("name")));
+                    tagList.add(new Sound().new Tag(tag.getAsInt("tag_id"), tag.get("name")));
                 }
             }
 
@@ -172,10 +154,49 @@ public class SoundHandler {
             soundCache.put(sound.getId(), sound);
         }
 
-        sounds = new ArrayList<>();
-        for (String sound_id : sound_ids) {
-            sounds.add(soundCache.get(sound_id));
-        }
+        return soundCache.get(sound_ids);
+    }
+
+    public static boolean deleteSound(String id) {
+        boolean result = DatabaseHandler.deleteSound(id);
+        if (result) soundCache.remove(id);
+        return result;
+    }
+
+    public static List<Sound> searchSound(String regex) {
+        return searchSound(regex, null);
+    } 
+
+    
+    public static List<Sound> searchSound(String regex, String author) {
+        QueryResult result = author == null ? DatabaseHandler.extremeSoundResearch(regex) : DatabaseHandler.extremeSoundResearch(regex, author);
+        List<Sound> sounds = getSoundsByIds(result.arrayColumn("id").toArray(new String[0]));
+    
+        // Precompilare il pattern della regex per migliorare le prestazioni
+        final Pattern pattern = Pattern.compile(regex);
+    
+        Comparator<Sound> byRelevance = (Sound s1, Sound s2) -> {
+            // Calcolare la somiglianza del nome alla regex
+            boolean s1Matches = pattern.matcher(s1.getName()).find();
+            boolean s2Matches = pattern.matcher(s2.getName()).find();
+    
+            if (s1Matches && !s2Matches) {
+                return -1;
+            } else if (!s1Matches && s2Matches) {
+                return 1;
+            }
+    
+            // Se entrambi i suoni corrispondono o non corrispondono alla regex, ordinare per views e like
+            int viewComparison = Integer.compare(s2.getGlobalPlays(), s1.getGlobalPlays());
+            if (viewComparison != 0) {
+                return viewComparison;
+            }
+            return Integer.compare(s2.getLikes(), s1.getLikes());
+        };
+    
+        Collections.sort(sounds, byRelevance);
+        int reduceTo = sounds.size() > 25 ? 25 : sounds.size();
+        sounds = sounds.subList(0, reduceTo);
         return sounds;
     }
 

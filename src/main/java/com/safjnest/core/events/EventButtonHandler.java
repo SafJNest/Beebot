@@ -287,7 +287,6 @@ public class EventButtonHandler extends ListenerAdapter {
         String args = event.getButton().getId().split("-", 4)[1];
         String soundId = event.getButton().getId().split("-", 4)[2];
         String tagId = event.getButton().getId().split("-", 4)[3];
-
         Sound soundData = SoundHandler.getSoundById(soundId);
 
         boolean tagSwitch = true;
@@ -306,8 +305,6 @@ public class EventButtonHandler extends ListenerAdapter {
                         .build();
 
                 event.replyModal(modal).queue();
-                
-                event.getMessage().delete().queue();
                 return;
             case "delete":
                 Tag[] tags = soundData.getTags();
@@ -364,21 +361,17 @@ public class EventButtonHandler extends ListenerAdapter {
                         .build();
 
                 event.replyModal(modal).queue();
-                
-                event.getMessage().delete().queue();
                 return;
             case "private":
                 boolean isPrivate = !soundData.isPublic();
                 soundData.setPublic(isPrivate);
                 break;
             case "delete":
-                DatabaseHandler.deleteSound(soundData.getId());
-                
-                event.getMessage().delete().queue();
-                event.deferReply(true).addContent("Sound Deleted").queue();
-                break;
+                String response = SoundHandler.deleteSound(soundId) ? "Sound deleted" : "Error deleting sound";
+                event.deferReply(true).addContent(response).queue();
+                return;
             case "tag":
-                if (clicked.getStyle() == ButtonStyle.PRIMARY) tagId = Integer.parseInt(clicked.getId().split("-")[2]);
+                if (clicked.getStyle() == ButtonStyle.PRIMARY) tagId = Integer.parseInt(clicked.getId().split("-")[3]);
                 tagSwitch = true;
                 break;
             case "download":

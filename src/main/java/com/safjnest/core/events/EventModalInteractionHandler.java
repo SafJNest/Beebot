@@ -24,7 +24,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         sound.setName(newName);
 
         eb = CustomizeSoundSlash.getEmbed(event.getUser(), sound);
-        event.deferReply().addEmbeds(eb.build()).addComponents(SoundHandler.getSoundButton(soundId)).queue();
+        event.editMessageEmbeds(eb.build()).setComponents(SoundHandler.getSoundButton(soundId)).queue();
     }
 
     private static void tag(ModalInteractionEvent event) {
@@ -44,7 +44,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         sound.setTags(tags);
 
         eb = CustomizeSoundSlash.getEmbed(event.getUser(), sound);
-        event.deferReply().addEmbeds(eb.build()).addComponents(SoundHandler.getSoundButton(soundId.split("-")[0])).queue();
+        event.editMessageEmbeds(eb.build()).setComponents(SoundHandler.getSoundButton(soundId.split("-")[0])).queue();
     }
 
     private static void twitch(ModalInteractionEvent event) {

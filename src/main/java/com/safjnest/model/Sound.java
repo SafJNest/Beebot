@@ -1,6 +1,7 @@
 package com.safjnest.model;
 
 import java.sql.Timestamp;
+
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -40,6 +41,10 @@ public class Sound {
 
         public String getName() {
             return name;
+        }
+
+        public boolean isEmpty() {
+            return ID == 0 || name.isEmpty();
         }
 
         @Override
@@ -152,6 +157,14 @@ public class Sound {
         this.track = track;
     }
 
+    public String getFormattedTags() {
+        StringBuilder sb = new StringBuilder();
+        for (Tag tag : tags) {
+            if (!tag.isEmpty()) sb.append(tag.getName()).append(", ");
+        }
+        return sb.toString().substring(0, sb.length() - 2);
+    }
+
     /**
      * 0 total 1 user
      * @param userId
@@ -164,12 +177,20 @@ public class Sound {
         return new int[] {plays.getAsInt("totalTimes"), plays.getAsInt("timesByUser")};
     }
 
+    public int getGlobalPlays() {
+        return getPlays(null)[0];
+    }
+
 
     public int[] getLikesDislikes() {
         ResultRow likes = DatabaseHandler.getLikeDislike(this.ID);
         if (likes.emptyValues()) return new int[] {0, 0};
 
         return new int[] {likes.getAsInt("likes"), likes.getAsInt("dislikes")};
+    }
+
+    public int getLikes() {
+        return getLikesDislikes()[0];
     }
 
     public boolean like(String userId) {
