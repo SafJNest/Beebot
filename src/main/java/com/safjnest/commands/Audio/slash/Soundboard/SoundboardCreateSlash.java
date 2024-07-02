@@ -57,11 +57,13 @@ public class SoundboardCreateSlash extends SlashCommand{
                 event.deferReply(true).addContent("A soundboard with that name in this guild already exists.").queue();
                 return;
             }
-            DatabaseHandler.insertSoundBoard(soundboardName, event.getGuild().getId(), soundIDs.toArray(new String[0]));
+            DatabaseHandler.insertSoundBoard(soundboardName, event.getGuild().getId(), event.getUser().getId(), soundIDs.toArray(new String[0]));
         }
 
         List<Sound> sounds = SoundHandler.getSoundsByIds(soundIDs.toArray(new String[0]));
         SoundHandler.composeSoundboard(event, soundboardName, sounds).queue();
+
+        
 
     }    
 }
