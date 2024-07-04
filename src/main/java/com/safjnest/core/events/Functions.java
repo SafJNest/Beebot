@@ -316,10 +316,12 @@ public class Functions {
 
 
     public static void handleGreetSound(AudioChannel channelJoin, User theGuy, Guild guild) {
-        Sound sound = SoundHandler.getSoundById(Bot.getUserData(theGuy.getId()).getGreet(guild.getId()));
+        String sound_id = Bot.getUserData(theGuy.getId()).getGreet(guild.getId());
+        if (sound_id == null || sound_id.isEmpty()) return;
+        
+        Sound sound = SoundHandler.getSoundById(sound_id);
 
-        if(sound == null)
-            return;
+        if(sound == null)  return;
 
         PlayerManager pm = PlayerManager.get();
 
