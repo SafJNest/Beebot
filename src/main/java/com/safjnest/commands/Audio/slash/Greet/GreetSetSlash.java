@@ -36,10 +36,7 @@ public class GreetSetSlash extends SlashCommand {
 
         String guildId = (event.getOption("global") != null && event.getOption("global").getAsBoolean()) ? "0" : event.getGuild().getId();
 
-        String soundId = sound.split("\\.")[0];
-        String extension = sound.split("\\.")[1];
-
-        if (!Bot.getUserData(event.getUser().getId()).setGreet(guildId, soundId, extension)) {
+        if (!Bot.getUserData(event.getUser().getId()).setGreet(guildId, sound)) {
             event.deferReply(false).addContent("An error occurred while setting the greet").queue();
             return;
         }

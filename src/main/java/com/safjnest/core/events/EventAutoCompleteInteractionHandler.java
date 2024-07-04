@@ -196,7 +196,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         for (ResultRow sound : sounds) {
             String server_name = Bot.getJDA().getGuildById(sound.get("guild_id")) == null ? "Unknown" : Bot.getJDA().getGuildById(sound.get("guild_id")).getName();
             String label = sound.get("name") + " (" + sound.get("id") + ") - " + server_name;
-            choices.add(new Choice(label, sound.get("id") + "." + sound.get("extension")));
+            choices.add(new Choice(label, sound.get("id")));
         }
 
         return choices;

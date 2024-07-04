@@ -104,7 +104,7 @@ public class UserData {
             return getGlobalGreet();
         }
 
-        String guildGreet = possibleGreet.get("id") + "." + possibleGreet.get("extension");
+        String guildGreet = possibleGreet.get("id");
         guildGreetIds.put(guildId, guildGreet);
 
         return guildGreet;
@@ -116,14 +116,14 @@ public class UserData {
             if (possibleGreet.emptyValues()) {
                 return null;
             }
-            globalGreetId = possibleGreet.get("id") + "." + possibleGreet.get("extension");
+            globalGreetId = possibleGreet.get("id");
         }
         return globalGreetId;
     }
 
-    public boolean setGreet(String guildId, String soundId, String extension) {
-        if (guildId.equals("0")) globalGreetId = soundId + "." + extension;
-        else guildGreetIds.put(guildId, soundId + "." + extension);
+    public boolean setGreet(String guildId, String soundId) {
+        if (guildId.equals("0")) globalGreetId = soundId;
+        else guildGreetIds.put(guildId, soundId);
         return DatabaseHandler.setGreet(this.USER_ID, guildId, soundId);
     }
 
