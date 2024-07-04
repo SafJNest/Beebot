@@ -33,7 +33,7 @@ class TwitchEventsHandler {
         String liveUrl = "https://www.twitch.tv/" + streamer.getLogin();
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle(stream.getTitle(), liveUrl);
+        eb.setTitle(!stream.getTitle().isEmpty() ? stream.getTitle() : "No Title", liveUrl);
         eb.setThumbnail("https://static-cdn.jtvnw.net/ttv-boxart/" + stream.getGameId() + "-285x380.jpg");
         eb.setAuthor(streamer.getDisplayName() + " is now live on Twitch!", liveUrl, streamer.getProfileImageUrl());
         eb.addField("Game", stream.getGameName(), true);

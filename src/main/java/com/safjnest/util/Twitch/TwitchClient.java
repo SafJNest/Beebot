@@ -55,6 +55,8 @@ public class TwitchClient {
             .withClientSecret(clientSecret)
             .build();
         
+        Conduit firstConduit = getFirstConduit();
+        updateConduit(firstConduit.getId(), 1);
         try {
             conduit = TwitchConduitSocketPool.create(spec -> {
                 spec.clientId(clientId);
@@ -62,10 +64,10 @@ public class TwitchClient {
                 spec.poolShards(1);
                 spec.helix(client.getHelix());
 
-                List<Conduit> conduitList = client.getHelix().getConduits(null).execute().getConduits();
-                if(conduitList.size() > 0) {
-                    spec.conduitId(conduitList.get(0).getId());
+                if(firstConduit != null) {
+                    spec.conduitId(firstConduit.getId());
                 }
+                
             });
         } catch (Exception e1) {
             BotLogger.error("[TWITCH] Error connecting to twitch");
@@ -73,6 +75,15 @@ public class TwitchClient {
         }
         conduit.getEventManager().onEvent(StreamOnlineEvent.class, TwitchEventsHandler::onStreamOnlineEvent);
         conduit.getEventManager().onEvent(EventSocketConnectionStateEvent.class, TwitchEventsHandler::onSocketConnectionStateEvent);
+    }
+
+    public static Conduit getFirstConduit() {
+        List<Conduit> conduitList = client.getHelix().getConduits(null).execute().getConduits();
+        return conduitList.size() > 0 ? conduitList.get(0) : null;
+    }
+
+    public static void updateConduit(String conduitId, int shardCount) {
+        TwitchClient.getClient().getHelix().updateConduit(null, conduitId, 1).execute();
     }
 
     public static void registerSubEvent(String streamerId) {        
