@@ -47,7 +47,7 @@ public class SoundHandler {
     private static CacheMap<String, Sound> soundCache;
 
     public SoundHandler() {
-        soundCache = new CacheMap<>(TimeConstant.MINUTE * 5, TimeConstant.MINUTE * 10, 100);
+        soundCache = new CacheMap<>(TimeConstant.MINUTE, TimeConstant.MINUTE * 2, 100);
     }   
 
     public static CacheMap<String, Sound> getSoundCache() {
@@ -150,7 +150,19 @@ public class SoundHandler {
                 }
             }
 
-            Sound sound = new Sound(soundData.get("id"), soundData.get("guild_id"), soundData.get("user_id"), soundData.get("name"), soundData.get("extension"), soundData.getAsBoolean("public"), soundData.getAsTimestamp("time"), tagList.toArray(new Sound.Tag[tagList.size()]));
+            Sound sound = new Sound(
+                    soundData.get("id"), 
+                    soundData.get("guild_id"), 
+                    soundData.get("user_id"), 
+                    soundData.get("name"), 
+                    soundData.get("extension"), 
+                    soundData.getAsBoolean("public"), 
+                    soundData.getAsTimestamp("time"), 
+                    soundData.getAsInt("plays"), 
+                    soundData.getAsInt("likes"), 
+                    soundData.getAsInt("dislikes"), 
+                    tagList.toArray(new Sound.Tag[tagList.size()])
+            );
             soundCache.put(sound.getId(), sound);
         }
 
@@ -172,11 +184,9 @@ public class SoundHandler {
         QueryResult result = author == null ? DatabaseHandler.extremeSoundResearch(regex) : DatabaseHandler.extremeSoundResearch(regex, author);
         List<Sound> sounds = getSoundsByIds(result.arrayColumn("id").toArray(new String[0]));
     
-        // Precompilare il pattern della regex per migliorare le prestazioni
         final Pattern pattern = Pattern.compile(regex);
     
         Comparator<Sound> byRelevance = (Sound s1, Sound s2) -> {
-            // Calcolare la somiglianza del nome alla regex
             boolean s1Matches = pattern.matcher(s1.getName()).find();
             boolean s2Matches = pattern.matcher(s2.getName()).find();
     
@@ -185,15 +195,13 @@ public class SoundHandler {
             } else if (!s1Matches && s2Matches) {
                 return 1;
             }
-    
-            // Se entrambi i suoni corrispondono o non corrispondono alla regex, ordinare per views e like
+
             int viewComparison = Integer.compare(s2.getGlobalPlays(), s1.getGlobalPlays());
             if (viewComparison != 0) {
                 return viewComparison;
             }
             return Integer.compare(s2.getLikes(), s1.getLikes());
         };
-    
         Collections.sort(sounds, byRelevance);
         int reduceTo = sounds.size() > 25 ? 25 : sounds.size();
         sounds = sounds.subList(0, reduceTo);
@@ -330,13 +338,13 @@ public class SoundHandler {
         false);
 
         int[] plays = sound.getPlays(author.getId());
-        eb.setFooter("Listened: " + plays[1] + (plays[1] == 1 ? " time" : " times") + " (" + plays[0] + " total)");
+        eb.setFooter("Listened: " + plays[1] + (plays[1] == 1 ? " time" : " times") + " (" + sound.getGlobalPlays() + " total)");
 
         return eb;
     }
 
     public static List<LayoutComponent> getSoundEmbedButtons(Sound sound) {
-        int[] likes = sound.getLikesDislikes();
+        int[] likes = sound.getLikesDislikes(false);
         Button like = Button.primary("soundplay-like-" + sound.getId(), String.valueOf(likes[0])).withEmoji(CustomEmojiHandler.getRichEmoji("like"));
         Button dislike = Button.danger("soundplay-dislike-"+ sound.getId(), String.valueOf(likes[1])).withEmoji(CustomEmojiHandler.getRichEmoji("dislike"));
         Button replay = Button.success("soundplay-replay-"+ sound.getId(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));

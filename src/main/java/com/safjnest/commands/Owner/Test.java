@@ -465,20 +465,31 @@ public class Test extends Command{
                 query = "SELECT id from sound";
                 QueryResult res1 = DatabaseHandler.safJQuery(query);
                 List<Sound> sounds = new ArrayList<>();
-                for(ResultRow row : res1){
-                    sounds.add(SoundHandler.getSoundById(row.get("id")));
-                }
+                System.out.println(res1.size());
                 for (Guild g : e.getJDA().getGuilds()) {
                     System.out.println(g.getName());
                     String query1 = "INSERT INTO play(user_id, sound_id, times)";
                     List<String> values = new ArrayList<>();
-                    for (Member m : g.getMembers()) {
-                        for (Sound soun : sounds) {
-                            values.add("(" + m.getId() + ", " + soun.getId() + ", " + 1 + ")");
+                    int batchSize = 50000; // Batch size of 10k
+                    for (int i = 0; i < res1.size(); i += batchSize) {
+                        List<String> batchValues = new ArrayList<>();
+                        // Calculate the end index for the current batch
+                        int end = Math.min(i + batchSize, res1.size());
+                        for (Member m : g.getMembers()) {
+                            for (int j = i; j < end; j++) { // Iterate over each batch
+                                ResultRow row = res1.get(j);
+                                batchValues.add("(" + m.getId() + ", " + row.get("id") + ", " + 1 + ")");
+                            }
                         }
+                        query = "INSERT INTO play(user_id, sound_id, times) VALUES " 
+                                       + String.join(", ", batchValues) 
+                                       + " ON DUPLICATE KEY UPDATE times = times + 1;";
+                        // Execute the query for the current batch
+                        System.out.println(i);
+                        DatabaseHandler.runQuery(query); // Uncomment this line to execute the query
                     }
-                    query1 += " VALUES " + String.join(", ", values) + "ON DUPLICATE KEY UPDATE times = times + 1;";
-                    DatabaseHandler.safJQuery(query1);
+                    break;
+                    //DatabaseHandler.safJQuery(query1);
                 }
                 break;
             case "dbsgozz":

@@ -1,6 +1,5 @@
 package com.safjnest.core.events;
 
-import java.io.File;
 import java.util.HashMap;
 
 import com.jagrosh.jdautilities.command.Command;
@@ -12,9 +11,11 @@ import com.safjnest.sql.ResultRow;
 import com.safjnest.util.ExperienceSystem;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.AliasData;
+import com.safjnest.model.Sound;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.alert.AlertType;
@@ -315,14 +316,14 @@ public class Functions {
 
 
     public static void handleGreetSound(AudioChannel channelJoin, User theGuy, Guild guild) {
-        String sound = Bot.getUserData(theGuy.getId()).getGreet(guild.getId());
+        Sound sound = SoundHandler.getSoundById(Bot.getUserData(theGuy.getId()).getGreet(guild.getId()));
 
         if(sound == null)
             return;
 
         PlayerManager pm = PlayerManager.get();
 
-        String path = "rsc" + File.separator + "SoundBoard"+ File.separator + sound;
+        String path = sound.getPath();
 
 
         pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
@@ -330,6 +331,7 @@ public class Functions {
             public void trackLoaded(AudioTrack track) {
                 if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);
 
+                sound.increaseUserPlays(theGuy.getId());
                 track.setUserData(new TrackData(AudioType.GREET));
                 pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.GREET);
             }

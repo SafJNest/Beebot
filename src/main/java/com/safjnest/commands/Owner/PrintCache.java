@@ -232,6 +232,10 @@ public class PrintCache extends Command {
                 + "Guild: " + Bot.getJDA().getGuildById(s.getGuildId()).getName() + "\n"
                 + "User: " + Bot.getJDA().retrieveUserById(s.getUserId()).complete().getName() + "\n"
                 + "Tags: " + s.getFormattedTags() + "\n"
+                + "Plays: " + s.getGlobalPlays() + "\n"
+                + "Retrived: " + s.retriveGlobalPlays() + "\n"
+                + "Likes: " + s.getLikes() + "\n"
+                + "Dislikes: " + s.getDislikes()
                 + "```";
             cache.add(msg);
             msg = "";

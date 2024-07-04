@@ -16,6 +16,10 @@ public class Sound {
     private boolean isPublic;
     private Timestamp timestamp;
 
+    private int plays;
+    private int likes;
+    private int dislikes;
+
     private AudioTrack track;
 
     private Tag[] tags;
@@ -66,7 +70,7 @@ public class Sound {
         this.tags = null;
     }
     
-    public Sound(String ID, String GUILD_ID, String USER_ID, String name, String extension, boolean isPublic, Timestamp timestamp, Tag[] tags) {
+    public Sound(String ID, String GUILD_ID, String USER_ID, String name, String extension, boolean isPublic, Timestamp timestamp, int plays, int likes, int dislikes, Tag[] tags) {
         this.ID = ID;
         this.GUILD_ID = GUILD_ID;
         this.USER_ID = USER_ID;
@@ -74,6 +78,9 @@ public class Sound {
         this.extension = extension;
         this.isPublic = isPublic;
         this.timestamp = timestamp;
+        this.plays = plays;
+        this.likes = likes;
+        this.dislikes = dislikes;
         this.tags = tags;
     }
 
@@ -150,7 +157,9 @@ public class Sound {
     }
 
     public boolean increaseUserPlays(String userId) {
-        return DatabaseHandler.updateUserPlays(this.ID, userId);
+        boolean result = DatabaseHandler.updateUserPlays(this.ID, userId);
+        if (result) plays++;
+        return result;
     }
 
     public void setTrack(AudioTrack track) {
@@ -162,7 +171,7 @@ public class Sound {
         for (Tag tag : tags) {
             if (!tag.isEmpty()) sb.append(tag.getName()).append(", ");
         }
-        return sb.toString().substring(0, sb.length() - 2);
+        return sb.length() > 2 ? sb.toString().substring(0, sb.length() - 2) : "";
     }
 
     /**
@@ -172,17 +181,28 @@ public class Sound {
      */
     public int[] getPlays(String userId) {
         ResultRow plays = DatabaseHandler.getPlays(this.ID, userId);
-        if (plays.emptyValues()) return new int[] {0, 0};
+        if (plays.emptyValues()) return new int[] {this.plays, 0};
 
-        return new int[] {plays.getAsInt("totalTimes"), plays.getAsInt("timesByUser")};
+        return new int[] {this.plays, plays.getAsInt("times")};
     }
 
     public int getGlobalPlays() {
-        return getPlays(null)[0];
+        return this.plays;
     }
 
+    public int retriveGlobalPlays() {
+        ResultRow plays = DatabaseHandler.getGlobalPlays(this.ID);
+        if (plays.emptyValues()) return 0;
+        this.plays = plays.getAsInt("times");
 
-    public int[] getLikesDislikes() {
+        return this.plays;
+    }
+
+    public int[] getLikesDislikes(boolean retrive) {
+        return retrive ? retriveLikeDislike() : new int[] {likes, dislikes};
+    }
+
+    private int[] retriveLikeDislike() {
         ResultRow likes = DatabaseHandler.getLikeDislike(this.ID);
         if (likes.emptyValues()) return new int[] {0, 0};
 
@@ -190,7 +210,11 @@ public class Sound {
     }
 
     public int getLikes() {
-        return getLikesDislikes()[0];
+        return likes;
+    }
+
+    public int getDislikes() {
+        return dislikes;
     }
 
     public boolean like(String userId) {
@@ -204,11 +228,27 @@ public class Sound {
 
 
     public boolean like(String userId, boolean like) {
-        return DatabaseHandler.setLikeDislike(this.ID, userId, like, false);
+        int probLike = hasLiked(userId) ? (like ? this.likes : this.likes - 1) : (like ? this.likes + 1 : this.likes);
+        int probDislike = hasDisliked(userId) ? (like ? this.dislikes - 1 : this.dislikes) : this.dislikes;
+        
+        boolean result = DatabaseHandler.setLikeDislike(this.ID, userId, like, false);
+        if (result) {
+            this.likes = probLike;
+            this.dislikes = probDislike;
+        }
+        return result;
     }
 
     public boolean dislike(String userId, boolean dislike) {
-        return DatabaseHandler.setLikeDislike(this.ID, userId, false, dislike);
+        int probLike = hasLiked(userId) ? (dislike ? this.likes - 1 : this.likes) : this.likes;
+        int probDislike = hasDisliked(userId) ? (dislike ? this.dislikes : this.dislikes - 1) : (dislike ? this.dislikes + 1 : this.dislikes);
+
+        boolean result = DatabaseHandler.setLikeDislike(this.ID, userId, false, dislike);
+        if (result) {
+            this.likes = probLike;
+            this.dislikes = probDislike;
+        }
+        return result;
     }
 
     public boolean hasLiked(String userId) {

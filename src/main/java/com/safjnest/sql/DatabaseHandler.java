@@ -295,7 +295,7 @@ public class DatabaseHandler {
             sb.append(sound_id + ", ");
         sb.setLength(sb.length() - 2);
 
-        return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id IN (" + sb.toString() + ");");
+        return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time, plays, likes, dislikes FROM sound WHERE id IN (" + sb.toString() + ");");
     }
 
     public static QueryResult getSoundsById(String id, String guild_id, String author_id) {
@@ -356,13 +356,17 @@ public class DatabaseHandler {
     }
 
     public static boolean updateUserPlays(String sound_id, String user_id) {
-        return runQuery("INSERT INTO play(user_id, sound_id, times) VALUES('" + user_id + "','" + sound_id + "', 1) ON DUPLICATE KEY UPDATE times = times + 1;");
+        boolean q1 = runQuery("INSERT INTO play(user_id, sound_id, times, last_play) VALUES('" + user_id + "', '" + sound_id + "', 1, '" + Timestamp.from(Instant.now()) + "') ON DUPLICATE KEY UPDATE times = times + 1, last_play = '" + Timestamp.from(Instant.now()) + "';");
+        boolean q2 = runQuery("UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
+        return q1 && q2;
     }
 
     public static ResultRow getPlays(String sound_id, String user_id) {
-        return fetchJRow("SELECT"
-            + "(SELECT SUM(times) FROM play WHERE sound_id = '" + sound_id + "') AS totalTimes,"
-            + "(SELECT times FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "') AS timesByUser;");
+        return fetchJRow("SELECT times FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
+    }
+
+    public static ResultRow getGlobalPlays(String sound_id) {
+        return fetchJRow("SELECT sum(times) as times FROM play WHERE sound_id = '" + sound_id + "'");
     }
 
     public static String getSoundsUploadedByUserCount(String user_id) {
@@ -983,9 +987,51 @@ public class DatabaseHandler {
             + "(SELECT SUM(dislike) FROM play WHERE sound_id = '" + sound_id + "') AS dislikes;");
     }
 
+    public static ResultRow getLikeDislikeUser(String sound_id, String user_id) {
+        return fetchJRow("SELECT `like`, dislike FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
+    }
+
 
     public static boolean setLikeDislike(String sound_id, String user_id, boolean like, boolean dislike) {
-        return runQuery("INSERT INTO play(user_id, sound_id, `like`, dislike) VALUES('" + user_id + "','" + sound_id + "', " + (like ? 1 : 0) + ", " + (dislike ? 1 : 0) + ") ON DUPLICATE KEY UPDATE `like` = " + (like ? 1 : 0) + ", dislike = " + (dislike ? 1 : 0) + ";");
+        ResultRow userLike = getLikeDislikeUser(sound_id, user_id);
+
+        String likePart = "";
+        String dislikePart = "";
+        
+        // Determine the action for likes
+        if (like && !userLike.getAsBoolean("like")) {
+            // If the user is liking for the first time
+            likePart = "`likes` = `likes` + 1";
+        } else if (!like && userLike.getAsBoolean("like")) {
+            // If the user is removing their like
+            likePart = "`likes` = `likes` - 1";
+        }
+        
+        // Determine the action for dislikes
+        if (dislike && !userLike.getAsBoolean("dislike")) {
+            // If the user is disliking for the first time
+            dislikePart = "dislikes = dislikes + 1";
+        } else if (!dislike && userLike.getAsBoolean("dislike")) {
+            // If the user is removing their dislike
+            dislikePart = "dislikes = dislikes - 1";
+        }
+        
+        // Combine the parts to form the full update query, ensuring we only include non-empty parts
+        String updateQuery = "UPDATE sound SET ";
+        if (!likePart.isEmpty() && !dislikePart.isEmpty()) {
+            updateQuery += likePart + ", " + dislikePart;
+        } else if (!likePart.isEmpty()) {
+            updateQuery += likePart;
+        } else if (!dislikePart.isEmpty()) {
+            updateQuery += dislikePart;
+        }
+    
+        if (!likePart.isEmpty() || !dislikePart.isEmpty()) {
+            updateQuery += " WHERE id = '" + sound_id + "';";
+        }
+        boolean q1 =  runQuery("INSERT INTO play(user_id, sound_id, `like`, dislike) VALUES('" + user_id + "','" + sound_id + "', " + (like ? 1 : 0) + ", " + (dislike ? 1 : 0) + ") ON DUPLICATE KEY UPDATE `like` = " + (like ? 1 : 0) + ", dislike = " + (dislike ? 1 : 0) + ";");
+        boolean q2 = runQuery(updateQuery);
+        return q1 && q2;
     }
 
     public static ResultRow hasInterectedSound(String sound_id, String user_id) {
