@@ -18,7 +18,7 @@ public class TwitchSlash extends SlashCommand{
         this.help = "json";
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new TwitchLinkSlash(father), new TwitchUnlinkSlash(father), new TwitchMenuSlash(father));
+        Collections.addAll(slashCommandsList, new TwitchLinkSlash(father), new TwitchUnlinkSlash(father), new TwitchMenuSlash(father), new TwitchUserSlash(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);    
     }
 

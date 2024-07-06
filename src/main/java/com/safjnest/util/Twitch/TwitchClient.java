@@ -1,6 +1,7 @@
 package com.safjnest.util.Twitch;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.github.philippheuer.events4j.api.domain.IEventSubscription;
 import com.github.twitch4j.ITwitchClient;
@@ -26,6 +27,10 @@ public class TwitchClient {
     private static TwitchConduitSocketPool conduit = null;
 
     private static CacheMap<String, User> streamersCache;
+
+    private static String userUrl = "https://www.twitch.tv/{user}";
+    private static String boxArtUrl = "https://static-cdn.jtvnw.net/ttv-boxart/{game}-{width}x{heigth}";
+    private static String twitchIconUrl = "https://static-00.iconduck.com/assets.00/twitch-icon-512x512-ws2eyit3.png";
 
     public TwitchClient(String clientId, String clientSecret) {
         TwitchClient.clientId = clientId;
@@ -55,6 +60,7 @@ public class TwitchClient {
             .withClientSecret(clientSecret)
             .build();
         
+        /*
         Conduit firstConduit = getFirstConduit();
         updateConduit(firstConduit.getId(), 1);
         try {
@@ -70,11 +76,12 @@ public class TwitchClient {
                 
             });
         } catch (Exception e1) {
-            BotLogger.error("[TWITCH] Error connecting to twitch");
+            BotLogger.error("[TWITCH] Error connecting the conduit to twitch");
             e1.printStackTrace();
         }
         conduit.getEventManager().onEvent(StreamOnlineEvent.class, TwitchEventsHandler::onStreamOnlineEvent);
         conduit.getEventManager().onEvent(EventSocketConnectionStateEvent.class, TwitchEventsHandler::onSocketConnectionStateEvent);
+        */
     }
 
     public static Conduit getFirstConduit() {
@@ -144,12 +151,25 @@ public class TwitchClient {
         return streamer.get(0);
     }
 
-    public static Stream getStream(String streamId) {
-        List<Stream> streams = TwitchClient.getClient().getHelix().getStreams(null, null, null, null, null, null, List.of(streamId), null).execute().getStreams();
+    public static Stream getStream(String streamerId) {
+        List<Stream> streams = TwitchClient.getClient().getHelix().getStreams(null, null, null, null, null, null, List.of(streamerId), null).execute().getStreams();
         if (streams.size() == 0) return null;
 
         return streams.get(0);
     }
 
+    public static String getStreamerUrl(String streamerLogin) {
+        return userUrl.replaceAll(Pattern.quote("{user}"), streamerLogin);
+    }
+
+    public static String getBoxArtUrl(String gameId, Integer width, Integer height) {
+        return boxArtUrl.replaceAll(Pattern.quote("{game}"), gameId)
+                        .replaceAll(Pattern.quote("{width}"), width.toString())
+                        .replaceAll(Pattern.quote("{height}"), height.toString());
+    }
+
+    public static String getTwitchIconUrl() {
+        return twitchIconUrl;
+    }
     
 }

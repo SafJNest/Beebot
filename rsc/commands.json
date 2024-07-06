@@ -920,8 +920,13 @@
             },
             "menu": {
                 "alias" : [],
-                "help"  : "Unlink a streamer",
+                "help"  : "twitch menu",
                 "arguments" : "[CommandName]"
+            },
+            "user": {
+                "alias" : [],
+                "help"  : "Get info on a streamer",
+                "arguments" : "[CommandName] [streamerName]"
             }
         }
     },

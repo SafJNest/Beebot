@@ -102,7 +102,7 @@ public class App {
             twitchSettings.get("clientSecret").toString()
         );
 
-        if(!isExtremeTesting()) {
+        if(isExtremeTesting()) {
             TwitchClient.init();
         }
 

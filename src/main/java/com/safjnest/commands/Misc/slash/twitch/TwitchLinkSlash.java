@@ -24,7 +24,7 @@ public class TwitchLinkSlash extends SlashCommand{
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "streamer", "Streamer's username", true),
-            new OptionData(OptionType.CHANNEL, "channel", "Channel", true)
+            new OptionData(OptionType.CHANNEL, "channel", "Channel", false)
                 .setChannelTypes(ChannelType.TEXT),
             new OptionData(OptionType.STRING, "message", "The message that would be sent when the live goes on", false)
         );
@@ -33,7 +33,7 @@ public class TwitchLinkSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         String streamerUsername = event.getOption("streamer").getAsString();
-        String channel = event.getOption("channel").getAsChannel().getId();
+        String channel = event.getOption("channel") == null ? event.getTextChannel().getId() : event.getOption("channel").getAsString();
         String message = event.getOption("message") == null ? "" : event.getOption("message").getAsString();
 
         String streamerId = TwitchClient.getStreamerByName(streamerUsername).getId();
@@ -43,9 +43,13 @@ public class TwitchLinkSlash extends SlashCommand{
             return;
         }
 
-        if (!DatabaseHandler.getTwitchSubscriptionsGuild(streamerId, event.getGuild().getId()).emptyValues()) {
-            DatabaseHandler.updateTwitchSubscription(streamerId, event.getGuild().getId(), channel, message);
-            event.reply("Twitch subscription already existed for this streamer in this server so it got updated").queue();
+        if (DatabaseHandler.updateTwitchSubscription(streamerId, event.getGuild().getId(), channel, message)) {
+            event.reply("Twitch subscription already exists for this streamer so it got updated").queue();
+            return;
+        }
+
+        if (channel == null) {
+            event.reply("For linking new subscriptions you must specify the channel").queue();
             return;
         }
 

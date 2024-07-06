@@ -56,10 +56,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
 
         if (channel != null) channel = channel.substring(channel.lastIndexOf("/") + 1);
 
-        if (DatabaseHandler.getTwitchSubscriptionsGuild(streamerId, event.getGuild().getId()).emptyValues())
-            DatabaseHandler.setTwitchSubscriptions(streamerId, event.getGuild().getId(), message, channel);
-        else
-            DatabaseHandler.updateTwitchSubscription(streamerId, event.getGuild().getId(), channel, message);
+        DatabaseHandler.setTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, message);
 
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(TwitchMenuSlash.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())

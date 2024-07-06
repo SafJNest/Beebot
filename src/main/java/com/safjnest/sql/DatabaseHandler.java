@@ -867,7 +867,9 @@ public class DatabaseHandler {
     }
 
     public static boolean setTwitchSubscriptions(String streamer_id, String guild_id, String channel_id, String message) {
-        String sql = "INSERT INTO twitch_subscription(streamer_id, guild_id, channel_id, message) VALUES(?, ?, ?, ?);";
+        // Adjusted SQL statement to handle duplicate key by updating existing record
+        String sql = "INSERT INTO twitch_subscription(streamer_id, guild_id, channel_id, message) VALUES(?, ?, ?, ?) " +
+                     "ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), message = VALUES(message);";
         try {
             PreparedStatement pstmt = c.prepareStatement(sql);
             pstmt.setObject(1, streamer_id);
@@ -877,23 +879,6 @@ public class DatabaseHandler {
     
             pstmt.executeUpdate();
             return true;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            return false;
-        }
-    }
-
-    public static boolean updateTwitchSubscriptionOld(String streamer_id, String guild_id, String channel_id, String message) {
-        String sql = "UPDATE twitch_subscription SET channel_id = ?, message = ? WHERE streamer_id = ? AND guild_id = ?;";
-        try {
-            PreparedStatement pstmt = c.prepareStatement(sql);
-            pstmt.setObject(1, channel_id);
-            pstmt.setObject(2, message);
-            pstmt.setObject(3, streamer_id);
-            pstmt.setObject(4, guild_id);
-
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
             return false;

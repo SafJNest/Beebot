@@ -15,6 +15,7 @@ import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.IEventSubConduit;
 import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
+import com.github.twitch4j.helix.domain.Stream;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.opencsv.CSVReader;
@@ -37,7 +38,9 @@ import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TableHandler;
 import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.Twitch.TwitchClient;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
@@ -45,6 +48,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
@@ -580,6 +584,46 @@ public class Test extends Command{
                     "table.txt"
                 )).queue();
             
+                break;
+            case "twitchuser":
+                com.github.twitch4j.helix.domain.User streamer = TwitchClient.getStreamerByName(args[1]);
+                if(streamer.getId() == null){
+                    e.reply("Streamer not found");
+                    return;
+                }
+
+                EmbedBuilder eb = new EmbedBuilder();
+                eb.setColor(Bot.getColor());
+                eb.setAuthor(streamer.getDisplayName(), TwitchClient.getStreamerUrl(streamer.getLogin()), streamer.getProfileImageUrl());
+                eb.setThumbnail(streamer.getProfileImageUrl());
+                eb.setFooter("twitch.tv/" + streamer.getLogin());
+                eb.setDescription(streamer.getDescription());
+                
+                String buttonLabel = null;
+
+                Stream stream = TwitchClient.getStream(streamer.getId());
+                if(stream == null) {
+                    eb.appendDescription("\n\n`⚫OFFLINE`\n");
+                    if(streamer.getOfflineImageUrl() != null && !streamer.getOfflineImageUrl().isBlank()) {
+                        eb.setImage(streamer.getOfflineImageUrl());
+                    }
+
+                    buttonLabel = "Visit profile";
+                }
+                else {
+                    eb.appendDescription("\n\n`🔴LIVE`\n");
+                    eb.appendDescription("\n" + stream.getTitle() + "\n");
+                    eb.setImage(stream.getThumbnailUrl(400, 225));
+                    eb.addField("Started", "<t:" + stream.getStartedAtInstant().getEpochSecond() + ":R>", true);
+                    eb.addField("Viewer count", stream.getViewerCount().toString(), true);
+                    buttonLabel = "Watch stream";
+                }
+
+                eb.addField("Channel created", "<t:" + streamer.getCreatedAt().getEpochSecond() + ":R>", false);
+
+                Button streamerButtonLink = Button.link(TwitchClient.getStreamerUrl(streamer.getLogin()), buttonLabel);
+                
+                e.getChannel().sendMessageEmbeds(eb.build()).setActionRow(streamerButtonLink).queue();
                 break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");

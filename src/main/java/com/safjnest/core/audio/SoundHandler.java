@@ -259,7 +259,7 @@ public class SoundHandler {
         int n = 1;
         for (Tag tag : tags) {
             Button tagButton = null;
-            if (tag.isEmpty()) tagButton = Button.secondary("sound-tag-empty-" + n, " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank"));
+            if (tag.isEmpty()) tagButton = Button.secondary("sound-tag-empty-" + n, " ").withEmoji(CustomEmojiHandler.getRichEmoji("tag"));
             else tagButton = Button.primary("sound-tag-" + sound + "-" + tag.getId(), tag.getName()).withEmoji(CustomEmojiHandler.getRichEmoji("tag"));
 
             tagButtons.add(tagButton);
