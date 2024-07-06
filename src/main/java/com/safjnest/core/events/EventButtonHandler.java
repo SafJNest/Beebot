@@ -163,16 +163,18 @@ public class EventButtonHandler extends ListenerAdapter {
             case "addSub":
                 TextInput streamerInput = TextInput.create("twitch-streamer", "Streamer name", TextInputStyle.SHORT)
                     .setPlaceholder("sunny314_")
-                    .setMaxLength(100)
+                    .setMinLength(4)
+                    .setMaxLength(25)
                     .build();
 
                 messageInput = TextInput.create("twitch-changeMessage", "New Message", TextInputStyle.PARAGRAPH)
-                    .setPlaceholder("Hello #streamer is now live!")
+                    .setPlaceholder("#streamer is now live!")
                     .setMaxLength(1000)
                     .build();
 
                 channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
                     .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
+                    .setMinLength(17)
                     .setMaxLength(100)
                     .build();
 
@@ -203,6 +205,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "changeChannel":
                 channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
                     .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
+                    .setMinLength(17)
                     .setMaxLength(100)
                     .build();
 

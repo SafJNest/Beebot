@@ -29,17 +29,24 @@ public class TwitchMenuSlash extends SlashCommand{
 
         QueryResult subs = DatabaseHandler.getTwitchSubscriptionsGuild(guildId);
         List<com.github.twitch4j.helix.domain.User> streamers = TwitchClient.getStreamersById(subs.arrayColumn("streamer_id"));
+        //if there are more than 24 streamers, 25 and up just dont show up :/ | todo: premium = streamcord + 1
         for (com.github.twitch4j.helix.domain.User streamer : streamers) {
             Button subButton = Button.primary("twitch-streamerId-" + streamer.getId(), streamer.getDisplayName());
             buttons.add(subButton);
+            if(buttonRows.size() == 4 && buttons.size() == 4) {
+                System.out.println("Someone has 24 or more streamers, its time to do pages :)");
+                break;
+            }
+            else if(buttons.size() == 5) {
+                buttonRows.add(ActionRow.of(buttons));
+                buttons.clear();
+            }
         }
 
-        Button addSubButton = Button.primary("twitch-addSub", "+");
+        Button addSubButton = Button.success("twitch-addSub", "+");
         buttons.add(addSubButton);
 
-        ActionRow row = ActionRow.of(buttons);
-
-        buttonRows.add(row);
+        buttonRows.add(ActionRow.of(buttons));
 
         return buttonRows;
     }
@@ -61,8 +68,15 @@ public class TwitchMenuSlash extends SlashCommand{
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setTitle("Twitch menu");
-        eb.setDescription("From here you can add new subs to your server or modify existing ones.\n" +
-            "On the message you can write #streamer to get the name of the streamer and @role");
+        eb.setDescription("Here you can **add** new subs to your server or **modify** existing ones.");
+
+        eb.setFooter("In the message you can write #streamer to get the name of the streamer.\n" +
+                          "Because of discord limitations you cant ping a role or a channel directly " +
+                          "from the form, so for channels you can right click -> copy link and paste " +
+                          "that in the form, but if you want to ping a role in the message i would " +
+                          "suggest using the twitch link command (specifiyng an already linked streamer " + 
+                          "in the link command will update the message/channel).");
+
         eb.setThumbnail("https://static-00.iconduck.com/assets.00/twitch-icon-512x512-ws2eyit3.png");
         eb.setColor(Bot.getColor());
 
@@ -76,8 +90,18 @@ public class TwitchMenuSlash extends SlashCommand{
         eb.setColor(Bot.getColor());
         eb.setTitle(streamer.getDisplayName(), "https://twitch.tv/" + streamer.getLogin());
         eb.setThumbnail(streamer.getProfileImageUrl());
-        eb.setDescription(sub.get("message"));
+        eb.setDescription("Here you can **add** new subs to your server or **modify** existing ones.");
+
+        eb.addField("Message", sub.get("message"), false);
         eb.addField("Channel", "https://discord.com/channels/" + guildId + "/" + sub.get("channel_id"), false);
+
+        eb.setFooter("In the message you can write #streamer to get the name of the streamer.\n" +
+                     "Because of discord limitations you cant ping a role or a channel directly " +
+                     "from the form, so for channels you can right click -> copy link and paste " +
+                     "that in the form, but if you want to ping a role in the message i would " +
+                     "suggest using the twitch link command (specifiyng an already linked streamer " + 
+                     "in the link command will update the message/channel).");
+        
         return eb;
     }
 
@@ -86,7 +110,6 @@ public class TwitchMenuSlash extends SlashCommand{
         this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
-        this.guildOnly = true;
     }
 
     @Override
