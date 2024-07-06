@@ -8,7 +8,7 @@ import java.util.Set;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.SoundHandler;
-import com.safjnest.model.Sound;
+import com.safjnest.model.sound.Sound;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.CommandsLoader;
 

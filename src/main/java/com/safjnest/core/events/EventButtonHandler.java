@@ -27,10 +27,10 @@ import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.audio.types.EmbedType;
-import com.safjnest.model.Sound;
-import com.safjnest.model.Sound.Tag;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.RewardData;
+import com.safjnest.model.sound.Sound;
+import com.safjnest.model.sound.Tag;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -313,7 +313,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 Tag[] tags = soundData.getTags();
                 for (int i = 0; i < tags.length; i++) {
                     if (tags[i].getId() == Integer.parseInt(tagId)) {
-                        tags[i] = new Sound().new Tag();
+                        tags[i] = new Tag();
                         break;
                     }
                 }

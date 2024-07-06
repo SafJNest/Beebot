@@ -8,8 +8,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.SoundHandler;
-import com.safjnest.model.Sound;
-import com.safjnest.model.Sound.Tag;
+import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
@@ -88,12 +87,12 @@ public class UploadSlash extends SlashCommand{
         }
 
         List<Tag> tags = new ArrayList<>();
-        for(int i = 1; i <= 5; i++){
+        for(int i = 1; i <= Tag.MAX_TAG_SOUND; i++){
             if(event.getOption("tag-" + i) != null){
                 String tagName = event.getOption("tag-" + i) != null ? event.getOption("tag-" + i).getAsString() : "";
                 if(tagName.length() > 0){
                     int tagId = DatabaseHandler.insertTag(tagName);
-                    tags.add(new Sound().new Tag(tagId, tagName));
+                    tags.add(new Tag(tagId, tagName));
                 }
             }
         }

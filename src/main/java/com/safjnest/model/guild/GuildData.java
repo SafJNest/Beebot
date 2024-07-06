@@ -83,7 +83,9 @@ public class GuildData {
         
         this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
 
-        retriveTTSSettings();
+        this.voice = null;
+        this.language = null;
+
         retriveChannels();
         retriveCustomCommand();
 
@@ -159,11 +161,17 @@ public class GuildData {
         this.language = result.get("language_tts");
     }
 
+    private void checkTTS() {
+        if (this.voice == null || this.language == null) retriveTTSSettings();
+    }
+
     public String getVoice() {
+        checkTTS();
         return this.voice;
     }
 
     public String getLanguage() {
+        checkTTS();
         return this.language;
     }
 

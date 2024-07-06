@@ -18,9 +18,9 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.core.Bot;
 import com.safjnest.core.CacheMap;
-import com.safjnest.model.Sound;
-import com.safjnest.model.Sound.Tag;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.model.sound.Sound;
+import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
@@ -137,16 +137,16 @@ public class SoundHandler {
         QueryResult tags = DatabaseHandler.getSoundsTags(notCached.toArray(new String[0]));
 
         for (ResultRow soundData : soundsResult) {
-            List<Sound.Tag> tagList = new ArrayList<>();
+            List<Tag> tagList = new ArrayList<>();
             for (ResultRow tag : tags) {
                 if (tag.get("sound_id").equals(soundData.get("id"))) {
-                    tagList.add(new Sound().new Tag(tag.getAsInt("tag_id"), tag.get("name")));
+                    tagList.add(new Tag(tag.getAsInt("tag_id"), tag.get("name")));
                 }
             }
 
-            if (tagList.size() != 5) {
-                for (int i = tagList.size(); i < 5; i++) {
-                    tagList.add(new Sound().new Tag(0, ""));
+            if (tagList.size() != Tag.MAX_TAG_SOUND) {
+                for (int i = tagList.size(); i < Tag.MAX_TAG_SOUND; i++) {
+                    tagList.add(new Tag());
                 }
             }
 
@@ -161,7 +161,7 @@ public class SoundHandler {
                     soundData.getAsInt("plays"), 
                     soundData.getAsInt("likes"), 
                     soundData.getAsInt("dislikes"), 
-                    tagList.toArray(new Sound.Tag[tagList.size()])
+                    tagList.toArray(new Tag[tagList.size()])
             );
             soundCache.put(sound.getId(), sound);
         }
@@ -215,7 +215,7 @@ public class SoundHandler {
     public static Tag getTagById(String tag_id) {
         ResultRow tagData = DatabaseHandler.getTag(tag_id);
         if (tagData == null) return null;
-        return new Sound().new Tag(tagData.getAsInt("id"), tagData.get("name"));
+        return new Tag(tagData.getAsInt("id"), tagData.get("name"));
     }
 
     public static Tag getTagByName(String tag_name) {
@@ -256,14 +256,21 @@ public class SoundHandler {
 
         Tag[] tags = soundData.getTags();
         List<Button> tagButtons = new ArrayList<>();
-        int n = 0;
+        int n = 1;
         for (Tag tag : tags) {
-            if (tag.getId() == 0) tagButtons.add(Button.secondary("sound-tag-empty-" + n, " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")));
-            else tagButtons.add(Button.primary("sound-tag-" + sound + "-" + tag.getId(), tag.getName()).withEmoji(CustomEmojiHandler.getRichEmoji("tag")));
+            Button tagButton = null;
+            if (tag.isEmpty()) tagButton = Button.secondary("sound-tag-empty-" + n, " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank"));
+            else tagButton = Button.primary("sound-tag-" + sound + "-" + tag.getId(), tag.getName()).withEmoji(CustomEmojiHandler.getRichEmoji("tag"));
+
+            tagButtons.add(tagButton);
+            if (n % 5 == 0 || n == tags.length) {
+                buttonRows.add(ActionRow.of(tagButtons));
+                tagButtons = new ArrayList<>();
+            }
             n++;
         }
 
-        buttonRows.add(ActionRow.of(tagButtons));
+        //buttonRows.add(ActionRow.of(tagButtons));
         
 
         return buttonRows;

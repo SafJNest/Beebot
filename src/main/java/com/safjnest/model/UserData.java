@@ -27,7 +27,6 @@ public class UserData {
         BotLogger.debug("Retriving UserData => {0}", new LoggerIDpair(USER_ID, LoggerIDpair.IDType.USER));
         
         retriveAlies();
-        retriveRiotAccounts();
 
         globalGreetId = null;
         guildGreetIds = new HashMap<>();
@@ -114,10 +113,13 @@ public class UserData {
         if (globalGreetId == null) {
             ResultRow possibleGreet = DatabaseHandler.getGlobalGreet(USER_ID);
             if (possibleGreet.emptyValues()) {
+                this.globalGreetId = "";
                 return null;
             }
             globalGreetId = possibleGreet.get("id");
         }
+        else if (globalGreetId.isEmpty()) return null;
+        
         return globalGreetId;
     }
 
@@ -155,12 +157,18 @@ public class UserData {
         }
     }
 
+    private void checkRiotAccounts() {
+        if (riotAccounts == null) retriveRiotAccounts();
+    }
+
 
     public HashMap<String, String> getRiotAccounts() {
+        checkRiotAccounts();
         return riotAccounts;
     }
 
     public boolean addRiotAccount(Summoner s) {
+        checkRiotAccounts();
         boolean result = DatabaseHandler.addLOLAccount(USER_ID, s.getSummonerId(), s.getAccountId(), s.getPlatform());
         if (result) riotAccounts.put(s.getAccountId(), String.valueOf(s.getPlatform().ordinal()));
         
@@ -168,6 +176,7 @@ public class UserData {
     }
 
     public boolean deleteRiotAccount(String account_id) {
+        checkRiotAccounts();
         boolean result = DatabaseHandler.deleteLOLaccount(USER_ID, account_id);
         if (result) riotAccounts.remove(account_id);
         

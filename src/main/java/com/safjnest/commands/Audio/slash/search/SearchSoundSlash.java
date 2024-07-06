@@ -9,7 +9,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.types.AudioType;
-import com.safjnest.model.Sound;
+import com.safjnest.model.sound.Sound;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;

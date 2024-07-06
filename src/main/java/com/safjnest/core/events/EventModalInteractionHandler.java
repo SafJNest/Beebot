@@ -4,8 +4,8 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import com.safjnest.commands.Audio.slash.CustomizeSoundSlash;
 import com.safjnest.commands.Misc.slash.twitch.TwitchMenuSlash;
 import com.safjnest.core.audio.SoundHandler;
-import com.safjnest.model.Sound;
-import com.safjnest.model.Sound.Tag;
+import com.safjnest.model.sound.Sound;
+import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.DatabaseHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;

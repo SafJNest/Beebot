@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.types.AudioType;
-import com.safjnest.model.Sound;
+import com.safjnest.model.sound.Sound;
 import com.safjnest.util.CommandsLoader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
