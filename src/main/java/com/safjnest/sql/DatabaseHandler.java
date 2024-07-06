@@ -9,10 +9,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
-import com.safjnest.model.Sound.Tag;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.sound.Tag;
 import com.safjnest.util.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -28,6 +30,8 @@ public class DatabaseHandler {
     private static String password;
 
     private static Connection c;
+
+    private static HashMap<Long, List<String>> queryAnalytics = new HashMap<>();
 
     /**
      * Constructor
@@ -62,6 +66,12 @@ public class DatabaseHandler {
         }
     }
 
+    private static void insertAnalytics(String query) {
+        List<String> queries = queryAnalytics.getOrDefault(System.currentTimeMillis(), new ArrayList<>());
+        queries.add(query);
+        queryAnalytics.put(System.currentTimeMillis(), queries);
+    }
+
     public static QueryResult safJQuery(String query) {
         connectIfNot();
 
@@ -80,6 +90,7 @@ public class DatabaseHandler {
                 }
                 result.add(beeRow);
             }
+            insertAnalytics(query);
             c.commit();
         } catch (SQLException ex) {
             try {
@@ -119,7 +130,7 @@ public class DatabaseHandler {
             }
             result.add(beeRow);
         }
-
+        insertAnalytics(query);
         return result; 
     }
 
@@ -146,6 +157,7 @@ public class DatabaseHandler {
                     beeRow.put(columnName, columnValue);
                 }
             }
+            insertAnalytics(query);
             c.commit();
         } catch (SQLException ex) {
             try {
@@ -183,7 +195,7 @@ public class DatabaseHandler {
                 beeRow.put(columnName, columnValue);
             }
         }
-
+        insertAnalytics(query);
         return beeRow;
     }
 
@@ -196,8 +208,10 @@ public class DatabaseHandler {
         connectIfNot();
 
         try (Statement stmt = c.createStatement()) {
-            for (String query : queries)
+            for (String query : queries) 
                 stmt.execute(query);
+            
+            insertAnalytics(queries.toString());
             c.commit();
             return true;
         } catch (SQLException ex) {
@@ -223,8 +237,15 @@ public class DatabaseHandler {
     public static void runQuery(Statement stmt, String... queries) throws SQLException {
         connectIfNot();
         
-        for (String query : queries)
+        for (String query : queries) 
             stmt.execute(query);
+        
+        insertAnalytics(queries.toString());
+        
+    }
+
+    public static HashMap<Long, List<String>> getQueryAnalytics() {
+        return queryAnalytics;
     }
 
     //-------------------------------------------------------------------------
@@ -356,9 +377,7 @@ public class DatabaseHandler {
     }
 
     public static boolean updateUserPlays(String sound_id, String user_id) {
-        boolean q1 = runQuery("INSERT INTO play(user_id, sound_id, times, last_play) VALUES('" + user_id + "', '" + sound_id + "', 1, '" + Timestamp.from(Instant.now()) + "') ON DUPLICATE KEY UPDATE times = times + 1, last_play = '" + Timestamp.from(Instant.now()) + "';");
-        boolean q2 = runQuery("UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
-        return q1 && q2;
+        return runQuery("INSERT INTO play(user_id, sound_id, times, last_play) VALUES('" + user_id + "', '" + sound_id + "', 1, '" + Timestamp.from(Instant.now()) + "') ON DUPLICATE KEY UPDATE times = times + 1, last_play = '" + Timestamp.from(Instant.now()) + "';", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
     }
 
     public static ResultRow getPlays(String sound_id, String user_id) {

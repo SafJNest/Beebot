@@ -6,13 +6,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ThreadLocalRandom;
-
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.IEventSubConduit;
@@ -24,8 +21,6 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundHandler;
-import com.safjnest.model.Sound;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -40,6 +35,7 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.TableHandler;
 import com.safjnest.util.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.Permission;
@@ -49,6 +45,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
 import org.jfree.chart.ChartFactory;
@@ -63,9 +60,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import java.util.*;
 
 import java.sql.Timestamp;
 /**
@@ -464,12 +464,9 @@ public class Test extends Command{
             case "soundsgozzing":
                 query = "SELECT id from sound";
                 QueryResult res1 = DatabaseHandler.safJQuery(query);
-                List<Sound> sounds = new ArrayList<>();
                 System.out.println(res1.size());
                 for (Guild g : e.getJDA().getGuilds()) {
                     System.out.println(g.getName());
-                    String query1 = "INSERT INTO play(user_id, sound_id, times)";
-                    List<String> values = new ArrayList<>();
                     int batchSize = 50000; // Batch size of 10k
                     for (int i = 0; i < res1.size(); i += batchSize) {
                         List<String> batchValues = new ArrayList<>();
@@ -507,6 +504,82 @@ public class Test extends Command{
             case "lolversion":
                 RiotHandler.setVersion(args[1]);
                 e.reply("new version: " + RiotHandler.getVersion());
+                break;
+            case "sql":                
+                HashMap<Long, List<String>> map = DatabaseHandler.getQueryAnalytics();      
+                HashMap<Long, Integer> queriesPerHour = new HashMap<>();
+                
+                for (Map.Entry<Long, List<String>> entry : map.entrySet()) {
+                    long hours = TimeUnit.MILLISECONDS.toHours(entry.getKey());
+                    int queriesCount = entry.getValue().size();
+                    queriesPerHour.put(hours, queriesPerHour.getOrDefault(hours, 0) + queriesCount);
+                }
+                Map<Long, Integer> sortedQueriesPerHour = queriesPerHour.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .collect(Collectors.toMap(
+                        Map.Entry::getKey, 
+                        Map.Entry::getValue, 
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                String[][] data = new String[sortedQueriesPerHour.size()][2];
+                int i = 0;
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-M-Y H:m:s");
+                for (Map.Entry<Long, Integer> entry : sortedQueriesPerHour.entrySet()) {
+                    System.out.println(TimeUnit.HOURS.toMillis(entry.getKey()));
+                    LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.HOURS.toMillis(entry.getKey())), ZoneId.systemDefault());
+                    String formattedDate = dateTime.format(formatter);
+                    data[i][0] = formattedDate;
+                    data[i][1] = entry.getValue().toString();
+                    i++;
+                }    
+                String[] headers = new String[] {"Time", "Query"};
+                String table = TableHandler.constructTable(data, headers);
+                
+                e.getChannel().sendFiles(FileUpload.fromData(
+                    table.getBytes(StandardCharsets.UTF_8),
+                    "table.txt"
+                )).queue();
+            
+                break;
+            case "sqlday":                
+                HashMap<Long, List<String>> map2 = DatabaseHandler.getQueryAnalytics();
+                HashMap<Long, Integer> queriesPerDay = new HashMap<>();
+
+                for (Map.Entry<Long, List<String>> entry : map2.entrySet()) {
+                    // Convert milliseconds to days
+                    long days = TimeUnit.MILLISECONDS.toDays(entry.getKey());
+                    int queriesCount = entry.getValue().size();
+                    queriesPerDay.put(days, queriesPerDay.getOrDefault(days, 0) + queriesCount);
+                }
+
+                Map<Long, Integer> sortedQueriesPerDay = queriesPerDay.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .collect(Collectors.toMap(
+                        Map.Entry::getKey, 
+                        Map.Entry::getValue, 
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+
+                String[][] data2 = new String[sortedQueriesPerDay.size()][2];
+                int j = 0;
+                DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("d-M-Y");
+
+                for (Map.Entry<Long, Integer> entry : sortedQueriesPerDay.entrySet()) {
+                    // Convert days back to milliseconds for the start of each day
+                    long millisForDay = TimeUnit.DAYS.toMillis(entry.getKey());
+                    LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(millisForDay), ZoneId.systemDefault());
+                    String formattedDate = dateTime.format(formatter2);
+                    data2[j][0] = formattedDate;
+                    data2[j][1] = entry.getValue().toString();
+                    j++;
+                }
+
+                String[] headers2 = new String[] {"Time", "Query"};
+                String table2 = TableHandler.constructTable(data2, headers2);
+
+                e.getChannel().sendFiles(FileUpload.fromData(
+                    table2.getBytes(StandardCharsets.UTF_8),
+                    "table.txt"
+                )).queue();
+            
                 break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
