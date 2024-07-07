@@ -877,7 +877,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         if (!p.getSummonerId().equals(s.getSummonerId()))
                             options.add(SelectOption.of(
                                     a.getName().toUpperCase(),
-                                    p.getSummonerId()).withEmoji(icon));
+                                    p.getSummonerId() + "#" + s.getPlatform().name()).withEmoji(icon));
                     }
 
                     StringSelectMenu menu = StringSelectMenu.create("rank-select")

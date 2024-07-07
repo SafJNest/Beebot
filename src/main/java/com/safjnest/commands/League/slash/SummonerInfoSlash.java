@@ -32,8 +32,7 @@ public class SummonerInfoSlash extends SlashCommand {
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "summoner", "Name of the summoner you want to get information on", false),
-            new OptionData(OptionType.STRING, "tag", "Tag of the summoner you want to get information on", false),
+            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false),
             RiotHandler.getLeagueShardOptions(),
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false));
     }
@@ -54,7 +53,7 @@ public class SummonerInfoSlash extends SlashCommand {
         
         s = RiotHandler.getSummonerByArgs(event);
         if(s == null){
-            event.getHook().editOriginal("Couldn't find the specified summoner. Remember to use the tag or connect an account.").queue();
+            event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag or connect an account using ```/summoner connect```").queue();
             return;
         }
         

@@ -22,7 +22,7 @@ public class SummonerSlash extends SlashCommand {
         this.help = new CommandsLoader().getString(this.name, "help");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new SummonerConnectSlash(father), new SummonerInfoSlash(father), new SummonerDisconnectSlash(father));
+        Collections.addAll(slashCommandsList, new SummonerLinkSlash(father), new SummonerInfoSlash(father), new SummonerUnlinkSlash(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
     }
 

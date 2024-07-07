@@ -998,17 +998,17 @@
         "children": {
             "info": {
                 "alias" : [],
-                "help"  : "Create a new soundboard.",
+                "help"  : "Show statistics for a summoner.",
                 "arguments" : "[CommandName]"
             }, 
-            "connect": {
+            "link": {
                 "alias" : [],
-                "help"  : "Select and show an existing soundboard.",
+                "help"  : "Link a summoner to your discord account.",
                 "arguments" : "[CommandName]"
             },
-            "disconnect": {
+            "unlink": {
                 "alias" : [],
-                "help"  : "Add a sound to an existing soundboard.",
+                "help"  : "Unlink a summoner from your discord account.",
                 "arguments" : "[CommandName]"
             }
         }

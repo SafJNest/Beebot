@@ -416,8 +416,9 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
         }
 
         LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guild.getLeagueShard();
-        String name = event.getOption("summoner").getAsString();
-        String tag = (event.getOption("tag") != null) ? event.getOption("tag").getAsString() : shard.name();
+        String summoner = event.getOption("summoner").getAsString();
+        String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : shard.name();
+        String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
         return getSummonerByName(name, tag, shard);
     }
 

@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
 import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -15,45 +16,49 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class SummonerDisconnectSlash extends SlashCommand {
+public class SummonerLinkSlash extends SlashCommand {
     
-
     /**
      * Constructor
      */
-    public SummonerDisconnectSlash(String father){
+    public SummonerLinkSlash(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
         this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "personal_summoner", "Accont to disconnect", true)
-                .setAutoComplete(true));
+            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", true),
+            RiotHandler.getLeagueShardOptions());
     }
 
     /**
      * This method is called every time a member executes the command.
      */
-	@Override
+    @Override
 	protected void execute(SlashCommandEvent event) {
-        String account_id = event.getOption("personal_summoner") != null ? event.getOption("personal_summoner").getAsString() : ""; 
-        if (account_id.isEmpty()) {
-            event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help summoner").queue();
+        event.deferReply(false).queue();
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerByArgs(event);
+
+        if(s == null){
+            event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag").queue();
             return;
         }
+
+        String name = event.getOption("summoner").getAsString();
 
         UserData data = Bot.getUserData(event.getMember().getId());
-        if (!data.getRiotAccounts().containsKey(account_id)) {
-            event.deferReply(false).addContent("This account is not connected to your profile.").queue();
+        if(data.getRiotAccounts().containsKey(s.getAccountId())){
+            event.getHook().editOriginal("This account is already connected to your profile.").queue();
             return;
         }
 
-        if (!data.deleteRiotAccount(account_id)) {
-            event.deferReply(false).addContent("Something went wrong while disconnecting your account.").queue();
+        if (!data.addRiotAccount(s)) {
+            event.getHook().editOriginal("Something went wrong while connecting your account.").queue();
             return;
         }
 
-        event.deferReply(false).addContent("Summoner removed").queue();
+        event.getHook().editOriginal("Connected " + name + " to your profile.").queue();
+
 	}
 
 }
