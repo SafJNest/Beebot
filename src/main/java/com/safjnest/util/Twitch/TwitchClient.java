@@ -29,7 +29,7 @@ public class TwitchClient {
     private static CacheMap<String, User> streamersCache;
 
     private static String userUrl = "https://www.twitch.tv/{user}";
-    private static String boxArtUrl = "https://static-cdn.jtvnw.net/ttv-boxart/{game}-{width}x{heigth}";
+    private static String boxArtUrl = "https://static-cdn.jtvnw.net/ttv-boxart/{game}-{width}x{height}.jpg";
     private static String twitchIconUrl = "https://static-00.iconduck.com/assets.00/twitch-icon-512x512-ws2eyit3.png";
 
     public TwitchClient(String clientId, String clientSecret) {
@@ -59,8 +59,7 @@ public class TwitchClient {
             .withClientId(clientId)
             .withClientSecret(clientSecret)
             .build();
-        
-        /*
+
         Conduit firstConduit = getFirstConduit();
         updateConduit(firstConduit.getId(), 1);
         try {
@@ -81,7 +80,6 @@ public class TwitchClient {
         }
         conduit.getEventManager().onEvent(StreamOnlineEvent.class, TwitchEventsHandler::onStreamOnlineEvent);
         conduit.getEventManager().onEvent(EventSocketConnectionStateEvent.class, TwitchEventsHandler::onSocketConnectionStateEvent);
-        */
     }
 
     public static Conduit getFirstConduit() {
