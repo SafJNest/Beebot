@@ -6,6 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.util.CommandsLoader;
@@ -24,7 +25,11 @@ public class RewardCreateSlash extends SlashCommand{
             new OptionData(OptionType.STRING, "message", "Leave message", true),
             new OptionData(OptionType.INTEGER, "level", "Level to give the reward", true),
             new OptionData(OptionType.ROLE, "role", "Role to be given.", true),
-            new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", false),
+            new OptionData(OptionType.STRING, "sendtype", "How the message would be sent", false)
+                .addChoice("Channel", String.valueOf(AlertSendType.CHANNEL.ordinal()))
+                .addChoice("Private", String.valueOf(AlertSendType.PRIVATE.ordinal()))
+                .addChoice("Both", String.valueOf(AlertSendType.BOTH.ordinal())),
+            new OptionData(OptionType.STRING, "private_message", "If empty would be use the same message (Must enable the private option (private or both)", false),
             new OptionData(OptionType.BOOLEAN, "temporary", "If the role is temporary", false)
         );
     }
@@ -32,10 +37,12 @@ public class RewardCreateSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         String message = event.getOption("message").getAsString();
+        String privateText = event.getOption("private_message") != null ? event.getOption("private_message").getAsString() : null;
+
         int level = event.getOption("level").getAsInt();
         String roleId = event.getOption("role").getAsRole().getId();
         boolean temporary = event.getOption("temporary") != null ? event.getOption("temporary").getAsBoolean() : false;
-        boolean isPrivate = event.getOption("private") != null ? event.getOption("private").getAsBoolean() : false;
+        AlertSendType sendType = event.getOption("sendtype") != null ? AlertSendType.values()[event.getOption("sendtype").getAsInt()] : AlertSendType.CHANNEL;
         
         String guildId = event.getGuild().getId();
 
@@ -50,7 +57,7 @@ public class RewardCreateSlash extends SlashCommand{
 
         String[] roles = new String[]{roleId};
 
-        RewardData newReward = RewardData.createRewardData(guildId, message, isPrivate, roles, level, temporary);
+        RewardData newReward = RewardData.createRewardData(guildId, message, privateText, sendType, roles, level, temporary);
         
         if(newReward.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

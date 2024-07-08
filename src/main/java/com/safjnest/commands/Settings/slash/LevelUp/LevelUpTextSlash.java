@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.util.CommandsLoader;
 
@@ -22,14 +23,19 @@ public class LevelUpTextSlash extends SlashCommand{
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "message", "Level up message", true),
-        new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", false)
+            new OptionData(OptionType.STRING, "sendtype", "How the message would be sent", false)
+                .addChoice("Channel", String.valueOf(AlertSendType.CHANNEL.ordinal()))
+                .addChoice("Private", String.valueOf(AlertSendType.PRIVATE.ordinal()))
+                .addChoice("Both", String.valueOf(AlertSendType.BOTH.ordinal())),
+            new OptionData(OptionType.STRING, "private_message", "If empty would be use the same message (Must enable the private option (private or both)", false)
         );
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
         String message = event.getOption("message") != null ? event.getOption("message").getAsString().replace("'", "''") : null;
-        boolean isPrivate = event.getOption("private") != null ? event.getOption("private").getAsBoolean() : false;
+        String privateText = event.getOption("private_message") != null ? event.getOption("private_message").getAsString() : null;
+        AlertSendType sendType = event.getOption("sendtype") != null ? AlertSendType.values()[event.getOption("sendtype").getAsInt()] : AlertSendType.CHANNEL;
         String guildId = event.getGuild().getId();
 
         GuildData gs = Bot.getGuildData(guildId);
@@ -43,7 +49,7 @@ public class LevelUpTextSlash extends SlashCommand{
         }
 
         if(level == null) {
-            AlertData newLevel = new AlertData(guildId, message, isPrivate);
+            AlertData newLevel = new AlertData(guildId, message, privateText, sendType);
             if (newLevel.getID() == 0) {
                 event.deferReply(true).addContent("Something went wrong.").queue();
                 return;

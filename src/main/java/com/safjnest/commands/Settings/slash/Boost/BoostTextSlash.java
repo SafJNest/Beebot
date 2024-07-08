@@ -21,13 +21,17 @@ public class BoostTextSlash extends SlashCommand {
         this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
         this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "message", "Boost message", true)
+            new OptionData(OptionType.STRING, "message", "Boost message", true),
+            new OptionData(OptionType.STRING, "type", "The type of message to change", false)
+                .addChoice("channel", "channel")
+                .addChoice("private", "private")
         );
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
         String message = event.getOption("message") != null ? event.getOption("message").getAsString() : null;
+        String type = event.getOption("type") != null ? event.getOption("type").getAsString() : "channel";
 
         String guildId = event.getGuild().getId();
 
@@ -40,7 +44,11 @@ public class BoostTextSlash extends SlashCommand {
             return;
         }
 
-        if(!boost.setMessage(message)) {
+        if(type.equals("channel") && !boost.setMessage(message)) {
+            event.deferReply(true).addContent("Something went wrong.").queue();
+            return;
+        }
+        else if (type.equals("private") && !boost.setPrivateMessage(message)){
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

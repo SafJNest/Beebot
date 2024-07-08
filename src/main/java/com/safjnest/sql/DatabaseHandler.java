@@ -8,11 +8,13 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.util.log.BotLogger;
@@ -637,6 +639,24 @@ public class DatabaseHandler {
         }
     }
 
+    public static boolean setAlertPrivateMessage(String ID, String message) {
+        try (PreparedStatement pstmt = c.prepareStatement("UPDATE alert SET private_message = ? WHERE ID = ?")) {
+            pstmt.setString(1, message);
+            pstmt.setString(2, ID);
+            int affectedRows = pstmt.executeUpdate();
+            c.commit();
+            return affectedRows > 0;
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+            return false;
+        }
+    }
+
     public static boolean setAlertChannel(String ID, String channel) {
         return runQuery("UPDATE alert SET channel = '" + channel + "' WHERE ID = '" + ID + "';");
     }
@@ -646,23 +666,40 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getAlerts(String guild_id) {
-        return safJQuery("SELECT id, message, channel, enabled, private, type FROM alert WHERE guild_id = '" + guild_id + "';");
+        return safJQuery("SELECT id, message, private_message, channel, enabled, send_type, type FROM alert WHERE guild_id = '" + guild_id + "';");
     }
 
     public static QueryResult getAlertsRoles(String guild_id) {
         return safJQuery("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "';");
     }
 
-    public static int createAlert(String guild_id, String message, String channelId, boolean isPrivate, AlertType type) {
+    public static int createAlert(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, AlertType type) {
         int id = 0;
-        try (Statement stmt = c.createStatement()) {
-            runQuery(stmt, "INSERT INTO alert(guild_id, message, channel, enabled, private, type) VALUES('" + guild_id + "','" + message + "','" + channelId + "', 1, " + (isPrivate ? 1 : 0) + ", '" + type.ordinal() + "');");
-            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+        String query = "INSERT INTO alert(guild_id, message, private_message, channel, enabled, send_type, type) VALUES(?, ?, ?, ?, 1, ?, ?);";
+        try (PreparedStatement pstmt = c.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, guild_id);
+            pstmt.setString(2, message);
+            if (privateMessage != null) {
+                pstmt.setString(3, privateMessage);
+            } else {
+                pstmt.setNull(3, Types.VARCHAR);
+            }
+            pstmt.setString(4, channelId);
+            pstmt.setInt(5, sendType.ordinal());
+            pstmt.setInt(6, type.ordinal());
+
+            pstmt.executeUpdate();
+            
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    id = generatedKeys.getInt(1);
+                }
+            }
             c.commit();
         } catch (SQLException ex) {
             try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
+                if (c != null) c.rollback();
+            } catch (SQLException e) {
                 System.out.println(e.getMessage());
             }
             System.out.println(ex.getMessage());
@@ -700,7 +737,6 @@ public class DatabaseHandler {
         }
 
         values = values.substring(0, values.length() - 2);
-
         if (deleteAlertRoles(valueOf) && runQuery("INSERT INTO alert_role(alert_id, role_id) VALUES " + values + ";")) {
             HashMap<Integer, String> roleMap = new HashMap<>();
             QueryResult result = safJQuery("SELECT id, role_id FROM alert_role WHERE alert_id = '" + valueOf + "';");

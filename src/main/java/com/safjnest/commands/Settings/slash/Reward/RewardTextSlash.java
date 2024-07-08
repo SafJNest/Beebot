@@ -23,13 +23,18 @@ public class RewardTextSlash extends SlashCommand {
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "reward_level", "Select the reward to change", true)
                 .setAutoComplete(true),
-            new OptionData(OptionType.STRING, "message", "Welcome message", true)
+            new OptionData(OptionType.STRING, "message", "Welcome message", true),
+            new OptionData(OptionType.STRING, "type", "The type of message to change", false)
+                .addChoice("channel", "channel")
+                .addChoice("private", "private")
         );
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
         String message = event.getOption("message") != null ? event.getOption("message").getAsString() : null;
+        String type = event.getOption("type") != null ? event.getOption("type").getAsString() : "channel";
+        
         int rewardLevel = event.getOption("reward_level").getAsInt();
 
         String guildId = event.getGuild().getId();
@@ -43,7 +48,11 @@ public class RewardTextSlash extends SlashCommand {
             return;
         }
 
-        if(!reward.setMessage(message)) {
+        if(type.equals("channel") && !reward.setMessage(message)) {
+            event.deferReply(true).addContent("Something went wrong.").queue();
+            return;
+        }
+        else if (type.equals("private") && !reward.setPrivateMessage(message)){
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

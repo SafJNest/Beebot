@@ -15,6 +15,7 @@ import com.safjnest.util.log.LoggerIDpair;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
+import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.customcommand.CustomCommand;
@@ -232,8 +233,9 @@ public class GuildData {
                         RewardData rd = new RewardData(
                             row.getAsInt("id"),
                             row.get("message"),
+                            row.get("private_message"),
                             row.getAsBoolean("enabled"),
-                            row.getAsBoolean("private"),
+                            AlertSendType.values()[row.getAsInt("send_type")],
                             roles.get(row.getAsInt("id")),
                             rewards.get(row.getAsInt("id")).getAsInt("level"),
                             rewards.get(row.getAsInt("id")).getAsBoolean("temporary")
@@ -245,9 +247,10 @@ public class GuildData {
                         AlertData ad = new AlertData(
                             row.getAsInt("id"),
                             row.get("message"),
+                            row.get("private_message"),
                             row.get("channel"),
                             row.getAsBoolean("enabled"),
-                            row.getAsBoolean("private"),
+                            AlertSendType.values()[row.getAsInt("send_type")],
                             AlertType.values()[row.getAsInt("type")],
                             roles.get(row.getAsInt("id"))
                         );

@@ -106,18 +106,34 @@ public class Functions {
         RewardData reward = guildData.getAlert(AlertType.REWARD, lvl);
         if (reward != null && !reward.isValid()) {
             String message = reward.getMessage();
+            String privateMessage = reward.hasPrivateMessage() ? reward.getPrivateMessage() : message;
+
             String[] roles = reward.getRolesAsArray();
             message = message.replace("#user", newGuy.getAsMention());
             message = message.replace("#level", String.valueOf(lvl));
             //message = message.replace("#role", role.getName());
 
+            privateMessage = privateMessage.replace("#user", newGuy.getAsMention());
+            privateMessage = privateMessage.replace("#level", String.valueOf(lvl));
+
             final String finalMessage = message;
-            if (reward.isPrivate()) {
-                newGuy.openPrivateChannel().queue(channelPrivate -> {
-                    channelPrivate.sendMessage(finalMessage).queue();
-                });
-            } else {
-                channel.sendMessage(finalMessage).queue();
+            final String finalPrivateMessage = privateMessage;
+
+            switch (reward.getSendType()) {
+                case CHANNEL:
+                    channel.sendMessage(finalMessage).queue();
+                    break;
+                case PRIVATE:
+                    newGuy.openPrivateChannel().queue(channelPrivate -> {
+                        channelPrivate.sendMessage(finalPrivateMessage).queue();
+                    });
+                    break;
+                case BOTH:
+                    channel.sendMessage(finalMessage).queue();
+                    newGuy.openPrivateChannel().queue(channelPrivate -> {
+                        channelPrivate.sendMessage(finalPrivateMessage).queue();
+                    });
+                    break;
             }
             
             for (String roleID : roles) {
@@ -143,9 +159,33 @@ public class Functions {
         AlertData alert = guildData.getAlert(AlertType.LEVEL_UP);
         if (alert != null && alert.isValid()) {
             String message = alert.getMessage();
+            String privateMessage = alert.hasPrivateMessage() ? alert.getPrivateMessage() : message;
+
             message = message.replace("#user", newGuy.getAsMention());
             message = message.replace("#level", String.valueOf(lvl));
-            e.getChannel().asTextChannel().sendMessage(message).queue();
+
+            privateMessage = privateMessage.replace("#user", newGuy.getAsMention());
+            privateMessage = privateMessage.replace("#level", String.valueOf(lvl));
+
+            final String finalMessage = message;
+            final String finalPrivateMessage = privateMessage;
+            switch (alert.getSendType()) {
+                case CHANNEL:
+                    channel.sendMessage(finalMessage).queue();
+                    break;
+                case PRIVATE:
+                    newGuy.openPrivateChannel().queue(channelPrivate -> {
+                        channelPrivate.sendMessage(finalPrivateMessage).queue();
+                    });
+                    break;
+                case BOTH:
+                    channel.sendMessage(finalMessage).queue();
+                    newGuy.openPrivateChannel().queue(channelPrivate -> {
+                        channelPrivate.sendMessage(finalPrivateMessage).queue();
+                    });
+                    break;
+            }
+
             return;
         }
     }
@@ -169,12 +209,23 @@ public class Functions {
         }
 
         String message = alert.getMessage().replace("#user", theGuy.getAsMention());
-        if (alert.isPrivate()) {
-            theGuy.openPrivateChannel().queue(channelPrivate -> {
-                channelPrivate.sendMessage(message).queue();
-            });
-        } else {
-            channel.sendMessage(message).queue();
+        String privateMessage = alert.hasPrivateMessage() ? alert.getPrivateMessage().replace("#user", theGuy.getAsMention()) : message;
+
+        switch (alert.getSendType()) {
+            case CHANNEL:
+                channel.sendMessage(message).queue();
+                break;
+            case PRIVATE:
+                theGuy.openPrivateChannel().queue(channelPrivate -> {
+                    channelPrivate.sendMessage(privateMessage).queue();
+                });
+                break;
+            case BOTH:
+                channel.sendMessage(message).queue();
+                theGuy.openPrivateChannel().queue(channelPrivate -> {
+                    channelPrivate.sendMessage(privateMessage).queue();
+                });
+                break;
         }
 
         if (alert.getRoles() != null) {
@@ -384,6 +435,13 @@ public class Functions {
         String commandName = command.getName();
         String args = event.getArgs();
         DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
+    }
+
+    public static void handleRoleDeleteAlert(Guild guild, String role_id) {
+        GuildData g = Bot.getGuildSettings().getGuild(guild.getId());
+        g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().containsValue(role_id)).forEach(alert -> {
+            alert.removeRole(role_id);
+        });
     }
 
 

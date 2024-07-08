@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTime
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -114,6 +115,11 @@ public class EventHandler extends ListenerAdapter {
         if(!event.getChannelType().isAudio()){
             Functions.handleChannelDeleteAlert(event.getGuild(), event.getChannel().getId());
         }
+    }
+
+    @Override
+    public void onRoleDelete(RoleDeleteEvent event){
+        Functions.handleRoleDeleteAlert(event.getGuild(), event.getRole().getId());
     }
 
     @Override

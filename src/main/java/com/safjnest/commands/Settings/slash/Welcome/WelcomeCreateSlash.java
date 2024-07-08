@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.util.CommandsLoader;
 
@@ -25,7 +26,11 @@ public class WelcomeCreateSlash extends SlashCommand{
             new OptionData(OptionType.STRING, "message", "Welcome message", true),
             new OptionData(OptionType.CHANNEL, "channel", "Welcome channel (leave out to use the guild's system channel).", false)
                 .setChannelTypes(ChannelType.TEXT),
-            new OptionData(OptionType.BOOLEAN, "private", "If true the bot will send a private message to the user", false),
+            new OptionData(OptionType.STRING, "sendtype", "How the message would be sent", false)
+                .addChoice("Channel", String.valueOf(AlertSendType.CHANNEL.ordinal()))
+                .addChoice("Private", String.valueOf(AlertSendType.PRIVATE.ordinal()))
+                .addChoice("Both", String.valueOf(AlertSendType.BOTH.ordinal())),
+            new OptionData(OptionType.STRING, "private_message", "If empty would be use the same message (Must enable the private option (private or both)", false),
             new OptionData(OptionType.ROLE, "role", "Role that will be given to the new members.", false)
         );
     }
@@ -33,7 +38,9 @@ public class WelcomeCreateSlash extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         String welcomeText = event.getOption("message").getAsString();
-        boolean isPrivate = event.getOption("private") != null ? event.getOption("private").getAsBoolean() : false;
+        String privateText = event.getOption("private_message") != null ? event.getOption("private_message").getAsString() : null;
+
+        AlertSendType sendType = event.getOption("sendtype") != null ? AlertSendType.values()[event.getOption("sendtype").getAsInt()] : AlertSendType.CHANNEL;
 
         String channelID;
         if(event.getOption("channel") != null)
@@ -60,7 +67,7 @@ public class WelcomeCreateSlash extends SlashCommand{
 
         String[] roles = new String[]{roleID};
 
-        AlertData newWelcome = new AlertData(guildId, welcomeText, channelID, isPrivate, roles);
+        AlertData newWelcome = new AlertData(guildId, welcomeText, privateText, channelID, sendType, roles);
 
         if(newWelcome.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();
