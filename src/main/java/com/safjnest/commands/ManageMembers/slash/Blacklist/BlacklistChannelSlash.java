@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.Permission;
@@ -18,9 +19,14 @@ public class BlacklistChannelSlash extends SlashCommand {
     
     public BlacklistChannelSlash(String father, GuildDataHandler gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
-        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
-        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
-        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
 
         this.userPermissions = new Permission[]{Permission.BAN_MEMBERS};
         this.botPermissions = new Permission[]{Permission.BAN_MEMBERS};
@@ -29,6 +35,7 @@ public class BlacklistChannelSlash extends SlashCommand {
             new OptionData(OptionType.CHANNEL, "channel", "Notification channel", true)
                 .setChannelTypes(ChannelType.TEXT)
         );   
+        commandData.setThings(this);
 
         this.gs = gs;
     }

@@ -70,6 +70,7 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.log.BotLogger;
 
 /**
@@ -162,7 +163,7 @@ public class Bot extends ListenerAdapter {
         builder.setCoOwnerIds(coOwnersIDs);
         builder.setActivity(activity);
         //builder.forceGuildOnly("876606568412639272"); //server di leon
-        //builder.forceGuildOnly("608967318789160970"); //guitarrin
+        //builder.forceGuildOnly("1150154886005133492"); //guitarrin
         //builder.forceGuildOnly("474935164451946506"); //safj
         
         jda.addEventListener(new ListenerAdapter() {
@@ -178,7 +179,6 @@ public class Bot extends ListenerAdapter {
                 // jda.getGuildById("474935164451946506").updateCommands().addCommands(
                 //         scd
                 // ).queue();
-
                 new CustomEmojiHandler();
                 BotLogger.debug("[JDA] Custom emoji cached correctly");
                 BotLogger.info("[JDA] No more guild cached correctly");
@@ -201,8 +201,10 @@ public class Bot extends ListenerAdapter {
             });
         }
 
+        new CommandsLoader();
+
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new PrintCache(gs), new Ping(), new Ram(), new Help(gs), new Prefix(gs));
+        Collections.addAll(commandsList, new PrintCache(gs), new Ping(), new Ram(), new Help(), new Prefix(gs));
 
         Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
             new LastMatches(), new Opgg(), new Calculator(), new Dice(), 
@@ -224,7 +226,7 @@ public class Bot extends ListenerAdapter {
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new PingSlash(), new BugSlash(), new HelpSlash(gs), new PrefixSlash(gs));
+        Collections.addAll(slashCommandsList, new PingSlash(), new BugSlash(), new HelpSlash(), new PrefixSlash(gs));
 
         
         Collections.addAll(slashCommandsList, new SummonerSlash(), new AugmentSlash(), new FreeChampSlash(), 

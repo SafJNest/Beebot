@@ -34,6 +34,8 @@ import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
+import com.safjnest.util.BotCommand;
+import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TableHandler;
@@ -83,14 +85,21 @@ public class Test extends Command{
     private GuildDataHandler gs;
 
     public Test(GuildDataHandler gs){
-        this.name = "test";
-        this.aliases = new String[]{"wip"};
-        this.help = "";
-        this.category = new Category("Owner");
-        this.arguments = "faker";
+        this.name = this.getClass().getSimpleName().toLowerCase();
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
         this.ownerCommand = true;
         this.hidden = true;
         this.gs = gs;
+
+        commandData.setThings(this);
     }
 
     @Override

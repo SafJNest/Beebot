@@ -2,6 +2,7 @@ package com.safjnest.commands.ManageMembers.slash.Blacklist;
 
 
 import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import java.util.ArrayList;
@@ -23,17 +24,25 @@ public class BlacklistSlash extends SlashCommand{
 
     public BlacklistSlash(GuildDataHandler gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        String father = this.getClass().getSimpleName().replace("Slash", "");
 
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.help = "json";
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
+
+        String father = this.getClass().getSimpleName().replace("Slash", "");
         
         this.gs = gs;
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
         Collections.addAll(slashCommandsList, new BlacklistChannelSlash(father, gs), new BlacklistCreateSlash(father, gs), new BlacklistThresholdSlash(father, gs), new BlacklistToggleSlash(father, gs));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
+
+        commandData.setThings(this);
     }
 
     @Override

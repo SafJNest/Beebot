@@ -10,6 +10,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.ResultRow;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.ExperienceSystem;
 import com.safjnest.util.PermissionHandler;
@@ -35,17 +36,21 @@ public class MemberInfoSlash extends SlashCommand{
 
     public MemberInfoSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "user", "User to get information on", false),
             new OptionData(OptionType.INTEGER, "rolecharnumber", "Max number of charachters the roles filed can be (1 to 1024)", false)
                 .setMinValue(1)
                 .setMaxValue(1024)
         );
+        commandData.setThings(this);
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -13,15 +14,20 @@ public class SpecialCharSlash extends SlashCommand{
 
     public SpecialCharSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "command", "Name of the bugged command", true)
                 .addChoice("`", "grave_accent")
-                .addChoice("~", "tilde"));
+                .addChoice("~", "tilde")
+        );
+
+        commandData.setThings(this);
     }
 
     @Override

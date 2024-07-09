@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.Permission;
@@ -23,11 +24,14 @@ public class ClearSlash extends SlashCommand {
 
     public ClearSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
         this.botPermissions = new Permission[]{Permission.MESSAGE_MANAGE};
         this.userPermissions = new Permission[]{Permission.MESSAGE_MANAGE};
         this.options = Arrays.asList(
@@ -35,6 +39,7 @@ public class ClearSlash extends SlashCommand {
                 .setMinValue(2)
                 .setMaxValue(100)
         );    
+        commandData.setThings(this);
     }
 
 	@Override

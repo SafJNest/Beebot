@@ -8,6 +8,7 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
 import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.ReplyType;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 
@@ -24,15 +25,19 @@ public class JumpToSlash extends SlashCommand {
 
     public JumpToSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "position", "Select a song from the queue", true)
                 .setAutoComplete(true)
         );
+
+        commandData.setThings(this);
     }
 
 	@Override

@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.LOL.MobalyticsHandler;
@@ -30,11 +31,14 @@ public class ChampionSlash extends SlashCommand {
      */
     public ChampionSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "champ", "Champion Name", true).setAutoComplete(true),
             new OptionData(OptionType.STRING, "lane", "Champion Lane", true)
@@ -44,6 +48,8 @@ public class ChampionSlash extends SlashCommand {
                 .addChoice("Bot lane", "ADC")
                 .addChoice("Support", "SUPPORT")
         );
+
+        commandData.setThings(this);
     }
 
 	@Override

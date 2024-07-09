@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -19,12 +20,20 @@ public class SoundboardDeleteSlash extends SlashCommand{
 
     public SoundboardDeleteSlash(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
-        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
-        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
-        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "name", "Soundboard to delete", true).setAutoComplete(true)
         );
+
+        commandData.setThings(this);
     }
 
 	@Override

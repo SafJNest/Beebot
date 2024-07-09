@@ -16,6 +16,7 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.model.sound.Sound;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
 import com.safjnest.util.Twitch.TwitchClient;
@@ -37,13 +38,18 @@ public class PrintCache extends Command {
     private CommandEvent event;
     public PrintCache(GuildDataHandler gs) {
         this.name = this.getClass().getSimpleName().toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
         this.ownerCommand = true;
         this.hidden = true;
+
+        commandData.setThings(this);
 
         this.gs = gs;
     }

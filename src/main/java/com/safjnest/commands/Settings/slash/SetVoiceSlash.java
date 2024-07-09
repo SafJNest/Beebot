@@ -2,6 +2,7 @@ package com.safjnest.commands.Settings.slash;
 
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.tts.TTSVoices;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -24,14 +25,19 @@ public class SetVoiceSlash extends SlashCommand {
 
     public SetVoiceSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "voice", "Voice name", true)
-                .setAutoComplete(true));
+                .setAutoComplete(true)
+        );
+
+        commandData.setThings(this);
         
         this.voices = TTSVoices.getVoices();
     }

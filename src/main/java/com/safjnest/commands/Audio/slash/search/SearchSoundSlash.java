@@ -10,6 +10,7 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.sound.Sound;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
@@ -38,13 +39,21 @@ public class SearchSoundSlash extends SlashCommand {
 
     public SearchSoundSlash(String father) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
-        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
-        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
-        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "query", "What are you looking for", true),
             new OptionData(OptionType.USER, "author", "Who uploaded the sound", false)
         );
+
+        commandData.setThings(this);
     }
 
    

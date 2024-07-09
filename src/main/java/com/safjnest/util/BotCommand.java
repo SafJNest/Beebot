@@ -5,42 +5,53 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.Command.Category;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BotCommand {
     private String name;
-    private String category;
+    private Category category;
     private String help;
+    private String longHelp;
     private String[] aliases;
     private int cooldown;
     private String arguments;
     private boolean text;
     private boolean slash;
-    private List<String> children = new ArrayList<String>();
+    private BotCommand father;
+    private List<BotCommand> children = new ArrayList<BotCommand>();
     private List<OptionData> options = new ArrayList<OptionData>();
+    private Permission[] botPermissions;
+    private Permission[] userPermissions;
+    private boolean hidden;
 
-    public BotCommand(Command command) {
-        this.name = command.getName();
-        this.aliases = command.getAliases();
-        this.help = command.getHelp();
-        this.cooldown = command.getCooldown();
-        this.category = command.getCategory().getName();
-        this.arguments = command.getArguments();
-        this.text = true;
+    public BotCommand(String name, String category, String help, String longHelp, String arguments, String[] aliases, int cooldown) {
+        this.name = name;
+        this.category = new Category(category);
+        this.help = help;
+        this.longHelp = longHelp;
+        this.arguments = arguments;
+        this.aliases = aliases;
+        this.cooldown = cooldown;
+        this.text = false;
         this.slash = false;
+        this.hidden = false;
     }
 
-    public BotCommand(SlashCommand command) {
-        this.name = command.getName();
-        this.aliases = command.getAliases();
-        this.help = command.getHelp();
-        this.cooldown = command.getCooldown();
-        this.category = command.getCategory().getName();
-        this.arguments = command.getArguments();
+    public BotCommand(String name, String category, String help, String longHelp, String arguments, String[] aliases, int cooldown, BotCommand father) {
+        this.name = name;
+        this.category = new Category(category);
+        this.help = help;
+        this.longHelp = longHelp;
+        this.arguments = arguments;
+        this.aliases = aliases;
+        this.cooldown = cooldown;
+        this.father = father;
         this.text = false;
-        this.slash = true;
-        addSlash(command);
+        this.slash = false;
+        this.hidden = false;
     }
 
     public String getName() {
@@ -51,12 +62,12 @@ public class BotCommand {
         this.name = name;
     }
 
-    public String getCategory() {
+    public Category getCategory() {
         return category;
     }
 
     public void setCategory(String category) {
-        this.category = category;
+        this.category = new Category(category);
     }
 
     public String getHelp() {
@@ -65,6 +76,10 @@ public class BotCommand {
 
     public void setHelp(String help) {
         this.help = help;
+    }
+
+    public String getLongHelp() {
+        return longHelp;
     }
 
     public String[] getAliases() {
@@ -91,6 +106,57 @@ public class BotCommand {
         this.arguments = arguments;
     }
 
+
+
+
+    public List<BotCommand> getChildren() {
+        return children;
+    }
+
+    public BotCommand getChild(String name) {
+        for (BotCommand child : children) {
+            if (child.getName().equals(name)) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    public void addChild(BotCommand child) {
+        this.children.add(child);
+    }
+
+    public BotCommand getFather() {
+        return father;
+    }
+
+
+
+    public List<OptionData> getOptions() {
+        return options;
+    }
+
+    public void setOptions(List<OptionData> options) {
+        this.options = options;
+    }
+
+
+
+    public Permission[] getBotPermissions() {
+        return botPermissions;
+    }
+
+    public Permission[] getUserPermissions() {
+        return userPermissions;
+    }
+
+
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+
     public boolean isText() {
         return text;
     }
@@ -107,35 +173,26 @@ public class BotCommand {
         this.slash = slash;
     }
 
-    public List<String> getChildren() {
-        return children;
+    public boolean isPresent() {
+        return isText() || isSlash();
     }
 
-    public void setChildren(List<String> children) {
-        this.children = children;
+    public boolean onlySlash() {
+        return isSlash() && !isText();
     }
 
-    public void setChildren(SlashCommand[] children) {
-        for(SlashCommand child : children) {
-            this.children.add(child.getName());
-        }
-    }
 
-    public List<OptionData> getOptions() {
-        return options;
+    public void setThings(SlashCommand command) {
+        this.slash = true;
+        this.options = command.getOptions();
+        this.botPermissions = command.getBotPermissions();
+        this.userPermissions = command.getUserPermissions();
     }
-
-    public void setOptions(List<OptionData> options) {
-        this.options = options;
-    }
-
-    public void addSlash(SlashCommand command) {
-        setSlash(true);
-        if(command.getChildren().length > 0)
-            setChildren(command.getChildren());
-        else
-            setOptions(command.getOptions());
-        
+    
+    public void setThings(Command command) {
+        this.text = true;
+        this.botPermissions = command.getBotPermissions();
+        this.userPermissions = command.getUserPermissions();
     }
 
 }

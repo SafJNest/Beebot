@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import com.safjnest.core.Bot;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.Twitch.TwitchClient;
 import com.github.twitch4j.helix.domain.Stream;
@@ -20,13 +21,20 @@ public class TwitchUserSlash extends SlashCommand{
 
     public TwitchUserSlash(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
-        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
-        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
-        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "streamer", "Streamer's username", true)
         );
+
+        commandData.setThings(this);
     }
 
     @Override

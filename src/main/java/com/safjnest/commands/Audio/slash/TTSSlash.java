@@ -13,6 +13,7 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.tts.TTSHandler;
 import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -36,16 +37,21 @@ public class TTSSlash extends SlashCommand{
     
     public TTSSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "text", "Text to be read", true),
             new OptionData(OptionType.STRING, "voice", "Reader's voice (also language)", false)
                 .setAutoComplete(true)
         );
+
+        commandData.setThings(this);
 
         this.tts = App.getTTS();
         this.pm = PlayerManager.get();

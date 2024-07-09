@@ -8,6 +8,7 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.sound.Sound;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -30,12 +31,17 @@ public class PlaySound extends Command{
 
     public PlaySound() {
         this.name = this.getClass().getSimpleName().toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
         this.pm = PlayerManager.get();
+
+        commandData.setThings(this);
     }
 
     @Override

@@ -11,6 +11,7 @@ import java.util.Map;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.App;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
 
@@ -33,11 +34,15 @@ public class LastMatchesSlash extends SlashCommand {
      */
     public LastMatchesSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
         this.options = Arrays.asList(
             new OptionData(OptionType.INTEGER, "games", "Number of games to analyze", true)
                 .setMinValue(1)
@@ -47,6 +52,8 @@ public class LastMatchesSlash extends SlashCommand {
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );
         this.r = App.getRiotApi();
+
+        commandData.setThings(this);
     }
 
     /**

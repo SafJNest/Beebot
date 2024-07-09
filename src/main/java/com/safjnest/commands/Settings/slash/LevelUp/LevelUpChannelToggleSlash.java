@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
@@ -17,9 +18,13 @@ public class LevelUpChannelToggleSlash extends SlashCommand{
     public LevelUpChannelToggleSlash(String father, GuildDataHandler gs){
         this.gs = gs;
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
-        this.help = new CommandsLoader().getString(this.name, "help", father.toLowerCase());
-        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
-        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        
         this.options = Arrays.asList(
             new OptionData(OptionType.CHANNEL, "channel", "Channel to enable/disable exp gain", true)
                 .setChannelTypes(ChannelType.TEXT),
@@ -27,6 +32,8 @@ public class LevelUpChannelToggleSlash extends SlashCommand{
                 .addChoice("on", "on")
                 .addChoice("off", "off")
         );
+
+        commandData.setThings(this);
     }
 
     @Override

@@ -15,6 +15,7 @@ import com.safjnest.core.audio.tts.TTSHandler;
 import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -42,15 +43,20 @@ public class TTS extends Command{
     
     public TTS(){
         this.name = this.getClass().getSimpleName().toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
 
         this.tts = App.getTTS();
         this.pm = PlayerManager.get();
         this.voices = TTSVoices.getVoices();
+
+        commandData.setThings(this);
     }
 
     @Override

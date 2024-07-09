@@ -6,15 +6,16 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.jagrosh.jdautilities.command.SlashCommand;
 import com.safjnest.core.Bot;
-import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 /**
  * This commands once is called sends a message with a full list of all commands, grouped by category.
@@ -26,42 +27,32 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  */
 public class Help extends Command {
 
-    GuildDataHandler gs;
-    public Help(GuildDataHandler gs) {
+
+    public Help() {
         this.name = this.getClass().getSimpleName().toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
-        this.gs = gs;
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
+        commandData.setThings(this);
     }
 
-    @Override
-    protected void execute(CommandEvent event) {
-        String prefix = gs.getGuild(event.getGuild().getId()).getPrefix();
-        String inputCommand = event.getArgs();
+
+    public static EmbedBuilder getGenericHelp(String guildId, String userId) {
+        String prefix = Bot.getGuildData(guildId).getPrefix();
         EmbedBuilder eb = new EmbedBuilder();
 
-        HashMap<String, BotCommand> commands = new HashMap<>();
-
-        for (Command e : event.getClient().getCommands())
-            if(!e.isHidden() || PermissionHandler.isUntouchable(event.getMember().getId()))
-                commands.put(e.getName(), new BotCommand(e));
-
-        for (SlashCommand e : event.getClient().getSlashCommands()) {
-            if(!e.isHidden() || PermissionHandler.isUntouchable(event.getMember().getId())){
-                if(!commands.containsKey(e.getName()))
-                    commands.put(e.getName(), new BotCommand(e));
-                else
-                    commands.get(e.getName()).addSlash(e);
-            }
-        }
+        HashMap<String, BotCommand> commands = CommandsLoader.getCommandsData(userId);
 
         HashMap<String, List<BotCommand>> categories = new HashMap<>();
 
         for(String command : commands.keySet())
-            categories.computeIfAbsent(commands.get(command).getCategory(), k -> new ArrayList<>()).add(commands.get(command));
+            categories.computeIfAbsent(commands.get(command).getCategory().getName(), k -> new ArrayList<>()).add(commands.get(command));
 
         for(String category : categories.keySet()) {
             categories.get(category).sort((c1, c2) -> {
@@ -73,89 +64,204 @@ public class Help extends Command {
             });
         }
 
-        if(inputCommand.equals("")) {
-            eb.setTitle("📒INFO AND COMMANDS📒");
-            eb.setDescription("Current prefix is: **" + prefix + "**\n"
-                + "For more information on a command: **" + prefix + "help <command name>.**\n"
-                + "In **brackets** is specified if the command is **text only** or **slash only**.\n"
-                + "If it doesn't have brackets it's **both**. **s** means the command has **sub-commands**.");
-            String ss = "```\n";
+        eb.setTitle("📒INFO AND COMMANDS📒");
+        eb.setDescription("Current prefix is: **" + prefix + "**\n"
+            + "For more information on a command: **" + prefix + "help <command name>.**\n"
+            + "In **brackets** is specified if the command is **text only** or **slash only**.\n"
+            + "If it doesn't have brackets it's **both**. **s** means the command has **sub-commands**.");
+        String ss = "```\n";
 
-            for(String category : getCategoriesBySize(categories)) {
-                for(BotCommand command : categories.get(category)) {
-                    String brackets = "";
-                    if(command.isText() != command.isSlash())
-                        brackets += " [" + (command.isText() ? prefix : "") + (command.isSlash() ? "/" : "") + ((command.getChildren().size() != 0) ? "s" : "") + "]";
-                    else if(command.getChildren().size() != 0)
-                        brackets += " [s]";
-                    ss += command.getName() + brackets + "\n";
-                }
-                ss +="```";
-                eb.addField(category, ss, true);
-                ss = "```\n";
+        for(String category : getCategoriesBySize(categories)) {
+            for(BotCommand command : categories.get(category)) {
+                String brackets = "";
+                if(command.isText() != command.isSlash())
+                    brackets += " [" + (command.isText() ? prefix : "") + (command.isSlash() ? "/" : "") + ((command.getChildren().size() != 0) ? "s" : "") + "]";
+                else if(command.getChildren().size() != 0)
+                    brackets += " [s]";
+                ss += command.getName() + brackets + "\n";
             }
+            ss +="```";
+            eb.addField(category, ss, true);
+            ss = "```\n";
+        }
 
-            int fieldNum = categories.size();
-            while (fieldNum++ % 3 != 0)
-                eb.addField("\u200E", "\u200E", true);
-            
-            eb.addField("Number of commands avaible:", "```" + commands.size() + "```", false);
-            eb.setFooter("Sorry if things don't work, Beebot was made for fun by only 2 people.", null);
+        int fieldNum = categories.size();
+        while (fieldNum++ % 3 != 0)
+            eb.addField("\u200E", "\u200E", true);
+        
+        eb.addField("Number of commands avaible:", "```" + commands.size() + "```", false);
+        eb.setFooter("Sorry if things don't work, Beebot was made for fun by only 2 people.", null);
+        eb.setColor(Bot.getColor());
+        eb.setAuthor(Bot.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", Bot.getJDA().getSelfUser().getAvatarUrl());
+
+
+        return eb;
+    }
+
+    public static List<LayoutComponent> getChildrenButton(BotCommand command) {
+        if (command.getChildren().isEmpty()) return null;
+        
+        List<LayoutComponent> rows = new ArrayList<>();
+        List<Button> row = new ArrayList<>();
+
+        int i = 0;
+        for (BotCommand child : command.getChildren()) {
+            String name = command.getName() + " " + child.getName();
+            row.add(Button.primary("help-" + name, child.getName()).withEmoji(CustomEmojiHandler.getRichEmoji("command")));
+            if (row.size() == 5 || i == command.getChildren().size() - 1) {
+                rows.add(ActionRow.of(row));
+                row = new ArrayList<>();
+            }
+            i++;
+        }
+        return rows;
+    }
+
+    public static List<LayoutComponent> getChildButton(BotCommand command) {
+        if (command.getChildren().isEmpty()) return null;
+        
+        List<LayoutComponent> rows = new ArrayList<>();
+
+        Button back = Button.primary("help-" + command.getName(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        rows.add(ActionRow.of(back));
+
+        return rows;
+    }
+
+    public static List<LayoutComponent> getCommandButton(BotCommand command) {
+        if (command.getFather() == null && command.getChildren().isEmpty()) return null;
+        if (command.getFather() != null) return getChildButton(command.getFather());
+        
+        return getChildrenButton(command);
+    
+    }
+
+    public static EmbedBuilder getCommandHelp(BotCommand command) {
+        EmbedBuilder eb = new EmbedBuilder();
+
+        eb.setTitle("**📒" + command.getName().toUpperCase() + " COMMAND📒**");
+        
+        eb.setDescription("```" + command.getLongHelp() + "```");
+        
+        eb.addField("**Category**", "```" + command.getCategory().getName() + "```", true);
+        eb.addField("**Cooldown**", "```" + command.getCooldown() + "s```", true);
+        
+        if(command.isText()) {
+            eb.addField("**Arguments** [text]", "```" + command.getArguments() + "```", false);
+        }
+
+        if(command.isSlash()) {
+            if(command.getChildren().size() > 0) {
+                String children = "";
+                for(BotCommand child : command.getChildren()) 
+                    children += child.getName() + " - ";
+
+                children = children.substring(0, children.length() - 3);     
+                eb.addField("**Children** [slash]", "```[" + children + "]```", false);
+            }
+            else if(command.getOptions().size() > 0) {
+                String options = "";
+                for(OptionData option : command.getOptions()) {
+                    if(option.isRequired()) {
+                        options += option.getName() + " - " + option.getDescription() + " [required]\n";
+                    }
+                }
+                for(OptionData option : command.getOptions()) {
+                    if(!option.isRequired()) {
+                        options += option.getName() + " - " + option.getDescription() + "\n";
+                    }
+                }
+                eb.addField("**Options** [slash]", "```" + options + "```", false);
+            }
+        }
+        
+        if (!command.onlySlash()) {
+            String aliases = "No aliases";
+            if(command.getAliases().length > 0) {
+                aliases = "";
+                for(String a : command.getAliases())
+                    aliases += a + " - ";
+                aliases = aliases.substring(0, aliases.length() - 3);
+            }
+            eb.addField("**Aliases** [text]", "```" + aliases + "```", false);
+        }
+
+        boolean twoRowPermission = command.getBotPermissions().length > 0 && command.getUserPermissions().length > 0;
+        if (command.getBotPermissions().length > 0){
+            String permissions = "";
+            for (int i = 0; i < command.getBotPermissions().length; i++) {
+                permissions += command.getBotPermissions()[i].getName() + " - ";
+            }
+            permissions = permissions.substring(0, permissions.length() - 3);
+            eb.addField("**Bot Permissions**", "``` [" + permissions + "]```", twoRowPermission);
+        }
+        if (command.getUserPermissions().length > 0){
+            String permissions = "";
+            for (int i = 0; i < command.getUserPermissions().length; i++) {
+                permissions += command.getUserPermissions()[i].getName() + " - ";
+            }
+            permissions = permissions.substring(0, permissions.length() - 3);
+            eb.addField("**User Permissions**", "``` [" + permissions + "]```", twoRowPermission);
+        }
+
+        eb.setFooter("In arguments [] is a required field and () is an optional field", null);
+        eb.setColor(Bot.getColor());
+        eb.setAuthor(Bot.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", Bot.getJDA().getSelfUser().getAvatarUrl());
+
+
+        return eb;
+    }
+
+    public static BotCommand searchCommand(String commandName, HashMap<String, BotCommand> commands) {
+        commandName = commandName.toLowerCase();
+
+        String probablyFather = commandName.split(" ")[0];
+
+
+        if(!commands.containsKey(probablyFather.toLowerCase())) {
+            return null;
+        }
+
+        BotCommand commandToPrint = commands.get(probablyFather.toLowerCase());
+
+        if (commandName.split(" ").length > 1) {
+            for (BotCommand child : commandToPrint.getChildren()) {
+                if (child.getName().equalsIgnoreCase(commandName.split(" ")[1].toLowerCase())) {
+                    return child;
+                }
+            }
+        }
+
+        return commandToPrint;
+    }
+
+    @Override
+    protected void execute(CommandEvent event) {
+        String inputCommand = event.getArgs();
+       
+        EmbedBuilder eb = new EmbedBuilder();
+        List<LayoutComponent> rows = null;
+        if(inputCommand.equals("")) {
+            eb = getGenericHelp(event.getGuild().getId(), event.getMember().getId());  
         } 
         else {
-            if(!commands.containsKey(inputCommand.toLowerCase())) {
+            HashMap<String, BotCommand> commands = CommandsLoader.getCommandsData(event.getMember().getId());
+            BotCommand commandToPrint = searchCommand(inputCommand, commands);
+
+            if(commandToPrint == null) {
                 event.reply("Command not found");
                 return;
             }
             
-            BotCommand commandToPrint = commands.get(inputCommand.toLowerCase());
-
-            eb.setTitle("**📒" + commandToPrint.getName().toUpperCase() + " COMMAND📒**");
-            eb.setDescription("```" + commandToPrint.getHelp() + "```");
-            eb.addField("**Category**", "```" + commandToPrint.getCategory() + "```", true);
-            eb.addField("**Cooldown**", "```" + commandToPrint.getCooldown() + "s```", true);
-            if(commandToPrint.isText()) {
-                eb.addField("**Arguments** [text]", "```" + commandToPrint.getArguments() + "```", false);
-            }
-            if(commandToPrint.isSlash()) {
-                if(commandToPrint.getChildren().size() > 0) {
-                    eb.addField("**Children** [slash]", "```" + commandToPrint.getChildren() + "```", false);
-                }
-                else if(commandToPrint.getOptions().size() > 0) {
-                    String options = "";
-                    for(OptionData option : commandToPrint.getOptions()) {
-                        if(option.isRequired()) {
-                            options += option.getName() + " - " + option.getDescription() + " [required]\n";
-                        }
-                    }
-                    for(OptionData option : commandToPrint.getOptions()) {
-                        if(!option.isRequired()) {
-                            options += option.getName() + " - " + option.getDescription() + "\n";
-                        }
-                    }
-                    eb.addField("**Options** [slash]", "```" + options + "```", false);
-                }
-            }
-            
-            String aliases = "";
-            if(commandToPrint.getAliases().length > 0) {
-                for(String a : commandToPrint.getAliases())
-                    aliases += a + " - ";
-                aliases = aliases.substring(0, aliases.length() - 3);
-            }
-            else {
-                aliases = "No aliases";
-            }
-            eb.addField("**Aliases**", "```" + aliases + "```", false);
-
-            eb.setFooter("In arguments [] is a required field and () is an optional field", null);
+            eb = getCommandHelp(commandToPrint);
+            rows = getCommandButton(commandToPrint);
         }
-        eb.setColor(Bot.getColor());
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest", event.getJDA().getSelfUser().getAvatarUrl());
-        event.reply(eb.build());
+
+        if (rows != null) event.getChannel().sendMessageEmbeds(eb.build()).addComponents(rows).queue();
+        else event.getChannel().sendMessageEmbeds(eb.build()).queue();
     }
 
-    public List<String> getCategoriesBySize(HashMap<String, List<BotCommand>> map) {
+    private static List<String> getCategoriesBySize(HashMap<String, List<BotCommand>> map) {
         List<String> keys = new ArrayList<>(map.keySet());
         keys.sort((k1, k2) -> {
             return Integer.compare(map.get(k2).size(), map.get(k1).size());

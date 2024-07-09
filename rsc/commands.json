@@ -41,8 +41,8 @@
 
     "playsound":{
         "alias" : ["p", "ps"],
-        "help"  : "Play a sound from the soundboard.",
-        "longhelp"  : "Play a sound from the soundboard.",
+        "help"  : "Play a custom sound.",
+        "longhelp"  : "Play a custom sound.\nYou can upload a sound using **/upload**",
         "category" : "Audio",
         "arguments" : "[CommandName] [soundName]"
     },
@@ -58,33 +58,29 @@
     "soundboard": {
         "alias" : [],
         "help"  : "Create, select and manage soundboards.",
+        "longhelp"  : "A soundboard is a message with buttons that allows you to play sounds. You can create, select and manage soundboards.",
         "category" : "Audio",
-        "arguments" : "[CommandName] (#channel)(@role) | [message]",
         "children": {
             "create": {
                 "alias" : [],
                 "help"  : "Create a new soundboard.",
-                "arguments" : "[CommandName]"
+                "longhelp": "You can create a soundboard up to 25 sounds.\nTo save it insert a name, otherwise would be temporary."
             }, 
             "select": {
                 "alias" : [],
-                "help"  : "Select and show an existing soundboard.",
-                "arguments" : "[CommandName]"
+                "help"  : "Select and show an existing soundboard."
             },
             "add": {
                 "alias" : [],
-                "help"  : "Add a sound to an existing soundboard.",
-                "arguments" : "[CommandName]"
+                "help"  : "Add a sound to an existing soundboard."
             }, 
             "remove": {
                 "alias" : [],
-                "help"  : "Remove a sound from an existing soundboard.",
-                "arguments" : "[CommandName]"
+                "help"  : "Remove a sound from an existing soundboard."
             },
             "delete": {
                 "alias" : [],
-                "help"  : "Delete an existing soundboard.",
-                "arguments" : "[CommandName]"
+                "help"  : "Delete an existing soundboard."
             }
         }
     },
@@ -100,9 +96,8 @@
     "upload":{
         "alias" : ["up", "add"],
         "help"  :"Upload a sound to the soundboard.",
-        "longhelp"  : "Upload a sound to the soundboard.",
-        "category" : "Audio",
-        "arguments" : "[CommandName] [soundName]"
+        "longhelp"  : "Upload a sound to the soundboard.\nThe supported format are .mp3 and .opus, up to 1MB.\nYou can also insert 5 tags for an easier search.",
+        "category" : "Audio"
     },
 
     "downloadsound":{
@@ -122,11 +117,9 @@
     },
 
     "customizesound":{
-        "alias" : ["custom", "cs", "personalize"],
-        "help"  : "Modify the name of a sound in the soundboard.",
-        "longhelp": "Modify the name of a sound in the soundboard.",
-        "category" : "Audio",
-        "arguments" : "[CommandName]"
+        "help"  : "Modify a custom sound",
+        "longhelp": "Allow to modify the name, manage tags and if a sound is public or not.\nN.B. You can only modify your sounds.",
+        "category" : "Audio"
     },
 
     "pause":{
@@ -189,14 +182,12 @@
             "user": {
                 "alias" : [],
                 "help"  : "Show all the sounds of a user.",
-                "longinfo": "Show all the sounds of a user.",
-                "arguments" : "[CommandName]"
+                "longinfo": "Show all the sounds of a user."
             }, 
             "guild": {
                 "alias" : [],
-                "help"  : "Show all the sounds uploaded to your guild.",
-                "longinfo": "Show all the sounds uploaded to your guild.",
-                "arguments" : "[CommandName]"
+                "help"  : "Show all the sounds uploaded in this guild.",
+                "longinfo": "Show all the sounds uploaded in this guild."
             }
         }
     },
@@ -226,7 +217,7 @@
     "greet": {
         "alias" : [],
         "help"  : "Set/Unset your greet sound.",
-        "longhelp"  : "set or unset your greet sound from the soundboard. You can specify if the greet is going to be guild specific or global",
+        "longhelp"  : "set or unset your greet sound from the soundboard. You can specify if the greet is going to be guild specific or global\nYou can use your sounds or the public ones.",
         "category" : "Audio",
         "arguments" : "[CommandName]",
         "children": {
@@ -264,21 +255,19 @@
     "search": {
         "alias" : ["search"],
         "help"  : "Search youtube for videos.",
-        "longhelp"  : "Search youtube for videos.",
+        "longhelp"  : "Currently, you can only search for youtube videos or sounds from the soundboard.",
         "category" : "Audio",
         "arguments" : "[CommandName]",
         "children": {
             "youtube": {
                 "alias" : [],
                 "help"  : "Search youtube for videos.",
-                "longhelp"  : "Search youtube for videos.",
-                "arguments" : "[CommandName]"
+                "longhelp"  : "Search youtube for videos."
             }, 
             "sound": {
                 "alias" : [],
                 "help"  : "Search a sound from the soundboard.",
-                "longhelp"  : "Search a sound from the soundboard.",
-                "arguments" : "[CommandName]"
+                "longhelp"  : "Search a sound from the soundboard.\nYou can also search for a specific user or using tags."
             }
         }
     },
@@ -402,24 +391,22 @@
 
     "welcome": {
         "alias" : ["setwelcome", "welcome"],
-        "help"  : "Allow to set a 'welcome quote' that would be sent every time a user join the server. Its necessary to set also a channel otherwise will be used the default system channel. Can also be setted only one role (for now) to be given. Ex: psetwelcome #welcome @role | Hello #user!. Using #user the user will be mentioned. - Write disable to cancel the function.",
+        "help"  : "json",
+        "longhelp"  : "Allow to set a 'welcome message' that would be sent every time a user join the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the role write #role",
         "category" : "Settings",
-        "arguments" : "[CommandName] (#channel)(@role) | [message]",
         "children": {
             "channel": {
                 "alias" : [],
-                "help"  : "Change the welcome channel.",
-                "arguments" : "[CommandName]"
+                "help"  : "Change the welcome channel."
             }, 
             "create": {
                 "alias" : [],
                 "help"  : "Create a welcome message for this guild.",
-                "arguments" : "[CommandName]"
+                "longhelp"  : "Allow to set a 'welcome message' that would be sent every time a user join the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the role write #role"
             },
             "delete": {
                 "alias" : [],
-                "help"  : "Delete the welcome message for this guild.",
-                "arguments" : "[CommandName]"
+                "help"  : "Delete the welcome message for this guild."
             },
             "preview": {
                 "alias" : [],
@@ -439,6 +426,7 @@
             "text": {
                 "alias" : [],
                 "help"  : "Change the welcome message's text.",
+                "longhelp"  : "Change the welcome message's text.\nTo mention the user write #user, the role write #role",
                 "arguments" : "[CommandName]"
             },
             "toggle": {
@@ -451,7 +439,8 @@
 
     "reward": {
         "alias" : [],
-        "help"  : "Allow to set a reward for the leveling up system. A message will be sent every time a user reach a certain level and one or more roles will be given.",
+        "help" : "json",
+        "longhelp"  : "Allow to set a reward for the leveling up system. A message will be sent every time a user reach a certain level and one or more roles will be given.\nThe message will be sent in the current channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the level write #level, the role write #role.",
         "category" : "Settings",
         "arguments" : "",
         "children": {
@@ -483,6 +472,7 @@
             "text": {
                 "alias" : [],
                 "help"  : "Change the reward message's text.",
+                "longhelp"  : "Change the reward message's text.\nTo mention the user write #user, the level write ```#level```.",
                 "arguments" : "[CommandName]"
             },
             "toggle": {
@@ -495,7 +485,8 @@
 
     "leave": {
         "alias" : ["setleave", "leave"],
-        "help"  : "Allow to set a message to be sent every time a user left a guild. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetleft #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot. - Write disable to cancel the function.",
+        "help" : "json",
+        "longhelp"  : "Allow to set a 'leave message' that would be sent every time a user leaves the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user",
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [message]",
         "children": {
@@ -534,7 +525,8 @@
 
     "levelup": {
         "alias" : ["setlevelup", "setlvl"],
-        "help"  : "Allow to set a 'level up message' to be sent every time a user level up in the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: psetlevelupmessage #global_chat | WP #user!. Using #user the user will be mentioned. This work only for Beebot. - Write disable to cancel the function.",
+        "help" : "json",
+        "longhelp"  : "These are the commands to manage the levelup system in your guild.\nYou can set a 'level up message' to be sent every time a user levels up.The message will be sent in the current channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the level write #level`.\n\n[The levelup system is enabled by default]",
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [messagge]",
         "children": {
@@ -565,7 +557,7 @@
             },
             "updatetime": {
                 "alias" : [],
-                "help"  : "Change after how many second you will gain experience",
+                "help"  : "Change after how many second you will gain experience (default 60).",
                 "arguments" : "[CommandName]"
             }
         }
@@ -573,7 +565,8 @@
 
     "boost": {
         "alias" : ["nitro", "setboost", "boosts"],
-        "help"  : "Allow to set a 'boost server message' to be sent every time a user boost the server. Its necessary to set also a channel otherwise will be used the default system channel.Ex: !boost #global_chat | Thx #user!. Using #user the user will be mentioned. - Write disable to cancel the function.",
+        "help" : "json",
+        "longhelp"  : "Allow to set a 'boost server message' to be sent every time a user boost the server.\nIts necessary to set also a channel otherwise will be used the default system channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user",
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [messagge]",
         "children": {
@@ -696,7 +689,8 @@
 
     "blacklist":{
         "alias" : ["blackbeard", "list of death"],
-        "help"  : "The 'Blacklist' feature in Discord enhances server security.\nIt keeps track of banned users across servers. Admins set a minimum ban count, and if it's exceeded, notifications alert the servers with the command enabled.\nThis helps ensure a safer and more secure server environment by identifying problematic users.",
+        "help" : "json",
+        "longhelp"  : "The 'Blacklist' feature in Discord enhances server security.\nIt keeps track of banned users across servers. Admins set a minimum ban count, and if it's exceeded, notifications alert the servers with the command enabled.\nThis helps ensure a safer and more secure server environment by identifying problematic users.",
         "category" : "Member Management",
         "arguments" : "",
         "children": {
@@ -904,29 +898,23 @@
 
     "twitch":{
         "alias" : ["twitchoid"],
-        "help"  : "Create a subscription.",
+        "help"  : "json",
+        "longhelp"  : "The twitch commands help you to keep track of your favorite streamers and to get information about them.",
         "category" : "Miscellaneous",
         "arguments" : "[CommandName]",
         "children": {
             "link": {
-                "alias" : [],
-                "help"  : "Link a streamer",
-                "arguments" : "[CommandName]"
+                "help"  : "Link a streamer"
             },
             "unlink": {
-                "alias" : [],
-                "help"  : "Unlink a streamer",
-                "arguments" : "[CommandName]"
+                "help"  : "Unlink a streamer"
             },
             "menu": {
-                "alias" : [],
                 "help"  : "twitch menu",
-                "arguments" : "[CommandName]"
+                "longhelp": "The twitch menu is a useful command to help you to manage your (this guild) linked streamers."
             },
             "user": {
-                "alias" : [],
-                "help"  : "Get info on a streamer",
-                "arguments" : "[CommandName] [streamerName]"
+                "help"  : "Get information on a streamer"
             }
         }
     },
@@ -992,7 +980,8 @@
 
     "summoner":{
         "alias" : ["sum"],
-        "help"  : "Show statistics for a summoner.",
+        "help"  : "Show information about a summoner.",
+        "longhelp"  : "Show information about a summoner.\nYou can also link your account so you don't have to specify it using the other league commands.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [summonerName]",
         "children": {
@@ -1016,7 +1005,7 @@
 
     "freechamp":{
         "alias" : ["fc", "rotation"],
-        "help"  : "Show the current free champion rotation. (Default EUW)",
+        "help"  : "Show the current free champion rotation.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName]"
     },
@@ -1045,6 +1034,7 @@
     "region":{
         "alias" : ["shard"],
         "help"  : "Select the default league of legends region.",
+        "longhelp"  : "Select the default league of legends region.\nAll the other league commands will use this region if you don't specify it. (EUW default)",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [region]"
     },
@@ -1056,6 +1046,13 @@
         "arguments" : "[CommandName] [champion]"
     },
 
+
+    "test": {
+        "alias" : ["wip"],
+        "help"  : "Extreme Safj things",
+        "category" : "Owner",
+        "arguments" : "faker"
+    },
 
 
 

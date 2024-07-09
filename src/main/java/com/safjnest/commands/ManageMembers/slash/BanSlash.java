@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.Permission;
@@ -24,18 +25,22 @@ public class BanSlash extends SlashCommand{
 
     public BanSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+
         this.botPermissions = new Permission[]{Permission.BAN_MEMBERS};
         this.userPermissions = new Permission[]{Permission.BAN_MEMBERS};
         this.options = Arrays.asList(
             new OptionData(OptionType.USER, "member", "Member to ban", true),
             new OptionData(OptionType.STRING, "reason", "Reason of the ban", false)
                 .setMaxLength(512)
-        );    
+        );  
+        
+        commandData.setThings(this);  
     }
 
     @Override

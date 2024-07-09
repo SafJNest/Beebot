@@ -12,12 +12,15 @@ import java.util.concurrent.TimeUnit;
 
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
+import com.safjnest.util.BotCommand;
+import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
 import com.safjnest.util.Twitch.TwitchClient;
 import com.safjnest.commands.Audio.slash.CustomizeSoundSlash;
 import com.safjnest.commands.League.Livegame;
 import com.safjnest.commands.League.Opgg;
 import com.safjnest.commands.League.Summoner;
+import com.safjnest.commands.Misc.Help;
 import com.safjnest.commands.Misc.slash.twitch.TwitchMenuSlash;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
@@ -143,7 +146,22 @@ public class EventButtonHandler extends ListenerAdapter {
         
         else if (buttonId.startsWith("soundplay-"))
             soundplay(event);
+
+        else if (buttonId.startsWith("help"))
+            help(event);
         
+    }
+
+    public void help(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-", 2)[1];
+        
+
+        BotCommand command = Help.searchCommand(args, CommandsLoader.getCommandsData(event.getUser().getId()));
+        List<LayoutComponent> rows = Help.getCommandButton(command);
+        
+
+        if (rows != null) event.getMessage().editMessageEmbeds(Help.getCommandHelp(command).build()).setComponents(rows).queue();
+        else event.getMessage().editMessageEmbeds(Help.getCommandHelp(command).build()).queue();
     }
 
     public void twitch(ButtonInteractionEvent event) {

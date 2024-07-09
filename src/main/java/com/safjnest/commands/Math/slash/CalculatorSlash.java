@@ -3,6 +3,7 @@ package com.safjnest.commands.Math.slash;
 import java.util.Arrays;
 
 import com.safjnest.commands.Math.Calculator;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -20,13 +21,17 @@ public class CalculatorSlash extends SlashCommand {
 
     public CalculatorSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+
         this.options = Arrays.asList(
                 new OptionData(OptionType.STRING, "n", "Number", true));
+
+        commandData.setThings(this);
     }
 
     @Override

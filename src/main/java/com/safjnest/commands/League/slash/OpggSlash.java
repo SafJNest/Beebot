@@ -6,6 +6,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.commands.League.Opgg;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
 
@@ -30,15 +31,21 @@ public class OpggSlash extends SlashCommand {
      */
     public OpggSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false),
             RiotHandler.getLeagueShardOptions(),
-            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false));
+            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
+        );
+        commandData.setThings(this);
     }
 
     /**

@@ -10,6 +10,7 @@ import java.util.List;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
+import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.AugmentData;
 import com.safjnest.util.LOL.RiotHandler;
 import com.safjnest.util.Twitch.TwitchClient;
@@ -24,7 +25,6 @@ import com.safjnest.model.guild.alert.AlertData;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
-import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
@@ -81,18 +81,22 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> help(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         
-        List<Command> allCommands = e.getJDA().retrieveCommands().complete();
+        List<String> commands = CommandsLoader.getAllCommandsNames(e.getUser().getId());
         
         if (isFocused) {
-            for (Command c : allCommands) {
-                if (c.getName().startsWith(value))
-                    choices.add(new Choice(c.getName(), c.getName()));
-            }
+            int i = 0;
+            for (String command : commands) {
+                if (command.toLowerCase().contains(value.toLowerCase())) {
+                    choices.add(new Choice(command, command));
+                    i++;
+                }
+                if (i >= MAX_CHOICES) break;
+            }   
         }
         else {
-            Collections.shuffle(allCommands);
+            Collections.shuffle(commands);
             for (int i = 0; i < MAX_CHOICES; i++)
-                choices.add(new Choice(allCommands.get(i).getName(), allCommands.get(i).getName()));
+                choices.add(new Choice(commands.get(i), commands.get(i)));
         }
 
         return choices;    
@@ -208,14 +212,15 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         List<String[]> voices = TTSVoices.getVoiceArray();
 
         if (isFocused) {
-            for (String[] voice : voices) {
+            for (int i = 0; i < 25; i++) {
+                String[] voice = voices.get(i);
                 if ((voice[0] + " " + voice[1]).toLowerCase().contains(value.toLowerCase()))
                     choices.add(new Choice(voice[0] + " - " + voice[1], voice[1]));
             }
         }
         else {
             Collections.shuffle(voices);
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 25; i++)
                 choices.add(new Choice(voices.get(i)[0] + " - " + voices.get(i)[1], voices.get(i)[1]));
         }
 

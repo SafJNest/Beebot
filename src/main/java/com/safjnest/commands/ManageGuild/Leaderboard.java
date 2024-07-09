@@ -2,6 +2,7 @@ package com.safjnest.commands.ManageGuild;
 
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.ExperienceSystem;
 import com.safjnest.util.SafJNest;
@@ -19,11 +20,16 @@ public class Leaderboard extends Command {
 
     public Leaderboard() {
         this.name = this.getClass().getSimpleName().toLowerCase();
-        this.aliases = new CommandsLoader().getArray(this.name, "alias");
-        this.help = new CommandsLoader().getString(this.name, "help");
-        this.cooldown = new CommandsLoader().getCooldown(this.name);
-        this.category = new Category(new CommandsLoader().getString(this.name, "category"));
-        this.arguments = new CommandsLoader().getString(this.name, "arguments");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
+        commandData.setThings(this);
     }
 
     @Override

@@ -1,14 +1,14 @@
 package com.safjnest.util;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 /**
  * Contains the methods to read the JSON file with all the commands descriptions.
@@ -17,138 +17,90 @@ import org.json.simple.parser.ParseException;
  * @since 1.3
  */
 public class CommandsLoader {
-    private String path = "rsc" + File.separator + "commands.json";
-    private FileReader reader;
-    private JSONParser jsonParser;
-
-    /**
-     * default constructor
-     */
-    public CommandsLoader(){
-        jsonParser = new JSONParser();
+    private static String path = "rsc" + File.separator + "commands.json";
+    private static HashMap<String, BotCommand> commands = new HashMap<>();
+ 
+    public CommandsLoader() {
         try {
-            reader = new FileReader(path);
-        } catch (FileNotFoundException e) {
+            FileReader reader = new FileReader(path);
+            JSONParser jsonParser = new JSONParser();
+            JSONObject commandsJson = (JSONObject) jsonParser.parse(reader);
+            registerAllCommands(commandsJson);
+        } catch (Exception e) { 
             e.printStackTrace();
         }
     }
 
-    /**
-     * Gets a string with a specific arguments of the command.
-     * @param nameCommand name of the command
-     * @param thing name of the argument
-     * @return a string with the argument, otherwise {@code null}
-     */
-    public String getString(String nameCommand, String thing){
-        nameCommand = nameCommand.toLowerCase();
-        thing = thing.toLowerCase();
-        Object obj;
-        try {
-            obj = jsonParser.parse(reader);
-            JSONObject commands = (JSONObject) obj;
-            JSONObject command = (JSONObject) commands.get(nameCommand);
-            return (String) command.get(thing);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+    @SuppressWarnings("unchecked")
+    private void registerAllCommands(JSONObject commandsJson) {
+        if (commandsJson != null) {
+            commandsJson.forEach((key, value) -> {
+                JSONObject command = (JSONObject) value;
+                String name = (String) key;
+                String category = (String) command.get("category");
+                String help = (String) command.get("help");
+                String longHelp = (String) command.get("longhelp");
+                longHelp = (longHelp == null || longHelp.isBlank()) ? help : longHelp;
+                String arguments = (String) command.get("arguments");
+                JSONArray aliasArray = (JSONArray) command.get("alias");
+                String[] alias;
+                if (aliasArray != null) {
+                    alias = (String[]) aliasArray.toArray(new String[0]);
+                } else {
+                    alias = new String[0];
+                }
 
-    /**
-     * Gets a string with a specific arguments of the command.
-     * @param nameCommand name of the command
-     * @param thing name of the argument
-     * @return a string with the argument, otherwise {@code null}
-     */
-    public String getString(String nameCommand, String thing, String father){
-        nameCommand = nameCommand.toLowerCase();
-        thing = thing.toLowerCase();
-        Object obj;
-        try {
-            obj = jsonParser.parse(getChildren(father));
-            JSONObject commands = (JSONObject) obj;
-            JSONObject command = (JSONObject) commands.get(nameCommand);
-            return (String) command.get(thing);
-        } catch (Exception e) {
-            return null;
-        }
-    }
+                int cooldown = (command.get("cooldown") == null) ? 0 : Integer.valueOf((String) command.get("cooldown"));
+                commands.put(name, new BotCommand(name, category, help, longHelp, arguments, alias, cooldown));
 
-    /**
-     * Gets an array of the arguments of a command.
-     * @param nameCommand name of the command
-     * @param thing name of the argument 
-     * @return an array of strings with the argument, otherwise {@code null}
-     */
-    public String[] getArray(String nameCommand, String thing){
-        nameCommand = nameCommand.toLowerCase();
-        thing = thing.toLowerCase();
-        Object obj;
-        try {
-            obj = jsonParser.parse(reader);
-            JSONObject commands = (JSONObject) obj;
-            JSONObject command = (JSONObject) commands.get(nameCommand);
-            JSONArray array = (JSONArray)command.get(thing);
-            String[] result = new String[array.size()];
-            for (int i = 0; i < array.size(); i++) {
-                result[i] = (String)array.get(i);
-            }
-            return result;
-        } catch (IOException | ParseException e) {
-            return null;
+                if (command.get("children") != null) {
+                    JSONObject children = (JSONObject) command.get("children");
+                    children.forEach((childKey, childValue) -> {
+                        JSONObject child = (JSONObject) childValue;
+                        String childName = (String) childKey;
+                        String childHelp = (String) child.get("help");
+                        String childLongHelp = (String) child.get("longhelp");
+                        childLongHelp = (childLongHelp == null || childLongHelp.isBlank()) ? childHelp : childLongHelp;
+                        int childCooldown = (child.get("cooldown") == null) ? 0 : Integer.valueOf((String) child.get("cooldown"));
+                        commands.get(name).addChild(new BotCommand(childName, category, childHelp, childLongHelp, null, null, childCooldown, commands.get(name)));
+                    });
+                }
+            });
         }
+    } 
+
+    public static BotCommand getCommand(String name) {
+        return commands.get(name.toLowerCase()); //TODO fare bene
     }
     
-    /**
-     * Gets the cooldown of a command.
-     * @param nameCommand name of the command
-     * @return a int with the cooldown, otherwise {@code null}
-     */
-    public int getCooldown(String nameCommand){
-        nameCommand = nameCommand.toLowerCase();
-        Object obj;
-        try {
-            obj = jsonParser.parse(reader);
-            JSONObject commands = (JSONObject) obj;
-            JSONObject command = (JSONObject) commands.get(nameCommand);
-            return (command.get("cooldown") == null) ? 0 : Integer.valueOf((String)command.get("cooldown"));
-        } catch (IOException | ParseException e) {
-            return 0;
+    public static HashMap<String, BotCommand> getCommandsData(String userId) {
+        HashMap<String, BotCommand> filteredCommandsMAP = new HashMap<>();
+
+        for (BotCommand command : commands.values()) {
+            if (command.isPresent() && (!command.isHidden() || PermissionHandler.isUntouchable(userId))) {
+                filteredCommandsMAP.put(command.getName(), command);
+            }
         }
+
+        return filteredCommandsMAP;
     }
 
-    /**
-     * Gets the cooldown of a command.
-     * @param nameCommand name of the command
-     * @return a int with the cooldown, otherwise {@code null}
-     */
-    public int getCooldown(String nameCommand, String father){
-        nameCommand = nameCommand.toLowerCase();
-        Object obj;
-        try {
-            obj = jsonParser.parse(getChildren(father));
-            JSONObject commands = (JSONObject) obj;
-            JSONObject command = (JSONObject) commands.get(nameCommand);
-            return (command.get("cooldown") == null) ? 0 : Integer.valueOf((String)command.get("cooldown"));
-        } catch (ParseException e) {
-            return 0;
-        }
-    }
+    public static List<String> getAllCommandsNames(String userId) {
+        List<String> filteredCommandsLIST = new ArrayList<>();
 
-    /**
-     * Gets the cooldown of a command.
-     * @param father name of the father command
-     * @return a string that rappresent the command, otherwise {@code null}
-     */
-    private String getChildren(String father){
-        Object obj;
-        try {
-            obj = jsonParser.parse(reader);
-            JSONObject commands = (JSONObject) obj;
-            JSONObject command = (JSONObject) commands.get(father);
-            JSONObject children = (JSONObject) command.get("children");
-            return children.toJSONString();
-        } catch (IOException | ParseException e) {
-            return null;
+
+        for (BotCommand command : commands.values()) {
+            if (command.isPresent() && (!command.isHidden() || PermissionHandler.isUntouchable(userId))) {
+                filteredCommandsLIST.add(command.getName());
+
+                for (BotCommand child : command.getChildren()) {
+                    if (child.isPresent() && (!child.isHidden() || PermissionHandler.isUntouchable(userId))) {
+                        filteredCommandsLIST.add(command.getName() + " " + child.getName());
+                    }
+                }
+            }
         }
+
+        return filteredCommandsLIST;
     }
 }

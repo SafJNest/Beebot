@@ -8,21 +8,28 @@ import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-public class WelcomeAddRole extends SlashCommand{
+public class WelcomeAddRole extends SlashCommand {
 
     public WelcomeAddRole(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
-        this.help = new CommandsLoader().getString(this.name, "help", father.toLowerCase());
-        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
-        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        
         this.options = Arrays.asList(
             new OptionData(OptionType.ROLE, "role", "Role that will be given to the new members.", true)
         );
+
+        commandData.setThings(this);
     }
 
     @Override

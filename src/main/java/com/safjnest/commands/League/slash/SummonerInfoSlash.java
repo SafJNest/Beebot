@@ -5,6 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.commands.League.Summoner;
+import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
 
@@ -27,14 +28,21 @@ public class SummonerInfoSlash extends SlashCommand {
  
     public SummonerInfoSlash(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
-        this.help = new CommandsLoader().getString(name, "help", father.toLowerCase());
-        this.cooldown = new CommandsLoader().getCooldown(this.name, father.toLowerCase());
-        this.category = new Category(new CommandsLoader().getString(father.toLowerCase(), "category"));
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
 
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false),
             RiotHandler.getLeagueShardOptions(),
-            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false));
+            new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
+        );
+        commandData.setThings(this);
     }
 
 	@Override
