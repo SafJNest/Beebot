@@ -61,6 +61,14 @@ public class RewardData extends AlertData{
         sampleText = sampleText.replace("#level", "117");
         sampleText = sampleText.replace("#role", String.join(", ", roleNames));
 
+        if (super.getPrivateMessage() != null && !super.getPrivateMessage().isEmpty()) {
+            String privateSampleText = super.getPrivateMessage();
+            privateSampleText = privateSampleText.replace("#user", "@sunyx");
+            privateSampleText = privateSampleText.replace("#level", "117");
+            privateSampleText = privateSampleText.replace("#role", String.join(", ", roleNames));
+            sampleText = "Public message:\n" + sampleText + "\n\nPrivate message:\n" + privateSampleText;
+        }
+
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(guild.getSelfMember().getEffectiveName(), "https://github.com/SafJNest", guild.getSelfMember().getEffectiveAvatarUrl());
         eb.setTitle(this.getType().getDescription() + "'s preview");
@@ -68,19 +76,21 @@ public class RewardData extends AlertData{
         eb.setColor(Bot.getColor());
         eb.setThumbnail(guild.getSelfMember().getEffectiveAvatarUrl());
         
+        eb.addField("Level", "```" + this.level + "```", true);
+
         eb.addField("is Enabled",
                     (this.isEnabled()
                         ?"```✅ Yes```"
                         :"```❌ No```")
                     , true);
         
-        eb.addField("Level", "```" + this.level + "```", true);
-        
         eb.addField("Temporary",
                     (this.temporary
                         ?"```✅ Yes```"
                         :"```❌ No```")
                     , true);
+
+        eb.addField("Send type", "```" + super.getSendType().getName() + "```", true);
 
         eb.addField("Roles", "```" + String.join("\n", roleNames) + "```", false);
 

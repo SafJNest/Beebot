@@ -45,6 +45,10 @@ public class RewardPreviewSlash extends SlashCommand{
 
         Button right = Button.primary("reward-right", "->");
 
+        if (gs.getHigherReward(lowerReward.getLevel()) == null) 
+            right = right.asDisabled().withStyle(ButtonStyle.DANGER);
+        
+
         Button center = Button.primary("reward-center", "Level: " + lowerReward.getLevel());
         center = center.withStyle(ButtonStyle.SUCCESS);
         center = center.asDisabled();

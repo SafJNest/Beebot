@@ -7,6 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -59,6 +60,9 @@ public class BoostTextSlash extends SlashCommand {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
+
+        if (type.equals("private") && boost.getSendType() == AlertSendType.CHANNEL) 
+            boost.setSendType(AlertSendType.BOTH);
 
         event.deferReply(false).addContent("Changed boost message.").queue();
     }

@@ -723,6 +723,10 @@ public class DatabaseHandler {
         return runQuery("DELETE FROM alert_role WHERE alert_id = '" + valueOf + "';");
     }
 
+    public static boolean alertUpdateSendType(String valueOf, AlertSendType sendType) {
+        return runQuery("UPDATE alert SET send_type = '" + sendType.ordinal() + "' WHERE id = '" + valueOf + "';");
+    }
+
     public static HashMap<Integer, String> createRolesAlert(String valueOf, String[] roles) {
         
         String values = "";

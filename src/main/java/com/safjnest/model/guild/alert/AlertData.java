@@ -229,6 +229,14 @@ public class AlertData {
         return sendType;
     }
 
+    public boolean setSendType(AlertSendType sendType) {
+        boolean result = DatabaseHandler.alertUpdateSendType(String.valueOf(this.ID), sendType);
+        if (result) {
+            this.sendType = sendType;
+        }
+        return result;
+    }
+
     public String getFormattedSample(Guild guild) {
         String sampleText = this.message;
         sampleText = sampleText.replace("#user", "@sunyx");
@@ -263,6 +271,14 @@ public class AlertData {
         sampleText = sampleText.replace("#user", "@sunyx");
         sampleText = sampleText.replace("#level", "117");
 
+        if (this.privateMessage != null && !this.privateMessage.isEmpty()) {
+            String samplePrivateText = this.privateMessage;
+            samplePrivateText = samplePrivateText.replace("#user", "@sunyx");
+            samplePrivateText = samplePrivateText.replace("#level", "117");
+
+            sampleText = "Public message:\n" + sampleText + "\n\nPrivate message:\n" + samplePrivateText;
+        }
+
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(guild.getSelfMember().getEffectiveName(), "https://github.com/SafJNest", guild.getSelfMember().getEffectiveAvatarUrl());
         eb.setTitle(this.getType().getDescription() + "'s preview");
@@ -284,6 +300,8 @@ public class AlertData {
                         ?"```✅ Yes```"
                         :"```❌ No```")
                     , true);
+        
+        eb.addField("Send type", "```" + this.sendType.getName() + "```", true);
         
 
         if (this.type == AlertType.WELCOME) {

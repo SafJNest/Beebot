@@ -111,10 +111,23 @@ public class Functions {
             String[] roles = reward.getRolesAsArray();
             message = message.replace("#user", newGuy.getAsMention());
             message = message.replace("#level", String.valueOf(lvl));
-            //message = message.replace("#role", role.getName());
 
             privateMessage = privateMessage.replace("#user", newGuy.getAsMention());
             privateMessage = privateMessage.replace("#level", String.valueOf(lvl));
+
+            String mentionedRoles = "";
+            for (String roleID : roles) {
+                Role role = guild.getRoleById(roleID);
+                if (role == null) continue;
+                mentionedRoles += role.getAsMention() + ", ";        
+            }
+
+            mentionedRoles = mentionedRoles.substring(0, mentionedRoles.length() - 2);
+
+            message = message.replace("#role", mentionedRoles);
+            privateMessage = privateMessage.replace("#role", mentionedRoles);
+            
+            givesRoles(newGuy, guild, roles);
 
             final String finalMessage = message;
             final String finalPrivateMessage = privateMessage;
@@ -136,12 +149,7 @@ public class Functions {
                     break;
             }
             
-            for (String roleID : roles) {
-                Role role = guild.getRoleById(roleID);
-                if (role == null)
-                    continue;
-                guild.addRoleToMember(UserSnowflake.fromId(newGuy.getId()), role).queue();
-            }
+
 
             RewardData toDelete = null;
             if ((toDelete = guildData.getLowerReward(lvl)) != null && toDelete.isTemporary()) {
@@ -150,7 +158,9 @@ public class Functions {
                     Role role = guild.getRoleById(roleID);
                     if (role == null)
                         continue;
-                    guild.removeRoleFromMember(UserSnowflake.fromId(newGuy.getId()), role).queue();
+
+                    try { guild.removeRoleFromMember(UserSnowflake.fromId(newGuy.getId()), role).queue(); } catch (Exception erole) { }
+                    
                 }
             }
             return;
@@ -211,27 +221,38 @@ public class Functions {
         String message = alert.getMessage().replace("#user", theGuy.getAsMention());
         String privateMessage = alert.hasPrivateMessage() ? alert.getPrivateMessage().replace("#user", theGuy.getAsMention()) : message;
 
+        if (alert.getRoles() != null && !alert.getRoles().isEmpty()) {
+            String[] roles = alert.getRoles().values().toArray(new String[0]);
+            String mentionedRoles = "";
+            for (String role : roles) {
+                mentionedRoles += guild.getRoleById(role).getAsMention() + ", ";
+            }
+            mentionedRoles = mentionedRoles.substring(0, mentionedRoles.length() - 2);
+            message = message.replace("#role", mentionedRoles);
+            privateMessage = privateMessage.replace("#role", mentionedRoles);
+
+            givesRoles(theGuy, guild, roles);
+        }
+
+        final String finalMessage = privateMessage;
+
         switch (alert.getSendType()) {
             case CHANNEL:
                 channel.sendMessage(message).queue();
                 break;
             case PRIVATE:
                 theGuy.openPrivateChannel().queue(channelPrivate -> {
-                    channelPrivate.sendMessage(privateMessage).queue();
+                    channelPrivate.sendMessage(finalMessage).queue();
                 });
                 break;
             case BOTH:
                 channel.sendMessage(message).queue();
                 theGuy.openPrivateChannel().queue(channelPrivate -> {
-                    channelPrivate.sendMessage(privateMessage).queue();
+                    channelPrivate.sendMessage(finalMessage).queue();
                 });
                 break;
         }
 
-        if (alert.getRoles() != null) {
-            String[] roles = alert.getRoles().values().toArray(new String[0]);
-            givesRoles(theGuy, guild, roles);
-        }
     }
 
 
@@ -245,7 +266,9 @@ public class Functions {
                 continue;
             }
 
-            guild.addRoleToMember(theGuy, r).queue();
+            try { guild.addRoleToMember(theGuy, r).queue();} 
+            catch (Exception e) { }
+            
         }
     }
 
