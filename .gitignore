@@ -32,6 +32,9 @@ rsc/tts/*
 .idea/
 l4j8cache/
 
+rsc/settings.json
+
 config.properties
 
-/TODO
+/TODO 
+ 
