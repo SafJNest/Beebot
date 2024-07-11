@@ -28,11 +28,9 @@ public class SoundboardAddSlash extends SlashCommand{
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
         
-        this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        this.arguments = commandData.getArguments();
 
         this.options = new ArrayList<>();
         this.options.add(new OptionData(OptionType.STRING, "soundboard_name", "Soundboard to add the sound(s) to.", true).setAutoComplete(true));

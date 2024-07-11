@@ -1,8 +1,5 @@
 package com.safjnest.commands.Audio.slash.search;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
@@ -29,9 +26,10 @@ public class SearchSlash extends SlashCommand{
 
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
-        ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new SearchYoutubeSlash(father), new SearchSoundSlash(father));
-        this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
+        this.children = new SlashCommand[]{
+            new SearchSoundSlash(father),
+            new SearchYoutubeSlash(father)
+        };
 
         commandData.setThings(this);
     }

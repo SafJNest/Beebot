@@ -27,11 +27,10 @@ public class ClearSlash extends SlashCommand {
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
         
-        this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        this.arguments = commandData.getArguments();
+        
         this.botPermissions = new Permission[]{Permission.MESSAGE_MANAGE};
         this.userPermissions = new Permission[]{Permission.MESSAGE_MANAGE};
         this.options = Arrays.asList(

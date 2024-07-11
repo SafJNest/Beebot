@@ -15,11 +15,9 @@ public class TwitchSlash extends SlashCommand{
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
         
-        this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        this.arguments = commandData.getArguments();
 
 
         String father = this.getClass().getSimpleName().replace("Slash", "");

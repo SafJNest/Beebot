@@ -34,11 +34,10 @@ public class ChampionSlash extends SlashCommand {
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
         
-        this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        this.arguments = commandData.getArguments();
+        
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "champ", "Champion Name", true).setAutoComplete(true),
             new OptionData(OptionType.STRING, "lane", "Champion Lane", true)

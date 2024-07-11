@@ -27,7 +27,7 @@ public class AugmentSlash extends SlashCommand {
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        this.arguments = commandData.getArguments();
+        
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "augment", "Augment name", true).setAutoComplete(true));
         commandData.setThings(this);

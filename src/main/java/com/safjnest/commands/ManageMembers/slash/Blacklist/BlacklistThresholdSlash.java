@@ -21,11 +21,9 @@ public class BlacklistThresholdSlash extends SlashCommand{
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
         
-        this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        this.arguments = commandData.getArguments();
 
         this.userPermissions = new Permission[]{Permission.BAN_MEMBERS};
         this.botPermissions = new Permission[]{Permission.BAN_MEMBERS};

@@ -27,11 +27,10 @@ public class LeaderboardSlash extends SlashCommand {
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
         
-        this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        this.arguments = commandData.getArguments();
+        
         this.options = Arrays.asList(
             new OptionData(OptionType.INTEGER, "limit", "positions limit", false)
         );
