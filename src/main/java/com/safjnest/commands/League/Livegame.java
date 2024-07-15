@@ -95,7 +95,7 @@ public class Livegame extends Command {
                     RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
                     Long.parseLong(CustomEmojiHandler.getEmojiId(RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), 
                     false);
-                if(!p.getSummonerId().equals(s.getSummonerId()))
+                    
                     options.add(SelectOption.of(
                                     account.getName().toUpperCase(), 
                                     p.getSummonerId() + "#" + s.getPlatform().name()).withEmoji(icon));

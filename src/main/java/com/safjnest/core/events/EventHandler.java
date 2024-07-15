@@ -128,7 +128,7 @@ public class EventHandler extends ListenerAdapter {
             String summonerId = event.getValues().get(0).split("#")[0];
             String platform =  event.getValues().get(0).split("#")[1];
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = RiotHandler.getSummonerBySummonerId(summonerId, LeagueShard.valueOf(platform));
-            event.deferReply().addEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build()).queue();
+            event.deferEdit().setEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build()).setComponents(event.getMessage().getComponents()).queue();
         }
     }
 }
