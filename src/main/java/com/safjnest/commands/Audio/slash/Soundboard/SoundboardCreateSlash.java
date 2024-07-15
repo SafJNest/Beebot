@@ -31,11 +31,9 @@ public class SoundboardCreateSlash extends SlashCommand{
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
         
-        this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        this.arguments = commandData.getArguments();
 
         this.options = new ArrayList<>();
         this.options.add(new OptionData(OptionType.STRING, "name", "Leave blank to not save the soundboard.", false));
