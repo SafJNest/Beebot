@@ -357,7 +357,7 @@
         "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
     },
 
-    "setvoice":{
+    "voice":{
         "alias" : ["voice"],
         "help"  : "Set a default tts voice.",
         "longhelp"  : "Set a default tts voice.",
@@ -976,6 +976,13 @@
         "help"  : "Show information about an augment.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName]"
+    },
+
+    "item":{
+        "alias" : [],
+        "help"  : "Show information about an item.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [item]"
     },
 
     "summoner":{

@@ -28,6 +28,7 @@ import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInterac
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -400,6 +401,37 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     }
 
+    private ArrayList<Choice> item(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+        HashMap<String, String> items = new HashMap<>();
+        for (Item item : RiotHandler.getRiotApi().getDDragonAPI().getItems().values()) {
+            // 30 is arena, so the item is different with the same name (riot?)          
+            if (!item.getMaps().get("30")) items.put(item.getName().replaceAll("<.+?>", ""), item.getId() + ""); 
+            else items.put(item.getName().replaceAll("<.+?>", "") + " (ARENA)", item.getId() + "");
+        }
+        
+
+        if (isFocused) {
+            List<String> keys = new ArrayList<>(items.keySet());
+            int i = 0;
+            for (String key : keys) {
+                if (key.toLowerCase().contains(value.toLowerCase()) && i < MAX_CHOICES) {
+                    choices.add(new Choice(key, items.get(key)));
+                    i++;
+                }
+            }
+        }
+        else {
+            List<String> keys = new ArrayList<>(items.keySet());
+            Collections.shuffle(keys);
+            for (int i = 0; i < keys.size() && i < MAX_CHOICES; i++)
+                choices.add(new Choice(keys.get(i), items.get(keys.get(i))));
+        }
+          
+
+        return choices;
+    }
+
 
 
 
@@ -462,6 +494,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         else if (e.getFocusedOption().getName().equals("streamer"))
             name = "streamer_name";
+        
+        else if (e.getFocusedOption().getName().equals("item"))
+            name = "item";
 
         
         switch (name) {
@@ -515,6 +550,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 break;
             case "streamer_name":
                 choices = streamer(e);
+                break;
+            case "item":
+                choices = item(e);
                 break;
         }
 

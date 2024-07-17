@@ -20,10 +20,10 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
  * 
  * @since 1.3
  */
-public class SetVoiceSlash extends SlashCommand {
+public class VoiceSlash extends SlashCommand {
     private final HashMap<String, Set<String>> voices;
 
-    public SetVoiceSlash() {
+    public VoiceSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
