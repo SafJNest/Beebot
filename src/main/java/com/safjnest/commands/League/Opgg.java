@@ -137,6 +137,21 @@ public class Opgg extends Command {
                 String date = DateHandler.formatDate(offsetDateTime);
                 date = "<t:" + ((match.getGameCreation()/1000) + match.getGameDurationAsDuration().getSeconds()) + ":R>";
                 switch (match.getQueue()){
+                    case STRAWBERRY:
+                    //String swarmKills = me.getChallenges().get("SWARM_KillEnemy").toString();
+                    content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " Level: " +  me.getChampionLevel() + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.getGoldEarned() +  "\n"
+                    + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
+                    + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
+                    eb.addField(
+                        "Swarm" + ": " + (me.didWin() ? "WIN" : "LOSE") , content, true);
+
+                    String swarmTeam = "";
+                    for(MatchParticipant mt : match.getParticipants())
+                        swarmTeam += CustomEmojiHandler.getFormattedEmoji(mt.getChampionName()) + " Level: " +  mt.getChampionLevel() + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + mt.getGoldEarned() +  "\n";
+                    
+                    eb.addField("Swarm Team", swarmTeam, true);
+                    eb.addBlankField(true);
+                    break;
 
                     case CHERRY:
 
