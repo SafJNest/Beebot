@@ -1,14 +1,10 @@
 package com.safjnest;
 
-import java.io.File;
 import java.io.FileReader;
-import java.io.Reader;
 import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Properties;
 
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -18,6 +14,7 @@ import com.safjnest.core.audio.tts.TTSHandler;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.LOL.RiotHandler;
 import com.safjnest.util.Twitch.TwitchClient;
 import com.safjnest.util.log.BotLogger;
@@ -67,39 +64,29 @@ public class App {
             app.setDefaultProperties(Collections.singletonMap("server.port", "8096"));
             //app.run(args);
         }
-        
 
         SecureRandom secureRandom = new SecureRandom();
         BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider());
-        
-        JSONParser parser = new JSONParser();
-        JSONObject settings = null, SQLSettings = null, riotSettings = null, twitchSettings = null;
-        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
-            settings = (JSONObject) parser.parse(reader);
-            settings = (JSONObject) settings.get("settings");
-            SQLSettings = (JSONObject) settings.get("MariaDB");
-            twitchSettings = (JSONObject) settings.get("Twitch");
-            if (App.isExtremeTesting()) {
-                SQLSettings = (JSONObject) settings.get("LocalHost");
-            }
-            riotSettings = (JSONObject) settings.get("Riot");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        tts = new TTSHandler(settings.get("ttsApiKey").toString());
+
+        SettingsLoader settingsLoader = new SettingsLoader(
+            App.isExtremeTesting() ? App.getProperty("bot") : "beebot",
+            App.isExtremeTesting() ? "LocalHost" : "MariaDB"
+        );
+
+        tts = new TTSHandler(settingsLoader.getTTSApiKey());
         
         new DatabaseHandler(
-            SQLSettings.get("HostName").toString(), 
-            SQLSettings.get("database").toString(), 
-            SQLSettings.get("user").toString(), 
-            SQLSettings.get("password").toString()
+            settingsLoader.getDBHostname(),
+            settingsLoader.getDBName(),
+            settingsLoader.getDBUser(),
+            settingsLoader.getDBPassword()
         );
 
         new SoundHandler();
         
         new TwitchClient(
-            twitchSettings.get("clientId").toString(), 
-            twitchSettings.get("clientSecret").toString()
+            settingsLoader.getTwitchClientId(),
+            settingsLoader.getTwitchClientSecret()
         );
         
         if(!isExtremeTesting()) {
@@ -108,13 +95,13 @@ public class App {
 
         riotApi = null;
         try {
-            riotApi = new R4J(new APICredentials(riotSettings.get("riotKey").toString()));
+            riotApi = new R4J(new APICredentials(settingsLoader.getRiotKey()));
             BotLogger.info("[R4J] Connection Successful!");
         } catch (Exception e) {
             BotLogger.error("[R4J] Annodam Not Successful!");
         }
         
-        new RiotHandler(riotApi, riotSettings.get("lolVersion").toString());
+        new RiotHandler(riotApi, settingsLoader.getLOLVersion());
 
         BotLogger.info("[CANNUCCIA] " + DatabaseHandler.getCannuccia());
         BotLogger.info("[EPRIA] ID " + PermissionHandler.getEpria());

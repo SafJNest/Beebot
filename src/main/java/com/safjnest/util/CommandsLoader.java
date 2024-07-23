@@ -43,13 +43,7 @@ public class CommandsLoader {
                 longHelp = (longHelp == null || longHelp.isBlank()) ? help : longHelp;
                 String arguments = (String) command.get("arguments");
                 JSONArray aliasArray = (JSONArray) command.get("alias");
-                String[] alias;
-                if (aliasArray != null) {
-                    alias = (String[]) aliasArray.toArray(new String[0]);
-                } else {
-                    alias = new String[0];
-                }
-
+                String[] alias = aliasArray != null ? (String[]) aliasArray.toArray(new String[0]) : new String[0];
                 int cooldown = (command.get("cooldown") == null) ? 0 : Integer.valueOf((String) command.get("cooldown"));
                 commands.put(name, new BotCommand(name, category, help, longHelp, arguments, alias, cooldown));
 

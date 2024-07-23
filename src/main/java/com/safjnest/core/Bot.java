@@ -5,17 +5,9 @@
  */
 package com.safjnest.core;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.Reader;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.awt.Color;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -71,6 +63,7 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 
 /**
@@ -117,31 +110,24 @@ public class Bot extends ListenerAdapter {
         // ctrl c ctrl v
         // assembly:assembly -DdescriptorId=jar-with-dependencies
 
-        JSONParser parser = new JSONParser();
-        JSONObject settings = null, discordSettings = null, settingsSettings = null;
+        SettingsLoader settingsLoader = new SettingsLoader(
+            App.isExtremeTesting() ? App.getProperty("bot") : "beebot",
+            null
+        );
 
-        String name = App.isExtremeTesting() ? App.getProperty("bot") : "beebot";
-        try (Reader reader = new FileReader("rsc" + File.separator + "settings.json")) {
-            settings = (JSONObject) parser.parse(reader);
-            discordSettings = (JSONObject) settings.get(name);
-            settingsSettings = (JSONObject) settings.get("settings");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        PREFIX = settingsLoader.getPrefix();
+        activity = settingsLoader.getActivity();
+        token = settingsLoader.getDiscordToken();
+        color = settingsLoader.getEmbedColor();
+        ownerID = settingsLoader.getOwnerID();
+        coOwnersIDs = settingsLoader.getCoOwnerIDs();
+        helpWord = settingsLoader.getHelpWord();
 
-        PREFIX = discordSettings.get("prefix").toString();
-        activity = Activity.playing(MessageFormat.format(discordSettings.get("activity").toString().replace("{0}", PREFIX), PREFIX));
-        token = discordSettings.get("discordToken").toString();
-        color = Color.decode(discordSettings.get("embedColor").toString());
-        ownerID = discordSettings.get("ownerID").toString();
-        coOwnersIDs = toStringArray((JSONArray) discordSettings.get("coOwnersIDs"));
-        helpWord = discordSettings.get("helpWord").toString();
+        maxPrime = settingsLoader.getMaxPrime();
+        weatherApiKey = settingsLoader.getWeatherAPIKey();
+        nasaApiKey = settingsLoader.getNasaApiKey();
 
-        maxPrime = Integer.valueOf(discordSettings.get("maxPrime").toString());
-        weatherApiKey = settingsSettings.get("weatherApiKey").toString();
-        nasaApiKey = settingsSettings.get("nasaApiKey").toString();
-
-        BotLogger.warning(discordSettings.get("info").toString());
+        BotLogger.warning(settingsLoader.getInfo());
 
         jda = JDABuilder
             .createLight(token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
@@ -250,9 +236,7 @@ public class Bot extends ListenerAdapter {
             new PlayerSlash(), new QueueSlash(), new SkipSlash(), new PreviousSlash(), new JumpToSlash(), new SearchSlash()
         );
 
-
         Collections.addAll(slashCommandsList, new RewardSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
-
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         
@@ -277,18 +261,6 @@ public class Bot extends ListenerAdapter {
 
     public void distruzione_demoniaca(){
         jda.shutdown();
-    }
-
-
-
-    public static String[] toStringArray(JSONArray array) {
-        if(array==null)
-            return new String[0];
-        
-        String[] arr = new String[array.size()];
-        for(int i = 0; i < arr.length; i++)
-            arr[i] = (String) array.get(i);
-        return arr;
     }
 
     public static JDA getJDA() {
