@@ -1,4 +1,4 @@
-package com.safjnest.commands.League.slash;
+package com.safjnest.commands.League.slash.summoner;
 
 import java.util.Arrays;
 
@@ -6,6 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
+import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -16,13 +17,10 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class SummonerUnlinkSlash extends SlashCommand {
+public class SummonerTrackSlash extends SlashCommand {
     
 
-    /**
-     * Constructor
-     */
-    public SummonerUnlinkSlash(String father){
+    public SummonerTrackSlash(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -33,7 +31,8 @@ public class SummonerUnlinkSlash extends SlashCommand {
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "personal_summoner", "Accont to unlink", true)
-                .setAutoComplete(true)
+                .setAutoComplete(true),
+            new OptionData(OptionType.BOOLEAN, "track", "Enable or disable tracking", false)
         );
         commandData.setThings(this);
     }
@@ -43,7 +42,8 @@ public class SummonerUnlinkSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        String account_id = event.getOption("personal_summoner") != null ? event.getOption("personal_summoner").getAsString() : ""; 
+        String account_id = event.getOption("personal_summoner") != null ? event.getOption("personal_summoner").getAsString() : "";
+        boolean track = event.getOption("track") != null ? event.getOption("track").getAsBoolean() : true;
         if (account_id.isEmpty()) {
             event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help summoner").queue();
             return;
@@ -55,12 +55,10 @@ public class SummonerUnlinkSlash extends SlashCommand {
             return;
         }
 
-        if (!data.deleteRiotAccount(account_id)) {
-            event.deferReply(false).addContent("Something went wrong while disconnecting your account.").queue();
-            return;
-        }
-
-        event.deferReply(false).addContent("Summoner removed").queue();
+        DatabaseHandler.trackSummoner(event.getMember().getId(), account_id, track);
+        
+        String response = track ? "Tracking enabled" : "Tracking disabled";
+        event.deferReply(false).addContent(response).queue();
 	}
 
 }

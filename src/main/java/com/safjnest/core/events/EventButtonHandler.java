@@ -621,6 +621,8 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid);
+        
+        if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
         
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
@@ -719,6 +721,11 @@ public class EventButtonHandler extends ListenerAdapter {
                 data.put("platform", s.getPlatform().toRegionShard());
                 data.put("puuid", s.getPUUID());
                 DataCall.getCacheProvider().clear(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, data);
+
+                data.clear();
+                data.put("platform", s.getPlatform().toRegionShard());
+                data.put("id", s.getSummonerId());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_LEAGUE_ENTRY, data);
 
 
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());

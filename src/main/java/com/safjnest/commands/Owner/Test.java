@@ -52,7 +52,12 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -271,7 +276,7 @@ public class Test extends Command{
                         gs.getGuild(g.getId()).getChannelData(cd.getId());
                     }
                     for(Member m : g.getMembers()){
-                        gs.getGuild(g.getId()).getUserData(m.getId());
+                        gs.getGuild(g.getId()).getMemberData(m.getId());
                         Bot.getUserData(m.getId());
                     }
                 }
@@ -315,9 +320,7 @@ public class Test extends Command{
                     } catch (SQLException ex) {
                         try {
                             if(c != null) c.rollback();
-                        } catch(SQLException ee) {
-                            System.out.println(ee.getMessage());
-                        }
+                        } catch(SQLException ee) {}
                         System.out.println(ex.getMessage());
                     }
                 }
@@ -506,7 +509,7 @@ public class Test extends Command{
                 for (Guild g : e.getJDA().getGuilds()) {
                     GuildData gd = Bot.getGuildData(g);
                     for (Member m : g.getMembers()) {
-                        gd.getUserData(m.getId()).setUpdateTime(61);
+                        gd.getMemberData(m.getId()).setUpdateTime(61);
                     }
                     for (TextChannel tc : g.getTextChannels()) {
                         gd.getChannelData(tc.getId()).setExpEnabled(true);
@@ -634,6 +637,35 @@ public class Test extends Command{
                 
                 e.getChannel().sendMessageEmbeds(eb.build()).setActionRow(streamerButtonLink).queue();
                 break;
+            case "fixlol":
+                query = "SELECT game_id, account_id from summoner_tracking";
+                res = DatabaseHandler.safJQuery(query);
+                for(ResultRow row : res){
+                    String game_id = "EUW1_"+row.get("game_id");
+                    String account_id = row.get("account_id");
+
+                    LOLMatch match = RiotHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, game_id);
+                    if (match == null) {
+                        System.out.println("Match not found");
+                        continue;
+                    }
+
+                    long time_start = match.getGameStartTimestamp();
+                    long time_end = match.getGameEndTimestamp();
+                    int championId = 0;
+
+                    for (MatchParticipant p : match.getParticipants()) {
+                        Summoner summoner = RiotHandler.getSummonerBySummonerId(p.getSummonerId(), LeagueShard.EUW1);
+                        if (summoner.getAccountId().equals(account_id)) {   
+                            championId = p.getChampionId();
+                            break;
+                        }
+                    }
+                    query = "UPDATE summoner_tracking SET league_shard = " + match.getPlatform().ordinal() + ",champion = " + championId + ", time_start = '" + new Timestamp(time_start) + "', time_end = '" + new Timestamp(time_end) + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
+                    System.out.println(query);
+                    DatabaseHandler.runQuery(query);
+                }
+            break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;

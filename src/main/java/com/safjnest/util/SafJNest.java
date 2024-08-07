@@ -8,6 +8,9 @@ import java.net.URLConnection;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Random;
@@ -388,6 +391,23 @@ public class SafJNest extends Thread {
             } catch (NumberFormatException e) {}
         }
         return -1;
+    }
+    
+    public static long midnight() {
+        return LocalDateTime.now().toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() / 1000;
+    }
+
+    public static Long firstDayOfMonth(Long time) {
+        LocalDateTime date = LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC);
+        return date.withDayOfMonth(1).toEpochSecond(ZoneOffset.UTC);
+    }
+
+    public static long parseDate(String date) {
+        String[] parts = date.split("-");
+        int day = Integer.parseInt(parts[0]);
+        int month = Integer.parseInt(parts[1]);
+        int year = Integer.parseInt(parts[2]);
+        return LocalDateTime.of(year, month, day, 0, 0).toEpochSecond(ZoneOffset.UTC);
     }
     
 }

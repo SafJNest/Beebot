@@ -22,6 +22,7 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.App;
 import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -42,6 +43,7 @@ import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 
 /**
@@ -82,7 +84,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
     public RiotHandler(R4J riotApi, String dataDragonVersion){
         RiotHandler.riotApi = riotApi;
-        RiotHandler.dataDragonVersion = dataDragonVersion;
+        RiotHandler.dataDragonVersion = riotApi.getDDragonAPI().getVersions().get(0);
         RiotHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + RiotHandler.dataDragonVersion + "/data/en_US/runesReforged.json";
         
         loadChampions();
@@ -93,6 +95,8 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
         loadAguments();
         BotLogger.info("[R4J-Augments] Augments Successful! Viktor is proud :)");
+
+        if (!App.isExtremeTesting()) new LPTracker();
     }
 
     private void loadChampions(){
@@ -275,20 +279,20 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
     public static String getSoloQStats(JDA jda, Summoner s){
         String stats = "";
-        for(int i = 0; i < 2; i++){
+        for(int i = 0; i < 3; i++){
             try {
                 LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
                     stats = getStatsByEntry(jda, entry);
 
-            } catch (Exception e) { }
+            } catch (Exception e) {}
         }
         return (stats.equals("")) ? "Unranked" : stats;
     }
 
     public static String getFlexStats(JDA jda, Summoner s){
         String stats = "";
-        for(int i = 0; i < 2; i++){
+        for(int i = 0; i < 3; i++){
             try {
                 LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
@@ -574,6 +578,12 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
     public Summoner getSummonerFromString(String account_id, String shard) {
         return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(LeagueShard.values()[Integer.valueOf(shard)], account_id);
+    }
+
+    public static String getFormattedSummonerName(Summoner s) {
+        RiotAccount account = riotApi.getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+        if (account == null) return "";
+        return account.getName() + "#" + account.getTag();
     }
 
 }

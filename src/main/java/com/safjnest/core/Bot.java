@@ -36,6 +36,8 @@ import com.safjnest.commands.Audio.slash.Soundboard.SoundboardSlash;
 import com.safjnest.commands.Audio.slash.search.SearchSlash;
 import com.safjnest.commands.League.*;
 import com.safjnest.commands.League.slash.*;
+import com.safjnest.commands.League.slash.graph.GraphSlash;
+import com.safjnest.commands.League.slash.summoner.SummonerSlash;
 import com.safjnest.commands.ManageGuild.*;
 import com.safjnest.commands.ManageGuild.slash.*;
 import com.safjnest.commands.ManageMembers.*;
@@ -216,7 +218,7 @@ public class Bot extends ListenerAdapter {
 
         
         Collections.addAll(slashCommandsList, new SummonerSlash(), new AugmentSlash(), new FreeChampSlash(), 
-            new LivegameSlash(), new LastMatchesSlash(), 
+            new LivegameSlash(), new LastMatchesSlash(), new GraphSlash(),
             new PrimeSlash(maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
             new WeatherSlash(weatherApiKey), new APODSlash(nasaApiKey), new SpecialCharSlash(), new RegionSlash(), new UltimateBraverySlash(), new ItemSlash()
         );

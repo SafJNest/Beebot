@@ -1,4 +1,4 @@
-package com.safjnest.commands.League.slash;
+package com.safjnest.commands.League.slash.summoner;
 
 import java.util.Arrays;
     
@@ -67,7 +67,7 @@ public class SummonerInfoSlash extends SlashCommand {
         
         if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
             RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
-            center = Button.primary("lol-center-" + s.getPUUID() + "#" + s.getPlatform().commonName(), account.getName());
+            center = Button.primary("lol-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
 
             WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),s).build());

@@ -1,4 +1,4 @@
-package com.safjnest.commands.League.slash;
+package com.safjnest.commands.League.slash.graph;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,9 +12,9 @@ import com.safjnest.util.CommandsLoader;;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class SummonerSlash extends SlashCommand {
+public class GraphSlash extends SlashCommand {
  
-    public SummonerSlash(){
+    public GraphSlash(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -27,7 +27,7 @@ public class SummonerSlash extends SlashCommand {
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new SummonerLinkSlash(father), new SummonerInfoSlash(father), new SummonerUnlinkSlash(father));
+        Collections.addAll(slashCommandsList, new GraphLpSlash(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);

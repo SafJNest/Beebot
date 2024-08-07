@@ -1006,6 +1006,11 @@
                 "alias" : [],
                 "help"  : "Unlink a summoner from your discord account.",
                 "arguments" : "[CommandName]"
+            },
+            "track": {
+                "alias" : [],
+                "help"  : "Track a summoner.",
+                "arguments" : "[CommandName]"
             }
         }
     },
@@ -1051,6 +1056,28 @@
         "help"  : "Show a random build for a champion.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName] [champion]"
+    },
+
+    "graph": {
+        "alias" : [],
+        "help"  : "Set/Unset your greet sound.",
+        "longhelp"  : "set or unset your greet sound from the soundboard. You can specify if the greet is going to be guild specific or global\nYou can use your sounds or the public ones.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "lp": {
+                "alias" : [],
+                "help"  : "Set your greet sound.",
+                "longhelp"  : "Set your greet sound.",
+                "arguments" : "[CommandName]"
+            }, 
+            "mmr": {
+                "alias" : [],
+                "help"  : "Unset your greet sound.",
+                "longhelp"  : "Unset your greet sound.",
+                "arguments" : "[CommandName]"
+            }
+        }
     },
 
 

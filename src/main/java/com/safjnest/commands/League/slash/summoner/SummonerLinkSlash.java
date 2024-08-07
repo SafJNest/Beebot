@@ -1,4 +1,4 @@
-package com.safjnest.commands.League.slash;
+package com.safjnest.commands.League.slash.summoner;
 
 import java.util.Arrays;
 

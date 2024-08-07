@@ -492,7 +492,7 @@ public class DatabaseHandler {
 
     
     public static QueryResult getLOLAccountsByUserId(String user_id){
-        String query = "SELECT account_id, league_shard FROM summoner WHERE user_id = '" + user_id + "';";
+        String query = "SELECT account_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "';";
         return safJQuery(query);
     }
 
@@ -1081,6 +1081,38 @@ public class DatabaseHandler {
     public static ResultRow hasInterectedSound(String sound_id, String user_id) {
         return fetchJRow("SELECT `like`, dislike FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
     }
+
+
+    public static QueryResult getRegistredLolAccount() {
+        return safJQuery("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM summoner_tracking WHERE (account_id, time_start) IN (SELECT account_id, MAX(time_start) AS latest_time FROM summoner_tracking GROUP BY account_id)) st ON s.account_id = st.account_id WHERE s.tracking = 1;");
+    }
+
+    public static boolean setSummonerData(String account_id, long game_id, LeagueShard shard, boolean win, int rank, int lp, int gain, int champion, long time_start, long time_end, String version) {
+        return runQuery("INSERT INTO summoner_tracking(account_id, game_id, league_shard, win, rank, lp, gain, champion, time_start, time_end, patch) VALUES('" + account_id + "','" + game_id + "','" + shard.ordinal() + "','" + (win ? 1 : 0) + "','" + rank + "','" + lp + "','" + gain + "','" + champion + "','" + new Timestamp(time_start) + "','" + new Timestamp(time_end) + "','" + version + "');");
+    }
+
+    public static QueryResult getSummonerData(String account_id) {
+        return safJQuery("SELECT rank, lp, wins, losses, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "';");
+    }
+
+    public static QueryResult getSummonerData(String account_id, long game_id) {
+        return safJQuery("SELECT account_id, game_id, rank, lp, gain, win time_start, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND game_id = '" + game_id + "';");
+    }
+
+    public static QueryResult getSummonerData(String account_id, String[] game_id) {
+        return safJQuery("SELECT account_id, game_id, rank, lp, gain, win time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND game_id IN ('" + String.join("', '", game_id) + "');");
+    }
+
+    public static boolean trackSummoner(String user_id, String account_id, boolean track) {
+        return runQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
+    }
+
+    public static ResultRow getSummonerData(String user_id, String account_id) {
+        return fetchJRow("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
+    }
+
+
+
 
 
 

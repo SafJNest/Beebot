@@ -6,11 +6,15 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.ResultRow;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.DateHandler;
@@ -104,10 +108,15 @@ public class Opgg extends Command {
         eb.setAuthor(account.getName() + "#" + account.getTag());
         eb.setColor(Bot.getColor());
         
+        List<String> gameIds = new ArrayList<>();
+        for (String ss : s.getLeagueGames().withCount(20).get()) gameIds.add(ss.split("_")[1]);
+        
+        QueryResult result = DatabaseHandler.getSummonerData(s.getAccountId(), gameIds.toArray(new String[0]));
+
         for(int i = 0; i < 5; i++){
             try {
                 
-                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, s.getLeagueGames().get().get(i));
+                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, s.getLeagueGames().withCount(20).get().get(i));
                 if (match.getParticipants().size() == 0)
                     continue; //riot di merda che quando crasha il game lascia dati sporchi
 
@@ -224,18 +233,26 @@ public class Opgg extends Command {
                     break;
 
                     default:
-                     content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
+                    String gain = "";
+                    for (ResultRow row : result) {
+                        if (row.getAsLong("game_id") == match.getGameId()) {
+                            gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") : String.valueOf(row.getAsInt("gain"));
+                            break;
+                        }
+                    }
+                    gain = (gain.isBlank() || gain.equals("0")) ? "" : (gain + " LP");
+                    content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
                                 + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
                                 + CustomEmojiHandler.getFormattedEmoji( String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, 0) + "\n"
                                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, 1) + "\n"
                                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
                                 eb.addField(
-                                    match.getQueue().commonName() + ": " + (me.didWin() ? "WIN" : "LOSE") , content, true);
+                                    match.getQueue().commonName() + ": " + (me.didWin() ? "WIN" : "LOSE") + " " + gain , content, true);
                                 String blueS = "";
                                 String redS = "";
                                 for(int j = 0; j < 5; j++)
                                     blueS += blue.get(j) + "\n";
-                                 for(int j = 0; j < 5; j++)
+                                for(int j = 0; j < 5; j++)
                                     redS += red.get(j) + "\n";
                                 eb.addField("Blue Side", blueS, true);
                                 eb.addField("Red Side", redS, true);
