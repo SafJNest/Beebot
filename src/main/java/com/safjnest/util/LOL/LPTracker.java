@@ -112,7 +112,7 @@ public class LPTracker {
         if (dataGame.get("rank") == null) gain = 0;
         else if ((division != TierDivisionType.CHALLENGER_I || division != TierDivisionType.GRANDMASTER_I || division != TierDivisionType.MASTER_I) && rank != dataGame.getAsInt("rank")) {
             gain = 100 - (lp - dataGame.getAsInt("lp"));
-            gain = rank > dataGame.getAsInt("rank") ? gain : -gain;
+            gain = rank < dataGame.getAsInt("rank") ? gain : -gain;
         }
         else gain = lp - dataGame.getAsInt("lp");
         
