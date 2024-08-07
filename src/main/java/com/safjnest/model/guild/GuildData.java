@@ -65,7 +65,7 @@ public class GuildData {
 
     private HashMap<AlertKey, AlertData> alerts;
 
-    private HashMap<Long, MemberData> users;
+    private HashMap<Long, MemberData> members;
 
     private HashMap<String, CustomCommand> customCommands;
 
@@ -80,7 +80,7 @@ public class GuildData {
         this.prefix = prefix;
         this.expEnabled = expSystem;
 
-        this.users = new HashMap<>();
+        this.members = new HashMap<>();
         
         this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
 
@@ -510,12 +510,12 @@ public class GuildData {
         return ud;
     }
 
-    public MemberData getUserData(String userId) {
-        return getUserData(Long.parseLong(userId));
+    public MemberData getMemberData(String userId) {
+        return getMemberData(Long.parseLong(userId));
     }
 
-    public MemberData getUserData(long userId) {
-        MemberData ud = this.users.get(userId);
+    public MemberData getMemberData(long userId) {
+        MemberData ud = this.members.get(userId);
         if (ud != null) {
             return ud;
         }
@@ -524,12 +524,12 @@ public class GuildData {
             ud = new MemberData(userId, this.getID());
             BotLogger.debug("Caching local MemberData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
         }
-        this.users.put(userId, ud);
+        this.members.put(userId, ud);
         return ud;
     }
 
     public HashMap<Long, MemberData> getUsers() {
-        return this.users;
+        return this.members;
     }
 
 
