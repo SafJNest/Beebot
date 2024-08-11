@@ -58,6 +58,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -638,7 +639,7 @@ public class Test extends Command{
                 e.getChannel().sendMessageEmbeds(eb.build()).setActionRow(streamerButtonLink).queue();
                 break;
             case "fixlol":
-                query = "SELECT game_id, account_id from summoner_tracking";
+                query = "SELECT game_id, account_id from summoner_tracking where league_shard = 3";
                 res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
                     String game_id = "EUW1_"+row.get("game_id");
@@ -665,6 +666,71 @@ public class Test extends Command{
                     System.out.println(query);
                     DatabaseHandler.runQuery(query);
                 }
+            break;
+            case "fixlolna":
+                query = "SELECT game_id, account_id from summoner_tracking where league_shard = 8";
+                res = DatabaseHandler.safJQuery(query);
+                for(ResultRow row : res){
+                    String game_id = "NA1_"+row.get("game_id");
+                    String account_id = row.get("account_id");
+
+                    LOLMatch match = RiotHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(RegionShard.AMERICAS, game_id);
+                    if (match == null) {
+                        System.out.println("Match not found");
+                        continue;
+                    }
+
+                    long time_start = match.getGameStartTimestamp();
+                    long time_end = match.getGameEndTimestamp();
+                    int championId = 0;
+
+                    for (MatchParticipant p : match.getParticipants()) {
+                        Summoner summoner = RiotHandler.getSummonerBySummonerId(p.getSummonerId(), LeagueShard.NA1);
+                        if (summoner.getAccountId().equals(account_id)) {   
+                            championId = p.getChampionId();
+                            break;
+                        }
+                    }
+                    query = "UPDATE summoner_tracking SET league_shard = " + match.getPlatform().ordinal() + ",champion = " + championId + ", time_start = '" + new Timestamp(time_start) + "', time_end = '" + new Timestamp(time_end) + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
+                    System.out.println(query);
+                    DatabaseHandler.runQuery(query);
+                }
+            break;
+            case "summoners":
+                query = "SELECT account_id, league_shard from summoner";
+                res = DatabaseHandler.safJQuery(query);
+                String ssss = "";
+                for(ResultRow row : res){
+                    String account_id = row.get("account_id");
+                    int league_shard = row.getAsInt("league_shard");
+                    Summoner summoner = RiotHandler.getSummonerByAccountId(account_id, LeagueShard.values()[league_shard]);
+                    if (summoner == null) {
+                        System.out.println("Summoner not found");
+                        continue;
+                    }
+                    RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(LeagueShard.values()[league_shard].toRegionShard(), summoner.getPUUID());
+                    if (account == null) {
+                        System.out.println("Account not found");
+                        continue;
+                    }
+                    ssss += account.getName() + "(" + summoner.getAccountId() + ")\n";
+
+                }
+                e.reply(ssss);
+            break;
+            case "match":
+                String match_id = "5079311964" ;
+                String shard = "8";
+                LOLMatch match = RiotHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[Integer.valueOf(shard)].toRegionShard(), match_id);
+                if (match == null) {
+                    e.reply("Match not found");
+                    return;
+                }
+                String matchdata = "";
+                for (MatchParticipant p : match.getParticipants()) {
+                    matchdata += CustomEmojiHandler.getFormattedEmoji(p.getChampionId()) + " " + p.getKills() + "/" + p.getDeaths() + "/" + p.getAssists() + "\n";
+                }
+                e.reply(matchdata);
             break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");

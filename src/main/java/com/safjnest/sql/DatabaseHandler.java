@@ -1084,7 +1084,7 @@ public class DatabaseHandler {
 
 
     public static QueryResult getRegistredLolAccount() {
-        return safJQuery("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM summoner_tracking WHERE (account_id, time_start) IN (SELECT account_id, MAX(time_start) AS latest_time FROM summoner_tracking GROUP BY account_id)) st ON s.account_id = st.account_id WHERE s.tracking = 1;");
+        return safJQuery("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking) t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1;");
     }
 
     public static boolean setSummonerData(String account_id, long game_id, LeagueShard shard, boolean win, int rank, int lp, int gain, int champion, long time_start, long time_end, String version) {
@@ -1097,6 +1097,11 @@ public class DatabaseHandler {
 
     public static QueryResult getSummonerData(String account_id, long game_id) {
         return safJQuery("SELECT account_id, game_id, rank, lp, gain, win time_start, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND game_id = '" + game_id + "';");
+    }
+
+    public static QueryResult getSummonerData(String account_id, LeagueShard shard, long time_start, long time_end) {
+        System.out.println("SELECT account_id, game_id, rank, lp, gain, win time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
+        return safJQuery("SELECT account_id, game_id, rank, lp, gain, win time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
     public static QueryResult getSummonerData(String account_id, String[] game_id) {

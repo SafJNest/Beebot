@@ -29,15 +29,18 @@ public class LPTracker {
     private static R4J api = RiotHandler.getRiotApi();
 
 	public LPTracker() {
+
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+		long period = TimeConstant.MINUTE * 15;
+
 		Runnable task = new Runnable() {
 			@Override
 			public void run() {
-				trackSummoners();
+                try {trackSummoners();}
+                catch (Exception e) {e.printStackTrace();}
+				
 			}
 		};
-
-		ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-		long period = TimeConstant.MINUTE * 10;
 
 		scheduler.scheduleAtFixedRate(task, 0, period, TimeUnit.MILLISECONDS);
 	}
@@ -71,7 +74,7 @@ public class LPTracker {
         catch (InterruptedException e) {e.printStackTrace();}
 
         List<String> matchIds = summoner.getLeagueGames().withCount(20).withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).get();
-        if (matchIds.size() == 0) return;
+        if (matchIds.isEmpty()) return;
 
         String matchId = matchIds.get(0);
         LOLMatch match = api.getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
@@ -82,9 +85,6 @@ public class LPTracker {
         int champion = 0;
         for (MatchParticipant partecipant : match.getParticipants()) {
             if (partecipant.getSummonerId().equals(summoner.getSummonerId())) {
-                if (summoner.getAccountId().equals("QUc2lHbpSFkErZsnAxRJyXxi-IABmTBu48vu5uUTlpMOxw")) {
-                    System.out.println(partecipant.getKills() + " " + partecipant.getDeaths());
-                }
                 win = partecipant.didWin();
                 champion = partecipant.getChampionId();
             }
@@ -111,7 +111,7 @@ public class LPTracker {
 
         if (dataGame.get("rank") == null) gain = 0;
         else if ((division != TierDivisionType.CHALLENGER_I || division != TierDivisionType.GRANDMASTER_I || division != TierDivisionType.MASTER_I) && rank != dataGame.getAsInt("rank")) {
-            gain = 100 - (lp - dataGame.getAsInt("lp"));
+            gain = 100 - (Math.abs(lp - dataGame.getAsInt("lp")));
             gain = rank < dataGame.getAsInt("rank") ? gain : -gain;
         }
         else gain = lp - dataGame.getAsInt("lp");
