@@ -397,6 +397,20 @@ public class SafJNest extends Thread {
         return LocalDateTime.now().toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli() / 1000;
     }
 
+    public static long midnightMilli() {
+        return LocalDateTime.now().toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
+
+    public static Long firstDayOfMonth() {
+        LocalDateTime date = LocalDateTime.now().toLocalDate().atStartOfDay();
+        return date.withDayOfMonth(1).toEpochSecond(ZoneOffset.UTC);
+    }
+
+    public static long firstDayOfMonthMilli() {
+        LocalDateTime date = LocalDateTime.now().toLocalDate().atStartOfDay();
+        return date.withDayOfMonth(1).toInstant(ZoneOffset.UTC).toEpochMilli();
+    }
+
     public static Long firstDayOfMonth(Long time) {
         LocalDateTime date = LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC);
         return date.withDayOfMonth(1).toEpochSecond(ZoneOffset.UTC);
@@ -408,6 +422,11 @@ public class SafJNest extends Thread {
         int month = Integer.parseInt(parts[1]);
         int year = Integer.parseInt(parts[2]);
         return LocalDateTime.of(year, month, day, 0, 0).toEpochSecond(ZoneOffset.UTC);
+    }
+
+    public static String getFormattedDate(long time) {
+        LocalDateTime date = LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC);
+        return date.getDayOfMonth() + "-" + date.getMonthValue() + "-" + date.getYear();
     }
     
 }

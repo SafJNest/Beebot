@@ -13,7 +13,9 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
@@ -37,6 +39,7 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -195,6 +198,23 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static R4J getRiotApi(){
         return riotApi;
+    }
+
+    public static HashMap<Integer, Integer> getTierDivision() {
+        HashMap<Integer, Integer> tierDivisionMapReformed = new HashMap<>();
+        List<TierDivisionType> tierDivisionList = List.of(TierDivisionType.values())
+            .stream()
+            .filter(t -> !t.name().endsWith("_V"))
+            .collect(Collectors.toList());
+        
+        TierDivisionType[] tierDivisionTypesArray = tierDivisionList.toArray(new TierDivisionType[tierDivisionList.size()]);
+
+        for (int i = tierDivisionTypesArray.length - 1, value = 0; i >= 0; i--, value += 100) {
+            tierDivisionMapReformed.put(tierDivisionTypesArray[i].ordinal(), value);
+        }
+
+        return tierDivisionMapReformed;
+
     }
 
 
