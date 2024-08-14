@@ -56,9 +56,11 @@ public class LivegameSlash extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
 
-        Button left = Button.primary("rank-left", "<-");
-        Button right = Button.primary("rank-right", "->");
+        Button left = Button.primary("rank-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));;
+        Button right = Button.primary("rank-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));;
         Button center = Button.primary("rank-center", "f");
+        Button refresh = Button.primary("rank-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
+
         event.deferReply(false).queue();
 
         User theGuy = null;
@@ -71,11 +73,10 @@ public class LivegameSlash extends SlashCommand {
             return;
         }
 
-        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
-        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
-            center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
-            center = center.asDisabled();
-        }
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+
+        center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+        center = center.asDisabled();
 
         LeagueShard shard = s.getPlatform();
         RegionShard region = RiotHandler.getRegionFromServer(shard);
@@ -115,21 +116,22 @@ public class LivegameSlash extends SlashCommand {
             if (theGuy != null && RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
                 WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
                         action.setComponents(ActionRow.of(menu),
-                                            ActionRow.of(left, center, right)).queue();
+                                            ActionRow.of(left, center, right, refresh)).queue();
                 return;
             }
+
             WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
-            action.setComponents(ActionRow.of(menu)).queue();
+            action.setComponents(ActionRow.of(menu), ActionRow.of(center, refresh)).queue();
                 
         } catch (Exception e) {
             builder = Livegame.createEmbed(event.getJDA(), event.getMember().getId(), s, users, accounts);
             if (theGuy != null && RiotHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
                 WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
-                        action.setComponents(ActionRow.of(left, center, right))
+                        action.setComponents(ActionRow.of(left, center, right, refresh))
                         .queue();
                 return;
             }
-            event.getHook().editOriginalEmbeds(builder.build()).queue();
+            event.getHook().editOriginalEmbeds(builder.build()).setComponents(ActionRow.of(center, refresh)).queue();
         }
 	}
 }

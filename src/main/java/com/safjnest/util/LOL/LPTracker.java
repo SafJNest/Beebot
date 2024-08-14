@@ -31,7 +31,7 @@ public class LPTracker {
 	public LPTracker() {
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-		long period = TimeConstant.MINUTE * 15;
+		long period = TimeConstant.MINUTE * 20;
 
 		Runnable task = new Runnable() {
 			@Override

@@ -61,9 +61,10 @@ public class Opgg extends Command {
      */
     @Override
     protected void execute(CommandEvent event) {
-        Button left = Button.primary("match-left", "<-");
-        Button right = Button.primary("match-right", "->");
+        Button left = Button.primary("match-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));;
+        Button right = Button.primary("match-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));;
         Button center = Button.primary("match-center", "f");
+        Button refresh = Button.primary("match-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
@@ -81,15 +82,16 @@ public class Opgg extends Command {
         
         EmbedBuilder builder = createEmbed(s, event.getJDA());
         
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+        center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+        center = center.asDisabled();
+
         if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
-            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
-            center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
-            center = center.asDisabled();
-            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right, refresh).queue();
             return;
         }
 
-        event.reply(builder.build());
+        event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(center, refresh).queue();
         
     }
     

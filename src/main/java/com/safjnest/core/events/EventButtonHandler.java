@@ -602,8 +602,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
     public void lolButtonEvent(ButtonInteractionEvent event) {
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-        Button left = Button.primary("lol-left", "<-");
-        Button right = Button.primary("lol-right", "->");
+        Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("lol-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
         Button center = null;
         Button refresh = Button.primary("lol-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 
@@ -614,7 +614,7 @@ public class EventButtonHandler extends ListenerAdapter {
         int index = 0;
 
         for (Button b : event.getMessage().getButtons()) {
-            if (!b.getLabel().equals("->") && !b.getLabel().equals("<-")) {
+            if (!b.getId().equals("lol-left") && !b.getId().equals("lol-right") && !b.getId().equals("lol-refresh")) {
                 puuid = b.getId().split("-", 3)[2].substring(0, b.getId().split("-", 3)[2].indexOf("#"));
                 break;
             }
@@ -650,7 +650,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 account_id = (String) accounts.keySet().toArray()[index];
 
                 s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
-                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
                 center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
                 
@@ -679,7 +679,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 account_id = (String) accounts.keySet().toArray()[index];
 
                 s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
-                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
                 center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
                 
@@ -689,12 +689,10 @@ public class EventButtonHandler extends ListenerAdapter {
                         .queue();
                 break;
             case "refresh":
-                //center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
-                //get accountId and platform
                 String accountId = "";
                 String platform = "";
                 for (Button b : event.getMessage().getButtons()) {
-                    if (!b.getLabel().equals("->") && !b.getLabel().equals("<-")) {
+                    if (!b.getId().equals("lol-left") && !b.getId().equals("lol-right") && !b.getId().equals("lol-refresh")) {
                         String[] parts = b.getId().split("-", 3);
 
                         accountId = parts[2].substring(0, parts[2].indexOf("#"));
@@ -728,7 +726,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 DataCall.getCacheProvider().clear(URLEndpoint.V4_LEAGUE_ENTRY, data);
 
 
-                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
                 center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
                 if (user_id.isEmpty() || event.getMessage().getButtonById("lol-left") == null) {
@@ -748,8 +746,9 @@ public class EventButtonHandler extends ListenerAdapter {
 
     public void matchButtonEvent(ButtonInteractionEvent event) {
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-        Button left = Button.primary("match-left", "<-");
-        Button right = Button.primary("match-right", "->");
+        Button left = Button.primary("match-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("match-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button refresh = Button.primary("match-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
         Button center = null;
 
 
@@ -757,12 +756,14 @@ public class EventButtonHandler extends ListenerAdapter {
         int index = 0;
 
         for (Button b : event.getMessage().getButtons()) {
-            if (!b.getLabel().equals("->") && !b.getLabel().equals("<-")) {
+            if (!b.getId().equals("match-left") && !b.getId().equals("match-right") && !b.getId().equals("match-refresh")) {
                 puuid = b.getId().split("-", 3)[2].substring(0, b.getId().split("-", 3)[2].indexOf("#"));
             }
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid);
+        
+        if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
         
         int i = 0;
@@ -791,13 +792,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 account_id = (String) accounts.keySet().toArray()[index];
                 s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
-                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
                 center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
                 
                 event.getMessage()
                         .editMessageEmbeds(Opgg.createEmbed(s, event.getJDA()).build())
-                        .setActionRow(left, center, right)
+                        .setActionRow(left, center, right, refresh)
                         .queue();
                 break;
 
@@ -819,34 +820,91 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 account_id = (String) accounts.keySet().toArray()[index];
                 s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
-                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
                 center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 center = center.asDisabled();
                 
                event.getMessage()
                         .editMessageEmbeds(Opgg.createEmbed(s, event.getJDA()).build())
-                        .setActionRow(left, center, right)
+                        .setActionRow(left, center, right, refresh)
                         .queue();
+                break;
+            case "refresh":
+                String accountId = "";
+                String platform = "";
+                for (Button b : event.getMessage().getButtons()) {
+                    if (!b.getId().equals("match-left") && !b.getId().equals("match-right") && !b.getId().equals("match-refresh")) {
+                        String[] parts = b.getId().split("-", 3);
+
+                        accountId = parts[2].substring(0, parts[2].indexOf("#"));
+                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
+                        break;
+                    }
+                }
+
+                s = RiotHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+
+                Map<String, Object> data = new LinkedHashMap<>();
+                data.put("platform", s.getPlatform());
+                data.put("accountid", accountId);                
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ACCOUNT, data);
+
+                data.remove("accountid");
+                data.put("id", s.getSummonerId());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ID, data);
+
+                data.remove("id");
+                data.put("puuid", s.getPUUID());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_PUUID, data);
+
+                data.put("platform", s.getPlatform().toRegionShard());
+                data.put("puuid", s.getPUUID());
+                DataCall.getCacheProvider().clear(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, data);
+
+                data.clear();
+                data.put("platform", s.getPlatform().toRegionShard());
+                data.put("id", s.getSummonerId());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_LEAGUE_ENTRY, data);
+
+
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+                center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+                center = center.asDisabled();
+                if (user_id.isEmpty() || event.getMessage().getButtonById("match-left") == null) {
+                    event.getMessage()
+                            .editMessageEmbeds(Opgg.createEmbed(s, event.getJDA()).build())
+                            .setActionRow(center, refresh)
+                            .queue();
+                } else {
+                    event.getMessage()
+                            .editMessageEmbeds(Opgg.createEmbed(s, event.getJDA()).build())
+                            .setActionRow(left, center, right, refresh)
+                            .queue();
+                }
                 break;
         }
     }
 
     public void rankButtonEvent(ButtonInteractionEvent event) {
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
-        Button left = Button.primary("rank-left", "<-");
-        Button right = Button.primary("rank-right", "->");
-        Button center = null;
+
+        Button left = Button.primary("rank-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("rank-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button center = Button.primary("rank-center", "f");
+        Button refresh = Button.primary("rank-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 
         String puuid = "";
         int index = 0;
 
         for (Button b : event.getMessage().getButtons()) {
-            if (!b.getLabel().equals("->") && !b.getLabel().equals("<-")) {
+            if (!b.getId().equals("rank-left") && !b.getId().equals("rank-right") && !b.getId().equals("rank-refresh")) {
                 puuid = b.getId().split("-", 3)[2].substring(0, b.getId().split("-", 3)[2].indexOf("#"));
             }
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid);
+        
+        if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
         
         int i = 0;
@@ -915,14 +973,14 @@ public class EventButtonHandler extends ListenerAdapter {
                             Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                     s, users, riotAccounts).build());
                     action.setComponents(ActionRow.of(menu),
-                            ActionRow.of(left, center, right));
+                            ActionRow.of(left, center, right, refresh));
                     action.queue();
                 } catch (Exception e) {
                     event.getMessage()
                             .editMessageEmbeds(
                                     Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                             s, users, riotAccounts).build())
-                            .setActionRow(left, center, right)
+                            .setActionRow(left, center, right, refresh)
                             .queue();
                 }
                 break;
@@ -946,6 +1004,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 account_id = (String) accounts.keySet().toArray()[index];
                 s = RiotHandler.getSummonerByAccountId(account_id, RiotHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+                riotAccounts.add(account);
                 center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
                 
                 shard = s.getPlatform();
@@ -978,15 +1037,135 @@ public class EventButtonHandler extends ListenerAdapter {
                             Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                     s, users, riotAccounts).build());
                     action.setComponents(ActionRow.of(menu),
-                            ActionRow.of(left, center, right));
+                            ActionRow.of(left, center, right, refresh));
                     action.queue();
                 } catch (Exception e) {
                     event.getMessage()
                             .editMessageEmbeds(
                                     Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
                                             s, users, riotAccounts).build())
-                            .setActionRow(left, center, right)
+                            .setActionRow(left, center, right, refresh)
                             .queue();
+                }
+                break;
+            case "refresh":
+                String accountId = "";
+                String platform = "";
+                for (Button b : event.getMessage().getButtons()) {
+                    if (!b.getId().equals("rank-left") && !b.getId().equals("rank-right") && !b.getId().equals("rank-refresh")) {
+                        String[] parts = b.getId().split("-", 3);
+                        accountId = parts[2].substring(0, parts[2].indexOf("#"));
+                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
+                        break;
+                    }
+                }
+
+                s = RiotHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+                Map<String, Object> data = new LinkedHashMap<>();
+                data.put("platform", s.getPlatform());
+                data.put("accountid", accountId);                
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ACCOUNT, data);
+
+                data.remove("accountid");
+                data.put("id", s.getSummonerId());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ID, data);
+
+                data.remove("id");
+                data.put("puuid", s.getPUUID());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_PUUID, data);
+
+                data.put("platform", s.getPlatform().toRegionShard());
+                data.put("puuid", s.getPUUID());
+                DataCall.getCacheProvider().clear(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, data);
+
+                data.clear();
+                data.put("platform", s.getPlatform().toRegionShard());
+                data.put("id", s.getSummonerId());
+                DataCall.getCacheProvider().clear(URLEndpoint.V4_LEAGUE_ENTRY, data);
+
+
+                account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+                riotAccounts.add(account);
+
+                shard = s.getPlatform();
+                region = RiotHandler.getRegionFromServer(shard);
+
+                center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+                center = center.asDisabled();
+                if (user_id.isEmpty() || event.getMessage().getButtonById("rank-left") == null) {
+                    try {
+                        users = s.getCurrentGame().getParticipants();
+    
+                        ArrayList<SelectOption> options = new ArrayList<>();
+                        for (SpectatorParticipant p : users) {
+                            RiotAccount a = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, p.getPuuid());
+                            riotAccounts.add(a);
+                            Emoji icon = Emoji.fromCustom(
+                                    RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
+                                    Long.parseLong(CustomEmojiHandler.getEmojiId(RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())),
+                                    false);
+                            if (!p.getSummonerId().equals(s.getSummonerId()))
+                                options.add(SelectOption.of(
+                                        a.getName().toUpperCase(),
+                                        p.getSummonerId()).withEmoji(icon));
+                        }
+    
+                        StringSelectMenu menu = StringSelectMenu.create("rank-select")
+                                .setPlaceholder("Select a summoner")
+                                .setMaxValues(1)
+                                .addOptions(options)
+                                .build();
+    
+                        MessageEditAction action = event.getMessage().editMessageEmbeds(
+                                Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                                        s, users, riotAccounts).build());
+                        action.setComponents(ActionRow.of(menu),
+                                ActionRow.of(center, refresh));
+                        action.queue();
+                    } catch (Exception e) {
+                        event.getMessage()
+                                .editMessageEmbeds(
+                                        Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s, users, riotAccounts).build())
+                                .setActionRow(center, refresh)
+                                .queue();
+                    }
+                } else {
+                    try {
+                        users = s.getCurrentGame().getParticipants();
+    
+                        ArrayList<SelectOption> options = new ArrayList<>();
+                        for (SpectatorParticipant p : users) {
+                            RiotAccount a = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, p.getPuuid());
+                            riotAccounts.add(a);
+                            Emoji icon = Emoji.fromCustom(
+                                    RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(),
+                                    Long.parseLong(CustomEmojiHandler.getEmojiId(RiotHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())),
+                                    false);
+                            if (!p.getSummonerId().equals(s.getSummonerId()))
+                                options.add(SelectOption.of(
+                                        a.getName().toUpperCase(),
+                                        p.getSummonerId()).withEmoji(icon));
+                        }
+    
+                        StringSelectMenu menu = StringSelectMenu.create("rank-select")
+                                .setPlaceholder("Select a summoner")
+                                .setMaxValues(1)
+                                .addOptions(options)
+                                .build();
+    
+                        MessageEditAction action = event.getMessage().editMessageEmbeds(
+                                Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),
+                                        s, users, riotAccounts).build());
+                        action.setComponents(ActionRow.of(menu),
+                                ActionRow.of(left, center, right, refresh));
+                        action.queue();
+                    } catch (Exception e) {
+                        event.getMessage()
+                                .editMessageEmbeds(
+                                        Livegame.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s, users, riotAccounts).build())
+                                .setActionRow(left, center, right, refresh)
+                                .queue();
+                    }
                 }
                 break;
         }

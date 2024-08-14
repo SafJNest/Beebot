@@ -160,12 +160,31 @@ public class GraphLpSlash extends SlashCommand {
         return result.size() > 60;
     }
 
+    private static boolean isDaily(QueryResult result) {
+        long lowest = Long.MAX_VALUE, highest = Long.MIN_VALUE;
+        for (ResultRow row : result) {
+            lowest = Math.min(lowest, row.getAsEpochSecond("time_start"));
+            highest = Math.max(highest, row.getAsEpochSecond("time_start"));
+        }
+
+        return highest - lowest < (TimeConstant.DAY/1000);
+    }
+
     private static Set<String> getTimeLabels(QueryResult result) {
         Set<String> labels = new LinkedHashSet<>();
         if (splitMonths(result)) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/yyyy").withZone(ZoneId.of("GMT"));
             for (ResultRow row : result) {
-                Instant instant = Instant.ofEpochSecond(row.getAsEpochSecond("time"));
+                Instant instant = Instant.ofEpochSecond(row.getAsEpochSecond("time_start"));
+                ZonedDateTime gmtTime = instant.atZone(ZoneId.of("GMT"));
+                String formattedTime = formatter.format(gmtTime);
+                labels.add(formattedTime);
+            }
+        } 
+        else if (isDaily(result)) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("GMT"));
+            for (ResultRow row : result) {
+                Instant instant = Instant.ofEpochSecond(row.getAsEpochSecond("time_start"));
                 ZonedDateTime gmtTime = instant.atZone(ZoneId.of("GMT"));
                 String formattedTime = formatter.format(gmtTime);
                 labels.add(formattedTime);
@@ -174,7 +193,7 @@ public class GraphLpSlash extends SlashCommand {
         else {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d/M/yyyy").withZone(ZoneId.of("GMT"));
             for (ResultRow row : result) {
-                Instant instant = Instant.ofEpochSecond(row.getAsEpochSecond("time"));
+                Instant instant = Instant.ofEpochSecond(row.getAsEpochSecond("time_start"));
                 ZonedDateTime gmtTime = instant.atZone(ZoneId.of("GMT"));
                 String formattedTime = formatter.format(gmtTime);
                 labels.add(formattedTime);
@@ -191,13 +210,14 @@ public class GraphLpSlash extends SlashCommand {
             Map<Long, Integer> dailyMaxValues = new HashMap<>();
 
             for (ResultRow row : result) {
-                long t = SafJNest.firstDayOfMonth(row.getAsEpochSecond("time"));
+                long t = SafJNest.firstDayOfMonth(row.getAsEpochSecond("time_start"));
                 int cont = tierDivisionMapReformed.get(row.getAsInt("rank")) + Integer.parseInt(row.get("lp"));
                 dailyMaxValues.put(t, Math.max(dailyMaxValues.getOrDefault(t, 0), cont));
             }
 
             values.addAll(dailyMaxValues.values());
-        } else {
+        }
+        else {
             for (ResultRow row : result) {
                 int cont = tierDivisionMapReformed.get(row.getAsInt("rank")) + Integer.parseInt(row.get("lp"));
                 values.add(cont);

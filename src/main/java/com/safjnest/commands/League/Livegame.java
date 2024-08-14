@@ -54,9 +54,10 @@ public class Livegame extends Command {
     @Override
     protected void execute(CommandEvent event) {
 
-        Button left = Button.primary("rank-left", "<-");
-        Button right = Button.primary("rank-right", "->");
+        Button left = Button.primary("rank-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));;
+        Button right = Button.primary("rank-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));;
         Button center = Button.primary("rank-center", "f");
+        Button refresh = Button.primary("rank-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         User theGuy = null;
@@ -69,18 +70,18 @@ public class Livegame extends Command {
             event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
             return;
         }
+
         LeagueShard shard = s.getPlatform();
         RegionShard region = RiotHandler.getRegionFromServer(shard);
         
         List<SpectatorParticipant> users = null;
         List<RiotAccount> accounts = new ArrayList<>();
 
-        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
         accounts.add(account);
-        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
-            center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
-            center = center.asDisabled();
-        }
+
+        center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+        center = center.asDisabled();
 
         EmbedBuilder builder = null;
         try {
@@ -111,35 +112,38 @@ public class Livegame extends Command {
             if (theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1) {
                 MessageCreateAction action = event.getChannel().sendMessageEmbeds(builder.build());
                 action.addComponents(ActionRow.of(menu));
-                action.addComponents(ActionRow.of(left, center, right));
+                action.addComponents(ActionRow.of(left, center, right, refresh));
                 action.queue();
                 return;
             }
-            event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(menu).queue();
+
+            event.getChannel().sendMessageEmbeds(builder.build()).addComponents(ActionRow.of(menu), ActionRow.of(center, refresh)).queue();
+       
                 
         } catch (Exception e) {
             builder = createEmbed(event.getJDA(), event.getAuthor().getId(), s, users, accounts);
             if (theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1) {
-                event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right).queue();
+                event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right, refresh).queue();
                 return;
             }
-            event.getChannel().sendMessageEmbeds(builder.build()).queue();
+            event.getChannel().sendMessageEmbeds(builder.build()).setComponents(ActionRow.of(center, refresh)).queue();
         }
 
     }
 
     public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s, List<SpectatorParticipant> users, List<RiotAccount> accounts) {
         RiotAccount account = null;
+        RiotAccount myAccount = null;
         for(RiotAccount a : accounts){
             if(a.getPUUID().equals(s.getPUUID())){
-                account = a;
+                myAccount = a;
                 break;
             }
         }
         try {
 
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(account.getName() + "#" + account.getTag() + "'s Game");
+            builder.setTitle(myAccount.getName() + "#" + myAccount.getTag() + "'s Game");
             builder.setColor(Bot.getColor());
             builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             String blueSide = "";
@@ -182,7 +186,7 @@ public class Livegame extends Command {
 
         } catch (Exception e) {
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(account.getName() + "#" + account.getTag() + "'s Game");
+            builder.setTitle(myAccount.getName() + "#" + myAccount.getTag() + "'s Game");
             builder.setColor(Bot.getColor());
             builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
             builder.setDescription("This user is not in a game.");

@@ -39,8 +39,8 @@ public class Summoner extends Command {
 
     @Override
     protected void execute(CommandEvent event) {
-        Button left = Button.primary("lol-left", "<-");
-        Button right = Button.primary("lol-right", "->");
+        Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("lol-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
         Button center = Button.primary("lol-center", "f");
         Button refresh = Button.primary("lol-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 

@@ -6,18 +6,19 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.commands.League.Opgg;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.RiotHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
-import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
@@ -51,11 +52,10 @@ public class OpggSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        Button left = Button.primary("match-left", "<-");
-        Button right = Button.primary("match-right", "->");
+        Button left = Button.primary("match-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("match-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
         Button center = Button.primary("match-center", "f");
-
-        boolean searchByUser = false;
+        Button refresh = Button.primary("match-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
         
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         event.deferReply(false).queue();
@@ -65,20 +65,23 @@ public class OpggSlash extends SlashCommand {
             event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag or connect an account using ```/summoner connect```").queue();
             return;
         }
+
+        User theGuy = null;
+        if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
+        else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
         EmbedBuilder builder = Opgg.createEmbed(s, event.getJDA());
         
-        if(searchByUser && RiotHandler.getNumberOfProfile(event.getUser().getId()) > 1){
-            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
-            center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
-            center = center.asDisabled();
-            
+        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+        center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+        center = center.asDisabled();
+        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){     
             WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
-            action.setComponents(ActionRow.of(left, center, right)).queue();
+            action.setComponents(ActionRow.of(left, center, right, refresh)).queue();
             return;
         }
 
-        event.getHook().editOriginalEmbeds(builder.build()).queue();
+        event.getHook().editOriginalEmbeds(builder.build()).setComponents(ActionRow.of(center, refresh)).queue();
 	}
 
 

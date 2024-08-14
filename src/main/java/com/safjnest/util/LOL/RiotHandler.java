@@ -449,7 +449,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     public static OptionData getLeagueShardOptions(boolean required) {
         Choice[] choices = new Choice[LeagueShard.values().length];
         for (int i = 0; i < LeagueShard.values().length; i++) {
-            choices[i] = new Choice(LeagueShard.values()[i].commonName(), String.valueOf(i));
+            choices[i] = new Choice("#" + LeagueShard.values()[i].name(), String.valueOf(i));
         }
 
 
