@@ -8,7 +8,7 @@ import com.safjnest.commands.League.Summoner;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -37,7 +37,7 @@ public class SummonerInfoSlash extends SlashCommand {
 
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false),
-            RiotHandler.getLeagueShardOptions(),
+            LeagueHandler.getLeagueShardOptions(),
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );
         commandData.setThings(this);
@@ -58,7 +58,7 @@ public class SummonerInfoSlash extends SlashCommand {
         if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
         else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
-        s = RiotHandler.getSummonerByArgs(event);
+        s = LeagueHandler.getSummonerByArgs(event);
         if(s == null){
             event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag or connect an account using ```/summoner connect```").queue();
             return;
@@ -66,10 +66,10 @@ public class SummonerInfoSlash extends SlashCommand {
         
         EmbedBuilder builder = Summoner.createEmbed(event.getJDA(),event.getJDA().getSelfUser().getId(), s);
         
-        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
         center = Button.primary("lol-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
-        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
+        if(theGuy != null && LeagueHandler.getNumberOfProfile(theGuy.getId()) > 1){
 
             WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),s).build());
             action.setComponents(ActionRow.of(left, center, right, refresh)).queue();

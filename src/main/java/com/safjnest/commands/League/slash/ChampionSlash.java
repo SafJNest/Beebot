@@ -11,7 +11,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.LOL.MobalyticsHandler;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -76,7 +76,7 @@ public class ChampionSlash extends SlashCommand {
                 break;
         }
         ArrayList<String> championsName = new ArrayList<>();
-        for (String champion : RiotHandler.getChampions()) {
+        for (String champion : LeagueHandler.getChampions()) {
             championsName.add(champion);
         }
         champName = SafJNest.findSimilarWord(champName, championsName);
@@ -148,9 +148,9 @@ public class ChampionSlash extends SlashCommand {
         */
         msg = "";
         for(int i = 0; i < 4; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(runes[i]) + " " + RiotHandler.getRunesHandler().get(roots[0]).getRune(runes[i]).getName() + "\n";
+            msg += CustomEmojiHandler.getFormattedEmoji(runes[i]) + " " + LeagueHandler.getRunesHandler().get(roots[0]).getRune(runes[i]).getName() + "\n";
         }
-        String support = RiotHandler.getRunesHandler().get(roots[0]).getName();
+        String support = LeagueHandler.getRunesHandler().get(roots[0]).getName();
         eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
 
         /*
@@ -158,9 +158,9 @@ public class ChampionSlash extends SlashCommand {
         */
         msg = "";
         for(int i = 4; i < 6; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(runes[i]) + " " + RiotHandler.getRunesHandler().get(roots[1]).getRune(runes[i]).getName() + "\n";
+            msg += CustomEmojiHandler.getFormattedEmoji(runes[i]) + " " + LeagueHandler.getRunesHandler().get(roots[1]).getRune(runes[i]).getName() + "\n";
         }
-        support = RiotHandler.getRunesHandler().get(roots[1]).getName();
+        support = LeagueHandler.getRunesHandler().get(roots[1]).getName();
         eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
 
         /*
@@ -178,7 +178,7 @@ public class ChampionSlash extends SlashCommand {
         */
         msg = "";
         for(int i = 0; i < starter.length; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(starter[i]) + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(starter[i])).getName() + "\n";
+            msg += CustomEmojiHandler.getFormattedEmoji(starter[i]) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(starter[i])).getName() + "\n";
         }
         eb.addField("**Starter Items**", msg, true);
 
@@ -187,7 +187,7 @@ public class ChampionSlash extends SlashCommand {
         */
         msg = "";
         for(int i = 0; i < core.length; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(core[i])  + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(core[i])).getName() + "\n";
+            msg += CustomEmojiHandler.getFormattedEmoji(core[i])  + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(core[i])).getName() + "\n";
         }
         eb.addField("**Core Items**", msg, true);
 
@@ -197,7 +197,7 @@ public class ChampionSlash extends SlashCommand {
 
         msg = "";
         for(int i = 0; i < fullBuild.length; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(fullBuild[i])  + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(fullBuild[i])).getName() + "\n";
+            msg += CustomEmojiHandler.getFormattedEmoji(fullBuild[i])  + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(fullBuild[i])).getName() + "\n";
         }
 
         eb.addField("**Full Build**", msg, true);
@@ -207,13 +207,13 @@ public class ChampionSlash extends SlashCommand {
         */
         msg = "";
         for(int i = 0; i < 3; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(situational[i])  + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
+            msg += CustomEmojiHandler.getFormattedEmoji(situational[i])  + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
         }
         eb.addField("**Situational Items**", msg, true);
         if(situational.length > 6){
             msg = "";
             for(int i = 3; i < 6; i++){
-                msg += CustomEmojiHandler.getFormattedEmoji(situational[i])  + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
+                msg += CustomEmojiHandler.getFormattedEmoji(situational[i])  + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
             }   
             eb.addField(" ", msg, true);
         }
@@ -223,8 +223,8 @@ public class ChampionSlash extends SlashCommand {
         eb.setColor(Bot.getColor());
         
         
-        champName = RiotHandler.transposeChampionNameForDataDragon(champName);
-        eb.setThumbnail(RiotHandler.getChampionProfilePic(champName));
+        champName = LeagueHandler.transposeChampionNameForDataDragon(champName);
+        eb.setThumbnail(LeagueHandler.getChampionProfilePic(champName));
         eb.setFooter("We analyze thousands of games (Platinum+) everyday to suggest you the best builds!", "https://cdn.discordapp.com/emojis/776346468700389436.png"); 
 
         event.getHook().editOriginalEmbeds(eb.build()).queue();

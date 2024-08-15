@@ -8,7 +8,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -25,7 +25,7 @@ public class RegionSlash extends SlashCommand {
         this.category = commandData.getCategory();
 
         this.options = Arrays.asList(
-            RiotHandler.getLeagueShardOptions(true));
+            LeagueHandler.getLeagueShardOptions(true));
         
         commandData.setThings(this);
     }

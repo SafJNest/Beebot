@@ -18,7 +18,7 @@ import com.safjnest.sql.ResultRow;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.DateHandler;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -73,7 +73,7 @@ public class Opgg extends Command {
         if(event.getArgs().equals("")) theGuy = event.getAuthor();    
         else if(event.getMessage().getMentions().getMembers().size() != 0) theGuy = event.getMessage().getMentions().getUsers().get(0);
 
-        s = RiotHandler.getSummonerByArgs(event);
+        s = LeagueHandler.getSummonerByArgs(event);
         if(s == null){
             event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
             return;
@@ -82,11 +82,11 @@ public class Opgg extends Command {
         
         EmbedBuilder builder = createEmbed(s, event.getJDA());
         
-        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
         center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
-        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
+        if(theGuy != null && LeagueHandler.getNumberOfProfile(theGuy.getId()) > 1){
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right, refresh).queue();
             return;
         }
@@ -99,13 +99,13 @@ public class Opgg extends Command {
     
     public static EmbedBuilder createEmbed(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s , JDA jda){
         LeagueShard shard = s.getPlatform();
-        RegionShard region = RiotHandler.getRegionFromServer(shard);
+        RegionShard region = shard.toRegionShard();
 
-        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(region, s.getPUUID());
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
         EmbedBuilder eb = new EmbedBuilder();
         MatchParticipant me = null;
         LOLMatch match = null;
-        R4J r4j = RiotHandler.getRiotApi();
+        R4J r4j = LeagueHandler.getRiotApi();
 
         eb.setAuthor(account.getName() + "#" + account.getTag());
         eb.setColor(Bot.getColor());
@@ -281,7 +281,7 @@ public class Opgg extends Command {
     private static String getFormattedRunes(MatchParticipant me, int row) {
         String prova = "";
         PerkStyle perkS = me.getPerks().getPerkStyles().get(row);
-        prova += CustomEmojiHandler.getFormattedEmoji(RiotHandler.getFatherRune(perkS.getSelections().get(0).getPerk()));
+        prova += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getFatherRune(perkS.getSelections().get(0).getPerk()));
         for (PerkSelection perk : perkS.getSelections()) {
             prova += CustomEmojiHandler.getFormattedEmoji(perk.getPerk());
         }

@@ -12,7 +12,7 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.LOL.AugmentData;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 import com.safjnest.util.Twitch.TwitchClient;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
@@ -106,7 +106,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     
     private ArrayList<Choice> champion(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
-        List<String> champions = Arrays.asList(RiotHandler.getChampions());
+        List<String> champions = Arrays.asList(LeagueHandler.getChampions());
 
         if (isFocused) {
             int max = 0;
@@ -128,7 +128,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private ArrayList<Choice> augment(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
-        List<AugmentData> augments = RiotHandler.getAugments();
+        List<AugmentData> augments = LeagueHandler.getAugments();
 
         if (isFocused) {
             int max = 0;
@@ -350,7 +350,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
-        R4J r4j = RiotHandler.getRiotApi();
+        R4J r4j = LeagueHandler.getRiotApi();
 
         if (accounts == null || accounts.isEmpty()) {
             return choices;
@@ -361,7 +361,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             String account_id = k;
 
             LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(account_id))];
-            Summoner summoner = RiotHandler.getSummonerByAccountId(account_id, shard);
+            Summoner summoner = LeagueHandler.getSummonerByAccountId(account_id, shard);
             RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
             accountNames.put(account_id, riotAccount.getName() + "#" + riotAccount.getTag());
         }
@@ -404,7 +404,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> item(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         HashMap<String, String> items = new HashMap<>();
-        for (Item item : RiotHandler.getRiotApi().getDDragonAPI().getItems().values()) {
+        for (Item item : LeagueHandler.getRiotApi().getDDragonAPI().getItems().values()) {
             // 30 is arena, so the item is different with the same name (riot?)          
             if (!item.getMaps().get("30")) items.put(item.getName().replaceAll("<.+?>", ""), item.getId() + ""); 
             else items.put(item.getName().replaceAll("<.+?>", "") + " (ARENA)", item.getId() + "");

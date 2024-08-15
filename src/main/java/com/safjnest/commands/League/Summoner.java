@@ -8,13 +8,12 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
@@ -53,7 +52,7 @@ public class Summoner extends Command {
         else if (event.getMessage().getMentions().getMembers().size() != 0)
             theGuy = event.getMessage().getMentions().getUsers().get(0);
 
-        s = RiotHandler.getSummonerByArgs(event);
+        s = LeagueHandler.getSummonerByArgs(event);
         if (s == null) {
             event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
             return;
@@ -61,12 +60,11 @@ public class Summoner extends Command {
 
         EmbedBuilder builder = createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s);
 
-        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE,
-                s.getPUUID());
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
         center = Button.primary("lol-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
-        if (theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1) {
+        if (theGuy != null && LeagueHandler.getNumberOfProfile(theGuy.getId()) > 1) {
             event.getChannel().sendMessageEmbeds(builder.build()).addActionRow(left, center, right, refresh).queue();
             return;
         }
@@ -75,14 +73,14 @@ public class Summoner extends Command {
     }
 
     public static EmbedBuilder createEmbed(JDA jda, String id, no.stelar7.api.r4j.pojo.lol.summoner.Summoner s){
-        RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
         
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(account.getName() + "#" + account.getTag());
         builder.setColor(Bot.getColor());
-        builder.setThumbnail(RiotHandler.getSummonerProfilePic(s));
+        builder.setThumbnail(LeagueHandler.getSummonerProfilePic(s));
 
-        String userId = DatabaseHandler.getUserIdByLOLAccountId(s.getAccountId());
+        String userId = DatabaseHandler.getUserIdByLOLAccountId(s.getAccountId(), s.getPlatform());
 
         if(userId != null){
             User theGuy = jda.retrieveUserById(userId).complete();
@@ -98,14 +96,14 @@ public class Summoner extends Command {
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
         }
         
-        builder.addField("Solo/duo Queue", RiotHandler.getSoloQStats(jda, s), true);
-        builder.addField("Flex Queue", RiotHandler.getFlexStats(jda, s), true);
+        builder.addField("Solo/duo Queue", LeagueHandler.getSoloQStats(s), true);
+        builder.addField("Flex Queue", LeagueHandler.getFlexStats(s), true);
         String masteryString = "";
         for(int i = 1; i < 4; i++)
-            masteryString += RiotHandler.getMastery(jda, s, i) + "\n";
+            masteryString += LeagueHandler.getMastery(s, i) + "\n";
         
         builder.addField("Top 3 Champs", masteryString, false); 
-        builder.addField("Activity", RiotHandler.getActivity(jda, s), true);
+        builder.addField("Activity", LeagueHandler.getActivity(s), true);
 
 
 

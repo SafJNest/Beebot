@@ -10,7 +10,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.LOL.AugmentData;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
@@ -40,7 +40,7 @@ public class Augment extends Command {
 	protected void execute(CommandEvent event) {
         String args = event.getArgs();
 
-        ArrayList<AugmentData> augments = RiotHandler.getAugments();
+        ArrayList<AugmentData> augments = LeagueHandler.getAugments();
         ArrayList<String> augmentNames = new ArrayList<>();
 
         for(AugmentData a : augments){

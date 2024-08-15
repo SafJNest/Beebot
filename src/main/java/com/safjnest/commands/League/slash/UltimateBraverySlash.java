@@ -8,7 +8,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.commands.League.UltimateBravery;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -53,11 +53,11 @@ public class UltimateBraverySlash extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
         
-        String[] champions = RiotHandler.getRiotApi().getDDragonAPI().getChampions().values().stream().map(champ -> String.valueOf(champ.getId())).toArray(String[]::new);
+        String[] champions = LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values().stream().map(champ -> String.valueOf(champ.getId())).toArray(String[]::new);
         String[] roles = {"0", "1", "2", "3", "4"};
 
         if (event.getOption("champion") != null) {
-            StaticChampion champ = RiotHandler.getChampionByName(event.getOption("champion").getAsString());
+            StaticChampion champ = LeagueHandler.getChampionByName(event.getOption("champion").getAsString());
             champions = new String[]{String.valueOf(champ.getId())};
         }
 
@@ -65,7 +65,7 @@ public class UltimateBraverySlash extends SlashCommand {
             roles = new String[]{event.getOption("lane").getAsString()};
         }
 
-        String json = RiotHandler.getBraveryBuildJSON(20, roles, champions);
+        String json = LeagueHandler.getBraveryBuildJSON(20, roles, champions);
         EmbedBuilder embed = UltimateBravery.createEmbed(json);
         event.getHook().sendMessageEmbeds(embed.build()).queue();
 	}

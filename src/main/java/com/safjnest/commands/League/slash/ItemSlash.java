@@ -13,7 +13,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -42,13 +42,13 @@ public class ItemSlash extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         int itemId = event.getOption("item").getAsInt();
 
-        Item item = RiotHandler.getRiotApi().getDDragonAPI().getItem(itemId);
+        Item item = LeagueHandler.getRiotApi().getDDragonAPI().getItem(itemId);
 
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setColor(Bot.getColor());
         eb.setTitle(item.getName());
-        String url = "http://ddragon.leagueoflegends.com/cdn/" + RiotHandler.getVersion() +"/img/item/" + item.getId() + ".png";
+        String url = "http://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.getVersion() +"/img/item/" + item.getId() + ".png";
         eb.setThumbnail(url);
 
         eb.addField("Gold Cost", CustomEmojiHandler.getFormattedEmoji("golds") + " " + String.valueOf(item.getGold().getTotal()), true);

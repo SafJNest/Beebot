@@ -39,7 +39,7 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TableHandler;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 import com.safjnest.util.Twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -218,7 +218,7 @@ public class Test extends Command{
             case "getlolitems":
                 System.out.println("eee");
                 String ss = "";
-                for (Item item : RiotHandler.getRiotApi().getDDragonAPI().getItems().values()) {
+                for (Item item : LeagueHandler.getRiotApi().getDDragonAPI().getItems().values()) {
                     System.out.println(item.getId());
                     if (item != null)
                         ss += CustomEmojiHandler.getFormattedEmoji(item.getId()) + "-";
@@ -519,8 +519,8 @@ public class Test extends Command{
 
                 break;
             case "lolversion":
-                RiotHandler.setVersion(args[1]);
-                e.reply("new version: " + RiotHandler.getVersion());
+                LeagueHandler.setVersion(args[1]);
+                e.reply("new version: " + LeagueHandler.getVersion());
                 break;
             case "sql":                
                 HashMap<Long, List<String>> map = DatabaseHandler.getQueryAnalytics();      
@@ -645,7 +645,7 @@ public class Test extends Command{
                     String game_id = "EUW1_"+row.get("game_id");
                     String account_id = row.get("account_id");
 
-                    LOLMatch match = RiotHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, game_id);
+                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, game_id);
                     if (match == null) {
                         System.out.println("Match not found");
                         continue;
@@ -656,7 +656,7 @@ public class Test extends Command{
                     int championId = 0;
 
                     for (MatchParticipant p : match.getParticipants()) {
-                        Summoner summoner = RiotHandler.getSummonerBySummonerId(p.getSummonerId(), LeagueShard.EUW1);
+                        Summoner summoner = LeagueHandler.getSummonerBySummonerId(p.getSummonerId(), LeagueShard.EUW1);
                         if (summoner.getAccountId().equals(account_id)) {   
                             championId = p.getChampionId();
                             break;
@@ -674,7 +674,7 @@ public class Test extends Command{
                     String game_id = "NA1_"+row.get("game_id");
                     String account_id = row.get("account_id");
 
-                    LOLMatch match = RiotHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(RegionShard.AMERICAS, game_id);
+                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(RegionShard.AMERICAS, game_id);
                     if (match == null) {
                         System.out.println("Match not found");
                         continue;
@@ -685,7 +685,7 @@ public class Test extends Command{
                     int championId = 0;
 
                     for (MatchParticipant p : match.getParticipants()) {
-                        Summoner summoner = RiotHandler.getSummonerBySummonerId(p.getSummonerId(), LeagueShard.NA1);
+                        Summoner summoner = LeagueHandler.getSummonerBySummonerId(p.getSummonerId(), LeagueShard.NA1);
                         if (summoner.getAccountId().equals(account_id)) {   
                             championId = p.getChampionId();
                             break;
@@ -703,12 +703,12 @@ public class Test extends Command{
                 for(ResultRow row : res){
                     String account_id = row.get("account_id");
                     int league_shard = row.getAsInt("league_shard");
-                    Summoner summoner = RiotHandler.getSummonerByAccountId(account_id, LeagueShard.values()[league_shard]);
+                    Summoner summoner = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.values()[league_shard]);
                     if (summoner == null) {
                         System.out.println("Summoner not found");
                         continue;
                     }
-                    RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(LeagueShard.values()[league_shard].toRegionShard(), summoner.getPUUID());
+                    RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
                     if (account == null) {
                         System.out.println("Account not found");
                         continue;
@@ -721,7 +721,7 @@ public class Test extends Command{
             case "match":
                 String match_id = "5079311964" ;
                 String shard = "8";
-                LOLMatch match = RiotHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[Integer.valueOf(shard)].toRegionShard(), match_id);
+                LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[Integer.valueOf(shard)].toRegionShard(), match_id);
                 if (match == null) {
                     e.reply("Match not found");
                     return;

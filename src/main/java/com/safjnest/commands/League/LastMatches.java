@@ -12,7 +12,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -54,14 +54,14 @@ public class LastMatches extends Command {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         
         
-        s = RiotHandler.getSummonerByArgs(event);
+        s = LeagueHandler.getSummonerByArgs(event);
         if(s == null){
             event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
             return;
         }
 
         LeagueShard shard = s.getPlatform();
-        RegionShard region = RiotHandler.getRegionFromServer(shard);
+        RegionShard region = shard.toRegionShard();
 
         int gamesNumber = gamesToAnalyze;
         try {

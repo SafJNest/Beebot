@@ -496,8 +496,8 @@ public class DatabaseHandler {
         return safJQuery(query);
     }
 
-    public static String getUserIdByLOLAccountId(String account_id) {
-        return fetchJRow("SELECT user_id FROM summoner WHERE account_id = '" + account_id + "';").get("user_id");
+    public static String getUserIdByLOLAccountId(String account_id, LeagueShard shard) {
+        return fetchJRow("SELECT user_id FROM summoner WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
     }
 
     

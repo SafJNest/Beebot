@@ -18,7 +18,7 @@ import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 import com.safjnest.util.Twitch.TwitchClient;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
@@ -114,7 +114,7 @@ public class PrintCache extends Command {
         String header = "**Tier god information about the insane beebots cache**```" + "Total Streamer: " + streamers.size() + " / " + streamers.getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + RiotHandler.getVersion() + "```";
+            + "League Version: " + LeagueHandler.getVersion() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -166,7 +166,7 @@ public class PrintCache extends Command {
             + "Total BlackList: " + totalBlackList + "\n\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + RiotHandler.getVersion() + "```";
+            + "League Version: " + LeagueHandler.getVersion() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -191,8 +191,8 @@ public class PrintCache extends Command {
             }
             else {
                 for(String account : lolAccounts.keySet()) {
-                    Summoner s = RiotHandler.getSummonerByAccountId(account, LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))]);
-                    RiotAccount riotAccount = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))].toRegionShard(), s.getPUUID());
+                    Summoner s = LeagueHandler.getSummonerByAccountId(account, LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))]);
+                    RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(s);
                     lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
                 }
                 lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3) + "\n";
@@ -214,7 +214,7 @@ public class PrintCache extends Command {
             + "Total Users: " + users.size() + " / " + users.getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + RiotHandler.getVersion() + "```";
+            + "League Version: " + LeagueHandler.getVersion() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -252,7 +252,7 @@ public class PrintCache extends Command {
         + "Total Sounds: " + SoundHandler.getSoundCache().size() + " / " + SoundHandler.getSoundCache().getMaxSize() + "\n"
         + "Other bot information\n"
         + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-        + "League Version: " + RiotHandler.getVersion() + "```";
+        + "League Version: " + LeagueHandler.getVersion() + "```";
 
         cache.add(0, header);
 

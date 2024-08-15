@@ -13,7 +13,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.ExperienceSystem;
 import com.safjnest.util.PermissionHandler;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -72,8 +72,8 @@ public class MemberInfo extends Command{
         }
         else {
             for(String account : lolAccounts.keySet()) {
-                Summoner s = RiotHandler.getSummonerByAccountId(account, LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))]);
-                RiotAccount riotAccount = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))].toRegionShard(), s.getPUUID());
+                Summoner s = LeagueHandler.getSummonerByAccountId(account, LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))]);
+                RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(s);
                 lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
             }
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);

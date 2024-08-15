@@ -28,7 +28,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import io.quickchart.QuickChart;
 
@@ -40,7 +40,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
-import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -61,7 +60,7 @@ public class GraphLpSlash extends SlashCommand {
 
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false),
-            RiotHandler.getLeagueShardOptions(),
+            LeagueHandler.getLeagueShardOptions(),
             new OptionData(OptionType.STRING, "period", "Period of time to get the LP from", false)
                 .addChoice("Today", "today")
                 .addChoice("Week", "week")
@@ -118,7 +117,7 @@ public class GraphLpSlash extends SlashCommand {
         if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
         else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
-        s = RiotHandler.getSummonerByArgs(event);
+        s = LeagueHandler.getSummonerByArgs(event);
         if(s == null){
             event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag or connect an account using ```/summoner connect```").queue();
             return;
@@ -126,8 +125,8 @@ public class GraphLpSlash extends SlashCommand {
         
         EmbedBuilder builder = createEmbed(s, timeStart, timeEnd);
         
-        if(theGuy != null && RiotHandler.getNumberOfProfile(theGuy.getId()) > 1){
-            RiotAccount account = RiotHandler.getRiotApi().getAccountAPI().getAccountByPUUID(RegionShard.EUROPE, s.getPUUID());
+        if(theGuy != null && LeagueHandler.getNumberOfProfile(theGuy.getId()) > 1){
+            RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
             center = Button.primary("lol-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
 
@@ -232,7 +231,7 @@ public class GraphLpSlash extends SlashCommand {
         
         if (result.isEmpty()) return null;
 
-        HashMap<Integer, Integer> tierDivisionList = RiotHandler.getTierDivision();
+        HashMap<Integer, Integer> tierDivisionList = LeagueHandler.getTierDivision();
 
         Set<String> labels = getTimeLabels(result);
         List<Integer> values = getValues(result, tierDivisionList);

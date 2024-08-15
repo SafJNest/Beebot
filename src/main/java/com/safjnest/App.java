@@ -15,7 +15,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 import com.safjnest.util.Twitch.TwitchClient;
 import com.safjnest.util.log.BotLogger;
 
@@ -101,7 +101,7 @@ public class App {
             BotLogger.error("[R4J] Annodam Not Successful!");
         }
         
-        new RiotHandler(riotApi, settingsLoader.getLOLVersion());
+        new LeagueHandler(riotApi, settingsLoader.getLOLVersion());
 
         BotLogger.info("[CANNUCCIA] " + DatabaseHandler.getCannuccia());
         BotLogger.info("[EPRIA] ID " + PermissionHandler.getEpria());

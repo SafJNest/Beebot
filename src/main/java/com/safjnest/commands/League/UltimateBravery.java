@@ -10,7 +10,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
@@ -44,7 +44,7 @@ public class UltimateBravery extends Command {
 	@Override
 	protected void execute(CommandEvent event) {
         
-        String json = RiotHandler.getBraveryBuildJSON();
+        String json = LeagueHandler.getBraveryBuildJSON();
         EmbedBuilder embed = createEmbed(json);
         event.reply(embed.build());
     
@@ -117,7 +117,7 @@ public class UltimateBravery extends Command {
 
 
             JSONObject runes = (JSONObject) data.get("runes");
-            runePrimaryStyle = RiotHandler.convertRuneRootToId((String) runes.get("primaryStyle"));
+            runePrimaryStyle = LeagueHandler.convertRuneRootToId((String) runes.get("primaryStyle"));
 
             JSONObject primary = (JSONObject) runes.get("primary");
             int dioporco = 0;
@@ -126,7 +126,7 @@ public class UltimateBravery extends Command {
                 dioporco++;
             }
 
-            runeSecondaryStyle = RiotHandler.convertRuneRootToId((String) runes.get("secondaryStyle"));
+            runeSecondaryStyle = LeagueHandler.convertRuneRootToId((String) runes.get("secondaryStyle"));
             JSONObject secondary = (JSONObject) runes.get("secondary");
             dioporco = 0;
             for (Object k : secondary.keySet()) {
@@ -137,7 +137,7 @@ public class UltimateBravery extends Command {
             JSONObject spells = (JSONObject) data.get("summonerSpells");
             dioporco = 0;
             for (Object k : spells.keySet()) {
-                summonerSpells[dioporco] = RiotHandler.convertSpellToId((String) k);
+                summonerSpells[dioporco] = LeagueHandler.convertSpellToId((String) k);
                 dioporco++;
             }
 
@@ -161,11 +161,11 @@ public class UltimateBravery extends Command {
                     break;
             }
             
-            StaticChampion champ = RiotHandler.getChampionByName(champion);
+            StaticChampion champ = LeagueHandler.getChampionByName(champion);
             EmbedBuilder eb = new EmbedBuilder();
             eb.setColor(Bot.getColor());
-            champion = RiotHandler.transposeChampionNameForDataDragon(champion);
-            eb.setThumbnail(RiotHandler.getChampionProfilePic(champion));
+            champion = LeagueHandler.transposeChampionNameForDataDragon(champion);
+            eb.setThumbnail(LeagueHandler.getChampionProfilePic(champion));
 
             eb.setTitle(":skull: Ultimate Bravery Build :skull:", "https://www.ultimate-bravery.net/Classic?s=" + seedID);
             eb.addField("**Title**", title, true);
@@ -178,29 +178,29 @@ public class UltimateBravery extends Command {
             
             String buildString = "";
             for (int i = 0; i < 6; i++) {
-                if (startingItems[i] != null && RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(startingItems[i])) != null) buildString += CustomEmojiHandler.getFormattedEmoji(startingItems[i]) + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(startingItems[i])).getName() + "\n";
+                if (startingItems[i] != null && LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(startingItems[i])) != null) buildString += CustomEmojiHandler.getFormattedEmoji(startingItems[i]) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(startingItems[i])).getName() + "\n";
             }
             eb.addField("**Starting Items**", buildString, true);
 
             String runeString = "";
             for (String r : runePrimary) {
                 r = r.split("\\.", 2)[0];
-                runeString += CustomEmojiHandler.getFormattedEmoji(r) + " " + RiotHandler.getRunesHandler().get(runePrimaryStyle).getRune(r).getName() + "\n";
+                runeString += CustomEmojiHandler.getFormattedEmoji(r) + " " + LeagueHandler.getRunesHandler().get(runePrimaryStyle).getRune(r).getName() + "\n";
             }
-            String runeRoot = RiotHandler.getRunesHandler().get(runePrimaryStyle).getName();
+            String runeRoot = LeagueHandler.getRunesHandler().get(runePrimaryStyle).getName();
             eb.addField(CustomEmojiHandler.getFormattedEmoji(runeRoot) + " " + runeRoot, runeString, true);
 
             runeString = "";
             for (String r : runeSecondary) {
                 r = r.split("\\.", 2)[0];
-                runeString += CustomEmojiHandler.getFormattedEmoji(r) + " " + RiotHandler.getRunesHandler().get(runeSecondaryStyle).getRune(r).getName() + "\n";
+                runeString += CustomEmojiHandler.getFormattedEmoji(r) + " " + LeagueHandler.getRunesHandler().get(runeSecondaryStyle).getRune(r).getName() + "\n";
             }
-            runeRoot = RiotHandler.getRunesHandler().get(runeSecondaryStyle).getName();
+            runeRoot = LeagueHandler.getRunesHandler().get(runeSecondaryStyle).getName();
             eb.addField(CustomEmojiHandler.getFormattedEmoji(runeRoot) + " " + runeRoot, runeString, true);
 
             buildString = "";
             for (int i = 0; i < 6; i++) {
-                if (fullBuild[i] != null) buildString += CustomEmojiHandler.getFormattedEmoji(fullBuild[i]) + " " + RiotHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(fullBuild[i])).getName() + "\n";
+                if (fullBuild[i] != null) buildString += CustomEmojiHandler.getFormattedEmoji(fullBuild[i]) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(fullBuild[i])).getName() + "\n";
             }
             eb.addField("**Full Build**", buildString, true);
             return eb;

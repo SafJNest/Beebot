@@ -26,7 +26,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 public class LPTracker {
 
-    private static R4J api = RiotHandler.getRiotApi();
+    private static R4J api = LeagueHandler.getRiotApi();
 
 	public LPTracker() {
 
@@ -46,17 +46,16 @@ public class LPTracker {
 	}
 
 	private void trackSummoners() {
-        BotLogger.info("[LPTracker] Starting daily task");
 		QueryResult result = DatabaseHandler.getRegistredLolAccount();
 
         for (ResultRow account : result) {
-            Summoner summoner = RiotHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
+            Summoner summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
             if (summoner != null) analyzeMatchHistory(summoner, account);
         }
 	}
 
     private void analyzeMatchHistory(Summoner summoner, ResultRow dataGame) {
-        BotLogger.trace("[LPTracker] Analyzing match history for " + RiotHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
+        BotLogger.trace("[LPTracker] Analyzing match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         long now = System.currentTimeMillis();
 
         Map<String, Object> data = new LinkedHashMap<>();

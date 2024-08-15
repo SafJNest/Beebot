@@ -13,7 +13,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.App;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -46,7 +46,7 @@ public class LastMatchesSlash extends SlashCommand {
                 .setMinValue(1)
                 .setMaxValue(20),
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false),
-            RiotHandler.getLeagueShardOptions(),
+            LeagueHandler.getLeagueShardOptions(),
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );
         this.r = App.getRiotApi();
@@ -64,14 +64,14 @@ public class LastMatchesSlash extends SlashCommand {
         int gamesToAnalyze = event.getOption("games").getAsInt();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         
-        s = RiotHandler.getSummonerByArgs(event);
+        s = LeagueHandler.getSummonerByArgs(event);
         if(s == null){
             event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag or connect an account using ```/summoner connect```").queue();
             return;
         }
 
         LeagueShard shard = s.getPlatform();
-        RegionShard region = RiotHandler.getRegionFromServer(shard);
+        RegionShard region = shard.toRegionShard();
 
         int gamesNumber = gamesToAnalyze;
         try {

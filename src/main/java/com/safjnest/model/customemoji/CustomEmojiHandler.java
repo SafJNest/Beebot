@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.core.Bot;
-import com.safjnest.util.LOL.RiotHandler;
+import com.safjnest.util.LOL.LeagueHandler;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -45,7 +45,7 @@ public class CustomEmojiHandler {
         if(name.equals("2201_")) {
             name = "4_";
         }
-        name = RiotHandler.transposeChampionNameForDataDragon(name);
+        name = LeagueHandler.transposeChampionNameForDataDragon(name);
         CustomEmoji em = emoji.get(name.toLowerCase());     
         return em != null ? emoji.get(name.toLowerCase()).toString() : String.valueOf(name);
     }
@@ -55,7 +55,7 @@ public class CustomEmojiHandler {
             name = "4_";
         }
 
-        name = RiotHandler.transposeChampionNameForDataDragon(name);
+        name = LeagueHandler.transposeChampionNameForDataDragon(name);
         return emoji.get(name.toLowerCase()).getObject();
        
     }
@@ -69,7 +69,7 @@ public class CustomEmojiHandler {
     }
 
     public static String getEmojiId(String name){
-        name = RiotHandler.transposeChampionNameForDataDragon(name);
+        name = LeagueHandler.transposeChampionNameForDataDragon(name);
         CustomEmoji em = emoji.get(name.toLowerCase());
         return em != null ? em.getId() : name;
     }
