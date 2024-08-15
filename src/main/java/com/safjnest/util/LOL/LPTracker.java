@@ -1,8 +1,6 @@
 package com.safjnest.util.LOL;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -13,7 +11,6 @@ import com.safjnest.sql.ResultRow;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
 
-import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -58,16 +55,7 @@ public class LPTracker {
         BotLogger.trace("[LPTracker] Analyzing match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         long now = System.currentTimeMillis();
 
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("platform", summoner.getPlatform().toRegionShard());
-        data.put("puuid", summoner.getPUUID());
-        data.put("queue", GameQueueType.TEAM_BUILDER_RANKED_SOLO);
-        data.put("type", "null");
-        data.put("start", "null");
-        data.put("count", 20);
-        data.put("startTime", "null");
-        data.put("endTime", "null");
-        DataCall.getCacheProvider().clear(URLEndpoint.V5_MATCHLIST, data);
+        LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         
         try { Thread.sleep(500); } 
         catch (InterruptedException e) {e.printStackTrace();}
@@ -91,11 +79,7 @@ public class LPTracker {
 
         if (match.getGameId() == dataGame.getAsLong("game_id")) return;
 
-
-        data = new LinkedHashMap<>();
-        data.put("platform", summoner.getPlatform());
-        data.put("id", summoner.getSummonerId());
-        DataCall.getCacheProvider().clear(URLEndpoint.V4_LEAGUE_ENTRY, data);
+        LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
         
         try { Thread.sleep(500); } 
         catch (InterruptedException e) { }
@@ -115,7 +99,6 @@ public class LPTracker {
         }
         else gain = lp - dataGame.getAsInt("lp");
         
-        //String account_id, long game_id, boolean win, int rank, int lp, int gain, long time, String version
         DatabaseHandler.setSummonerData(summoner.getAccountId(), match.getGameId(), summoner.getPlatform(), win, rank, lp, gain, champion, match.getGameCreation(), match.getGameEndTimestamp(), match.getGameVersion());
 
     }

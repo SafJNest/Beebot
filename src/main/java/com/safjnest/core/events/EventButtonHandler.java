@@ -3,9 +3,7 @@ package com.safjnest.core.events;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
@@ -60,8 +58,6 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.requests.restaction.MessageEditAction;
 import net.dv8tion.jda.api.utils.FileUpload;
-import no.stelar7.api.r4j.basic.calling.DataCall;
-import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
@@ -702,27 +698,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
 
-                Map<String, Object> data = new LinkedHashMap<>();
-                data.put("platform", s.getPlatform());
-                data.put("accountid", accountId);                
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ACCOUNT, data);
-
-                data.remove("accountid");
-                data.put("id", s.getSummonerId());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ID, data);
-
-                data.remove("id");
-                data.put("puuid", s.getPUUID());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_PUUID, data);
-
-                data.put("platform", s.getPlatform().toRegionShard());
-                data.put("puuid", s.getPUUID());
-                DataCall.getCacheProvider().clear(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, data);
-
-                data.clear();
-                data.put("platform", s.getPlatform().toRegionShard());
-                data.put("id", s.getSummonerId());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_LEAGUE_ENTRY, data);
+                LeagueHandler.clearSummonerCache(s);
 
 
                 account = LeagueHandler.getRiotAccountFromSummoner(s);
@@ -845,27 +821,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
 
-                Map<String, Object> data = new LinkedHashMap<>();
-                data.put("platform", s.getPlatform());
-                data.put("accountid", accountId);                
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ACCOUNT, data);
-
-                data.remove("accountid");
-                data.put("id", s.getSummonerId());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ID, data);
-
-                data.remove("id");
-                data.put("puuid", s.getPUUID());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_PUUID, data);
-
-                data.put("platform", s.getPlatform().toRegionShard());
-                data.put("puuid", s.getPUUID());
-                DataCall.getCacheProvider().clear(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, data);
-
-                data.clear();
-                data.put("platform", s.getPlatform().toRegionShard());
-                data.put("id", s.getSummonerId());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_LEAGUE_ENTRY, data);
+                LeagueHandler.clearSummonerCache(s);
 
 
                 account = LeagueHandler.getRiotAccountFromSummoner(s);
@@ -1017,28 +973,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 }
 
                 s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
-                Map<String, Object> data = new LinkedHashMap<>();
-                data.put("platform", s.getPlatform());
-                data.put("accountid", accountId);                
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ACCOUNT, data);
 
-                data.remove("accountid");
-                data.put("id", s.getSummonerId());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_ID, data);
-
-                data.remove("id");
-                data.put("puuid", s.getPUUID());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_SUMMONER_BY_PUUID, data);
-
-                data.put("platform", s.getPlatform().toRegionShard());
-                data.put("puuid", s.getPUUID());
-                DataCall.getCacheProvider().clear(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, data);
-
-                data.clear();
-                data.put("platform", s.getPlatform().toRegionShard());
-                data.put("id", s.getSummonerId());
-                DataCall.getCacheProvider().clear(URLEndpoint.V4_LEAGUE_ENTRY, data);
-
+                LeagueHandler.clearSummonerCache(s);
 
                 account = LeagueHandler.getRiotAccountFromSummoner(s);
                 riotAccounts.add(account);

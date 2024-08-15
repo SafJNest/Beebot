@@ -13,8 +13,10 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -35,7 +37,10 @@ import com.safjnest.util.LOL.Runes.Rune;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.basic.calling.DataCall;
+import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
@@ -651,6 +656,66 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
         return champ;
         
+    }
+
+//   ▄████████    ▄████████  ▄████████    ▄█    █▄       ▄████████ 
+//  ███    ███   ███    ███ ███    ███   ███    ███     ███    ███ 
+//  ███    █▀    ███    ███ ███    █▀    ███    ███     ███    █▀  
+//  ███          ███    ███ ███         ▄███▄▄▄▄███▄▄  ▄███▄▄▄     
+//  ███        ▀███████████ ███        ▀▀███▀▀▀▀███▀  ▀▀███▀▀▀     
+//  ███    █▄    ███    ███ ███    █▄    ███    ███     ███    █▄  
+//  ███    ███   ███    ███ ███    ███   ███    ███     ███    ███ 
+//  ████████▀    ███    █▀  ████████▀    ███    █▀      ██████████ 
+//                                                                 
+
+    public static void clearCache(URLEndpoint endpoint, Summoner summoner) {
+        Map<String, Object> data = new LinkedHashMap<>();
+
+        switch (endpoint) {
+            case V4_SUMMONER_BY_ACCOUNT:
+                data.put("platform", summoner.getPlatform());
+                data.put("accountid", summoner.getAccountId());     
+                break;
+            case V4_SUMMONER_BY_ID:
+                data.put("platform", summoner.getPlatform());
+                data.put("id", summoner.getSummonerId());
+                break;
+            case V4_SUMMONER_BY_PUUID:
+                data.put("platform", summoner.getPlatform());
+                data.put("puuid", summoner.getPUUID());
+                break;
+            case V1_SHARED_ACCOUNT_BY_PUUID:
+                data.put("platform", summoner.getPlatform().toRegionShard());
+                data.put("puuid", summoner.getPUUID());
+                break;
+            case V4_LEAGUE_ENTRY:
+                data.put("platform", summoner.getPlatform());
+                data.put("id", summoner.getSummonerId());
+                break;
+            case V5_MATCHLIST:
+                data.put("platform", summoner.getPlatform().toRegionShard());
+                data.put("puuid", summoner.getPUUID());
+                data.put("queue", GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+                data.put("type", "null");
+                data.put("start", "null");
+                data.put("count", 20);
+                data.put("startTime", "null");
+                data.put("endTime", "null");
+                break;
+        
+            default:
+                break;
+        }
+
+        DataCall.getCacheProvider().clear(endpoint, data);
+    }
+
+    public static void clearSummonerCache(Summoner summoner) {
+        clearCache(URLEndpoint.V4_SUMMONER_BY_ACCOUNT, summoner);
+        clearCache(URLEndpoint.V4_SUMMONER_BY_ID, summoner);
+        clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner);
+        clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner);
+        clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
     }
 
 }

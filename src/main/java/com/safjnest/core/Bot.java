@@ -112,6 +112,9 @@ public class Bot extends ListenerAdapter {
         // ctrl c ctrl v
         // assembly:assembly -DdescriptorId=jar-with-dependencies
 
+        //fastest way to comment
+        //https://patorjk.com/software/taag/#p=display&c=c%2B%2B&f=Delta%20Corps%20Priest%201
+
         SettingsLoader settingsLoader = new SettingsLoader(
             App.isExtremeTesting() ? App.getProperty("bot") : "beebot",
             null
