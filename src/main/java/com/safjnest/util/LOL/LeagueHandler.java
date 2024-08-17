@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -716,6 +717,89 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner);
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner);
         clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
+    }
+
+//     ▄████████    ▄███████▄  ▄█        ▄█      ███     
+//    ███    ███   ███    ███ ███       ███  ▀█████████▄ 
+//    ███    █▀    ███    ███ ███       ███▌    ▀███▀▀██ 
+//    ███          ███    ███ ███       ███▌     ███   ▀ 
+//  ▀███████████ ▀█████████▀  ███       ███▌     ███     
+//           ███   ███        ███       ███      ███     
+//     ▄█    ███   ███        ███▌    ▄ ███      ███     
+//   ▄████████▀   ▄████▀      █████▄▄██ █▀      ▄████▀   
+//                            ▀                          
+
+    public static long[] getCurrentSplitRange() {
+        long[] range = new long[2];
+        
+        long now = System.currentTimeMillis();
+        try {
+            FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
+            JSONParser parser = new JSONParser();
+            JSONObject file = (JSONObject) parser.parse(reader);
+            JSONArray season = (JSONArray) file.get("seasons");
+            JSONObject current = (JSONObject) season.get(season.size() - 1);
+            
+            JSONArray splits = (JSONArray) current.get("splits");
+            for (int i = 0; i < splits.size(); i++) {
+                JSONObject split = (JSONObject) splits.get(i);
+                String start = (String) split.get("start_date");
+                String end = (String) split.get("end_date");
+
+                long startMillis = new SimpleDateFormat("yyyy-MM-dd").parse(start).getTime();
+                long endMillis = new SimpleDateFormat("yyyy-MM-dd").parse(end).getTime();
+                
+                if (now >= startMillis && now <= endMillis) {
+                    range[0] = startMillis;
+                    range[1] = endMillis;
+                    break;
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        return range;
+
+    }
+
+    public static String getCurrentSplitFormatted() {
+        long now = System.currentTimeMillis();
+    
+        try {
+            FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
+            JSONParser parser = new JSONParser();
+            JSONObject file = (JSONObject) parser.parse(reader);
+            JSONArray season = (JSONArray) file.get("seasons");
+            JSONObject current = (JSONObject) season.get(season.size() - 1);
+    
+            JSONArray splits = (JSONArray) current.get("splits");
+            for (int i = 0; i < splits.size(); i++) {
+                JSONObject split = (JSONObject) splits.get(i);
+                String start = split.get("start_date").toString();
+                String end = split.get("end_date").toString();
+    
+                long startMillis = new SimpleDateFormat("yyyy-MM-dd").parse(start).getTime();
+                long endMillis = new SimpleDateFormat("yyyy-MM-dd").parse(end).getTime();
+    
+                if (now >= startMillis && now <= endMillis && split.get("current") != null) {
+                    return "Season " + current.get("season").toString() + " split " + split.get("split").toString();
+                }
+            }
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    
+        return null;
+    }
+
+    public static boolean isCurrentSplit(long time) {
+        long[] range = getCurrentSplitRange();
+        return time >= range[0] && time <= range[1];
     }
 
 }
