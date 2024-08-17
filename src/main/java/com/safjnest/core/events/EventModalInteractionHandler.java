@@ -1,17 +1,17 @@
 package com.safjnest.core.events;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import com.safjnest.commands.Audio.slash.CustomizeSoundSlash;
-import com.safjnest.commands.Misc.slash.twitch.TwitchMenuSlash;
+
+import com.safjnest.commands.audio.slash.CustomizeSoundSlash;
+import com.safjnest.commands.misc.slash.twitch.TwitchMenuSlash;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.util.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
-
-import com.safjnest.util.Twitch.TwitchClient;
 
 public class EventModalInteractionHandler extends ListenerAdapter {
 

@@ -15,9 +15,9 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.LOL.LeagueHandler;
-import com.safjnest.util.Twitch.TwitchClient;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.twitch.TwitchClient;
 
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.impl.R4J;

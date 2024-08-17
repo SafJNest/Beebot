@@ -1,8 +1,8 @@
 package com.safjnest.core.events;
 
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.util.LOL.LeagueHandler;
-import com.safjnest.commands.League.Summoner;
+import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.commands.lol.Summoner;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.alert.AlertType;
 

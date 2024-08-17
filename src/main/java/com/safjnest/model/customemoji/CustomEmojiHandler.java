@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.core.Bot;
-import com.safjnest.util.LOL.LeagueHandler;
+import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
