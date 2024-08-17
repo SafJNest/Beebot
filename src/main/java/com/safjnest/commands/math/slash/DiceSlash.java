@@ -1,4 +1,4 @@
-package com.safjnest.commands.Math.slash;
+package com.safjnest.commands.math.slash;
 
 import java.util.ArrayList;
 import java.util.Arrays;

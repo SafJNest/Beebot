@@ -1,8 +1,8 @@
-package com.safjnest.commands.Math.slash;
+package com.safjnest.commands.math.slash;
 
 import java.util.Arrays;
 
-import com.safjnest.commands.Math.Calculator;
+import com.safjnest.commands.math.Calculator;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.jagrosh.jdautilities.command.SlashCommand;

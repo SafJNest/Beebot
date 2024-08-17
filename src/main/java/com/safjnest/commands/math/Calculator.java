@@ -1,4 +1,4 @@
-package com.safjnest.commands.Math;
+package com.safjnest.commands.math;
 
 
 import java.util.Stack;

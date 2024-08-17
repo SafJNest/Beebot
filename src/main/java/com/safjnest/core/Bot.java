@@ -27,8 +27,6 @@ import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.command.SlashCommand;
 
 import com.safjnest.App;
-import com.safjnest.commands.Math.*;
-import com.safjnest.commands.Math.slash.*;
 import com.safjnest.commands.audio.*;
 import com.safjnest.commands.audio.slash.*;
 import com.safjnest.commands.audio.slash.greet.GreetSlash;
@@ -42,6 +40,8 @@ import com.safjnest.commands.lol.*;
 import com.safjnest.commands.lol.slash.*;
 import com.safjnest.commands.lol.slash.graph.GraphSlash;
 import com.safjnest.commands.lol.slash.summoner.SummonerSlash;
+import com.safjnest.commands.math.*;
+import com.safjnest.commands.math.slash.*;
 import com.safjnest.commands.members.*;
 import com.safjnest.commands.members.slash.*;
 import com.safjnest.commands.members.slash.blacklist.BlacklistSlash;
