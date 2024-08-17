@@ -53,7 +53,6 @@ public class LPTracker {
 
     private void analyzeMatchHistory(Summoner summoner, ResultRow dataGame) {
         BotLogger.trace("[LPTracker] Analyzing match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
-        long now = System.currentTimeMillis();
 
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         
@@ -66,7 +65,7 @@ public class LPTracker {
         String matchId = matchIds.get(0);
         LOLMatch match = api.getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
 
-        if (now - match.getGameStartTimestamp() > TimeConstant.MONTH * 3) return;
+        if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp())) return;
         
         boolean win = false;
         int champion = 0;
@@ -93,7 +92,7 @@ public class LPTracker {
         int gain = 0;
 
         if (dataGame.get("rank") == null) gain = 0;
-        else if ((division != TierDivisionType.CHALLENGER_I || division != TierDivisionType.GRANDMASTER_I || division != TierDivisionType.MASTER_I) && rank != dataGame.getAsInt("rank")) {
+        else if ((division != TierDivisionType.CHALLENGER_I && division != TierDivisionType.GRANDMASTER_I && division != TierDivisionType.MASTER_I) && rank != dataGame.getAsInt("rank")) {
             gain = 100 - (Math.abs(lp - dataGame.getAsInt("lp")));
             gain = rank < dataGame.getAsInt("rank") ? gain : -gain;
         }
