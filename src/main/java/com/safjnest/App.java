@@ -55,7 +55,7 @@ public class App {
         SafJNest.bee();
         new BotLogger("Beebot", null);
 
-        EXTREME_TESTING = getPropertyAsBoolean("testing");
+        EXTREME_TESTING = args.length > 0 ? Boolean.parseBoolean(args[0]) : getPropertyAsBoolean("testing");
         if (EXTREME_TESTING) BotLogger.info("Beebot is in testing mode");
         else BotLogger.info("Beebot is in normal mode");
 
@@ -69,7 +69,7 @@ public class App {
         BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider());
 
         SettingsLoader settingsLoader = new SettingsLoader(
-            App.isExtremeTesting() ? App.getProperty("bot") : "beebot",
+            App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot",
             App.isExtremeTesting() ? "LocalHost" : "MariaDB"
         );
 
