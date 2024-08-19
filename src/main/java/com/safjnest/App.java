@@ -71,6 +71,7 @@ public class App {
         BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider());
 
         bot = App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
+        System.out.println("Bot: " + bot);
         SettingsLoader settingsLoader = new SettingsLoader(
             bot,
             App.isExtremeTesting() ? "LocalHost" : "MariaDB"
