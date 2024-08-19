@@ -32,6 +32,8 @@ public class App {
 
     private static Bot extreme_safj_beebot;
 
+    private static String bot;
+    
     /**
      * Insane beebot core
      */
@@ -68,8 +70,9 @@ public class App {
         SecureRandom secureRandom = new SecureRandom();
         BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider());
 
+        bot = App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
         SettingsLoader settingsLoader = new SettingsLoader(
-            App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot",
+            bot,
             App.isExtremeTesting() ? "LocalHost" : "MariaDB"
         );
 
@@ -138,5 +141,9 @@ public class App {
             e.printStackTrace();
         }
 
+    }
+
+    public static String getBot() {
+        return bot;
     }
 }

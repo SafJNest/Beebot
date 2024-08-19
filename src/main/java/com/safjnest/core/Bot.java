@@ -116,7 +116,7 @@ public class Bot extends ListenerAdapter {
         //https://patorjk.com/software/taag/#p=display&c=c%2B%2B&f=Delta%20Corps%20Priest%201
 
         SettingsLoader settingsLoader = new SettingsLoader(
-            App.isExtremeTesting() ? App.getProperty("bot") : "beebot",
+            App.getBot(),
             null
         );
 
