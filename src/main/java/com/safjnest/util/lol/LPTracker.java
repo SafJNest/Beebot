@@ -39,7 +39,7 @@ public class LPTracker {
 			}
 		};
 
-		scheduler.scheduleAtFixedRate(task, 0, period, TimeUnit.MILLISECONDS);
+		scheduler.scheduleAtFixedRate(task, TimeConstant.MINUTE, period, TimeUnit.MILLISECONDS);
 	}
 
 	private void trackSummoners() {
