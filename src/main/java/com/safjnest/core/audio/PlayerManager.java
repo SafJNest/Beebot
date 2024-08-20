@@ -1,7 +1,12 @@
 package com.safjnest.core.audio;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -12,6 +17,11 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.lava.extensions.youtuberotator.YoutubeIpRotatorSetup;
+import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
+import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingIpRoutePlanner;
+import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.*;
+
 
 import dev.arbjerg.lavalink.client.LavalinkClient;
 import dev.arbjerg.lavalink.client.NodeOptions;
@@ -44,10 +54,23 @@ public class PlayerManager {
         AudioSourceManagers.registerLocalSource(audioPlayerManager);
     }
 
+    @SuppressWarnings("rawtypes")
     private void loadYoutube() {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtubeAudioSourceManager = new dev.lavalink.youtube.YoutubeAudioSourceManager();
         audioPlayerManager.registerSourceManager(youtubeAudioSourceManager);
-        //add focking rotator
+
+        
+        IpBlock ipBlock = new Ipv6Block("2001:470:1f04:3a::/64");
+        
+        List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
+        
+        AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
+
+        YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
+
+        rotator.forConfiguration(youtubeAudioSourceManager.getHttpInterfaceManager(), false)
+            .withMainDelegateFilter(youtubeAudioSourceManager.getContextFilter())
+            .setup();
     }
 
     public static PlayerManager get() {
