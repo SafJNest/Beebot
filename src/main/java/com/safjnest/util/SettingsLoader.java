@@ -155,6 +155,14 @@ public class SettingsLoader {
         return getLavalinkSettings().get("host").toString();
     }
 
+    public String getPoToken() {
+        return getLavalinkSettings().get("potoken").toString();
+    }
+
+    public String getVisitorData() {
+        return getLavalinkSettings().get("visitordata").toString();
+    }
+
     public String getLavalinkPassword() {
         return getLavalinkSettings().get("password").toString();
     }

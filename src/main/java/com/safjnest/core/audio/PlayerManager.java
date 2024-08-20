@@ -25,6 +25,7 @@ import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.*;
 
 import dev.arbjerg.lavalink.client.LavalinkClient;
 import dev.arbjerg.lavalink.client.NodeOptions;
+import dev.lavalink.youtube.clients.Web;
 import net.dv8tion.jda.api.entities.Guild;
 
 /**
@@ -48,16 +49,16 @@ public class PlayerManager {
         lavalink = new LavalinkClient(Long.parseLong(Bot.getBotId()));
         lavalink.addNode(new NodeOptions.Builder("beebot", URI.create(settingsLoader.getLavalinkHost()), settingsLoader.getLavalinkPassword(), null, 0).build());
 
-        loadYoutube();
+        loadYoutube(settingsLoader);
         
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
         AudioSourceManagers.registerLocalSource(audioPlayerManager);
     }
 
     @SuppressWarnings("rawtypes")
-    private void loadYoutube() {
+    private void loadYoutube(SettingsLoader settingsLoader) {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtubeAudioSourceManager = new dev.lavalink.youtube.YoutubeAudioSourceManager();
-        youtubeAudioSourceManager.useOauth2(null, false);
+        Web.setPoTokenAndVisitorData(settingsLoader.getPoToken(), settingsLoader.getVisitorData());
 
         audioPlayerManager.registerSourceManager(youtubeAudioSourceManager);
 
