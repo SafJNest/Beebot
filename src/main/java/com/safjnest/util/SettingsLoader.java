@@ -67,6 +67,10 @@ public class SettingsLoader {
         return (JSONObject) getBotSettings().get("Riot");
     }
 
+    private JSONObject getLavalinkSettings() {
+        return (JSONObject) getBotSettings().get("Lavalink");
+    }
+
     public String getPrefix() {
         return getDiscordSettings().get("prefix").toString();
     }
@@ -145,5 +149,13 @@ public class SettingsLoader {
 
     public String getLOLVersion() {
         return getRiotSettings().get("lolVersion").toString();
+    }
+
+    public String getLavalinkHost() {
+        return getLavalinkSettings().get("host").toString();
+    }
+
+    public String getLavalinkPassword() {
+        return getLavalinkSettings().get("password").toString();
     }
 }

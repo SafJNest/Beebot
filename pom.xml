@@ -118,6 +118,12 @@
       <version>1.5.2</version>
     </dependency>
 
+    <dependency>
+      <groupId>dev.arbjerg</groupId>
+      <artifactId>lavalink-client</artifactId>
+      <version>3.0.0</version>
+    </dependency>
+
     <!-- https://mvnrepository.com/artifact/net.dv8tion/JDA -->
     <dependency>
       <groupId>pw.chew</groupId>
