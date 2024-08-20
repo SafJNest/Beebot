@@ -57,6 +57,8 @@ public class PlayerManager {
     @SuppressWarnings("rawtypes")
     private void loadYoutube() {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtubeAudioSourceManager = new dev.lavalink.youtube.YoutubeAudioSourceManager();
+        youtubeAudioSourceManager.useOauth2(null, false);
+
         audioPlayerManager.registerSourceManager(youtubeAudioSourceManager);
 
         
