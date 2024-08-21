@@ -14,15 +14,17 @@ import net.dv8tion.jda.api.entities.Activity;
 
 public class SettingsLoader {
     private static final String path = "rsc" + File.separator + "settings.json";
+    private static final String databaseName = "Database";
+    private static final String testDatabaseName = "TestDatabase";
 
     private final String bot;
     private final String database;
 
     private final JSONObject settings;
 
-    public SettingsLoader(String bot, String database) {
+    public SettingsLoader(String bot, boolean testDatabase) {
         this.bot = bot;
-        this.database = database;
+        this.database = testDatabase ? testDatabaseName : databaseName;
 
         JSONObject settings = null;
 
@@ -34,8 +36,25 @@ public class SettingsLoader {
         } finally {
             this.settings = settings;
         }
-        
     }
+
+    public SettingsLoader(String bot) {
+        this.bot = bot;
+        this.database = null;
+
+        JSONObject settings = null;
+
+        JSONParser parser = new JSONParser();
+        try (Reader reader = new FileReader(path)) {
+            settings = (JSONObject) parser.parse(reader);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            this.settings = settings;
+        }
+    }
+
+
 
     private static String[] toStringArray(JSONArray array) {
         if(array==null)
@@ -52,7 +71,7 @@ public class SettingsLoader {
     }
 
     private JSONObject getBotSettings() {
-        return (JSONObject) settings.get("settings");
+        return (JSONObject) settings.get("settings"); 
     }
 
     private JSONObject getDatabaseSettings() {
@@ -69,6 +88,10 @@ public class SettingsLoader {
 
     private JSONObject getLavalinkSettings() {
         return (JSONObject) getBotSettings().get("Lavalink");
+    }
+
+    private JSONObject getSpotifySettings() {
+        return (JSONObject) getBotSettings().get("Spotify");
     }
 
     public String getPrefix() {
@@ -163,7 +186,27 @@ public class SettingsLoader {
         return getLavalinkSettings().get("visitordata").toString();
     }
 
+    public String getIpv6Block() {
+        return getLavalinkSettings().get("ipv6block").toString();
+    }
+
     public String getLavalinkPassword() {
         return getLavalinkSettings().get("password").toString();
+    }
+
+    public String getSpotifyClientID() {
+        return getSpotifySettings().get("clientid").toString();
+    }
+
+    public String getSpotifyClientSecret() {
+        return getSpotifySettings().get("clientsecret").toString();
+    }
+
+    public String getSpotifySPDC() {
+        return getSpotifySettings().get("spdc").toString();
+    }
+
+    public String getSpotifyCountryCode() {
+        return getSpotifySettings().get("countrycode").toString();
     }
 }

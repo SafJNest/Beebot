@@ -1,6 +1,7 @@
 package com.safjnest.core.audio;
 
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.util.log.BotLogger;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -11,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * This class schedules tracks for the audio player.
@@ -360,4 +362,20 @@ public class TrackScheduler extends AudioEventAdapter {
             player.getPlayingTrack().setPosition(player.getPlayingTrack().getPosition() + milliseconds);
         }
 	}
+
+    public String getLyrics(AudioTrack track) {
+        if(!track.getSourceManager().getSourceName().equals("spotify")) return "Lyrics are only available for Spotify tracks";
+        
+        AudioLyrics audioLyrics = PlayerManager.get().loadLyrics(track);
+        if(audioLyrics == null) return "No lyrics found for this track";
+        
+        List<AudioLyrics.Line> lines = audioLyrics.getLines();
+        StringBuilder sb = new StringBuilder();
+        if (lines != null) {
+            for (AudioLyrics.Line line : lines) {
+                sb.append(line.getLine()).append("\n");
+            }
+        }
+        return sb.toString();
+    }
 }

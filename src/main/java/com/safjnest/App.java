@@ -72,10 +72,7 @@ public class App {
 
         bot = App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
         System.out.println("Bot: " + bot);
-        SettingsLoader settingsLoader = new SettingsLoader(
-            bot,
-            App.isExtremeTesting() ? "LocalHost" : "MariaDB"
-        );
+        SettingsLoader settingsLoader = new SettingsLoader(bot, App.isExtremeTesting());
 
         tts = new TTSHandler(settingsLoader.getTTSApiKey());
         

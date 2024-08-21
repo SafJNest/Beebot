@@ -583,6 +583,10 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "queue":
                 ts.getMessage().setType(EmbedType.QUEUE);
+                break;
+            case "lyrics":
+                event.getHook().sendMessageEmbeds(QueueHandler.getLyricsEmbed(guild).build()).queue();
+                break;
             default:
                 break;
         }

@@ -115,10 +115,7 @@ public class Bot extends ListenerAdapter {
         //fastest way to comment
         //https://patorjk.com/software/taag/#p=display&c=c%2B%2B&f=Delta%20Corps%20Priest%201
 
-        SettingsLoader settingsLoader = new SettingsLoader(
-            App.getBot(),
-            null
-        );
+        SettingsLoader settingsLoader = new SettingsLoader(App.getBot());
 
         PREFIX = settingsLoader.getPrefix();
         activity = settingsLoader.getActivity();

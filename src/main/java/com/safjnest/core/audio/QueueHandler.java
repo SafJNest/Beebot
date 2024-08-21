@@ -136,10 +136,8 @@ public class QueueHandler {
 
     private static String getThumbnail(AudioTrack track) {
         String thumbnailURL = track.getUserData(TrackData.class).getThumbnailUrl();
-
         if(thumbnailURL != null) return thumbnailURL;
         
-
         thumbnailURL = track.getInfo().artworkUrl;
         if (thumbnailURL != null && !thumbnailURL.isEmpty()) return thumbnailURL;
 
@@ -342,13 +340,14 @@ public class QueueHandler {
         Button forward = Button.secondary("player-forward", " ").withEmoji(CustomEmojiHandler.getRichEmoji("fastforward30"));
 
         Button playerButton = Button.secondary("player-queue", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list"));
+        Button lyrics = Button.secondary("player-lyrics", " ").withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
 
         buttonRows.add(ActionRow.of(
             playerButton,
             rewind,
-            Button.secondary("queue-blank1", " ").asDisabled().withEmoji(CustomEmojiHandler.getRichEmoji("blank")),
+            Button.secondary("player-blank1", " ").asDisabled().withEmoji(CustomEmojiHandler.getRichEmoji("blank")),
             forward,
-            Button.secondary("queue-blank2", " ").asDisabled().withEmoji(CustomEmojiHandler.getRichEmoji("blank"))
+            lyrics
         ));
 
         return buttonRows;
@@ -500,5 +499,16 @@ public class QueueHandler {
         eb.setColor(Bot.getColor());
 
         return eb.build();
+    }
+
+    public static EmbedBuilder getLyricsEmbed(Guild guild) {
+        TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
+        
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setColor(Bot.getColor());
+        eb.setTitle("Lyrics for " + ts.getCurrent().getInfo().title);
+        eb.setDescription(ts.getLyrics(ts.getCurrent()));
+
+        return eb;
     }
 }
