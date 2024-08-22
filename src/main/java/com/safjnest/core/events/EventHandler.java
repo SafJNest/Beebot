@@ -2,7 +2,7 @@ package com.safjnest.core.events;
 
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.lol.LeagueHandler;
-import com.safjnest.commands.lol.Summoner;
+import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.alert.AlertType;
 
@@ -128,7 +128,7 @@ public class EventHandler extends ListenerAdapter {
             String summonerId = event.getValues().get(0).split("#")[0];
             String platform =  event.getValues().get(0).split("#")[1];
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerBySummonerId(summonerId, LeagueShard.valueOf(platform));
-            event.deferEdit().setEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(), s).build()).setComponents(event.getMessage().getComponents()).queue();
+            event.deferEdit().setEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(event.getMessage().getComponents()).queue();
         }
     }
 }

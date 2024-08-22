@@ -2,24 +2,20 @@ package com.safjnest.commands.lol.slash;
 
 
 import java.util.Arrays;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.commands.lol.Opgg;
-import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.LeagueMessage;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -52,11 +48,6 @@ public class OpggSlash extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        Button left = Button.primary("match-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
-        Button right = Button.primary("match-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
-        Button center = Button.primary("match-center", "f");
-        Button refresh = Button.primary("match-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
-        
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         event.deferReply(false).queue();
 
@@ -70,18 +61,10 @@ public class OpggSlash extends SlashCommand {
         if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
         else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
-        EmbedBuilder builder = Opgg.createEmbed(s, event.getJDA());
+        EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);
+        List<LayoutComponent> row = LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null);
         
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        center = Button.primary("match-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
-        center = center.asDisabled();
-        if(theGuy != null && LeagueHandler.getNumberOfProfile(theGuy.getId()) > 1){     
-            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
-            action.setComponents(ActionRow.of(left, center, right, refresh)).queue();
-            return;
-        }
-
-        event.getHook().editOriginalEmbeds(builder.build()).setComponents(ActionRow.of(center, refresh)).queue();
+        event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
 	}
 
 

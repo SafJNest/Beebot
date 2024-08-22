@@ -20,7 +20,6 @@ import java.util.Set;
 import com.google.gson.Gson;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.commands.lol.Summoner;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
@@ -130,7 +129,7 @@ public class GraphLpSlash extends SlashCommand {
             center = Button.primary("lol-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
             center = center.asDisabled();
 
-            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(Summoner.createEmbed(event.getJDA(), event.getJDA().getSelfUser().getId(),s).build());
+            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(new EmbedBuilder().build());
             action.setComponents(ActionRow.of(left, center, right)).queue();
             return;
         }

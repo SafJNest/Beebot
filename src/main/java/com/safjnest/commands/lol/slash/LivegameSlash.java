@@ -6,22 +6,18 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.commands.lol.Livegame;
-import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.LeagueMessage;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
-import net.dv8tion.jda.api.requests.restaction.WebhookMessageEditAction;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -51,14 +47,9 @@ public class LivegameSlash extends SlashCommand {
 
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-
-        Button left = Button.primary("rank-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));;
-        Button right = Button.primary("rank-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));;
-        Button center = Button.primary("rank-center", "f");
-        Button refresh = Button.primary("rank-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
-
         event.deferReply(false).queue();
+        
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
 
         User theGuy = null;
         if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
@@ -70,44 +61,20 @@ public class LivegameSlash extends SlashCommand {
             return;
         }
 
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        center = Button.primary("rank-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
-        center = center.asDisabled();
-
-        LeagueShard shard = s.getPlatform();
-        
-        List<SpectatorParticipant> users = null;
+        List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
         List<RiotAccount> accounts = new ArrayList<>();
 
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
         accounts.add(account);
-        
-        EmbedBuilder builder = null;
-        try {
-            users = s.getCurrentGame().getParticipants();
-        
-            StringSelectMenu menu = Livegame.createSummonersMenu(users, accounts, shard);
 
-            builder = Livegame.createEmbed(s, users, accounts);
+        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users, accounts);
+        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users, accounts);
+        List<LayoutComponent> row = LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null);
 
-            if (theGuy != null && LeagueHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
-                WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
-                        action.setComponents(ActionRow.of(menu),
-                                            ActionRow.of(left, center, right, refresh)).queue();
-                return;
-            }
-
-            WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
-            action.setComponents(ActionRow.of(menu), ActionRow.of(center, refresh)).queue();
-                
-        } catch (Exception e) {
-            builder = Livegame.createEmbed(s, users, accounts);
-            if (theGuy != null && LeagueHandler.getNumberOfProfile(event.getMember().getId()) > 1) {
-                WebhookMessageEditAction<Message> action = event.getHook().editOriginalEmbeds(builder.build());
-                        action.setComponents(ActionRow.of(left, center, right, refresh))
-                        .queue();
-                return;
-            }
-            event.getHook().editOriginalEmbeds(builder.build()).setComponents(ActionRow.of(center, refresh)).queue();
+        if (menu != null) {
+            row.add(0, ActionRow.of(menu));
+            event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
         }
+        else event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
 	}
 }
