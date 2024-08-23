@@ -464,6 +464,7 @@ public class TrackScheduler extends AudioEventAdapter {
                 @Override
                 public void onError(Throwable throwable) {
                     BotLogger.error("Error during video info retrieval: " + throwable.getMessage());
+                    message.editMessage("Error during video info retrieval: " + throwable.getMessage()).queue();
                 }
             })
             .async();
