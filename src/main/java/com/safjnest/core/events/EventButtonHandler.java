@@ -584,6 +584,9 @@ public class EventButtonHandler extends ListenerAdapter {
             case "lyrics":
                 event.getHook().sendMessageEmbeds(QueueHandler.getLyricsEmbed(guild).build()).queue();
                 break;
+            case "download":
+                ts.downloadTrackAudio(ts.getCurrent(), event.getHook());
+                break;
             default:
                 break;
         }

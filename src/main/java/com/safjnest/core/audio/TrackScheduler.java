@@ -3,16 +3,32 @@ package com.safjnest.core.audio;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
 import com.safjnest.core.audio.types.AudioType;
+import com.safjnest.util.SafJNest;
 import com.safjnest.util.log.BotLogger;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+
+import com.github.kiulian.downloader.YoutubeDownloader;
+import com.github.kiulian.downloader.downloader.YoutubeCallback;
+import com.github.kiulian.downloader.downloader.YoutubeProgressCallback;
+import com.github.kiulian.downloader.downloader.request.RequestVideoInfo;
+import com.github.kiulian.downloader.downloader.request.RequestVideoStreamDownload;
+import com.github.kiulian.downloader.model.videos.VideoInfo;
+import com.github.kiulian.downloader.model.videos.formats.AudioFormat;
+import com.github.kiulian.downloader.model.videos.formats.Format;
 
 /**
  * This class schedules tracks for the audio player.
@@ -23,6 +39,7 @@ import java.util.List;
  * @since 1.0
  */
 public class TrackScheduler extends AudioEventAdapter {
+    private static final double MAX_YT_DOWNLOAD_SIZE = 5;
     private final AudioPlayer player;
 
     private final LinkedList<AudioTrack> queue;
@@ -377,5 +394,80 @@ public class TrackScheduler extends AudioEventAdapter {
             }
         }
         return sb.toString();
+    }
+    
+
+    private long estimateFileSize(VideoInfo video, Format format) {
+        int bitrate = format instanceof AudioFormat ? ((AudioFormat)format).averageBitrate() : format.bitrate();
+        long duration = video.details().lengthSeconds();
+        return (bitrate * duration) / 8; //in bytes
+    }
+
+    public void downloadTrackAudio(AudioTrack track, InteractionHook hook) {
+        if(!track.getSourceManager().getSourceName().equals("youtube")) {
+            hook.sendMessage("Can only download youtube videos.").queue();
+            return;
+        }
+
+        Message message = hook.sendMessage("Downloading audio...").complete();
+
+        String videoId = track.getIdentifier();
+        YoutubeDownloader downloader = new YoutubeDownloader();
+        RequestVideoInfo request = new RequestVideoInfo(videoId)
+            .callback(new YoutubeCallback<VideoInfo>() {
+                @Override
+                public void onFinished(VideoInfo video) {
+                    if(!video.details().isDownloadable()) {
+                        BotLogger.info("Download of video `" + video.details().title() + "` rejected for being not downladable.");
+                        message.editMessage("Content cannot be downloaded.").queue();
+                        return;
+                    }
+
+                    AudioFormat format = video.bestAudioFormat();
+
+                    double fileSizeInMB = SafJNest.round(estimateFileSize(video, format) / (1024.0 * 1024.0), 1);
+                    double maxDownlaodSize = Math.min(MAX_YT_DOWNLOAD_SIZE, hook.getInteraction().getGuild().getMaxFileSize());
+                    if(fileSizeInMB > maxDownlaodSize) {
+                        BotLogger.info("Download of video `" + video.details().title() + "` rejected for being too big: " + fileSizeInMB + " Mb");
+                        message.editMessage("Video size too big (" + fileSizeInMB + " Mb), please keep it under " + maxDownlaodSize + " Mb.").queue();
+                        return;
+                    }
+
+                    OutputStream os = new ByteArrayOutputStream();
+
+                    RequestVideoStreamDownload downloadRequest = new RequestVideoStreamDownload(format, os)
+                        .callback(new YoutubeProgressCallback<Void>() {
+                            @Override
+                            public void onDownloading(int progress) {
+                                //System.out.printf("Downloaded %d%%\n", progress);
+                            }
+
+                            @Override
+                            public void onFinished(Void unused) {
+                                BotLogger.info("Finished downloading youtube video: " + video.details().title());
+
+                                FileUpload fileUpload = FileUpload.fromData(((ByteArrayOutputStream) os).toByteArray(), video.details().title() + "." + format.extension().value());
+                                message.editMessage("Here is your audio:").setAttachments(fileUpload).queue();
+                            }
+
+                            @Override
+                            public void onError(Throwable throwable) {
+                                BotLogger.error("Error during download of youtube video: " + throwable.getMessage());
+                                message.editMessage("Error during download: " + throwable.getMessage()).queue();
+                            }
+                        })
+                        .async();
+
+                        downloader.downloadVideoStream(downloadRequest);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    BotLogger.error("Error during video info retrieval: " + throwable.getMessage());
+                }
+            })
+            .async();
+
+        downloader.getVideoInfo(request);
     }
 }

@@ -336,16 +336,16 @@ public class QueueHandler {
             shurima
         ));
 
-        Button rewind = Button.secondary("player-rewind", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rewind10"));
-        Button forward = Button.secondary("player-forward", " ").withEmoji(CustomEmojiHandler.getRichEmoji("fastforward30"));
-
         Button playerButton = Button.secondary("player-queue", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list"));
+        Button rewind = Button.secondary("player-rewind", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rewind10"));
+        Button download = Button.secondary("player-download", " ").withEmoji(CustomEmojiHandler.getRichEmoji("download"));
+        Button forward = Button.secondary("player-forward", " ").withEmoji(CustomEmojiHandler.getRichEmoji("fastforward30"));
         Button lyrics = Button.secondary("player-lyrics", " ").withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
 
         buttonRows.add(ActionRow.of(
             playerButton,
             rewind,
-            Button.secondary("player-blank1", " ").asDisabled().withEmoji(CustomEmojiHandler.getRichEmoji("blank")),
+            download,
             forward,
             lyrics
         ));

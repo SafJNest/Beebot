@@ -22,12 +22,12 @@
  - [x] seek bar?
  - [x] search function
  - [ ] bot playlists
- - [ ] some spotify interaction
+ - [x] some spotify interaction
  - [ ] Webpwujngbwibig si
  - [ ] radio o qualche tipo di autoplay [bot 24/7?]
  - [x] cambiare il layout dell'embed della coda
  - [ ] play file
  - [ ] when do you want to play this (check euphony)
- - [ ] download the audio
+ - [x] download the audio
  - [ ] dj role
  

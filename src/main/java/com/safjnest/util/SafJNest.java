@@ -2,7 +2,9 @@ package com.safjnest.util;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.NoSuchAlgorithmException;
@@ -427,6 +429,14 @@ public class SafJNest extends Thread {
     public static String getFormattedDate(long time) {
         LocalDateTime date = LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC);
         return date.getDayOfMonth() + "-" + date.getMonthValue() + "-" + date.getYear();
+    }
+
+    public static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = BigDecimal.valueOf(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
     
 }
