@@ -64,15 +64,15 @@ public class PlayerManager {
 
         audioPlayerManager.registerSourceManager(youtube);
 
-        if(!App.isExtremeTesting()) {
-            IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
-            List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
-            AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
-            YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
-            rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
-                .withMainDelegateFilter(youtube.getContextFilter())
-                .setup();
-        }
+        // if(!App.isExtremeTesting()) {
+        //     IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
+        //     List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
+        //     AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
+        //     YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
+        //     rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
+        //         .withMainDelegateFilter(youtube.getContextFilter())
+        //         .setup();
+        // }
     }
 
     private void registerSpotify(SettingsLoader settingsLoader) {
