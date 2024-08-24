@@ -1,8 +1,6 @@
 package com.safjnest.core.audio;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -17,11 +15,6 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.lava.extensions.youtuberotator.YoutubeIpRotatorSetup;
-import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
-import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingIpRoutePlanner;
-import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
-import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.Ipv6Block;
 
 import dev.lavalink.youtube.clients.Web;
 import net.dv8tion.jda.api.entities.Guild;
@@ -56,7 +49,6 @@ public class PlayerManager {
     }
 
     //registers youtube source and starts the rotator
-    @SuppressWarnings("rawtypes")
     private void registerYoutube(SettingsLoader settingsLoader) {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 

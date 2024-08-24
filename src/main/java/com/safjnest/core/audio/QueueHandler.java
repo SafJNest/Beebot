@@ -338,7 +338,7 @@ public class QueueHandler {
 
         Button playerButton = Button.secondary("player-queue", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list"));
         Button rewind = Button.secondary("player-rewind", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rewind10"));
-        Button download = Button.secondary("player-download", " ").withEmoji(CustomEmojiHandler.getRichEmoji("download"));
+        Button download = Button.secondary("player-download", " ").withEmoji(CustomEmojiHandler.getRichEmoji("download")).asDisabled();
         Button forward = Button.secondary("player-forward", " ").withEmoji(CustomEmojiHandler.getRichEmoji("fastforward30"));
         Button lyrics = Button.secondary("player-lyrics", " ").withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
 
