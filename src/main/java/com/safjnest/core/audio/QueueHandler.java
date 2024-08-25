@@ -3,6 +3,7 @@ package com.safjnest.core.audio;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,7 +38,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 public class QueueHandler {
     private static String formatTrack(int index, AudioTrack track) {
         //"**[" + (index + 1) + "]** " + "`-`"  + track.getInfo().title + " - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
-        return "`" + (index + 1) + "`" + "\u00A0\u00A0" + PermissionHandler.ellipsis(track.getInfo().title, 49);
+        return new StringBuilder().append("`").append(index + 1).append("\u00A0\u00A0").append(PermissionHandler.ellipsis(track.getInfo().title, 49)).toString();
     }
 
     public static String extractSoundcloudTrackId(String url) {
@@ -195,9 +196,18 @@ public class QueueHandler {
             startIndex = index + 1;
         }
         
-        String queues = "";
-        for(int i = startIndex, cont = 0; i < queue.size() && cont < 10 && i != index; i++, cont ++) {
-            queues += formatTrack(i, queue.get(i)) + "\n";
+        StringBuilder queues = new StringBuilder();
+        int cont = 0;
+
+        ListIterator<AudioTrack> iterator = queue.listIterator(startIndex);
+        while (iterator.hasNext() && cont < 10) {
+            int i = iterator.nextIndex();
+            if (i == index) {
+                iterator.next();
+                continue;
+            }
+            queues.append(formatTrack(i, iterator.next())).append("\n");
+            cont++;
         }
 
         if (playingNow != null) {
@@ -208,7 +218,8 @@ public class QueueHandler {
             eb.setTitle("There is no song playing right now.");
         } 
         
-        eb.addField(CustomEmojiHandler.getFormattedEmoji("playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues, false);
+        eb.addField(CustomEmojiHandler.getFormattedEmoji("playlist") + " Songs in queue ("  + (queue.size() - index - 1) + ")", queues.toString(), false);
+        
         return eb;
     }
 
