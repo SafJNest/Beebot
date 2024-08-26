@@ -915,7 +915,7 @@ public class EventButtonHandler extends ListenerAdapter {
         users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
         StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users, riotAccounts);
         EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users, riotAccounts);
-        List<LayoutComponent> row = LeagueMessage.getLivegameButtons(s, user_id);
+        List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
 
         if (menu != null) {
             row.add(0, ActionRow.of(menu));

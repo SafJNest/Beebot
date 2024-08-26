@@ -137,14 +137,14 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 String augmentId = augments.get(i).getId();
 
                 if (augmentName.startsWith(value.toLowerCase()) || augmentId.startsWith(value)){
-                    choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
+                    choices.add(new Choice(augments.get(i).getId() + " . " + augments.get(i).getName(), augments.get(i).getId()));
                     max++;
                 }
             }
         } else {
             Collections.shuffle(augments);
             for (int i = 0; i < MAX_CHOICES; i++)
-                choices.add(new Choice(augments.get(i).getName(), augments.get(i).getId()));
+                choices.add(new Choice(augments.get(i).getId() + " . " + augments.get(i).getName(), augments.get(i).getId()));
         }
 
         return choices;
@@ -516,7 +516,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 choices = champion(e);
                 break;
 
-            case "infoaugment":
+            case "augment":
                 choices = augment(e);
                 break;
 

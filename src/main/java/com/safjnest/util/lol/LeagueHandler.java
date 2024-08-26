@@ -230,24 +230,25 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
     }
 
-    private void loadAguments(){
+    private void loadAguments() {
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "augments.json");
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
-            for(int i = 1; i < 99; i++){
-                if(i == 3) continue;
-
-                JSONObject augment = (JSONObject)file.get(String.valueOf(i));
-
+            JSONArray augmentsArray = (JSONArray) file.get("augments");
+    
+            for (Object obj : augmentsArray) {
+                JSONObject augment = (JSONObject) obj;
+    
                 HashMap<String, String> spellDataValues = new HashMap<>();
-                JSONObject spellData = (JSONObject)augment.get("spellDataValues");
-                for(Object key : spellData.keySet()){
+                JSONObject spellData = (JSONObject) augment.get("dataValues");
+                for (Object key : spellData.keySet()) {
                     spellDataValues.put(String.valueOf(key), String.valueOf(spellData.get(key)));
                 }
+                System.out.println(augment.get("id") + " " + augment.get("name"));
                 augments.add(new AugmentData(
                     String.valueOf(augment.get("id")),
-                    String.valueOf(augment.get("displayName")),
+                    String.valueOf(augment.get("name")),
                     String.valueOf(augment.get("tooltip")),
                     spellDataValues
                 ));
