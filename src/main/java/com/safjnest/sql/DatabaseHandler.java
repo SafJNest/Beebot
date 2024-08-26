@@ -1119,6 +1119,13 @@ public class DatabaseHandler {
 
 
 
+    public static QueryResult getPlaylistTracks(int playlist_id) {
+        return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id);
+    }
+
+
+
+
 
 
 

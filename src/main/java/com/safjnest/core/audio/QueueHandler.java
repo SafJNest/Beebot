@@ -136,7 +136,10 @@ public class QueueHandler {
     }
 
     private static String getThumbnail(AudioTrack track) {
-        String thumbnailURL = track.getUserData(TrackData.class).getThumbnailUrl();
+        String thumbnailURL = null;
+        
+        if(track.getUserData(TrackData.class) != null) thumbnailURL = track.getUserData(TrackData.class).getThumbnailUrl();
+
         if(thumbnailURL != null) return thumbnailURL;
         
         thumbnailURL = track.getInfo().artworkUrl;

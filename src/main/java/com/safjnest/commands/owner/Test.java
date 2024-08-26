@@ -22,6 +22,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -122,7 +123,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist");
             break;
             case "timer":
                 Timer timer = new Timer();
@@ -747,6 +748,17 @@ public class Test extends Command{
                     System.out.println(query);
                     DatabaseHandler.runQuery(query);
                 }
+            break;
+            case "playplaylist":
+                int playlistId = Integer.valueOf(args[1]);
+                QueryResult tracks = DatabaseHandler.getPlaylistTracks(playlistId);
+
+                List<String> URIs = new ArrayList<String>();
+                for(ResultRow track : tracks) {
+                    URIs.add(track.get("uri"));
+                }
+                PlayerManager.get().loadPlaylist(e.getGuild(), URIs, new ResultHandler(e, false, false));
+
             break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");

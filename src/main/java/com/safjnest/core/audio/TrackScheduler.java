@@ -112,7 +112,6 @@ public class TrackScheduler extends AudioEventAdapter {
             player.setPaused(false);
  
         player.startTrack(track, !forced);
-        
     }
 
     public void play(AudioTrack track, long position, boolean forced) {

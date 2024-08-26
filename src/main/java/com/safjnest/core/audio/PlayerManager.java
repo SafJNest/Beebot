@@ -3,6 +3,10 @@ package com.safjnest.core.audio;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import com.github.topi314.lavalyrics.LyricsManager;
 import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
@@ -14,6 +18,8 @@ import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import dev.lavalink.youtube.clients.Web;
@@ -100,6 +106,52 @@ public class PlayerManager {
     public Future<Void> loadItemOrdered(Guild guild, String trackURL, AudioLoadResultHandler resultHandler) {
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
         return audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, resultHandler);
+    }
+
+    public void loadPlaylist(Guild guild, List<String> uris, AudioLoadResultHandler resultHandler) {
+        GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
+        List<AudioTrack> tracks = new ArrayList<>();
+        CountDownLatch latch = new CountDownLatch(uris.size());
+    
+        for (String uri : uris) {
+            audioPlayerManager.loadItemOrdered(guildMusicManager, uri, new AudioLoadResultHandler() {
+                @Override
+                public void trackLoaded(AudioTrack track) {
+                    tracks.add(track);
+                    System.out.println("Loaded track: " + track.getInfo().title);
+                    latch.countDown();
+                }
+    
+                @Override
+                public void playlistLoaded(AudioPlaylist playlist) {
+                    System.out.println("Loaded playlist: " + playlist.getName());
+                    tracks.addAll(playlist.getTracks());
+                    latch.countDown();
+                }
+    
+                @Override
+                public void noMatches() {
+                    System.out.println("No matches found for URI: " + uri);
+                    latch.countDown();
+                }
+    
+                @Override
+                public void loadFailed(FriendlyException exception) {
+                    System.err.println("Failed to load URI: " + uri);
+                    exception.printStackTrace();
+                    latch.countDown();
+                }
+            });
+        }
+    
+        try {
+            latch.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    
+        SafjAudioPlaylist playlist = new SafjAudioPlaylist("Custom Playlist", tracks, null);
+        resultHandler.playlistLoaded(playlist);
     }
 
     public AudioLyrics loadLyrics(AudioTrack track) {
