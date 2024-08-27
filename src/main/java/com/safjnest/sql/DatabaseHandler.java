@@ -14,10 +14,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.util.log.BotLogger;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -203,7 +205,7 @@ public class DatabaseHandler {
 
 
     /**
-     * Run one or more queries using the deffault statement
+     * Run one or more queries using the default statement
      * @param queries
      */
     public static boolean runQuery(String... queries) {
@@ -1120,19 +1122,50 @@ public class DatabaseHandler {
 
 
     public static QueryResult getPlaylistTracks(int playlist_id) {
-        return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id);
+        return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id + " ORDER BY `order` ASC;");
     }
 
-    public static boolean addTrackToPlaylist(int playlist_id, String uri, String encoded_track, int order) {
-        System.out.println("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES (" + playlist_id + ", '" + uri + "', '" + encoded_track + "', " + order + ")");
-        return runQuery("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES (" + playlist_id + ", '" + uri + "', '" + encoded_track + "', " + order + ")");
+    public static boolean addTrackToPlaylist(int playlist_id, String uri, String encoded_track, Integer order) {
+        if(order == null) {
+            return runQuery("SET @max_order = (SELECT COALESCE(MAX(`order`), 0) FROM playlist_track WHERE playlist_id = " + playlist_id + ")", "INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES (" + playlist_id + ", '" + uri + "', '" + encoded_track + "', @max_order + 1);");
+        } else {
+            return runQuery("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES (" + playlist_id + ", '" + uri + "', '" + encoded_track + "', " + order + ")");
+        }
+    }
+
+    public static boolean addTrackToPlaylist(int playlist_id, List<AudioTrack> tracks, Integer order) {
+        StringBuilder queryBuilder = new StringBuilder("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES ");
+        
+        try (Statement stmt = c.createStatement()) {
+            int currentOrder = order != null ? order : fetchJRow(stmt, "SELECT COALESCE(MAX(`order`), 0) AS max_order FROM playlist_track WHERE playlist_id = " + playlist_id).getAsInt("max_order");
+            for (AudioTrack track : tracks) {
+                queryBuilder.append("(")
+                    .append(playlist_id).append(", '")
+                    .append(track.getInfo().uri).append("', '")
+                    .append(PlayerManager.get().encodeTrack(track)).append("', ")
+                    .append(currentOrder++).append("),");
+            }
+            queryBuilder.setLength(queryBuilder.length() - 1);
+            queryBuilder.append(";");
+            runQuery(stmt, queryBuilder.toString());
+            
+            c.commit();
+            return true;
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+            return false;
+        }
+
     }
 
 
 
-
-
-
+    
 
 
 

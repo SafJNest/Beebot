@@ -38,7 +38,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 public class QueueHandler {
     private static String formatTrack(int index, AudioTrack track) {
         //"**[" + (index + 1) + "]** " + "`-`"  + track.getInfo().title + " - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
-        return new StringBuilder().append("`").append(index + 1).append("\u00A0\u00A0").append(PermissionHandler.ellipsis(track.getInfo().title, 49)).toString();
+        return new StringBuilder().append("`").append(index + 1).append("`\u00A0\u00A0").append(PermissionHandler.ellipsis(track.getInfo().title, 49)).toString();
     }
 
     public static String extractSoundcloudTrackId(String url) {
@@ -201,16 +201,17 @@ public class QueueHandler {
         
         StringBuilder queues = new StringBuilder();
         int cont = 0;
-
-        ListIterator<AudioTrack> iterator = queue.listIterator(startIndex);
-        while (iterator.hasNext() && cont < 10) {
-            int i = iterator.nextIndex();
-            if (i == index) {
-                iterator.next();
-                continue;
+        if(startIndex >= 0 && startIndex < queue.size()) {
+            ListIterator<AudioTrack> iterator = queue.listIterator(startIndex);
+            while (iterator.hasNext() && cont < 10) {
+                int i = iterator.nextIndex();
+                if (i == index) {
+                    iterator.next();
+                    continue;
+                }
+                queues.append(formatTrack(i, iterator.next())).append("\n");
+                cont++;
             }
-            queues.append(formatTrack(i, iterator.next())).append("\n");
-            cont++;
         }
 
         if (playingNow != null) {

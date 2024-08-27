@@ -23,6 +23,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
+import com.safjnest.core.audio.SafjAudioPlaylist;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -767,12 +768,19 @@ public class Test extends Command{
             case "addtrackplaylist":
                 AudioTrack track = PlayerManager.get().createTrack(e.getGuild(), args[1]);
                 PlayerManager.get().encodeTrack(track);
-                DatabaseHandler.addTrackToPlaylist(1, track.getInfo().uri, PlayerManager.get().encodeTrack(track), 1);
+                DatabaseHandler.addTrackToPlaylist(2, track.getInfo().uri, PlayerManager.get().encodeTrack(track), null);
+            break;
+            case "loadtracksfromdb":
+                List<AudioTrack> tracksFinal = new ArrayList<>();
+                QueryResult tracksToLoad = DatabaseHandler.getPlaylistTracks(Integer.parseInt(args[1]));
+                for(ResultRow trackToLoad : tracksToLoad) {
+                    tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
+                }
+                SafjAudioPlaylist playlist = new SafjAudioPlaylist("Custom Playlist", tracksFinal, null);
+                (new ResultHandler(e, false, false)).playlistLoaded(playlist);
             break;
             case "loadqueuedb":
-                for (AudioTrack audiotrack : PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue()) {
-                    DatabaseHandler.addTrackToPlaylist(1, audiotrack.getInfo().uri, PlayerManager.get().encodeTrack(audiotrack), 1);
-                }
+                DatabaseHandler.addTrackToPlaylist(Integer.valueOf(args[1]), (List<AudioTrack>) PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue(), null);
             break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");

@@ -168,8 +168,6 @@ public class PlayerManager {
 
         String encodedTrack = Base64.getEncoder().encodeToString(outputStream.toByteArray());
 
-        System.out.println("\n" + encodedTrack);
-
         return encodedTrack;
     }
 
@@ -182,9 +180,6 @@ public class PlayerManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        if(decodedTrack != null) System.out.println("\n" + decodedTrack.getInfo().uri);
-        else System.out.println("\n" + "decodedTrack is null :(");
 
         return decodedTrack;
     }
