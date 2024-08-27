@@ -98,6 +98,7 @@ public class LPTracker {
         }
         else gain = lp - dataGame.getAsInt("lp");
         
+        BotLogger.info("[LPTracker] Push match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         DatabaseHandler.setSummonerData(summoner.getAccountId(), match.getGameId(), summoner.getPlatform(), win, rank, lp, gain, champion, match.getGameCreation(), match.getGameEndTimestamp(), match.getGameVersion());
 
     }
