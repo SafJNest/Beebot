@@ -169,7 +169,6 @@ public class Bot extends ListenerAdapter {
                 // ).queue();
                 new CustomEmojiHandler();
                 BotLogger.debug("[JDA] Custom emoji cached correctly");
-                BotLogger.info("[JDA] No more guild cached correctly");
             }
         });
 

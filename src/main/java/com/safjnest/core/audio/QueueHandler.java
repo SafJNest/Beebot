@@ -38,7 +38,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 public class QueueHandler {
     private static String formatTrack(int index, AudioTrack track) {
         //"**[" + (index + 1) + "]** " + "`-`"  + track.getInfo().title + " - " + "`" + SafJNest.formatDuration(track.getInfo().length) +  "`";
-        return new StringBuilder().append("`").append(index + 1).append("\u00A0\u00A0").append(PermissionHandler.ellipsis(track.getInfo().title, 49)).toString();
+        return new StringBuilder().append("`").append(index + 1).append("`\u00A0\u00A0").append(PermissionHandler.ellipsis(track.getInfo().title, 49)).toString();
     }
 
     public static String extractSoundcloudTrackId(String url) {

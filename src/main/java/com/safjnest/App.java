@@ -68,10 +68,9 @@ public class App {
         }
 
         SecureRandom secureRandom = new SecureRandom();
-        BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider());
+        BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider().getInfo());
 
         bot = App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
-        System.out.println("Bot: " + bot);
         SettingsLoader settingsLoader = new SettingsLoader(bot, App.isExtremeTesting());
 
         tts = new TTSHandler(settingsLoader.getTTSApiKey());
