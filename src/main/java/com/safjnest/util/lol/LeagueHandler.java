@@ -245,7 +245,6 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 for (Object key : spellData.keySet()) {
                     spellDataValues.put(String.valueOf(key), String.valueOf(spellData.get(key)));
                 }
-                System.out.println(augment.get("id") + " " + augment.get("name"));
                 augments.add(new AugmentData(
                     String.valueOf(augment.get("id")),
                     String.valueOf(augment.get("name")),

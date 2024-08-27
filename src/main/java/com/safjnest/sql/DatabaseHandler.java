@@ -1123,6 +1123,11 @@ public class DatabaseHandler {
         return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id);
     }
 
+    public static boolean addTrackToPlaylist(int playlist_id, String uri, String encoded_track, int order) {
+        System.out.println("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES (" + playlist_id + ", '" + uri + "', '" + encoded_track + "', " + order + ")");
+        return runQuery("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES (" + playlist_id + ", '" + uri + "', '" + encoded_track + "', " + order + ")");
+    }
+
 
 
 

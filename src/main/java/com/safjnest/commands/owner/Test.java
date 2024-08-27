@@ -42,6 +42,7 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.TableHandler;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.twitch.TwitchClient;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -759,6 +760,19 @@ public class Test extends Command{
                 }
                 PlayerManager.get().loadPlaylist(e.getGuild(), URIs, new ResultHandler(e, false, false));
 
+            break;
+            case "encodetrack":
+                PlayerManager.get().encodeTrack(PlayerManager.get().createTrack(e.getGuild(), args[1]));
+            break;
+            case "addtrackplaylist":
+                AudioTrack track = PlayerManager.get().createTrack(e.getGuild(), args[1]);
+                PlayerManager.get().encodeTrack(track);
+                DatabaseHandler.addTrackToPlaylist(1, track.getInfo().uri, PlayerManager.get().encodeTrack(track), 1);
+            break;
+            case "loadqueuedb":
+                for (AudioTrack audiotrack : PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue()) {
+                    DatabaseHandler.addTrackToPlaylist(1, audiotrack.getInfo().uri, PlayerManager.get().encodeTrack(audiotrack), 1);
+                }
             break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
