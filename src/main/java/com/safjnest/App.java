@@ -2,7 +2,6 @@ package com.safjnest;
 
 import java.io.FileReader;
 import java.security.SecureRandom;
-import java.util.Collections;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
@@ -52,6 +51,7 @@ public class App {
     }
 
 
+
     public static void main(String args[]) {
         
         SafJNest.bee();
@@ -63,8 +63,14 @@ public class App {
 
         if (!EXTREME_TESTING) {
             SpringApplication app = new SpringApplication(App.class);
-            app.setDefaultProperties(Collections.singletonMap("server.port", "8096"));
-            //app.run(args);
+            try {
+                Properties spring = new Properties();
+                spring.load(new FileReader("spring.properties"));
+                app.setDefaultProperties(spring);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            app.run(args);
         }
 
         SecureRandom secureRandom = new SecureRandom();

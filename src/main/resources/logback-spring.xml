@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true">
+    <!-- Configure Twitch4J logger level -->
+    <logger name="com.github.twitch4j" level="WARN"/>
+
+    <!-- Ensure the custom converter class is correctly included in your project -->
+    <conversionRule conversionWord="colorLevel" converterClass="com.safjnest.util.log.BotLoggerColorConverter" />
+
+    <!-- Appender Configuration [Console] -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight([%-5level]) %logger{25} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Appender Configuration [File] -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <file>client.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>client.%i.log</fileNamePattern>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <MaxFileSize>10MB</MaxFileSize>
+        </triggeringPolicy>
+    </appender>
+
+    <!-- Appender Configuration [BotLogger] -->
+    <appender name="BOTLOGGER" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%colorLevel - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Configure BotLogger logger level -->
+    <logger name="com.safjnest.util.log.BotLogger" level="TRACE" additivity="false">
+        <appender-ref ref="BOTLOGGER"/>
+    </logger>
+
+    <logger name="no.stelar7.api.r4j.basic.calling.DataCallBuilder" level="WARN" additivity="false">
+        <appender-ref ref="BOTLOGGER"/>
+    </logger>
+
+    <!-- Appender Output Configuration -->
+    <root level="info">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
