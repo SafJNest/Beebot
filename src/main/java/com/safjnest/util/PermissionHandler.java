@@ -44,13 +44,25 @@ public class PermissionHandler {
     }
     
     /**
-     * Check if a discord tag is in the list of {@link com.safjnest.util.PermissionHandler#untouchables untouchables}
+     * Check if a discord user is in the list of {@link com.safjnest.util.PermissionHandler#untouchables untouchables}
      * 
-     * @param id Discord tag of the member
+     * @param id Discord id of the user
      * @return True if the member is in the list, false otherwise
      */
     public static boolean isUntouchable(String id) {
         if (untouchables.contains(id))
+            return true;
+        return false;
+    }
+
+    /**
+     * Check if a discord user is Premium
+     * 
+     * @param id Discord id of the user
+     * @return True if the member is premium, false otherwise
+     */
+    public static boolean isPremium(String id) {
+        if (isUntouchable(id) || isEpria(id))
             return true;
         return false;
     }

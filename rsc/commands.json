@@ -272,6 +272,56 @@
         }
     },
 
+    "playlist": {
+        "alias" : ["pl"],
+        "help"  : "Manage custom playlists.",
+        "longhelp"  : "Manage custom playlists.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "create": {
+                "alias" : [],
+                "help"  : ".",
+                "longhelp"  : "."
+            }, 
+            "addsong": {
+                "alias" : [],
+                "help"  : ".",
+                "longhelp"  : "."
+            },
+            "addqueue": {
+                "alias" : [],
+                "help"  : ".",
+                "longhelp"  : "."
+            },
+            "play": {
+                "alias" : [],
+                "help"  : ".",
+                "longhelp"  : "."
+            },
+            "removesong": {
+                "alias" : [],
+                "help"  : ".",
+                "longhelp"  : "."
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : ".",
+                "longhelp"  : "."
+            },
+            "list": {
+                "alias" : [],
+                "help"  : ".",
+                "longhelp"  : "."
+            },
+            "view": {
+                "alias" : [],
+                "help"  : ".",
+                "longhelp"  : "."
+            }
+        }
+    },
+
 
 
 

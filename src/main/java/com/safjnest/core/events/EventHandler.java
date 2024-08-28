@@ -8,6 +8,7 @@ import com.safjnest.model.guild.alert.AlertType;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
@@ -41,10 +42,12 @@ public class EventHandler extends ListenerAdapter {
         Guild guild = e.getGuild();
         User self = e.getJDA().getSelfUser();
         User userJoined = e.getMember().getUser();
+        
 
         AudioChannel channelJoined = e.getChannelJoined();
         AudioChannel channelLeft = e.getChannelLeft();
         AudioChannel connectChannel = guild.getAudioManager().getConnectedChannel();
+        VoiceChannel afkChannel = guild.getAfkChannel();
 
         if(e.getMember().getId().equals(self.getId()) && channelJoined == null)
             Functions.handleBotLeave(guild);
@@ -52,7 +55,7 @@ public class EventHandler extends ListenerAdapter {
         if (Functions.isBotAlone(connectChannel, channelLeft))
             Functions.handleBotLeave(guild);
         
-        if (channelJoined != null && 
+        if (channelJoined != null && (afkChannel != null && channelJoined.getIdLong() != afkChannel.getIdLong()) &&
             (connectChannel == null || channelJoined.getId().equals(connectChannel.getId())) && !userJoined.isBot()) {
             Functions.handleGreetSound(channelJoined, userJoined, guild);
         }

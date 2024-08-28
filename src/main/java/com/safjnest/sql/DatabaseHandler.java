@@ -1117,9 +1117,36 @@ public class DatabaseHandler {
     public static ResultRow getSummonerData(String user_id, String account_id) {
         return fetchJRow("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
     }
+    
+
+    
 
 
+    public static int createPlaylist(String name, String user_id) {
+        int id = 0;
+        try (Statement stmt = c.createStatement()) {
+            runQuery(stmt, "INSERT INTO playlist(name, user_id) VALUES('" + name + "','" + user_id + "');");
+            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+            c.commit();
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+        }
+        return id;
+    }
 
+    public static QueryResult getPlaylists(String user_id) {
+        return safJQuery("SELECT id, name, created_at FROM playlist WHERE user_id = '" + user_id + "';");
+    }
+
+
+    public static boolean playlistExixtes(String name, String user_id) {
+        return !safJQuery("SELECT 1 FROM playlist WHERE name = '" + name + "' AND user_id = '" + user_id + "'").isEmpty();
+    }
 
     public static QueryResult getPlaylistTracks(int playlist_id) {
         return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id + " ORDER BY `order` ASC;");
@@ -1160,7 +1187,36 @@ public class DatabaseHandler {
             System.out.println(ex.getMessage());
             return false;
         }
+    }
 
+    public static boolean addTrackToPlaylist(String playlist_name, String user_id, List<AudioTrack> tracks, Integer order) {
+        StringBuilder queryBuilder = new StringBuilder("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES ");
+        
+        try (Statement stmt = c.createStatement()) {
+            int playlist_id = fetchJRow("SELECT id FROM playlist WHERE name = '" + playlist_name + "' AND user_id = '" + user_id + "'").getAsInt("id");
+            int currentOrder = order != null ? order : fetchJRow(stmt, "SELECT COALESCE(MAX(`order`), 0) AS max_order FROM playlist_track WHERE playlist_id = " + playlist_id).getAsInt("max_order");
+            for (AudioTrack track : tracks) {
+                queryBuilder.append("(")
+                    .append(playlist_id).append(", '")
+                    .append(track.getInfo().uri).append("', '")
+                    .append(PlayerManager.get().encodeTrack(track)).append("', ")
+                    .append(currentOrder++).append("),");
+            }
+            queryBuilder.setLength(queryBuilder.length() - 1);
+            queryBuilder.append(";");
+            runQuery(stmt, queryBuilder.toString());
+            
+            c.commit();
+            return true;
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+            return false;
+        }
     }
 
 

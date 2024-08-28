@@ -134,6 +134,22 @@ public class SettingsLoader {
         return getBotSettings().get("nasaApiKey").toString();
     }
 
+    public Integer getMaxFreePlaylists() {
+        return Integer.valueOf(getDiscordSettings().get("maxFreePlaylists").toString());
+    }
+
+    public Integer getMaxFreePlaylistSize() {
+        return Integer.valueOf(getDiscordSettings().get("maxFreePlaylistSize").toString());
+    }
+
+    public Integer getMaxPremiumPlaylists() {
+        return Integer.valueOf(getDiscordSettings().get("maxPremiumPlaylists").toString());
+    }
+
+    public Integer getMaxPremiumPlaylistSize() {
+        return Integer.valueOf(getDiscordSettings().get("maxPremiumPlaylistSize").toString());
+    }
+
     public String getInfo() {
         return getDiscordSettings().get("info").toString();
     }
