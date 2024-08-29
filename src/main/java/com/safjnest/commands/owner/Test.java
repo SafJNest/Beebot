@@ -753,7 +753,7 @@ public class Test extends Command{
             break;
             case "playplaylist":
                 int playlistId = Integer.valueOf(args[1]);
-                QueryResult tracks = DatabaseHandler.getPlaylistTracks(playlistId);
+                QueryResult tracks = DatabaseHandler.getPlaylistTracks(playlistId, null, null);
 
                 List<String> URIs = new ArrayList<String>();
                 for(ResultRow track : tracks) {
@@ -772,7 +772,7 @@ public class Test extends Command{
             break;
             case "loadtracksfromdb":
                 List<AudioTrack> tracksFinal = new ArrayList<>();
-                QueryResult tracksToLoad = DatabaseHandler.getPlaylistTracks(Integer.parseInt(args[1]));
+                QueryResult tracksToLoad = DatabaseHandler.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
                 for(ResultRow trackToLoad : tracksToLoad) {
                     tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
                 }

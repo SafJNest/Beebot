@@ -29,7 +29,7 @@ public class PlaylistCreateSlash extends SlashCommand{
         this.category = commandData.getCategory();
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "name", "Name of the custom playlist", true),
+            new OptionData(OptionType.STRING, "name", "Name of the playlist to create", true),
             new OptionData(OptionType.BOOLEAN, "load", "Load the current queue in the newly created playlist", false)
         );
 
@@ -38,7 +38,7 @@ public class PlaylistCreateSlash extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        event.deferReply();
+        event.deferReply().setEphemeral(true).queue();
 
         String playlistName = event.getOption("name").getAsString();
         boolean loadQueue = event.getOption("load") != null ? event.getOption("load").getAsBoolean() : false;
@@ -55,41 +55,41 @@ public class PlaylistCreateSlash extends SlashCommand{
         QueryResult userPlaylists = DatabaseHandler.getPlaylists(userId);
 
         if(userPlaylists.size() >= maxPlaylists && !PermissionHandler.isPremium(userId)) {
-            event.reply("You have already created the maximum amount of free playlists (for more playlists wait for future paid tiers [pagaaaah, sgancia, spilla, sborsa proprio maonna ragazih]).").setEphemeral(true).queue();
+            event.getHook().editOriginal("You have already created the maximum amount of free playlists (for more playlists wait for future paid tiers [pagaaaah, sgancia, spilla, sborsa proprio maonna ragazih]).").queue();
             return;
         }
 
         if(userPlaylists.size() >= maxPlaylists && PermissionHandler.isPremium(userId)) {
-            event.reply("You have already created the maximum amount of playlists. If you legitimately need more DM ono f the devs.").setEphemeral(true).queue();
+            event.getHook().editOriginal("You have already created the maximum amount of playlists. If you legitimately need more DM ono f the devs.").queue();
             return;
         }
 
         if(userPlaylists.arrayColumn("name").contains(playlistName)) {
-            event.reply("You have already created a playlist with that name.").setEphemeral(true).queue();
+            event.getHook().editOriginal("You have already created a playlist with that name.").queue();
             return;
         }
 
         int playlistId = DatabaseHandler.createPlaylist(playlistName, userId);
 
         if (!loadQueue) {
-            event.reply("Playlist created successfully.").setEphemeral(true).queue();
+            event.getHook().editOriginal("Playlist created successfully.").queue();
             return;
         }
 
         List<AudioTrack> queue = (List<AudioTrack>) PlayerManager.get().getGuildMusicManager(event.getGuild()).getTrackScheduler().getQueue();
         if(queue.isEmpty()) {
-            event.reply("The current queue is empty so the created playlist will be empty.").setEphemeral(true).queue();
+            event.getHook().editOriginal("The current queue is empty so the created playlist will be empty.").queue();
             return;
         }
 
         if(queue.size() > maxPlaylistSize) {
             DatabaseHandler.addTrackToPlaylist(playlistId, queue.subList(0, maxPlaylistSize - 1), null);
-            event.reply("Playlist created successfully, the queue was too big to fit in the playlist (max " + maxPlaylistSize + ") so only the first " + maxPlaylistSize + "tracks were put in.").setEphemeral(true).queue();
+            event.getHook().editOriginal("Playlist created successfully, the queue was too big to fit in the playlist (max " + maxPlaylistSize + ") so only the first " + maxPlaylistSize + "tracks were put in.").queue();
             return;
         }
 
         DatabaseHandler.addTrackToPlaylist(playlistId, queue, null);
 
-        event.reply("Playlist created successfully.").setEphemeral(true).queue();
+        event.getHook().editOriginal("Playlist created successfully.").queue();
     }
 }

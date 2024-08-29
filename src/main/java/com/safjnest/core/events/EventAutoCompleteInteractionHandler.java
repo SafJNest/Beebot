@@ -16,7 +16,9 @@ import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.twitch.TwitchClient;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.tts.TTSVoices;
+import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
@@ -432,6 +434,76 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         return choices;
     }
 
+        private ArrayList<Choice> playlist(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+        QueryResult playlists = DatabaseHandler.getPlaylistsWithSize(e.getUser().getId());
+        
+
+        if (isFocused) {
+            int i = 0;
+            for (ResultRow playlist : playlists) {
+                if (playlist.get("name").toLowerCase().contains(value.toLowerCase()) && i < MAX_CHOICES) {
+                    String label = playlist.get("name") + " (" + playlist.get("size") + " songs)";
+                    choices.add(new Choice(label, playlist.get("id")));
+                    i++;
+                }
+                    
+            }
+        }
+        else {
+            playlists.shuffle();
+
+            int i = 0;
+            for (ResultRow playlist : playlists) {
+                String label = playlist.get("name") + " (" + playlist.get("size") + " songs)";
+                if (i < MAX_CHOICES) choices.add(new Choice(label, playlist.get("id")));
+            }
+        }
+          
+
+        return choices;
+    }
+
+    private ArrayList<Choice> playlistSong(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+        if (e.getOption("playlist-name") == null)
+            return choices;
+        
+        int playlistId = e.getOption("playlist-name").getAsInt();
+
+        QueryResult songs = DatabaseHandler.getPlaylistTracks(playlistId, null, null);
+        List<AudioTrack> queue = new ArrayList<>();
+        for (ResultRow song : songs) {
+            AudioTrack track = PlayerManager.get().decodeTrack(song.get("encoded_track"));
+            if (track != null) {
+                TrackData data = new TrackData(AudioType.SOUND);
+                data.setPlaylistSongId(song.getAsInt("id"));
+                track.setUserData(data);
+                queue.add(track);
+            } 
+        }
+
+        if (isFocused) {
+            int i = 0;
+            for (AudioTrack track : queue) {
+                if (track.getInfo().title.toLowerCase().contains(value.toLowerCase()) && i < MAX_CHOICES) {
+                    choices.add(new Choice(track.getInfo().title, track.getUserData(TrackData.class).getPlaylistSongId()));
+                    i++;
+                }
+            }
+        }
+        else {
+            Collections.shuffle(queue);
+            for (int i = 0; i < queue.size() && i < MAX_CHOICES; i++)
+                choices.add(new Choice(queue.get(i).getInfo().title, queue.get(i).getUserData(TrackData.class).getPlaylistSongId()));
+        }
+
+        return choices;
+
+    }
+
 
 
 
@@ -497,6 +569,12 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         else if (e.getFocusedOption().getName().equals("item"))
             name = "item";
+        
+        else if (e.getFocusedOption().getName().equals("playlist-name"))
+            name = "playlist";
+
+        else if (e.getFocusedOption().getName().equals("playlist-song"))
+            name = "playlist_song";
 
         
         switch (name) {
@@ -553,6 +631,12 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 break;
             case "item":
                 choices = item(e);
+                break;
+            case "playlist":
+                choices = playlist(e);
+                break;
+            case "playlist_song":
+                choices = playlistSong(e);
                 break;
         }
 

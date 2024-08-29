@@ -1143,13 +1143,79 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, name, created_at FROM playlist WHERE user_id = '" + user_id + "';");
     }
 
+    public static ResultRow getPlaylist(String user_id, int playlist_id) {
+        return fetchJRow("SELECT id, name, created_at FROM playlist WHERE user_id = '" + user_id + "' AND id = " + playlist_id + ";");
+    }
+
+    public static QueryResult getPlaylistsWithSize(String user_id) {
+        return safJQuery("SELECT id, name, created_at, (select count(*) as size from playlist_track where playlist_id = p.id) as size FROM playlist p WHERE user_id = '" + user_id + "';");
+    }
+
+    public static ResultRow getPlaylistByIdWithSize(int playlist_id) {
+        return fetchJRow("SELECT id, name, user_id, created_at, (select count(*) as size from playlist_track where playlist_id = p.id) as size FROM playlist p WHERE id = '" + playlist_id + "';");
+    }
+
+    public static int deletePlaylist(int playlist_id, String user_id) {
+        try (Statement stmt = c.createStatement()) {
+            ResultRow search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
+            
+            if(search.isEmpty()) {
+                return 0;
+            }
+
+            if(!search.get("user_id").equals(user_id)) {
+                return -1;
+            }
+
+            runQuery(stmt, "DELETE FROM playlist WHERE id = '" + playlist_id + "';");
+
+            return 1;
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+            return -2;
+        }
+    }
+
+    public static int deletePlaylistSong(int playlist_id, int song_id, String user_id) {
+        try (Statement stmt = c.createStatement()) {
+            ResultRow search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
+            
+            if(search.isEmpty()) {
+                return 0;
+            }
+
+            if(!search.get("user_id").equals(user_id)) {
+                return -1;
+            }
+
+            runQuery(stmt, "DELETE FROM playlist_track WHERE id = '" + song_id + "';");
+
+            return 1;
+        } catch (SQLException ex) {
+            try {
+                if(c != null) c.rollback();
+            } catch(SQLException e) {
+                System.out.println(e.getMessage());
+            }
+            System.out.println(ex.getMessage());
+            return -2;
+        }
+    }
+
 
     public static boolean playlistExixtes(String name, String user_id) {
         return !safJQuery("SELECT 1 FROM playlist WHERE name = '" + name + "' AND user_id = '" + user_id + "'").isEmpty();
     }
 
-    public static QueryResult getPlaylistTracks(int playlist_id) {
-        return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id + " ORDER BY `order` ASC;");
+    public static QueryResult getPlaylistTracks(int playlist_id, Integer limit, Integer offset) {
+        String limitString = limit != null ? " LIMIT " + limit + " " : "";
+        limitString += offset != null ? " OFFSET " + offset + " " : "";
+        return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id + " ORDER BY `order` ASC" + limitString);
     }
 
     public static boolean addTrackToPlaylist(int playlist_id, String uri, String encoded_track, Integer order) {

@@ -181,6 +181,26 @@ public class PlayerManager {
         return decodedTrack;
     }
 
+    public List<AudioTrack> decodeTracks(List<String> encodedTracks) {
+        List<AudioTrack> decodedTracks = new ArrayList<>();
+        
+        for (String encodedTrack : encodedTracks) {
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(Base64.getDecoder().decode(encodedTrack));
+            MessageInput input = new MessageInput(inputStream);
+            
+            try {
+                AudioTrack decodedTrack = audioPlayerManager.decodeTrack(input).decodedTrack;
+                if (decodedTrack != null) {
+                    decodedTracks.add(decodedTrack);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        return decodedTracks;
+    }
+
     public void loadPlaylist(Guild guild, List<String> uris, AudioLoadResultHandler resultHandler) {
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
         List<AudioTrack> tracks = new ArrayList<>();

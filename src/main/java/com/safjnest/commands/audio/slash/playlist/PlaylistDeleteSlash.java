@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -22,7 +23,7 @@ public class PlaylistDeleteSlash extends SlashCommand {
         this.category = commandData.getCategory();
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "name", "Name of the custom playlist", true)
+            new OptionData(OptionType.STRING, "name", "Name of the playlist to delete", true).setAutoComplete(true)
         );
 
         commandData.setThings(this);
@@ -30,6 +31,12 @@ public class PlaylistDeleteSlash extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        throw new UnsupportedOperationException("Unimplemented method 'execute'");
+        event.deferReply().setEphemeral(true).queue();
+
+        int playlistId = event.getOption("name").getAsInt();//ti da direttamente l'id della playlist uwu gna gna
+
+        DatabaseHandler.deletePlaylist(playlistId, event.getUser().getId());
+
+        event.getHook().editOriginal("Playlist deleted successfully.").queue();
     }
 }
