@@ -1214,7 +1214,7 @@ public class DatabaseHandler {
 
     public static QueryResult getPlaylistTracks(int playlist_id, Integer limit, Integer offset) {
         String limitString = limit != null ? " LIMIT " + limit + " " : "";
-        limitString += offset != null ? " OFFSET " + offset + " " : "";
+        limitString += offset != null ? " OFFSET " + ((offset - 1) * limit) + " " : "";
         return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id + " ORDER BY `order` ASC" + limitString);
     }
 
