@@ -10,12 +10,14 @@ import java.util.concurrent.TimeUnit;
 
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.ResultRow;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.util.twitch.TwitchClient;
 import com.safjnest.commands.audio.slash.CustomizeSoundSlash;
+import com.safjnest.commands.audio.slash.playlist.PlaylistViewSlash;
 import com.safjnest.commands.misc.Help;
 import com.safjnest.commands.misc.slash.twitch.TwitchMenuSlash;
 import com.safjnest.core.Bot;
@@ -139,7 +141,40 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if (buttonId.startsWith("help"))
             help(event);
+
+        else if (buttonId.startsWith("playlist"))
+            playlist(event);
         
+    }
+
+    private void playlist(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-", 2)[1];
+        
+        int page = 0;
+        int playlistId = 0;
+        for (Button b : event.getMessage().getButtons()) {
+            if (b.getId().startsWith("playlist-center")) {
+                playlistId = Integer.parseInt(b.getId().split("-")[2]);
+                page = Integer.parseInt(b.getLabel().split(":")[1].trim()) - 1;
+                break;
+            }
+        }
+
+        ResultRow playlist = DatabaseHandler.getPlaylistByIdWithSize(playlistId);
+        switch (args) {
+            case "left":
+                page -= 1;
+                break;
+            case "right":
+                page += 1;
+                break;
+        }
+
+        event.getMessage().editMessageEmbeds(PlaylistViewSlash.getTracksEmbed(playlist, event.getMember(), page).build())
+                .setComponents(PlaylistViewSlash.getTracksButton(playlist, page))
+                .queue();
+
+
     }
 
     public void help(ButtonInteractionEvent event) {
