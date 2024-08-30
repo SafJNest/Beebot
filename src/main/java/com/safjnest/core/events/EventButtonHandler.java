@@ -155,7 +155,7 @@ public class EventButtonHandler extends ListenerAdapter {
         for (Button b : event.getMessage().getButtons()) {
             if (b.getId().startsWith("playlist-center")) {
                 playlistId = Integer.parseInt(b.getId().split("-")[2]);
-                page = Integer.parseInt(b.getLabel().split(":")[1].trim()) - 1;
+                page = Integer.parseInt(b.getLabel().split(" ")[1].trim()) - 1;
                 break;
             }
         }
