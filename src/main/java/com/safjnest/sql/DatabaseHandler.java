@@ -1212,9 +1212,9 @@ public class DatabaseHandler {
         return !safJQuery("SELECT 1 FROM playlist WHERE name = '" + name + "' AND user_id = '" + user_id + "'").isEmpty();
     }
 
-    public static QueryResult getPlaylistTracks(int playlist_id, Integer limit, Integer offset) {
+    public static QueryResult getPlaylistTracks(int playlist_id, Integer limit, Integer page) {
         String limitString = limit != null ? " LIMIT " + limit + " " : "";
-        limitString += offset != null ? " OFFSET " + ((offset - 1) * limit) + " " : "";
+        limitString += page != null ? " OFFSET " + (page * limit) + " " : "";
         return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id + " ORDER BY `order` ASC" + limitString);
     }
 
