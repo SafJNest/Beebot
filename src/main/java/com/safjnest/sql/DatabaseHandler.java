@@ -381,15 +381,15 @@ public class DatabaseHandler {
     }
 
     public static boolean updateUserPlays(String sound_id, String user_id) {
-        return runQuery("INSERT INTO play(user_id, sound_id, times, last_play) VALUES('" + user_id + "', '" + sound_id + "', 1, '" + Timestamp.from(Instant.now()) + "') ON DUPLICATE KEY UPDATE times = times + 1, last_play = '" + Timestamp.from(Instant.now()) + "';", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
+        return runQuery("INSERT INTO sound_interactions(user_id, sound_id, times, last_play) VALUES('" + user_id + "', '" + sound_id + "', 1, '" + Timestamp.from(Instant.now()) + "') ON DUPLICATE KEY UPDATE times = times + 1, last_play = '" + Timestamp.from(Instant.now()) + "';", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
     }
 
     public static ResultRow getPlays(String sound_id, String user_id) {
-        return fetchJRow("SELECT times FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
+        return fetchJRow("SELECT times FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
     }
 
     public static ResultRow getGlobalPlays(String sound_id) {
-        return fetchJRow("SELECT sum(times) as times FROM play WHERE sound_id = '" + sound_id + "'");
+        return fetchJRow("SELECT sum(times) as times FROM sound_interactions WHERE sound_id = '" + sound_id + "'");
     }
 
     public static String getSoundsUploadedByUserCount(String user_id) {
@@ -401,7 +401,7 @@ public class DatabaseHandler {
     }
 
     public static String getTotalPlays(String user_id) {
-        return fetchJRow("select sum(times) as sum from play where user_id = '" + user_id + "';").get("sum");
+        return fetchJRow("select sum(times) as sum from sound_interactions where user_id = '" + user_id + "';").get("sum");
     }
 
     public static boolean soundboardExists(String id, String guild_id) {
@@ -1029,12 +1029,12 @@ public class DatabaseHandler {
 
     public static ResultRow getLikeDislike(String sound_id) {
         return fetchJRow("SELECT"
-            + "(SELECT SUM(`like`) FROM play WHERE sound_id = '" + sound_id + "') AS likes,"
-            + "(SELECT SUM(dislike) FROM play WHERE sound_id = '" + sound_id + "') AS dislikes;");
+            + "(SELECT SUM(`like`) FROM sound_interactions WHERE sound_id = '" + sound_id + "') AS likes,"
+            + "(SELECT SUM(dislike) FROM sound_interactions WHERE sound_id = '" + sound_id + "') AS dislikes;");
     }
 
     public static ResultRow getLikeDislikeUser(String sound_id, String user_id) {
-        return fetchJRow("SELECT `like`, dislike FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
+        return fetchJRow("SELECT `like`, dislike FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
     }
 
 
@@ -1075,13 +1075,13 @@ public class DatabaseHandler {
         if (!likePart.isEmpty() || !dislikePart.isEmpty()) {
             updateQuery += " WHERE id = '" + sound_id + "';";
         }
-        boolean q1 =  runQuery("INSERT INTO play(user_id, sound_id, `like`, dislike) VALUES('" + user_id + "','" + sound_id + "', " + (like ? 1 : 0) + ", " + (dislike ? 1 : 0) + ") ON DUPLICATE KEY UPDATE `like` = " + (like ? 1 : 0) + ", dislike = " + (dislike ? 1 : 0) + ";");
+        boolean q1 =  runQuery("INSERT INTO sound_interactions(user_id, sound_id, `like`, dislike) VALUES('" + user_id + "','" + sound_id + "', " + (like ? 1 : 0) + ", " + (dislike ? 1 : 0) + ") ON DUPLICATE KEY UPDATE `like` = " + (like ? 1 : 0) + ", dislike = " + (dislike ? 1 : 0) + ";");
         boolean q2 = runQuery(updateQuery);
         return q1 && q2;
     }
 
     public static ResultRow hasInterectedSound(String sound_id, String user_id) {
-        return fetchJRow("SELECT `like`, dislike FROM play WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
+        return fetchJRow("SELECT `like`, dislike FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
     }
 
 
