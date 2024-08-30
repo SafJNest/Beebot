@@ -273,7 +273,7 @@
     },
 
     "playlist": {
-        "alias" : ["pl"],
+        "alias" : [],
         "help"  : "Manage custom playlists.",
         "longhelp"  : "Manage custom playlists.",
         "category" : "Audio",
@@ -281,43 +281,43 @@
         "children": {
             "create": {
                 "alias" : [],
-                "help"  : ".",
-                "longhelp"  : "."
+                "help"  : "Create a new custom playlist.",
+                "longhelp"  : "Create a new custom playlist."
             }, 
             "addsong": {
                 "alias" : [],
-                "help"  : ".",
-                "longhelp"  : "."
+                "help"  : "Add a song to one of your custom playlists.",
+                "longhelp"  : "Add a song to one of your custom playlists."
             },
             "addqueue": {
                 "alias" : [],
-                "help"  : ".",
-                "longhelp"  : "."
+                "help"  : "Add the current queue to one of your custom playlists.",
+                "longhelp"  : "Add the current queue to one of your custom playlists."
             },
             "play": {
                 "alias" : [],
-                "help"  : ".",
-                "longhelp"  : "."
+                "help"  : "Add on of your custom playlists to the queue.",
+                "longhelp"  : "Add on of your custom playlists to the queue."
             },
             "removesong": {
                 "alias" : [],
-                "help"  : ".",
-                "longhelp"  : "."
+                "help"  : "Remove a song from one of your custom playlists.",
+                "longhelp"  : "Remove a song from one of your custom playlists."
             },
             "delete": {
                 "alias" : [],
-                "help"  : ".",
-                "longhelp"  : "."
+                "help"  : "Delete one of your custom playlists.",
+                "longhelp"  : "Delete one of your custom playlists."
             },
             "list": {
                 "alias" : [],
-                "help"  : ".",
-                "longhelp"  : "."
+                "help"  : "List your custom playlists.",
+                "longhelp"  : "List your custom playlists."
             },
             "view": {
                 "alias" : [],
-                "help"  : ".",
-                "longhelp"  : "."
+                "help"  : "View the songs in one of your custom playlists.",
+                "longhelp"  : "View the songs in one of your custom playlists."
             }
         }
     },
