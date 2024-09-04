@@ -24,6 +24,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.core.audio.SafjAudioPlaylist;
+import com.safjnest.core.audio.types.PlayTiming;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -759,7 +760,7 @@ public class Test extends Command{
                 for(ResultRow track : tracks) {
                     URIs.add(track.get("uri"));
                 }
-                PlayerManager.get().loadPlaylist(e.getGuild(), URIs, new ResultHandler(e, false, false));
+                PlayerManager.get().loadPlaylist(e.getGuild(), URIs, new ResultHandler(e, false, PlayTiming.LAST));
 
             break;
             case "encodetrack":
@@ -777,7 +778,7 @@ public class Test extends Command{
                     tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
                 }
                 SafjAudioPlaylist playlist = new SafjAudioPlaylist("Custom Playlist", tracksFinal, null);
-                (new ResultHandler(e, false, false)).playlistLoaded(playlist);
+                (new ResultHandler(e, false, PlayTiming.LAST)).playlistLoaded(playlist);
             break;
             case "loadqueuedb":
                 DatabaseHandler.addTrackToPlaylist(Integer.valueOf(args[1]), (List<AudioTrack>) PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue(), null);

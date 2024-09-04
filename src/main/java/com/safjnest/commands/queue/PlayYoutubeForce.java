@@ -7,6 +7,9 @@ import com.safjnest.util.CommandsLoader;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
+import com.safjnest.core.audio.types.PlayTiming; 
+
+
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -53,6 +56,6 @@ public class PlayYoutubeForce extends Command {
             return;
         }
         
-        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, true));
+        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, PlayTiming.NOW));
     }
 }

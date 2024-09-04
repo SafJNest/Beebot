@@ -31,7 +31,11 @@ public class PlaylistPlaySlash extends SlashCommand {
         this.category = commandData.getCategory();
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "playlist-name", "Name of the custom playlist", true).setAutoComplete(true)
+            new OptionData(OptionType.STRING, "playlist-name", "Name of the custom playlist", true).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "timing", "When to play the track", false)
+                .addChoice(PlayTiming.NOW.getName(), String.valueOf(PlayTiming.NOW.ordinal()))
+                .addChoice(PlayTiming.NEXT.getName(), String.valueOf(PlayTiming.NEXT.ordinal()))
+                .addChoice(PlayTiming.LAST.getName(), String.valueOf(PlayTiming.LAST.ordinal()))
         );
 
         commandData.setThings(this);
@@ -48,6 +52,8 @@ public class PlaylistPlaySlash extends SlashCommand {
             event.getHook().editOriginal("What the fock are yu doing.").queue();
             return;
         }
+
+        PlayTiming timing = event.getOption("timing") == null ? PlayTiming.LAST : PlayTiming.values()[event.getOption("timing").getAsInt()];
  
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = event.getGuild().getSelfMember().getVoiceState().getChannel();
@@ -77,6 +83,6 @@ public class PlaylistPlaySlash extends SlashCommand {
         
 
         SafjAudioPlaylist audioPlaylist = new SafjAudioPlaylist(playlist.get("name"), tracksFinal, null);
-        (new ResultHandler(event, false, "", true, ReplyType.MODIFY)).playlistLoaded(audioPlaylist);
+        (new ResultHandler(event, false, "", timing, ReplyType.MODIFY)).playlistLoaded(audioPlaylist);
     }
 }

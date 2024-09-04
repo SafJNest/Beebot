@@ -16,6 +16,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
+import com.safjnest.core.audio.types.PlayTiming;
 import com.safjnest.core.audio.types.ReplyType;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -234,7 +235,7 @@ public class SearchYoutubeSlash extends SlashCommand {
                 event.getHook().editOriginalComponents().queue();
     
                 pm.loadItemOrdered(guild, selected.get(0),
-                        new ResultHandler(slashEvent, false, selected.get(0), false, ReplyType.MODIFY));
+                        new ResultHandler(slashEvent, false, selected.get(0), PlayTiming.LAST, ReplyType.MODIFY));
                 
                 event.getJDA().removeEventListener(this);
             }

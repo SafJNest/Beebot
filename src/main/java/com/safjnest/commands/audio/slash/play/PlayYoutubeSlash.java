@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
-import com.safjnest.core.audio.types.ReplyType;
+import com.safjnest.core.audio.types.*;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -34,7 +34,10 @@ public class PlayYoutubeSlash extends SlashCommand {
         this.category = commandData.getCategory();
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "video", "Video/Playlist link or video name", true),
-            new OptionData(OptionType.BOOLEAN, "force", "Force play", false)
+            new OptionData(OptionType.STRING, "timing", "When to play the track", false)
+                .addChoice(PlayTiming.NOW.getName(), String.valueOf(PlayTiming.NOW.ordinal()))
+                .addChoice(PlayTiming.NEXT.getName(), String.valueOf(PlayTiming.NEXT.ordinal()))
+                .addChoice(PlayTiming.LAST.getName() + " (default)", String.valueOf(PlayTiming.LAST.ordinal()))
         );
         this.pm = PlayerManager.get();
         commandData.setThings(this);
@@ -43,7 +46,7 @@ public class PlayYoutubeSlash extends SlashCommand {
 	@Override
 	protected void execute(SlashCommandEvent event) {
         String search = event.getOption("video").getAsString();
-        boolean isForced = event.getOption("force") != null && event.getOption("force").getAsBoolean();
+        PlayTiming timing = event.getOption("timing") == null ? PlayTiming.LAST : PlayTiming.values()[event.getOption("timing").getAsInt()];
 
         Guild guild = event.getGuild();
         
@@ -60,6 +63,6 @@ public class PlayYoutubeSlash extends SlashCommand {
             return;
         }
         
-        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, search, isForced, ReplyType.REPLY));
+        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, search, timing, ReplyType.REPLY));
     }
 }

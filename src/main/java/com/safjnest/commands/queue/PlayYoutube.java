@@ -7,6 +7,8 @@ import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
+import com.safjnest.core.audio.types.PlayTiming; 
+
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 
@@ -46,6 +48,6 @@ public class PlayYoutube extends Command {
             return;
         }
 
-        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, false));
+        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, PlayTiming.LAST));
     }
 }

@@ -1,10 +1,10 @@
 package com.safjnest.core.audio;
 
+import java.util.Collections;
+
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.audio.types.AudioType;
-import com.safjnest.core.audio.types.EmbedType;
-import com.safjnest.core.audio.types.ReplyType;
+import com.safjnest.core.audio.types.*;
 import com.safjnest.util.SafJNest;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -27,11 +27,11 @@ public class ResultHandler implements AudioLoadResultHandler {
     private final String args;
     private final boolean isSearch;
 
-    private final boolean isForced;
     private final ReplyType replyType;
+    private final PlayTiming playbackTiming;
     
 
-    public ResultHandler(CommandEvent commandEvent, boolean isSearch, boolean isForced) {
+    public ResultHandler(CommandEvent commandEvent, boolean isSearch, PlayTiming playbackTiming) {
         this.commandEvent = commandEvent;
         this.slashCommandEvent = null;
         this.guild = commandEvent.getGuild();
@@ -40,20 +40,20 @@ public class ResultHandler implements AudioLoadResultHandler {
         this.isSearch = isSearch;
         this.pm = PlayerManager.get();
         this.ts = pm.getGuildMusicManager(guild).getTrackScheduler();
-        this.isForced = isForced;
+        this.playbackTiming = playbackTiming;
         this.replyType = ReplyType.SEPARATED;
     }
 
-    public ResultHandler(SlashCommandEvent slashCommandEvent, boolean isSearch, String args, boolean isForced, ReplyType replyType) {
+    public ResultHandler(SlashCommandEvent slashCommandEvent, boolean isSearch, String args, PlayTiming playbackTiming, ReplyType replyType) {
         this.commandEvent = null;
         this.slashCommandEvent = slashCommandEvent;
         this.guild = slashCommandEvent.getGuild();
         this.author = slashCommandEvent.getMember();
+        this.playbackTiming = playbackTiming;
         this.args = args;
         this.isSearch = isSearch;
         this.pm = PlayerManager.get();
         this.ts = pm.getGuildMusicManager(guild).getTrackScheduler();
-        this.isForced = isForced;
         this.replyType = replyType;
     }
 
@@ -107,58 +107,97 @@ public class ResultHandler implements AudioLoadResultHandler {
 
     private void search() {
         if(commandEvent != null) 
-            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(commandEvent, true, isForced));
+            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(commandEvent, true, playbackTiming));
         else if(slashCommandEvent != null) 
-            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(slashCommandEvent, true, args, isForced, replyType));
+            pm.loadItemOrdered(guild, "ytsearch:" + args, new ResultHandler(slashCommandEvent, true, args, playbackTiming, replyType));
     }
 
 
-    private void queue(AudioTrack track, boolean isForced, int seconds) {
-        if(isForced) {
+    private void queue(AudioTrack track, PlayTiming playbackTiming, int seconds) {
+        if(seconds != -1)
+            track.setPosition(seconds * 1000);
+
+        switch (playbackTiming) {
+        case NOW:
             ts.addTrackToFront(track);
 
             ts.moveCursor(1);
-
-            if(seconds != -1)
-                track.setPosition(seconds * 1000);
-
             ts.play(track, true);
-        }
-        else {
+        break;
+        case NEXT:
+            ts.addTrackToFront(track);
+
+            if (ts.canPlay()) {
+                ts.play();
+            }
+        break;
+        case LAST:
             ts.queue(track);
             
             if (ts.canPlay()) {
                 ts.moveCursor(ts.getQueue().size(), true);
                 ts.play();
             }
+        break;
+        default:
+            ts.queue(track);
+                
+            if (ts.canPlay()) {
+                ts.moveCursor(ts.getQueue().size(), true);
+                ts.play();
+            }
+        break;
         }
     }
 
-    private void queue(AudioTrack track, boolean isForced) {
-        queue(track, isForced, -1);
+    private void queue(AudioTrack track, PlayTiming playbackTiming) {
+        queue(track, playbackTiming, -1);
     }
 
-    private void queue(AudioPlaylist playlist, boolean isForced) {
-        if(isForced) {
-            //TODO capire se il comportamento deve essere diverso
-        }
-        
+    private void queue(AudioPlaylist playlist, PlayTiming playbackTiming) {
+
         if(playlist.getTracks().size() == 0) { 
             reply("Playlist is empty");
             return;
         }
 
-        for(AudioTrack track : playlist.getTracks()) {
-            track.setUserData(new TrackData(AudioType.AUDIO));
-            ts.queue(track);
+        switch (playbackTiming) {
+            case NOW:
+                Collections.reverse(playlist.getTracks());
+                for(AudioTrack track : playlist.getTracks()) {
+                    track.setUserData(new TrackData(AudioType.AUDIO));
+                    ts.addTrackToFront(track);
+                }
+                ts.play(ts.moveCursor(1), true);
+                break;
+            case NEXT:
+                Collections.reverse(playlist.getTracks());
+                for(AudioTrack track : playlist.getTracks()) {
+                    track.setUserData(new TrackData(AudioType.AUDIO));
+                    ts.addTrackToFront(track);
+                }
+                if (ts.canPlay()) {
+                    ts.play();
+                }
+                break;  
+            case LAST:
+                for(AudioTrack track : playlist.getTracks()) {
+                    track.setUserData(new TrackData(AudioType.AUDIO));
+                    ts.queue(track);
+                }
+                if (ts.canPlay()) {
+                    int index = ts.getQueue().size() - playlist.getTracks().size();
+                    if (index > 0) index++;
+                    ts.moveCursor(index, true);
+                    ts.play();
+                }
+                break;
+        
+            default:
+                break;
         }
 
-        if (ts.canPlay()) {
-            int index = ts.getQueue().size() - playlist.getTracks().size();
-            if (index > 0) index++;
-            ts.moveCursor(index, true);
-            ts.play();
-        }
+
     }
 
     
@@ -167,7 +206,7 @@ public class ResultHandler implements AudioLoadResultHandler {
         track.setUserData(new TrackData(AudioType.AUDIO));
 
         int seconds = SafJNest.extractSeconds(args);
-        queue(track, isForced, seconds);
+        queue(track, playbackTiming, seconds);
 
         reply(QueueHandler.getTrackEmbed(author, track));
 
@@ -182,12 +221,12 @@ public class ResultHandler implements AudioLoadResultHandler {
             AudioTrack track = playlist.getTracks().get(0);
             track.setUserData(new TrackData(AudioType.AUDIO));
 
-            queue(track, isForced);
+            queue(track, playbackTiming);
 
             reply(QueueHandler.getTrackEmbed(author, track));
         }
         else {
-            queue(playlist, isForced);
+            queue(playlist, playbackTiming);
 
             reply(QueueHandler.getPlaylistEmbed(author, playlist, args));
         }
