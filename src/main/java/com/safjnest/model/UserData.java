@@ -187,7 +187,7 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = DatabaseHandler.addLOLAccount(USER_ID, s.getSummonerId(), s.getAccountId(), s.getPlatform());
+        boolean result = DatabaseHandler.addLOLAccount(USER_ID, s);
         if (result) riotAccounts.put(s.getAccountId(), String.valueOf(s.getPlatform().ordinal()));
         
         return result;

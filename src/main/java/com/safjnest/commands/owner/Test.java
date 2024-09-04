@@ -783,6 +783,23 @@ public class Test extends Command{
             case "loadqueuedb":
                 DatabaseHandler.addTrackToPlaylist(Integer.valueOf(args[1]), (List<AudioTrack>) PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue(), null);
             break;
+            case "fixloldb":
+                query = "SELECT id, summoner_id, league_shard from summoner";
+                res = DatabaseHandler.safJQuery(query);
+                for (ResultRow acc : res) {
+                    String summoner_id = acc.get("summoner_id");
+                    int league_shard = acc.getAsInt("league_shard");
+                    Summoner summoner = LeagueHandler.getSummonerBySummonerId(summoner_id, LeagueShard.values()[league_shard]);
+                    if (summoner == null) {
+                        System.out.println("Summoner not found");
+                        continue;
+                    }
+                    String query1 = "UPDATE summoner SET account_id = '" + summoner.getAccountId() + "', puuid = '" + summoner.getPUUID() + "' WHERE id = " + acc.get("id");
+                    System.out.println(query1);
+                    DatabaseHandler.runQuery(query1);
+                }
+                e.reply("Done");
+            break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;

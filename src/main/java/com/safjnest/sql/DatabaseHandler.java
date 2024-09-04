@@ -22,6 +22,7 @@ import com.safjnest.util.log.BotLogger;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 /**
  * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
@@ -502,10 +503,12 @@ public class DatabaseHandler {
         return fetchJRow("SELECT user_id FROM summoner WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
     }
 
-    
+    public static boolean addLOLAccount(String user_id, Summoner summoner) {
+        return addLOLAccount(user_id, summoner.getSummonerId(), summoner.getAccountId(), summoner.getPUUID(), summoner.getPlatform());
+    }
 
-    public static boolean addLOLAccount(String user_id, String summoner_id, String account_id, LeagueShard shard) {
-        String query = "INSERT INTO summoner(user_id, summoner_id, account_id, league_shard) VALUES('" + user_id + "','" + summoner_id + "','" + account_id + "','" + shard.ordinal() + "');";
+    public static boolean addLOLAccount(String user_id, String summoner_id, String account_id, String puuid, LeagueShard shard) {
+        String query = "INSERT INTO summoner(user_id, summoner_id, account_id, puuid, league_shard) VALUES('" + user_id + "','" + summoner_id + "','" + account_id + "','" + puuid + "','" + shard.ordinal() + "');";
         return runQuery(query);
     }
 
