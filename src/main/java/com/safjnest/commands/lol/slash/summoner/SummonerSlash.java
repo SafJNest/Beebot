@@ -27,7 +27,7 @@ public class SummonerSlash extends SlashCommand {
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new SummonerLinkSlash(father), new SummonerInfoSlash(father), new SummonerUnlinkSlash(father), new SummonerTrackSlash(father));
+        Collections.addAll(slashCommandsList, new SummonerLinkSlash(father), new SummonerProfileSlash(father), new SummonerUnlinkSlash(father), new SummonerTrackSlash(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);

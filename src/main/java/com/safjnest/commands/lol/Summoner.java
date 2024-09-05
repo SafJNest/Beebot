@@ -44,7 +44,7 @@ public class Summoner extends Command {
 
         s = LeagueHandler.getSummonerByArgs(event);
         if (s == null) {
-            event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
+            event.reply("Couldn't find the specified summoner. Remember to specify the tag or link an account using `/summoner link`");
             return;
         }
 

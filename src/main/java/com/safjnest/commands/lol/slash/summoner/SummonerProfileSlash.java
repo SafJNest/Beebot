@@ -20,9 +20,9 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class SummonerInfoSlash extends SlashCommand {
+public class SummonerProfileSlash extends SlashCommand {
  
-    public SummonerInfoSlash(String father){
+    public SummonerProfileSlash(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -51,7 +51,7 @@ public class SummonerInfoSlash extends SlashCommand {
         
         s = LeagueHandler.getSummonerByArgs(event);
         if(s == null){
-            event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag or connect an account using ```/summoner connect```").queue();
+            event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag or link an account using `/summoner link`").queue();
             return;
         }
 
