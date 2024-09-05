@@ -407,9 +407,10 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
         HashMap<String, String> items = new HashMap<>();
         for (Item item : LeagueHandler.getRiotApi().getDDragonAPI().getItems().values()) {
-            // 30 is arena, so the item is different with the same name (riot?)          
-            if (!item.getMaps().get("30")) items.put(item.getName().replaceAll("<.+?>", ""), item.getId() + ""); 
-            else items.put(item.getName().replaceAll("<.+?>", "") + " (ARENA)", item.getId() + "");
+            // 30 is arena, so the item is different with the same name (riot?)         
+            if (item.getMaps().get("30")) items.put(item.getName().replaceAll("<.+?>", "") + " (ARENA)", item.getId() + "");
+            else if (item.getMaps().get("33")) items.put(item.getName().replaceAll("<.+?>", "") + " (SWARM)", item.getId() + "");
+            else items.put(item.getName().replaceAll("<.+?>", ""), item.getId() + ""); 
         }
         
 
