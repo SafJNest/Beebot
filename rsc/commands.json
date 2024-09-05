@@ -1118,7 +1118,7 @@
         "alias" : [],
         "help"  : "Set/Unset your greet sound.",
         "longhelp"  : "set or unset your greet sound from the soundboard. You can specify if the greet is going to be guild specific or global\nYou can use your sounds or the public ones.",
-        "category" : "Audio",
+        "category" : "League Of Legends",
         "arguments" : "[CommandName]",
         "children": {
             "lp": {
