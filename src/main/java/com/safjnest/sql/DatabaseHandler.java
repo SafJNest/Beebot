@@ -1,7 +1,6 @@
 package com.safjnest.sql;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -13,6 +12,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.guild.alert.AlertSendType;
@@ -34,7 +36,7 @@ public class DatabaseHandler {
     private static String user;
     private static String password;
 
-    private static Connection c;
+    private static HikariDataSource dataSource;
 
     private static HashMap<Long, List<String>> queryAnalytics = new HashMap<>();
 
@@ -56,18 +58,39 @@ public class DatabaseHandler {
     }
 
     private static void connectIfNot() {
-        try {
-            if (c != null && !c.isClosed()) return;
+        if (dataSource != null) return;
 
-            Class.forName("org.mariadb.jdbc.Driver");
-            c = DriverManager.getConnection("jdbc:mariadb://" + hostName + "/" + database + "?autoReconnect=true", user, password);
-            c.setAutoCommit(false);
-            BotLogger.info("[SQL] Connection to the extreme db successful!");
-            
+        initializeConnectionPool();
+        if(!dataSource.isRunning())
+            BotLogger.error("[SQL] Connection to the extreme db failed!");
+
+        BotLogger.info("[SQL] Connection to the extreme db successful!");
+    }
+
+    public static void initializeConnectionPool() {
+        HikariConfig config = new HikariConfig();
+        
+        config.setJdbcUrl("jdbc:mariadb://" + hostName + "/" + database + "?autoReconnect=true");
+        config.setUsername(user);
+        config.setPassword(password);
+        config.setAutoCommit(false);
+
+        config.setMaximumPoolSize(5);
+        config.setMinimumIdle(2);
+        config.setIdleTimeout(30000);
+        config.setConnectionTimeout(10000);
+        config.setMaxLifetime(1800000);
+
+        dataSource = new HikariDataSource(config);
+    }
+
+    public static Connection getConnection() {
+        connectIfNot();
+        try {
+            return dataSource.getConnection();
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            BotLogger.error("[SQL] Connection to the extreme db failed!");
+            return null;
         }
     }
 
@@ -80,8 +103,11 @@ public class DatabaseHandler {
     public static QueryResult safJQuery(String query) {
         connectIfNot();
 
+        Connection c = getConnection();
+        if(c == null) return null;
+
         QueryResult result = new QueryResult();
-        
+
         try (Statement stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query)) {
 
@@ -98,16 +124,25 @@ public class DatabaseHandler {
             insertAnalytics(query);
             c.commit();
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
-            //return null;
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
 
-        return result; 
+        return result;
     }
 
 
@@ -123,7 +158,6 @@ public class DatabaseHandler {
         QueryResult result = new QueryResult();
 
         ResultSet rs = stmt.executeQuery(query);
-
         ResultSetMetaData rsmd = rs.getMetaData();
 
         while (rs.next()) {
@@ -136,6 +170,7 @@ public class DatabaseHandler {
             result.add(beeRow);
         }
         insertAnalytics(query);
+
         return result; 
     }
 
@@ -148,6 +183,9 @@ public class DatabaseHandler {
      */
     public static ResultRow fetchJRow(String query) {
         connectIfNot();
+
+        Connection c = getConnection();
+        if(c == null) return null;
 
         ResultRow beeRow = new ResultRow();
 
@@ -165,13 +203,22 @@ public class DatabaseHandler {
             insertAnalytics(query);
             c.commit();
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
-            //return null;
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
 
         return beeRow;
@@ -212,22 +259,34 @@ public class DatabaseHandler {
     public static boolean runQuery(String... queries) {
         connectIfNot();
 
+        Connection c = getConnection();
+        if(c == null) return false;
+
         try (Statement stmt = c.createStatement()) {
             for (String query : queries) 
                 stmt.execute(query);
-            
             insertAnalytics(queries.toString());
             c.commit();
             return true;
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
-            return false;
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
+        return false;
     }
 
 
@@ -349,18 +408,31 @@ public class DatabaseHandler {
     }
 
     public static String insertSound(String name, String guild_id, String user_id, String extension, boolean isPublic) {
+        Connection c = getConnection();
+        if(c == null) return null;
+
         String soundId = null;
         try (Statement stmt = c.createStatement()) {
             runQuery(stmt, "INSERT INTO sound(name, guild_id, user_id, extension, public, time) VALUES('" + name + "','" + guild_id + "','" + user_id + "','" + extension + "', " + ((isPublic == true) ? "1" : "0") + ", '" +  Timestamp.from(Instant.now()) + "'); ");
             soundId = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").get("id");
             c.commit();
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
         return soundId;
     }
@@ -452,6 +524,9 @@ public class DatabaseHandler {
         for (String sound_id : sound_ids)
             sb.append("(LAST_INSERT_ID(), " + sound_id + "), ");
         sb.setLength(sb.length() - 2);
+
+        Connection c = getConnection();
+        if(c == null) return false;
         
         try (Statement stmt = c.createStatement()) {
             runQuery(stmt, "INSERT INTO soundboard (name, guild_id, user_id) VALUES ('" + name + "', '" + guild_id + "', '" + user_id + "'); ");
@@ -459,14 +534,24 @@ public class DatabaseHandler {
             c.commit();
             return true;
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
-            return false;
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
+        return false;
     }
 
     public static boolean insertSoundsInSoundBoard(String id, String... sound_ids) {
@@ -627,6 +712,9 @@ public class DatabaseHandler {
 
 
     public static boolean setAlertMessage(String ID, String message) {
+        Connection c = getConnection();
+        if(c == null) return false;
+
         try (PreparedStatement pstmt = c.prepareStatement("UPDATE alert SET message = ? WHERE ID = ?")) {
             pstmt.setString(1, message);
             pstmt.setString(2, ID);
@@ -634,17 +722,30 @@ public class DatabaseHandler {
             c.commit();
             return affectedRows > 0;
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
-            return false;
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
+        return false;
     }
 
     public static boolean setAlertPrivateMessage(String ID, String message) {
+        Connection c = getConnection();
+        if(c == null) return false;
+
         try (PreparedStatement pstmt = c.prepareStatement("UPDATE alert SET private_message = ? WHERE ID = ?")) {
             pstmt.setString(1, message);
             pstmt.setString(2, ID);
@@ -652,14 +753,24 @@ public class DatabaseHandler {
             c.commit();
             return affectedRows > 0;
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
-            return false;
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
+        return false;
     }
 
     public static boolean setAlertChannel(String ID, String channel) {
@@ -681,6 +792,10 @@ public class DatabaseHandler {
     public static int createAlert(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, AlertType type) {
         int id = 0;
         String query = "INSERT INTO alert(guild_id, message, private_message, channel, enabled, send_type, type) VALUES(?, ?, ?, ?, 1, ?, ?);";
+        
+        Connection c = getConnection();
+        if(c == null) return id;
+
         try (PreparedStatement pstmt = c.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             pstmt.setString(1, guild_id);
             pstmt.setString(2, message);
@@ -702,12 +817,22 @@ public class DatabaseHandler {
             }
             c.commit();
         } catch (SQLException ex) {
-            try {
-                if (c != null) c.rollback();
-            } catch (SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
         return id;
     }
@@ -762,17 +887,31 @@ public class DatabaseHandler {
 
     public static int insertChannelData(long guild_id, long channel_id) {
         int id = 0;
+
+        Connection c = getConnection();
+        if(c == null) return id;
+
         try (Statement stmt = c.createStatement()) {
             runQuery(stmt, "INSERT INTO channel(guild_id, channel_id) VALUES('" + guild_id + "','" + channel_id + "');");
             id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
             c.commit();
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
         return id;
     }
@@ -800,17 +939,31 @@ public class DatabaseHandler {
 
     public static int insertUserData(long guild_id, long user_id) {
         int id = 0;
+
+        Connection c = getConnection();
+        if(c == null) return id;
+
         try (Statement stmt = c.createStatement()) {
             runQuery(stmt, "INSERT INTO user(guild_id, user_id) VALUES('" + guild_id + "','" + user_id + "');");
             id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
             c.commit();
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
         return id;
     }
@@ -838,17 +991,31 @@ public class DatabaseHandler {
 
     public static int createAlias(String user_id, String name, String command) {
         int id = 0;
+
+        Connection c = getConnection();
+        if(c == null) return id;
+
         try (Statement stmt = c.createStatement()) {
             runQuery(stmt, "INSERT INTO alias(user_id, name, command) VALUES('" + user_id + "','" + name + "','" + command + "');");
             id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
             c.commit();
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
         return id;
     }
@@ -915,6 +1082,10 @@ public class DatabaseHandler {
         // Adjusted SQL statement to handle duplicate key by updating existing record
         String sql = "INSERT INTO twitch_subscription(streamer_id, guild_id, channel_id, message) VALUES(?, ?, ?, ?) " +
                      "ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), message = VALUES(message);";
+
+        Connection c = getConnection();
+        if(c == null) return false;
+
         try {
             PreparedStatement pstmt = c.prepareStatement(sql);
             pstmt.setObject(1, streamer_id);
@@ -924,10 +1095,25 @@ public class DatabaseHandler {
     
             pstmt.executeUpdate();
             return true;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            return false;
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
+        return false;
     }
 
     public static boolean updateTwitchSubscription(String streamer_id, String guild_id, String channel_id, String message) {
@@ -946,6 +1132,9 @@ public class DatabaseHandler {
             sql.append("message = ?");
         }
         sql.append(" WHERE streamer_id = ? AND guild_id = ?;");
+
+        Connection c = getConnection();
+        if(c == null) return false;
         
         try {
             PreparedStatement pstmt = c.prepareStatement(sql.toString());
@@ -965,10 +1154,25 @@ public class DatabaseHandler {
 
             int rowsAffected = pstmt.executeUpdate();
             return rowsAffected > 0; // Returns true if at least one row was updated
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            return false;
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
+        return false;
     }
 
     public static boolean deleteTwitchSubscription(String streamer_id, String guild_id) {
@@ -1006,6 +1210,10 @@ public class DatabaseHandler {
 
     public static int insertTag(String tag) {
         int id = 0;
+
+        Connection c = getConnection();
+        if(c == null) return id;
+
         try (Statement stmt = c.createStatement()) {
             PreparedStatement ps = c.prepareStatement("SELECT * FROM tag WHERE name = ?;");
             ps.setString(1, tag);
@@ -1020,12 +1228,22 @@ public class DatabaseHandler {
                 c.commit();
             }
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
         return id;
     }
@@ -1127,17 +1345,31 @@ public class DatabaseHandler {
 
     public static int createPlaylist(String name, String user_id) {
         int id = 0;
+
+        Connection c = getConnection();
+        if(c == null) return id;
+
         try (Statement stmt = c.createStatement()) {
             runQuery(stmt, "INSERT INTO playlist(name, user_id) VALUES('" + name + "','" + user_id + "');");
             id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
             c.commit();
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
         return id;
     }
@@ -1159,6 +1391,10 @@ public class DatabaseHandler {
     }
 
     public static int deletePlaylist(int playlist_id, String user_id) {
+
+        Connection c = getConnection();
+        if(c == null) return -2;
+
         try (Statement stmt = c.createStatement()) {
             ResultRow search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
             
@@ -1174,17 +1410,30 @@ public class DatabaseHandler {
 
             return 1;
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
             return -2;
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
     }
 
     public static int deletePlaylistSong(int playlist_id, int song_id, String user_id) {
+        Connection c = getConnection();
+        if(c == null) return -2;
+
         try (Statement stmt = c.createStatement()) {
             ResultRow search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
             
@@ -1200,13 +1449,23 @@ public class DatabaseHandler {
 
             return 1;
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
             return -2;
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
     }
 
@@ -1232,6 +1491,9 @@ public class DatabaseHandler {
     public static boolean addTrackToPlaylist(int playlist_id, List<AudioTrack> tracks, Integer order) {
         StringBuilder queryBuilder = new StringBuilder("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES ");
         
+        Connection c = getConnection();
+        if(c == null) return false;
+
         try (Statement stmt = c.createStatement()) {
             int currentOrder = order != null ? order : fetchJRow(stmt, "SELECT COALESCE(MAX(`order`), 0) AS max_order FROM playlist_track WHERE playlist_id = " + playlist_id).getAsInt("max_order");
             for (AudioTrack track : tracks) {
@@ -1248,19 +1510,32 @@ public class DatabaseHandler {
             c.commit();
             return true;
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
             return false;
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
     }
 
     public static boolean addTrackToPlaylist(String playlist_name, String user_id, List<AudioTrack> tracks, Integer order) {
         StringBuilder queryBuilder = new StringBuilder("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES ");
         
+        Connection c = getConnection();
+        if(c == null) return false;
+
         try (Statement stmt = c.createStatement()) {
             int playlist_id = fetchJRow("SELECT id FROM playlist WHERE name = '" + playlist_name + "' AND user_id = '" + user_id + "'").getAsInt("id");
             int currentOrder = order != null ? order : fetchJRow(stmt, "SELECT COALESCE(MAX(`order`), 0) AS max_order FROM playlist_track WHERE playlist_id = " + playlist_id).getAsInt("max_order");
@@ -1278,13 +1553,23 @@ public class DatabaseHandler {
             c.commit();
             return true;
         } catch (SQLException ex) {
-            try {
-                if(c != null) c.rollback();
-            } catch(SQLException e) {
-                System.out.println(e.getMessage());
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
             }
-            System.out.println(ex.getMessage());
+            System.out.println("Query execution failed: " + ex.getMessage());
             return false;
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
         }
     }
 
@@ -1314,10 +1599,6 @@ public class DatabaseHandler {
         s = s.replace("\"", "\\\"");
         s = s.replace("\'", "\\\'");
         return s;
-    }
-
-    public static Connection getConnection(){
-        return c;
     }
 
 }
