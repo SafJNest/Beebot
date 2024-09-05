@@ -183,7 +183,7 @@ public class Bot extends ListenerAdapter {
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
             new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
-            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo()
+            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCodeSlash()
         );
         
         Collections.addAll(commandsList, new Leaderboard(), new Test(gs));
@@ -197,7 +197,8 @@ public class Bot extends ListenerAdapter {
         Collections.addAll(slashCommandsList, new SummonerSlash(), new AugmentSlash(), new FreeChampSlash(), 
             new LivegameSlash(), new LastMatchesSlash(), new GraphSlash(),
             new PrimeSlash(settings.maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
-            new WeatherSlash(settings.weatherApiKey), new APODSlash(settings.nasaApiKey), new SpecialCharSlash(), new RegionSlash(), new UltimateBraverySlash(), new ItemSlash()
+            new WeatherSlash(settings.weatherApiKey), new APODSlash(settings.nasaApiKey), new SpecialCharSlash(), 
+            new RegionSlash(), new UltimateBraverySlash(), new ItemSlash(), new QRCodeSlash()
         );
         
         

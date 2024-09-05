@@ -969,6 +969,12 @@
         }
     },
 
+    "qrcode":{
+        "alias" : ["qr"],
+        "help"  : "Make a qr code with the given text.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName] [text]"
+    },
 
 
 

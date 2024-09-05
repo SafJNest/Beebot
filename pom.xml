@@ -321,6 +321,12 @@
       <version>5.1.0</version>
     </dependency>
 
+    <dependency>
+      <groupId>io.nayuki</groupId>
+      <artifactId>qrcodegen</artifactId>
+      <version>1.8.0</version>
+    </dependency>
+
   </dependencies>
 
   <build>

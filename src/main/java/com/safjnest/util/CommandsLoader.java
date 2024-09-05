@@ -64,7 +64,12 @@ public class CommandsLoader {
     } 
 
     public static BotCommand getCommand(String name) {
-        return commands.get(name.toLowerCase()); //TODO fare bene
+        name = name.toLowerCase();
+        if(commands.containsKey(name))
+            return commands.get(name);
+        else {
+            return new BotCommand(name, "unknown", "unknown", "unknown", "unknown", null, 0);
+        }
     }
     
     public static HashMap<String, BotCommand> getCommandsData(String userId) {
