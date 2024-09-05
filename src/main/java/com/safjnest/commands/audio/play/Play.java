@@ -13,7 +13,7 @@ import com.safjnest.util.CommandsLoader;
  * 
  * @since 1.1
  */
-public class Play extends SlashCommand {
+public class Play extends SlashCommand{
 
     public Play(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -29,7 +29,7 @@ public class Play extends SlashCommand {
 
         String father = this.getClass().getSimpleName().replace("Slash", "");
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new PlaySound(this.name), new PlayYoutube(father));
+        Collections.addAll(slashCommandsList, new PlaySound(father), new PlayYoutube(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);
