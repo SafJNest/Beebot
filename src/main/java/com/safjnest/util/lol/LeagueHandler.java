@@ -342,6 +342,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         if (event.getMessage().getMentions().getMembers().size() != 0) {
             return getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
         }
+        args = args.replaceAll("[\\p{C}]", ""); //when you copy the name from riot chat it adds some weird characters
 
         String name = "";
         String tag = "";
@@ -368,9 +369,11 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
 
         LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guild.getLeagueShard();
-        String summoner = event.getOption("summoner").getAsString();
+        
+        String summoner = event.getOption("summoner").getAsString().replaceAll("[\\p{C}]", ""); //when you copy the name from riot chat it adds some weird characters
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : shard.name();
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
+
         return getSummonerByName(name, tag, shard);
     }
 
