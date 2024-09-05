@@ -40,6 +40,14 @@ public class DatabaseHandler {
 
     private static HashMap<Long, List<String>> queryAnalytics = new HashMap<>();
 
+    static {
+        try {
+            Class.forName("org.mariadb.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
     /**
      * Constructor
      * 
