@@ -31,6 +31,8 @@ import com.safjnest.commands.audio.slash.*;
 import com.safjnest.commands.audio.slash.greet.GreetSlash;
 import com.safjnest.commands.audio.slash.list.ListSlash;
 import com.safjnest.commands.audio.slash.play.PlaySlash;
+import com.safjnest.commands.audio.slash.play.PlaySoundSlash;
+import com.safjnest.commands.audio.slash.play.PlayYoutubeSlash;
 import com.safjnest.commands.audio.slash.playlist.PlaylistSlash;
 import com.safjnest.commands.audio.slash.search.SearchSlash;
 import com.safjnest.commands.audio.slash.soundboard.SoundboardSlash;
@@ -182,7 +184,7 @@ public class Bot extends ListenerAdapter {
 
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
-            new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
+            new PlayYoutubeSlash(), new PlaySoundSlash(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
             new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCodeSlash()
         );
         

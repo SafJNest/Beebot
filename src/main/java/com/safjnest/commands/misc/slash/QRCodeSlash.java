@@ -20,7 +20,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.FileUpload;
 
-public class QRCodeSlash extends SlashCommand{
+public class QRCodeSlash extends SlashCommand {
 
     public QRCodeSlash() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();

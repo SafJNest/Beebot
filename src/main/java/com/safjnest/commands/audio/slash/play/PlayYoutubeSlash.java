@@ -7,13 +7,16 @@ import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.core.audio.types.*;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -43,6 +46,22 @@ public class PlayYoutubeSlash extends SlashCommand {
         commandData.setThings(this);
     }
 
+    public PlayYoutubeSlash() {
+        this.name = this.getClass().getSimpleName().toLowerCase().replace("slash", "");
+
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
+        this.aliases = commandData.getAliases();
+        this.help = commandData.getHelp();
+        this.cooldown = commandData.getCooldown();
+        this.category = commandData.getCategory();
+        this.arguments = commandData.getArguments();
+
+        commandData.setThings(this);
+        
+        this.pm = PlayerManager.get();
+    }
+
 	@Override
 	protected void execute(SlashCommandEvent event) {
         String search = event.getOption("video").getAsString();
@@ -64,5 +83,25 @@ public class PlayYoutubeSlash extends SlashCommand {
         }
         
         pm.loadItemOrdered(guild, search, new ResultHandler(event, false, search, timing, ReplyType.REPLY));
+    }
+
+    @Override   
+    protected void execute(CommandEvent event) {
+        String search = event.getArgs();
+        Guild guild = event.getGuild();
+        AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
+        AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
+        
+        if(myChannel == null){
+            event.reply("You need to be in a voice channel to use this command.");
+            return;
+        }
+
+        if(botChannel != null && myChannel != botChannel){
+            event.reply("The bot is already being used in another voice channel.");
+            return;
+        }
+
+        pm.loadItemOrdered(guild, search, new ResultHandler(event, false, PlayTiming.LAST));
     }
 }
