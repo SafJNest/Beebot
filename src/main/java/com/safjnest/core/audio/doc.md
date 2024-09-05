@@ -21,13 +21,13 @@
  - [x] on track end riaggiornare l'embed (salvare id messaggio in trackscheduler? array o solo ultimo)
  - [x] seek bar?
  - [x] search function
- - [ ] bot playlists
+ - [x] bot playlists
  - [x] some spotify interaction
  - [ ] Webpwujngbwibig si
  - [ ] radio o qualche tipo di autoplay [bot 24/7?]
  - [x] cambiare il layout dell'embed della coda
  - [ ] play file
- - [ ] when do you want to play this (check euphony)
+ - [x] when do you want to play this (check euphony)
  - [x] download the audio
  - [ ] dj role
  
