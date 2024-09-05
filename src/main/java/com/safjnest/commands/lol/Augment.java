@@ -2,8 +2,9 @@ package com.safjnest.commands.lol;
 
 import java.util.ArrayList;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
@@ -19,7 +20,7 @@ import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class Augment extends Command {
+public class Augment extends SlashCommand {
 
     public Augment(){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -80,4 +81,26 @@ public class Augment extends Command {
         eb.setThumbnail(emoji.getImageUrl());
         event.reply(eb.build());
 	}
+
+    @Override
+	protected void execute(SlashCommandEvent event) {
+        String aug = event.getOption("augment").getAsString();
+        AugmentData augment = null;
+        
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setColor(Bot.getColor());
+        
+        for(AugmentData a : LeagueHandler.getAugments()){
+            if(a.getId().equalsIgnoreCase(aug)){
+                    augment = a;
+                    break;
+            }
+        }
+        
+        RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji("a"+augment.getId());
+        eb.setTitle(augment.getName().toUpperCase() + " (" + augment.getId() + ")");
+        eb.setDescription(augment.getFormattedDesc());
+        eb.setThumbnail(emoji.getImageUrl());
+        event.replyEmbeds(eb.build()).queue();
+    }
 }

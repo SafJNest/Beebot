@@ -2,8 +2,8 @@ package com.safjnest.core.events;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-import com.safjnest.commands.audio.slash.CustomizeSoundSlash;
-import com.safjnest.commands.misc.slash.twitch.TwitchMenuSlash;
+import com.safjnest.commands.audio.CustomizeSound;
+import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
@@ -23,7 +23,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         String newName = event.getValue("sound-name").getAsString();
         sound.setName(newName);
 
-        eb = CustomizeSoundSlash.getEmbed(event.getUser(), sound);
+        eb = CustomizeSound.getEmbed(event.getUser(), sound);
         event.editMessageEmbeds(eb.build()).setComponents(SoundHandler.getSoundButton(soundId)).queue();
     }
 
@@ -43,7 +43,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         }
         sound.setTags(tags);
 
-        eb = CustomizeSoundSlash.getEmbed(event.getUser(), sound);
+        eb = CustomizeSound.getEmbed(event.getUser(), sound);
         event.editMessageEmbeds(eb.build()).setComponents(SoundHandler.getSoundButton(soundId.split("-")[0])).queue();
     }
 
@@ -59,8 +59,8 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         DatabaseHandler.setTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, message);
 
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(TwitchMenuSlash.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
-                .setComponents(TwitchMenuSlash.getTwitchStreamerButtons(streamerId))
+        event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
+                .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))
                 .queue();
     }
 

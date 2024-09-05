@@ -16,10 +16,10 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.util.twitch.TwitchClient;
-import com.safjnest.commands.audio.slash.CustomizeSoundSlash;
-import com.safjnest.commands.audio.slash.playlist.PlaylistViewSlash;
+import com.safjnest.commands.audio.CustomizeSound;
+import com.safjnest.commands.audio.playlist.PlaylistView;
 import com.safjnest.commands.misc.Help;
-import com.safjnest.commands.misc.slash.twitch.TwitchMenuSlash;
+import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
@@ -170,8 +170,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        event.getMessage().editMessageEmbeds(PlaylistViewSlash.getTracksEmbed(playlist, event.getMember(), page).build())
-                .setComponents(PlaylistViewSlash.getTracksButton(playlist, page))
+        event.getMessage().editMessageEmbeds(PlaylistView.getTracksEmbed(playlist, event.getMember(), page).build())
+                .setComponents(PlaylistView.getTracksButton(playlist, page))
                 .queue();
 
 
@@ -199,8 +199,8 @@ public class EventButtonHandler extends ListenerAdapter {
         switch (args) {
             case "streamerId":
                 event.deferEdit().queue();
-                event.getMessage().editMessageEmbeds(TwitchMenuSlash.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
-                        .setComponents(TwitchMenuSlash.getTwitchStreamerButtons(streamerId))
+                event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
+                        .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))
                         .queue();
                 break;
             case "addSub":
@@ -229,8 +229,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "back":
                 event.deferEdit().queue();
-                event.getMessage().editMessageEmbeds(TwitchMenuSlash.getTwitchEmbed().build())
-                        .setComponents(TwitchMenuSlash.getTwitchButtons(event.getGuild().getId()))
+                event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchEmbed().build())
+                        .setComponents(TwitchMenu.getTwitchButtons(event.getGuild().getId()))
                         .queue();
                 break;
             case "changeMessage":
@@ -265,8 +265,8 @@ public class EventButtonHandler extends ListenerAdapter {
                     TwitchClient.unregisterSubEvent(streamerId);
                     
                 event.deferEdit().queue();
-                event.getMessage().editMessageEmbeds(TwitchMenuSlash.getTwitchEmbed().build())
-                        .setComponents(TwitchMenuSlash.getTwitchButtons(event.getGuild().getId()))
+                event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchEmbed().build())
+                        .setComponents(TwitchMenu.getTwitchButtons(event.getGuild().getId()))
                         .queue();
                 break;
             default:
@@ -369,7 +369,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         List<LayoutComponent> buttons = tagSwitch ? SoundHandler.getTagButton(soundId, args) : SoundHandler.getSoundButton(soundId);
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundData).build())
+        event.getMessage().editMessageEmbeds(CustomizeSound.getEmbed(event.getUser(), soundData).build())
                         .setComponents(buttons)
                         .queue();
 
@@ -429,7 +429,7 @@ public class EventButtonHandler extends ListenerAdapter {
         List<LayoutComponent> buttons = tagSwitch ? SoundHandler.getTagButton(soundId, String.valueOf(tagId)) : SoundHandler.getSoundButton(soundId); 
 
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(CustomizeSoundSlash.getEmbed(event.getUser(), soundData).build())
+        event.getMessage().editMessageEmbeds(CustomizeSound.getEmbed(event.getUser(), soundData).build())
                         .setComponents(buttons)
                         .queue();
 

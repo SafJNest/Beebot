@@ -1,9 +1,11 @@
 package com.safjnest.commands.guild;
 
+import java.util.Arrays;
 import java.util.List;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
@@ -11,6 +13,8 @@ import com.safjnest.util.SafJNest;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageHistory;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -18,7 +22,7 @@ import net.dv8tion.jda.api.entities.MessageHistory;
  * 
  * @since 1.0
  */
-public class Clear extends Command {
+public class Clear extends SlashCommand {
 
     public Clear(){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -33,6 +37,11 @@ public class Clear extends Command {
         this.botPermissions = new Permission[]{Permission.MESSAGE_MANAGE};
         this.userPermissions = new Permission[]{Permission.MESSAGE_MANAGE};
 
+        this.options = Arrays.asList(
+            new OptionData(OptionType.INTEGER, "value", "Number of messages to delete (max 100)", true)
+                .setMinValue(2)
+                .setMaxValue(100)
+        );    
         commandData.setThings(this);
     }
 
@@ -52,5 +61,16 @@ public class Clear extends Command {
         MessageHistory history = new MessageHistory(event.getChannel());
         List<Message> msgs = history.retrievePast(n + 1).complete();
         event.getTextChannel().deleteMessages(msgs).queue();
+	}
+
+    @Override
+	protected void execute(SlashCommandEvent event) {
+        int value = event.getOption("value").getAsInt();
+        
+        MessageHistory history = new MessageHistory(event.getChannel());
+        List<Message> msgs = history.retrievePast(value).complete();
+        event.getTextChannel().deleteMessages(msgs).queue();
+
+        event.deferReply(true).addContent(value + " messages deleted.").queue();
 	}
 }

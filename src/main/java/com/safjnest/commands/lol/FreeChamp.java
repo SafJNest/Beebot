@@ -2,8 +2,10 @@ package com.safjnest.commands.lol;
 
 import java.io.File;
 
-import com.jagrosh.jdautilities.command.Command;
+
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
@@ -20,7 +22,7 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class FreeChamp extends Command {
+public class FreeChamp extends SlashCommand {
     
     /**
      * Constructor
@@ -69,6 +71,34 @@ public class FreeChamp extends Command {
         event.getChannel().sendMessageEmbeds(eb.build())
             .addFiles(FileUpload.fromData(file))
             .queue();
+	}
+
+    @Override
+	protected void execute(SlashCommandEvent event) {
+        ChampionBuilder builder = new ChampionBuilder().withPlatform(LeagueShard.EUW1);
+        ChampionRotationInfo c = builder.getFreeToPlayRotation();
+            
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(event.getMember().getEffectiveName());
+        eb.setColor(Bot.getColor());
+        eb.setTitle("Current free champion rotation:");
+
+        String s = "";
+        int cont = 1;
+        for(StaticChampion ce : c.getFreeChampions()){
+            s += CustomEmojiHandler.getFormattedEmoji(ce.getName()) + " **" + ce.getName()+"**\n";
+            if(cont % 10 == 0){
+                eb.addField("", s, true);
+                cont = 0;
+                s = "";
+            }
+            cont++;
+        }
+        
+        String img = "iconLol.png";
+        File file = new File("rsc" + File.separator + "img" + File.separator + img);
+        eb.setThumbnail("attachment://" + img);
+        event.deferReply(false).addEmbeds(eb.build()).addFiles(FileUpload.fromData(file)).queue();
 	}
 
 }

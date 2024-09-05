@@ -26,41 +26,41 @@ import com.jagrosh.jdautilities.command.CommandClientBuilder;
 import com.jagrosh.jdautilities.command.SlashCommand;
 
 import com.safjnest.App;
-import com.safjnest.commands.audio.*;
-import com.safjnest.commands.audio.slash.*;
-import com.safjnest.commands.audio.slash.greet.GreetSlash;
-import com.safjnest.commands.audio.slash.list.ListSlash;
-import com.safjnest.commands.audio.slash.play.PlaySlash;
-import com.safjnest.commands.audio.slash.play.PlaySoundSlash;
-import com.safjnest.commands.audio.slash.play.PlayYoutubeSlash;
-import com.safjnest.commands.audio.slash.playlist.PlaylistSlash;
-import com.safjnest.commands.audio.slash.search.SearchSlash;
-import com.safjnest.commands.audio.slash.soundboard.SoundboardSlash;
+import com.safjnest.commands.audio.Connect;
+import com.safjnest.commands.audio.CustomizeSound;
+import com.safjnest.commands.audio.DeleteSound;
+import com.safjnest.commands.audio.Disconnect;
+import com.safjnest.commands.audio.DownloadSound;
+import com.safjnest.commands.audio.Stop;
+import com.safjnest.commands.audio.TTS;
+import com.safjnest.commands.audio.Upload;
+import com.safjnest.commands.audio.greet.Greet;
+import com.safjnest.commands.audio.list.List;
+import com.safjnest.commands.audio.list.ListUser;
+import com.safjnest.commands.audio.play.Play;
+import com.safjnest.commands.audio.play.PlaySound;
+import com.safjnest.commands.audio.play.PlayYoutube;
+import com.safjnest.commands.audio.playlist.Playlist;
+import com.safjnest.commands.audio.search.Search;
+import com.safjnest.commands.audio.soundboard.Soundboard;
 import com.safjnest.commands.guild.*;
-import com.safjnest.commands.guild.slash.*;
 import com.safjnest.commands.lol.*;
-import com.safjnest.commands.lol.slash.*;
-import com.safjnest.commands.lol.slash.graph.GraphSlash;
-import com.safjnest.commands.lol.slash.summoner.SummonerSlash;
+import com.safjnest.commands.lol.graph.GraphSlash;
+import com.safjnest.commands.lol.summoner.Summoner;
 import com.safjnest.commands.math.*;
-import com.safjnest.commands.math.slash.*;
 import com.safjnest.commands.members.*;
-import com.safjnest.commands.members.slash.*;
-import com.safjnest.commands.members.slash.blacklist.BlacklistSlash;
-import com.safjnest.commands.members.slash.move.*;
+import com.safjnest.commands.members.blacklist.Blacklist;
+import com.safjnest.commands.members.move.*;
 import com.safjnest.commands.misc.*;
-import com.safjnest.commands.misc.slash.*;
-import com.safjnest.commands.misc.slash.twitch.*;
+import com.safjnest.commands.misc.twitch.*;
 import com.safjnest.commands.owner.*;
 import com.safjnest.commands.queue.*;
-import com.safjnest.commands.queue.slash.*;
 import com.safjnest.commands.settings.*;
-import com.safjnest.commands.settings.slash.*;
-import com.safjnest.commands.settings.slash.boost.BoostSlash;
-import com.safjnest.commands.settings.slash.leave.LeaveSlash;
-import com.safjnest.commands.settings.slash.levelup.LevelUpSlash;
-import com.safjnest.commands.settings.slash.reward.RewardSlash;
-import com.safjnest.commands.settings.slash.welcome.WelcomeSlash;
+import com.safjnest.commands.settings.boost.Boost;
+import com.safjnest.commands.settings.leave.Leave;
+import com.safjnest.commands.settings.levelup.LevelUp;
+import com.safjnest.commands.settings.reward.Reward;
+import com.safjnest.commands.settings.welcome.Welcome;
 import com.safjnest.core.events.*;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -179,46 +179,46 @@ public class Bot extends ListenerAdapter {
   
         
         Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
-            new InviteBot(), new ListGuild(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
+            new InviteBot(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
             new Permissions(), new ModifyNickname(), new RandomMove());
 
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
-            new PlayYoutubeSlash(), new PlaySoundSlash(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
-            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCodeSlash()
+            new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
+            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode()
         );
         
-        Collections.addAll(commandsList, new Leaderboard(), new Test(gs));
+        Collections.addAll(commandsList, new Leaderboard(), new Test(gs), new ListGuild());
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new PingSlash(), new BugSlash(), new HelpSlash(), new PrefixSlash(gs));
+        Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix(gs));
 
         
-        Collections.addAll(slashCommandsList, new SummonerSlash(), new AugmentSlash(), new FreeChampSlash(), 
-            new LivegameSlash(), new LastMatchesSlash(), new GraphSlash(),
-            new PrimeSlash(settings.maxPrime), new CalculatorSlash(), new DiceSlash(), new ChampionSlash(), new OpggSlash(), 
-            new WeatherSlash(settings.weatherApiKey), new APODSlash(settings.nasaApiKey), new SpecialCharSlash(), 
-            new RegionSlash(), new UltimateBraverySlash(), new ItemSlash(), new QRCodeSlash()
+        Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
+            new Livegame(), new LastMatches(), new GraphSlash(),
+            new Prime(settings.maxPrime), new Calculator(), new Dice(), new Champion(), new Opgg(), 
+            new Weather(settings.weatherApiKey), new APOD(settings.nasaApiKey), new SpecialChar(), 
+            new Region(), new UltimateBravery(), new Item(), new QRCode()
         );
         
         
-        Collections.addAll(slashCommandsList, new ChannelInfoSlash(), new ClearSlash(), new MsgSlash(), 
-            new ServerInfoSlash(), new MemberInfoSlash(), new EmojiInfoSlash(), new InviteBotSlash(), new BanSlash(), 
-            new UnbanSlash(), new KickSlash(), new MoveSlash(),new MuteSlash(), new UnMuteSlash(), new ImageSlash(), 
-            new PermissionsSlash(), new ModifyNicknameSlash(), new WelcomeSlash(gs), new LeaveSlash(), new BoostSlash(), 
-            new BlacklistSlash(gs), new TwitchSlash()
+        Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
+            new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
+            new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
+            new Permissions(), new ModifyNickname(), new Welcome(gs), new Leave(), new Boost(), 
+            new Blacklist(gs), new Twitch()
         );
 
         
-        Collections.addAll(slashCommandsList, new DeleteSoundSlash(), new DisconnectSlash(), new DownloadSoundSlash(), 
-            new ListSlash(), new PlaySlash(), new PlaylistSlash(), new UploadSlash(), new TTSSlash(), new StopSlash(), 
-            new VoiceSlash(), new CustomizeSoundSlash(), new SoundboardSlash(), new GreetSlash(), new PauseSlash(), new ResumeSlash(),
-            new PlayerSlash(), new QueueSlash(), new SkipSlash(), new PreviousSlash(), new JumpToSlash(), new SearchSlash()
+        Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), new DownloadSound(), 
+            new List(), new Play(), new Playlist(), new Upload(), new TTS(), new Stop(), 
+            new Voice(), new CustomizeSound(), new Soundboard(), new Greet(), new Pause(), new Resume(),
+            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search()
         );
 
-        Collections.addAll(slashCommandsList, new RewardSlash(), new LeaderboardSlash(), new LevelUpSlash(gs));
+        Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp(gs));
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         

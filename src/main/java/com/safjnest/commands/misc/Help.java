@@ -1,17 +1,20 @@
 package com.safjnest.commands.misc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
@@ -25,7 +28,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
  * 
  * @since 1.1.01
  */
-public class Help extends Command {
+public class Help extends SlashCommand {
 
 
     public Help() {
@@ -38,6 +41,12 @@ public class Help extends Command {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
+
+        this.options = Arrays.asList(
+            new OptionData(OptionType.STRING, "command", "Name of the command you want information on",
+                false)
+                .setAutoComplete(true)
+        );
 
         commandData.setThings(this);
     }
@@ -259,6 +268,27 @@ public class Help extends Command {
 
         if (rows != null) event.getChannel().sendMessageEmbeds(eb.build()).addComponents(rows).queue();
         else event.getChannel().sendMessageEmbeds(eb.build()).queue();
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        String inputCommand = (event.getOption("command") == null) ? "" : event.getOption("command").getAsString();
+
+        EmbedBuilder eb = new EmbedBuilder();
+        List<LayoutComponent> rows = null;
+
+        if(inputCommand.equals("")) 
+            eb = Help.getGenericHelp(event.getGuild().getId(), event.getMember().getUser().getId());  
+        else {      
+            HashMap<String, BotCommand> commands = CommandsLoader.getCommandsData(event.getMember().getId());
+            BotCommand commandToPrint = Help.searchCommand(inputCommand, commands);
+
+            eb = Help.getCommandHelp(commandToPrint);
+            rows = Help.getCommandButton(commandToPrint);
+        }
+        
+        if (rows != null) event.deferReply().addEmbeds(eb.build()).setComponents(rows).queue();
+        else event.deferReply().addEmbeds(eb.build()).queue();
     }
 
     private static List<String> getCategoriesBySize(HashMap<String, List<BotCommand>> map) {

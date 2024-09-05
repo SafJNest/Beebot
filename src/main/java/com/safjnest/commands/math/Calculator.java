@@ -1,12 +1,17 @@
 package com.safjnest.commands.math;
 
 
+import java.util.Arrays;
 import java.util.Stack;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
+
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  * This class is used to calculate the result of a mathematical expression.
@@ -17,7 +22,7 @@ import com.safjnest.util.CommandsLoader;
  * 
  * @since 1.2.5
  */
-public class Calculator extends Command{
+public class Calculator extends SlashCommand {
 
     public Calculator(){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -30,6 +35,8 @@ public class Calculator extends Command{
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
 
+        this.options = Arrays.asList(new OptionData(OptionType.STRING, "n", "Number", true));
+
         commandData.setThings(this);
     }
 
@@ -37,6 +44,11 @@ public class Calculator extends Command{
     protected void execute(CommandEvent event) {
         String command = event.getArgs();
         event.reply(String.valueOf(evaluateExpression(command)));
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        event.deferReply(false).addContent(String.valueOf(Calculator.evaluateExpression(event.getOption("n").getAsString()))).queue();
     }
 
     public static double evaluateExpression(String expression) {

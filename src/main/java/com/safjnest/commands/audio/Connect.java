@@ -1,10 +1,10 @@
 package com.safjnest.commands.audio;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -12,10 +12,10 @@ import com.safjnest.util.CommandsLoader;
  * 
  * @since 1.0
  */
-public class Connect extends Command {
+public class Connect extends SlashCommand {
 
     public Connect(){
-        this.name = this.getClass().getSimpleName().toLowerCase();
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
         
@@ -29,6 +29,16 @@ public class Connect extends Command {
     }
 
 	@Override
+	protected void execute(SlashCommandEvent event) {
+        if(event.getMember().getVoiceState().getChannel() == null){
+            event.deferReply(true).addContent("You need to be in a voice channel to use this command.").queue();
+            return;
+        }
+
+		event.getGuild().getAudioManager().openAudioConnection(event.getMember().getVoiceState().getChannel());
+	}
+
+    @Override
 	protected void execute(CommandEvent event) {
         if(event.getMember().getVoiceState().getChannel() == null) {
             event.reply("You need to be in a voice channel to use this command.");

@@ -1,7 +1,8 @@
 package com.safjnest.commands.misc;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -11,7 +12,7 @@ import com.safjnest.util.CommandsLoader;
  * 
  * @since 1.1
  */
-public class InviteBot extends Command{
+public class InviteBot extends SlashCommand {
 
     public InviteBot(){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -30,6 +31,11 @@ public class InviteBot extends Command{
     @Override
     protected void execute(CommandEvent event) {
         event.reply(event.getJDA().getInviteUrl());
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        event.deferReply(false).addContent(event.getJDA().getInviteUrl()).queue();
     }
 
 }

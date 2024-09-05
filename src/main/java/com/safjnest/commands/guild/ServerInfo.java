@@ -1,13 +1,17 @@
 package com.safjnest.commands.guild;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
@@ -25,7 +29,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
  * 
  * @since 1.1.02
  */
-public class ServerInfo extends Command{
+public class ServerInfo extends SlashCommand {
 
     public ServerInfo(){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -38,32 +42,26 @@ public class ServerInfo extends Command{
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
         
+        this.options = Arrays.asList(
+            new OptionData(OptionType.INTEGER, "rolecharnumber", "Max number of charachters the roles filed can be (1 to 1024)", false)
+                .setMinValue(1)
+                .setMaxValue(1024)
+        );
+
         commandData.setThings(this);
     }
 
-    @Override
-    protected void execute(CommandEvent event) {
-        Guild guild;
-        if(!event.getArgs().equals("") && PermissionHandler.isUntouchable(event.getAuthor().getId()))
-            guild = PermissionHandler.getGuild(event, event.getArgs());
-        else 
-            guild = event.getGuild();
-            
-        if(guild == null) {
-            event.reply("Couldn't find the specified guild. Please write the id of the guild and make sure the bot is in that guild.");
-            return;
-        }
-
+    private static EmbedBuilder createEmbed(Guild guild) {
         HashMap<AlertKey, AlertData> alerts = Bot.getGuildData(guild.getId()).getAlerts();
         AlertData welcome = alerts.get(new AlertKey(AlertType.WELCOME));
         AlertData leave = alerts.get(new AlertKey(AlertType.LEAVE));
         AlertData lvlup = alerts.get(new AlertKey(AlertType.LEVEL_UP));
 
-        ResultRow settings = DatabaseHandler.getGuildData(event.getGuild().getId());
+        ResultRow settings = DatabaseHandler.getGuildData(guild.getId());
         
         String welcomeMessageString = null;
         if(welcome != null) {
-            String channelString = welcome.getChannelId() == null ? "No channel set" : event.getJDA().getTextChannelById(welcome.getChannelId()).getName();
+            String channelString = welcome.getChannelId() == null ? "No channel set" : Bot.getJDA().getTextChannelById(welcome.getChannelId()).getName();
             welcomeMessageString = welcome.getMessage()
                 + " [" + channelString + "]"
                 + " [" + (welcome.isEnabled() ? "on" : "off") + "]"
@@ -72,7 +70,7 @@ public class ServerInfo extends Command{
         
         String leaveMessageString = null;
         if(leave != null) {
-            String channelString = leave.getChannelId() == null ? "No channel set" : event.getJDA().getTextChannelById(leave.getChannelId()).getName();
+            String channelString = leave.getChannelId() == null ? "No channel set" : Bot.getJDA().getTextChannelById(leave.getChannelId()).getName();
             leaveMessageString = leave.getMessage()
                 + " [" + channelString + "]"
                 + " [" + (leave.isEnabled() ? "on" : "off") + "]"
@@ -82,7 +80,7 @@ public class ServerInfo extends Command{
         String blacklistString = null;
         if(settings.get("blacklist_channel") != null) {
             blacklistString = "A total of " + DatabaseHandler.getBannedTimesInGuild(guild.getId()) + " users have been banned from this guild"
-                + " [" + event.getJDA().getChannelById(TextChannel.class, settings.get("blacklist_channel")).getName() + "]"
+                + " [" + Bot.getJDA().getChannelById(TextChannel.class, settings.get("blacklist_channel")).getName() + "]"
                 + " [" + (settings.getAsBoolean("blacklist_enabled") ? "on" : "off") + "]"
             + "\n\n";
         }
@@ -187,6 +185,31 @@ public class ServerInfo extends Command{
             + "<t:" + guild.getTimeCreated().toEpochSecond() + ":R>",
         false);
 
-        event.reply(eb.build());
+        return eb;
+    }
+
+    @Override
+    protected void execute(CommandEvent event) {
+        Guild guild;
+        if(!event.getArgs().equals("") && PermissionHandler.isUntouchable(event.getAuthor().getId()))
+            guild = PermissionHandler.getGuild(event, event.getArgs());
+        else 
+            guild = event.getGuild();
+            
+        if(guild == null) {
+            event.reply("Couldn't find the specified guild. Please write the id of the guild and make sure the bot is in that guild.");
+            return;
+        }
+
+
+
+        event.reply(createEmbed(guild).build());
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        Guild guild = event.getGuild();
+
+        event.deferReply(false).addEmbeds(createEmbed(guild).build()).queue();
     }
 }

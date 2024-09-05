@@ -1,5 +1,6 @@
 package com.safjnest.util;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -183,8 +184,23 @@ public class BotCommand {
 
 
     public void setThings(SlashCommand command) {
-        this.slash = true;
-        this.options = command.getOptions();
+        Class<?> clazz = command.getClass();
+
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method : methods) {
+            if (method.getName().equals("execute")) {
+                Class<?>[] parameterTypes = method.getParameterTypes();
+                for(int i = 0; i < parameterTypes.length; i++) {
+                    if(parameterTypes[i].getName().equals("com.jagrosh.jdautilities.command.SlashCommandEvent")) {
+                        this.slash = true;
+                        this.options = command.getOptions();
+                    } else if(parameterTypes[i].getName().equals("com.jagrosh.jdautilities.command.CommandEvent")) {
+                        this.text = true;
+                    }
+                }
+            }
+        }
+
         this.botPermissions = command.getBotPermissions();
         this.userPermissions = command.getUserPermissions();
     }

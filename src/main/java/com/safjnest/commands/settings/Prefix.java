@@ -1,12 +1,17 @@
 package com.safjnest.commands.settings;
 
-import com.jagrosh.jdautilities.command.Command;
+import java.util.Arrays;
+
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -14,7 +19,7 @@ import net.dv8tion.jda.api.Permission;
  * 
  * @since 1.1
  */
-public class Prefix extends Command{
+public class Prefix extends SlashCommand {
     private GuildDataHandler gs;
     
     public Prefix(GuildDataHandler gs){
@@ -27,9 +32,15 @@ public class Prefix extends Command{
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
+
         this.userPermissions = new Permission[]{Permission.ADMINISTRATOR};
 
+        this.options = Arrays.asList(
+            new OptionData(OptionType.STRING, "prefix", "New Prefix", true)
+        );
+
         commandData.setThings(this);
+
         this.gs = gs;
     }
 
@@ -47,5 +58,13 @@ public class Prefix extends Command{
         }
         else
             event.reply("Couldn't change the prefix due to an unknown error, please try again later or report this with /bugsnotifier.");
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        if(gs.getGuild(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
+            event.deferReply(false).addContent("The new Prefix is " + event.getOption("prefix").getAsString()).queue();
+        else
+            event.deferReply(true).addContent("Error").queue();   
     }
 }

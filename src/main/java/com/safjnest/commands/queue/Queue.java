@@ -1,13 +1,15 @@
 package com.safjnest.commands.queue;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.QueueHandler;
 import com.safjnest.core.audio.types.EmbedType;
+import com.safjnest.core.audio.types.ReplyType;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
-public class Queue extends Command{
+public class Queue extends SlashCommand {
     
     public Queue() {
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -26,5 +28,10 @@ public class Queue extends Command{
     @Override
     protected void execute(CommandEvent event) {
         QueueHandler.sendEmbed(event, EmbedType.QUEUE);
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        QueueHandler.sendEmbed(event, EmbedType.QUEUE, ReplyType.REPLY);
     }
 }

@@ -1,23 +1,19 @@
 package com.safjnest.commands.audio;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Guild;
 
-/**
- * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
- * @author <a href="https://github.com/Leon412">Leon412</a>
- * 
- * @since 1.0
- */
-public class Stop extends Command {
+
+public class Stop extends SlashCommand {
 
     public Stop(){
-        this.name = this.getClass().getSimpleName().toLowerCase();
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
         
@@ -28,6 +24,13 @@ public class Stop extends Command {
         this.arguments = commandData.getArguments();
 
         commandData.setThings(this);
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        Guild guild = event.getGuild();
+        PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().stop();
+        event.deferReply(false).addContent("Playing stopped").queue();
     }
 
     @Override

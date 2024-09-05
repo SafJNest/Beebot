@@ -1,9 +1,11 @@
 package com.safjnest.commands.guild;
 
+import java.util.Arrays;
 import java.util.List;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -11,19 +13,22 @@ import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.ForumChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.NewsChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.StageChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * 
  * @since 1.0
  */
-public class ChannelInfo extends Command {
+public class ChannelInfo extends SlashCommand {
 
     public ChannelInfo(){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -36,8 +41,20 @@ public class ChannelInfo extends Command {
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
 
+        this.options = Arrays.asList(
+            new OptionData(OptionType.CHANNEL, "channel", "Channel to get information on", false));
+
         commandData.setThings(this);
     }
+
+    @Override
+	protected void execute(SlashCommandEvent event) {
+        GuildChannel gc = (GuildChannel) (event.getOption("channel") == null ? event.getGuildChannel() : event.getOption("channel").getAsChannel());
+
+        EmbedBuilder eb = buildEmbed(event.getGuild(), gc);
+
+        event.deferReply(false).addEmbeds(eb.build()).queue();
+	}
 
 	@Override
 	protected void execute(CommandEvent event) {
@@ -53,6 +70,12 @@ public class ChannelInfo extends Command {
             return;
         }
         
+        EmbedBuilder eb = buildEmbed(event.getGuild(), gc);
+
+        event.reply(eb.build());
+	}
+
+    private static EmbedBuilder buildEmbed(Guild guild, GuildChannel gc) {
         EmbedBuilder eb = new EmbedBuilder();
 
         eb.setTitle("**CHANNEL INFO**");
@@ -63,7 +86,7 @@ public class ChannelInfo extends Command {
 
         switch (gc.getType().toString()) {
             case "TEXT":
-                TextChannel c = event.getGuild().getTextChannelById(gc.getId());
+                TextChannel c = guild.getTextChannelById(gc.getId());
 
                 eb.addField("Channel Topic", "```" 
                             + ((c.getTopic() == null)
@@ -81,7 +104,7 @@ public class ChannelInfo extends Command {
                 break;
 
             case "VOICE":
-                VoiceChannel v = event.getGuild().getVoiceChannelById(gc.getId()); 
+                VoiceChannel v = guild.getVoiceChannelById(gc.getId()); 
 
                 eb.addBlankField(true);
 
@@ -115,7 +138,7 @@ public class ChannelInfo extends Command {
                 break;
 
             case "CATEGORY":
-                net.dv8tion.jda.api.entities.channel.concrete.Category ct = event.getGuild().getCategoryById(gc.getId());
+                net.dv8tion.jda.api.entities.channel.concrete.Category ct = guild.getCategoryById(gc.getId());
 
                 eb.addField("Contains", "```" + ct.getChannels().size() + " channels" + "```", true);
 
@@ -123,7 +146,7 @@ public class ChannelInfo extends Command {
                 break;
 
             case "STAGE":
-                StageChannel sg = event.getGuild().getStageChannelById(gc.getId()); 
+                StageChannel sg = guild.getStageChannelById(gc.getId()); 
 
                 eb.addField("BitRate ", "```" + sg.getBitrate()/1000 + "kbps```", false);  
 
@@ -163,7 +186,7 @@ public class ChannelInfo extends Command {
                 break;
 
             case "NEWS":
-                NewsChannel nw = event.getGuild().getNewsChannelById(gc.getId());
+                NewsChannel nw = guild.getNewsChannelById(gc.getId());
 
                 eb.addField("Channel Topic", "```" 
                             + ((nw.getTopic() == null)
@@ -181,7 +204,7 @@ public class ChannelInfo extends Command {
                 break;
 
             case "FORUM":
-                ForumChannel fr = event.getGuild().getForumChannelById(gc.getId());
+                ForumChannel fr = guild.getForumChannelById(gc.getId());
 
                 eb.addField("Channel Topic", "```" 
                             + ((fr.getTopic()==null)
@@ -199,7 +222,6 @@ public class ChannelInfo extends Command {
                 break;
             
             default:
-                event.reply("Unknown channel type");
                 break;
         }
 
@@ -208,6 +230,7 @@ public class ChannelInfo extends Command {
                     + "<t:" + gc.getTimeCreated().toEpochSecond() + ":R>",
                      false);
 
-        event.reply(eb.build());
-	}
+        return eb;
+    }
+
 }

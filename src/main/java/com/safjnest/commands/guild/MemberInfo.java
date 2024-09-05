@@ -1,11 +1,13 @@
 package com.safjnest.commands.guild;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
+import com.jagrosh.jdautilities.command.SlashCommand;
+import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.ResultRow;
@@ -17,7 +19,11 @@ import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
@@ -27,7 +33,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
  * 
  * @since 1.2.5
  */
-public class MemberInfo extends Command{
+public class MemberInfo extends SlashCommand {
 
     public MemberInfo() {
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -40,32 +46,22 @@ public class MemberInfo extends Command{
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
 
+        this.options = Arrays.asList(
+            new OptionData(OptionType.USER, "user", "User to get information on", false),
+            new OptionData(OptionType.INTEGER, "rolecharnumber", "Max number of charachters the roles filed can be (1 to 1024)", false)
+                .setMinValue(1)
+                .setMaxValue(1024)
+        );
         commandData.setThings(this);
+
     }
 
-    @Override
-    protected void execute(CommandEvent event) {
-        Member mentionedMember;
-        if(event.getArgs().equals("")) {
-            mentionedMember = event.getMember();
-        }
-        else {
-            mentionedMember = PermissionHandler.getMentionedMember(event, event.getArgs());
-        }
-
-        if(mentionedMember == null) {
-            event.reply("Couldn't find the specified member. Please mention or write the id of a member.");
-            return;
-        }
-
-        String name = mentionedMember.getUser().getName();
-        String id = mentionedMember.getId();
-
+    private static EmbedBuilder createEmbed(Guild guild, Member mentionedMember) {
         List<String> RoleNames = PermissionHandler.getMaxFieldableRoleNames(mentionedMember.getRoles());
 
         String permissionNames = PermissionHandler.getFilteredPermissionNames(mentionedMember).toString();
 
-        HashMap<String, String> lolAccounts = Bot.getUserData(id).getRiotAccounts();
+        HashMap<String, String> lolAccounts = Bot.getUserData(mentionedMember.getId()).getRiotAccounts();
         String lolAccountsString = "";
         if(lolAccounts == null || lolAccounts.isEmpty()) {
             lolAccountsString = mentionedMember.getEffectiveName() + " has not connected a riot account.";
@@ -79,7 +75,7 @@ public class MemberInfo extends Command{
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);
         }
 
-        ResultRow userExp = DatabaseHandler.getUserExp(id, event.getGuild().getId());
+        ResultRow userExp = DatabaseHandler.getUserExp(mentionedMember.getId(), guild.getId());
         int exp = 0, lvl = 0, msg = 0;
         if(userExp != null) {
             exp = userExp.getAsInt("experience");
@@ -90,13 +86,13 @@ public class MemberInfo extends Command{
 
         List<String> activityNames = new ArrayList<String>();
         mentionedMember.getActivities().forEach(activity -> activityNames.add(activity.getName()));
-        
+
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT " + name + "** :busts_in_silhouette:");
+        eb.setTitle(":busts_in_silhouette: **INFORMATION ABOUT " + mentionedMember.getEffectiveName() + "** :busts_in_silhouette:");
         eb.setThumbnail(mentionedMember.getEffectiveAvatarUrl());
         eb.setColor(Bot.getColor());
 
-        eb.addField("Name", "```" + name + "```", true);
+        eb.addField("Name", "```" + mentionedMember.getEffectiveName() + "```", true);
 
         eb.addField("Nickname", "```"
             + (mentionedMember.getNickname() == null
@@ -104,7 +100,7 @@ public class MemberInfo extends Command{
                 : mentionedMember.getNickname())
         + "```", true);
 
-        eb.addField("ID", "```" + id + "```" , true);
+        eb.addField("ID", "```" + mentionedMember.getId() + "```" , true);
         
         eb.addField("Roles [" + mentionedMember.getRoles().size() + "] " + "(Printed " + RoleNames.size() + ")", "```"
             + (RoleNames.size() == 0
@@ -151,15 +147,15 @@ public class MemberInfo extends Command{
         +"```", true);
         
         eb.addField("Total Sounds Uploaded", "```" 
-            + DatabaseHandler.getSoundsUploadedByUserCount(id)
+            + DatabaseHandler.getSoundsUploadedByUserCount(mentionedMember.getId())
         + "```", true);
 
         eb.addField("Sounds Uploaded in this server", "```" 
-            + DatabaseHandler.getSoundsUploadedByUserCount(id, event.getGuild().getId())
+            + DatabaseHandler.getSoundsUploadedByUserCount(mentionedMember.getId(), guild.getId())
         + "```", true);
         
         eb.addField("Total Sound played (global)", "```"
-            + DatabaseHandler.getTotalPlays(id)
+            + DatabaseHandler.getTotalPlays(mentionedMember.getId())
         + "```", true);
 
         eb.addField("Member joined", 
@@ -169,7 +165,46 @@ public class MemberInfo extends Command{
         eb.addField("Account created", 
             "<t:" + mentionedMember.getTimeCreated().toEpochSecond() + ":f>"  + " | <t:" + mentionedMember.getTimeCreated().toEpochSecond() + ":R>",
         false);
+
+        return eb;
+    }
+
+    @Override
+    protected void execute(CommandEvent event) {
+        Member mentionedMember;
+        if(event.getArgs().equals("")) {
+            mentionedMember = event.getMember();
+        }
+        else {
+            mentionedMember = PermissionHandler.getMentionedMember(event, event.getArgs());
+        }
+
+        if(mentionedMember == null) {
+            event.reply("Couldn't find the specified member. Please mention or write the id of a member.");
+            return;
+        }
+
+
+
+
         
-        event.reply(eb.build());    
+
+        
+        event.reply(createEmbed(event.getGuild(), mentionedMember).build());    
+    }
+
+    @Override
+    protected void execute(SlashCommandEvent event) {
+        User user = event.getOption("user") == null ? event.getUser() : event.getOption("user").getAsUser();
+
+        if(!event.getGuild().isMember(user)){
+            event.reply("The specified user is not in this guild.");
+            return;
+        }
+
+        Member mentionedMember = event.getGuild().getMember(user);
+        
+
+        event.deferReply(false).addEmbeds(createEmbed(event.getGuild(), mentionedMember).build()).queue();
     }
 }
