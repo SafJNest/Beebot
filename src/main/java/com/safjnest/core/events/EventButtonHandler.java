@@ -706,8 +706,13 @@ public class EventButtonHandler extends ListenerAdapter {
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
+
+                StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s);
+                List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
                 
-                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id)).queue();
+                if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
+
+                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(opggRow).queue();
                 return;
             case "rank":
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
@@ -833,8 +838,12 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         EmbedBuilder eb = LeagueMessage.getOpggEmbed(s);
-        List<LayoutComponent> row = LeagueMessage.getOpggButtons(s, user_id);
-        event.getMessage().editMessageEmbeds(eb.build()).setComponents(row).queue();
+        StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s);
+        List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
+        
+        if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
+
+        event.getMessage().editMessageEmbeds(eb.build()).setComponents(opggRow).queue();
     }
 
     public void rankButtonEvent(ButtonInteractionEvent event) {
@@ -935,7 +944,12 @@ public class EventButtonHandler extends ListenerAdapter {
                     
                 if (event.getMessage().getButtonById("rank-left") == null) user_id = "";
                 
-                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id)).queue();
+                StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s);
+                List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
+                
+                if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
+
+                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(opggRow).queue();
 
                 return;
         }

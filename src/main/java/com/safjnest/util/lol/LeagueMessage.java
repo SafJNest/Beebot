@@ -7,12 +7,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import org.hibernate.mapping.Map;
 
 import java.text.DecimalFormat;
 
-import com.github.twitch4j.helix.domain.Team;
-import com.iwebpp.crypto.TweetNaclFast.Hash;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.DatabaseHandler;
@@ -157,8 +154,6 @@ public class LeagueMessage {
 
     public static EmbedBuilder getOpggEmbed(Summoner s, LOLMatch match) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        LeagueShard shard = s.getPlatform();
-        RegionShard region = shard.toRegionShard();
 
         MatchParticipant me = null;
         for(MatchParticipant mp : match.getParticipants())
@@ -171,19 +166,119 @@ public class LeagueMessage {
         eb.setTitle(match.getQueue().commonName());
         eb.setDescription((me.didWin() ? "Win" : "Lose") + " as " + CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " " + me.getChampionName() + " in " + match.getGameDurationAsDuration().toMinutes() + " minutes");
         
-        switch (match.getQueue()) {         
+        HashMap<MatchParticipant, HashMap<String, String>> totalStats = new HashMap<>();
+        HashMap<TeamType, HashMap<String, String>> teamStats = new HashMap<>();
+        TeamType blue = TeamType.BLUE;
+        TeamType red = TeamType.RED;
+
+        teamStats.put(blue, new HashMap<>());
+        teamStats.put(red, new HashMap<>());
+
+        double totalKill = 0;
+        double totalCreeps = 0;
+
+        String killPartecipation = "";
+        String csPerMin = "";
+        String personalStatsTxt = "";
+
+        HashMap<String, String> personalstats = new HashMap<>();
+
+        String build = "";
+
+
+        switch (match.getQueue()) {        
+            case CHERRY:
+                eb.setTitle("ARENA");
+                HashMap<String, ArrayList<String>> prova = new HashMap<>();
+                prova.put("teamscuttles", new ArrayList<>());
+                prova.put("teamporos", new ArrayList<>());
+                prova.put("teamkrugs", new ArrayList<>());
+                prova.put("teamminions", new ArrayList<>());
+
+                prova.put("teamsentinels", new ArrayList<>());
+                prova.put("teamgromps", new ArrayList<>());
+                prova.put("teamraptors", new ArrayList<>());
+                prova.put("teamwolves", new ArrayList<>());
+
+                HashMap<Integer, String> positions = new HashMap<>();
+                
+                
+
+                for(MatchParticipant mt : match.getParticipants()){
+                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(mt.getSummonerId(), match.getPlatform()));
+                    String name = "**" + mt.getRiotIdName() + "#" + mt.getRiotIdTagline() + "**" + rank;
+                    String score = "`" + mt.getKills() + "/" + mt.getDeaths() + "/" + mt.getAssists() + "`";
+
+                    String team = "";
+                    switch (mt.getPlayerSubteamId()) {
+                        case 1:
+                            team = "teamporos";
+                        break;
+                        case 2:
+                            team = "teamminions";
+                        break;
+                        case 3:
+                            team = "teamscuttles";
+                        break;
+                        case 4:
+                            team = "teamkrugs";
+                        break;
+                        case 5:
+                            team = "teamraptors";
+                        break;
+                        case 6:
+                            team = "teamsentinels";
+                        break;
+                        case 7:
+                            team = "teamwolves";
+                        break;
+                        case 8:
+                            team = "teamgromps";
+                        break;
+                    }
+                    prova.get(team).add(CustomEmojiHandler.getFormattedEmoji(mt.getChampionName()) + name + "\n" + score);
+                    positions.put(mt.getPlacement(), team);
+
+                    totalStats.put(mt, new HashMap<>());
+                    totalStats.get(mt).put("damageDealt", String.valueOf(mt.getTotalDamageDealtToChampions()));
+                    totalStats.get(mt).put("damageTaken", String.valueOf(mt.getTotalDamageTaken()));
+
+                    TeamType currentTeam = me.getPlayerSubteamId() == mt.getPlayerSubteamId() ? TeamType.BLUE : TeamType.RED;
+                    teamStats.get(currentTeam).put("kills", String.valueOf(Integer.valueOf(teamStats.get(currentTeam).getOrDefault("kills", "0")) + mt.getKills()));
+                    teamStats.get(currentTeam).put("damageDealt", String.valueOf(Integer.valueOf(teamStats.get(currentTeam).getOrDefault("damageDealt", "0")) + mt.getTotalDamageDealtToChampions()));
+                    teamStats.get(currentTeam).put("damageTaken", String.valueOf(Integer.valueOf(teamStats.get(currentTeam).getOrDefault("damageTaken", "0")) + mt.getTotalDamageTaken()));
+
+                }
+
+                for (int j = 1; j <= 8; j++) {
+                    String team = positions.get(j);
+                    String field = CustomEmojiHandler.getFormattedEmoji(team) + " " + j + "th positon";
+                    String value = prova.get(team).get(0) + "\n" + prova.get(team).get(1);
+                    eb.addField(field, value, true);
+                }
+
+                totalKill = Double.valueOf(teamStats.get(me.getTeam()).get("kills")) == 0 ? 1 : Double.valueOf(teamStats.get(me.getTeam()).get("kills"));
+                killPartecipation = String.format("%.1f", (Double.valueOf(me.getKills()) + Double.valueOf(me.getAssists())) / totalKill * 100);
+                csPerMin = String.format("%.1f", totalCreeps / Double.valueOf(match.getGameDurationAsDuration().toMinutes()));
+                personalstats = totalStats.get(me);
+                personalStatsTxt = "**KDA**: " + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " (" +  killPartecipation + "% kill partecipation)\n"
+                                        + "**Damage Dealt to champion**: " + formatNumber(personalstats.get("damageDealt")) + " (" + getPosition(totalStats, personalstats, "damageDealt") + "th in the game)\n"
+                                        + "**Damage Taken**: " + formatNumber(personalstats.get("damageTaken")) + " (" + getPosition(totalStats, personalstats, "damageTaken") + "th in the game)\n";
+                
+                eb.addField("Personal Stats", personalStatsTxt, false);
+
+                build = CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner1Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment1())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment2())) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment3())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment4())) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
+                eb.addField("Build", build, false);
+                break; 
             default:
                 String blueSide = "";
                 String redSide = "";
 
-                TeamType blue = TeamType.BLUE;
-                TeamType red = TeamType.RED;
 
-                HashMap<TeamType, HashMap<String, String>> teamStats = new HashMap<>();
-                teamStats.put(blue, new HashMap<>());
-                teamStats.put(red, new HashMap<>());
 
-                HashMap<MatchParticipant, HashMap<String, String>> totalStats = new HashMap<>();
+                
 
                 for (MatchTeam team : match.getTeams()) {
                     if (team.getTeamId() != TeamType.BLUE && team.getTeamId() != TeamType.RED) continue;
@@ -211,7 +306,7 @@ public class LeagueMessage {
 
                     String championText = teamStats.get(partecipant.getTeam()).getOrDefault("champions", "**Picks**\n");
 
-                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
+                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(partecipant.getSummonerId(), match.getPlatform()));
                     String name = CustomEmojiHandler.getFormattedEmoji(partecipant.getChampionName()) + " **" + partecipant.getRiotIdName() + "#" + partecipant.getRiotIdTagline() + "**";
                     String kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists() + "(" + (partecipant.getTotalMinionsKilled() + partecipant.getNeutralMinionsKilled()) + " CS)";
 
@@ -237,20 +332,25 @@ public class LeagueMessage {
                 eb.addField("Blue Side", blueSide, true);
                 eb.addField("Red Side", redSide, true);
                 
-                HashMap<String, String> personalstats = totalStats.get(me);
+                personalstats = totalStats.get(me);
 
                 
-                double totalCreeps = me.getTotalMinionsKilled() + me.getNeutralMinionsKilled();
-                double totalKill = Double.valueOf(teamStats.get(me.getTeam()).get("kills")) == 0 ? 1 : Double.valueOf(teamStats.get(me.getTeam()).get("kills"));
-                String killPartecipation = String.format("%.1f", (Double.valueOf(me.getKills()) + Double.valueOf(me.getAssists())) / totalKill * 100);
-                String csPerMin = String.format("%.1f", totalCreeps / Double.valueOf(match.getGameDurationAsDuration().toMinutes()));
+                totalCreeps = me.getTotalMinionsKilled() + me.getNeutralMinionsKilled();
+                totalKill = Double.valueOf(teamStats.get(me.getTeam()).get("kills")) == 0 ? 1 : Double.valueOf(teamStats.get(me.getTeam()).get("kills"));
+                killPartecipation = String.format("%.1f", (Double.valueOf(me.getKills()) + Double.valueOf(me.getAssists())) / totalKill * 100);
+                csPerMin = String.format("%.1f", totalCreeps / Double.valueOf(match.getGameDurationAsDuration().toMinutes()));
                 
-                String personalStatsTxt = "**KDA**: " + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " (" +  killPartecipation + "% kill partecipation)\n"
+                personalStatsTxt = "**KDA**: " + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " (" +  killPartecipation + "% kill partecipation)\n"
                                         + "**CS**: " + totalCreeps + " (" + csPerMin + " CS/min)\n"
                                         + "**Vision Score**: " + me.getVisionScore() + " (" + me.getWardsPlaced() + " wards placed)\n"
                                         + "**Damage Dealt to champion**: " + formatNumber(personalstats.get("damageDealt")) + " (" + getPosition(totalStats, personalstats, "damageDealt") + "th in the game)\n";
 
                 eb.addField("Personal Stats", personalStatsTxt, false);
+
+                build = CustomEmojiHandler.getFormattedEmoji( String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, 0) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, 1) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
+                eb.addField("Build", build, false);
 
                 break;
         }

@@ -447,15 +447,19 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
     }
 
-    public static LeagueEntry getRankEntry(Summoner s) {
+    public static LeagueEntry getRankEntry(String summonerId, LeagueShard shard) {
         try {
             for(int i = 0; i < 3; i++){
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
                     return entry;
             }
         } catch (Exception e) { }
         return null;
+    }
+
+    public static LeagueEntry getRankEntry(Summoner s) {
+        return getRankEntry(s.getSummonerId(), s.getPlatform());
     }
 
     public static String getRankIcon(LeagueEntry entry) {
