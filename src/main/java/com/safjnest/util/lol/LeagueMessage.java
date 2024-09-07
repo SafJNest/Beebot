@@ -134,8 +134,7 @@ public class LeagueMessage {
                 
                 Emoji icon = LeagueHandler.getEmojiByChampion(me.getChampionId());
 
-
-                String label = match.getGameDurationAsDuration().toMinutes() + " minutes " + match.getQueue().commonName();
+                String label = match.getGameDurationAsDuration().toMinutes() + " minutes " + LeagueHandler.formatMatchName(match.getQueue());
                 String description = "As " + me.getChampionName() + " (" + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " " + me.getTotalMinionsKilled() + " CS)";
 
                 options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getAccountId()).withEmoji(icon).withDescription(description));
@@ -163,7 +162,7 @@ public class LeagueMessage {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(account.getName() + "#" + account.getTag());
         eb.setColor(Bot.getColor());
-        eb.setTitle(match.getQueue().commonName());
+        eb.setTitle(LeagueHandler.formatMatchName(match.getQueue()));
         eb.setDescription((me.didWin() ? "Win" : "Lose") + " as " + CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " " + me.getChampionName() + " in " + match.getGameDurationAsDuration().toMinutes() + " minutes");
         
         HashMap<MatchParticipant, HashMap<String, String>> totalStats = new HashMap<>();
@@ -188,7 +187,6 @@ public class LeagueMessage {
 
         switch (match.getQueue()) {        
             case CHERRY:
-                eb.setTitle("ARENA");
                 HashMap<String, ArrayList<String>> prova = new HashMap<>();
                 prova.put("teamscuttles", new ArrayList<>());
                 prova.put("teamporos", new ArrayList<>());
@@ -536,7 +534,7 @@ public class LeagueMessage {
                                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, 1) + "\n"
                                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
                                 eb.addField(
-                                    match.getQueue().commonName() + ": " + (me.didWin() ? "WIN" : "LOSE") + " " + gain , content, true);
+                                    LeagueHandler.formatMatchName(match.getQueue()) + ": " + (me.didWin() ? "WIN" : "LOSE") + " " + gain , content, true);
                                 String blueS = "";
                                 String redS = "";
                                 for(int j = 0; j < 5; j++)

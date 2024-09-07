@@ -178,6 +178,25 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return Math.round(kda * 100.0) / 100.0;
     }
 
+    public static String formatMatchName(GameQueueType queue) {
+        String name = queue.commonName();
+        switch (queue) {
+            case CHERRY:
+                name = "Arena";
+                break;
+            case STRAWBERRY:
+                name = "Swarm";
+                break;
+            default:
+                break;
+        }
+        if (queue.commonName().equals("5v5 Ranked Solo")) name = "Ranked Solo/Duo";
+        else if (queue.commonName().equals("5v5 Ranked Flex Queue")) name = "Ranked Flex";
+        else if (queue.commonName().equals("5v5 Draft Pick")) name = "Draft Pick";
+
+        return name;
+    }
+
 //   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████ 
 //  ███       ███    ███   ███    ███ ███   ▀███      ▀█████████▄   ███    ███   ███  ███▀▀▀██▄   ███    ███   ███    ███ 
 //  ███       ███    ███   ███    ███ ███    ███         ▀███▀▀██   ███    ███   ███▌ ███   ███   ███    █▀    ███    █▀  
