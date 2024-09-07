@@ -7,6 +7,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.hibernate.mapping.Map;
+
+import java.text.DecimalFormat;
+
+import com.github.twitch4j.helix.domain.Team;
+import com.iwebpp.crypto.TweetNaclFast.Hash;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.DatabaseHandler;
@@ -27,8 +33,10 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
+import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
@@ -109,6 +117,171 @@ public class LeagueMessage {
 
     public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id) {
         return composeButtons(s, user_id, "lol");
+    }
+
+
+
+    public static StringSelectMenu getOpggMenu(Summoner summoner) {
+
+        ArrayList<SelectOption> options = new ArrayList<>();
+        for(int i = 0; i < 5; i++){
+            try {
+                
+                LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), summoner.getLeagueGames().withCount(20).get().get(i));
+                if (match.getParticipants().size() == 0) continue;
+
+                MatchParticipant me = null;
+                for(MatchParticipant mp : match.getParticipants())
+                    if(mp.getSummonerId().equals(summoner.getSummonerId()))
+                        me = mp;
+                
+                Emoji icon = LeagueHandler.getEmojiByChampion(me.getChampionId());
+
+
+                String label = match.getGameDurationAsDuration().toMinutes() + " minutes " + match.getQueue().commonName();
+                String description = "As " + me.getChampionName() + " (" + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " " + me.getTotalMinionsKilled() + " CS)";
+
+                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getAccountId()).withEmoji(icon).withDescription(description));
+            } catch (Exception e) {
+                e.printStackTrace();
+                continue;
+            }
+        }
+
+        return StringSelectMenu.create("opgg-select")
+                .setPlaceholder("Select a game")
+                .setMaxValues(1)
+                .addOptions(options)
+                .build();
+    }
+
+    public static EmbedBuilder getOpggEmbed(Summoner s, LOLMatch match) {
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
+        LeagueShard shard = s.getPlatform();
+        RegionShard region = shard.toRegionShard();
+
+        MatchParticipant me = null;
+        for(MatchParticipant mp : match.getParticipants())
+            if(mp.getSummonerId().equals(s.getSummonerId()))
+                me = mp;
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(account.getName() + "#" + account.getTag());
+        eb.setColor(Bot.getColor());
+        eb.setTitle(match.getQueue().commonName());
+        eb.setDescription((me.didWin() ? "Win" : "Lose") + " as " + CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " " + me.getChampionName() + " in " + match.getGameDurationAsDuration().toMinutes() + " minutes");
+        
+        switch (match.getQueue()) {         
+            default:
+                String blueSide = "";
+                String redSide = "";
+
+                TeamType blue = TeamType.BLUE;
+                TeamType red = TeamType.RED;
+
+                HashMap<TeamType, HashMap<String, String>> teamStats = new HashMap<>();
+                teamStats.put(blue, new HashMap<>());
+                teamStats.put(red, new HashMap<>());
+
+                HashMap<MatchParticipant, HashMap<String, String>> totalStats = new HashMap<>();
+
+                for (MatchTeam team : match.getTeams()) {
+                    if (team.getTeamId() != TeamType.BLUE && team.getTeamId() != TeamType.RED) continue;
+
+                    String banText = teamStats.get(team.getTeamId()).getOrDefault("ban", "**Bans**\n");
+                    for (ChampionBan ban : team.getBans()) 
+                        banText += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(ban.getChampionId()).getName()) + " ";
+                    
+                    teamStats.get(team.getTeamId()).put("bans", banText);
+                }
+                
+
+                for (MatchParticipant partecipant : match.getParticipants()) {
+                    int kills = partecipant.getKills();
+                    int tower = partecipant.getTurretKills();
+                    int gold = partecipant.getGoldEarned();
+
+                    int totalKills = Integer.valueOf(teamStats.get(partecipant.getTeam()).getOrDefault("kills", "0")) + kills;
+                    int totalTowers = Integer.valueOf(teamStats.get(partecipant.getTeam()).getOrDefault("towers", "0")) + tower;
+                    int totalGold = Integer.valueOf(teamStats.get(partecipant.getTeam()).getOrDefault("gold", "0")) + gold;
+
+                    teamStats.get(partecipant.getTeam()).put("kills", String.valueOf(totalKills));
+                    teamStats.get(partecipant.getTeam()).put("towers", String.valueOf(totalTowers));
+                    teamStats.get(partecipant.getTeam()).put("gold", String.valueOf(totalGold));
+
+                    String championText = teamStats.get(partecipant.getTeam()).getOrDefault("champions", "**Picks**\n");
+
+                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
+                    String name = CustomEmojiHandler.getFormattedEmoji(partecipant.getChampionName()) + " **" + partecipant.getRiotIdName() + "#" + partecipant.getRiotIdTagline() + "**";
+                    String kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists() + "(" + (partecipant.getTotalMinionsKilled() + partecipant.getNeutralMinionsKilled()) + " CS)";
+
+                    championText += name + rank + "\n`" + kda + "`\n";
+                    teamStats.get(partecipant.getTeam()).put("champions", championText);
+
+                    HashMap<String, String> stats = new HashMap<>();
+                    stats.put("damageDealt", String.valueOf(partecipant.getTotalDamageDealtToChampions()));
+                    stats.put("damageTaken", String.valueOf(partecipant.getTotalDamageTaken()));
+                    stats.put("heal", String.valueOf(partecipant.getTotalHeal()));
+                    stats.put("vision", String.valueOf(partecipant.getVisionScore()));
+
+                    totalStats.put(partecipant, stats);
+
+                }
+
+                String killsIcon = CustomEmojiHandler.getFormattedEmoji("kda");
+                String goldIcon = CustomEmojiHandler.getFormattedEmoji("golds2");
+                String towericon = CustomEmojiHandler.getFormattedEmoji("tower");
+
+                blueSide += killsIcon + teamStats.get(blue).get("kills") + " ∙ " + towericon + teamStats.get(blue).get("towers") + " ∙ " + goldIcon + " " + formatNumber(teamStats.get(blue).get("gold")) + "\n" + teamStats.get(blue).get("bans") + "\n\n" + teamStats.get(blue).get("champions");
+                redSide += killsIcon + teamStats.get(red).get("kills") + " ∙ " + towericon + teamStats.get(red).get("towers") + " ∙ " + goldIcon + " " + formatNumber(teamStats.get(red).get("gold")) + "\n" + teamStats.get(blue).get("bans") + "\n\n" + teamStats.get(red).get("champions");
+                eb.addField("Blue Side", blueSide, true);
+                eb.addField("Red Side", redSide, true);
+                
+                HashMap<String, String> personalstats = totalStats.get(me);
+
+                
+                double totalCreeps = me.getTotalMinionsKilled() + me.getNeutralMinionsKilled();
+                double totalKill = Double.valueOf(teamStats.get(me.getTeam()).get("kills")) == 0 ? 1 : Double.valueOf(teamStats.get(me.getTeam()).get("kills"));
+                String killPartecipation = String.format("%.1f", (Double.valueOf(me.getKills()) + Double.valueOf(me.getAssists())) / totalKill * 100);
+                String csPerMin = String.format("%.1f", totalCreeps / Double.valueOf(match.getGameDurationAsDuration().toMinutes()));
+                
+                String personalStatsTxt = "**KDA**: " + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " (" +  killPartecipation + "% kill partecipation)\n"
+                                        + "**CS**: " + totalCreeps + " (" + csPerMin + " CS/min)\n"
+                                        + "**Vision Score**: " + me.getVisionScore() + " (" + me.getWardsPlaced() + " wards placed)\n"
+                                        + "**Damage Dealt to champion**: " + formatNumber(personalstats.get("damageDealt")) + " (" + getPosition(totalStats, personalstats, "damageDealt") + "th in the game)\n";
+
+                eb.addField("Personal Stats", personalStatsTxt, false);
+
+                break;
+        }
+        return eb;
+    }
+
+    private static String getPosition(HashMap<MatchParticipant, HashMap<String, String>> allStats, HashMap<String, String> personalStats, String statKey) {
+        int personalStatValue = Integer.parseInt(personalStats.get(statKey));
+        int position = 1;
+    
+        for (HashMap<String, String> stats : allStats.values()) {
+            int statValue = Integer.parseInt(stats.get(statKey));
+            if (statValue > personalStatValue) {
+                position++;
+            }
+        }
+    
+        return String.valueOf(position);
+    }
+
+    private static String formatNumber(String number) {
+        return formatNumber(Integer.valueOf(number));
+    }
+
+    private static String formatNumber(int number) {
+        if (number >= 1000) {
+            double value = number / 1000.0;
+            DecimalFormat df = new DecimalFormat("#.#");
+            return df.format(value) + "k";
+        }
+        return String.valueOf(number);
     }
 
 

@@ -35,6 +35,7 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
 
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -446,6 +447,22 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
     }
 
+    public static LeagueEntry getRankEntry(Summoner s) {
+        try {
+            for(int i = 0; i < 3; i++){
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
+                if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
+                    return entry;
+            }
+        } catch (Exception e) { }
+        return null;
+    }
+
+    public static String getRankIcon(LeagueEntry entry) {
+
+        return entry != null ? CustomEmojiHandler.getFormattedEmoji(entry.getTier()) : CustomEmojiHandler.getFormattedEmoji("unranked");
+    }
+
     public static String getMastery(Summoner s, int nChamp){
         DecimalFormat df = new DecimalFormat("#,##0", new DecimalFormatSymbols(Locale.US));
         String masteryString = "";
@@ -469,11 +486,30 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return masteryString;
     }
 
+    public static String getMasteryByChamp(Summoner s, int champId) {
+        String masteryString = "";
+        try {
+            for(ChampionMastery mastery : s.getChampionMasteries()){
+                if(mastery.getChampionId() == champId){
+                    int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+                    masteryString += CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " ";
+                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
+                                    + " **[" + mastery.getChampionLevel()+ "]** ";
+                    return masteryString;
+                }
+            }
+            
+        } catch (Exception e) { }
+        return masteryString;
+    }
+
     public static String getActivity(Summoner s){
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
-                if(partecipant.getSummonerId().equals(s.getSummonerId()))
-                    return "Playing a " + s.getCurrentGame().getGameQueueConfig().commonName()+ " as " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                if(partecipant.getSummonerId().equals(s.getSummonerId())) {
+                    String gameName = s.getCurrentGame().getGameQueueConfig() == GameQueueType.CHERRY ? "Arena" : (s.getCurrentGame().getGameQueueConfig() == GameQueueType.STRAWBERRY ? "Swarm" : s.getCurrentGame().getGameQueueConfig().commonName());
+                    return "Playing a " + gameName + " as " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                }
             }
         } catch (Exception e) {
             return "Not in a game";
@@ -660,6 +696,12 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
         return champ;
         
+    }
+
+    public static Emoji getEmojiByChampion(int champId) {
+        StaticChampion champion = riotApi.getDDragonAPI().getChampion(champId);
+        long emojiId = Long.parseLong(CustomEmojiHandler.getEmojiId(champion.getName()));
+        return Emoji.fromCustom(champion.getName(), emojiId, false);
     }
 
 //   ▄████████    ▄████████  ▄████████    ▄█    █▄       ▄████████ 

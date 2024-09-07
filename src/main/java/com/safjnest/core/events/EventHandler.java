@@ -23,6 +23,7 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -132,6 +133,18 @@ public class EventHandler extends ListenerAdapter {
             String platform =  event.getValues().get(0).split("#")[1];
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerBySummonerId(summonerId, LeagueShard.valueOf(platform));
             event.deferEdit().setEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(event.getMessage().getComponents()).queue();
+        }
+        else if (event.getComponentId().equals("opgg-select")) {
+            String gameId = event.getValues().get(0);
+            String platform =  event.getValues().get(0).split("_")[0];
+            String accountId =  event.getValues().get(0).split("#")[1];
+
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+            
+            LeagueShard shard = LeagueShard.valueOf(platform);
+            LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
+            event.deferEdit().setEmbeds(LeagueMessage.getOpggEmbed(s, match).build()).setComponents(event.getMessage().getComponents()).queue();
+            
         }
     }
 }

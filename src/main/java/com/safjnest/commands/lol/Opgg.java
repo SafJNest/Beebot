@@ -1,5 +1,6 @@
 package com.safjnest.commands.lol;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -15,7 +16,9 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -63,7 +66,11 @@ public class Opgg extends SlashCommand {
         
         
         EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);
-        List<LayoutComponent> row = LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null);
+        StringSelectMenu menu = LeagueMessage.getOpggMenu(s);
+        List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null));
+
+        if (menu != null) row.add(0, ActionRow.of(menu));
+        else System.out.println("Menu is null");
 
         event.getChannel().sendMessageEmbeds(builder.build()).setComponents(row).queue();
         
@@ -85,7 +92,11 @@ public class Opgg extends SlashCommand {
         else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
         EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);
-        List<LayoutComponent> row = LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null);
+        StringSelectMenu menu = LeagueMessage.getOpggMenu(s);
+        List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null));
+        
+        if (menu != null) row.add(0, ActionRow.of(menu));
+        else System.out.println("Menu is null");
         
         event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
 	}
