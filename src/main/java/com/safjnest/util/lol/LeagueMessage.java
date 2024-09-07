@@ -309,53 +309,72 @@ public class LeagueMessage {
 
 
 
-    public static EmbedBuilder getLivegameEmbed(Summoner summoner, List<SpectatorParticipant> spectators, List<RiotAccount> accounts) {
-        RiotAccount me = null;
-        for(RiotAccount a : accounts){
-            if(a.getPUUID().equals(summoner.getPUUID())){
-                me = a;
-                break;
-            }
-        }
+    public static EmbedBuilder getLivegameEmbed(Summoner summoner, List<SpectatorParticipant> spectators) {
         try {
+
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(me.getName() + "#" + me.getTag() + "'s Game");
+            builder.setTitle(LeagueHandler.getActivity(summoner));
             builder.setColor(Bot.getColor());
             builder.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
-            String blueSide = "";
-            String redSide = "";
-            for (SpectatorParticipant partecipant : spectators) {
-                RiotAccount account = accounts.stream().filter(a -> a.getPUUID().equals(partecipant.getPuuid())).findFirst().orElse(null);
 
-
-                String sum = CustomEmojiHandler.getFormattedEmoji(
-                        LeagueHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
-                        + " " + account.getName().toUpperCase();
-                String stats = "";
-                if (summoner.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) {
-                    stats = LeagueHandler.getFlexStats(LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform()));
-                    stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "  + stats.substring(stats.lastIndexOf(":") + 1);
-
-                } else {
-                    stats = LeagueHandler.getSoloQStats(LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform()));
-                    stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | " + stats.substring(stats.lastIndexOf(":") + 1);
-                }
-
-                if (partecipant.getTeam() == TeamType.BLUE) blueSide += "**" + sum + "** " + stats + "\n";
-                else redSide += "**" + sum + "** " + stats + "\n";
-
+            switch (summoner.getCurrentGame().getGameQueueConfig()) {
+                case CHERRY:
+                    String field1 = "";
+                    String field2 = "";
+                    int i = 0;
+                    
+                    for (SpectatorParticipant partecipant : spectators) {
+                        Summoner s = LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform());
+                        String mastery = LeagueHandler.getMasteryByChamp(s, partecipant.getChampionId());
+                        String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
+                        String sum = " **" + partecipant.getRiotId() + "**";
+                    
+                        if (i < 8) field1 += mastery + " " + sum + " " + stats + "\n";
+                        else if (i < 16) field2 += mastery + " " + sum + " " + stats + "\n";
+                        i++;
+                    }
+                    builder.addField("1 - 8 Players", field1, false);
+                    builder.addField("8 - 16 Players", field2, false);
+                    break;
+            
+                default:
+                    String blueSide = "";
+                    String redSide = "";
+                    for (SpectatorParticipant partecipant : spectators) {       
+                        String sum = CustomEmojiHandler.getFormattedEmoji(
+                                LeagueHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
+                                + " " + partecipant.getRiotId();
+                        String stats = "";
+                        if (summoner.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) {
+                            stats = LeagueHandler.getFlexStats(LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform()));
+                            stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "  + stats.substring(stats.lastIndexOf(":") + 1);
+        
+                        } else {
+                            stats = LeagueHandler.getSoloQStats(LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform()));
+                            stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | " + stats.substring(stats.lastIndexOf(":") + 1);
+                        }
+        
+                        if (partecipant.getTeam() == TeamType.BLUE) blueSide += "**" + sum + "** " + stats + "\n";
+                        else redSide += "**" + sum + "** " + stats + "\n";
+        
+                    }
+                    if (summoner.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) builder.addField("Ranked stats", "FLEX", false);
+                    else builder.addField("Ranked stats", "SOLOQ", false);
+        
+                    builder.addField("**BLUE SIDE**", blueSide, false);
+                    builder.addField("**RED SIDE**", redSide, true);
+                    break;
             }
-            if (summoner.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) builder.addField("Ranked stats", "FLEX", false);
-            else builder.addField("Ranked stats", "SOLOQ", false);
 
-            builder.addField("**BLUE SIDE**", blueSide, false);
-            builder.addField("**RED SIDE**", redSide, true);
+
+
             builder.setFooter("For every gamemode would be use the SOLOQ ranked data. Flex would be shown only if the game is a Flex game.");
             return builder;
 
         } catch (Exception e) {
+            RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(me.getName() + "#" + me.getTag() + "'s Game");
+            builder.setTitle(account.getName() + "'s Game");
             builder.setColor(Bot.getColor());
             builder.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
             builder.setDescription("This user is not in a game.");
@@ -363,18 +382,13 @@ public class LeagueMessage {
         }
     }
 
-    public static StringSelectMenu getLivegameMenu(Summoner summoner, List<SpectatorParticipant> spectators, List<RiotAccount> accounts) {
+    public static StringSelectMenu getLivegameMenu(Summoner summoner, List<SpectatorParticipant> spectators) {
         if (spectators == null || spectators.size() == 0) return null;
 
         ArrayList<SelectOption> options = new ArrayList<>();
         for(SpectatorParticipant p : spectators){
-            RiotAccount account = LeagueHandler.getRiotApi().getAccountAPI().getAccountByPUUID(summoner.getPlatform().toRegionShard(), p.getPuuid());
-            accounts.add(account);
-            Emoji icon = Emoji.fromCustom(
-                LeagueHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName(), 
-                Long.parseLong(CustomEmojiHandler.getEmojiId(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(p.getChampionId()).getName())), false);
-                
-            options.add(SelectOption.of(account.getName().toUpperCase(), p.getSummonerId() + "#" + summoner.getPlatform().name()).withEmoji(icon));
+            Emoji icon = LeagueHandler.getEmojiByChampion(p.getChampionId());    
+            options.add(SelectOption.of(p.getRiotId(), p.getSummonerId() + "#" + summoner.getPlatform().name()).withEmoji(icon));
         }
 
         return StringSelectMenu.create("rank-select")

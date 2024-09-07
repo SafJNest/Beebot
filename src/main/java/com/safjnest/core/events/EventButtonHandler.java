@@ -716,12 +716,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
                 
-                List<RiotAccount> riotAccounts = new ArrayList<>();
-                RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-                riotAccounts.add(account);
-
-                StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users, riotAccounts);
-                EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users, riotAccounts);
+                StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
+                EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
                 List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
         
                 if (menu != null) {
@@ -823,12 +819,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
                 
-                List<RiotAccount> riotAccounts = new ArrayList<>();
-                RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-                riotAccounts.add(account);
-
-                StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users, riotAccounts);
-                EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users, riotAccounts);
+                StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
+                EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
                 List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
         
                 if (menu != null) {
@@ -948,8 +940,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 return;
         }
         users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users, riotAccounts);
-        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users, riotAccounts);
+        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
+        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
         List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
 
         if (menu != null) {

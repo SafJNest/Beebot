@@ -21,7 +21,6 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -68,14 +67,9 @@ public class Livegame extends SlashCommand {
         }
         
         List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-        List<RiotAccount> accounts = new ArrayList<>();
 
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        accounts.add(account);
-
-
-        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users, accounts);
-        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users, accounts);
+        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
+        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
         List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null));
 
         if (menu != null) {
@@ -103,13 +97,9 @@ public class Livegame extends SlashCommand {
         }
 
         List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-        List<RiotAccount> accounts = new ArrayList<>();
 
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        accounts.add(account);
-
-        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users, accounts);
-        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users, accounts);
+        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
+        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
         List<LayoutComponent> row = LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null);
 
         if (menu != null) {
