@@ -1102,6 +1102,7 @@ public class DatabaseHandler {
             pstmt.setObject(4, message);
     
             pstmt.executeUpdate();
+            c.commit();
             return true;
         } catch (SQLException ex) {
             if (c != null) {
@@ -1161,6 +1162,7 @@ public class DatabaseHandler {
             pstmt.setObject(parameterIndex, guild_id);
 
             int rowsAffected = pstmt.executeUpdate();
+            c.commit();
             return rowsAffected > 0; // Returns true if at least one row was updated
         } catch (SQLException ex) {
             if (c != null) {
