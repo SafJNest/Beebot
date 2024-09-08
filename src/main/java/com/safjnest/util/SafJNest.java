@@ -23,6 +23,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import java.time.format.DateTimeFormatter;
+
 
 /**
  * Classe ufficiale della <a href="https://github.com/SafJNest">SafJNest Corporation</a>
@@ -429,6 +431,11 @@ public class SafJNest extends Thread {
     public static String getFormattedDate(long time) {
         LocalDateTime date = LocalDateTime.ofEpochSecond(time, 0, ZoneOffset.UTC);
         return date.getDayOfMonth() + "-" + date.getMonthValue() + "-" + date.getYear();
+    }
+
+    public static String getFormattedDate(LocalDateTime time, String format) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
+        return time.format(formatter);
     }
 
     public static double round(double value, int places) {

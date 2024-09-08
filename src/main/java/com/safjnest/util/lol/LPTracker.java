@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
+import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
 
@@ -20,16 +21,16 @@ import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import java.time.LocalDateTime;
 
 public class LPTracker {
 
     private static R4J api = LeagueHandler.getRiotApi();
+    private static long period = TimeConstant.MINUTE * 20;
 
 	public LPTracker() {
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-		long period = TimeConstant.MINUTE * 20;
-
 		Runnable task = new Runnable() {
 			@Override
 			public void run() {
@@ -40,20 +41,21 @@ public class LPTracker {
 		};
 
 		scheduler.scheduleAtFixedRate(task, TimeConstant.MINUTE, period, TimeUnit.MILLISECONDS);
-	}
+	} 
 
 	private void trackSummoners() {
 		QueryResult result = DatabaseHandler.getRegistredLolAccount();
+        BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
 
         for (ResultRow account : result) {
             Summoner summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
             if (summoner != null) analyzeMatchHistory(summoner, account);
         }
+
+        BotLogger.info("[LPTracker] Finish tracking summoners. Next check at " + SafJNest.getFormattedDate(LocalDateTime.now().plusSeconds(period / 1000), "yyyy-MM-dd HH:mm:ss"));
 	}
 
     private void analyzeMatchHistory(Summoner summoner, ResultRow dataGame) {
-        BotLogger.trace("[LPTracker] Analyzing match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
-
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         
         try { Thread.sleep(500); } 
