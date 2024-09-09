@@ -28,7 +28,8 @@
         "help"  : "Play a video from youtube.",
         "longhelp"  : "Play a video from youtube.",
         "category" : "Audio Queue",
-        "arguments" : "[link/name video]"
+        "arguments" : "[link/name video]",
+        "cooldown": "2"
     },
 
     "playyoutubeforce":{
@@ -36,7 +37,8 @@
         "help"  : "Play a video from youtube ignoring the current queue.",
         "longhelp"  : "Play a video from youtube.",
         "category" : "Audio Queue",
-        "arguments" : "[link/name video]"
+        "arguments" : "[link/name video]",
+        "cooldown": "2"
     },
 
     "playsound":{
@@ -52,7 +54,8 @@
         "help"  : "Text to speech.",
         "longhelp"  : "Text to speech.",
         "category" : "Audio",
-        "arguments" : "[CommandName] [text]"
+        "arguments" : "[CommandName] [text]",
+        "cooldown": "2"
     },
 
     "soundboard": {
@@ -143,7 +146,8 @@
         "help"  : "Show the current player.",
         "longhelp": "Show the current player.",
         "category" : "Audio Queue",
-        "arguments" : "[CommandName]"
+        "arguments" : "[CommandName]",
+        "cooldown": "2"
     },
 
     "queue":{
@@ -151,7 +155,8 @@
         "help"  : "Show the current queue.",
         "longhelp": "Show the current queue.",
         "category" : "Audio Queue",
-        "arguments" : "[CommandName]"
+        "arguments" : "[CommandName]",
+        "cooldown": "2"
     },
 
     "skip":{
@@ -203,7 +208,8 @@
                 "alias" : [],
                 "help"  : "Play a video from youtube.",
                 "longhelp"  : "Play a video from youtube.",
-                "arguments" : "[CommandName]"
+                "arguments" : "[CommandName]",
+                "cooldown": "2"
             }, 
             "sound": {
                 "alias" : [],
@@ -241,7 +247,8 @@
         "help"  : "Jump to a specific track in the queue.",
         "longhelp"  : "Jump to a specific track in the queue.",
         "category" : "Audio Queue",
-        "arguments" : "[CommandName]"
+        "arguments" : "[CommandName]",
+        "cooldown": "2"
     },
 
     "searchyoutube": {
@@ -249,7 +256,8 @@
         "help"  : "Search youtube for videos.",
         "longhelp"  : "Search youtube for videos.",
         "category" : "Audio",
-        "arguments" : "[CommandName]"
+        "arguments" : "[CommandName]",
+        "cooldown": "2"
     },
 
     "search": {
@@ -262,7 +270,8 @@
             "youtube": {
                 "alias" : [],
                 "help"  : "Search youtube for videos.",
-                "longhelp"  : "Search youtube for videos."
+                "longhelp"  : "Search youtube for videos.",
+                "cooldown": "2"
             }, 
             "sound": {
                 "alias" : [],
