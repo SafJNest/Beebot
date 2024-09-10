@@ -6,6 +6,7 @@ import java.util.concurrent.Future;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,11 @@ import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.lava.extensions.youtuberotator.YoutubeIpRotatorSetup;
+import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
+import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingIpRoutePlanner;
+import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
+import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.Ipv6Block;
 
 import dev.lavalink.youtube.clients.Web;
 import net.dv8tion.jda.api.entities.Guild;
@@ -69,15 +75,15 @@ public class PlayerManager {
 
         audioPlayerManager.registerSourceManager(youtube);
 
-        // if(!App.isExtremeTesting()) {
-        //     IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
-        //     List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
-        //     AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
-        //     YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
-        //     rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
-        //         .withMainDelegateFilter(youtube.getContextFilter())
-        //         .setup();
-        // }
+        if(!App.isExtremeTesting()) {
+            IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
+            List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
+            AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
+            YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
+            rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
+                .withMainDelegateFilter(youtube.getContextFilter())
+                .setup();
+        }
     }
 
     private void registerSpotify(SettingsLoader settingsLoader) {
