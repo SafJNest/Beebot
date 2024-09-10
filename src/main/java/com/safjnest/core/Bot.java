@@ -70,6 +70,7 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.Settings;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
+import net.dv8tion.jda.api.entities.Activity;
 
 /**
  * Main class of the bot.
@@ -86,7 +87,7 @@ import com.safjnest.util.log.BotLogger;
 public class Bot extends ListenerAdapter {
 
     private static JDA jda;
-    private static String BOT_ID;
+    private static String botID;
     private static Settings settings;
     
     private static GuildDataHandler gs;
@@ -120,7 +121,7 @@ public class Bot extends ListenerAdapter {
             .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
             .build();
 
-        BOT_ID = jda.getSelfUser().getId();
+        botID = jda.getSelfUser().getId();
 
         gs = new GuildDataHandler();
         userData = new CacheMap<String, UserData>(50);
@@ -259,7 +260,7 @@ public class Bot extends ListenerAdapter {
     
 
     public static String getBotId() {
-        return BOT_ID;
+        return botID;
     }
 
     public static Color getColor() {

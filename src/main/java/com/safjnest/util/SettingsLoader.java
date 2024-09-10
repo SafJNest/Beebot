@@ -99,7 +99,7 @@ public class SettingsLoader {
     }
 
     public Activity getActivity() {
-        return Activity.playing(MessageFormat.format(getDiscordSettings().get("activity").toString().replace("{0}", getPrefix()), getPrefix()));
+        return Activity.listening(MessageFormat.format(getDiscordSettings().get("activity").toString().replace("{0}", getPrefix()), getPrefix()));
     }
 
     public String getDiscordToken() {
