@@ -152,15 +152,13 @@ public class LeagueMessage {
     }
 
     public static EmbedBuilder getOpggEmbed(Summoner s, LOLMatch match) {
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-
         MatchParticipant me = null;
         for(MatchParticipant mp : match.getParticipants())
             if(mp.getSummonerId().equals(s.getSummonerId()))
                 me = mp;
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(account.getName() + "#" + account.getTag());
+        eb.setAuthor(me.getRiotIdName() + "#" + me.getRiotIdTagline());
         eb.setColor(Bot.getColor());
         eb.setTitle(LeagueHandler.formatMatchName(match.getQueue()));
         eb.setDescription((me.didWin() ? "Win" : "Lose") + " as " + CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " " + me.getChampionName() + " in " + match.getGameDurationAsDuration().toMinutes() + " minutes");
@@ -274,17 +272,15 @@ public class LeagueMessage {
                 String blueSide = "";
                 String redSide = "";
 
-
-
-                
-
                 for (MatchTeam team : match.getTeams()) {
                     if (team.getTeamId() != TeamType.BLUE && team.getTeamId() != TeamType.RED) continue;
 
                     String banText = teamStats.get(team.getTeamId()).getOrDefault("ban", "**Bans**\n");
-                    for (ChampionBan ban : team.getBans()) 
-                        banText += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(ban.getChampionId()).getName()) + " ";
-                    
+                    for (ChampionBan ban : team.getBans()) {
+                        if (ban.getChampionId() == -1) banText += CustomEmojiHandler.getFormattedEmoji("0") + " ";
+                        else banText += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(ban.getChampionId()).getName()) + " ";
+                        
+                    }
                     teamStats.get(team.getTeamId()).put("bans", banText);
                 }
                 
@@ -326,7 +322,7 @@ public class LeagueMessage {
                 String towericon = CustomEmojiHandler.getFormattedEmoji("tower");
 
                 blueSide += killsIcon + teamStats.get(blue).get("kills") + " ∙ " + towericon + teamStats.get(blue).get("towers") + " ∙ " + goldIcon + " " + formatNumber(teamStats.get(blue).get("gold")) + "\n" + teamStats.get(blue).get("bans") + "\n\n" + teamStats.get(blue).get("champions");
-                redSide += killsIcon + teamStats.get(red).get("kills") + " ∙ " + towericon + teamStats.get(red).get("towers") + " ∙ " + goldIcon + " " + formatNumber(teamStats.get(red).get("gold")) + "\n" + teamStats.get(blue).get("bans") + "\n\n" + teamStats.get(red).get("champions");
+                redSide += killsIcon + teamStats.get(red).get("kills") + " ∙ " + towericon + teamStats.get(red).get("towers") + " ∙ " + goldIcon + " " + formatNumber(teamStats.get(red).get("gold")) + "\n" + teamStats.get(red).get("bans") + "\n\n" + teamStats.get(red).get("champions");
                 eb.addField("Blue Side", blueSide, true);
                 eb.addField("Red Side", redSide, true);
                 

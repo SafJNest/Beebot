@@ -13,6 +13,7 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.lol.LPTracker;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.util.twitch.TwitchClient;
@@ -807,6 +808,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (event.getMessage().getButtonById("match-left") == null) user_id = "";
 
                 s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+                LPTracker.analyzeMatchHistory(s);
 
                 LeagueHandler.clearSummonerCache(s);
                 break;

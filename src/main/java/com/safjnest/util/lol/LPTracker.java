@@ -55,7 +55,14 @@ public class LPTracker {
         BotLogger.info("[LPTracker] Finish tracking summoners. Next check at " + SafJNest.getFormattedDate(LocalDateTime.now().plusSeconds(period / 1000), "yyyy-MM-dd HH:mm:ss"));
 	}
 
-    private void analyzeMatchHistory(Summoner summoner, ResultRow dataGame) {
+    public static void analyzeMatchHistory(Summoner summoner) {
+        ResultRow result = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId());
+        if (result.emptyValues()) return;
+
+        analyzeMatchHistory(summoner, result);
+    }
+
+    public static void analyzeMatchHistory(Summoner summoner, ResultRow dataGame) {
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         
         try { Thread.sleep(500); } 

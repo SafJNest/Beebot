@@ -1320,6 +1320,10 @@ public class DatabaseHandler {
         return safJQuery("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking) t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1;");
     }
 
+    public static ResultRow getRegistredLolAccount(String account_id) {
+        return fetchJRow("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking) t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1 AND s.account_id = '" + account_id + "';");
+    }
+
     public static boolean setSummonerData(String account_id, long game_id, LeagueShard shard, boolean win, int rank, int lp, int gain, int champion, long time_start, long time_end, String version) {
         return runQuery("INSERT INTO summoner_tracking(account_id, game_id, league_shard, win, rank, lp, gain, champion, time_start, time_end, patch) VALUES('" + account_id + "','" + game_id + "','" + shard.ordinal() + "','" + (win ? 1 : 0) + "','" + rank + "','" + lp + "','" + gain + "','" + champion + "','" + new Timestamp(time_start) + "','" + new Timestamp(time_end) + "','" + version + "');");
     }
