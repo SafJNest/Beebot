@@ -72,12 +72,6 @@ public class PlayerManager {
     private void registerYoutube(SettingsLoader settingsLoader) {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 
-        if (settingsLoader.isPoTokenEnabled()) {
-            Web.setPoTokenAndVisitorData(settingsLoader.getPoToken(), settingsLoader.getVisitorData());
-        }
-
-        audioPlayerManager.registerSourceManager(youtube);
-
         if(!App.isExtremeTesting() && settingsLoader.isRotorEnabled()) {
             IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
             List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
@@ -87,6 +81,12 @@ public class PlayerManager {
                 .withMainDelegateFilter(youtube.getContextFilter())
                 .setup();
         }
+
+        if (settingsLoader.isPoTokenEnabled()) {
+            Web.setPoTokenAndVisitorData(settingsLoader.getPoToken(), settingsLoader.getVisitorData());
+        }
+
+        audioPlayerManager.registerSourceManager(youtube);
     }
 
     private void registerSpotify(SettingsLoader settingsLoader) {
