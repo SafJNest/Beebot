@@ -198,6 +198,14 @@ public class SettingsLoader {
         return getLavalinkSettings().get("potoken").toString();
     }
 
+    public boolean isPoTokenEnabled() {
+        return getLavalinkSettings().get("potokenEnabled").toString().equals("1");
+    }
+
+    public boolean isRotorEnabled() {
+        return getLavalinkSettings().get("rotorEnabled").toString().equals("1");
+    }
+
     public String getVisitorData() {
         return getLavalinkSettings().get("visitordata").toString();
     }

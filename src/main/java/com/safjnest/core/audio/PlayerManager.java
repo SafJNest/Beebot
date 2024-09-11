@@ -72,11 +72,13 @@ public class PlayerManager {
     private void registerYoutube(SettingsLoader settingsLoader) {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 
-        Web.setPoTokenAndVisitorData(settingsLoader.getPoToken(), settingsLoader.getVisitorData());
+        if (settingsLoader.isPoTokenEnabled()) {
+            Web.setPoTokenAndVisitorData(settingsLoader.getPoToken(), settingsLoader.getVisitorData());
+        }
 
         audioPlayerManager.registerSourceManager(youtube);
 
-        if(!App.isExtremeTesting()) {
+        if(!App.isExtremeTesting() && settingsLoader.isRotorEnabled()) {
             IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
             List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
             AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
