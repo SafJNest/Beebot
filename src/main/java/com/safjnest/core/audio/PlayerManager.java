@@ -32,7 +32,9 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import com.sedmelluq.lava.extensions.youtuberotator.YoutubeIpRotatorSetup;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
+import com.sedmelluq.lava.extensions.youtuberotator.planner.NanoIpRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingIpRoutePlanner;
+import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingNanoIpRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.Ipv6Block;
 
@@ -75,7 +77,7 @@ public class PlayerManager {
         if(!App.isExtremeTesting() && settingsLoader.isRotorEnabled()) {
             IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
             List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
-            AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
+            NanoIpRoutePlanner routePlanner = new NanoIpRoutePlanner(ipBlocks, true);
             YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
             rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
                 .withMainDelegateFilter(youtube.getContextFilter())
