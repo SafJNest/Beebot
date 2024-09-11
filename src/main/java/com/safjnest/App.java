@@ -70,7 +70,7 @@ public class App {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            app.run(args);
+            //app.run(args);
         }
 
         SecureRandom secureRandom = new SecureRandom();

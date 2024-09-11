@@ -29,6 +29,7 @@ import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+
 import com.sedmelluq.lava.extensions.youtuberotator.YoutubeIpRotatorSetup;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingIpRoutePlanner;
@@ -68,7 +69,6 @@ public class PlayerManager {
     }
 
     //registers youtube source and starts the rotator
-    @SuppressWarnings("rawtypes")
     private void registerYoutube(SettingsLoader settingsLoader) {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 
@@ -76,15 +76,15 @@ public class PlayerManager {
 
         audioPlayerManager.registerSourceManager(youtube);
 
-        // if(!App.isExtremeTesting()) {
-        //     IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
-        //     List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
-        //     AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
-        //     YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
-        //     rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
-        //         .withMainDelegateFilter(youtube.getContextFilter())
-        //         .setup();
-        // }
+        if(!App.isExtremeTesting()) {
+            IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
+            List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
+            AbstractRoutePlanner routePlanner = new RotatingIpRoutePlanner(ipBlocks);
+            YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
+            rotator.forConfiguration(youtube.getHttpInterfaceManager(), false)
+                .withMainDelegateFilter(youtube.getContextFilter())
+                .setup();
+        }
     }
 
     private void registerSpotify(SettingsLoader settingsLoader) {
