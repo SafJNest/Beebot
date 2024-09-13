@@ -643,13 +643,14 @@ public class Test extends Command{
                 e.getChannel().sendMessageEmbeds(eb.build()).setActionRow(streamerButtonLink).queue();
                 break;
             case "fixlol":
-                query = "SELECT game_id, account_id from summoner_tracking where league_shard = 3";
+                query = "SELECT st.id, st.game_id, st.account_id, st.league_shard, s.summoner_id FROM summoner_tracking st JOIN summoner s ON st.account_id = s.account_id AND st.league_shard = s.league_shard WHERE st.id > 1615 order by id;";
                 res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
-                    String game_id = "EUW1_"+row.get("game_id");
+                    String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
+                    String game_id = region + "_"+row.get("game_id");
                     String account_id = row.get("account_id");
-
-                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(RegionShard.EUROPE, game_id);
+                    String summoner_id = row.get("summoner_id");
+                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                     try {
                         Thread.sleep(200);
                     } catch (Exception eee) { eee.printStackTrace(); }
@@ -658,11 +659,18 @@ public class Test extends Command{
                         continue;
                     }
 
-                    long time_start = match.getGameStartTimestamp();
-                    long time_end = match.getGameEndTimestamp();
+                    String kda = "";
+                    for (MatchParticipant partecipant : match.getParticipants()) {
+                        if (partecipant.getSummonerId().equals(summoner_id)) {
+                            kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists();
+                        }
+                    }
+                    if (account_id.equals("2PsFonivlLKJUejUIgLmsj9g2yYO240AS71m52fO2VYXCA")) {
+                        System.out.println(kda);
+                    }
 
-                    query = "UPDATE summoner_tracking SET league_shard = " + match.getPlatform().ordinal() + ",time_start = '" + new Timestamp(time_start) + "', time_end = '" + new Timestamp(time_end) + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
-                    System.out.println(query);
+                    query = "UPDATE summoner_tracking SET kda = '" + kda + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
+                    System.out.println(row.get("id") + " " + query);
                     DatabaseHandler.runQuery(query);
                 }
             break;
