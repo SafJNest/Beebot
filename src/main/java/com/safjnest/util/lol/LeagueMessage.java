@@ -30,6 +30,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
@@ -37,6 +38,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -90,14 +92,16 @@ public class LeagueMessage {
             User theGuy = Bot.getJDA().retrieveUserById(userId).complete();
             builder.addField("User:", theGuy.getName(), true);
             builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
-            builder.addBlankField(true);
+            builder.addField("Server", LeagueHandler.getShardFlag(s.getPlatform()) + " " +  s.getPlatform().prettyName(), true);
 
             ResultRow data = DatabaseHandler.getSummonerData(userId, s.getAccountId());
-            if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner");
+            if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner. The more you play, the more accurate the data will be.");
             else builder.setFooter("LPs tracking disabled for the current summoner");
             
         }else{
-            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), false);
+            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
+            builder.addField("Server", LeagueHandler.getShardFlag(s.getPlatform()) + " " + s.getPlatform().prettyName(), true);
+            builder.addBlankField(true);
         }
         
         builder.addField("Solo/duo Queue", LeagueHandler.getSoloQStats(s), true);
@@ -106,17 +110,47 @@ public class LeagueMessage {
         for(int i = 1; i < 4; i++)
             masteryString += LeagueHandler.getMastery(s, i) + "\n";
         
-        builder.addField("Top 3 Champs", masteryString, false); 
+        builder.addField("Highest Masteries", masteryString, false); 
+
+        long[] split = LeagueHandler.getCurrentSplitRange();
+        QueryResult advanceData = DatabaseHandler.getAdvancedLOLData(s.getAccountId(), split[0], split[1]);
+
+        if (!advanceData.isEmpty()) {
+            LeagueEntry entry = LeagueHandler.getRankEntry(s.getSummonerId(), s.getPlatform());
+    
+            int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
+    
+            ResultRow mostPlayedChamp = advanceData.get(0), bestChampion = advanceData.get(0), worstChampion = advanceData.get(0);
+    
+            for (ResultRow row : advanceData) {
+                if (Integer.parseInt(row.get("games")) > Integer.parseInt(mostPlayedChamp.get("games"))) mostPlayedChamp = row;
+                if (Integer.parseInt(row.get("total_lp_gain")) > Integer.parseInt(bestChampion.get("total_lp_gain"))) bestChampion = row;
+                if (Integer.parseInt(row.get("total_lp_gain")) < Integer.parseInt(worstChampion.get("total_lp_gain"))) worstChampion = row;
+            }
+    
+            builder.addField("Advanced Data", "The bot has analyzed " + totalGamesAnalized +" games over the " + (entry.getWins() + entry.getLosses()) + " you have played this split." , false);
+            String champStats = "";
+            for (int i = 0; i < 5 && i < advanceData.size(); i++) {
+                ResultRow row = advanceData.get(i);
+                champStats += formatAdvancedData(row);
+            }
+            builder.addField("Most Played Champions", champStats, false);
+        }
+
         builder.addField("Activity", LeagueHandler.getActivity(s), true);
 
         return builder;
     }
 
+    private static String formatAdvancedData(ResultRow data) {
+        StaticChampion champion = LeagueHandler.getChampionById(data.getAsInt("champion"));
+        return CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) - " + (data.getAsInt("wins") * 100 / (data.getAsInt("wins") + data.getAsInt("losses"))) + "% WR | " + data.get("total_lp_gain") + " LP\n"
+            + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
+    }
+
     public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id) {
         return composeButtons(s, user_id, "lol");
     }
-
-
 
     public static StringSelectMenu getOpggMenu(Summoner summoner) {
 

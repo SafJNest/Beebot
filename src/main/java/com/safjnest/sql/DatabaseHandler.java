@@ -596,6 +596,14 @@ public class DatabaseHandler {
         return fetchJRow("SELECT user_id FROM summoner WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
     }
 
+    public static QueryResult getAdvancedLOLData(String account_id) {
+        return safJQuery("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `summoner_tracking` WHERE `account_id` = '" + account_id + "' GROUP BY `champion` ORDER BY `games` DESC;");
+    }
+
+    public static QueryResult getAdvancedLOLData(String account_id, long time_start, long time_end) {
+        return safJQuery("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `summoner_tracking` WHERE `account_id` = '" + account_id + "' AND `time_start` >= '" + new Timestamp(time_start) + "' AND `time_end` <= '" + new Timestamp(time_end) + "' GROUP BY `champion` ORDER BY `games` DESC;");
+    }
+
     public static boolean addLOLAccount(String user_id, Summoner summoner) {
         return addLOLAccount(user_id, summoner.getSummonerId(), summoner.getAccountId(), summoner.getPUUID(), summoner.getPlatform());
     }

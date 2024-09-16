@@ -621,6 +621,10 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return getLeagueShardOptions(false);
     }
 
+    public static String getShardFlag(LeagueShard shard) {
+        return CustomEmojiHandler.getFormattedEmoji(shard.getRealmValue().toUpperCase() + "_server");
+    }
+
 
 //  ▀█████████▄     ▄████████    ▄████████  ▄█    █▄     ▄████████    ▄████████ ▄██   ▄   
 //    ███    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ ███   ██▄ 
@@ -720,6 +724,17 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return champ;
         
     }
+
+    public static StaticChampion getChampionById(int id) {
+        StaticChampion champ = null;
+        for (StaticChampion c : riotApi.getDDragonAPI().getChampions().values()) {
+            if (c.getId() == id) {
+                champ = c;
+                break;
+            }
+        }
+        return champ;
+    } 
 
     public static Emoji getEmojiByChampion(int champId) {
         StaticChampion champion = riotApi.getDDragonAPI().getChampion(champId);
