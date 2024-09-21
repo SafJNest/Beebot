@@ -144,7 +144,7 @@ public class EventHandler extends ListenerAdapter {
             
             LeagueShard shard = LeagueShard.valueOf(platform);
             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
-            event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s, match).build()).setComponents(event.getMessage().getComponents()).queue(); 
+            event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbedMatch(s, match).build()).setComponents(event.getMessage().getComponents()).queue(); 
         }
     }
 }

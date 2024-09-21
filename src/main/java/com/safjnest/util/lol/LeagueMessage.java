@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-
 import java.text.DecimalFormat;
 
 import com.safjnest.core.Bot;
@@ -28,8 +27,10 @@ import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
@@ -152,13 +153,56 @@ public class LeagueMessage {
         return composeButtons(s, user_id, "lol");
     }
 
+
+    
+    public static LayoutComponent getOpggQueueTypeButtons(GameQueueType queue) {
+        Button soloQ = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
+        Button flex = Button.primary("match-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
+        Button draft = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
+        Button aram = Button.primary("match-queue-" + GameQueueType.ARAM, "ARAM");
+        Button arena = Button.primary("match-queue-" + GameQueueType.CHERRY, "Arena");
+
+        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, arena);
+
+        switch (queue) {
+            case TEAM_BUILDER_RANKED_SOLO:
+                soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
+                break;
+            case RANKED_FLEX_SR:
+                flex = flex.withStyle(ButtonStyle.SUCCESS);
+                break;
+            case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
+                draft = draft.withStyle(ButtonStyle.SUCCESS);
+                break;
+            case ARAM:
+                aram = aram.withStyle(ButtonStyle.SUCCESS);
+                break;
+            case CHERRY:
+                arena = arena.withStyle(ButtonStyle.SUCCESS);
+                break;
+            default:
+                break;
+        }
+
+        return ActionRow.of(soloQ, flex, draft, aram, arena);
+    }
+
     public static StringSelectMenu getOpggMenu(Summoner summoner) {
+        return getOpggMenu(summoner, null);
+    }
+
+    public static StringSelectMenu getOpggMenu(Summoner summoner, GameQueueType queue) {
+        List<String> gameIds = new ArrayList<>();
+        MatchListBuilder builder = queue != null ? summoner.getLeagueGames().withCount(20).withQueue(queue) : summoner.getLeagueGames().withCount(20);	
+
+        for (String gameId : builder.get()) 
+            gameIds.add(gameId);
 
         ArrayList<SelectOption> options = new ArrayList<>();
-        for(int i = 0; i < 5; i++){
+        for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
                 
-                LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), summoner.getLeagueGames().withCount(20).get().get(i));
+                LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), gameIds.get(i));
                 if (match.getParticipants().size() == 0) continue;
 
                 MatchParticipant me = null;
@@ -173,10 +217,11 @@ public class LeagueMessage {
 
                 options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getAccountId()).withEmoji(icon).withDescription(description));
             } catch (Exception e) {
-                e.printStackTrace();
                 continue;
             }
         }
+
+        if (options.isEmpty()) return null;
 
         return StringSelectMenu.create("opgg-select")
                 .setPlaceholder("Select a game")
@@ -185,7 +230,7 @@ public class LeagueMessage {
                 .build();
     }
 
-    public static EmbedBuilder getOpggEmbed(Summoner s, LOLMatch match) {
+    public static EmbedBuilder getOpggEmbedMatch(Summoner s, LOLMatch match) {
         MatchParticipant me = null;
         for(MatchParticipant mp : match.getParticipants())
             if(mp.getSummonerId().equals(s.getSummonerId()))
@@ -414,6 +459,10 @@ public class LeagueMessage {
 
 
     public static EmbedBuilder getOpggEmbed(Summoner s) {
+        return getOpggEmbed(s, null);
+    }
+
+    public static EmbedBuilder getOpggEmbed(Summoner s, GameQueueType queue) {
         LeagueShard shard = s.getPlatform();
         RegionShard region = shard.toRegionShard();
 
@@ -425,16 +474,19 @@ public class LeagueMessage {
 
         eb.setAuthor(account.getName() + "#" + account.getTag());
         eb.setColor(Bot.getColor());
-        
+
         List<String> gameIds = new ArrayList<>();
-        for (String ss : s.getLeagueGames().withCount(20).get()) gameIds.add(ss.split("_")[1]);
+        MatchListBuilder builder = queue != null ? s.getLeagueGames().withCount(20).withQueue(queue) : s.getLeagueGames().withCount(20);	
+
+        for (String gameId : builder.get()) 
+            gameIds.add(gameId);
         
         QueryResult result = DatabaseHandler.getSummonerData(s.getAccountId(), gameIds.toArray(new String[0]));
 
-        for(int i = 0; i < 5; i++){
+        for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
                 
-                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, s.getLeagueGames().withCount(20).get().get(i));
+                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
                 if (match.getParticipants().size() == 0)
                     continue; //riot di merda che quando crasha il game lascia dati sporchi
 
@@ -583,6 +635,10 @@ public class LeagueMessage {
                 continue;
             }
         }
+
+        if (eb.getFields().size() == 0) 
+            eb.setDescription("No games found");
+        
         return eb;
     }
 

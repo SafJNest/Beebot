@@ -59,6 +59,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -710,6 +711,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s);
                 List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
+                opggRow.add(0, LeagueMessage.getOpggQueueTypeButtons(null));
                 
                 if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
 
@@ -742,16 +744,21 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void matchButtonEvent(ButtonInteractionEvent event) {
-        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        String args = event.getButton().getId().split("-", 3)[1];
 
         String puuid = "";
         String region = "";
         int index = 0;
 
+        GameQueueType queue = null;
+
         for (Button b : event.getMessage().getButtons()) {
             if (b.getId().startsWith("match-center-")) {
                 puuid = b.getId().split("-", 3)[2].substring(0, b.getId().split("-", 3)[2].indexOf("#"));
                 region = b.getId().split("-", 3)[2].substring(b.getId().split("-", 3)[2].indexOf("#") + 1);
+            }
+            if (b.getId().startsWith("match-queue-") && b.getStyle() == ButtonStyle.SUCCESS) {
+                queue = GameQueueType.valueOf(b.getId().split("-")[2]);
             }
         }
 
@@ -771,6 +778,9 @@ public class EventButtonHandler extends ListenerAdapter {
             }
             i++;
         }
+
+        String accountId = "";
+        String platform = "";
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         switch (args) {
@@ -793,10 +803,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 
                 break;
             case "refresh":
-                String accountId = "";
-                String platform = "";
                 for (Button b : event.getMessage().getButtons()) {
-                    if (!b.getId().equals("match-left") && !b.getId().equals("match-right") && !b.getId().equals("match-refresh")) {
+                    if (b.getId().startsWith("match-center-")) {
                         String[] parts = b.getId().split("-", 3);
 
                         accountId = parts[2].substring(0, parts[2].indexOf("#"));
@@ -811,6 +819,23 @@ public class EventButtonHandler extends ListenerAdapter {
                 LPTracker.analyzeMatchHistory(s);
 
                 LeagueHandler.clearSummonerCache(s);
+                break;
+            case "queue":
+                for (Button b : event.getMessage().getButtons()) {
+                    if (b.getId().startsWith("match-center-")) {
+                        String[] parts = b.getId().split("-", 3);
+
+                        accountId = parts[2].substring(0, parts[2].indexOf("#"));
+                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
+                        break;
+                    }
+                }
+
+                if (event.getMessage().getButtonById("match-left") == null) user_id = "";
+
+                s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+
+                queue = event.getButton().getStyle() != ButtonStyle.SUCCESS ? GameQueueType.valueOf(event.getButton().getId().split("-")[2]) : null;
                 break;
             case "lol":
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
@@ -839,9 +864,10 @@ public class EventButtonHandler extends ListenerAdapter {
                 return;
         }
 
-        EmbedBuilder eb = LeagueMessage.getOpggEmbed(s);
-        StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s);
+        EmbedBuilder eb = LeagueMessage.getOpggEmbed(s, queue);
+        StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s, queue);
         List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
+        opggRow.add(0, LeagueMessage.getOpggQueueTypeButtons(queue));
         
         if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
 
@@ -948,6 +974,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 
                 StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s);
                 List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
+                opggRow.add(0, LeagueMessage.getOpggQueueTypeButtons(null));
                 
                 if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
 

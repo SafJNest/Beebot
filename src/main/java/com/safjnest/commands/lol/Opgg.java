@@ -68,7 +68,8 @@ public class Opgg extends SlashCommand {
         EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);
         StringSelectMenu menu = LeagueMessage.getOpggMenu(s);
         List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null));
-
+        row.add(0, LeagueMessage.getOpggQueueTypeButtons(null));
+        
         if (menu != null) row.add(0, ActionRow.of(menu));
         else System.out.println("Menu is null");
 
@@ -94,6 +95,7 @@ public class Opgg extends SlashCommand {
         EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);
         StringSelectMenu menu = LeagueMessage.getOpggMenu(s);
         List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null));
+        row.add(0, LeagueMessage.getOpggQueueTypeButtons(null));
         
         if (menu != null) row.add(0, ActionRow.of(menu));
         else System.out.println("Menu is null");
