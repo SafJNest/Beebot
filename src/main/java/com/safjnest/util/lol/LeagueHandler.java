@@ -318,7 +318,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             if (accounts == null || accounts.size() == 0) return null;
 
             String firstAccount = accounts.keySet().stream().findFirst().get();
-             LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(firstAccount))];
+            LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(firstAccount))];
 
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, firstAccount);
         } catch (Exception e) {return null;}

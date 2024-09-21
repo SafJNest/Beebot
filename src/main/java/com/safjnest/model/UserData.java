@@ -1,6 +1,7 @@
 package com.safjnest.model;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
@@ -16,7 +17,7 @@ public class UserData {
     
     private final String USER_ID;
     private HashMap<String, AliasData> aliases;
-    private HashMap<String, String> riotAccounts;
+    private LinkedHashMap<String, String> riotAccounts;
 
     private String globalGreetId;
     private HashMap<String, String> guildGreetIds;
@@ -169,7 +170,7 @@ public class UserData {
         QueryResult result = DatabaseHandler.getLOLAccountsByUserId(USER_ID);
         if (result == null) { return; }
 
-        this.riotAccounts = new HashMap<>();
+        this.riotAccounts = new LinkedHashMap<>();
         for(ResultRow row: result){
             riotAccounts.put(row.get("account_id"), row.get("league_shard"));
         }

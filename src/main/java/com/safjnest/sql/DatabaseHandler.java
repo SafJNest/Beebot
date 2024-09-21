@@ -588,7 +588,7 @@ public class DatabaseHandler {
 
     
     public static QueryResult getLOLAccountsByUserId(String user_id){
-        String query = "SELECT account_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "';";
+        String query = "SELECT account_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
         return safJQuery(query);
     }
 
