@@ -1303,19 +1303,23 @@ public class EventButtonHandler extends ListenerAdapter {
     private void soundboardEvent(ButtonInteractionEvent event){
         Guild guild = event.getGuild();
         String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+
         TextChannel textChannel = event.getChannel().asTextChannel();
         AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
-        String path = "rsc" + File.separator + "SoundBoard"+ File.separator + args;
+
+        String sound_id = args.split("\\.")[0];
+        Sound sound = SoundHandler.getSoundById(sound_id);
+        String path = sound.getPath();
 
         PlayerManager pm = PlayerManager.get();
         pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, true);
-                guild.getAudioManager().openAudioConnection(audioChannel);
+                if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(audioChannel);
 
-                String id = args.split("\\.")[0];
-                DatabaseHandler.updateUserPlays(id, event.getMember().getId());
+                sound.increaseUserPlays(event.getMember().getId());
+                track.setUserData(new TrackData(AudioType.SOUND));
+                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
             }
 
             @Override
