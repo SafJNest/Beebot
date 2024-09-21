@@ -69,9 +69,9 @@
                 "help"  : "Create a new soundboard.",
                 "longhelp": "You can create a soundboard up to 25 sounds.\nTo save it insert a name, otherwise would be temporary."
             }, 
-            "select": {
+            "play": {
                 "alias" : [],
-                "help"  : "Select and show an existing soundboard."
+                "help"  : "Play an existing soundboard."
             },
             "add": {
                 "alias" : [],

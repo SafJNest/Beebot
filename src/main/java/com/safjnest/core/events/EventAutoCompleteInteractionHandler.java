@@ -535,7 +535,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else if (e.getFocusedOption().getName().equals("sound_remove"))
             name = "sound_remove";
 
-        else if (e.getFullCommandName().equals("soundboard select")
+        else if (e.getFullCommandName().equals("soundboard play")
                 || e.getFocusedOption().getName().equals("soundboard_name")
                 || e.getFullCommandName().equals("soundboard remove")
                 || e.getFullCommandName().equals("soundboard delete"))

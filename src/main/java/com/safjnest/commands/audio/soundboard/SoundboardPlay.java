@@ -20,9 +20,9 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * 
  * @since 2.1
  */
-public class SoundboardSelect extends SlashCommand{
+public class SoundboardPlay extends SlashCommand{
 
-    public SoundboardSelect(String father){
+    public SoundboardPlay(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
