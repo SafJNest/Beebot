@@ -96,14 +96,18 @@ public class LPTracker {
 
         LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
         
+        TierDivisionType oldDivision = TierDivisionType.values()[dataGame.getAsInt("rank")];
         TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
 
         int rank = division.ordinal();
         int lp = league != null ? league.getLeaguePoints() : 0;
         int gain = 0;
 
+        boolean isPromotionToMaster = oldDivision == TierDivisionType.DIAMOND_I && division == TierDivisionType.MASTER_I;
+        boolean isMasterPlus = division == TierDivisionType.MASTER_I || division == TierDivisionType.GRANDMASTER_I || division == TierDivisionType.CHALLENGER_I;
+
         if (dataGame.get("rank") == null) gain = 0;
-        else if ((division != TierDivisionType.CHALLENGER_I && division != TierDivisionType.GRANDMASTER_I && division != TierDivisionType.MASTER_I) && rank != dataGame.getAsInt("rank")) {
+        else if ((isPromotionToMaster || !isMasterPlus) && rank != dataGame.getAsInt("rank")) {
             gain = 100 - (Math.abs(lp - dataGame.getAsInt("lp")));
             gain = rank < dataGame.getAsInt("rank") ? gain : -gain;
         }
