@@ -407,6 +407,9 @@ public class SoundHandler {
 
     public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardID) {
         String name = DatabaseHandler.getSoundboardByID(soundboardID).get("name");
+        if (name == null) {
+            return event.deferReply().setContent("Soundboard not found").setEphemeral(true);
+        }
         List<Sound> soundList = getSoundboardSounds(soundboardID);
         return composeSoundboard(event, name, soundList);
     }
