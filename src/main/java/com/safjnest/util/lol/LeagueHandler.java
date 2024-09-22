@@ -43,6 +43,7 @@ import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
@@ -194,6 +195,61 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         else if (queue.commonName().equals("5v5 Ranked Flex Queue")) name = "Ranked Flex";
         else if (queue.commonName().equals("5v5 Draft Pick")) name = "Draft Pick";
 
+        return name;
+    }
+
+    public static String getLaneTypeEmoji(LaneType type) {
+        String emoji = "";
+        switch (type) {
+            case TOP:
+                emoji = CustomEmojiHandler.getFormattedEmoji("TopLane");
+                break;
+            case JUNGLE:
+                emoji = CustomEmojiHandler.getFormattedEmoji("Jungle");
+                break;
+            case MID:
+                emoji = CustomEmojiHandler.getFormattedEmoji("MidLane");
+                break;
+            case BOT:
+                emoji = CustomEmojiHandler.getFormattedEmoji("ADC");
+                break;
+            case UTILITY:
+                emoji = CustomEmojiHandler.getFormattedEmoji("Support");
+                break;
+            case NONE:
+                emoji = CustomEmojiHandler.getFormattedEmoji("autofill");
+                break;
+            default:
+                break;
+        }
+        return emoji;
+    }
+
+    public static String getPrettyName(LaneType type) {
+        String name = "";
+        switch (type) {
+            case TOP:
+                name = "Top Lane";
+                break;
+            case JUNGLE:
+                name = "Jungle";
+                break;
+            case MID:
+                name = "Mid Lane";
+                break;
+            case BOT:
+                name = "Bot Lane";
+                break;
+            case UTILITY:
+                name = "Support";
+                break;
+            case NONE:
+                name = "Remake";
+                break;
+            default:
+                name = type.name();
+                break;
+        }
         return name;
     }
 

@@ -5,8 +5,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.text.DecimalFormat;
 
 import com.safjnest.core.Bot;
@@ -28,6 +30,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
@@ -118,7 +121,39 @@ public class LeagueMessage {
 
         if (!advanceData.isEmpty()) {
             LeagueEntry entry = LeagueHandler.getRankEntry(s.getSummonerId(), s.getPlatform());
-    
+                    
+            LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
+            for (String stats : advanceData.arrayColumn("lanes_played")) {
+                String[] lanes = stats.split(",");
+                for (String lane : lanes) {
+                    lane = lane.trim();
+                    LaneType laneType = LaneType.values()[Integer.parseInt(lane.split("-")[0])];
+                    laneStats.merge(laneType, lane.split("-")[1] + "-" + lane.split("-")[2], (oldValue, newValue) -> {
+                        String[] oldStats = oldValue.split("-");
+                        String[] newStats = newValue.split("-");
+                        int totalWins = Integer.parseInt(oldStats[0]) + Integer.parseInt(newStats[0]);
+                        int totalLosses = Integer.parseInt(oldStats[1]) + Integer.parseInt(newStats[1]);
+                        return totalWins + "-" + totalLosses;
+                    });
+                }
+            }
+            
+            laneStats = laneStats.entrySet()
+                .stream()
+                .sorted((entry1, entry2) -> {
+                    String[] stats1 = entry1.getValue().split("-");
+                    String[] stats2 = entry2.getValue().split("-");
+                    int totalGames1 = Integer.parseInt(stats1[0]) + Integer.parseInt(stats1[1]);
+                    int totalGames2 = Integer.parseInt(stats2[0]) + Integer.parseInt(stats2[1]);
+                    return Integer.compare(totalGames2, totalGames1);
+                })
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    Map.Entry::getValue,
+                    (e1, e2) -> e1,
+                    LinkedHashMap::new
+                ));
+            
             int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
     
             ResultRow mostPlayedChamp = advanceData.get(0), bestChampion = advanceData.get(0), worstChampion = advanceData.get(0);
@@ -128,14 +163,30 @@ public class LeagueMessage {
                 if (Integer.parseInt(row.get("total_lp_gain")) > Integer.parseInt(bestChampion.get("total_lp_gain"))) bestChampion = row;
                 if (Integer.parseInt(row.get("total_lp_gain")) < Integer.parseInt(worstChampion.get("total_lp_gain"))) worstChampion = row;
             }
-    
-            builder.addField("Advanced Data", "The bot has analyzed " + totalGamesAnalized +" games over the " + (entry.getWins() + entry.getLosses()) + " you have played this split." , false);
+
+            String laneString = "";
+            for (LaneType lane : laneStats.keySet()) {
+                String wins = laneStats.get(lane).split("-")[0];
+                String losses = laneStats.get(lane).split("-")[1];
+                int games = Integer.valueOf(wins) + Integer.valueOf(losses);
+
+                if (lane == LaneType.NONE) {
+                    laneString += LeagueHandler.getLaneTypeEmoji(lane) + " " + LeagueHandler.getPrettyName(lane) + " " + games + " games\n";
+                    continue;
+                }
+
+                String percent = String.format("%.2f", Double.parseDouble(wins) * 100 / (Double.parseDouble(wins) + Double.parseDouble(losses)));
+                laneString += LeagueHandler.getLaneTypeEmoji(lane) + " " + LeagueHandler.getPrettyName(lane) + " " + games + " games (" +  wins + "W/" + losses + "L) - " + percent +"% WR\n";
+            }
+
+            builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + (entry.getWins() + entry.getLosses()) + " you have played this split.\n" + laneString , false);
+
             String champStats = "";
             for (int i = 0; i < 5 && i < advanceData.size(); i++) {
                 ResultRow row = advanceData.get(i);
                 champStats += formatAdvancedData(row);
             }
-            builder.addField("Most Played Champions", champStats, false);
+            builder.addField("Champions", champStats, false);
         }
 
         builder.addField("Activity", LeagueHandler.getActivity(s), true);

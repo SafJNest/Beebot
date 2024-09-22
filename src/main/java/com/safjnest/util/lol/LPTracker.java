@@ -15,6 +15,7 @@ import com.safjnest.util.log.BotLogger;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -64,6 +65,7 @@ public class LPTracker {
 
     public static void analyzeMatchHistory(Summoner summoner, ResultRow dataGame) {
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
+        LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
         
         try { Thread.sleep(500); } 
         catch (InterruptedException e) {e.printStackTrace();}
@@ -79,20 +81,17 @@ public class LPTracker {
         boolean win = false;
         int champion = 0;
         String kda = "";
+        LaneType lane = null;
         for (MatchParticipant partecipant : match.getParticipants()) {
             if (partecipant.getSummonerId().equals(summoner.getSummonerId())) {
                 win = partecipant.didWin();
                 champion = partecipant.getChampionId();
                 kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists();
+                lane = partecipant.getChampionSelectLane();
             }
         }
 
         if (match.getGameId() == dataGame.getAsLong("game_id")) return;
-
-        LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
-        
-        try { Thread.sleep(500); } 
-        catch (InterruptedException e) { }
 
         LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
         
@@ -114,7 +113,7 @@ public class LPTracker {
         else gain = lp - dataGame.getAsInt("lp");
         
         BotLogger.info("[LPTracker] Push match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
-        DatabaseHandler.setSummonerData(summoner.getAccountId(), match.getGameId(), summoner.getPlatform(), win, kda, rank, lp, gain, champion, match.getGameCreation(), match.getGameEndTimestamp(), match.getGameVersion());
+        DatabaseHandler.setSummonerData(summoner.getAccountId(), match.getGameId(), summoner.getPlatform(), win, kda, rank, lp, gain, champion, lane, match.getGameCreation(), match.getGameEndTimestamp(), match.getGameVersion());
 
     }
 

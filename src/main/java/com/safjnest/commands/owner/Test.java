@@ -58,6 +58,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
@@ -643,7 +644,7 @@ public class Test extends Command{
                 e.getChannel().sendMessageEmbeds(eb.build()).setActionRow(streamerButtonLink).queue();
                 break;
             case "fixlol":
-                query = "SELECT st.id, st.game_id, st.account_id, st.league_shard, s.summoner_id FROM summoner_tracking st JOIN summoner s ON st.account_id = s.account_id AND st.league_shard = s.league_shard WHERE st.id > 1615 order by id;";
+                query = "SELECT st.id, st.game_id, st.account_id, st.league_shard, s.summoner_id FROM summoner_tracking st JOIN summoner s ON st.account_id = s.account_id AND st.league_shard = s.league_shard WHERE st.lane IS NULL order by id;";
                 res = DatabaseHandler.safJQuery(query);
                 for(ResultRow row : res){
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
@@ -652,24 +653,21 @@ public class Test extends Command{
                     String summoner_id = row.get("summoner_id");
                     LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(400);
                     } catch (Exception eee) { eee.printStackTrace(); }
                     if (match == null) {
                         System.out.println("Match not found");
                         continue;
                     }
 
-                    String kda = "";
+                    LaneType lane = null;
                     for (MatchParticipant partecipant : match.getParticipants()) {
                         if (partecipant.getSummonerId().equals(summoner_id)) {
-                            kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists();
+                            lane = partecipant.getChampionSelectLane();
                         }
                     }
-                    if (account_id.equals("2PsFonivlLKJUejUIgLmsj9g2yYO240AS71m52fO2VYXCA")) {
-                        System.out.println(kda);
-                    }
 
-                    query = "UPDATE summoner_tracking SET kda = '" + kda + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
+                    query = "UPDATE summoner_tracking SET lane = " + lane.ordinal() + " WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
                     System.out.println(row.get("id") + " " + query);
                     DatabaseHandler.runQuery(query);
                 }
