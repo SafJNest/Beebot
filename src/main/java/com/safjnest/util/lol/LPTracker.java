@@ -67,15 +67,16 @@ public class LPTracker {
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
         
-        try { Thread.sleep(500); } 
+        try { Thread.sleep(350); } 
         catch (InterruptedException e) {e.printStackTrace();}
 
         List<String> matchIds = summoner.getLeagueGames().withCount(20).withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).get();
         if (matchIds.isEmpty()) return;
 
         String matchId = matchIds.get(0);
-        LOLMatch match = api.getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
+        if (Long.parseLong(matchId.split("_")[1]) == dataGame.getAsLong("game_id")) return;
 
+        LOLMatch match = api.getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
         if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp())) return;
         
         boolean win = false;
@@ -90,8 +91,6 @@ public class LPTracker {
                 lane = partecipant.getChampionSelectLane();
             }
         }
-
-        if (match.getGameId() == dataGame.getAsLong("game_id")) return;
 
         LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
         
