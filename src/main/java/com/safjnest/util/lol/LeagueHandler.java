@@ -842,6 +842,10 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 data.put("startTime", "null");
                 data.put("endTime", "null");
                 break;
+            case V5_SPECTATOR_CURRENT:
+                data.put("platform", summoner.getPlatform());
+                data.put("summoner", summoner.getPUUID());
+                break;
         
             default:
                 break;
@@ -856,6 +860,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner);
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner);
         clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
+        clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner);
     }
 
 //     ▄████████    ▄███████▄  ▄█        ▄█      ███     
