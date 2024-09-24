@@ -532,7 +532,7 @@ public class LeagueMessage {
         for (String gameId : builder.get()) 
             gameIds.add(gameId);
         
-        QueryResult result = DatabaseHandler.getSummonerData(s.getAccountId(), gameIds.toArray(new String[0]));
+        QueryResult result = DatabaseHandler.getSummonerData(s.getAccountId(), gameIds.stream().map(gameId -> gameId.split("_")[1]).collect(Collectors.toList()).toArray(new String[0]));
 
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
