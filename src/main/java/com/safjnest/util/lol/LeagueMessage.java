@@ -179,7 +179,8 @@ public class LeagueMessage {
                 laneString += LeagueHandler.getLaneTypeEmoji(lane) + " " + LeagueHandler.getPrettyName(lane) + " " + games + " games (" +  wins + "W/" + losses + "L) - " + percent +"% WR\n";
             }
 
-            builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + (entry.getWins() + entry.getLosses()) + " you have played this split.\n" + laneString , false);
+            String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
+            builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + totalGames + " you have played this split.\n" + laneString , false);
 
             String champStats = "";
             for (int i = 0; i < 5 && i < advanceData.size(); i++) {
