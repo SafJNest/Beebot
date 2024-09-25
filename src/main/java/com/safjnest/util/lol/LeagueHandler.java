@@ -429,6 +429,11 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         if (event.getMessage().getMentions().getMembers().size() != 0) {
             return getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
         }
+
+        if (event.getJDA().getUserById(args) != null) {
+            return getSummonerFromDB(args);
+        }
+
         args = args.replaceAll("[\\p{C}]", ""); //when you copy the name from riot chat it adds some weird characters
 
         String name = "";
