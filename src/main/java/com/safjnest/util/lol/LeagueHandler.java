@@ -64,7 +64,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     
     private static R4J riotApi;
     
-    private static String dataDragonVersion;
+    private static String version;
     
     private static String runesURL;
     
@@ -73,10 +73,10 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
     private static ArrayList<AugmentData> augments = new ArrayList<>();
 
-    public LeagueHandler(R4J riotApi, String dataDragonVersion){
+    public LeagueHandler(R4J riotApi, String version){
         LeagueHandler.riotApi = riotApi;
-        LeagueHandler.dataDragonVersion = riotApi.getDDragonAPI().getVersions().get(0);
-        LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.dataDragonVersion + "/data/en_US/runesReforged.json";
+        LeagueHandler.version = getVersion();
+        LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
         
         loadChampions();
         loadRunes();
@@ -86,11 +86,22 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static String getVersion() {
-        return dataDragonVersion;
-    }
+        if (version == null) {
+            try {
+                URI uri = new URI("https://ddragon.leagueoflegends.com/api/versions.json");
+                URL url = uri.toURL();
+                String json = IOUtils.toString(url, Charset.forName("UTF-8"));
+                JSONParser parser = new JSONParser();
+                JSONArray file = (JSONArray) parser.parse(json);
 
-    public static void setVersion(String version) {
-        dataDragonVersion = version;
+                // Get the latest version (first element in the array)
+                version = (String) file.get(0);
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return version;
     }
 
     public static HashMap<String, PageRunes> getRunesHandler() {
@@ -470,15 +481,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 //                               
 
     public static String getSummonerProfilePic(Summoner s){
-        return "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/img/profileicon/"+s.getProfileIconId()+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/profileicon/"+s.getProfileIconId()+".png";
     }
 
     public static String getSummonerProfilePic(int id){
-        return "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/img/profileicon/"+id+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/profileicon/"+id+".png";
     }
 
     public static String getChampionProfilePic(String champ){
-        return "https://ddragon.leagueoflegends.com/cdn/"+dataDragonVersion+"/img/champion/"+champ+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/champion/"+champ+".png";
     }
 
 //     ▄████████ ███▄▄▄▄       ███        ▄████████ ▄██   ▄   

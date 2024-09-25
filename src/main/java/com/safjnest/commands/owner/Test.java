@@ -523,10 +523,6 @@ public class Test extends Command{
                 }
 
                 break;
-            case "lolversion":
-                LeagueHandler.setVersion(args[1]);
-                e.reply("new version: " + LeagueHandler.getVersion());
-                break;
             case "sql":                
                 HashMap<Long, List<String>> map = DatabaseHandler.getQueryAnalytics();      
                 HashMap<Long, Integer> queriesPerHour = new HashMap<>();
