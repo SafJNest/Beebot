@@ -661,6 +661,7 @@ public class LeagueMessage {
                             break;
                         }
                     }
+
                     gain = (gain.isBlank() || gain.equals("0")) ? "" : (gain + " LP");
                     content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
                                 + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
@@ -753,22 +754,19 @@ public class LeagueMessage {
                         String sum = CustomEmojiHandler.getFormattedEmoji(
                                 LeagueHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
                                 + " " + partecipant.getRiotId();
-                        String stats = "";
-                        if (summoner.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) {
-                            stats = LeagueHandler.getFlexStats(LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform()));
-                            stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | "  + stats.substring(stats.lastIndexOf(":") + 1);
-        
-                        } else {
-                            stats = LeagueHandler.getSoloQStats(LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform()));
-                            stats = stats.substring(0, stats.lastIndexOf("P") + 1) + " | " + stats.substring(stats.lastIndexOf(":") + 1);
-                        }
+                        
+                        String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + " Unranked";
+                        LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getSummonerId(), summoner.getPlatform());
+                        if (entry != null) 
+                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP | " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
+
         
                         if (partecipant.getTeam() == TeamType.BLUE) blueSide += "**" + sum + "** " + stats + "\n";
                         else redSide += "**" + sum + "** " + stats + "\n";
         
                     }
-                    if (summoner.getCurrentGame().getGameQueueConfig().commonName().equals("5v5 Ranked Flex Queue")) builder.addField("Ranked stats", "FLEX", false);
-                    else builder.addField("Ranked stats", "SOLOQ", false);
+
+                    builder.addField("Ranked stats", LeagueHandler.formatMatchName(summoner.getCurrentGame().getGameQueueConfig()), false);
         
                     builder.addField("**BLUE SIDE**", blueSide, false);
                     builder.addField("**RED SIDE**", redSide, true);

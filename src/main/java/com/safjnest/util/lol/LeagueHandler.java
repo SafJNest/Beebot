@@ -32,6 +32,8 @@ import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.util.PermissionHandler;
+import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
 
@@ -82,7 +84,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         loadRunes();
         loadAguments();
 
-        if (!App.isExtremeTesting()) new LPTracker();
+        if (App.isExtremeTesting()) new LPTracker();
     }
 
     public static String getVersion() {
@@ -198,6 +200,9 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 break;
             case STRAWBERRY:
                 name = "Swarm";
+                break;
+            case ULTBOOK:
+                name = "Ultimate Spellbook";
                 break;
             default:
                 break;
@@ -430,7 +435,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             return getSummonerFromDB(event.getMessage().getMentions().getMembers().get(0).getId());
         }
 
-        if (event.getJDA().getUserById(args) != null) {
+        if (SafJNest.longIsParsable(args) && event.getJDA().getUserById(args) != null) {
             return getSummonerFromDB(args);
         }
 
@@ -517,7 +522,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
             } catch (Exception e) {}
         }
-        return (stats.equals("")) ? "Unranked" : stats;
+        return (stats.equals("")) ? (CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked") : stats;
     }
 
     public static String getFlexStats(Summoner s){
@@ -529,7 +534,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                     stats = getStatsByEntry(entry);
             } catch (Exception e) { }
         }
-        return (stats.equals("")) ? "Unranked" : stats;
+        return (stats.equals("")) ? (CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked") : stats;
     }
 
     private static String getStatsByEntry(LeagueEntry entry){
@@ -551,6 +556,19 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static LeagueEntry getRankEntry(Summoner s) {
         return getRankEntry(s.getSummonerId(), s.getPlatform());
+    }
+
+    public static LeagueEntry getEntry(GameQueueType type, String summonerId, LeagueShard shard) {
+        if (type == GameQueueType.CHERRY) type = GameQueueType.RANKED_SOLO_5X5;
+        LeagueEntry def = null;
+        try {
+            List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId);
+            for (LeagueEntry entry : entries) {
+                if (entry.getQueueType().equals(type)) return entry;
+                if (entry.getQueueType() == GameQueueType.RANKED_SOLO_5X5) def = entry;
+            }
+        } catch (Exception e) { }
+        return def;
     }
 
     public static String getRankIcon(LeagueEntry entry) {
@@ -602,7 +620,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
                 if(partecipant.getSummonerId().equals(s.getSummonerId())) {
-                    String gameName = s.getCurrentGame().getGameQueueConfig() == GameQueueType.CHERRY ? "Arena" : (s.getCurrentGame().getGameQueueConfig() == GameQueueType.STRAWBERRY ? "Swarm" : s.getCurrentGame().getGameQueueConfig().commonName());
+                    String gameName = LeagueHandler.formatMatchName(s.getCurrentGame().getGameQueueConfig());
                     return "Playing a " + gameName + " as " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
                 }
             }
