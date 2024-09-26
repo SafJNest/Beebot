@@ -45,7 +45,7 @@ public class LPTracker {
 	} 
 
 	private void trackSummoners() {
-		QueryResult result = DatabaseHandler.getRegistredLolAccount();
+		QueryResult result = DatabaseHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
         BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
 
         for (ResultRow account : result) {
@@ -57,7 +57,7 @@ public class LPTracker {
 	}
 
     public static void analyzeMatchHistory(Summoner summoner) {
-        ResultRow result = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId());
+        ResultRow result = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
         if (result.emptyValues()) return;
 
         analyzeMatchHistory(summoner, result);

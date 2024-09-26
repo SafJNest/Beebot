@@ -602,6 +602,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getAdvancedLOLData(String account_id, long time_start, long time_end) {
+        System.out.println("SELECT t.`champion`, COUNT(*) AS `games`, SUM(t.`win`) AS `wins`, SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(t.`gain`) AS total_lp_gain, GROUP_CONCAT(DISTINCT CONCAT(l.`lane`, '-', l.`lane_wins`, '-', l.`lane_losses`) ORDER BY l.`lane` SEPARATOR ', ') AS lanes_played FROM `summoner_tracking` t JOIN (SELECT `champion`, `lane`, SUM(`win`) AS `lane_wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` FROM `summoner_tracking` WHERE `account_id` = '" + account_id + "' AND `time_start` >= '" + new Timestamp(time_start) + "' AND `time_end` <= '" + new Timestamp(time_end) + "' GROUP BY `champion`, `lane`) AS l ON t.`champion` = l.`champion` AND t.`lane` = l.`lane` WHERE t.`account_id` = '" + account_id + "' AND t.`time_start` >= '" + new Timestamp(time_start) + "' AND t.`time_end` <= '" + new Timestamp(time_end) + "' GROUP BY t.`champion` ORDER BY `games` DESC;");
         return safJQuery("SELECT t.`champion`, COUNT(*) AS `games`, SUM(t.`win`) AS `wins`, SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(t.`gain`) AS total_lp_gain, GROUP_CONCAT(DISTINCT CONCAT(l.`lane`, '-', l.`lane_wins`, '-', l.`lane_losses`) ORDER BY l.`lane` SEPARATOR ', ') AS lanes_played FROM `summoner_tracking` t JOIN (SELECT `champion`, `lane`, SUM(`win`) AS `lane_wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` FROM `summoner_tracking` WHERE `account_id` = '" + account_id + "' AND `time_start` >= '" + new Timestamp(time_start) + "' AND `time_end` <= '" + new Timestamp(time_end) + "' GROUP BY `champion`, `lane`) AS l ON t.`champion` = l.`champion` AND t.`lane` = l.`lane` WHERE t.`account_id` = '" + account_id + "' AND t.`time_start` >= '" + new Timestamp(time_start) + "' AND t.`time_end` <= '" + new Timestamp(time_end) + "' GROUP BY t.`champion` ORDER BY `games` DESC;");
     }
     
@@ -1326,12 +1327,12 @@ public class DatabaseHandler {
     }
 
 
-    public static QueryResult getRegistredLolAccount() {
-        return safJQuery("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking) t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1;");
+    public static QueryResult getRegistredLolAccount(long time_start) {
+        return safJQuery("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking WHERE time_start >= '" + new Timestamp(time_start) + "') t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1;");
     }
 
-    public static ResultRow getRegistredLolAccount(String account_id) {
-        return fetchJRow("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking) t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1 AND s.account_id = '" + account_id + "';");
+    public static ResultRow getRegistredLolAccount(String account_id, long time_start) {
+        return fetchJRow("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking WHERE time_start >= '" + new Timestamp(time_start) + "') t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1 AND s.account_id = '" + account_id + "';");
     }
 
     public static boolean setSummonerData(String account_id, long game_id, LeagueShard shard, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, long time_start, long time_end, String version) {
@@ -1347,7 +1348,6 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getSummonerData(String account_id, LeagueShard shard, long time_start, long time_end) {
-        System.out.println("SELECT account_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
         return safJQuery("SELECT account_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 

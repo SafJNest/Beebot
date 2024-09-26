@@ -84,7 +84,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         loadRunes();
         loadAguments();
 
-        if (App.isExtremeTesting()) new LPTracker();
+        if (!App.isExtremeTesting()) new LPTracker();
     }
 
     public static String getVersion() {
@@ -923,9 +923,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 JSONObject split = (JSONObject) splits.get(i);
                 String start = (String) split.get("start_date");
                 String end = (String) split.get("end_date");
-
-                long startMillis = new SimpleDateFormat("yyyy-MM-dd").parse(start).getTime();
-                long endMillis = new SimpleDateFormat("yyyy-MM-dd").parse(end).getTime();
+                long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
+                long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
                 
                 if (now >= startMillis && now <= endMillis) {
                     range[0] = startMillis;
@@ -959,8 +958,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 String start = split.get("start_date").toString();
                 String end = split.get("end_date").toString();
     
-                long startMillis = new SimpleDateFormat("yyyy-MM-dd").parse(start).getTime();
-                long endMillis = new SimpleDateFormat("yyyy-MM-dd").parse(end).getTime();
+                long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
+                long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
     
                 if (now >= startMillis && now <= endMillis && split.get("current") != null) {
                     return "Season " + current.get("season").toString() + " split " + split.get("split").toString();
