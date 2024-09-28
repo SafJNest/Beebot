@@ -40,7 +40,7 @@ public class Opgg extends SlashCommand {
         this.arguments = commandData.getArguments();
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false),
+            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false).setAutoComplete(true),
             LeagueHandler.getLeagueShardOptions(),
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );

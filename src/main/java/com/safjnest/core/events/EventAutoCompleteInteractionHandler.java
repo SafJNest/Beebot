@@ -348,7 +348,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     }
 
 
-    private ArrayList<Choice> summoner(CommandAutoCompleteInteractionEvent e) {
+    private ArrayList<Choice> personalSummoner(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
         HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
@@ -378,6 +378,22 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else accountNames.forEach((k, v) -> personal.add(new Choice(v, k)));
 
         return personal;
+
+    }
+
+    private ArrayList<Choice> summoner(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+        QueryResult summoners = new QueryResult();
+        LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : Bot.getGuildData(e.getGuild().getId()).getLeagueShard();
+        
+        if (isFocused) summoners = DatabaseHandler.getFocusedSummoners(value, shard);
+
+        for (ResultRow summoner : summoners) {
+            choices.add(new Choice(summoner.get("riot_id"), summoner.get("riot_id")));
+        }
+
+        return choices;
 
     }
 
@@ -577,6 +593,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else if (e.getFocusedOption().getName().equals("playlist-song"))
             name = "playlist_song";
 
+        else if (e.getFocusedOption().getName().equals("summoner"))
+            name = "summoner";
+
         
         switch (name) {
             case "play":
@@ -625,7 +644,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 choices = rewardRole(e);
                 break;
             case "personal_summoner":
-                choices = summoner(e);
+                choices = personalSummoner(e);
                 break;
             case "streamer_name":
                 choices = streamer(e);
@@ -638,6 +657,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 break;
             case "playlist_song":
                 choices = playlistSong(e);
+                break;
+            case "summoner":
+                choices = summoner(e);
                 break;
         }
 

@@ -33,7 +33,7 @@ public class SummonerLink extends SlashCommand {
         this.category = commandData.getCategory();
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", true),
+            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", true).setAutoComplete(true),
             LeagueHandler.getLeagueShardOptions()
         );
         commandData.setThings(this);

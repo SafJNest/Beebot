@@ -21,11 +21,17 @@ import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.LeagueHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
@@ -604,19 +610,100 @@ public class DatabaseHandler {
     public static QueryResult getAdvancedLOLData(String account_id, long time_start, long time_end) {
         return safJQuery("SELECT t.`champion`, COUNT(*) AS `games`, SUM(t.`win`) AS `wins`, SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(t.`gain`) AS total_lp_gain, GROUP_CONCAT(DISTINCT CONCAT(l.`lane`, '-', l.`lane_wins`, '-', l.`lane_losses`) ORDER BY l.`lane` SEPARATOR ', ') AS lanes_played FROM `summoner_tracking` t JOIN (SELECT `champion`, `lane`, SUM(`win`) AS `lane_wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` FROM `summoner_tracking` WHERE `account_id` = '" + account_id + "' AND `time_start` >= '" + new Timestamp(time_start) + "' AND `time_end` <= '" + new Timestamp(time_end) + "' GROUP BY `champion`, `lane`) AS l ON t.`champion` = l.`champion` AND t.`lane` = l.`lane` WHERE t.`account_id` = '" + account_id + "' AND t.`time_start` >= '" + new Timestamp(time_start) + "' AND t.`time_end` <= '" + new Timestamp(time_end) + "' GROUP BY t.`champion` ORDER BY `games` DESC;");
     }
-    
 
+    public static boolean addLOLAccount(Summoner summoner) {
+        return addLOLAccount(null, summoner);
+    }
+    
     public static boolean addLOLAccount(String user_id, Summoner summoner) {
-        return addLOLAccount(user_id, summoner.getSummonerId(), summoner.getAccountId(), summoner.getPUUID(), summoner.getPlatform());
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+        String query = "INSERT INTO summoner(user_id, summoner_id, account_id, puuid, riot_id, league_shard) " +
+                "VALUES(?, ?, ?, ?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE " +
+                "user_id = IF(VALUES(user_id) IS NOT NULL, VALUES(user_id), user_id), " +
+                "summoner_id = VALUES(summoner_id), " +
+                "account_id = VALUES(account_id), " +
+                "puuid = VALUES(puuid), " +
+                "riot_id = VALUES(riot_id), " +
+                "league_shard = VALUES(league_shard);";
+
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            if (user_id != null) {
+                pstmt.setString(1, user_id);
+            } else {
+                pstmt.setNull(1, java.sql.Types.VARCHAR);
+            }
+            pstmt.setString(2, summoner.getSummonerId());
+            pstmt.setString(3, summoner.getAccountId());
+            pstmt.setString(4, summoner.getPUUID());
+            pstmt.setString(5, account.getName() + "#" + account.getTag());
+            pstmt.setInt(6, summoner.getPlatform().ordinal());
+
+            int affectedRows = pstmt.executeUpdate();
+            conn.commit();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
-    public static boolean addLOLAccount(String user_id, String summoner_id, String account_id, String puuid, LeagueShard shard) {
-        String query = "INSERT INTO summoner(user_id, summoner_id, account_id, puuid, league_shard) VALUES('" + user_id + "','" + summoner_id + "','" + account_id + "','" + puuid + "','" + shard.ordinal() + "');";
-        return runQuery(query);
+    public static boolean addLOLAccount(SpectatorGameInfo info) {
+        String query = "INSERT INTO summoner(summoner_id, puuid, riot_id, league_shard) " +
+                       "VALUES(?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "summoner_id = VALUES(summoner_id), " +
+                       "puuid = VALUES(puuid), " +
+                       "riot_id = VALUES(riot_id), " +
+                       "league_shard = VALUES(league_shard);";
+
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            for (SpectatorParticipant summoner : info.getParticipants()) {
+                pstmt.setString(1, summoner.getSummonerId());
+                pstmt.setString(2, summoner.getPuuid());
+                pstmt.setString(3, summoner.getRiotId());
+                pstmt.setInt(4, info.getPlatform().ordinal());
+                pstmt.addBatch();
+            }
+
+            int[] affectedRows = pstmt.executeBatch();
+            conn.commit();
+            return affectedRows.length == info.getParticipants().size();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean addLOLAccountFromMatch(LOLMatch match) {
+        String query = "INSERT INTO summoner(summoner_id, puuid, riot_id, league_shard) " +
+                       "VALUES(?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "summoner_id = VALUES(summoner_id), " +
+                       "puuid = VALUES(puuid), " +
+                       "riot_id = VALUES(riot_id), " +
+                       "league_shard = VALUES(league_shard);";
+
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            for (MatchParticipant summoner : match.getParticipants()) {
+                pstmt.setString(1, summoner.getSummonerId());
+                pstmt.setString(2, summoner.getPuuid());
+                pstmt.setString(3, summoner.getRiotIdName() + "#" + summoner.getRiotIdTagline());
+                pstmt.setInt(4, match.getPlatform().ordinal());
+                pstmt.addBatch();
+            }
+
+            int[] affectedRows = pstmt.executeBatch();
+            conn.commit();
+            return affectedRows.length == match.getParticipants().size();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static boolean deleteLOLaccount(String user_id, String account_id){
-        String query = "DELETE FROM summoner WHERE account_id = '" + account_id + "' and user_id = '" + user_id + "';";
+        String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';";
         return runQuery(query);
     }
 
@@ -1336,6 +1423,10 @@ public class DatabaseHandler {
 
     public static boolean setSummonerData(String account_id, long game_id, LeagueShard shard, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, long time_start, long time_end, String version) {
         return runQuery("INSERT INTO summoner_tracking(account_id, game_id, league_shard, win, kda, rank, lp, gain, champion, lane, time_start, time_end, patch) VALUES('" + account_id + "','" + game_id + "','" + shard.ordinal() + "','" + (win ? 1 : 0) + "','" + kda + "','" + rank + "','" + lp + "','" + gain + "','" + champion + "','" + lane.ordinal() + "','" + new Timestamp(time_start) + "','" + new Timestamp(time_end) + "','" + version + "');");
+    }
+
+    public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
+        return safJQuery("SELECT riot_id FROM summoner WHERE riot_id LIKE '%" + query + "%' AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
     }
 
     public static QueryResult getSummonerData(String account_id) {

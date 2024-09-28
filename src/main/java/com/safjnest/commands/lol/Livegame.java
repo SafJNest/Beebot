@@ -42,7 +42,7 @@ public class Livegame extends SlashCommand {
         this.arguments = commandData.getArguments();
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false),
+            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false).setAutoComplete(true),
             LeagueHandler.getLeagueShardOptions(),
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );
@@ -77,6 +77,10 @@ public class Livegame extends SlashCommand {
             event.getChannel().sendMessageEmbeds(builder.build()).setComponents(row).queue();
         }
         else event.getChannel().sendMessageEmbeds(builder.build()).setComponents(row).queue();
+
+        if (users != null) {
+            LeagueHandler.updateSummonerDB(s.getCurrentGame());
+        }
         
     }
 
@@ -100,13 +104,17 @@ public class Livegame extends SlashCommand {
 
         StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
         EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
-        List<LayoutComponent> row = LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null);
+        List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null));
 
         if (menu != null) {
             row.add(0, ActionRow.of(menu));
             event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
         }
         else event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
+
+        if (users != null) {
+            LeagueHandler.updateSummonerDB(s.getCurrentGame());
+        }
 	}
 
 }

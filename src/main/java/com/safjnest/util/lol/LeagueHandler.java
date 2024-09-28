@@ -32,7 +32,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.util.PermissionHandler;
+import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
@@ -50,6 +50,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
@@ -480,6 +482,18 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return account.getName() + "#" + account.getTag();
     }
 
+    public static void updateSummonerDB(Summoner summoner) {
+        DatabaseHandler.addLOLAccount(summoner);
+    }
+
+    public static void updateSummonerDB(SpectatorGameInfo game) {
+        DatabaseHandler.addLOLAccount(game);
+    }
+
+    public static void updateSummonerDB(LOLMatch match) {
+        DatabaseHandler.addLOLAccountFromMatch(match);
+    }
+
 //     ▄███████▄  ▄█   ▄████████ 
 //    ███    ███ ███  ███    ███ 
 //    ███    ███ ███▌ ███    █▀  
@@ -695,11 +709,12 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 
     public static OptionData getLeagueShardOptions(boolean required) {
-        Choice[] choices = new Choice[LeagueShard.values().length];
+        List<Choice> choices = new ArrayList<>();
         for (int i = 0; i < LeagueShard.values().length; i++) {
-            choices[i] = new Choice("#" + LeagueShard.values()[i].name(), String.valueOf(i));
+            if (LeagueShard.values()[i] == LeagueShard.UNKNOWN) continue;
+            choices.add(new Choice(LeagueShard.values()[i].getRealmValue().toUpperCase(), String.valueOf(i)));
         }
-
+        
         return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", required).addChoices(choices);                
     }
 

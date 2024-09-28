@@ -796,9 +796,16 @@ public class Test extends Command{
                         System.out.println("Summoner not found");
                         continue;
                     }
-                    String query1 = "UPDATE summoner SET account_id = '" + summoner.getAccountId() + "', puuid = '" + summoner.getPUUID() + "' WHERE id = " + acc.get("id");
+                    RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+                    String query1 = "UPDATE summoner SET riot_id = '" + (account.getName() + "#" + account.getTag()) + "', account_id = '" + summoner.getAccountId() + "', puuid = '" + summoner.getPUUID() + "' WHERE id = " + acc.get("id");
                     System.out.println(query1);
                     DatabaseHandler.runQuery(query1);
+                    try {
+                        Thread.sleep(350);
+                    } catch (InterruptedException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
                 }
                 e.reply("Done");
             break;

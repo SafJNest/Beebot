@@ -113,7 +113,7 @@ public class LPTracker {
         
         BotLogger.info("[LPTracker] Push match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         DatabaseHandler.setSummonerData(summoner.getAccountId(), match.getGameId(), summoner.getPlatform(), win, kda, rank, lp, gain, champion, lane, match.getGameCreation(), match.getGameEndTimestamp(), match.getGameVersion());
-
+        LeagueHandler.updateSummonerDB(match);
     }
 
 }

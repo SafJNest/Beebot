@@ -83,6 +83,7 @@ public class LeagueMessage {
     }
     
     public static EmbedBuilder getSummonerEmbed(Summoner s) {
+        LeagueHandler.updateSummonerDB(s);
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
         
         EmbedBuilder builder = new EmbedBuilder();
@@ -542,6 +543,7 @@ public class LeagueMessage {
                 if (match.getParticipants().size() == 0)
                     continue; //riot di merda che quando crasha il game lascia dati sporchi
 
+                LeagueHandler.updateSummonerDB(match);
                 for(MatchParticipant mp : match.getParticipants()){
                     if(mp.getSummonerId().equals(s.getSummonerId())){
                         me = mp;
