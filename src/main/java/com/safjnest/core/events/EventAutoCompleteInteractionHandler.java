@@ -387,7 +387,30 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         QueryResult summoners = new QueryResult();
         LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : Bot.getGuildData(e.getGuild().getId()).getLeagueShard();
         
-        if (isFocused) summoners = DatabaseHandler.getFocusedSummoners(value, shard);
+        if (!isFocused) {
+            HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
+            R4J r4j = LeagueHandler.getRiotApi();
+    
+            if (accounts == null || accounts.isEmpty()) {
+                return choices;
+            }
+            
+            HashMap<String, String> accountNames = new HashMap<>();
+            for (String k : accounts.keySet()) {
+                String account_id = k;
+    
+                shard = LeagueShard.values()[Integer.valueOf(accounts.get(account_id))];
+                Summoner summoner = LeagueHandler.getSummonerByAccountId(account_id, shard);
+                RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
+                accountNames.put(riotAccount.getName() + "#" + riotAccount.getTag(), riotAccount.getName() + "#" + riotAccount.getTag());
+            }
+        
+            accountNames.forEach((k, v) -> choices.add(new Choice(v, k)));
+            return choices;
+        }
+        
+        summoners = DatabaseHandler.getFocusedSummoners(value, shard);
+        
 
         for (ResultRow summoner : summoners) {
             choices.add(new Choice(summoner.get("riot_id"), summoner.get("riot_id")));

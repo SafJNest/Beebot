@@ -1426,7 +1426,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
-        return safJQuery("SELECT riot_id FROM summoner WHERE riot_id LIKE '%" + query + "%' AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
+        return safJQuery("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "';");
     }
 
     public static QueryResult getSummonerData(String account_id) {
