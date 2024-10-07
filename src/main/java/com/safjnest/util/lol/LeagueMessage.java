@@ -32,6 +32,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -41,6 +42,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkStyle;
+import no.stelar7.api.r4j.pojo.lol.shared.BannedChampion;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
@@ -81,6 +83,16 @@ public class LeagueMessage {
 
         return List.of(ActionRow.of(center, profile, opgg, livegame, refresh));
     }
+
+//     ▄████████ ███    █▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄    ▄██████▄  ███▄▄▄▄      ▄████████    ▄████████ 
+//    ███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄ ▄██▀▀▀███▀▀▀██▄ ███    ███ ███▀▀▀██▄   ███    ███   ███    ███ 
+//    ███    █▀  ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    █▀    ███    ███ 
+//    ███        ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███  ▄███▄▄▄      ▄███▄▄▄▄██▀ 
+//  ▀███████████ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   
+//           ███ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    █▄  ▀███████████ 
+//     ▄█    ███ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    ███   ███    ███ 
+//   ▄████████▀  ████████▀   ▀█   ███   █▀   ▀█   ███   █▀   ▀██████▀   ▀█   █▀    ██████████   ███    ███ 
+//                                                                                              ███    ███ 
     
     public static EmbedBuilder getSummonerEmbed(Summoner s) {
         LeagueHandler.updateSummonerDB(s);
@@ -206,16 +218,26 @@ public class LeagueMessage {
         return composeButtons(s, user_id, "lol");
     }
 
-
+//   ▄██████▄     ▄███████▄    ▄██████▄     ▄██████▄  
+//  ███    ███   ███    ███   ███    ███   ███    ███ 
+//  ███    ███   ███    ███   ███    █▀    ███    █▀  
+//  ███    ███   ███    ███  ▄███         ▄███        
+//  ███    ███ ▀█████████▀  ▀▀███ ████▄  ▀▀███ ████▄  
+//  ███    ███   ███          ███    ███   ███    ███ 
+//  ███    ███   ███          ███    ███   ███    ███ 
+//   ▀██████▀   ▄████▀        ████████▀    ████████▀  
+//                                                    
     
     public static LayoutComponent getOpggQueueTypeButtons(GameQueueType queue) {
+        GameQueueType currentGameQueueType = GameQueueType.ULTBOOK;
+
         Button soloQ = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
         Button flex = Button.primary("match-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
         Button draft = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
         Button aram = Button.primary("match-queue-" + GameQueueType.ARAM, "ARAM");
-        Button arena = Button.primary("match-queue-" + GameQueueType.CHERRY, "Arena");
+        Button curretModeButton = Button.primary("match-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType));
 
-        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, arena);
+        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
 
         switch (queue) {
             case TEAM_BUILDER_RANKED_SOLO:
@@ -231,13 +253,14 @@ public class LeagueMessage {
                 aram = aram.withStyle(ButtonStyle.SUCCESS);
                 break;
             case CHERRY:
-                arena = arena.withStyle(ButtonStyle.SUCCESS);
+            case ULTBOOK:
+                curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
                 break;
             default:
                 break;
         }
 
-        return ActionRow.of(soloQ, flex, draft, aram, arena);
+        return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
     }
 
     public static StringSelectMenu getOpggMenu(Summoner summoner) {
@@ -659,12 +682,19 @@ public class LeagueMessage {
                     String gain = "";
                     for (ResultRow row : result) {
                         if (row.getAsLong("game_id") == match.getGameId()) {
-                            gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") : String.valueOf(row.getAsInt("gain"));
+                            if (row.getAsInt("rank") == TierDivisionType.UNRANKED.ordinal()) {
+                                gain = "(Placement)";
+                                break;
+                            }
+                            if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) gain = "-0"; //demotion shield
+                            else gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") : String.valueOf(row.getAsInt("gain"));
+                            
+                            gain += " LP";
                             break;
                         }
                     }
 
-                    gain = (gain.isBlank() || gain.equals("0")) ? "" : (gain + " LP");
+                    gain = gain.isBlank() ? "" : gain;
                     content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
                                 + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
                                 + CustomEmojiHandler.getFormattedEmoji( String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, 0) + "\n"
