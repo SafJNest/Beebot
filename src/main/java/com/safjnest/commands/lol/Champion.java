@@ -39,12 +39,12 @@ public class Champion extends SlashCommand {
         this.category = commandData.getCategory();
         
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "champ", "Champion Name", true).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "lane", "Champion Lane", true)
-                .addChoice("Top lane", "TOP")
+            new OptionData(OptionType.STRING, "champion", "Champion Name", true).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "role", "Champion Role", true)
+                .addChoice("Top", "TOP")
                 .addChoice("Jungle", "JUNGLE")
-                .addChoice("Mid lane", "MID")
-                .addChoice("Bot lane", "ADC")
+                .addChoice("Mid", "MID")
+                .addChoice("ADC", "ADC")
                 .addChoice("Support", "SUPPORT")
         );
 
@@ -55,8 +55,8 @@ public class Champion extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
         
-        String champName = event.getOption("champ").getAsString();
-        String lane = event.getOption("lane").getAsString();
+        String champName = event.getOption("champion").getAsString();
+        String lane = event.getOption("role").getAsString();
         String laneFormatName =  "";
         switch(lane){
             case "TOP":
