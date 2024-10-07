@@ -719,13 +719,22 @@ public class LeagueMessage {
 
     }
 
-
+//   ▄█        ▄█   ▄█    █▄     ▄████████ 
+//  ███       ███  ███    ███   ███    ███ 
+//  ███       ███▌ ███    ███   ███    █▀  
+//  ███       ███▌ ███    ███  ▄███▄▄▄     
+//  ███       ███▌ ███    ███ ▀▀███▀▀▀     
+//  ███       ███  ███    ███   ███    █▄  
+//  ███▌    ▄ ███  ███    ███   ███    ███ 
+//  █████▄▄██ █▀    ▀██████▀    ██████████ 
+//  ▀                                      
 
     public static EmbedBuilder getLivegameEmbed(Summoner summoner, List<SpectatorParticipant> spectators) {
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         try {
-
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(LeagueHandler.getActivity(summoner));
+            builder.setTitle(CustomEmojiHandler.getFormattedEmoji("bee") + " In game live details");
+            builder.setDescription("**" + account.getName() + "#" + account.getTag() + "** is currently playing a " + LeagueHandler.formatMatchName(summoner.getCurrentGame().getGameQueueConfig()));
             builder.setColor(Bot.getColor());
             builder.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 
@@ -750,38 +759,51 @@ public class LeagueMessage {
                     break;
             
                 default:
-                    String blueSide = "";
-                    String redSide = "";
-                    for (SpectatorParticipant partecipant : spectators) {       
-                        String sum = CustomEmojiHandler.getFormattedEmoji(
-                                LeagueHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName())
-                                + " " + partecipant.getRiotId();
-                        
-                        String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + " Unranked";
-                        LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getSummonerId(), summoner.getPlatform());
-                        if (entry != null) 
-                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP | " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
+                    String blueSide = "", redSide = "";
+                    String blueBans = "", redBans = "";
+                    String entryName = "";
 
+                    for (BannedChampion bc : summoner.getCurrentGame().getBannedChampions()) {
+                        if (bc.getTeamId() == TeamType.BLUE.getValue()) blueBans += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(bc.getChampionId()).getName()) + " ";
+                        else redBans += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(bc.getChampionId()).getName()) + " ";
+                    }
+
+                    for (SpectatorParticipant partecipant : spectators) {   
+                        Summoner s = LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform()); 
+                        
+                        String mastery = LeagueHandler.getMasteryByPuuid(partecipant.getPuuid(), s.getPlatform(), partecipant.getChampionId());
+
+                        String championIcon = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName());
+
+                        
+                        String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
+                        LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getSummonerId(), summoner.getPlatform());
+                        if (entry != null) {
+                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + entry.getTier() + " " + entry.getRank()+ " " + String.valueOf(entry.getLeaguePoints()) + " LP " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"% WR`";
+                            entryName = LeagueHandler.formatMatchName(entry.getQueueType());
+                        }
+
+                        String field = championIcon + "**" + partecipant.getRiotId() + "**" + stats + "\n";
         
-                        if (partecipant.getTeam() == TeamType.BLUE) blueSide += "**" + sum + "** " + stats + "\n";
-                        else redSide += "**" + sum + "** " + stats + "\n";
+                        if (partecipant.getTeam() == TeamType.BLUE) blueSide += field;
+                        else redSide += field;
         
                     }
 
-                    builder.addField("Ranked stats", LeagueHandler.formatMatchName(summoner.getCurrentGame().getGameQueueConfig()), false);
+                    builder.addField("Rank queue", "Showing ranks about " + entryName, false);
         
-                    builder.addField("**BLUE SIDE**", blueSide, false);
-                    builder.addField("**RED SIDE**", redSide, true);
+                    builder.addField("**BLUE SIDE**", "**Bans\n**" + blueBans + "\n\n**Picks**\n" + blueSide, true);
+                    builder.addField("**RED SIDE**", "**Bans\n**" + redBans + "\n\n**Picks**\n" + redSide, true);
                     break;
             }
 
 
 
-            builder.setFooter("For every gamemode would be use the SOLOQ ranked data. Flex would be shown only if the game is a Flex game.");
+            builder.setFooter("For every gamemode would be use the SoloQ ranked data. Flex would be shown only if the game is a Flex game.");
             return builder;
 
         } catch (Exception e) {
-            RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+            e.printStackTrace();
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(account.getName() + "'s Game");
             builder.setColor(Bot.getColor());

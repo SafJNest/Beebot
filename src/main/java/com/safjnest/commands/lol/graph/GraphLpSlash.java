@@ -95,6 +95,11 @@ public class GraphLpSlash extends SlashCommand {
                     timeStart = SafJNest.firstDayOfMonthMilli();
                     timeEnd = SafJNest.midnightMilli() + TimeConstant.DAY;
                     break;
+                case "split":
+                    timeStart = LeagueHandler.getCurrentSplitRange()[0];
+                    timeEnd = LeagueHandler.getCurrentSplitRange()[1];
+                break;
+                    
             }
         }
         else {
@@ -234,6 +239,12 @@ public class GraphLpSlash extends SlashCommand {
 
         Set<String> labels = getTimeLabels(result);
         List<Integer> values = getValues(result, tierDivisionList);
+        List<Integer> gains = new ArrayList<>();
+        for (ResultRow row : result) {
+            gains.add(row.getAsInt("gain"));
+        }
+        System.out.println(gains);
+        System.out.println(values);
 
         double max = Math.floor((values.stream().max(Integer::compare).get() + 99) / 100.0) * 100;
         double min = Math.ceil(values.stream().min(Integer::compare).get() / 100) * 100;

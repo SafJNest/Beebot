@@ -630,6 +630,13 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return masteryString;
     }
 
+    public static String getMasteryByPuuid(String puuid, LeagueShard shard, int champion) {
+        ChampionMastery mastery = LeagueHandler.getRiotApi().getLoLAPI().getMasteryAPI().getChampionMastery(shard, puuid, champion);
+        if (mastery == null) return "";
+        int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+        return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) + " **[" + mastery.getChampionLevel()+ "]** ";
+    }
+
     public static String getActivity(Summoner s){
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
