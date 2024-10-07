@@ -794,18 +794,15 @@ public class LeagueMessage {
                     String entryName = "";
 
                     for (BannedChampion bc : summoner.getCurrentGame().getBannedChampions()) {
-                        if (bc.getTeamId() == TeamType.BLUE.getValue()) blueBans += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(bc.getChampionId()).getName()) + " ";
-                        else redBans += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(bc.getChampionId()).getName()) + " ";
+                        String bcIcon = LeagueHandler.getFormattedEmojiByChampion(bc.getChampionId());
+                        
+                        if (bc.getTeamId() == TeamType.BLUE.getValue()) blueBans += bcIcon + " ";
+                        else redBans += bcIcon + " ";
                     }
 
-                    for (SpectatorParticipant partecipant : spectators) {   
-                        Summoner s = LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform()); 
-                        
-                        String mastery = LeagueHandler.getMasteryByPuuid(partecipant.getPuuid(), s.getPlatform(), partecipant.getChampionId());
-
-                        String championIcon = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRiotApi().getDDragonAPI().getChampion(partecipant.getChampionId()).getName());
-
-                        
+                    for (SpectatorParticipant partecipant : spectators) {                   
+                        String championIcon = LeagueHandler.getFormattedEmojiByChampion(partecipant.getChampionId());
+        
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
                         LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getSummonerId(), summoner.getPlatform());
                         if (entry != null) {

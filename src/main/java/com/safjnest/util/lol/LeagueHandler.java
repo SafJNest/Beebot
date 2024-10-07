@@ -854,6 +854,11 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return Emoji.fromCustom(champion.getName(), emojiId, false);
     }
 
+    public static String getFormattedEmojiByChampion(int champion) {
+        if (champion == -1) return CustomEmojiHandler.getFormattedEmoji("0");
+        return CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(champion).getName());
+    }
+
 //   ▄████████    ▄████████  ▄████████    ▄█    █▄       ▄████████ 
 //  ███    ███   ███    ███ ███    ███   ███    ███     ███    ███ 
 //  ███    █▀    ███    ███ ███    █▀    ███    ███     ███    █▀  
