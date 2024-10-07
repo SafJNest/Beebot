@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 public class LPTracker {
 
     private static R4J api = LeagueHandler.getRiotApi();
-    private static long period = TimeConstant.MINUTE * 20;
+    private static long period = TimeConstant.MINUTE * 15;
 
 	public LPTracker() {
 
