@@ -289,6 +289,7 @@ public class Functions {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(guild.getJDA().getSelfUser().getName());
         eb.setThumbnail(badGuy.getAvatarUrl());
+        eb.setColor(Bot.getColor());
         eb.setTitle(":radioactive:Blacklist:radioactive:");
         eb.setDescription("The new member " + badGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
 
@@ -323,6 +324,7 @@ public class Functions {
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(guild.getJDA().getSelfUser().getName());
+        eb.setColor(Bot.getColor());
         eb.setThumbnail(badGuy.getAvatarUrl());
         eb.setTitle(":radioactive:Blacklist:radioactive:");
         eb.setDescription("The member " + badGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
