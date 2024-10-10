@@ -31,10 +31,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import com.sedmelluq.lava.extensions.youtuberotator.YoutubeIpRotatorSetup;
-import com.sedmelluq.lava.extensions.youtuberotator.planner.AbstractRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.NanoIpRoutePlanner;
-import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingIpRoutePlanner;
-import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingNanoIpRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.Ipv6Block;
 
@@ -71,6 +68,7 @@ public class PlayerManager {
     }
 
     //registers youtube source and starts the rotator
+    @SuppressWarnings("rawtypes")
     private void registerYoutube(SettingsLoader settingsLoader) {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 
