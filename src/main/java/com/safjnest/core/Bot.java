@@ -230,7 +230,6 @@ public class Bot extends ListenerAdapter {
         jda.addEventListener(new EventHandler());
         jda.addEventListener(new EventButtonHandler());
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
-        jda.addEventListener(new EventHandlerBeebot());
         jda.addEventListener(new EventModalInteractionHandler());
 
         if(App.isExtremeTesting()){

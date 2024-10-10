@@ -4,10 +4,13 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.core.Bot;
+import com.safjnest.model.UserData;
+import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
@@ -20,6 +23,7 @@ import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTime
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -60,6 +64,25 @@ public class EventHandler extends ListenerAdapter {
             (connectChannel == null || channelJoined.getId().equals(connectChannel.getId())) && !userJoined.isBot()) {
             Functions.handleGreetSound(channelJoined, userJoined, guild);
         }
+    }
+
+
+    @Override
+    public void onMessageReceived(MessageReceivedEvent e) {
+        if (e.getAuthor().isBot())
+            return;
+
+        if (e.isFromType(ChannelType.PRIVATE)) {
+            e.getJDA().getTextChannelById("1294052017815158804").sendMessage(e.getAuthor().getName() + "(" + e.getAuthor().getId() + "): " + e.getMessage().getContentDisplay()).queue();
+            return;
+        }
+
+        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+        UserData userData = Bot.getUserData(e.getAuthor().getId());
+
+        Functions.handleAlias(guildData, userData, e);
+        Functions.handleExperience(guildData, e);
+
     }
 
     @Override
