@@ -78,18 +78,13 @@ public class Functions {
         Guild guild = e.getGuild();
         User newGuy = e.getAuthor();
 
-        if (!guildData.isExpSystemEnabled())
-            return;	
-
-        if(!guildData.getExpSystemRoom(e.getChannel().getIdLong()))
+        if (!guildData.canReceiveExperience(newGuy.getIdLong(), channel.getIdLong())) 
             return;
-
+    
         double modifier = guildData.getExpValueRoom(channel.getIdLong());
         
         MemberData member = guildData.getMemberData(newGuy.getIdLong());
-        if (!member.canReceiveExperience()) {
-            return;
-        }
+
 
         int exp = member.getExperience();
         int currentLevel = member.getLevel();

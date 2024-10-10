@@ -532,6 +532,10 @@ public class GuildData {
         return this.members;
     }
 
+    public boolean canReceiveExperience(long userId, long channelId) {
+        return this.isExpSystemEnabled() && this.getExpSystemRoom(channelId) && getMemberData(userId).canReceiveExperience();
+    }
+
 
 //   ▄████████  ▄██████▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄      ▄████████ ███▄▄▄▄   ████████▄  
 //  ███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███▀▀▀██▄ ███   ▀███ 
