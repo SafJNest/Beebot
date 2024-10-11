@@ -37,6 +37,7 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
 
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
@@ -458,13 +459,13 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
         GuildData guild = Bot.getGuildData(event.getGuild().getId());
-        
-        if (event.getOption("summoner") == null && event.getOption("user") == null) {
-            return getSummonerFromDB(event.getUser().getId());
-        }
 
-        if (event.getOption("user") != null) {
-            return getSummonerFromDB(event.getOption("user").getAsUser().getId());
+        User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();
+        
+        Summoner s = null;
+        
+        if (event.getOption("summoner") == null && (s = getSummonerFromDB(user.getId())) != null) {
+            return s;
         }
 
         LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guild.getLeagueShard();
