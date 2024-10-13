@@ -10,7 +10,6 @@ import com.safjnest.core.Bot;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
-import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -58,13 +57,7 @@ public class ChannelInfo extends SlashCommand {
 
 	@Override
 	protected void execute(CommandEvent event) {
-        GuildChannel gc = null;
-        if(event.getMessage().getMentions().getChannels().size() > 0) 
-            gc = event.getMessage().getMentions().getChannels().get(0);
-        else if(event.getArgs().equals(""))
-            gc = event.getGuildChannel();
-        else if(SafJNest.longIsParsable(event.getArgs()))
-            gc = event.getGuild().getGuildChannelById(event.getArgs());
+        GuildChannel gc = PermissionHandler.getMentionedChannel(event, event.getArgs());
         if(gc == null) {
             event.reply("Couldn't find the specified channel.");
             return;

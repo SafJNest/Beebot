@@ -120,7 +120,7 @@ public class BotCommand {
                 return child;
             }
         }
-        return null;
+        return new BotCommand(name, "unknown", "unknown", "unknown", "unknown", null, 0);
     }
 
     public void addChild(BotCommand child) {

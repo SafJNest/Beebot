@@ -2,6 +2,7 @@ package com.safjnest.core.events;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,7 @@ import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.audio.types.EmbedType;
+import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.sound.Sound;
@@ -146,6 +148,9 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if (buttonId.startsWith("playlist"))
             playlist(event);
+
+        else if (buttonId.startsWith("chat-"))
+            chat(event);
         
     }
 
@@ -632,6 +637,34 @@ public class EventButtonHandler extends ListenerAdapter {
 
         event.getMessage().editMessageEmbeds(QueueHandler.getEmbed(guild).build())
                 .setComponents(rows).queue();
+    }
+
+    private void chat(ButtonInteractionEvent event) {
+        String[] args = event.getButton().getId().split("-");
+
+        TextChannel channel = Bot.getJDA().getTextChannelById(args[2]);
+
+        EmbedBuilder ebRequester = new EmbedBuilder();
+        ebRequester.setAuthor(event.getGuild().getName(), event.getGuildChannel().getJumpUrl(), event.getGuild().getIconUrl());
+        ebRequester.setTitle("Channel connection status");
+
+        //EmbedBuilder ebReceiver = new EmbedBuilder();
+        //ebRequester.setAuthor(channel.getGuild().getName(), channel.getJumpUrl(), channel.getGuild().getIconUrl());
+
+        switch (args[1]) {
+            case "refuse":
+                ebRequester.setDescription("Channel connection refused");
+                break;
+            case "accept":
+                ebRequester.setDescription("Channel connection accepted");
+                ChatHandler.addConnection(event.getChannelId(), channel.getId());
+                break;
+        
+            default:
+                break;
+        }
+        channel.sendMessageEmbeds(ebRequester.build()).queue();
+        event.getHook().editOriginalEmbeds((new EmbedBuilder()).setTitle("Connected").build()).setComponents(Collections.emptyList()).queue();
     }
 
     public void lolButtonEvent(ButtonInteractionEvent event) {

@@ -11,6 +11,7 @@ import javax.imageio.ImageIO;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.Bot;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -90,6 +91,7 @@ public class QRCode extends SlashCommand {
 
         event.replyEmbeds(new EmbedBuilder()
             .setImage("attachment://" + "QRCode.png")
+            .setColor(Bot.getColor())
             .build()
         ).addFiles(QRCode).queue();
     }
@@ -107,6 +109,7 @@ public class QRCode extends SlashCommand {
 
         event.getTextChannel().sendMessageEmbeds(new EmbedBuilder()
         .setImage("attachment://" + "QRCode.png")
+        .setColor(Bot.getColor())
         .build()
         ).addFiles(QRCode).queue();
     }

@@ -1,6 +1,7 @@
 package com.safjnest.core.events;
 
 import com.safjnest.core.Bot;
+import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 

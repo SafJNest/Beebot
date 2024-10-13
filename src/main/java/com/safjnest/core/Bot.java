@@ -52,6 +52,7 @@ import com.safjnest.commands.members.*;
 import com.safjnest.commands.members.blacklist.Blacklist;
 import com.safjnest.commands.members.move.*;
 import com.safjnest.commands.misc.*;
+import com.safjnest.commands.misc.omegle.Omegle;
 import com.safjnest.commands.misc.twitch.*;
 import com.safjnest.commands.owner.*;
 import com.safjnest.commands.queue.*;
@@ -185,7 +186,7 @@ public class Bot extends ListenerAdapter {
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
             new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
-            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode()
+            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle()
         );
         
         Collections.addAll(commandsList, new Leaderboard(), new Test(gs), new ListGuild());
@@ -208,7 +209,7 @@ public class Bot extends ListenerAdapter {
             new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
             new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
             new Permissions(), new ModifyNickname(), new Welcome(gs), new Leave(), new Boost(), 
-            new Blacklist(gs), new Twitch()
+            new Blacklist(gs), new Twitch(), new Omegle()
         );
 
         
@@ -236,7 +237,6 @@ public class Bot extends ListenerAdapter {
             //Connection c = new Connection(jda, gs, bs);
             //c.start();
         }
-        
     }
 
 

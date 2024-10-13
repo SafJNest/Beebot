@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.exceptions.ErrorResponseException;
 import net.dv8tion.jda.api.exceptions.InsufficientPermissionException;
 
@@ -243,6 +244,28 @@ public class PermissionHandler {
                 members.add(event.getGuild().getMemberById(name));
             } catch (Exception e) {}
         return members;
+    }
+
+    public static GuildChannel getMentionedChannel(CommandEvent event, String name) {
+        GuildChannel gc = null;
+        if(event.getMessage().getMentions().getChannels().size() > 0) 
+            gc = event.getMessage().getMentions().getChannels().get(0);
+        else if(name.equals(""))
+            gc = event.getGuildChannel();
+        else if(SafJNest.longIsParsable(name))
+            gc = event.getGuild().getGuildChannelById(name);
+
+        return gc;
+    }
+
+    public static GuildChannel getMentionedChannelGlobal(CommandEvent event, String name) {
+        GuildChannel gc = null;
+        if(event.getMessage().getMentions().getChannels().size() > 0) 
+            gc = event.getMessage().getMentions().getChannels().get(0);
+        else if(SafJNest.longIsParsable(name))
+            gc = event.getJDA().getGuildChannelById(name);
+
+        return gc;
     }
 
     public static Guild getGuild(CommandEvent event, String guildName) {

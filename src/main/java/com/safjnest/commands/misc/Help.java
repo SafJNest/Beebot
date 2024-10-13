@@ -186,7 +186,7 @@ public class Help extends SlashCommand {
         
         if (!command.onlySlash()) {
             String aliases = "No aliases";
-            if(command.getAliases().length > 0) {
+            if(command.getAliases() != null && command.getAliases().length > 0) {
                 aliases = "";
                 for(String a : command.getAliases())
                     aliases += a + " - ";

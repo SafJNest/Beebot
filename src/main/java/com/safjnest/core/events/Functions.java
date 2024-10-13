@@ -74,7 +74,14 @@ public class Functions {
 
     
     public static void handleExperience(GuildData guildData, MessageReceivedEvent e) {
-        TextChannel channel = e.getChannel().asTextChannel();
+        TextChannel channel = null;
+        try{
+            channel = e.getChannel().asTextChannel();
+        }
+        catch(IllegalStateException err) {
+            return;
+        }
+
         Guild guild = e.getGuild();
         User newGuy = e.getAuthor();
 

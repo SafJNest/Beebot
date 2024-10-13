@@ -955,6 +955,13 @@
         "arguments" : "[CommandName]"
     },
 
+    "chat":{
+        "alias" : ["chattest"],
+        "help"  : "chat command tests.",
+        "category" : "Owner",
+        "arguments" : "[CommandName]"
+    },
+
     "twitch":{
         "alias" : ["twitchoid"],
         "help"  : "json",
@@ -1153,6 +1160,27 @@
         "arguments" : "faker"
     },
 
+    "omegle":{
+        "alias" : ["om", "ommomomavaffanculova"],
+        "help"  : "Talk to strangers like omegle.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName] ",
+        "children": {
+            "connect": {
+                "alias" : [],
+                "help"  : "Connect to a random stranger.",
+                "longhelp"  : "Connect to a random stranger.",
+                "arguments" : "[CommandName]"
+            }, 
+            "disconnect": {
+                "alias" : [],
+                "help"  : "Disconnect from the conversation.",
+                "longhelp"  : "Disconnect from the conversation.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
 
 
 
@@ -1164,7 +1192,7 @@
 
 
     "talk":{
-        "alias" : ["stranger", "omegle"],
+        "alias" : ["stranger"],
         "help"  : "Talk to a stranger on omegle (type quit to quit. Use partymode to let everyone write).",
         "category" : "Miscellaneous",
         "arguments" : "[CommandName] (language) (interests) (party mode)"

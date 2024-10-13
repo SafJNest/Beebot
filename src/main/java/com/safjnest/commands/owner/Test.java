@@ -51,7 +51,9 @@ import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -803,11 +805,20 @@ public class Test extends Command{
                     try {
                         Thread.sleep(350);
                     } catch (InterruptedException e1) {
-                        // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
                 }
                 e.reply("Done");
+            break;
+            case "getprivatehistory":
+                User user = PermissionHandler.getMentionedUser(e, args[1]);
+                PrivateChannel dm = user.openPrivateChannel().complete();
+                List<Message> messages = dm.getHistory().retrievePast(10).complete();
+                String messagesString = null;
+                for(Message msg : messages) {
+                    messagesString = msg.getContentDisplay() + "\n";
+                }
+                e.reply(messagesString);
             break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");

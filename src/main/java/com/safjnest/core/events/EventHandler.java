@@ -4,6 +4,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.core.Bot;
+import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
@@ -83,6 +84,7 @@ public class EventHandler extends ListenerAdapter {
         Functions.handleAlias(guildData, userData, e);
         Functions.handleExperience(guildData, e);
 
+        ChatHandler.relayMessage(e);
     }
 
     @Override
