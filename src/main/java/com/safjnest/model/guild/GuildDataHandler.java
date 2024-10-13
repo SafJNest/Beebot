@@ -8,10 +8,6 @@ import com.safjnest.sql.ResultRow;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-
-
-
 /**
  * Class that stores in a {@link GuildDataHandler#cache guilds} all the settings for a guild.
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -65,20 +61,15 @@ public class GuildDataHandler {
      * @return
      * Always a {@link com.safjnest.model.Guild.GuildData guildData}, never {@code null}
      */
-    public GuildData retriveGuild(String stringId) {
-        BotLogger.info("Retriving guild from database => {0}", new LoggerIDpair(stringId, LoggerIDpair.IDType.GUILD));
-        ResultRow guildData = DatabaseHandler.getGuildData(stringId);
+    public GuildData retriveGuild(String guildId) {
+        BotLogger.info("Retriving guild from database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
+        ResultRow guildData = DatabaseHandler.getGuildData(guildId);
         
         if(guildData.emptyValues()) {
-            return insertGuild(stringId);
+            return insertGuild(guildId);
         }
 
-        Long guildId = guildData.getAsLong("guild_id");
-        String prefix = guildData.get("prefix");
-        boolean expEnabled = guildData.getAsBoolean("exp_enabled");
-        LeagueShard shard = LeagueShard.values()[Integer.parseInt(guildData.get("league_shard"))];
-        
-        GuildData guild = new GuildData(guildId, prefix, expEnabled, shard);
+        GuildData guild = new GuildData(guildData);
         saveGuild(guild);
         return guild;
     }
@@ -98,13 +89,8 @@ public class GuildDataHandler {
     public void retrieveAllGuilds() {
         QueryResult guilds = DatabaseHandler.getGuildData();
         
-        for(ResultRow guildData : guilds){
-            Long guildId = guildData.getAsLong("guild_id");
-            String prefix = guildData.get("prefix");
-            boolean expEnabled = guildData.getAsBoolean("exp_enabled");
-            LeagueShard shard = LeagueShard.valueOf(guildData.get("league_shard"));
-        
-            GuildData guild = new GuildData(guildId, prefix, expEnabled, shard);
+        for(ResultRow guildData : guilds){        
+            GuildData guild = new GuildData(guildData);
             saveGuild(guild);
         }
     }
@@ -113,7 +99,7 @@ public class GuildDataHandler {
         DatabaseHandler.insertGuild(guildId, Bot.getPrefix());
         BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
 
-        GuildData guild = new GuildData(Long.parseLong(guildId), Bot.getPrefix(), true, LeagueShard.EUW1);
+        GuildData guild = new GuildData(Long.parseLong(guildId));
         saveGuild(guild);
         return guild;
     }

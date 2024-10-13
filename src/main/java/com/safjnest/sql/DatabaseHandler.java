@@ -713,7 +713,7 @@ public class DatabaseHandler {
     }
     
     public static ResultRow getGuildData(String guild_id) {
-        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
+        String query = "SELECT guild_id, PREFIX, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
         return fetchJRow(query);
     }
 
@@ -1022,7 +1022,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getChannelData(String guild_id) {
-        return safJQuery("SELECT id, channel_id, exp_enabled, exp_modifier, stats_enabled FROM channel WHERE guild_id = '" + guild_id + "';");
+        return safJQuery("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled FROM channel WHERE guild_id = '" + guild_id + "';");
     }
 
     public static boolean setChannelExpModifier(int ID, double exp_modifier) {
@@ -1074,7 +1074,7 @@ public class DatabaseHandler {
     }
 
     public static ResultRow getUserData(String guild_id, long user_id) {
-        return fetchJRow("SELECT id, experience, level, messages, update_time FROM user WHERE user_id = '"+ user_id +"' AND guild_id = '" + guild_id + "';");
+        return fetchJRow("SELECT id, guild_id, experience, level, messages, update_time FROM user WHERE user_id = '"+ user_id +"' AND guild_id = '" + guild_id + "';");
     }
 
     public static boolean updateUserDataExperience(int ID, int experience, int level, int messages) {

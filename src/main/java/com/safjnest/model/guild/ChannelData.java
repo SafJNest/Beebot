@@ -1,6 +1,7 @@
 package com.safjnest.model.guild;
 
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.ResultRow;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -15,58 +16,36 @@ import com.safjnest.util.log.LoggerIDpair;
  * @author <a href="https://github.com/Leon412">Leon412</a>
  */
 public class ChannelData {
-    
 
     private int ID;
-
-
-    /**
-     * ID of the room
-     */
     private final long CHANNEL_ID;
-        
-    /**
-     * If the room has the exp system
-     * @see com.safjnest.util.ExperienceSystem EXPSystem  
-     */
-    private boolean expEnabled;
-
-    /**
-     * Value of the exp system
-     */
-    private double expModifier;
-
-    /**
-     * If the room has the command system
-     */
-    private boolean statisticsEnabled;
-
     private final String GUILD_ID;
-    
-    /**
-     * Defaul Constructor
-     * @param id
-     * @param name
-     * @param expSystem
-     * @param expValue
-     * @param command
-     */
-    public ChannelData(int ID, long CHANNEL_ID, boolean expSystem, double expValue, boolean command, String GUILD_ID) {
-        this.ID = ID;
-        this.CHANNEL_ID = CHANNEL_ID;
-        this.expEnabled = expSystem;
-        this.expModifier = expValue;
-        this.statisticsEnabled = command;
-        this.GUILD_ID = GUILD_ID;
-    }
+        
+    private boolean expEnabled;
+    private double experienceModifier;
+
+    private boolean statisticsEnabled;
 
     public ChannelData(long CHANNEL_ID, String GUILD_ID) {
         this.ID = 0;
         this.CHANNEL_ID = CHANNEL_ID;
-        this.expEnabled = true;
-        this.expModifier = 1;
-        this.statisticsEnabled = true;
         this.GUILD_ID = GUILD_ID;
+
+        this.expEnabled = true;
+        this.experienceModifier = 1;
+
+        this.statisticsEnabled = true;
+    }
+    
+    public ChannelData(ResultRow data) {
+        this.ID = data.getAsInt("id");
+        this.CHANNEL_ID = data.getAsLong("channel_id");
+        this.GUILD_ID = data.get("guild_id");
+
+        this.expEnabled = data.getAsBoolean("exp_enabled");
+        this.experienceModifier = data.getAsDouble("exp_modifier");
+
+        this.statisticsEnabled = data.getAsBoolean("command_enabled");
     }
 
     public int getId() {
@@ -96,11 +75,11 @@ public class ChannelData {
     }
 
 
-    public double getExpValue() {
-        return expModifier;
+    public double getExperienceModifier() {
+        return experienceModifier;
     }
 
-    public boolean setExpEnabled(boolean exp) {
+    public boolean enableExperience(boolean exp) {
         handleEmptyID();
 
         boolean result = DatabaseHandler.setChannelExpEnabled(this.ID, exp);
@@ -110,12 +89,12 @@ public class ChannelData {
         return result;
     }
 
-    public boolean setExpModifier(double value) {
+    public boolean setExperienceModifier(double value) {
         handleEmptyID();
 
         boolean result = DatabaseHandler.setChannelExpModifier(this.ID, value);
         if (result) {
-            this.expModifier = value;
+            this.experienceModifier = value;
         }
         return result;
     }
@@ -136,8 +115,8 @@ public class ChannelData {
 
     @Override
     public String toString() {
-        return "ChannelData [ID=" + ID + ", CHANNEL_ID=" + CHANNEL_ID + ", expEnabled=" + expEnabled + ", expModifier="
-                + expModifier + ", statisticsEnabled=" + statisticsEnabled + "]";
+        return "ChannelData [ID=" + ID + ", CHANNEL_ID=" + CHANNEL_ID + ", expEnabled=" + expEnabled + ", experienceModifier="
+                + experienceModifier + ", statisticsEnabled=" + statisticsEnabled + "]";
     }
 
 }

@@ -6,31 +6,27 @@ import com.safjnest.sql.DatabaseHandler;
 
 public class BlacklistData {
     
-    /**
-     * Threshold for blacklist
-     */
-    private int threshold;
-
-
-    /**
-     * Blacklist Channel
-     */
-    private String blackChannelId;
-
-
-    /**
-     * Flag to toggle the blacklist
-     */
-    private boolean blacklist_enabled;
-
     private GuildData guildData;
 
+    private int threshold;
+    private String blackChannelId;
+    private boolean blacklist_enabled;
+
+
+    public BlacklistData(GuildData guildData) {
+        this.guildData = guildData;
+
+        this.threshold = 0;
+        this.blackChannelId = null;
+        this.blacklist_enabled = false;
+    }
 
     public BlacklistData(int threshold, String blackChannelId, boolean blacklist_enabled, GuildData guildData) {
+        this.guildData = guildData;
+        
         this.threshold = threshold;
         this.blackChannelId = blackChannelId;
         this.blacklist_enabled = blacklist_enabled;
-        this.guildData = guildData;
     }
 
     public int getThreshold() {

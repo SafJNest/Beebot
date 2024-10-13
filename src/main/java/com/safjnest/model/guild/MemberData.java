@@ -3,39 +3,43 @@ package com.safjnest.model.guild;
 import java.time.LocalDateTime;
 
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.ResultRow;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
 public class MemberData {
     private int ID;
     private final long USER_ID;
+    private final String GUILD_ID;
+
     private int experience;
     private int level;
     private int messages;
     private int updateTime;
     private LocalDateTime lastMessageTime;
-    private final String GUILD_ID;
-
-    public MemberData(int ID, long USER_ID, int experience, int level, int messages, int updateTime, String GUILD_ID) {
-        this.ID = ID;
-        this.USER_ID = USER_ID;
-        this.experience = experience;
-        this.level = level;
-        this.messages = messages;
-        this.updateTime = updateTime;
-        this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
-        this.GUILD_ID = GUILD_ID;
-    }
 
     public MemberData(long USER_ID, String GUILD_ID) {
         this.ID = 0;
         this.USER_ID = USER_ID;
+        this.GUILD_ID = GUILD_ID;
+
         this.experience = 0;
         this.level = 1;
         this.messages = 0;
         this.updateTime = 60;
         this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
-        this.GUILD_ID = GUILD_ID;
+    }
+
+    public MemberData(ResultRow data) {
+        this.ID = data.getAsInt("id");
+        this.USER_ID = data.getAsLong("user_id");
+        this.GUILD_ID = data.get("guild_id");
+
+        this.experience = data.getAsInt("experience");
+        this.level = data.getAsInt("level");
+        this.messages = data.getAsInt("messages");
+        this.updateTime = data.getAsInt("update_time");
+        this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
     }
 
     private void handleEmptyID() {

@@ -27,4 +27,13 @@ public enum AlertType {
     public int getLevel() {
         return level;
     }
+
+    public static AlertType getFromOrdinal(int ordinal) {
+        for (AlertType type : values()) {
+            if (type.ordinal() == ordinal) {
+                return type;
+            }
+        }
+        return null;
+    }
 }

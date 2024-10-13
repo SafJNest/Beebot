@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.ResultRow;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -19,6 +20,17 @@ public class AlertData {
     private AlertSendType sendType;
     private HashMap<Integer, String> roles;
 
+    public AlertData(ResultRow data, HashMap<Integer, String> roles) {
+        this.ID = data.getAsInt("id");
+        this.message = data.get("message");
+        this.privateMessage = data.get("private_message");
+        this.channelId = data.get("channel_id");
+        this.enabled = data.getAsBoolean("enabled");
+        this.type = AlertType.getFromOrdinal(data.getAsInt("type"));
+        this.roles = roles;
+        this.sendType = AlertSendType.getFromOrdinal(data.getAsInt("send_type"));
+    }
+
     public AlertData(int ID, String message, String privateMessage, String channelId, boolean enabled, AlertSendType sendType, AlertType type, HashMap<Integer, String> roles) {
         this.ID = ID;
         this.message = message;
@@ -30,16 +42,6 @@ public class AlertData {
         this.sendType = sendType;
     }
 
-
-    /**
-     * Constructor for the alert message
-     * @param guild_id
-     * @param bot_id
-     * @param message
-     * @param channelId
-     * @param enabled
-     * @param type
-     */
     public AlertData(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, AlertType type) {
         this.ID = DatabaseHandler.createAlert(guild_id, message, privateMessage, channelId, sendType, type);
         this.message = message;
@@ -50,14 +52,6 @@ public class AlertData {
         this.sendType = sendType;
     }
 
-    /**
-     * Constructor for the welcome message
-     * @param guild_id
-     * @param bot_id
-     * @param message
-     * @param channelId
-     * @param roles
-     */
     public AlertData(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, String[] roles) {
         this.ID = DatabaseHandler.createAlert(guild_id, message, privateMessage, channelId, sendType, AlertType.WELCOME);
         this.message = message;
@@ -69,11 +63,6 @@ public class AlertData {
         this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
     }
 
-    /**
-     * Constructor for the level up message
-     * @param guild_id
-     * @param message
-     */
     public AlertData(String guild_id, String message, String privateMessage, AlertSendType sendType) {
         this.ID = DatabaseHandler.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.LEVEL_UP);
         this.message = message;

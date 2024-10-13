@@ -37,7 +37,7 @@ public class LevelUpPreview extends SlashCommand{
 
         AlertData level = gs.getAlert(AlertType.LEVEL_UP);
 
-        if(!gs.isExpSystemEnabled()) {
+        if(!gs.isExperienceEnabled()) {
             event.deferReply(true).addContent("This guild doesn't have the exp system enabled.").queue();
             return;
         }
@@ -56,7 +56,7 @@ public class LevelUpPreview extends SlashCommand{
             if (!channel.isExpSystemEnabled()) {
                 noExpChannels.add(String.valueOf(channel.getRoomId()));
             }
-            if (channel.getExpValue() != 1.0) {
+            if (channel.getExperienceModifier() != 1.0) {
                 expChannels.add(String.valueOf(channel.getRoomId()));
             }
         }
@@ -66,7 +66,7 @@ public class LevelUpPreview extends SlashCommand{
             String modifiedChannels= "";
 
             for(String channel_id : expChannels) {
-                modifiedChannels += event.getGuild().getTextChannelById(channel_id).getName() + ": " + channels.get(Long.parseLong(channel_id)).getExpValue() + " exp\n";
+                modifiedChannels += event.getGuild().getTextChannelById(channel_id).getName() + ": " + channels.get(Long.parseLong(channel_id)).getExperienceModifier() + " exp\n";
             }
             eb.addField("Modified Exp Channels", "```" + modifiedChannels + "```", true);
         }

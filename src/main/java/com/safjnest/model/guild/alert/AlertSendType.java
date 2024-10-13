@@ -14,4 +14,13 @@ public enum AlertSendType {
     public String getName() {
         return name;
     }
+
+    public static AlertSendType getFromOrdinal(int ordinal) {
+        for (AlertSendType type : values()) {
+            if (type.ordinal() == ordinal) {
+                return type;
+            }
+        }
+        return null;
+    }
 }

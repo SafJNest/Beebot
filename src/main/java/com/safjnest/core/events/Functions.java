@@ -81,7 +81,7 @@ public class Functions {
         if (!guildData.canReceiveExperience(newGuy.getIdLong(), channel.getIdLong())) 
             return;
     
-        double modifier = guildData.getExpValueRoom(channel.getIdLong());
+        double modifier = guildData.getExperienceModifier(channel.getIdLong());
         
         MemberData member = guildData.getMemberData(newGuy.getIdLong());
 

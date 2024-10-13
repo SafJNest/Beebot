@@ -137,14 +137,14 @@ public class PrintCache extends Command {
             try {
                 if(!forbidden.contains(String.valueOf(gd.getId()))) {
                     long time = gs.getGuilds().getExpirationTime(gd.getID());
-                    totalUsers += gd.getUsers().size();
+                    totalUsers += gd.getMembers().size();
                     totalChannels += gd.getChannels().size();
                     totalAlerts += gd.isAlertsCached() ? 1 : 0;
                     totalBlackList += gd.isBlackListCached() ? 1 : 0;
                     msg += "**" + event.getJDA().getGuildById(gd.getId()).getName() + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
                         + "Prefix: " + gd.getPrefix() + "\n"
-                        + "ExpSystem: " + (gd.isExpSystemEnabled() ? "enabled" : "disabled") + "\n"
-                        + "Members: " + gd.getUsers().size() + "\n"
+                        + "ExpSystem: " + (gd.isExperienceEnabled() ? "enabled" : "disabled") + "\n"
+                        + "Members: " + gd.getMembers().size() + "\n"
                         + "Channels: " + gd.getChannels().size() + "\n"
                         + "Alerts: " + (gd.isAlertsCached() ? "cached" : "not cached") + "\n"
                         + "BlackList: " + (gd.isBlackListCached() ? "cached" : "not cached") + "```";

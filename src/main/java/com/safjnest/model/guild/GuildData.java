@@ -15,7 +15,6 @@ import com.safjnest.util.log.LoggerIDpair;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
-import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.customcommand.CustomCommand;
@@ -41,60 +40,76 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
  * @author <a href="https://github.com/Leon412">Leon412</a>
  */
 public class GuildData {
-    /**
-     * Server ID 
-     */
+
     private final Long ID;    
-    /**
-     * Prefix Server 
-     */
+
     private String prefix;
     
-    /**
-     * Exp System 
-     */
-    private boolean expEnabled;
+
+    private boolean experience;
 
     private String voice;
-
     private String language;
 
-    private HashMap<Long, ChannelData> channels;
 
     private BlacklistData blacklistData;
 
     private HashMap<AlertKey, AlertData> alerts;
-
+    
+    private HashMap<Long, ChannelData> channels;
     private HashMap<Long, MemberData> members;
-
     private HashMap<String, CustomCommand> customCommands;
 
     private LeagueShard leagueShard;
-
     private RegionShard reagionShard;
 
     private LoggerIDpair loggerIDpair;
 
-    public GuildData(Long id, String prefix, boolean expSystem, LeagueShard shard) {
+    public GuildData(Long id) {
         this.ID = id;
-        this.prefix = prefix;
-        this.expEnabled = expSystem;
+        this.prefix = Bot.getPrefix();
+        this.experience = true;
+
+        this.members = new HashMap<>();
+        this.channels = new HashMap<>();
+        this.customCommands = new HashMap<>();
+        
+        this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
+
+        this.leagueShard = LeagueShard.EUW1;
+        this.reagionShard = this.leagueShard.toRegionShard();
+
+        this.blacklistData = new BlacklistData(this);
+
+        this.voice = "John";
+        this.language = "en-us";
+    }
+
+    public GuildData(ResultRow data) {
+        this.ID = data.getAsLong("guild_id");
+        this.prefix = data.get("prefix");
+        this.experience = data.getAsBoolean("exp_enabled");
 
         this.members = new HashMap<>();
         
         this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
 
-        this.voice = null;
-        this.language = null;
+        this.leagueShard = LeagueShard.values()[Integer.parseInt(data.get("league_shard"))];
+        this.reagionShard = this.leagueShard.toRegionShard();
+
+        this.voice = data.get("name_tts") != null ? data.get("name_tts") : "John";
+        this.language = data.get("language_tts") != null ? data.get("language_tts") : "en-us";
+
+        this.blacklistData = new BlacklistData(
+            data.getAsInt("threshold"),
+            data.get("blacklist_channel") != null ? data.get("blacklist_channel") : null,
+            data.getAsBoolean("blacklist_enabled"),
+            this
+        );
 
         retriveChannels();
         retriveCustomCommand();
-
-        this.leagueShard = shard;
-        this.reagionShard = this.leagueShard.toRegionShard();
     }
-
-
 
 //     ▄██████▄  ███    █▄   ▄█   ▄█       ████████▄  
 //    ███    ███ ███    ███ ███  ███       ███   ▀███ 
@@ -118,8 +133,8 @@ public class GuildData {
         return prefix;
     }
 
-    public boolean isExpSystemEnabled() {
-        return expEnabled;
+    public boolean isExperienceEnabled() {
+        return experience;
     }
 
 
@@ -134,7 +149,7 @@ public class GuildData {
     public synchronized boolean setExpSystem(boolean expSystem) {
         boolean result = DatabaseHandler.toggleLevelUp(String.valueOf(this.ID), expSystem);
         if (result) {
-            this.expEnabled = expSystem;
+            this.experience = expSystem;
         }
         return result;
     }
@@ -160,31 +175,11 @@ public class GuildData {
         this.reagionShard = shard;
     }
 
-    private void retriveTTSSettings() {
-        ResultRow result = DatabaseHandler.getDefaultVoice(String.valueOf(ID));
-        
-        if (result.emptyValues()) {
-            this.voice = "John";
-            this.language = "en-us";
-            return;
-        }
-
-
-        this.voice = result.get("name_tts");
-        this.language = result.get("language_tts");
-    }
-
-    private void checkTTS() {
-        if (this.voice == null || this.language == null) retriveTTSSettings();
-    }
-
     public String getVoice() {
-        checkTTS();
         return this.voice;
     }
 
     public String getLanguage() {
-        checkTTS();
         return this.language;
     }
 
@@ -198,7 +193,7 @@ public class GuildData {
     }
 
     public String toString(){
-        return "{ID: " + ID + ", Prefix: " + prefix + ", ExpSystem: " + expEnabled + ", Shard: " + leagueShard + "}";
+        return "{ID: " + ID + ", Prefix: " + prefix + ", ExpSystem: " + experience + ", Shard: " + leagueShard + "}";
     }
 
 //     ▄████████  ▄█          ▄████████    ▄████████     ███          ████████▄     ▄████████     ███        ▄████████ 
@@ -248,30 +243,12 @@ public class GuildData {
             for (ResultRow row : alertResult) {
                 switch (row.getAsInt("type")) {
                     case 4:
-                        RewardData rd = new RewardData(
-                            row.getAsInt("id"),
-                            row.get("message"),
-                            row.get("private_message"),
-                            row.getAsBoolean("enabled"),
-                            AlertSendType.values()[row.getAsInt("send_type")],
-                            roles.get(row.getAsInt("id")),
-                            rewards.get(row.getAsInt("id")).getAsInt("level"),
-                            rewards.get(row.getAsInt("id")).getAsBoolean("temporary")
-                        );
+                        RewardData rd = new RewardData(row, rewards.get(row.getAsInt("id")), roles.get(row.getAsInt("id")));
                         this.alerts.put(rd.getKey(), rd);
                         break;
                 
                     default:
-                        AlertData ad = new AlertData(
-                            row.getAsInt("id"),
-                            row.get("message"),
-                            row.get("private_message"),
-                            row.get("channel"),
-                            row.getAsBoolean("enabled"),
-                            AlertSendType.values()[row.getAsInt("send_type")],
-                            AlertType.values()[row.getAsInt("type")],
-                            roles.get(row.getAsInt("id"))
-                        );
+                        AlertData ad = new AlertData(row, roles.get(row.getAsInt("id")));
                         this.alerts.put(ad.getKey(), ad);
                     break;
                 }
@@ -293,7 +270,6 @@ public class GuildData {
         }
         return null;
     }
-
 
     public RewardData getAlert(AlertType type, int level) {
         AlertData alert = getAlerts().get(new AlertKey(type, level));
@@ -323,7 +299,6 @@ public class GuildData {
         }
         return null;
     }
-
 
     public AlertData getWelcome() {
         return getAlert(AlertType.WELCOME);
@@ -355,19 +330,6 @@ public class GuildData {
 //                                                                                                    
 
     public BlacklistData getBlacklistData() {
-        if (this.blacklistData == null) {
-            BlacklistData bd = null;
-            ResultRow result = DatabaseHandler.getGuildData(String.valueOf(ID));
-
-            BotLogger.debug("Retriving BlacklistData from database => {0}", loggerIDpair);
-            bd = new BlacklistData(
-                result.getAsInt("threshold"),
-                result.get("blacklist_channel"),
-                result.getAsBoolean("blacklist_enabled"),
-                this
-            );
-            this.blacklistData = bd;
-        }
         return this.blacklistData;
     }
 
@@ -418,17 +380,10 @@ public class GuildData {
         if (result == null) { return; }
 
         BotLogger.debug("Retriving ChannelData from database => {0}", loggerIDpair);
-        for(ResultRow row: result){
+        for(ResultRow row : result){
             this.channels.put(
                 row.getAsLong("channel_id"),
-                new ChannelData(
-                    row.getAsInt("id"),
-                    row.getAsLong("channel_id"),
-                    row.getAsBoolean("exp_enabled"),
-                    row.getAsDouble("exp_modifier"),
-                    row.getAsBoolean("stats_enabled"),
-                    this.getID()
-                )
+                new ChannelData(row)
             );
         }
 
@@ -469,17 +424,8 @@ public class GuildData {
         return getChannelData(id).getCommand();
     }
 
-    public double getExpValueRoom(Long id){
-        return getChannelData(id).getExpValue();
-    }
-
-
-    public synchronized boolean setExpSystemRoom(Long id, boolean exp){
-        return getChannelData(id).setExpEnabled(exp);
-    }
-
-    public synchronized boolean setExpValueChannel(Long id, double value){
-        return getChannelData(id).setExpModifier(value);
+    public double getExperienceModifier(Long id){
+        return getChannelData(id).getExperienceModifier();
     }
 
 //     ▄▄▄▄███▄▄▄▄      ▄████████   ▄▄▄▄███▄▄▄▄   ▀█████████▄     ▄████████    ▄████████ 
@@ -492,22 +438,14 @@ public class GuildData {
 //    ▀█   ███   █▀    ██████████  ▀█   ███   █▀  ▄█████████▀    ██████████   ███    ███ 
 //                                                                            ███    ███ 
 
-    private MemberData retriveUserData(long userId) {
-        MemberData ud = null;
+    private MemberData retriveMemberData(long userId) {
+        MemberData member = null;
         ResultRow result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
         if (result.emptyValues()) { return null; }
 
         BotLogger.debug("Retriving MemberData from database => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
-        ud = new MemberData(
-            result.getAsInt("id"),
-            userId,
-            result.getAsInt("experience"),
-            result.getAsInt("level"),
-            result.getAsInt("messages"),
-            result.getAsInt("update_time"),
-            this.getID()
-        );
-        return ud;
+        member = new MemberData(result);
+        return member;
     }
 
     public MemberData getMemberData(String userId) {
@@ -515,25 +453,25 @@ public class GuildData {
     }
 
     public MemberData getMemberData(long userId) {
-        MemberData ud = this.members.get(userId);
-        if (ud != null) {
-            return ud;
+        MemberData member = this.members.get(userId);
+        if (member != null) {
+            return member;
         }
-        ud = retriveUserData(userId);
-        if (ud == null) {
-            ud = new MemberData(userId, this.getID());
+        member = retriveMemberData(userId);
+        if (member == null) {
+            member = new MemberData(userId, this.getID());
             BotLogger.debug("Caching local MemberData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
         }
-        this.members.put(userId, ud);
-        return ud;
+        this.members.put(userId, member);
+        return member;
     }
 
-    public HashMap<Long, MemberData> getUsers() {
+    public HashMap<Long, MemberData> getMembers() {
         return this.members;
     }
 
     public boolean canReceiveExperience(long userId, long channelId) {
-        return this.isExpSystemEnabled() && this.getExpSystemRoom(channelId) && getMemberData(userId).canReceiveExperience();
+        return this.isExperienceEnabled() && this.getExpSystemRoom(channelId) && getMemberData(userId).canReceiveExperience();
     }
 
 

@@ -50,7 +50,7 @@ public class LevelUpText extends SlashCommand{
         AlertData level = gs.getAlert(AlertType.LEVEL_UP);
 
 
-        if(!gs.isExpSystemEnabled()) {
+        if(!gs.isExperienceEnabled()) {
             event.deferReply(true).addContent("This guild doesn't have the exp system enabled.").queue();
             return;
         }
