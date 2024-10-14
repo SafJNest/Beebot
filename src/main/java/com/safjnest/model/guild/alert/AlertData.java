@@ -24,7 +24,7 @@ public class AlertData {
         this.ID = data.getAsInt("id");
         this.message = data.get("message");
         this.privateMessage = data.get("private_message");
-        this.channelId = data.get("channel_id");
+        this.channelId = data.get("channel");
         this.enabled = data.getAsBoolean("enabled");
         this.type = AlertType.getFromOrdinal(data.getAsInt("type"));
         this.roles = roles;
