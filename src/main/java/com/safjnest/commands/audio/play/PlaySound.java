@@ -76,19 +76,19 @@ public class PlaySound extends SlashCommand{
         String fileName = event.getOption("sound").getAsString();
 
         if(authorChannel == null){
-            event.reply("You need to be in a voice channel to use this command.");
+            event.deferReply().addContent("You need to be in a voice channel to use this command.").queue();
             return;
         }
 
         if(botChannel != null && (authorChannel != botChannel)){
-            event.reply("The bot is already being used in another voice channel.");
+            event.deferReply().addContent("The bot is already being used in another voice channel.").queue();
             return;
         }
         
         Sound sound = SoundHandler.getSoundByString(fileName, guild, event.getUser());
 
         if(sound == null) {
-            event.reply("Couldn't find a sound with that name/id.");
+            event.deferReply().addContent("Couldn't find a sound with that name/id. You can upload a new one using /upload").queue();
             return;
         }
 
