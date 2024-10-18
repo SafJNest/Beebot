@@ -40,6 +40,139 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private final int MAX_CHOICES = 25;
 
+    @Override
+    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {        
+        ArrayList<Choice> choices = new ArrayList<>();
+        String name = e.getName();
+
+        this.isFocused = !e.getFocusedOption().getValue().isEmpty();
+        this.value = e.getFocusedOption().getValue();
+
+        if (e.getFullCommandName().equals("soundboard create") 
+            || e.getFocusedOption().getName().startsWith("sound-"))
+            name = "play";
+
+        else if (e.getFocusedOption().getName().equals("sound_add"))
+            name = "play";
+
+        else if (e.getFocusedOption().getName().equals("sound_remove"))
+            name = "sound_remove";
+
+        else if (e.getFullCommandName().equals("soundboard play")
+                || e.getFocusedOption().getName().equals("soundboard_name")
+                || e.getFullCommandName().equals("soundboard remove")
+                || e.getFullCommandName().equals("soundboard delete"))
+            name = "soundboard_select";
+
+        else if (e.getFocusedOption().getName().equals("user_sound"))
+            name = "user_sound";
+
+        else if (e.getFullCommandName().equals("bugsnotifier"))
+            name = "help";
+
+        else if (e.getFocusedOption().getName().equals("voice"))
+            name = "tts";
+
+        else if (e.getFocusedOption().getName().equals("role_remove"))
+            name = "alert_role";
+
+        else if (e.getFocusedOption().getName().equals("reward_level"))
+            name = "rewards_level";
+
+        else if (e.getFocusedOption().getName().equals("reward_roles"))
+            name = "reward_roles";
+        
+        else if (e.getFocusedOption().getName().equals("personal_summoner"))
+            name = "personal_summoner";
+
+        else if (e.getFocusedOption().getName().equals("champion"))
+            name = "champion";
+
+        else if (e.getFocusedOption().getName().equals("streamer"))
+            name = "streamer_name";
+        
+        else if (e.getFocusedOption().getName().equals("item"))
+            name = "item";
+        
+        else if (e.getFocusedOption().getName().equals("playlist-name"))
+            name = "playlist";
+
+        else if (e.getFocusedOption().getName().equals("playlist-song"))
+            name = "playlist_song";
+
+        else if (e.getFocusedOption().getName().equals("summoner"))
+            name = "summoner";
+
+        
+        switch (name) {
+            case "play":
+                choices = playSound(e);
+
+                break;
+            case "user_sound":
+                choices = userSound(e);
+
+                break;
+            case "help":
+                choices = help(e);
+                break;
+
+            case "champion":
+                choices = champion(e);
+                break;
+
+            case "augment":
+                choices = augment(e);
+                break;
+
+            case "soundboard_select":
+                choices = soundboard(e);
+                break;
+            case "sound_remove":
+                choices = soundboardSound(e);
+                break;
+
+            case "greet":
+                choices = greet(e);
+                break;
+            case "tts":
+                choices = tts(e);
+                break;
+            case "jumpto":
+                choices = jump(e);
+                break;
+            case "alert_role":
+                choices = alert(e);
+                break;
+            case "rewards_level":
+                choices = rewardsLevel(e);
+                break;
+            case "reward_roles":
+                choices = rewardRole(e);
+                break;
+            case "personal_summoner":
+                choices = personalSummoner(e);
+                break;
+            case "streamer_name":
+                choices = streamer(e);
+                break;
+            case "item":
+                choices = item(e);
+                break;
+            case "playlist":
+                choices = playlist(e);
+                break;
+            case "playlist_song":
+                choices = playlistSong(e);
+                break;
+            case "summoner":
+                choices = summoner(e);
+                break;
+        }
+
+        e.replyChoices(choices).queue();
+    }
+
     /**
      * Sound upload by the user and present in the current guild
      * @param e
@@ -542,151 +675,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         return choices;
 
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-    @Override
-    public void onCommandAutoCompleteInteraction(CommandAutoCompleteInteractionEvent e) {        
-        ArrayList<Choice> choices = new ArrayList<>();
-        String name = e.getName();
-
-        this.isFocused = !e.getFocusedOption().getValue().isEmpty();
-        this.value = e.getFocusedOption().getValue();
-
-        if (e.getFullCommandName().equals("soundboard create") 
-            || e.getFocusedOption().getName().startsWith("sound-"))
-            name = "play";
-
-        else if (e.getFocusedOption().getName().equals("sound_add"))
-            name = "play";
-
-        else if (e.getFocusedOption().getName().equals("sound_remove"))
-            name = "sound_remove";
-
-        else if (e.getFullCommandName().equals("soundboard play")
-                || e.getFocusedOption().getName().equals("soundboard_name")
-                || e.getFullCommandName().equals("soundboard remove")
-                || e.getFullCommandName().equals("soundboard delete"))
-            name = "soundboard_select";
-
-        else if (e.getFocusedOption().getName().equals("user_sound"))
-            name = "user_sound";
-
-        else if (e.getFullCommandName().equals("bugsnotifier"))
-            name = "help";
-
-        else if (e.getFocusedOption().getName().equals("voice"))
-            name = "tts";
-
-        else if (e.getFocusedOption().getName().equals("role_remove"))
-            name = "alert_role";
-
-        else if (e.getFocusedOption().getName().equals("reward_level"))
-            name = "rewards_level";
-
-        else if (e.getFocusedOption().getName().equals("reward_roles"))
-            name = "reward_roles";
-        
-        else if (e.getFocusedOption().getName().equals("personal_summoner"))
-            name = "personal_summoner";
-
-        else if (e.getFocusedOption().getName().equals("champion"))
-            name = "champion";
-
-        else if (e.getFocusedOption().getName().equals("streamer"))
-            name = "streamer_name";
-        
-        else if (e.getFocusedOption().getName().equals("item"))
-            name = "item";
-        
-        else if (e.getFocusedOption().getName().equals("playlist-name"))
-            name = "playlist";
-
-        else if (e.getFocusedOption().getName().equals("playlist-song"))
-            name = "playlist_song";
-
-        else if (e.getFocusedOption().getName().equals("summoner"))
-            name = "summoner";
-
-        
-        switch (name) {
-            case "play":
-                choices = playSound(e);
-
-                break;
-            case "user_sound":
-                choices = userSound(e);
-
-                break;
-            case "help":
-                choices = help(e);
-                break;
-
-            case "champion":
-                choices = champion(e);
-                break;
-
-            case "augment":
-                choices = augment(e);
-                break;
-
-            case "soundboard_select":
-                choices = soundboard(e);
-                break;
-            case "sound_remove":
-                choices = soundboardSound(e);
-                break;
-
-            case "greet":
-                choices = greet(e);
-                break;
-            case "tts":
-                choices = tts(e);
-                break;
-            case "jumpto":
-                choices = jump(e);
-                break;
-            case "alert_role":
-                choices = alert(e);
-                break;
-            case "rewards_level":
-                choices = rewardsLevel(e);
-                break;
-            case "reward_roles":
-                choices = rewardRole(e);
-                break;
-            case "personal_summoner":
-                choices = personalSummoner(e);
-                break;
-            case "streamer_name":
-                choices = streamer(e);
-                break;
-            case "item":
-                choices = item(e);
-                break;
-            case "playlist":
-                choices = playlist(e);
-                break;
-            case "playlist_song":
-                choices = playlistSong(e);
-                break;
-            case "summoner":
-                choices = summoner(e);
-                break;
-        }
-
-        e.replyChoices(choices).queue();
     }
 }
 

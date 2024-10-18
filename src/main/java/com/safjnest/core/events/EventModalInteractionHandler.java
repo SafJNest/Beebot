@@ -15,6 +15,26 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 
 public class EventModalInteractionHandler extends ListenerAdapter {
 
+    @Override
+    public void onModalInteraction(ModalInteractionEvent event) {
+        String id = event.getModalId().split("-", 2)[0];
+        
+        switch (id) {
+            case "sound":
+                sound(event);
+                break;
+
+            case "tag":        
+                tag(event);
+                break;
+            case "twitch":
+                twitch(event);
+                break;
+            default:
+                break;
+        }
+    }
+
     private static void sound(ModalInteractionEvent event) {
         String soundId = event.getModalId().split("-", 2)[1];
 
@@ -62,25 +82,5 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
                 .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))
                 .queue();
-    }
-
-    @Override
-    public void onModalInteraction(ModalInteractionEvent event) {
-        String id = event.getModalId().split("-", 2)[0];
-        
-        switch (id) {
-            case "sound":
-                sound(event);
-                break;
-
-            case "tag":        
-                tag(event);
-                break;
-            case "twitch":
-                twitch(event);
-                break;
-            default:
-                break;
-        }
     }
 }

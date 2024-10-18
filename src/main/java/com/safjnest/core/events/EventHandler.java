@@ -3,6 +3,10 @@ package com.safjnest.core.events;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import com.safjnest.core.Bot;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
@@ -27,6 +31,8 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
@@ -169,7 +175,11 @@ public class EventHandler extends ListenerAdapter {
             
             LeagueShard shard = LeagueShard.valueOf(platform);
             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
-            event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbedMatch(s, match).build()).setComponents(event.getMessage().getComponents()).queue(); 
+
+            List<LayoutComponent> compontens = new ArrayList<>(event.getMessage().getComponents());
+            compontens.add(0, ActionRow.of(LeagueMessage.getSelectedMatchMenu(match)));
+
+            event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbedMatch(s, match).build()).setComponents(compontens).queue(); 
         }
     }
 }
