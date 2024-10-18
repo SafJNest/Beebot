@@ -749,6 +749,20 @@ public class LeagueMessage {
 
     }
 
+    public static StringSelectMenu getSelectedMatchMenu(LOLMatch match) {
+        ArrayList<SelectOption> options = new ArrayList<>();
+        for(MatchParticipant p : match.getParticipants()){
+            Emoji icon = LeagueHandler.getEmojiByChampion(p.getChampionId());    
+            options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getSummonerId() + "#" + match.getPlatform().name()).withEmoji(icon));
+        }
+
+        return StringSelectMenu.create("rank-select")
+                .setPlaceholder("Select a summoner")
+                .setMaxValues(1)
+                .addOptions(options)
+                .build();
+    }
+
 //   ▄█        ▄█   ▄█    █▄     ▄████████ 
 //  ███       ███  ███    ███   ███    ███ 
 //  ███       ███▌ ███    ███   ███    █▀  
