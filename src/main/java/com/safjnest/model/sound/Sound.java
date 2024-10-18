@@ -2,6 +2,7 @@ package com.safjnest.model.sound;
 
 import java.sql.Timestamp;
 
+import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.ResultRow;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -35,17 +36,20 @@ public class Sound {
         this.tags = null;
     }
     
-    public Sound(String ID, String GUILD_ID, String USER_ID, String name, String extension, boolean isPublic, Timestamp timestamp, int plays, int likes, int dislikes, Tag[] tags) {
-        this.ID = ID;
-        this.GUILD_ID = GUILD_ID;
-        this.USER_ID = USER_ID;
-        this.name = name;
-        this.extension = extension;
-        this.isPublic = isPublic;
-        this.timestamp = timestamp;
-        this.plays = plays;
-        this.likes = likes;
-        this.dislikes = dislikes;
+    public Sound(ResultRow data, Tag[] tags) {
+        this.ID = data.get("id");
+        this.GUILD_ID = data.get("guild_id");
+        this.USER_ID = data.get("user_id");
+
+        this.name = data.get("name");
+        this.extension = data.get("extension");
+        this.isPublic = data.getAsBoolean("public");
+        this.timestamp = data.getAsTimestamp("time");
+
+        this.plays = data.getAsInt("plays");
+        this.likes = data.getAsInt("likes");
+        this.dislikes = data.getAsInt("dislikes");
+        
         this.tags = tags;
     }
 
@@ -122,7 +126,11 @@ public class Sound {
     }
 
     public boolean increaseUserPlays(String userId) {
-        boolean result = DatabaseHandler.updateUserPlays(this.ID, userId);
+        return increaseUserPlays(userId, AudioType.AUDIO);
+    }
+
+    public boolean increaseUserPlays(String userId, AudioType source) {
+        boolean result = DatabaseHandler.updateUserPlays(this.ID, userId, source.ordinal());
         if (result) plays++;
         return result;
     }
@@ -174,6 +182,12 @@ public class Sound {
         return new int[] {likes.getAsInt("likes"), likes.getAsInt("dislikes")};
     }
 
+    private void updateLikeDislike() {
+        int[] likeDislike = retriveLikeDislike();
+        this.likes = likeDislike[0];
+        this.dislikes = likeDislike[1];
+    }
+
     public int getLikes() {
         return likes;
     }
@@ -193,25 +207,17 @@ public class Sound {
 
 
     public boolean like(String userId, boolean like) {
-        int probLike = hasLiked(userId) ? (like ? this.likes : this.likes - 1) : (like ? this.likes + 1 : this.likes);
-        int probDislike = hasDisliked(userId) ? (like ? this.dislikes - 1 : this.dislikes) : this.dislikes;
-        
-        boolean result = DatabaseHandler.setLikeDislike(this.ID, userId, like, false);
+        boolean result = DatabaseHandler.setLikeDislike(this.ID, userId, (like ? 1 : 0));
         if (result) {
-            this.likes = probLike;
-            this.dislikes = probDislike;
+            updateLikeDislike();
         }
         return result;
     }
 
     public boolean dislike(String userId, boolean dislike) {
-        int probLike = hasLiked(userId) ? (dislike ? this.likes - 1 : this.likes) : this.likes;
-        int probDislike = hasDisliked(userId) ? (dislike ? this.dislikes : this.dislikes - 1) : (dislike ? this.dislikes + 1 : this.dislikes);
-
-        boolean result = DatabaseHandler.setLikeDislike(this.ID, userId, false, dislike);
+        boolean result = DatabaseHandler.setLikeDislike(this.ID, userId, (dislike ? -1 : 0));
         if (result) {
-            this.likes = probLike;
-            this.dislikes = probDislike;
+            updateLikeDislike();
         }
         return result;
     }

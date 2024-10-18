@@ -820,6 +820,38 @@ public class Test extends Command{
                 }
                 e.reply(messagesString);
             break;
+            case "splitsoundplays":
+                query = "select * from sound_interactions";
+                res = DatabaseHandler.safJQuery(query);
+                query = "";
+                for (ResultRow row : res) {
+                    int times = row.getAsInt("times");
+                    System.out.println(row.get("sound_id") + " " + row.get("user_id") + " " + times );
+                    for (i = 0; i < times; i++) {
+                        query += "(" + row.get("user_id") + ", " + row.get("sound_id") + "),";
+                    }
+                    //remove ,
+                    if (query.isBlank()) continue;
+                    
+                }
+                query = query.substring(0, query.length() - 1);
+                query = "INSERT INTO sound_interactions2(user_id, sound_id) VALUES " + query;
+                DatabaseHandler.runQuery(query);
+            break;
+            case "splitlike":
+                query = "select * from sound_interactions";
+                res = DatabaseHandler.safJQuery(query);
+                query = "";
+                for (ResultRow row : res) {
+                    int likevalue = row.getAsInt("like") == 1 ? 1 : 0;
+                    likevalue = row.getAsInt("dislike") == 1 ? -1 : likevalue;
+                    query += "(" + row.get("user_id") + ", " + row.get("sound_id") + ", " + likevalue + "),";
+                    
+                }
+                query = query.substring(0, query.length() - 1);
+                query = "INSERT INTO sound_interactions3(user_id, sound_id, value) VALUES " + query;
+                DatabaseHandler.runQuery(query);
+            break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;

@@ -468,16 +468,16 @@ public class DatabaseHandler {
         return runQuery("DELETE FROM sound WHERE id = " + id + ";");
     }
 
-    public static boolean updateUserPlays(String sound_id, String user_id) {
-        return runQuery("INSERT INTO sound_interactions(user_id, sound_id, times, last_play) VALUES('" + user_id + "', '" + sound_id + "', 1, '" + Timestamp.from(Instant.now()) + "') ON DUPLICATE KEY UPDATE times = times + 1, last_play = '" + Timestamp.from(Instant.now()) + "';", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
+    public static boolean updateUserPlays(String sound_id, String user_id, int source) {
+        return runQuery("INSERT INTO sound_reproductions(user_id, sound_id, source) VALUES('" + user_id + "', '" + sound_id + "', " + source + ");", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
     }
 
     public static ResultRow getPlays(String sound_id, String user_id) {
-        return fetchJRow("SELECT times FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
+        return fetchJRow("SELECT count(id) as times FROM sound_reproductions WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
     }
 
     public static ResultRow getGlobalPlays(String sound_id) {
-        return fetchJRow("SELECT sum(times) as times FROM sound_interactions WHERE sound_id = '" + sound_id + "'");
+        return fetchJRow("SELECT count(id) as times FROM sound_reproductions WHERE sound_id = '" + sound_id + "'");
     }
 
     public static String getSoundsUploadedByUserCount(String user_id) {
@@ -489,7 +489,7 @@ public class DatabaseHandler {
     }
 
     public static String getTotalPlays(String user_id) {
-        return fetchJRow("select sum(times) as sum from sound_interactions where user_id = '" + user_id + "';").get("sum");
+        return fetchJRow("select count(id) as sum from sound_reproductions where user_id = '" + user_id + "';").get("sum");
     }
 
     public static boolean soundboardExists(String id, String guild_id) {
@@ -1356,60 +1356,23 @@ public class DatabaseHandler {
     }
 
     public static ResultRow getLikeDislike(String sound_id) {
-        return fetchJRow("SELECT"
-            + "(SELECT SUM(`like`) FROM sound_interactions WHERE sound_id = '" + sound_id + "') AS likes,"
-            + "(SELECT SUM(dislike) FROM sound_interactions WHERE sound_id = '" + sound_id + "') AS dislikes;");
-    }
-
-    public static ResultRow getLikeDislikeUser(String sound_id, String user_id) {
-        return fetchJRow("SELECT `like`, dislike FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
+        return fetchJRow("SELECT "
+            + "(SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = 1) AS likes, "
+            + "(SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = -1) AS dislikes;");
     }
 
 
-    public static boolean setLikeDislike(String sound_id, String user_id, boolean like, boolean dislike) {
-        ResultRow userLike = getLikeDislikeUser(sound_id, user_id);
-
-        String likePart = "";
-        String dislikePart = "";
-        
-        // Determine the action for likes
-        if (like && !userLike.getAsBoolean("like")) {
-            // If the user is liking for the first time
-            likePart = "`likes` = `likes` + 1";
-        } else if (!like && userLike.getAsBoolean("like")) {
-            // If the user is removing their like
-            likePart = "`likes` = `likes` - 1";
-        }
-        
-        // Determine the action for dislikes
-        if (dislike && !userLike.getAsBoolean("dislike")) {
-            // If the user is disliking for the first time
-            dislikePart = "dislikes = dislikes + 1";
-        } else if (!dislike && userLike.getAsBoolean("dislike")) {
-            // If the user is removing their dislike
-            dislikePart = "dislikes = dislikes - 1";
-        }
-        
-        // Combine the parts to form the full update query, ensuring we only include non-empty parts
-        String updateQuery = "UPDATE sound SET ";
-        if (!likePart.isEmpty() && !dislikePart.isEmpty()) {
-            updateQuery += likePart + ", " + dislikePart;
-        } else if (!likePart.isEmpty()) {
-            updateQuery += likePart;
-        } else if (!dislikePart.isEmpty()) {
-            updateQuery += dislikePart;
-        }
-    
-        if (!likePart.isEmpty() || !dislikePart.isEmpty()) {
-            updateQuery += " WHERE id = '" + sound_id + "';";
-        }
-        boolean q1 =  runQuery("INSERT INTO sound_interactions(user_id, sound_id, `like`, dislike) VALUES('" + user_id + "','" + sound_id + "', " + (like ? 1 : 0) + ", " + (dislike ? 1 : 0) + ") ON DUPLICATE KEY UPDATE `like` = " + (like ? 1 : 0) + ", dislike = " + (dislike ? 1 : 0) + ";");
-        boolean q2 = runQuery(updateQuery);
-        return q1 && q2;
+    public static boolean setLikeDislike(String sound_id, String user_id, int value) {
+        return runQuery("INSERT INTO sound_interactions(sound_id, user_id, value) VALUES('" + sound_id + "', '" + user_id + "', '" + value + "') ON DUPLICATE KEY UPDATE value = '" + value + "';", "UPDATE sound SET likes = (SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = 1), dislikes = (SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = -1) WHERE id = '" + sound_id + "';");
     }
 
     public static ResultRow hasInterectedSound(String sound_id, String user_id) {
-        return fetchJRow("SELECT `like`, dislike FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';");
+        String query = "SELECT " +
+                       "CASE WHEN value = 1 THEN 1 ELSE 0 END AS `like`, " +
+                       "CASE WHEN value = -1 THEN 1 ELSE 0 END AS `dislike` " +
+                       "FROM sound_interactions " +
+                       "WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "';";
+        return fetchJRow(query);
     }
 
 
