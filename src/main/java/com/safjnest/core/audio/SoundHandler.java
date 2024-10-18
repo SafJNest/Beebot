@@ -161,19 +161,7 @@ public class SoundHandler {
                 }
             }
 
-            Sound sound = new Sound(
-                    soundData.get("id"), 
-                    soundData.get("guild_id"), 
-                    soundData.get("user_id"), 
-                    soundData.get("name"), 
-                    soundData.get("extension"), 
-                    soundData.getAsBoolean("public"), 
-                    soundData.getAsTimestamp("time"), 
-                    soundData.getAsInt("plays"), 
-                    soundData.getAsInt("likes"), 
-                    soundData.getAsInt("dislikes"), 
-                    tagList.toArray(new Tag[tagList.size()])
-            );
+            Sound sound = new Sound(soundData, tagList.toArray(new Tag[tagList.size()]));
             soundCache.put(sound.getId(), sound);
         }
 

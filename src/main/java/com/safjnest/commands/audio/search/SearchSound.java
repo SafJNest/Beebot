@@ -103,8 +103,9 @@ public class SearchSound extends SlashCommand {
         count = 1;
         for (Sound sound : sounds) {
             String label = count + " - " + sound.getName();
+            String description = Bot.getJDA().getGuildById(sound.getGuildId()).getName() + " by " + Bot.getJDA().getUserById(sound.getUserId()).getName() + " - " + sound.getGlobalPlays() + " plays " + sound.getLikes() + "/" + sound.getDislikes();
             label = PermissionHandler.ellipsis(label, 100);
-            mb.addOption(label, sound.getId());
+            mb.addOption(label, sound.getId(), description);
             count++;
         }
         MenuListener fileListener = new MenuListener(event, mb.getId());
