@@ -482,7 +482,7 @@
                 "help"  : "Change the role users will get when they enter this guild.",
                 "arguments" : "[CommandName]"
             },
-            "text": {
+            "message": {
                 "alias" : [],
                 "help"  : "Change the welcome message's text.",
                 "longhelp"  : "Change the welcome message's text.\nTo mention the user write #user, the role write #role",
@@ -528,7 +528,7 @@
                 "help"  : "Remove a role from a specific reward.",
                 "arguments" : "[CommandName]"
             },
-            "text": {
+            "message": {
                 "alias" : [],
                 "help"  : "Change the reward message's text.",
                 "longhelp"  : "Change the reward message's text.\nTo mention the user write #user, the level write ```#level```.",
@@ -569,7 +569,7 @@
                 "help"  : "Preview the leave message.",
                 "arguments" : "[CommandName]"
             },
-            "text": {
+            "message": {
                 "alias" : [],
                 "help"  : "Change the leave message's text.",
                 "arguments" : "[CommandName]"
@@ -604,7 +604,7 @@
                 "help"  : "Preview the level up message.",
                 "arguments" : "[CommandName]"
             },
-            "text": {
+            "message": {
                 "alias" : [],
                 "help"  : "Change the level up message's text.",
                 "arguments" : "[CommandName]"
@@ -649,7 +649,7 @@
                 "help"  : "Preview the boost message.",
                 "arguments" : "[CommandName]"
             },
-            "text": {
+            "message": {
                 "alias" : [],
                 "help"  : "Change the boost message's text.",
                 "arguments" : "[CommandName]"

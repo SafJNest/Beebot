@@ -15,9 +15,9 @@ import com.safjnest.util.CommandsLoader;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-public class WelcomeText extends SlashCommand {
+public class WelcomeMessage extends SlashCommand {
 
-    public WelcomeText(String father){
+    public WelcomeMessage(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);

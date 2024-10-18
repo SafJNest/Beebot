@@ -1,4 +1,4 @@
-package com.safjnest.commands.settings.leave;
+package com.safjnest.commands.settings.boost;
 
 import java.util.Arrays;
 
@@ -15,9 +15,9 @@ import com.safjnest.util.CommandsLoader;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-public class LeaveText extends SlashCommand {
-    
-    public LeaveText(String father){
+public class BoostMessage extends SlashCommand {
+
+    public BoostMessage(String father) {
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -27,7 +27,7 @@ public class LeaveText extends SlashCommand {
         this.category = commandData.getCategory();
         
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "message", "Leave message", true),
+            new OptionData(OptionType.STRING, "message", "Boost message", true),
             new OptionData(OptionType.STRING, "type", "The type of message to change", false)
                 .addChoice("channel", "channel")
                 .addChoice("private", "private")
@@ -45,25 +45,25 @@ public class LeaveText extends SlashCommand {
 
         GuildData gs = Bot.getGuildData(guildId);
 
-        AlertData leave = gs.getAlert(AlertType.LEAVE);
+        AlertData boost = gs.getAlert(AlertType.BOOST);   
 
-        if(leave == null) {
-            event.deferReply(true).addContent("This guild doesn't have a leave message. Use the create command.").queue();
+        if(boost == null) {
+            event.deferReply(true).addContent("This guild doesn't have a boost message. Use the create command.").queue();
             return;
         }
 
-        if(type.equals("channel") && !leave.setMessage(message)) {
+        if(type.equals("channel") && !boost.setMessage(message)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
-        else if (type.equals("private") && !leave.setPrivateMessage(message)){
+        else if (type.equals("private") && !boost.setPrivateMessage(message)){
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
 
-        if (type.equals("private") && leave.getSendType() == AlertSendType.CHANNEL) 
-            leave.setSendType(AlertSendType.BOTH);
+        if (type.equals("private") && boost.getSendType() == AlertSendType.CHANNEL) 
+            boost.setSendType(AlertSendType.BOTH);
 
-        event.deferReply(false).addContent("Changed leave message.").queue();
+        event.deferReply(false).addContent("Changed boost message.").queue();
     }
 }

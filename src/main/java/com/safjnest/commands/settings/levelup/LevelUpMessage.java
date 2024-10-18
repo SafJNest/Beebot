@@ -15,9 +15,9 @@ import com.safjnest.util.CommandsLoader;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-public class LevelUpText extends SlashCommand{
+public class LevelUpMessage extends SlashCommand{
 
-    public LevelUpText(String father){
+    public LevelUpMessage(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -51,7 +51,7 @@ public class LevelUpText extends SlashCommand{
 
 
         if(!gs.isExperienceEnabled()) {
-            event.deferReply(true).addContent("This guild doesn't have the exp system enabled.").queue();
+            event.deferReply(true).addContent("This guild doesn't have the experience enabled.").queue();
             return;
         }
 
@@ -67,9 +67,24 @@ public class LevelUpText extends SlashCommand{
             return;
         }
 
-
-        if(!level.setMessage(message)) {
-            event.deferReply(true).addContent("Something went wrong.").queue();
+        boolean result = false;
+        switch (sendType) {
+            case CHANNEL:
+                result = level.setMessage(message);
+                break;
+            case PRIVATE:
+                result = level.setPrivateMessage(privateText) && level.setSendType(sendType);
+                break;
+            case BOTH:
+                result = level.setMessage(message) && level.setPrivateMessage(privateText) && level.setSendType(sendType);
+                break;
+        
+            default:
+                break;
+        }
+        
+        if (!result) {
+            event.deferReply(true).addContent("Something went wrong. Use `/help Levelup text` for more information").queue();
             return;
         }
         
