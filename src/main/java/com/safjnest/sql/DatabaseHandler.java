@@ -469,15 +469,15 @@ public class DatabaseHandler {
     }
 
     public static boolean updateUserPlays(String sound_id, String user_id, int source) {
-        return runQuery("INSERT INTO sound_reproductions(user_id, sound_id, source) VALUES('" + user_id + "', '" + sound_id + "', " + source + ");", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
+        return runQuery("INSERT INTO sound_history(user_id, sound_id, source) VALUES('" + user_id + "', '" + sound_id + "', " + source + ");", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
     }
 
     public static ResultRow getPlays(String sound_id, String user_id) {
-        return fetchJRow("SELECT count(id) as times FROM sound_reproductions WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
+        return fetchJRow("SELECT count(id) as times FROM sound_history WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
     }
 
     public static ResultRow getGlobalPlays(String sound_id) {
-        return fetchJRow("SELECT count(id) as times FROM sound_reproductions WHERE sound_id = '" + sound_id + "'");
+        return fetchJRow("SELECT count(id) as times FROM sound_history WHERE sound_id = '" + sound_id + "'");
     }
 
     public static String getSoundsUploadedByUserCount(String user_id) {
@@ -489,7 +489,7 @@ public class DatabaseHandler {
     }
 
     public static String getTotalPlays(String user_id) {
-        return fetchJRow("select count(id) as sum from sound_reproductions where user_id = '" + user_id + "';").get("sum");
+        return fetchJRow("select count(id) as sum from sound_history where user_id = '" + user_id + "';").get("sum");
     }
 
     public static boolean soundboardExists(String id, String guild_id) {
