@@ -1377,9 +1377,9 @@ public class EventButtonHandler extends ListenerAdapter {
             public void trackLoaded(AudioTrack track) {
                 if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(audioChannel);
 
-                sound.increaseUserPlays(event.getMember().getId());
-                track.setUserData(new TrackData(AudioType.SOUND));
-                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
+                sound.increaseUserPlays(event.getMember().getId(), AudioType.SOUNDBOARD);
+                track.setUserData(new TrackData(AudioType.SOUNDBOARD));
+                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUNDBOARD);
             }
 
             @Override
