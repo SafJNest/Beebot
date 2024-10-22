@@ -13,6 +13,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -36,7 +37,10 @@ public class SoundboardCreate extends SlashCommand{
         this.category = commandData.getCategory();
 
         this.options = new ArrayList<>();
+
         this.options.add(new OptionData(OptionType.STRING, "name", "Leave blank to not save the soundboard.", false));
+        this.options.add(new OptionData(OptionType.ATTACHMENT, "thumbnail", "Thumbnail for the soundboard.", false));
+
         for(int i = 1; i <= maxSounds; i++) {
             this.options.add(new OptionData(OptionType.STRING, "sound-" + i, "Sound " + i, false).setAutoComplete(true));
         }
@@ -48,7 +52,7 @@ public class SoundboardCreate extends SlashCommand{
 	protected void execute(SlashCommandEvent event) {
         Set<String> soundIDs = new HashSet<String>();
         for(OptionMapping option : event.getOptions())
-            if(option != null && !option.getName().equals("name"))
+            if(option != null && option.getName().startsWith("sound-"))
                 soundIDs.add(option.getAsString());
 
         if(soundIDs.isEmpty()) {
@@ -63,7 +67,8 @@ public class SoundboardCreate extends SlashCommand{
                 event.deferReply(true).addContent("A soundboard with that name in this guild already exists.").queue();
                 return;
             }
-            DatabaseHandler.insertSoundBoard(soundboardName, event.getGuild().getId(), event.getUser().getId(), soundIDs.toArray(new String[0]));
+            Attachment attachment = event.getOption("thumbnail") != null ? event.getOption("thumbnail").getAsAttachment() : null;
+            DatabaseHandler.insertSoundBoard(soundboardName, attachment, event.getGuild().getId(), event.getUser().getId(), soundIDs.toArray(new String[0]));
         }
 
         List<Sound> sounds = SoundHandler.getSoundsByIds(soundIDs.toArray(new String[0]));

@@ -1,18 +1,23 @@
 package com.safjnest.sql;
 
+import java.sql.Blob;
+import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
 import java.util.Map.Entry;
 
 public class ResultRow {
     private Map<String, String> row;
+    private ResultSet resultSet;
 
-    public ResultRow(Map<String, String> row){
+    public ResultRow(Map<String, String> row, ResultSet resultSet){
         this.row = row;
+        this.resultSet = resultSet;
     }
 
 
@@ -21,8 +26,13 @@ public class ResultRow {
      * <p>
      * If the {@link com.safjnest.sql.ResultRow query} is null, the method {@code row.get(String)} will throw a NullPointerException.
      */
-    public ResultRow(){
+    public ResultRow(ResultSet resultSet){
         this.row = new HashMap<String, String>();
+        this.resultSet = resultSet;
+    }
+
+    public void setResultSet(ResultSet resultSet){
+        this.resultSet = resultSet;
     }
 
     public String get(String columnName){
@@ -84,6 +94,14 @@ public class ResultRow {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime dateTime = LocalDateTime.parse(row.get(columnName), formatter);
             return Timestamp.valueOf(dateTime);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public Blob getAsBlob(String columnName){
+        try {
+            return resultSet.getBlob(columnName);
         } catch (Exception e) {
             return null;
         }

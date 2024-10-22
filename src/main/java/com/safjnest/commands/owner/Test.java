@@ -77,6 +77,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -852,6 +853,30 @@ public class Test extends Command{
                 query = "INSERT INTO sound_interactions3(user_id, sound_id, value) VALUES " + query;
                 DatabaseHandler.runQuery(query);
             break;
+            case "testblob":
+                query = "SELECT * FROM soundboard WHERE id = 23";
+                ResultRow row = DatabaseHandler.fetchJRow(query);
+                String blobString = row.get("thumbnail");
+                if (blobString != null) {
+                    try {
+                        // Decode the base64 string to get the byte array
+                        byte[] bytes = Base64.getDecoder().decode(blobString);
+        
+                        // Create a temporary file
+                        File file = new File("thumbnail.png");
+                        try (FileOutputStream fos = new FileOutputStream(file)) {
+                            fos.write(bytes);
+                        }
+        
+                        System.out.println("File written successfully: " + file.getAbsolutePath());
+                    } catch (IOException ee) {
+                        ee.printStackTrace();
+                    }
+                } else {
+                    System.out.println("No BLOB data found for the specified column.");
+                }
+                
+                break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;

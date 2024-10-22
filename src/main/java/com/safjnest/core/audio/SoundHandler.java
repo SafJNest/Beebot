@@ -4,10 +4,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;//everybody was mocking you?
+import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import net.dv8tion.jda.api.utils.FileUpload;
 
 
 import org.gagravarr.ogg.OggFile;
@@ -30,6 +34,7 @@ import com.safjnest.util.TimeConstant;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
@@ -393,21 +398,46 @@ public class SoundHandler {
         return getSoundsByIds(sounds.arrayColumn("sound_id").toArray(new String[0]));
     }
 
-    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardID) {
-        String name = DatabaseHandler.getSoundboardByID(soundboardID).get("name");
-        if (name == null) {
-            return event.deferReply().setContent("Soundboard not found").setEphemeral(true);
-        }
-        List<Sound> soundList = getSoundboardSounds(soundboardID);
-        return composeSoundboard(event, name, soundList);
+    public static boolean isValidThumbnail(Attachment thumbnail) {
+        if (thumbnail == null) return false;
+        if (thumbnail.getSize() > 1024 * 1024) return false;
+        if (List.of("png", "jpg", "jpeg", "gif").stream().noneMatch(thumbnail.getFileExtension()::equals)) return false;
+        return true;
     }
 
+    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardID) {
+        ResultRow data = DatabaseHandler.getSoundboardByID(soundboardID);
+        if (data.emptyValues()) 
+            return event.deferReply().setContent("Soundboard not found").setEphemeral(true);
+        
+        String name = data.get("name");
+        Blob thumbnailBlob = data.getAsBlob("thumbnail");
+        InputStream thumbnailStream = null;
+
+        if (thumbnailBlob != null) {
+            try {
+                thumbnailStream = thumbnailBlob.getBinaryStream();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        List<Sound> soundList = getSoundboardSounds(soundboardID);
+        return composeSoundboard(event, name, thumbnailStream, soundList);
+    }
 
     public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, List<Sound> sounds) {
+        return composeSoundboard(event, name, null, sounds);
+    }
+
+    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, InputStream thumbnail, List<Sound> sounds) {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName() + " requested:", "https://github.com/SafJNest", event.getUser().getAvatarUrl());
         eb.setTitle("**" + name + "**");
-        eb.setThumbnail(Bot.getJDA().getSelfUser().getAvatarUrl());
+        
+        if (thumbnail != null) eb.setThumbnail("attachment://thumbnail.png");
+        else eb.setThumbnail(Bot.getJDA().getSelfUser().getAvatarUrl());
+
         eb.setDescription("Press a button to play a sound");
         eb.setColor(Bot.getColor());
         eb.setFooter(sounds.size() + " sounds");
@@ -422,6 +452,8 @@ public class SoundHandler {
             }
         }
 
+        if (thumbnail != null) 
+            return event.deferReply().addEmbeds(eb.build()).addFiles(FileUpload.fromData(thumbnail, "thumbnail.png")).setComponents(rows);
         return event.deferReply().addEmbeds(eb.build()).setComponents(rows);
     }
 

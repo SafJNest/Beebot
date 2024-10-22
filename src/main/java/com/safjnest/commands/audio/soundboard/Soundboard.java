@@ -28,7 +28,7 @@ public class Soundboard extends SlashCommand{
         String father = this.getClass().getSimpleName().replace("Slash", "");
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new SoundboardCreate(father), new SoundboardPlay(father), new SoundboardAdd(father), new SoundboardRemove(father), new SoundboardDelete(father));
+        Collections.addAll(slashCommandsList, new SoundboardCreate(father), new SoundboardPlay(father), new SoundboardAdd(father), new SoundboardRemove(father), new SoundboardDelete(father), new SoundboardThumbnail(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
         
         commandData.setThings(this);

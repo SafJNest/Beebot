@@ -1,5 +1,6 @@
 package com.safjnest.sql;
 
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,9 +13,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+
+import net.dv8tion.jda.api.entities.Message.Attachment;
 
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.guild.alert.AlertSendType;
@@ -128,7 +132,7 @@ public class DatabaseHandler {
 
             ResultSetMetaData rsmd = rs.getMetaData();
             while (rs.next()) {
-                ResultRow beeRow = new ResultRow();
+                ResultRow beeRow = new ResultRow(rs);
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                     String columnName = rsmd.getColumnLabel(i);
                     String columnValue = rs.getString(i);
@@ -176,7 +180,7 @@ public class DatabaseHandler {
         ResultSetMetaData rsmd = rs.getMetaData();
 
         while (rs.next()) {
-            ResultRow beeRow = new ResultRow();
+            ResultRow beeRow = new ResultRow(rs);
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                 String columnName = rsmd.getColumnName(i);
                 String columnValue = rs.getString(i);
@@ -201,12 +205,10 @@ public class DatabaseHandler {
 
         Connection c = getConnection();
         if(c == null) return null;
-
-        ResultRow beeRow = new ResultRow();
-
+        ResultRow beeRow = new ResultRow(null);
         try (Statement stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query)) {
-            
+            beeRow.setResultSet(rs);
             ResultSetMetaData rsmd = rs.getMetaData();
             if (rs.next()) {
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
@@ -249,9 +251,9 @@ public class DatabaseHandler {
     public static ResultRow fetchJRow(Statement stmt, String query) throws SQLException {
         connectIfNot();
         
-        ResultRow beeRow = new ResultRow();
-
+        
         ResultSet rs = stmt.executeQuery(query);
+        ResultRow beeRow = new ResultRow(rs);
             
         ResultSetMetaData rsmd = rs.getMetaData();
 
@@ -493,7 +495,11 @@ public class DatabaseHandler {
     }
 
     public static boolean soundboardExists(String id, String guild_id) {
-        return !fetchJRow("SELECT id from soundboard WHERE ID = '" + id + "' AND guild_id = '" + guild_id + "'").emptyValues();
+        return !fetchJRow("SELECT id from soundboard WHERE name = '" + id + "' AND guild_id = '" + guild_id + "'").isEmpty();
+    }
+
+    public static boolean soundboardExists(String id, String guild_id, String user_id) {
+        return !fetchJRow("SELECT id from soundboard WHERE ID = '" + id + "' AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "')").isEmpty();
     }
 
     public static int getSoundInSoundboardCount(String id) {
@@ -505,7 +511,7 @@ public class DatabaseHandler {
     }
 
     public static ResultRow getSoundboardByID(String id) {
-        return fetchJRow("select name from soundboard where id = '" + id + "'");
+        return fetchJRow("select name, thumbnail from soundboard where id = '" + id + "'");
     }
     
     public static QueryResult getRandomSoundboard(String guild_id, String user_id) {
@@ -531,7 +537,7 @@ public class DatabaseHandler {
 
 
 
-    public static boolean insertSoundBoard(String name, String guild_id, String user_id, String... sound_ids) {
+    public static boolean insertSoundBoard(String name, Attachment attachment, String guild_id, String user_id, String... sound_ids) {
         if(sound_ids.length == 0) throw new IllegalArgumentException("sound_ids must not be empty");
 
         StringBuilder sb = new StringBuilder();
@@ -544,8 +550,71 @@ public class DatabaseHandler {
         if(c == null) return false;
         
         try (Statement stmt = c.createStatement()) {
-            runQuery(stmt, "INSERT INTO soundboard (name, guild_id, user_id) VALUES ('" + name + "', '" + guild_id + "', '" + user_id + "'); ");
+            //runQuery(stmt, "INSERT INTO soundboard (name, thumbnail, guild_id, user_id) VALUES ('" + name + "', '" + (attachment != null ? attachment.getUrl() : "") + "', '" + guild_id + "', '" + user_id + "'); ");
+            
+            String query = "INSERT INTO soundboard (name, thumbnail, guild_id, user_id) VALUES (?, ?, ?, ?);";
+            try (PreparedStatement pstmt = c.prepareStatement(query)) {
+                pstmt.setString(1, name);
+                if (attachment != null) {
+                    CompletableFuture<InputStream> futureInputStream = attachment.getProxy().download();
+                    InputStream thumbnail = futureInputStream.join();
+                    pstmt.setBlob(2, thumbnail);
+                } else {
+                    pstmt.setNull(2, java.sql.Types.BLOB);
+                }
+                pstmt.setString(3, guild_id);
+                pstmt.setString(4, user_id);
+    
+                pstmt.execute();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
+            }
+            
+            
+            
+            System.out.println("INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
             runQuery(stmt, "INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
+            c.commit();
+            return true;
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean updateSoundboardThumbnail(String id, Attachment thumbnail) {
+        Connection c = getConnection();
+        if(c == null) return false;
+
+        try (Statement stmt = c.createStatement()) {
+            String query = "UPDATE soundboard SET thumbnail = ? WHERE id = ?;";
+            try (PreparedStatement pstmt = c.prepareStatement(query)) {
+                CompletableFuture<InputStream> futureInputStream = thumbnail.getProxy().download();
+                InputStream thumbnailStream = futureInputStream.join();
+                pstmt.setBlob(1, thumbnailStream);
+                pstmt.setString(2, id);
+    
+                pstmt.execute();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
+            }
             c.commit();
             return true;
         } catch (SQLException ex) {

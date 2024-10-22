@@ -40,6 +40,11 @@ public class SoundboardRemove extends SlashCommand{
         String soundID = event.getOption("sound_remove").getAsString();
         String soundboardID = event.getOption("name").getAsString();
 
+        if(!DatabaseHandler.soundboardExists(soundboardID, event.getGuild().getId(), event.getUser().getId())) {
+            event.deferReply(true).addContent("Soundboard does not exist or you dont have permission to play the selected one.").queue();
+            return;
+        }
+
         if(!DatabaseHandler.deleteSoundFromSoundboard(soundboardID, soundID)){
             event.deferReply(false).addContent("Error deleting sound.").queue();
             return;
