@@ -661,7 +661,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 TrackData data = new TrackData(AudioType.SOUND);
             
                 data.setPlaylistSongId(song.getAsInt("id"));
-                data.setPlaylistSongOrder(song.getAsInt("order"));
+                data.setPlaylistSongOrder(song.getAsInt("order") + 1);
             
                 track.setUserData(data);
                 queue.add(track);

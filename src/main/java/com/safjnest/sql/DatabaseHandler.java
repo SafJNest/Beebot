@@ -1553,6 +1553,7 @@ public class DatabaseHandler {
             }
 
             runQuery(stmt, "DELETE FROM playlist WHERE id = '" + playlist_id + "';");
+            c.commit();
 
             return 1;
         } catch (SQLException ex) {
@@ -1592,7 +1593,7 @@ public class DatabaseHandler {
             }
 
             runQuery(stmt, "DELETE FROM playlist_track WHERE id = '" + song_id + "';");
-
+            c.commit();
             return 1;
         } catch (SQLException ex) {
             if (c != null) {

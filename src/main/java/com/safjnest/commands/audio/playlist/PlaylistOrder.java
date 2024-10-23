@@ -28,9 +28,9 @@ public class PlaylistOrder extends SlashCommand {
 
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "playlist-name", "Name of the custom playlist", true).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "playlist-song", "Name of the song to remove", true).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "playlist-order", "Name of the song to remove", true).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "order", "Name of the song to remove", true)
+            new OptionData(OptionType.STRING, "playlist-song", "Name of the song to order", true).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "playlist-order", "Position or song to replace", true).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "order", "How to order the songs", true)
                 .addChoice("Swap", "swap")
                 .addChoice("Move", "move")
                 .addChoice("After", "after")
@@ -83,6 +83,6 @@ public class PlaylistOrder extends SlashCommand {
         if(result == 0) event.getHook().editOriginal("Playlist not found.").queue();
         else if(result == -1) event.getHook().editOriginal("You are not the creator of this playlist.").queue();
         else if(result == -2) event.getHook().editOriginal("An error occurred.").queue();
-        else event.getHook().editOriginal("Removed song from playlist.").queue();
+        else event.getHook().editOriginal("Order changed correctly").queue();
     }
 }
