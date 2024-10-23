@@ -6,6 +6,7 @@ public class TrackData {
     private AudioType type;
     private String thumbnailUrl;
     private int playlistSongId;
+    private int playlistSongOrder;
 
     public TrackData(AudioType type) {
         this.type = type;
@@ -29,8 +30,16 @@ public class TrackData {
         this.playlistSongId = playlistSongId;
     }
 
+    public void setPlaylistSongOrder(int playlistSongOrder) {
+        this.playlistSongOrder = playlistSongOrder;
+    }
+
     public int getPlaylistSongId() {
         return playlistSongId;
+    }
+
+    public int getPlaylistSongOrder() {
+        return playlistSongOrder;
     }
 
     public void setThumbnailUrl(String thumbnailUrl) {

@@ -1,6 +1,7 @@
 package com.safjnest.core.events;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.ResultRow;
 import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.lol.AugmentData;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.twitch.TwitchClient;
@@ -102,6 +104,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         else if (e.getFocusedOption().getName().equals("summoner"))
             name = "summoner";
+        
+        else if (e.getFocusedOption().getName().equals("playlist-order"))
+            name = "playlist_order";
 
         
         switch (name) {
@@ -163,11 +168,13 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 choices = playlist(e);
                 break;
             case "playlist_song":
+            case "playlist_order":
                 choices = playlistSong(e);
                 break;
             case "summoner":
                 choices = summoner(e);
                 break;
+                
         }
 
         e.replyChoices(choices).queue();
@@ -652,7 +659,10 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             AudioTrack track = PlayerManager.get().decodeTrack(song.get("encoded_track"));
             if (track != null) {
                 TrackData data = new TrackData(AudioType.SOUND);
+            
                 data.setPlaylistSongId(song.getAsInt("id"));
+                data.setPlaylistSongOrder(song.getAsInt("order"));
+            
                 track.setUserData(data);
                 queue.add(track);
             } 
@@ -661,16 +671,19 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         if (isFocused) {
             int i = 0;
             for (AudioTrack track : queue) {
-                if (track.getInfo().title.toLowerCase().contains(value.toLowerCase()) && i < MAX_CHOICES) {
-                    choices.add(new Choice(track.getInfo().title, track.getUserData(TrackData.class).getPlaylistSongId()));
+                String label = "[" + track.getUserData(TrackData.class).getPlaylistSongOrder() + "] " + track.getInfo().title;
+                if (label.toLowerCase().contains(value.toLowerCase()) && i < MAX_CHOICES) {
+                    choices.add(new Choice(PermissionHandler.ellipsis(label, 100), track.getUserData(TrackData.class).getPlaylistSongId()));
                     i++;
                 }
             }
         }
         else {
             Collections.shuffle(queue);
-            for (int i = 0; i < queue.size() && i < MAX_CHOICES; i++)
-                choices.add(new Choice(queue.get(i).getInfo().title, queue.get(i).getUserData(TrackData.class).getPlaylistSongId()));
+            for (int i = 0; i < queue.size() && i < MAX_CHOICES; i++) {
+                String label = "[" + queue.get(i).getUserData(TrackData.class).getPlaylistSongOrder() + "] " + queue.get(i).getInfo().title;
+                choices.add(new Choice(PermissionHandler.ellipsis(label, 100), queue.get(i).getUserData(TrackData.class).getPlaylistSongId()));
+            }
         }
 
         return choices;

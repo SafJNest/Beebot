@@ -84,6 +84,10 @@
             "delete": {
                 "alias" : [],
                 "help"  : "Delete an existing soundboard."
+            },
+            "thumbnail": {
+                "alias" : [],
+                "help"  : "Add a soundboard to an existing soundboard."
             }
         }
     },
@@ -327,6 +331,11 @@
                 "alias" : [],
                 "help"  : "View the songs in one of your custom playlists.",
                 "longhelp"  : "View the songs in one of your custom playlists."
+            },
+            "order": {
+                "alias":[],
+                "help": "Modify the order of your songs in one playlist.",
+                "longhelp": "Modify the order of your songs in one playlist."
             }
         }
     },

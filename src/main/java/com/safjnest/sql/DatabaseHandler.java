@@ -1615,6 +1615,49 @@ public class DatabaseHandler {
         }
     }
 
+    public static int updatePlaylistOrder(int playlist_id, String user_id, List<String> song_ids) {
+        Connection c = getConnection();
+        if(c == null) return -2;
+
+        try (Statement stmt = c.createStatement()) {
+            ResultRow search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
+            
+            if(search.isEmpty()) {
+                return 0;
+            }
+
+            if(!search.get("user_id").equals(user_id)) {
+                return -1;
+            }
+
+            int order = 0;
+            for(String song_id : song_ids) {
+                runQuery(stmt, "UPDATE playlist_track SET `order` = '" + order + "' WHERE id = '" + song_id + "';");
+                order++;
+            }
+            c.commit();
+            return 1;
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+            return -2;
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+    }
+
 
     public static boolean playlistExixtes(String name, String user_id) {
         return !safJQuery("SELECT 1 FROM playlist WHERE name = '" + name + "' AND user_id = '" + user_id + "'").isEmpty();

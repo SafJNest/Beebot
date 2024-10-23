@@ -28,7 +28,8 @@ public class Playlist extends SlashCommand {
             new PlaylistRemoveSong(father),
             new PlaylistDelete(father),
             new PlaylistList(father),
-            new PlaylistView(father)
+            new PlaylistView(father),
+            new PlaylistOrder(father)
         };
 
         commandData.setThings(this);
