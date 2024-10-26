@@ -4,6 +4,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import com.safjnest.commands.audio.CustomizeSound;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
+import com.safjnest.core.Bot;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
@@ -23,16 +24,36 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             case "sound":
                 sound(event);
                 break;
-
             case "tag":        
                 tag(event);
                 break;
             case "twitch":
                 twitch(event);
                 break;
+            case "greet":
+                greet(event);
             default:
                 break;
         }
+    }
+
+    private void greet(ModalInteractionEvent event) {
+        String type = event.getModalId().split("-", 2)[1];
+        String input = event.getValue("greet-set").getAsString();
+
+        Sound sound = SoundHandler.getSoundByString(input, event.getGuild(), event.getUser());
+        if (sound == null) {
+            event.deferReply(true).setContent("Sound not found. Use command /list or /search sound").queue();
+            return;
+        }
+        if (type.equals("global"))
+            Bot.getUserData(event.getUser().getId()).setGreet("0", sound.getId());
+        else 
+            Bot.getUserData(event.getUser().getId()).setGreet(event.getGuild().getId(), sound.getId());
+        
+        event.deferEdit().queue();
+        event.getMessage().editMessageEmbeds(SoundHandler.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
+                .setComponents(SoundHandler.getGreetButton(event.getUser().getId(), event.getGuild().getId())).queue();
     }
 
     private static void sound(ModalInteractionEvent event) {

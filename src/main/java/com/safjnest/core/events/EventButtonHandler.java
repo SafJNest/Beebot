@@ -86,6 +86,11 @@ public class EventButtonHandler extends ListenerAdapter {
             twitch(event);
             return;
         }
+
+        else if (buttonId.startsWith("greet")) {
+            greet(event);
+            return;
+        }
         
 
         event.deferEdit().queue();
@@ -152,6 +157,75 @@ public class EventButtonHandler extends ListenerAdapter {
         else if (buttonId.startsWith("chat-"))
             chat(event);
         
+    }
+
+    private void greet(ButtonInteractionEvent event) {
+        String args = event.getButton().getId().split("-", 3)[1];
+        Button clicked = event.getButton();
+        
+
+        // if (!soundData.getUserId().equals(event.getUser().getId())) {
+        //     event.deferReply(true).addContent("You can only modify your own sounds").queue();
+        //     return;
+        // }
+
+        boolean soundSwitch = false;
+        String soundId = "";
+        String type = "";
+        String userId = "";
+        
+        for (Button b : event.getMessage().getButtons()) {
+            if (b.getId().startsWith("greet-user-") || b.getId().startsWith("greet-back-"))
+                userId = b.getId().split("-")[2];
+        }
+        
+        if (!userId.equals(event.getUser().getId())) {
+            event.deferReply(true).addContent("You can modify only your greets.").queue();
+            return;
+        }
+
+        switch (args) {
+            case "global":
+                soundSwitch = true;
+                soundId = Bot.getUserData(event.getUser().getId()).getGlobalGreet();
+                type = "global";
+                break;
+            case "guild":
+                soundSwitch = true;
+                soundId = Bot.getUserData(event.getUser().getId()).getGreet(event.getGuild().getId());
+                type = "guild";
+                break;
+            case "back":
+                soundSwitch = false;
+                break;
+            case "set":
+                System.out.println(clicked.getId().split("-")[2]);
+                type = clicked.getId().split("-")[2];
+                TextInput subject = TextInput.create("greet-set", "Select your " + type +" greet!", TextInputStyle.SHORT)
+                    .setPlaceholder("Name or id of the sound")
+                    .setMaxLength(100)
+                    .build();
+
+                Modal modal = Modal.create("greet-" + type, "Select your " + type +" greet!")
+                        .addComponents(ActionRow.of(subject))
+                        .build();
+
+                event.replyModal(modal).queue();
+                return;
+            case "delete":
+                type = clicked.getId().split("-")[2];
+                if (type.equals("global"))
+                    Bot.getUserData(event.getUser().getId()).unsetGreet("0");
+                else 
+                    Bot.getUserData(event.getUser().getId()).unsetGreet(event.getGuild().getId());
+        }
+
+        List<LayoutComponent> buttons = soundSwitch ? SoundHandler.getGreetSoundButton(event.getUser().getId(), type, soundId) : SoundHandler.getGreetButton(event.getUser().getId(), event.getGuild().getId()); 
+
+        event.deferEdit().queue();
+        event.getMessage().editMessageEmbeds(SoundHandler.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
+                        .setComponents(buttons)
+                        .queue();
     }
 
     private void playlist(ButtonInteractionEvent event) {

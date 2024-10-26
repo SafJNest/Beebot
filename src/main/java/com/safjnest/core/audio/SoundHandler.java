@@ -457,4 +457,80 @@ public class SoundHandler {
         return event.deferReply().addEmbeds(eb.build()).setComponents(rows);
     }
 
+
+
+
+
+    public static EmbedBuilder getGreetViewEmbed(String userId, String guildId) {
+        String globalGreetId = Bot.getUserData(userId).getGlobalGreet();
+        String guildGreetId = Bot.getUserData(userId).getGuildGreet(guildId);
+
+        Sound globalGreet = (globalGreetId != null && !globalGreetId.isBlank()) ? SoundHandler.getSoundById(globalGreetId) : null;
+        Sound guildGreet = (guildGreetId != null && !guildGreetId.isBlank()) ? SoundHandler.getSoundById(guildGreetId) : null;
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle("Your greet sounds");
+        eb.setThumbnail(Bot.getJDA().getUserById(userId).getAvatarUrl());
+        eb.setColor(Bot.getColor());
+        eb.setDescription("A greet sound is a sound that will be played when you join a voice channel!.\n" +
+            "You can set a global greet sound that will be played in every server, or a specific greet sound for each server.\n" +
+            "Click on the buttons to set, change, listen or delete your greet");
+
+        eb.addField("Global greet", "```" + (globalGreet != null ? globalGreet.getName() : "Not set") + "```", true);
+        eb.addField("Guild greet", "```" + (guildGreet != null ? guildGreet.getName() : "Not set") + "```", true);
+
+        return eb;
+    }
+
+    public static List<LayoutComponent> getGreetButton(String userId, String GuildId) {
+        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+
+        String globalGreetId = Bot.getUserData(userId).getGlobalGreet();
+        String guildGreetId = Bot.getUserData(userId).getGuildGreet(GuildId);
+
+        Sound globalGreet = (globalGreetId != null && !globalGreetId.isBlank()) ? SoundHandler.getSoundById(globalGreetId) : null;
+        Sound guildGreet = (guildGreetId != null && !guildGreetId.isBlank()) ? SoundHandler.getSoundById(guildGreetId) : null;
+
+        
+        Button globalGreetButton, guildGreetButton, userButton = Button.primary("greet-user-" + userId, Bot.getUserData(userId).getName()).asDisabled().withEmoji(CustomEmojiHandler.getRichEmoji("user"));
+        if (globalGreet != null)
+            globalGreetButton = Button.primary("greet-global", globalGreet.getName());
+        else
+            globalGreetButton = Button.secondary("greet-set-global", "Set global greet");
+
+        if (guildGreet != null)
+            guildGreetButton = Button.primary("greet-guild", guildGreet.getName());
+        else
+            guildGreetButton = Button.secondary("greet-set-guild", "Set guild greet");
+
+        buttonRows.add(ActionRow.of(
+            userButton,
+            globalGreetButton,
+            guildGreetButton
+        ));
+
+        return buttonRows;
+    }
+
+    public static List<LayoutComponent> getGreetSoundButton(String userId, String type, String soundId) {
+        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+
+        Sound sound = SoundHandler.getSoundById(soundId);
+
+        
+        Button back = Button.primary("greet-back-" + userId, " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button change = Button.success("greet-set-" + type, sound.getName()).withEmoji(CustomEmojiHandler.getRichEmoji("wavesound"));
+        Button play = Button.primary("soundboard-" + sound.getId() + "." + sound.getExtension(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("audio"));
+        Button delete = Button.danger("greet-delete-" + type, " ").withEmoji(CustomEmojiHandler.getRichEmoji("bin"));
+
+        buttonRows.add(ActionRow.of(
+            back,
+            play,
+            change,
+            delete
+        ));
+
+        return buttonRows;
+    }
+
 }

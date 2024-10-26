@@ -122,6 +122,23 @@ public class UserData {
         return guildGreet;
     }
 
+    public String getGuildGreet(String guildId) {
+        if (guildGreetIds.containsKey(guildId)) 
+            return guildGreetIds.get(guildId);
+        
+        ResultRow possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
+        if (possibleGreet.emptyValues()) {
+            guildGreetIds.put(guildId, "");
+            return null;
+        }
+
+        String guildGreet = possibleGreet.get("id");
+        guildGreetIds.put(guildId, guildGreet);
+
+        return guildGreet;
+        
+    }
+
     public String getGlobalGreet() {
         if (globalGreetId == null) {
             ResultRow possibleGreet = DatabaseHandler.getGlobalGreet(USER_ID);

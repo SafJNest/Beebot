@@ -242,6 +242,12 @@
                 "help"  : "Unset your greet sound.",
                 "longhelp"  : "Unset your greet sound.",
                 "arguments" : "[CommandName]"
+            },
+            "view": {
+                "alias" : [],
+                "help"  : "View and manage your greet sounds.",
+                "longhelp"  : "View and manage your greet sounds.",
+                "arguments" : "[CommandName]"
             }
         }
     },

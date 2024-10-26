@@ -29,7 +29,7 @@ public class Greet extends SlashCommand{
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new GreetSet(father), new GreetUnset(father));
+        Collections.addAll(slashCommandsList, new GreetSet(father), new GreetUnset(father), new GreetView(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);
