@@ -186,7 +186,7 @@ public class Bot extends ListenerAdapter {
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
             new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
-            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle()
+            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard()
         );
         
         Collections.addAll(commandsList, new Leaderboard(), new Test(gs), new ListGuild());

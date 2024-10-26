@@ -494,6 +494,10 @@ public class DatabaseHandler {
         return fetchJRow("select count(id) as sum from sound_history where user_id = '" + user_id + "';").get("sum");
     }
 
+    public static ResultRow searchSoundboard(String string, String guild_id, String user_id) {
+        return fetchJRow("SELECT id from soundboard WHERE (ID = '" + string + "' OR name = '" + string + "') AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "')");
+    }
+
     public static boolean soundboardExists(String id, String guild_id) {
         return !fetchJRow("SELECT id from soundboard WHERE name = '" + id + "' AND guild_id = '" + guild_id + "'").isEmpty();
     }

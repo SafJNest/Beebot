@@ -18,6 +18,7 @@ import org.gagravarr.ogg.OggFile;
 import org.gagravarr.opus.OpusFile;
 import org.gagravarr.opus.OpusStatistics;
 
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.core.Bot;
@@ -455,6 +456,50 @@ public class SoundHandler {
         if (thumbnail != null) 
             return event.deferReply().addEmbeds(eb.build()).addFiles(FileUpload.fromData(thumbnail, "thumbnail.png")).setComponents(rows);
         return event.deferReply().addEmbeds(eb.build()).setComponents(rows);
+    }
+
+    public static void composeSoundboard(CommandEvent event, String soundboardID) {
+        ResultRow data = DatabaseHandler.getSoundboardByID(soundboardID);
+
+        String name = data.get("name");
+        Blob thumbnailBlob = data.getAsBlob("thumbnail");
+        InputStream thumbnailStream = null;
+
+        if (thumbnailBlob != null) {
+            try {
+                thumbnailStream = thumbnailBlob.getBinaryStream();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        List<Sound> sounds = getSoundboardSounds(soundboardID);
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setAuthor(event.getAuthor().getName() + " requested:", "https://github.com/SafJNest", event.getAuthor().getAvatarUrl());
+        eb.setTitle("**" + name + "**");
+        
+        if (thumbnailStream != null) eb.setThumbnail("attachment://thumbnail.png");
+        else eb.setThumbnail(Bot.getJDA().getSelfUser().getAvatarUrl());
+
+        eb.setDescription("Press a button to play a sound");
+        eb.setColor(Bot.getColor());
+        eb.setFooter(sounds.size() + " sounds");
+        
+        List<LayoutComponent> rows = new ArrayList<>();
+        List<Button> row = new ArrayList<>();
+        for (int i = 0; i < sounds.size(); i++) {
+            row.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(), sounds.get(i).getName()));
+            if (row.size() == 5 || i == sounds.size() - 1) {
+                rows.add(ActionRow.of(row));
+                row = new ArrayList<>();
+            }
+        }
+
+        if (thumbnailStream != null) 
+            event.getChannel().sendMessageEmbeds(eb.build()).addFiles(FileUpload.fromData(thumbnailStream, "thumbnail.png")).setComponents(rows).queue();
+        else
+            event.getChannel().sendMessageEmbeds(eb.build()).setComponents(rows).queue();     
     }
 
 

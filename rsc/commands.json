@@ -59,7 +59,7 @@
     },
 
     "soundboard": {
-        "alias" : [],
+        "alias" : ["sb"],
         "help"  : "Create, select and manage soundboards.",
         "longhelp"  : "A soundboard is a message with buttons that allows you to play sounds. You can create, select and manage soundboards.",
         "category" : "Audio",
