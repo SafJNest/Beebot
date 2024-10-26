@@ -69,10 +69,12 @@ public class PlaylistOrder extends SlashCommand {
                 tracks.add(place, tracks.remove(selected));
                 break;
             case "after":
-                tracks.add(place + 1, tracks.remove(selected));
+                if (place == tracks.size() - 1) tracks.add(tracks.remove(selected));
+                else tracks.add(place + 1, tracks.remove(selected));
                 break;
             case "before":
-                tracks.add(place - 1, tracks.remove(selected));
+                if (place == 0) tracks.add(0, tracks.remove(selected));
+                else tracks.add(place - 1, tracks.remove(selected));
                 break;
             default:
                 break;
