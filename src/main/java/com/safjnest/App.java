@@ -50,6 +50,8 @@ public class App {
         return riotApi;
     }
 
+    //empty commit
+
 
 
     public static void main(String args[]) {
@@ -95,7 +97,7 @@ public class App {
             settingsLoader.getTwitchClientSecret()
         );
         
-        if(!isExtremeTesting()) {
+        if(isExtremeTesting()) {
             TwitchClient.init();
         }
 
