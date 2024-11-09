@@ -42,6 +42,7 @@ public class OmegleConnect extends SlashCommand{
         boolean anonymous = event.getOption("anonymous") != null ? event.getOption("anonymous").getAsBoolean() : false;
 
         event.deferReply().queue();
+
         
         ChatHandler.omegle(event.getTextChannel(), autoReconnect, anonymous, event.getHook());
     }

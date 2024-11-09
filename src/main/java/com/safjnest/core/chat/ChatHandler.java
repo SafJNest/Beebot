@@ -2,6 +2,7 @@ package com.safjnest.core.chat;
 
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.safjnest.commands.misc.Help;
 import com.safjnest.core.Bot;
@@ -28,6 +29,7 @@ public class ChatHandler {
     private static final Map<String, Set<String>> channelGroups = new HashMap<>();
     private static final Map<String, OmegleChannel> omegleChannels = new HashMap<>();
     private static final Queue<TextChannel> waitingRoom = new SynchronizedQueue<TextChannel>();
+    private static final Map<String, Queue<TextChannel>> interestsWaitingRooms = new HashMap<>();
     private static final Map<String, Timer> connectTimers = new HashMap<>();
     private static final Map<String, Timer> disconnectTimers = new HashMap<>();
     
@@ -107,9 +109,8 @@ public class ChatHandler {
         }
     }
 
-    public static void omegle(TextChannel channel, boolean autoReconnect, boolean anonymous, InteractionHook hook) {
-        TextChannel otherChannel = waitingRoom.peek();
-        omegleChannels.putIfAbsent(channel.getId(), new OmegleChannel(channel.getId(), autoReconnect, anonymous, hook));
+    public static void omegle(TextChannel channel, boolean autoReconnect, boolean anonymous, List<String> interests, InteractionHook hook) {
+        omegleChannels.putIfAbsent(channel.getId(), new OmegleChannel(channel.getId(), null, hook, null, null, autoReconnect, anonymous, interests));
 
         if(waitingRoom.contains(channel)) {
             if(hook == null) {
@@ -129,6 +130,19 @@ public class ChatHandler {
                 hook.editOriginal("You are already connected with another channel!").queue();
             }
             return;
+        }
+
+        TextChannel otherChannel = waitingRoom.peek();
+        Iterator<TextChannel> waitingChannels = waitingRoom.iterator();
+        while(waitingChannels.hasNext()) {
+            TextChannel cchannel = waitingChannels.next();
+            if (omegleChannels.get(cchannel.getId()).getInterests().stream()
+                .filter(omegleChannels.get(channel.getId()).getInterests()::contains)
+                .collect(Collectors.toList())
+                .isEmpty()
+            ) {
+                //TODO common interests
+            }
         }
 
         if(otherChannel == null) {

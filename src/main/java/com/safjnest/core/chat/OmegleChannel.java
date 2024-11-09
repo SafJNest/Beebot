@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 
 public class OmegleChannel {
+    private static final int inactivityBeforeStoppingAutoreconnect = 2;
     private static final List<String> staticNamePool = List.of(LeagueHandler.getChampions());
     
     private String channel;
@@ -20,6 +21,7 @@ public class OmegleChannel {
     private Message message;
     private boolean autoReconnect;
     private boolean anonymous;
+    private List<String> interests;
     private InteractionHook hook;
     private Map<String, String> anonymousNames; // user id -> unique name
     private List<String> namePool;
@@ -57,6 +59,20 @@ public class OmegleChannel {
         this.message = message;
         this.autoReconnect = autoReconnect;
         this.anonymous = anonymous;
+
+        this.anonymousNames = new HashMap<>(); 
+        this.namePool = new ArrayList<>(staticNamePool);
+    }
+
+    public OmegleChannel(String channel, String connectedChannel, InteractionHook hook, Webhook webhook, Message message, boolean autoReconnect, boolean anonymous, List<String> interests) {
+        this.channel = channel;
+        this.connectedChannel = connectedChannel;
+        this.hook = hook;
+        this.webhook = webhook;
+        this.message = message;
+        this.autoReconnect = autoReconnect;
+        this.anonymous = anonymous;
+        this.interests = interests;
 
         this.anonymousNames = new HashMap<>(); 
         this.namePool = new ArrayList<>(staticNamePool);
@@ -110,6 +126,10 @@ public class OmegleChannel {
         return anonymous;
     }
 
+    public List<String> getInterests() {
+        return interests;
+    }
+
     public InteractionHook getHook() {
         return hook;
     }
@@ -136,6 +156,10 @@ public class OmegleChannel {
 
     public void setAnonymous(boolean anonymous) {
         this.anonymous = anonymous;
+    }
+
+    public void setInterests(List<String> interests) {
+        this.interests = interests;
     }
 
     public void setInteraction(InteractionHook interaction) {
