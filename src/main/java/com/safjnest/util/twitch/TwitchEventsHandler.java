@@ -76,7 +76,7 @@ class TwitchEventsHandler {
             message = message.replace("#streamer", streamer.getDisplayName());
             privateMessage = privateMessage.replace("#streamer", streamer.getDisplayName());
 
-            Role role = !twitchData.getStreamerRole().isBlank() ? guild.getRoleById(twitchData.getStreamerRole()) : null;
+            Role role = (twitchData.getStreamerRole()!= null && !twitchData.getStreamerRole().isBlank()) ? guild.getRoleById(twitchData.getStreamerRole()) : null;
             
 
             final String finalMessage = message;
@@ -84,7 +84,7 @@ class TwitchEventsHandler {
 
             switch (twitchData.getSendType()) {
                 case CHANNEL:
-                    channel.sendMessage(finalMessage).queue();
+                    channel.sendMessage(finalMessage).addEmbeds(eb.build()).queue();
                     break;
                 case PRIVATE:
                     for (Member member : guild.getMembersWithRoles(role)) {
@@ -100,7 +100,7 @@ class TwitchEventsHandler {
                     }
                     break;
                 case BOTH:
-                    channel.sendMessage(finalMessage).queue();
+                    channel.sendMessage(finalMessage).addEmbeds(eb.build()).queue();
                     for (Member member : guild.getMembersWithRoles(role)) {
                         if (member.getUser().isBot()) continue;
                         try {
