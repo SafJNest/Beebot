@@ -2,16 +2,21 @@ package com.safjnest.core.events;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+import java.util.List;
+
 import com.safjnest.commands.audio.CustomizeSound;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.model.guild.alert.AlertSendType;
+import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 
 public class EventModalInteractionHandler extends ListenerAdapter {
@@ -89,17 +94,63 @@ public class EventModalInteractionHandler extends ListenerAdapter {
     }
 
     private static void twitch(ModalInteractionEvent event) {
+        event.deferEdit().queue();
+        Guild guild = event.getGuild();
+
         String streamerId = event.getModalId().split("-", 2)[1];
         streamerId = streamerId.equals("0") ? TwitchClient.getStreamerByName(event.getValue("twitch-streamer").getAsString()).getId() : streamerId;
 
         String message = event.getValue("twitch-changeMessage") != null ? event.getValue("twitch-changeMessage").getAsString() : null;
+        String privateMessage = event.getValue("twitch-changePrivateMessage") != null ? event.getValue("twitch-changePrivateMessage").getAsString() : null;
+        
         String channel = event.getValue("twitch-changeChannel") != null ? event.getValue("twitch-changeChannel").getAsString() : null;
-
         if (channel != null) channel = channel.substring(channel.lastIndexOf("/") + 1);
 
-        DatabaseHandler.setTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, message);
+        String roleID = event.getValue("twitch-changeRole") != null ? event.getValue("twitch-changeRole").getAsString() : null;
+        
+        if (roleID != null && !roleID.isBlank()) {
+            Role role = null;
+        
+            List<Role> rolesByName = guild.getRolesByName(roleID, true);
+            if (!rolesByName.isEmpty()) 
+                role = rolesByName.get(0);
+            else if (roleID.matches("\\d+")) 
+                role = guild.getRoleById(roleID);
+            
+            roleID = (role != null) ? role.getId() : null;
+        } else {
+            roleID = null;
+        }
 
-        event.deferEdit().queue();
+        TwitchData twitch = Bot.getGuildData(guild).getTwitchdata(streamerId);
+        if (twitch == null) {
+            AlertSendType sendType = (privateMessage != null && !privateMessage.isBlank()) ? AlertSendType.BOTH : AlertSendType.CHANNEL;
+            
+            roleID = roleID.isBlank() ? null : roleID;
+            
+            TwitchData newTwitchData = TwitchData.createTwitchData(event.getGuild().getId(), streamerId, message, privateMessage, channel, sendType, roleID);
+
+            if(newTwitchData.getID() == 0) {
+                event.deferReply(true).addContent("Something went wrong.").queue();
+                return;
+            }
+    
+            Bot.getGuildData(event.getGuild().getId()).getAlerts().put(newTwitchData.getKey(), newTwitchData);
+            TwitchClient.registerSubEvent(streamerId);
+            event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
+                .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))
+                .queue();
+            return;
+        }
+
+        if (message != null) twitch.setMessage(message);
+        if (privateMessage != null && !privateMessage.isBlank()) {
+            twitch.setPrivateMessage(privateMessage);
+            twitch.setSendType(AlertSendType.BOTH);
+        }
+        if (channel != null) twitch.setAlertChannel(channel);
+        if (roleID != null) twitch.setStreamerRole(roleID);
+
         event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
                 .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))
                 .queue();

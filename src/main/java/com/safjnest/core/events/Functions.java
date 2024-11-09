@@ -354,7 +354,7 @@ public class Functions {
         String alertChannel = guild.getDefaultChannel().getId();
         String alertMessage = "";
         String content = "";
-        HashMap<AlertKey, AlertData> alerts = g.getAlerts();
+        HashMap<AlertKey<?>, AlertData> alerts = g.getAlerts();
         BlacklistData bld = g.getBlacklistData();
         if (alerts != null) {
             for (AlertData data : alerts.values()) {

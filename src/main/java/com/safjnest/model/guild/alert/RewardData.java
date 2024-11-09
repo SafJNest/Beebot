@@ -15,10 +15,10 @@ public class RewardData extends AlertData{
     private int level;
     private boolean temporary;
 
-    public RewardData(ResultRow data, ResultRow rewardData, HashMap<Integer, String> roles) {
+    public RewardData(ResultRow data, HashMap<Integer, String> roles) {
         super(data, roles);
-        this.level = rewardData.getAsInt("level");
-        this.temporary = rewardData.getAsBoolean("temporary");
+        this.level = data.getAsInt("level");
+        this.temporary = data.getAsBoolean("temporary");
     }
     
     public RewardData(int ID, String message, String privateMessage, boolean enabled, AlertSendType sendType, HashMap<Integer, String> roles, int level, boolean temporary) {
@@ -108,8 +108,8 @@ public class RewardData extends AlertData{
 
 
     @Override
-    public AlertKey getKey() {
-        return new AlertKey(AlertType.REWARD, this.level);
+    public AlertKey<Integer> getKey() {
+        return new AlertKey<>(AlertType.REWARD, this.level);
     }
     
 

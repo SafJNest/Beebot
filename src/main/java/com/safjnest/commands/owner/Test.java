@@ -33,6 +33,7 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
+import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryResult;
@@ -81,7 +82,9 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -267,7 +270,7 @@ public class Test extends Command{
                 System.out.println(gs.getGuild(e.getGuild().getId()).getBlacklistData().toString());
                 break;
             case "13":
-                HashMap<AlertKey, AlertData> prova = gs.getGuild(e.getGuild().getId()).getAlerts();
+                HashMap<AlertKey<?>, AlertData> prova = gs.getGuild(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
                 e.reply("```json\n" + gs.getGuild(e.getGuild().getId()).toString() + "```");
                 e.reply("```json\n" + s + "```");
@@ -877,6 +880,66 @@ public class Test extends Command{
                 }
                 
                 break;
+            case "converttwitchalert":
+                query = "select * from twitch_subscription";
+                res = DatabaseHandler.safJQuery(query);
+
+                for (ResultRow r : res) {
+                    int id = 0;
+                    Connection c = DatabaseHandler.getConnection();
+                    query = "INSERT INTO alert(guild_id, message, channel, enabled, type, send_type) VALUES(?, ?, ?, 1, ?, ?);";
+                    try (PreparedStatement pstmt = c.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+                        pstmt.setString(1, r.get("guild_id"));
+                        pstmt.setString(2, r.get("message"));
+                        pstmt.setString(3, r.get("channel_id"));
+                        pstmt.setInt(4, AlertType.TWITCH.ordinal());
+                        pstmt.setInt(5, AlertSendType.CHANNEL.ordinal());
+        
+                        pstmt.executeUpdate();
+        
+                        // Retrieve the generated alert ID
+                        try (ResultSet rs = pstmt.getGeneratedKeys()) {
+                            if (rs.next()) {
+                                id = rs.getInt(1);
+                            }
+                        }
+        
+                        // Insert into alert_twitch table
+                        String alertTwitchQuery = "INSERT INTO alert_twitch(alert_id, streamer_id) VALUES(?, ?);";
+                        try (PreparedStatement alertTwitchStmt = c.prepareStatement(alertTwitchQuery)) {
+                            alertTwitchStmt.setInt(1, id);
+                            alertTwitchStmt.setString(2, r.get("streamer_id"));
+                            alertTwitchStmt.executeUpdate();
+                        }
+        
+                        c.commit();
+                    } catch (SQLException ex) {
+                        try {
+                            if (c != null) c.rollback();
+                        } catch (SQLException ee) {
+                            ee.printStackTrace();
+                        }
+                        System.out.println(ex.getMessage());
+                    } finally {
+                        try {
+                            if (c != null) c.close();
+                        } catch (SQLException eee) {
+                            eee.printStackTrace();
+                        }
+                    }
+                }
+
+                
+
+            break;
+            case "updateconduit":
+            query = "SELECT streamer_id from twitch_subscription";
+            res = DatabaseHandler.safJQuery(query);
+            for (ResultRow r : res) {
+                TwitchClient.registerSubEvent(r.get("streamer_id"));
+            }
+            System.out.println("Done");   
+            break;
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;

@@ -25,6 +25,7 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
+import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.Role;
@@ -430,7 +431,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>(); 
         GuildData guildData = Bot.getGuildData(e.getGuild().getId());
 
-        HashMap<AlertKey, AlertData> alerts = guildData.getAlerts();
+        HashMap<AlertKey<?>, AlertData> alerts = guildData.getAlerts();
         List<String> levels = new ArrayList<>();
         
         for (AlertData data : alerts.values()) {
@@ -563,8 +564,11 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> streamer(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryResult streamers = DatabaseHandler.getTwitchSubscriptionsGuild(e.getGuild().getId());
-        List<com.github.twitch4j.helix.domain.User> users = TwitchClient.getStreamersById(streamers.arrayColumn("streamer_id"));
+        List<String> subs = new ArrayList<>();
+        for (TwitchData twitch : Bot.getGuildData(e.getGuild()).getTwitchDatas().values()) {
+            subs.add(twitch.getStreamer());
+        }
+        List<com.github.twitch4j.helix.domain.User> users = TwitchClient.getStreamersById(subs);
 
         if (isFocused) {
             for (com.github.twitch4j.helix.domain.User user : users) {

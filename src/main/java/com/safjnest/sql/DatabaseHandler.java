@@ -959,10 +959,6 @@ public class DatabaseHandler {
         return runQuery("UPDATE alert SET enabled = '" + (toggle ? 1 : 0) + "' WHERE ID = '" + ID + "';");
     }
 
-    public static QueryResult getAlerts(String guild_id) {
-        return safJQuery("SELECT id, message, private_message, channel, enabled, send_type, type FROM alert WHERE guild_id = '" + guild_id + "';");
-    }
-
     public static QueryResult getAlertsRoles(String guild_id) {
         return safJQuery("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "';");
     }
@@ -1019,8 +1015,49 @@ public class DatabaseHandler {
         return runQuery("INSERT INTO alert_reward(alert_id, level, temporary) VALUES('" + alertID + "', '" + level + "', '" + (temporary ? 1 : 0) + "');");
     }
 
-    public static QueryResult getRewardData(String guild_id) {
-        return safJQuery("SELECT r.id as id, a.id as alert_id, r.level as level, r.temporary as temporary FROM alert as a JOIN alert_reward as r ON a.id = r.alert_id WHERE a.guild_id = '" + guild_id + "';");
+    public static boolean createTwitchData(String alertId, String streamerId, String roleId) {
+        String query = "INSERT INTO alert_twitch (alert_id, streamer_id, role_id) VALUES (?, ?, ?);";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, alertId);
+            pstmt.setString(2, streamerId);
+            if (roleId != null) {
+                pstmt.setString(3, roleId);
+            } else {
+                pstmt.setNull(3, java.sql.Types.VARCHAR);
+            }
+            int affectedRows = pstmt.executeUpdate();
+            conn.commit();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean updateTwitchRole(int alertId, String roleId) {
+        return runQuery("UPDATE alert_twitch SET role_id = '" + roleId + "' WHERE alert_id = '" + alertId + "';");
+    }
+
+    public static QueryResult getAlerts(String guild_id) {
+        String query = "SELECT " +
+                       "a.id AS alert_id, " +
+                       "a.message, " +
+                       "a.private_message, " +
+                       "a.channel, " +
+                       "a.enabled, " +
+                       "a.send_type, " +
+                       "a.type, " +
+                       "r.id AS reward_id, " +
+                       "r.level AS level, " +
+                       "r.temporary AS temporary, " +
+                       "t.id AS twitch_id, " +
+                       "t.streamer_id, " +
+                       "t.role_id " +
+                       "FROM alert AS a " +
+                       "LEFT JOIN alert_reward AS r ON a.id = r.alert_id " +
+                       "LEFT JOIN alert_twitch AS t ON a.id = t.alert_id " +
+                       "WHERE a.guild_id = '" + guild_id + "';";
+        return safJQuery(query);
     }
 
     public static boolean deleteAlert(String valueOf) {
@@ -1245,118 +1282,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getTwitchSubscriptions(String streamer_id) {
-        return safJQuery("SELECT guild_id, channel_id, message, streamer_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "';");
-    }
-
-    public static QueryResult getTwitchSubscriptionsGuild(String guild_id) {
-        return safJQuery("SELECT guild_id, channel_id, message, streamer_id FROM twitch_subscription WHERE guild_id = '" + guild_id + "';");
-    }
-
-    public static ResultRow getTwitchSubscriptionsGuild(String streamer_id, String guild_id) {
-        return fetchJRow("SELECT guild_id, channel_id, message, streamer_id FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "' AND guild_id = '" + guild_id + "';");
-    }
-
-    public static boolean setTwitchSubscriptions(String streamer_id, String guild_id, String channel_id, String message) {
-        // Adjusted SQL statement to handle duplicate key by updating existing record
-        String sql = "INSERT INTO twitch_subscription(streamer_id, guild_id, channel_id, message) VALUES(?, ?, ?, ?) " +
-                     "ON DUPLICATE KEY UPDATE channel_id = VALUES(channel_id), message = VALUES(message);";
-
-        Connection c = getConnection();
-        if(c == null) return false;
-
-        try {
-            PreparedStatement pstmt = c.prepareStatement(sql);
-            pstmt.setObject(1, streamer_id);
-            pstmt.setObject(2, guild_id);
-            pstmt.setObject(3, channel_id);
-            pstmt.setObject(4, message);
-    
-            pstmt.executeUpdate();
-            c.commit();
-            return true;
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
-                }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
-        }
-        return false;
-    }
-
-    public static boolean updateTwitchSubscription(String streamer_id, String guild_id, String channel_id, String message) {
-        StringBuilder sql = new StringBuilder("UPDATE twitch_subscription SET ");
-        boolean first = true;
-    
-        if (channel_id != null) {
-            sql.append("channel_id = ?");
-            first = false;
-        }
-
-        if (message != null) {
-            if (!first) {
-                sql.append(", ");
-            }
-            sql.append("message = ?");
-        }
-        sql.append(" WHERE streamer_id = ? AND guild_id = ?;");
-
-        Connection c = getConnection();
-        if(c == null) return false;
-        
-        try {
-            PreparedStatement pstmt = c.prepareStatement(sql.toString());
-    
-            int parameterIndex = 1;
-    
-            if (channel_id != null) {
-                pstmt.setObject(parameterIndex++, channel_id);
-            }
-    
-            if (message != null) {
-                pstmt.setObject(parameterIndex++, message);
-            }
-    
-            pstmt.setObject(parameterIndex++, streamer_id);
-            pstmt.setObject(parameterIndex, guild_id);
-
-            int rowsAffected = pstmt.executeUpdate();
-            c.commit();
-            return rowsAffected > 0; // Returns true if at least one row was updated
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
-                }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
-        }
-        return false;
-    }
-
-    public static boolean deleteTwitchSubscription(String streamer_id, String guild_id) {
-        return runQuery("DELETE FROM twitch_subscription WHERE streamer_id = '" + streamer_id + "' AND guild_id = '" + guild_id + "';");
+        return safJQuery("SELECT a.guild_id as guild_id from alert_twitch as at join alert as a on at.alert_id = a.id WHERE at.streamer_id = '" + streamer_id + "';");
     }
 
     public static QueryResult getSoundTags(String sound_id) {
@@ -1794,5 +1720,4 @@ public class DatabaseHandler {
         s = s.replace("\'", "\\\'");
         return s;
     }
-
 }

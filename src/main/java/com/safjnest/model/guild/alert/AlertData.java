@@ -21,7 +21,7 @@ public class AlertData {
     private HashMap<Integer, String> roles;
 
     public AlertData(ResultRow data, HashMap<Integer, String> roles) {
-        this.ID = data.getAsInt("id");
+        this.ID = data.getAsInt("alert_id");
         this.message = data.get("message");
         this.privateMessage = data.get("private_message");
         this.channelId = data.get("channel");
@@ -312,8 +312,8 @@ public class AlertData {
     }
 
 
-    public AlertKey getKey() {
-        return new AlertKey(this.type);
+    public AlertKey<?> getKey() {
+        return new AlertKey<>(this.type);
     }
 
     @Override

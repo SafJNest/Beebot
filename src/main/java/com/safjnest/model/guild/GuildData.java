@@ -17,6 +17,7 @@ import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
+import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.guild.customcommand.CustomCommand;
 import com.safjnest.model.guild.customcommand.Option;
 import com.safjnest.model.guild.customcommand.OptionValue;
@@ -54,7 +55,7 @@ public class GuildData {
 
     private BlacklistData blacklistData;
 
-    private HashMap<AlertKey, AlertData> alerts;
+    private HashMap<AlertKey<?>, AlertData> alerts;
     
     private HashMap<Long, ChannelData> channels;
     private HashMap<Long, MemberData> members;
@@ -216,13 +217,12 @@ public class GuildData {
      * If the alert is {@link AlertType#WELCOME WELCOME}, the will be also retrieved the roles, otherwise it will be null.
      * @return
      */
-    public HashMap<AlertKey, AlertData> getAlerts() {
+    public HashMap<AlertKey<?>, AlertData> getAlerts() {
         if (this.alerts == null) {
             BotLogger.debug("Retriving AlertData from database => {0}", loggerIDpair);
             this.alerts = new HashMap<>();
             QueryResult alertResult = DatabaseHandler.getAlerts(String.valueOf(ID));
             QueryResult roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID));
-            QueryResult rewardResult = DatabaseHandler.getRewardData(String.valueOf(ID));
             
             HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
             for (ResultRow row : roleResult) {
@@ -235,20 +235,19 @@ public class GuildData {
                 roles.get(alertId).put(rowId, roleId);
             }
 
-            HashMap<Integer, ResultRow> rewards = new HashMap<>();
-            for (ResultRow row : rewardResult) {
-                rewards.put(row.getAsInt("alert_id"), row);
-            }
-
             for (ResultRow row : alertResult) {
-                switch (row.getAsInt("type")) {
-                    case 4:
-                        RewardData rd = new RewardData(row, rewards.get(row.getAsInt("id")), roles.get(row.getAsInt("id")));
+                switch (AlertType.getFromOrdinal(row.getAsInt("type"))) {
+                    case REWARD:
+                        RewardData rd = new RewardData(row, roles.get(row.getAsInt("alert_id")));
                         this.alerts.put(rd.getKey(), rd);
+                        break;
+                    case TWITCH:
+                        TwitchData td = new TwitchData(row);
+                        this.alerts.put(td.getKey(), td);
                         break;
                 
                     default:
-                        AlertData ad = new AlertData(row, roles.get(row.getAsInt("id")));
+                        AlertData ad = new AlertData(row, roles.get(row.getAsInt("alert_id")));
                         this.alerts.put(ad.getKey(), ad);
                     break;
                 }
@@ -259,7 +258,7 @@ public class GuildData {
     }
 
     public AlertData getAlert(AlertType type) {
-        return getAlerts().get(new AlertKey(type));
+        return getAlerts().get(new AlertKey<>(type));
     }
 
     public AlertData getAlertByID(int id) {
@@ -272,7 +271,7 @@ public class GuildData {
     }
 
     public RewardData getAlert(AlertType type, int level) {
-        AlertData alert = getAlerts().get(new AlertKey(type, level));
+        AlertData alert = getAlerts().get(new AlertKey<Integer>(type, level));
         if (alert instanceof RewardData) {
             return (RewardData) alert;
         } else {
@@ -309,11 +308,35 @@ public class GuildData {
     }
 
     public boolean deleteAlert(AlertType type, int level) {
-        AlertData toDelete = getAlerts().remove(new AlertKey(type, level));
+        AlertData toDelete = getAlerts().remove(new AlertKey<Integer>(type, level));
         if (toDelete == null) {
             return false;
         }
         return toDelete.terminator4LaRinascita();
+    }
+
+    public boolean deleteAlert(AlertType type, String streamerId) {
+        AlertData toDelete = getAlerts().remove(new AlertKey<String>(type, streamerId));
+        if (toDelete == null) {
+            return false;
+        }
+        return toDelete.terminator4LaRinascita();
+    }
+
+    public TwitchData getTwitchdata(String streamerId) {
+        AlertData alert = getAlerts().get(new AlertKey<String>(AlertType.TWITCH, streamerId));
+        if (alert instanceof TwitchData) {
+            return (TwitchData) alert;
+        } else {
+            return null;
+        }
+    }
+
+    public HashMap<AlertKey<String>, TwitchData> getTwitchDatas() {
+        return getAlerts().values().stream()
+            .filter(alert -> alert instanceof TwitchData)
+            .map(alert -> (TwitchData) alert)
+            .collect(Collectors.toMap(TwitchData::getKey, twitch -> twitch, (a, b) -> a, HashMap::new));
     }
 
 

@@ -985,10 +985,12 @@
         "arguments" : "[CommandName]",
         "children": {
             "link": {
-                "help"  : "Link a streamer"
+                "help"  : "Link a streamer",
+                "longhelp": "Link a streamer to this guild. The bot will send a notification when the streamer goes live. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both (in this case must select a role to filter the user).\n\nTo mention the streamer #streamer"
             },
             "unlink": {
-                "help"  : "Unlink a streamer"
+                "help"  : "Unlink a streamer",
+                "longhelp": "Unlink a streamer, the alert will be deleted."
             },
             "menu": {
                 "help"  : "twitch menu",

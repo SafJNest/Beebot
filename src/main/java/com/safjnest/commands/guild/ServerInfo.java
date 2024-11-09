@@ -52,10 +52,10 @@ public class ServerInfo extends SlashCommand {
     }
 
     private static EmbedBuilder createEmbed(Guild guild) {
-        HashMap<AlertKey, AlertData> alerts = Bot.getGuildData(guild.getId()).getAlerts();
-        AlertData welcome = alerts.get(new AlertKey(AlertType.WELCOME));
-        AlertData leave = alerts.get(new AlertKey(AlertType.LEAVE));
-        AlertData lvlup = alerts.get(new AlertKey(AlertType.LEVEL_UP));
+        HashMap<AlertKey<?>, AlertData> alerts = Bot.getGuildData(guild.getId()).getAlerts();
+        AlertData welcome = alerts.get(new AlertKey<>(AlertType.WELCOME));
+        AlertData leave = alerts.get(new AlertKey<>(AlertType.LEAVE));
+        AlertData lvlup = alerts.get(new AlertKey<>(AlertType.LEVEL_UP));
 
         ResultRow settings = DatabaseHandler.getGuildData(guild.getId());
         

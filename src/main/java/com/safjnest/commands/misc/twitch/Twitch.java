@@ -23,7 +23,12 @@ public class Twitch extends SlashCommand{
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new TwitchLink(father), new TwitchUnlink(father), new TwitchMenu(father), new TwitchUser(father));
+        Collections.addAll(slashCommandsList, 
+            new TwitchLink(father), 
+            new TwitchUnlink(father), 
+            new TwitchMenu(father), 
+            new TwitchUser(father),
+            new TwitchMessage(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);    
 
         commandData.setThings(this);

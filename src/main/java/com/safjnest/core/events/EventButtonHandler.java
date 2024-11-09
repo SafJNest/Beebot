@@ -32,6 +32,7 @@ import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
@@ -275,7 +276,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String streamerId = event.getButton().getId().split("-", 3).length > 2 ? event.getButton().getId().split("-", 3)[2] : "0";
 
 
-        TextInput messageInput = null, channelInput = null;
+        TextInput messageInput = null, privateInput = null, channelInput = null, roleInput = null;
         Modal modal = null;
         switch (args) {
             case "streamerId":
@@ -296,15 +297,33 @@ public class EventButtonHandler extends ListenerAdapter {
                     .setMaxLength(1000)
                     .build();
 
+                privateInput = TextInput.create("twitch-changePrivateMessage", "New Private Message", TextInputStyle.PARAGRAPH)
+                    .setPlaceholder("Hello #streamer is now live! (not required)")
+                    .setRequired(false)
+                    .setMaxLength(1000)
+                    .build();
+
                 channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
                     .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
                     .setMinLength(17)
                     .setMaxLength(100)
                     .build();
+                
+                roleInput = TextInput.create("twitch-changeRole", "Role to ping", TextInputStyle.SHORT)
+                    .setPlaceholder("Name or id (better) of the role")
+                    .setRequired(false)
+                    .setMaxLength(100)
+                    .build();
+                
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
-                    .addComponents(ActionRow.of(streamerInput), ActionRow.of(messageInput), ActionRow.of(channelInput))
-                    .build();
+                        .addComponents(
+                                ActionRow.of(streamerInput), 
+                                ActionRow.of(messageInput),
+                                ActionRow.of(privateInput), 
+                                ActionRow.of(channelInput), 
+                                ActionRow.of(roleInput))
+                        .build();
 
                 event.replyModal(modal).queue();
                 break;
@@ -316,12 +335,17 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "changeMessage":
                 messageInput = TextInput.create("twitch-changeMessage", "New Message", TextInputStyle.PARAGRAPH)
-                .setPlaceholder("Hello #streamer is now live!")
-                .setMaxLength(1000)
-                .build();
+                    .setPlaceholder("Hello #streamer is now live!")
+                    .setMaxLength(1000)
+                    .build();
+
+                privateInput = TextInput.create("twitch-changePrivateMessage", "New Private Message", TextInputStyle.PARAGRAPH)
+                    .setPlaceholder("Hello #streamer is now live!")
+                    .setMaxLength(1000)
+                    .build();
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
-                        .addComponents(ActionRow.of(messageInput))
+                        .addComponents(ActionRow.of(messageInput), ActionRow.of(privateInput))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -339,8 +363,20 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 event.replyModal(modal).queue();
                 break;
+            case "changeRole":
+                roleInput = TextInput.create("twitch-changeRole", "Role to ping", TextInputStyle.SHORT)
+                    .setPlaceholder("Name or id (better) of the role")
+                    .setMaxLength(100)
+                    .build();
+
+                modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
+                        .addComponents(ActionRow.of(roleInput))
+                        .build();
+
+                event.replyModal(modal).queue();
+                break;
             case "delete":
-                DatabaseHandler.deleteTwitchSubscription(streamerId, event.getGuild().getId());
+                Bot.getGuildData(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
                 if (DatabaseHandler.getTwitchSubscriptions(streamerId).getAffectedRows() == 0)
                     TwitchClient.unregisterSubEvent(streamerId);

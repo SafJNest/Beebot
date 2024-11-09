@@ -12,7 +12,10 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.core.Bot;
+import com.safjnest.model.guild.GuildData;
+import com.safjnest.model.guild.alert.AlertSendType;
+import com.safjnest.model.guild.alert.TwitchData;
 
 public class TwitchLink extends SlashCommand{
 
@@ -27,9 +30,16 @@ public class TwitchLink extends SlashCommand{
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "streamer", "Streamer's username", true),
-            new OptionData(OptionType.CHANNEL, "channel", "Channel", false)
+            new OptionData(OptionType.STRING, "message", "The message that would be sent when the live goes on", true),
+            new OptionData(OptionType.CHANNEL, "channel", "Channel where the message would be sent (leave out to use the guild's system channel).", false)
                 .setChannelTypes(ChannelType.TEXT),
-            new OptionData(OptionType.STRING, "message", "The message that would be sent when the live goes on", false)
+            new OptionData(OptionType.STRING, "sendtype", "How the message would be sent", false)
+                .addChoice("Channel", String.valueOf(AlertSendType.CHANNEL.ordinal()))
+                .addChoice("Private", String.valueOf(AlertSendType.PRIVATE.ordinal()))
+                .addChoice("Both", String.valueOf(AlertSendType.BOTH.ordinal())),
+            new OptionData(OptionType.STRING, "private_message", "If empty would be use the same message (Must enable the private option (private or both)", false),
+            new OptionData(OptionType.ROLE, "role", "Role that will be pinged when the live goes on (also for send the private message)", false)
+            
         );
 
         commandData.setThings(this);
@@ -38,9 +48,6 @@ public class TwitchLink extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         String streamerUsername = event.getOption("streamer").getAsString();
-        String channel = event.getOption("channel") == null ? event.getTextChannel().getId() : event.getOption("channel").getAsString();
-        String message = event.getOption("message") == null ? "" : event.getOption("message").getAsString();
-
         String streamerId = TwitchClient.getStreamerByName(streamerUsername).getId();
 
         if(streamerId == null){
@@ -48,19 +55,43 @@ public class TwitchLink extends SlashCommand{
             return;
         }
 
-        if (DatabaseHandler.updateTwitchSubscription(streamerId, event.getGuild().getId(), channel, message)) {
-            event.reply("Twitch subscription already exists for this streamer so it got updated").queue();
+        String message = event.getOption("message").getAsString();
+        String privateMessage = event.getOption("private_message") != null ? event.getOption("private_message").getAsString() : null;
+
+        AlertSendType sendType = event.getOption("sendtype") != null ? AlertSendType.values()[event.getOption("sendtype").getAsInt()] : AlertSendType.CHANNEL;
+
+        String channelID;
+        if(event.getOption("channel") != null)
+            channelID = event.getOption("channel").getAsString();
+        else if(event.getGuild().getSystemChannel() != null)
+            channelID = event.getGuild().getSystemChannel().getId();
+        else{
+            event.deferReply(true).addContent("No channel specified and no system channel found.").queue();
             return;
         }
 
-        if (channel == null) {
-            event.reply("For linking new subscriptions you must specify the channel").queue();
+        String roleID = event.getOption("role") != null ? event.getOption("role").getAsString() : null;
+
+        String guildId = event.getGuild().getId();
+
+        GuildData gs = Bot.getGuildData(guildId);
+
+        TwitchData twitchData = gs.getTwitchdata(streamerId);
+
+        if(twitchData != null) {
+            event.deferReply(true).addContent("This streamer has already being linked.").queue();
             return;
         }
 
+        TwitchData newTwitchData = TwitchData.createTwitchData(guildId, streamerId, message, privateMessage, channelID, sendType, roleID);
+
+        if(newTwitchData.getID() == 0) {
+            event.deferReply(true).addContent("Something went wrong.").queue();
+            return;
+        }
+
+        gs.getAlerts().put(newTwitchData.getKey(), newTwitchData);
         TwitchClient.registerSubEvent(streamerId);
-        DatabaseHandler.setTwitchSubscriptions(streamerId, event.getGuild().getId(), channel, message);
-
-        event.reply("Twitch subscription registered").queue();
+        event.deferReply(false).addContent("Streamer linked correctly").queue();
     }
 }
