@@ -33,7 +33,7 @@ public class OmegleConnect extends SlashCommand{
 
     @Override
     protected void execute(CommandEvent event) {
-        ChatHandler.omegle(event.getTextChannel(), false, false, null);
+        ChatHandler.omegle(event.getTextChannel(), false, false, null, null);
     }
 
     @Override
@@ -44,6 +44,6 @@ public class OmegleConnect extends SlashCommand{
         event.deferReply().queue();
 
         
-        ChatHandler.omegle(event.getTextChannel(), autoReconnect, anonymous, event.getHook());
+        ChatHandler.omegle(event.getTextChannel(), autoReconnect, anonymous, null, event.getHook());
     }
 }

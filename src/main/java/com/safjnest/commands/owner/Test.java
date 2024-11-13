@@ -53,9 +53,11 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Invite;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -279,6 +281,7 @@ public class Test extends Command{
                 HashMap<Long, ChannelData> channels = gs.getGuild(e.getGuild().getId()).getChannels();
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
                 e.reply("```json\n" + new JSONObject(gs.getGuild(e.getGuild().getId()).getMembers()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(gs.getGuild(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
                 break;
             case "14":
                 for(Guild g : e.getJDA().getGuilds()) {
@@ -943,6 +946,16 @@ public class Test extends Command{
             default:
                 e.reply("Command does not exist (use list to list the commands).");
             break;
+            case "createmuterole":
+                Role role = e.getGuild().createRole().setName("Berbit-Muted").complete();
+                for (TextChannel tc : e.getGuild().getTextChannels()) {
+                    tc.getManager().putRolePermissionOverride(role.getIdLong(), null, Collections.singleton(Permission.MESSAGE_SEND)).queue();
+                
+                }
+                for (VoiceChannel vc : e.getGuild().getVoiceChannels()) {
+                    vc.getManager().putPermissionOverride(role, null, Collections.singleton(Permission.VOICE_SPEAK)).queue();
+                }
+                e.reply("Role created");
         }
     }  
 

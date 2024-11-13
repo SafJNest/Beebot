@@ -803,9 +803,9 @@ public class DatabaseHandler {
 
     public static QueryResult getUsersByExp(String guild_id, int limit) {
         if (limit == 0) {
-            return safJQuery("SELECT user_id, messages, level, experience as exp from user WHERE guild_id = '" + guild_id + "' order by experience DESC;");
+            return safJQuery("SELECT user_id, messages, level, experience as exp from member WHERE guild_id = '" + guild_id + "' order by experience DESC;");
         }
-        return safJQuery("SELECT user_id, messages, level, experience as exp from user WHERE guild_id = '" + guild_id + "' order by experience DESC limit " + limit + ";");
+        return safJQuery("SELECT user_id, messages, level, experience as exp from member WHERE guild_id = '" + guild_id + "' order by experience DESC limit " + limit + ";");
     }
 
 
@@ -1152,14 +1152,14 @@ public class DatabaseHandler {
     }
 
 
-    public static int insertUserData(long guild_id, long user_id) {
+    public static int insertUserData(String guild_id, String user_id) {
         int id = 0;
 
         Connection c = getConnection();
         if(c == null) return id;
 
         try (Statement stmt = c.createStatement()) {
-            runQuery(stmt, "INSERT INTO user(guild_id, user_id) VALUES('" + guild_id + "','" + user_id + "');");
+            runQuery(stmt, "INSERT INTO member(guild_id, user_id) VALUES('" + guild_id + "','" + user_id + "');");
             id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
             c.commit();
         } catch (SQLException ex) {
@@ -1183,20 +1183,20 @@ public class DatabaseHandler {
         return id;
     }
 
-    public static ResultRow getUserData(String guild_id, long user_id) {
-        return fetchJRow("SELECT id, guild_id, experience, level, messages, update_time FROM user WHERE user_id = '"+ user_id +"' AND guild_id = '" + guild_id + "';");
+    public static ResultRow getUserData(String guild_id, String user_id) {
+        return fetchJRow("SELECT id, user_id, guild_id, experience, level, messages, update_time FROM member WHERE user_id = '"+ user_id +"' AND guild_id = '" + guild_id + "';");
     }
 
     public static boolean updateUserDataExperience(int ID, int experience, int level, int messages) {
-        return runQuery("UPDATE user SET experience = '" + experience + "', level = '" + level + "', messages = '" + messages + "' WHERE id = '" + ID + "';");
+        return runQuery("UPDATE member SET experience = '" + experience + "', level = '" + level + "', messages = '" + messages + "' WHERE id = '" + ID + "';");
     }
 
     public static boolean updateUserDataUpdateTime(int ID, int updateTime) {
-        return runQuery("UPDATE user SET update_time = '" + updateTime + "' WHERE id = '" + ID + "';");
+        return runQuery("UPDATE member SET update_time = '" + updateTime + "' WHERE id = '" + ID + "';");
     }
 
     public static ResultRow getUserExp(String id, String id2) {
-        return fetchJRow("SELECT experience, level, messages FROM user WHERE user_id = '" + id + "' AND guild_id = '" + id2 + "'");
+        return fetchJRow("SELECT experience, level, messages FROM member WHERE user_id = '" + id + "' AND guild_id = '" + id2 + "'");
     }
 
 
@@ -1693,6 +1693,99 @@ public class DatabaseHandler {
         }
     }
 
+    public static int createAutomatedAction(String guildId, int action, String role, Integer actionTime, int infractions, Integer infractionsTime) {
+        String query = "INSERT INTO automated_action (guild_id, action, action_role, action_time, infractions, infractions_time) VALUES(?, ?, ?, ?, ?, ?);";
+        int id = 0;
+        Connection c = getConnection();
+        try (PreparedStatement pstmt = c.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, guildId);
+            pstmt.setInt(2, action);
+
+            if (role != null) {
+                pstmt.setString(3, role);
+            } else {
+                pstmt.setNull(3, Types.VARCHAR);
+            }
+
+            if (actionTime != null) {
+                pstmt.setInt(4, actionTime);
+            } else {
+                pstmt.setNull(4, Types.INTEGER);
+            }
+
+            pstmt.setInt(5, infractions);
+
+            if (infractionsTime != null) {
+                pstmt.setInt(6, infractionsTime);
+            } else {
+                pstmt.setNull(6, Types.INTEGER);
+            }
+
+            pstmt.executeUpdate();
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    id = generatedKeys.getInt(1);
+                }
+            }
+            c.commit();
+            return id;
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+            return -1;
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+    }
+
+    public static int insertWarn(int memberId, String description) {
+        Connection c = getConnection();
+        if(c == null) return -1;
+
+        int id = -1;
+        try (Statement stmt = c.createStatement()) {
+            runQuery(stmt, "INSERT INTO warning (member_id, reason) VALUES('" + memberId + "','" + description + "');");
+            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+            c.commit();
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+        return id;
+    }
+
+    public static boolean canExecuteAction(int memberId, int infractions, int infractionsTime) {
+        int warning_count = fetchJRow("SELECT COUNT(*) AS warning_count FROM warning WHERE member_id = " + memberId + " AND `time` >= NOW() - INTERVAL " + infractionsTime + " SECOND " +  "GROUP BY member_id").getAsInt("warning_count");
+        return warning_count >= infractions;
+    }
+    
+
 
 
     
@@ -1719,5 +1812,49 @@ public class DatabaseHandler {
         s = s.replace("\"", "\\\"");
         s = s.replace("\'", "\\\'");
         return s;
+    }
+
+    public static QueryResult getWarnings(String valueOf) {
+        return safJQuery("SELECT id, action, action_role, action_time, infractions, infractions_time FROM automated_action WHERE guild_id = '" + valueOf + "'");
+    }
+
+    public static QueryResult getAutomatedActionsExpiring() {
+        String query = "SELECT aae.*, u.user_id, u.guild_id " + "FROM automated_action_expiration aae " + "JOIN `member` u ON aae.member_id = u.id " + "WHERE aae.time BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 2 HOUR)";
+        System.out.println(query);
+        return safJQuery(query);
+    }
+
+    public static String insertAutomatedActionExpiring(int member_id, int action, long time) {
+        Connection c = getConnection();
+        if(c == null) return "-1";;
+
+        String id = "-1";
+        try (Statement stmt = c.createStatement()) {
+            runQuery(stmt, "INSERT INTO automated_action_expiration (member_id, action_id, time) VALUES('" + member_id + "','" + action + "','" + new Timestamp(time) + "');");
+            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").get("id");
+            c.commit();
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+        return id;
+    }
+
+    public static String getMutedRole(String valueOf) {
+        return fetchJRow("SELECT action_role FROM automated_action WHERE action = 1 AND guild_id = '" + valueOf + "';").get("action_role");
     }
 }

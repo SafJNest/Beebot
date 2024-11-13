@@ -1198,6 +1198,21 @@
         }
     },
 
+    "automatedaction":{
+        "alias" : ["auto", "automated"],
+        "help"  : "Automated actions.",
+        "category" : "Server Management",
+        "arguments" : "[CommandName] [action] [arguments]"
+    },
+
+    "warn":{
+        "alias" : ["avverti", "avv"],
+        "help"  : "Warn a member.",
+        "category" : "Server Management",
+        "arguments" : "[warn] [@user] (reason)"
+    },
+
+
 
 
 

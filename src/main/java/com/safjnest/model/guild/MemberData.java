@@ -9,7 +9,7 @@ import com.safjnest.util.log.LoggerIDpair;
 
 public class MemberData {
     private int ID;
-    private final long USER_ID;
+    private final String USER_ID;
     private final String GUILD_ID;
 
     private int experience;
@@ -18,7 +18,7 @@ public class MemberData {
     private int updateTime;
     private LocalDateTime lastMessageTime;
 
-    public MemberData(long USER_ID, String GUILD_ID) {
+    public MemberData(String USER_ID, String GUILD_ID) {
         this.ID = 0;
         this.USER_ID = USER_ID;
         this.GUILD_ID = GUILD_ID;
@@ -32,7 +32,7 @@ public class MemberData {
 
     public MemberData(ResultRow data) {
         this.ID = data.getAsInt("id");
-        this.USER_ID = data.getAsLong("user_id");
+        this.USER_ID = data.get("user_id");
         this.GUILD_ID = data.get("guild_id");
 
         this.experience = data.getAsInt("experience");
@@ -45,7 +45,7 @@ public class MemberData {
     private void handleEmptyID() {
         if (this.ID == 0) {
             BotLogger.info("Pushing local UserData into Database => {0}", new LoggerIDpair(String.valueOf(this.USER_ID), LoggerIDpair.IDType.USER));
-            this.ID = DatabaseHandler.insertUserData(Long.valueOf(this.GUILD_ID), this.USER_ID);
+            this.ID = DatabaseHandler.insertUserData(this.GUILD_ID, this.USER_ID);
         }
     }
 
@@ -53,7 +53,11 @@ public class MemberData {
         return ID;
     }
 
-    public long getUserId() {
+    public String getIdString() {
+        return String.valueOf(ID);
+    }
+
+    public String getUserId() {
         return USER_ID;
     }
 
@@ -109,6 +113,11 @@ public class MemberData {
             this.updateTime = updateTime;
         }
         return result;
+    }
+
+    public int warn(String reason) {
+        handleEmptyID();
+        return DatabaseHandler.insertWarn(this.ID, reason);
     }
 
 

@@ -147,4 +147,14 @@ public class ResultRow {
     public Map<String, String> getAsMap() {
         return row;
     }
+
+
+    public LocalDateTime getAsLocalDateTime(String string) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            return LocalDateTime.parse(row.get(string), formatter);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

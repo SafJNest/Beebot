@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
@@ -55,6 +56,7 @@ import com.safjnest.commands.misc.*;
 import com.safjnest.commands.misc.omegle.Omegle;
 import com.safjnest.commands.misc.twitch.*;
 import com.safjnest.commands.owner.*;
+import com.safjnest.commands.owner.Shutdown;
 import com.safjnest.commands.queue.*;
 import com.safjnest.commands.settings.*;
 import com.safjnest.commands.settings.boost.Boost;
@@ -67,6 +69,7 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.util.AutomatedActionTimer;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.Settings;
 import com.safjnest.util.SettingsLoader;
@@ -84,7 +87,7 @@ import com.safjnest.util.log.BotLogger;
  * 
  * @version 4.0
  */
-public class Bot extends ListenerAdapter {
+public class Bot {
 
     private static JDA jda;
     private static String botID;
@@ -95,6 +98,7 @@ public class Bot extends ListenerAdapter {
 
     private static CommandClient client;
 
+    private static AutomatedActionTimer automatedActionTimer;
     /**
      * Where the magic happens.
      *
@@ -169,6 +173,8 @@ public class Bot extends ListenerAdapter {
             });
         }
 
+        automatedActionTimer = new AutomatedActionTimer();
+
         new CommandsLoader();
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
@@ -186,7 +192,7 @@ public class Bot extends ListenerAdapter {
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
             new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
-            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard()
+            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard(), new Warn()
         );
         
         Collections.addAll(commandsList, new Leaderboard(), new Test(gs), new ListGuild());
@@ -216,7 +222,7 @@ public class Bot extends ListenerAdapter {
         Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), new DownloadSound(), 
             new List(), new Play(), new Playlist(), new Upload(), new TTS(), new Stop(), 
             new Voice(), new CustomizeSound(), new Soundboard(), new Greet(), new Pause(), new Resume(),
-            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search()
+            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn()
         );
 
         Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp(gs));
@@ -229,6 +235,7 @@ public class Bot extends ListenerAdapter {
 
         jda.addEventListener(client);
         jda.addEventListener(new EventHandler());
+        jda.addEventListener(new EventHandlerBeebot());
         jda.addEventListener(new EventButtonHandler());
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
@@ -290,5 +297,13 @@ public class Bot extends ListenerAdapter {
 
     public static CacheMap<String, UserData> getUsers() {
         return userData;
+    }
+
+    public static void handleEvent(GenericEvent event) {
+        jda.getEventManager().handle(event);
+    }
+
+    public static AutomatedActionTimer getAutomatedActionTimer() {
+        return automatedActionTimer;
     }
 }

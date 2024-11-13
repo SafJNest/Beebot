@@ -3,6 +3,7 @@ package com.safjnest.model.guild;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,7 +25,11 @@ import com.safjnest.model.guild.customcommand.OptionValue;
 import com.safjnest.model.guild.customcommand.Task;
 import com.safjnest.model.guild.customcommand.TaskType;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Role;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
@@ -52,14 +57,17 @@ public class GuildData {
     private String voice;
     private String language;
 
+    private String mutedRoleId;
+
 
     private BlacklistData blacklistData;
 
     private HashMap<AlertKey<?>, AlertData> alerts;
     
     private HashMap<Long, ChannelData> channels;
-    private HashMap<Long, MemberData> members;
+    private HashMap<String, MemberData> members;
     private HashMap<String, CustomCommand> customCommands;
+    private List<AutomatedAction> actions;
 
     private LeagueShard leagueShard;
     private RegionShard reagionShard;
@@ -109,6 +117,7 @@ public class GuildData {
         );
 
         retriveChannels();
+        retriveActions();
         retriveCustomCommand();
     }
 
@@ -191,6 +200,35 @@ public class GuildData {
             this.language = language;
         }
         return result;
+    }
+
+    public String getMutedRoleId() {
+        if (mutedRoleId != null && !mutedRoleId.isEmpty()) 
+            return mutedRoleId;
+        
+        mutedRoleId = DatabaseHandler.getMutedRole(String.valueOf(ID));
+        if (mutedRoleId == null) mutedRoleId = "";
+        
+        if (mutedRoleId.isEmpty()) {
+            Guild guild = Bot.getJDA().getGuildById(ID);
+            Role role = guild.createRole().setName("Beebot-muted").complete();
+            mutedRoleId = role.getId();
+            for (TextChannel tc : guild.getTextChannels()) {
+                tc.getManager().putRolePermissionOverride(role.getIdLong(), null, Collections.singleton(Permission.MESSAGE_SEND)).queue();
+            
+            }
+            for (VoiceChannel vc : guild.getVoiceChannels()) {
+                vc.getManager().putPermissionOverride(role, null, Collections.singleton(Permission.VOICE_SPEAK)).queue();
+            }
+        }
+        return mutedRoleId;
+    }
+
+    public boolean hasMutedRole() {
+        if (mutedRoleId == null) {
+            mutedRoleId = DatabaseHandler.getMutedRole(String.valueOf(ID));
+        }
+        return mutedRoleId != null && !mutedRoleId.isEmpty();
     }
 
     public String toString(){
@@ -461,7 +499,7 @@ public class GuildData {
 //    ▀█   ███   █▀    ██████████  ▀█   ███   █▀  ▄█████████▀    ██████████   ███    ███ 
 //                                                                            ███    ███ 
 
-    private MemberData retriveMemberData(long userId) {
+    private MemberData retriveMemberData(String userId) {
         MemberData member = null;
         ResultRow result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
         if (result.emptyValues()) { return null; }
@@ -471,11 +509,11 @@ public class GuildData {
         return member;
     }
 
-    public MemberData getMemberData(String userId) {
-        return getMemberData(Long.parseLong(userId));
+    public MemberData getMemberData(Long userId) {
+        return getMemberData(String.valueOf(userId));
     }
 
-    public MemberData getMemberData(long userId) {
+    public MemberData getMemberData(String userId) {
         MemberData member = this.members.get(userId);
         if (member != null) {
             return member;
@@ -489,13 +527,69 @@ public class GuildData {
         return member;
     }
 
-    public HashMap<Long, MemberData> getMembers() {
+    public HashMap<String, MemberData> getMembers() {
         return this.members;
     }
 
     public boolean canReceiveExperience(long userId, long channelId) {
         return this.isExperienceEnabled() && this.getExpSystemRoom(channelId) && getMemberData(userId).canReceiveExperience();
     }
+
+//     ▄████████  ▄████████     ███      ▄█   ▄██████▄  ███▄▄▄▄   
+//    ███    ███ ███    ███ ▀█████████▄ ███  ███    ███ ███▀▀▀██▄ 
+//    ███    ███ ███    █▀     ▀███▀▀██ ███▌ ███    ███ ███   ███ 
+//    ███    ███ ███            ███   ▀ ███▌ ███    ███ ███   ███ 
+//  ▀███████████ ███            ███     ███▌ ███    ███ ███   ███ 
+//    ███    ███ ███    █▄      ███     ███  ███    ███ ███   ███ 
+//    ███    ███ ███    ███     ███     ███  ███    ███ ███   ███ 
+//    ███    █▀  ████████▀     ▄████▀   █▀    ▀██████▀   ▀█   █▀  
+//                                                                
+
+    private void retriveActions() {
+        actions = new ArrayList<>();
+        QueryResult result = DatabaseHandler.getWarnings(String.valueOf(ID));
+        if (result == null) { return; }
+
+        for (ResultRow row : result) {
+            actions.add(new AutomatedAction(row));
+        }
+    }
+
+    public boolean addAction(int action, String roleId, int actionTime, int infractions, int infractionsTime) {
+        AutomatedAction aa = AutomatedAction.create(String.valueOf(ID), action, roleId, actionTime, infractions, infractionsTime);
+        if (aa == null) {
+            return false;
+        }
+        actions.add(aa);
+        return true;
+    }
+
+    public HashMap <Integer, AutomatedAction> getActionsWithId() {
+        HashMap <Integer, AutomatedAction> map = new HashMap<>();
+        for (AutomatedAction aa : actions) {
+            map.put(aa.getId(), aa);
+        }
+        return map;
+    }
+
+    public List<AutomatedAction> getActions() {
+        return actions;
+    }
+
+    public AutomatedAction getAction(int id) {
+        for (AutomatedAction aa : actions) {
+            if (aa.getId() == id) {
+                return aa;
+            }
+        }
+        return null;
+    }
+
+
+
+
+
+
 
 
 //   ▄████████  ▄██████▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄      ▄████████ ███▄▄▄▄   ████████▄  

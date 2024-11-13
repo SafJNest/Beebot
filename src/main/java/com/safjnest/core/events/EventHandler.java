@@ -5,6 +5,7 @@ import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.safjnest.core.Bot;
@@ -13,11 +14,14 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
 
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.events.channel.ChannelCreateEvent;
 import net.dv8tion.jda.api.events.channel.ChannelDeleteEvent;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
@@ -155,6 +159,23 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onRoleDelete(RoleDeleteEvent event){
         Functions.handleRoleDeleteAlert(event.getGuild(), event.getRole().getId());
+    }
+
+    @Override
+    public void onChannelCreate(ChannelCreateEvent event){      
+        if (Bot.getGuildData(event.getGuild()).hasMutedRole()) {
+            Role role = event.getGuild().getRoleById(Bot.getGuildData(event.getGuild()).getMutedRoleId());
+            switch (event.getChannelType()) {
+                case TEXT:
+                    event.getChannel().asTextChannel().getManager().putRolePermissionOverride(role.getIdLong(), null, Collections.singleton(Permission.MESSAGE_SEND)).queue();
+                    break;
+                case VOICE:
+                    event.getChannel().asVoiceChannel().getManager().putPermissionOverride(role, null, Collections.singleton(Permission.VOICE_SPEAK)).queue();
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     @Override

@@ -23,8 +23,8 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import rx.internal.util.SynchronizedQueue;
 
 public class ChatHandler {
-    private static final long connectTimeoutDelay = TimeConstant.SECOND * 10;
-    private static final long disconnectTimeoutDelay = TimeConstant.SECOND * 10;;
+    private static final long connectTimeoutDelay = TimeConstant.MINUTE * 3;
+    private static final long disconnectTimeoutDelay = TimeConstant.MINUTE * 5;
 
     private static final Map<String, Set<String>> channelGroups = new HashMap<>();
     private static final Map<String, OmegleChannel> omegleChannels = new HashMap<>();

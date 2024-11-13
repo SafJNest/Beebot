@@ -76,7 +76,7 @@ public class Chat extends Command {
                 break;
 
             case "omegle":
-                ChatHandler.omegle(event.getTextChannel(), false, false, null);
+                ChatHandler.omegle(event.getTextChannel(), false, false, null, null);
                 break;
 
             case "disconnect":
