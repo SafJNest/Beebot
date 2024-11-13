@@ -88,7 +88,7 @@ public class LPTracker {
                 win = partecipant.didWin();
                 champion = partecipant.getChampionId();
                 kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists();
-                lane = partecipant.getChampionSelectLane();
+                lane = partecipant.getChampionSelectLane() != null ? partecipant.getChampionSelectLane() : partecipant.getLane();
             }
         }
 
