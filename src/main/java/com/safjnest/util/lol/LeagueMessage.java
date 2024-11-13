@@ -568,7 +568,7 @@ public class LeagueMessage {
 
                 LeagueHandler.updateSummonerDB(match);
                 for(MatchParticipant mp : match.getParticipants()){
-                    if(mp.getSummonerId().equals(s.getSummonerId())){
+                    if(mp.getPuuid().equals(s.getPUUID())){
                         me = mp;
                     }
                 }

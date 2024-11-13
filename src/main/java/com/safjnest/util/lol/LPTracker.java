@@ -74,9 +74,14 @@ public class LPTracker {
         if (matchIds.isEmpty()) return;
 
         String matchId = matchIds.get(0);
+        LeagueShard matchShard = summoner.getPlatform();
+        try {
+            matchShard = LeagueShard.valueOf(matchId.split("_")[0]);
+        } catch (Exception e) { }
+        
         if (Long.parseLong(matchId.split("_")[1]) == dataGame.getAsLong("game_id")) return;
 
-        LOLMatch match = api.getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
+        LOLMatch match = api.getLoLAPI().getMatchAPI().getMatch(matchShard.toRegionShard(), matchId);
         if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp())) return;
         
         boolean win = false;
@@ -84,7 +89,7 @@ public class LPTracker {
         String kda = "";
         LaneType lane = null;
         for (MatchParticipant partecipant : match.getParticipants()) {
-            if (partecipant.getSummonerId().equals(summoner.getSummonerId())) {
+            if (partecipant.getPuuid().equals(summoner.getPUUID())) {
                 win = partecipant.didWin();
                 champion = partecipant.getChampionId();
                 kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists();
@@ -112,7 +117,7 @@ public class LPTracker {
         else gain = lp - dataGame.getAsInt("lp");
         
         BotLogger.info("[LPTracker] Push match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
-        DatabaseHandler.setSummonerData(summoner.getAccountId(), match.getGameId(), summoner.getPlatform(), win, kda, rank, lp, gain, champion, lane, match.getGameCreation(), match.getGameEndTimestamp(), match.getGameVersion());
+        DatabaseHandler.setSummonerData(summoner.getAccountId(), match.getGameId(), matchShard, win, kda, rank, lp, gain, champion, lane, match.getGameCreation(), match.getGameEndTimestamp(), match.getGameVersion());
         LeagueHandler.updateSummonerDB(match);
     }
 
