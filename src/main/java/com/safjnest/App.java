@@ -63,7 +63,7 @@ public class App {
         if (EXTREME_TESTING) BotLogger.info("Beebot is in testing mode");
         else BotLogger.info("Beebot is in normal mode");
 
-        if (!EXTREME_TESTING) {
+        if (EXTREME_TESTING) {
             SpringApplication app = new SpringApplication(App.class);
             try {
                 Properties spring = new Properties();
@@ -72,7 +72,7 @@ public class App {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            //app.run(args);
+            app.run(args);
         }
 
         SecureRandom secureRandom = new SecureRandom();

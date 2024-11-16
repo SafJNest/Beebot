@@ -104,4 +104,10 @@ public class ApiController {
         return ResponseEntity.ok(leaderboard.toList());
     }
 
+    @PostMapping("/track") 
+    public ResponseEntity<Object> track(@RequestBody Map<String, String> body) {
+        Bot.getJDA().getGuildById("608967318789160970").getTextChannelById("1281982092288458842").sendMessage(body.toString()).queue();
+        return ResponseEntity.ok().build();
+    }
+
 }
