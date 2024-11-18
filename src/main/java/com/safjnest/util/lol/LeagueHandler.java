@@ -414,6 +414,14 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
     }
 
+    public static Summoner getSummonerByPuiid(String puiid, LeagueShard shard) {
+        try {
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puiid);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static Summoner getSummonerBySummonerId(String id, LeagueShard shard){
         try { 
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerById(shard, id);

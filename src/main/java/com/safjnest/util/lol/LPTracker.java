@@ -78,6 +78,12 @@ public class LPTracker {
         try {
             matchShard = LeagueShard.valueOf(matchId.split("_")[0]);
         } catch (Exception e) { }
+
+        if (matchShard != summoner.getPlatform()) {
+            summoner = LeagueHandler.getSummonerByPuiid(summoner.getPUUID(), matchShard);
+            analyzeMatchHistory(summoner, dataGame);
+            return;
+        }
         
         if (Long.parseLong(matchId.split("_")[1]) == dataGame.getAsLong("game_id")) return;
 
