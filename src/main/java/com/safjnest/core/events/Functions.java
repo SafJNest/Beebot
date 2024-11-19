@@ -243,12 +243,15 @@ public class Functions {
                 channel.sendMessage(message).queue();
                 break;
             case PRIVATE:
+                if (theGuy.isBot()) break;
                 theGuy.openPrivateChannel().queue(channelPrivate -> {
                     channelPrivate.sendMessage(finalMessage).queue();
                 });
                 break;
             case BOTH:
                 channel.sendMessage(message).queue();
+                
+                if (theGuy.isBot()) break;
                 theGuy.openPrivateChannel().queue(channelPrivate -> {
                     channelPrivate.sendMessage(finalMessage).queue();
                 });

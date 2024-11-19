@@ -32,6 +32,8 @@ public class EventHandlerBeebot extends BeebotListenerAdapter {
         Member member = event.getGuild().getMemberById(event.getMemberData().getUserId());
         MemberData memberData = event.getMemberData();
 
+        if (guildData.getActions().isEmpty()) return;
+
         for (AutomatedAction action : guildData.getActions()) {
             if (!action.canExecute(memberData.getID())) continue;
 

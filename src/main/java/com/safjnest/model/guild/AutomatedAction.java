@@ -84,7 +84,11 @@ public class AutomatedAction {
     }
 
     public boolean canExecute(int memberId) {
-        return DatabaseHandler.canExecuteAction(memberId, infractions, infractionsTime);
+        int memberInfractions = 0;
+        if (infractionsTime == 0)  memberInfractions = DatabaseHandler.getMemberWarnings(memberId);
+        else memberInfractions = DatabaseHandler.getMemberWarnings(memberId, infractionsTime);
+        
+        return memberInfractions >= infractions;
     }
 
     public String getActionMessage() {
