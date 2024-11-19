@@ -45,7 +45,7 @@ public class ChannelData {
         this.expEnabled = data.getAsBoolean("exp_enabled");
         this.experienceModifier = data.getAsDouble("exp_modifier");
 
-        this.statisticsEnabled = data.getAsBoolean("command_enabled");
+        this.statisticsEnabled = data.getAsBoolean("stats_enabled");//TODO: find a better name	
     }
 
     public int getId() {
