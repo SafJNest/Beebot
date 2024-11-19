@@ -81,7 +81,7 @@ public class LPTracker {
 
         if (matchShard != summoner.getPlatform()) {
             summoner = LeagueHandler.getSummonerByPuiid(summoner.getPUUID(), matchShard);
-            analyzeMatchHistory(summoner, dataGame);
+            analyzeMatchHistory(summoner);
             return;
         }
         

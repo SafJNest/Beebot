@@ -1414,6 +1414,10 @@ public class DatabaseHandler {
     public static ResultRow getSummonerData(String user_id, String account_id) {
         return fetchJRow("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
     }
+
+    public static QueryResult getSummonersBuPuuid(String puuid) {
+        return safJQuery("SELECT account_id, league_shard FROM summoner WHERE puuid = '" + puuid + "';");
+    }
     
 
     
@@ -1780,10 +1784,14 @@ public class DatabaseHandler {
         return id;
     }
 
-    public static boolean canExecuteAction(int memberId, int infractions, int infractionsTime) {
-        int warning_count = fetchJRow("SELECT COUNT(*) AS warning_count FROM warning WHERE member_id = " + memberId + " AND `time` >= NOW() - INTERVAL " + infractionsTime + " SECOND " +  "GROUP BY member_id").getAsInt("warning_count");
-        return warning_count >= infractions;
+    public static int getMemberWarnings(int memberId, int infractionsTime) {
+        return fetchJRow("SELECT COUNT(*) AS warning_count FROM warning WHERE member_id = " + memberId + " AND `time` >= NOW() - INTERVAL " + infractionsTime + " SECOND " +  "GROUP BY member_id").getAsInt("warning_count");
     }
+
+    public static int getMemberWarnings(int memberId) {
+        return fetchJRow("SELECT COUNT(*) AS warning_count FROM warning WHERE member_id = " + memberId + " GROUP BY member_id").getAsInt("warning_count");
+    }
+
     
 
 
@@ -1815,7 +1823,7 @@ public class DatabaseHandler {
     }
 
     public static QueryResult getWarnings(String valueOf) {
-        return safJQuery("SELECT id, action, action_role, action_time, infractions, infractions_time FROM automated_action WHERE guild_id = '" + valueOf + "'");
+        return safJQuery("SELECT id, action, action_role, action_time, infractions, infractions_time FROM automated_action WHERE guild_id = '" + valueOf + "' ORDER BY infractions DESC");
     }
 
     public static QueryResult getAutomatedActionsExpiring() {

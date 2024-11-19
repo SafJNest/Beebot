@@ -778,7 +778,7 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void lolButtonEvent(ButtonInteractionEvent event) {
-        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1);
+        String args = event.getButton().getId().substring(event.getButton().getId().indexOf("-") + 1).split("-")[0];
 
         String puuid = "";
         String region = "";
@@ -811,6 +811,10 @@ public class EventButtonHandler extends ListenerAdapter {
             i++;
         }
 
+        String accountId = "";
+        String platform = "";
+        String[] parts;
+
         switch (args) {
 
             case "right":
@@ -830,11 +834,9 @@ public class EventButtonHandler extends ListenerAdapter {
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
                 break;
             case "refresh":
-                String accountId = "";
-                String platform = "";
                 for (Button b : event.getMessage().getButtons()) {
-                    if (!b.getId().equals("lol-left") && !b.getId().equals("lol-right") && !b.getId().equals("lol-refresh")) {
-                        String[] parts = b.getId().split("-", 3);
+                    if (b.getId().startsWith("lol-center")) {
+                        parts = b.getId().split("-", 3);
 
                         accountId = parts[2].substring(0, parts[2].indexOf("#"));
                         platform = parts[2].substring(parts[2].indexOf("#") + 1);
@@ -878,6 +880,15 @@ public class EventButtonHandler extends ListenerAdapter {
                 else event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
 
                 return;
+            case "shard":
+                parts = event.getButton().getId().split("-", 3);
+
+                accountId = parts[2].substring(0, parts[2].indexOf("#"));
+                platform = parts[2].substring(parts[2].indexOf("#") + 1);
+
+                if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+            break;
         }
 
         EmbedBuilder eb = LeagueMessage.getSummonerEmbed(s);

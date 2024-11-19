@@ -215,7 +215,20 @@ public class LeagueMessage {
     }
 
     public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id) {
-        return composeButtons(s, user_id, "lol");
+        List<LayoutComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
+        List<Summoner> summoners = LeagueHandler.getSummonersFromPuuid(s.getPUUID());
+        if (summoners.size() == 1) return buttons;
+
+        List<Button> shard = new ArrayList<>();
+        for (Summoner summoner : summoners) {
+            Button button = Button.primary("lol-shard-" + summoner.getAccountId() + "#" + summoner.getPlatform().name(), summoner.getPlatform().getRealmValue().toUpperCase()).withEmoji(CustomEmojiHandler.getRichEmoji(summoner.getPlatform().getRealmValue().toUpperCase() + "_server"));
+            if (summoner.getAccountId().equals(s.getAccountId())) button = button.asDisabled().withStyle(ButtonStyle.SUCCESS);
+            shard.add(button);
+        }
+        buttons.add(0, ActionRow.of(shard));
+        return buttons;
+
+
     }
 
 //   ▄██████▄     ▄███████▄    ▄██████▄     ▄██████▄  
@@ -268,11 +281,7 @@ public class LeagueMessage {
     }
 
     public static StringSelectMenu getOpggMenu(Summoner summoner, GameQueueType queue) {
-        List<String> gameIds = new ArrayList<>();
-        MatchListBuilder builder = queue != null ? summoner.getLeagueGames().withCount(20).withQueue(queue) : summoner.getLeagueGames().withCount(20);	
-
-        for (String gameId : builder.get()) 
-            gameIds.add(gameId);
+        List<String> gameIds = getMatchIds(summoner, queue);
 
         ArrayList<SelectOption> options = new ArrayList<>();
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
@@ -538,6 +547,25 @@ public class LeagueMessage {
         return getOpggEmbed(s, null);
     }
 
+    public static List<String> getMatchIds(Summoner s, GameQueueType queue) {
+        List<String> gameIds = new ArrayList<>();
+        MatchListBuilder builder = queue != null ? s.getLeagueGames().withCount(100).withQueue(queue).withPlatform(s.getPlatform()) : s.getLeagueGames().withCount(100).withPlatform(s.getPlatform());	
+
+        for (String gameId : builder.get()) {
+            if (gameId.split("_")[0].equalsIgnoreCase(s.getPlatform().toString())) {
+                gameIds.add(gameId);
+            }
+        }
+
+        if (gameIds.size() > 5) return gameIds;
+
+        for (String gameId : builder.get()) {
+            gameIds.add(gameId);
+        }
+            
+        return gameIds;
+    }
+
     public static EmbedBuilder getOpggEmbed(Summoner s, GameQueueType queue) {
         LeagueShard shard = s.getPlatform();
         RegionShard region = shard.toRegionShard();
@@ -551,11 +579,7 @@ public class LeagueMessage {
         eb.setAuthor(account.getName() + "#" + account.getTag());
         eb.setColor(Bot.getColor());
 
-        List<String> gameIds = new ArrayList<>();
-        MatchListBuilder builder = queue != null ? s.getLeagueGames().withCount(20).withQueue(queue) : s.getLeagueGames().withCount(20);	
-
-        for (String gameId : builder.get()) 
-            gameIds.add(gameId);
+        List<String> gameIds = getMatchIds(s, queue);
         
         QueryResult result = DatabaseHandler.getSummonerData(s.getAccountId(), gameIds.stream().map(gameId -> gameId.split("_")[1]).collect(Collectors.toList()).toArray(new String[0]));
 
