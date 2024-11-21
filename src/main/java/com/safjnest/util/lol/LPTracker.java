@@ -57,10 +57,10 @@ public class LPTracker {
 	}
 
     public static void analyzeMatchHistory(Summoner summoner) {
-        ResultRow result = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
-        if (result.emptyValues()) return;
+        ResultRow row = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
+        if (row.emptyValues()) return;
 
-        analyzeMatchHistory(summoner, result);
+        analyzeMatchHistory(summoner, row);
     }
 
     public static void analyzeMatchHistory(Summoner summoner, ResultRow dataGame) {

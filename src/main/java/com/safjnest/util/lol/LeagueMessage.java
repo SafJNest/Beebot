@@ -19,7 +19,6 @@ import com.safjnest.sql.ResultRow;
 import com.safjnest.util.DateHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
@@ -99,27 +98,20 @@ public class LeagueMessage {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
         
         EmbedBuilder builder = new EmbedBuilder();
-        builder.setAuthor(account.getName() + "#" + account.getTag());
+        builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
         builder.setColor(Bot.getColor());
         builder.setThumbnail(LeagueHandler.getSummonerProfilePic(s));
 
         String userId = DatabaseHandler.getUserIdByLOLAccountId(s.getAccountId(), s.getPlatform());
-
         if(userId != null){
-            User theGuy = Bot.getJDA().retrieveUserById(userId).complete();
-            builder.addField("User:", theGuy.getName(), true);
-            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
-            builder.addField("Server", LeagueHandler.getShardFlag(s.getPlatform()) + " " +  s.getPlatform().prettyName(), true);
 
             ResultRow data = DatabaseHandler.getSummonerData(userId, s.getAccountId());
-            if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner. The more you play, the more accurate the data will be.");
-            else builder.setFooter("LPs tracking disabled for the current summoner");
-            
-        }else{
-            builder.addField("Level:", String.valueOf(s.getSummonerLevel()), true);
-            builder.addField("Server", LeagueHandler.getShardFlag(s.getPlatform()) + " " + s.getPlatform().prettyName(), true);
-            builder.addBlankField(true);
+            if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
+            else builder.setFooter("LPs tracking disabled for the current summoner");   
         }
+
+        String description = "Summoner is level **" + s.getSummonerLevel() + "** on " + LeagueHandler.getShardFlag(s.getPlatform()) + s.getPlatform().getRealmValue() + " server.";
+        builder.setDescription(description);
         
         builder.addField("Solo/duo Queue", LeagueHandler.getSoloQStats(s), true);
         builder.addField("Flex Queue", LeagueHandler.getFlexStats(s), true);
@@ -250,7 +242,7 @@ public class LeagueMessage {
         Button aram = Button.primary("match-queue-" + GameQueueType.ARAM, "ARAM");
         Button curretModeButton = Button.primary("match-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType));
 
-        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram);
 
         switch (queue) {
             case TEAM_BUILDER_RANKED_SOLO:
@@ -273,7 +265,7 @@ public class LeagueMessage {
                 break;
         }
 
-        return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+        return ActionRow.of(soloQ, flex, draft, aram);
     }
 
     public static StringSelectMenu getOpggMenu(Summoner summoner) {
@@ -576,7 +568,8 @@ public class LeagueMessage {
         LOLMatch match = null;
         R4J r4j = LeagueHandler.getRiotApi();
 
-        eb.setAuthor(account.getName() + "#" + account.getTag());
+        eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
+        eb.setTitle("Showing matches from " + LeagueHandler.getShardFlag(shard) + " " + shard.getRealmValue());
         eb.setColor(Bot.getColor());
 
         List<String> gameIds = getMatchIds(s, queue);
@@ -801,8 +794,8 @@ public class LeagueMessage {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         try {
             EmbedBuilder builder = new EmbedBuilder();
-            builder.setTitle(CustomEmojiHandler.getFormattedEmoji("bee") + " In game live details");
-            builder.setDescription("**" + account.getName() + "#" + account.getTag() + "** is currently playing a " + LeagueHandler.formatMatchName(summoner.getCurrentGame().getGameQueueConfig()));
+            builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
+            builder.setDescription("Currently playing a **" + LeagueHandler.formatMatchName(summoner.getCurrentGame().getGameQueueConfig()) + "** started <t:" + ((summoner.getCurrentGame().getGameStart()/1000)) + ":R>");
             builder.setColor(Bot.getColor());
             builder.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 

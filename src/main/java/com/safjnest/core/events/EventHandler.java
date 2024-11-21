@@ -36,6 +36,8 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
+import net.dv8tion.jda.api.interactions.components.Component.Type;
+import net.dv8tion.jda.api.interactions.components.ItemComponent;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
@@ -184,7 +186,20 @@ public class EventHandler extends ListenerAdapter {
             String summonerId = event.getValues().get(0).split("#")[0];
             String platform =  event.getValues().get(0).split("#")[1];
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerBySummonerId(summonerId, LeagueShard.valueOf(platform));
-            event.deferEdit().setEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(LeagueMessage.getSummonerButtons(s, platform)).queue();
+            
+            List<LayoutComponent> compontens = new ArrayList<>();
+            for (LayoutComponent layoutComponent : event.getMessage().getComponents()) {
+                for (ItemComponent component : layoutComponent.getComponents()) {
+                    if (component.getType() == Type.STRING_SELECT) {
+                        compontens.add(ActionRow.of(component));   
+                    }
+                }
+            }
+            for (LayoutComponent layoutComponent : LeagueMessage.getSummonerButtons(s, platform)) {
+                compontens.add(layoutComponent);
+            }
+
+            event.deferEdit().setEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(compontens).queue();
         }
         else if (event.getComponentId().equals("opgg-select")) {
             event.deferEdit().queue();
@@ -196,9 +211,20 @@ public class EventHandler extends ListenerAdapter {
             
             LeagueShard shard = LeagueShard.valueOf(platform);
             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
-
-            List<LayoutComponent> compontens = new ArrayList<>(event.getMessage().getComponents());
+            
+            List<LayoutComponent> compontens = new ArrayList<>();
             compontens.add(0, ActionRow.of(LeagueMessage.getSelectedMatchMenu(match)));
+            
+            for (LayoutComponent layoutComponent : event.getMessage().getComponents()) {
+                for (ItemComponent component : layoutComponent.getComponents()) {
+                    if (component.toData().get("custom_id").equals("opgg-select")) {
+                        compontens.add(ActionRow.of(component));
+                    }
+                }       
+            }
+            for (LayoutComponent layoutComponent : LeagueMessage.getOpggButtons(s, platform)) {
+                compontens.add(layoutComponent);
+            }
 
             event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbedMatch(s, match).build()).setComponents(compontens).queue(); 
         }

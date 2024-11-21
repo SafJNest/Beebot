@@ -1384,7 +1384,7 @@ public class DatabaseHandler {
     }
 
     public static boolean setSummonerData(String account_id, long game_id, LeagueShard shard, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, long time_start, long time_end, String version) {
-        return runQuery("INSERT INTO summoner_tracking(account_id, game_id, league_shard, win, kda, rank, lp, gain, champion, lane, time_start, time_end, patch) VALUES('" + account_id + "','" + game_id + "','" + shard.ordinal() + "','" + (win ? 1 : 0) + "','" + kda + "','" + rank + "','" + lp + "','" + gain + "','" + champion + "','" + lane.ordinal() + "','" + new Timestamp(time_start) + "','" + new Timestamp(time_end) + "','" + version + "');");
+        return runQuery("INSERT IGNORE INTO summoner_tracking(account_id, game_id, league_shard, win, kda, rank, lp, gain, champion, lane, time_start, time_end, patch) VALUES('" + account_id + "','" + game_id + "','" + shard.ordinal() + "','" + (win ? 1 : 0) + "','" + kda + "','" + rank + "','" + lp + "','" + gain + "','" + champion + "','" + lane.ordinal() + "','" + new Timestamp(time_start) + "','" + new Timestamp(time_end) + "','" + version + "');");
     }
 
     public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
