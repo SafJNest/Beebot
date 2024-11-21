@@ -69,8 +69,8 @@ public class PlaylistPlay extends SlashCommand {
         }
 
         
-        ResultRow playlist = DatabaseHandler.getPlaylist(event.getUser().getId(), playlistId);
-        QueryResult playlistTracks = DatabaseHandler.getPlaylistTracks(playlistId, null, null);
+        QueryRecord playlist = DatabaseHandler.getPlaylist(event.getUser().getId(), playlistId);
+        QueryCollection playlistTracks = DatabaseHandler.getPlaylistTracks(playlistId, null, null);
 
         if (playlistTracks.isEmpty()) {
             event.getHook().editOriginal("Playlist is empty.").queue();
@@ -78,7 +78,7 @@ public class PlaylistPlay extends SlashCommand {
         }
 
         List<AudioTrack> tracksFinal = new ArrayList<>();
-        for(ResultRow trackToLoad : playlistTracks) 
+        for(QueryRecord trackToLoad : playlistTracks) 
             tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
         
 

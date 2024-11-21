@@ -6,8 +6,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
@@ -45,10 +45,10 @@ public class LPTracker {
 	} 
 
 	private void trackSummoners() {
-		QueryResult result = DatabaseHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
+		QueryCollection result = DatabaseHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
         BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
 
-        for (ResultRow account : result) {
+        for (QueryRecord account : result) {
             Summoner summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
             if (summoner != null) analyzeMatchHistory(summoner, account);
         }
@@ -57,13 +57,13 @@ public class LPTracker {
 	}
 
     public static void analyzeMatchHistory(Summoner summoner) {
-        ResultRow row = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
+        QueryRecord row = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
         if (row.emptyValues()) return;
 
         analyzeMatchHistory(summoner, row);
     }
 
-    public static void analyzeMatchHistory(Summoner summoner, ResultRow dataGame) {
+    public static void analyzeMatchHistory(Summoner summoner, QueryRecord dataGame) {
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
         

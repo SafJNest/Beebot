@@ -1,7 +1,7 @@
 package com.safjnest.model.guild;
 
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -37,7 +37,7 @@ public class ChannelData {
         this.statisticsEnabled = true;
     }
     
-    public ChannelData(ResultRow data) {
+    public ChannelData(QueryRecord data) {
         this.ID = data.getAsInt("id");
         this.CHANNEL_ID = data.getAsLong("channel_id");
         this.GUILD_ID = data.get("guild_id");

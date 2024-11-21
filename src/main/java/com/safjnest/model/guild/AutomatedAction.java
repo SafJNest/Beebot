@@ -1,7 +1,7 @@
 package com.safjnest.model.guild;
 
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 
 public class AutomatedAction {
 
@@ -25,7 +25,7 @@ public class AutomatedAction {
         this.infractionsTime = infractionsTime;
     }
 
-    public AutomatedAction(ResultRow result) {
+    public AutomatedAction(QueryRecord result) {
         this.id = result.getAsInt("id");
         this.action = result.getAsInt("action");
         this.roleId = result.get("action_role");

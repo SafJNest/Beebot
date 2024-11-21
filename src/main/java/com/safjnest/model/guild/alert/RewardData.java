@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -15,7 +15,7 @@ public class RewardData extends AlertData{
     private int level;
     private boolean temporary;
 
-    public RewardData(ResultRow data, HashMap<Integer, String> roles) {
+    public RewardData(QueryRecord data, HashMap<Integer, String> roles) {
         super(data, roles);
         this.level = data.getAsInt("level");
         this.temporary = data.getAsBoolean("temporary");

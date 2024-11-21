@@ -5,8 +5,8 @@ import java.util.LinkedHashMap;
 
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -65,10 +65,10 @@ public class UserData {
     private void retriveAlies() {
         this.aliases = new HashMap<>();
         
-        QueryResult result = DatabaseHandler.getAliases(USER_ID);
+        QueryCollection result = DatabaseHandler.getAliases(USER_ID);
         if (result == null) { return; }
 
-        for(ResultRow row: result){
+        for(QueryRecord row: result){
             AliasData alias = new AliasData(row.getAsInt("ID"), row.get("name"), row.get("command"));
             aliases.put(row.get("name"), alias);
         }
@@ -109,7 +109,7 @@ public class UserData {
         if (guildGreetIds.containsKey(guildId)) {
             return guildGreetIds.get(guildId).isEmpty() ? getGlobalGreet() : guildGreetIds.get(guildId);
         }
-        ResultRow possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
+        QueryRecord possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
 
         if (possibleGreet.emptyValues()) {
             guildGreetIds.put(guildId, "");
@@ -126,7 +126,7 @@ public class UserData {
         if (guildGreetIds.containsKey(guildId)) 
             return guildGreetIds.get(guildId);
         
-        ResultRow possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
+        QueryRecord possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
         if (possibleGreet.emptyValues()) {
             guildGreetIds.put(guildId, "");
             return null;
@@ -141,7 +141,7 @@ public class UserData {
 
     public String getGlobalGreet() {
         if (globalGreetId == null) {
-            ResultRow possibleGreet = DatabaseHandler.getGlobalGreet(USER_ID);
+            QueryRecord possibleGreet = DatabaseHandler.getGlobalGreet(USER_ID);
             if (possibleGreet.emptyValues()) {
                 this.globalGreetId = "";
                 return null;
@@ -184,11 +184,11 @@ public class UserData {
 //  ▀                                                                        
 
     private void retriveRiotAccounts() {
-        QueryResult result = DatabaseHandler.getLOLAccountsByUserId(USER_ID);
+        QueryCollection result = DatabaseHandler.getLOLAccountsByUserId(USER_ID);
         if (result == null) { return; }
 
         this.riotAccounts = new LinkedHashMap<>();
-        for(ResultRow row: result){
+        for(QueryRecord row: result){
             riotAccounts.put(row.get("account_id"), row.get("league_shard"));
         }
     }

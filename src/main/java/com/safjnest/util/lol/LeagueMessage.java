@@ -14,8 +14,8 @@ import java.text.DecimalFormat;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.DateHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -105,7 +105,7 @@ public class LeagueMessage {
         String userId = DatabaseHandler.getUserIdByLOLAccountId(s.getAccountId(), s.getPlatform());
         if(userId != null){
 
-            ResultRow data = DatabaseHandler.getSummonerData(userId, s.getAccountId());
+            QueryRecord data = DatabaseHandler.getSummonerData(userId, s.getAccountId());
             if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
             else builder.setFooter("LPs tracking disabled for the current summoner");   
         }
@@ -122,7 +122,7 @@ public class LeagueMessage {
         builder.addField("Highest Masteries", masteryString, false); 
 
         long[] split = LeagueHandler.getCurrentSplitRange();
-        QueryResult advanceData = DatabaseHandler.getAdvancedLOLData(s.getAccountId(), split[0], split[1]);
+        QueryCollection advanceData = DatabaseHandler.getAdvancedLOLData(s.getAccountId(), split[0], split[1]);
 
         if (!advanceData.isEmpty()) {
             LeagueEntry entry = LeagueHandler.getRankEntry(s.getSummonerId(), s.getPlatform());
@@ -161,9 +161,9 @@ public class LeagueMessage {
             
             int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
     
-            ResultRow mostPlayedChamp = advanceData.get(0), bestChampion = advanceData.get(0), worstChampion = advanceData.get(0);
+            QueryRecord mostPlayedChamp = advanceData.get(0), bestChampion = advanceData.get(0), worstChampion = advanceData.get(0);
     
-            for (ResultRow row : advanceData) {
+            for (QueryRecord row : advanceData) {
                 if (Integer.parseInt(row.get("games")) > Integer.parseInt(mostPlayedChamp.get("games"))) mostPlayedChamp = row;
                 if (Integer.parseInt(row.get("total_lp_gain")) > Integer.parseInt(bestChampion.get("total_lp_gain"))) bestChampion = row;
                 if (Integer.parseInt(row.get("total_lp_gain")) < Integer.parseInt(worstChampion.get("total_lp_gain"))) worstChampion = row;
@@ -189,7 +189,7 @@ public class LeagueMessage {
 
             String champStats = "";
             for (int i = 0; i < 5 && i < advanceData.size(); i++) {
-                ResultRow row = advanceData.get(i);
+                QueryRecord row = advanceData.get(i);
                 champStats += formatAdvancedData(row);
             }
             builder.addField("Champions", champStats, false);
@@ -200,7 +200,7 @@ public class LeagueMessage {
         return builder;
     }
 
-    private static String formatAdvancedData(ResultRow data) {
+    private static String formatAdvancedData(QueryRecord data) {
         StaticChampion champion = LeagueHandler.getChampionById(data.getAsInt("champion"));
         return CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) - " + (data.getAsInt("wins") * 100 / (data.getAsInt("wins") + data.getAsInt("losses"))) + "% WR | " + data.get("total_lp_gain") + " LP\n"
             + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
@@ -574,7 +574,7 @@ public class LeagueMessage {
 
         List<String> gameIds = getMatchIds(s, queue);
         
-        QueryResult result = DatabaseHandler.getSummonerData(s.getAccountId(), gameIds.stream().map(gameId -> gameId.split("_")[1]).collect(Collectors.toList()).toArray(new String[0]));
+        QueryCollection result = DatabaseHandler.getSummonerData(s.getAccountId(), gameIds.stream().map(gameId -> gameId.split("_")[1]).collect(Collectors.toList()).toArray(new String[0]));
 
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
@@ -697,7 +697,7 @@ public class LeagueMessage {
 
                     default:
                     String gain = "";
-                    for (ResultRow row : result) {
+                    for (QueryRecord row : result) {
                         if (row.getAsLong("game_id") == match.getGameId()) {
                             if (row.getAsInt("rank") == TierDivisionType.UNRANKED.ordinal()) {
                                 gain = "(Placement)";

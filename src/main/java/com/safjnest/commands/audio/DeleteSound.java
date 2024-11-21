@@ -5,8 +5,8 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -43,7 +43,7 @@ public class DeleteSound extends SlashCommand{
 	protected void execute(SlashCommandEvent event) {
         String fileName = event.getOption("sound").getAsString();
 
-        QueryResult sounds = fileName.matches("[0123456789]*") 
+        QueryCollection sounds = fileName.matches("[0123456789]*") 
                            ? DatabaseHandler.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
                            : DatabaseHandler.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
 
@@ -54,13 +54,13 @@ public class DeleteSound extends SlashCommand{
 
         if(sounds.size() > 1) {
             StringBuilder toSend = new StringBuilder("Two or more sounds with that name have been found, please use IDs.\n");
-            for(ResultRow sound : sounds)
+            for(QueryRecord sound : sounds)
                 toSend.append("**Sound:** " + sound.get("name") + " (ID: " + sound.get("id") + ") | **Guild:** " + event.getJDA().getGuildById(sound.get("guild_id")).getName() + " | **Author:** " + event.getGuild().getMemberById(sound.get("user_id")).getAsMention() + " | **Can you delete this:** " + ((!event.getUser().getId().equals(sound.get("user_id")) && !(event.getMember().hasPermission(Permission.ADMINISTRATOR) && event.getGuild().getId().equals(sound.get("guild_id")))) ? "no" : "yes") + "\n");
             event.deferReply(true).addContent(toSend.toString()).queue();
             return;
         }
 
-        ResultRow toDelete = sounds.get(0);
+        QueryRecord toDelete = sounds.get(0);
 
         if(!event.getUser().getId().equals(toDelete.get("user_id")) && !(event.getMember().hasPermission(Permission.ADMINISTRATOR) && event.getGuild().getId().equals(toDelete.get("guild_id")))) {
             event.deferReply(true).addContent("You don't have permission to delete this sound.").queue();

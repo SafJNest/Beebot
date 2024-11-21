@@ -16,8 +16,8 @@ import net.dv8tion.jda.api.entities.User;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.AutomatedAction;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 
 public class AutomatedActionTimer {
@@ -92,9 +92,9 @@ public class AutomatedActionTimer {
         return () -> {
             try {
                 nextReschedule = LocalDateTime.now().plusNanos(rescheduleTiming * 1000 * 1000);
-                QueryResult tasks = DatabaseHandler.getAutomatedActionsExpiring();
+                QueryCollection tasks = DatabaseHandler.getAutomatedActionsExpiring();
                 BotLogger.info("[AutomatedActionTimer] Rescheduling tasks: " + tasks.size());
-                for (ResultRow task : tasks) {
+                for (QueryRecord task : tasks) {
                     LocalDateTime dateTime = task.getAsLocalDateTime("time");
                     if (!scheduledTasks.containsKey(task.get("id"))) {
                         scheduleAATask(dateTime, task.get("id"), task.getAsInt("action_id"), task.get("user_id"), task.get("guild_id"));

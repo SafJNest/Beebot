@@ -6,8 +6,8 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -40,7 +40,7 @@ public class DownloadSound extends SlashCommand{
         String fileName = event.getOption("sound").getAsString();
         String message = null;
 
-        QueryResult sounds = fileName.matches("\\d+") 
+        QueryCollection sounds = fileName.matches("\\d+") 
                            ? DatabaseHandler.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
                            : DatabaseHandler.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
 
@@ -49,14 +49,14 @@ public class DownloadSound extends SlashCommand{
             return;
         }
 
-        ResultRow toDownload = null;
+        QueryRecord toDownload = null;
 
         if(sounds.size() == 1) {
             toDownload = sounds.get(0);
             message = "Downloaded sound **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")**";
         }
         else {
-            for(ResultRow sound : sounds) {
+            for(QueryRecord sound : sounds) {
                 if(sound.get("guild_id").equals(event.getGuild().getId())) {
                     toDownload = sound;
                     message = "Downloaded sound **" + toDownload.get("name") + " (ID: " + toDownload.get("id") + ")** from this guild.";

@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 import com.safjnest.core.Bot;
@@ -94,7 +94,7 @@ public class GuildData {
         this.language = "en-us";
     }
 
-    public GuildData(ResultRow data) {
+    public GuildData(QueryRecord data) {
         this.ID = data.getAsLong("guild_id");
         this.prefix = data.get("prefix");
         this.experience = data.getAsBoolean("exp_enabled");
@@ -259,11 +259,11 @@ public class GuildData {
         if (this.alerts == null) {
             BotLogger.debug("Retriving AlertData from database => {0}", loggerIDpair);
             this.alerts = new HashMap<>();
-            QueryResult alertResult = DatabaseHandler.getAlerts(String.valueOf(ID));
-            QueryResult roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID));
+            QueryCollection alertResult = DatabaseHandler.getAlerts(String.valueOf(ID));
+            QueryCollection roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID));
             
             HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
-            for (ResultRow row : roleResult) {
+            for (QueryRecord row : roleResult) {
                 int alertId = row.getAsInt("alert_id");
                 String roleId = row.get("role_id");
                 int rowId = row.getAsInt("row_id");
@@ -273,7 +273,7 @@ public class GuildData {
                 roles.get(alertId).put(rowId, roleId);
             }
 
-            for (ResultRow row : alertResult) {
+            for (QueryRecord row : alertResult) {
                 switch (AlertType.getFromOrdinal(row.getAsInt("type"))) {
                     case REWARD:
                         RewardData rd = new RewardData(row, roles.get(row.getAsInt("alert_id")));
@@ -437,11 +437,11 @@ public class GuildData {
 
     public void retriveChannels() {
         this.channels = new HashMap<>();
-        QueryResult result = DatabaseHandler.getChannelData(String.valueOf(ID));
+        QueryCollection result = DatabaseHandler.getChannelData(String.valueOf(ID));
         if (result == null) { return; }
 
         BotLogger.debug("Retriving ChannelData from database => {0}", loggerIDpair);
-        for(ResultRow row : result){
+        for(QueryRecord row : result){
             this.channels.put(
                 row.getAsLong("channel_id"),
                 new ChannelData(row)
@@ -501,7 +501,7 @@ public class GuildData {
 
     private MemberData retriveMemberData(String userId) {
         MemberData member = null;
-        ResultRow result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
+        QueryRecord result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
         if (result.emptyValues()) { return null; }
 
         BotLogger.debug("Retriving MemberData from database => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
@@ -547,10 +547,10 @@ public class GuildData {
 
     private void retriveActions() {
         actions = new ArrayList<>();
-        QueryResult result = DatabaseHandler.getWarnings(String.valueOf(ID));
+        QueryCollection result = DatabaseHandler.getWarnings(String.valueOf(ID));
         if (result == null) { return; }
 
-        for (ResultRow row : result) {
+        for (QueryRecord row : result) {
             actions.add(new AutomatedAction(row));
         }
     }
@@ -605,17 +605,17 @@ public class GuildData {
 
     private void retriveCustomCommand() {
         customCommands = new HashMap<>();
-        HashMap<String, QueryResult> commandData = DatabaseHandler.getCustomCommandData(String.valueOf(ID));
+        HashMap<String, QueryCollection> commandData = DatabaseHandler.getCustomCommandData(String.valueOf(ID));
         if (commandData == null) { return; }
 
-        QueryResult result = commandData.get("commands");
-        QueryResult optionResult = commandData.get("options");
-        QueryResult taskResult = commandData.get("tasks");
-        QueryResult taskValueResult = commandData.get("task_values");
-        QueryResult taskMessage = commandData.get("task_messages");
+        QueryCollection result = commandData.get("commands");
+        QueryCollection optionResult = commandData.get("options");
+        QueryCollection taskResult = commandData.get("tasks");
+        QueryCollection taskValueResult = commandData.get("task_values");
+        QueryCollection taskMessage = commandData.get("task_messages");
 
 
-        for (ResultRow row : result) {
+        for (QueryRecord row : result) {
             int id = row.getAsInt("ID");
             String name = row.get("name");
             String description = row.get("description");
@@ -623,7 +623,7 @@ public class GuildData {
 
             CustomCommand cc = new CustomCommand(id, name, description, isSlash);
 
-            final QueryResult finalValueResult = commandData.get("values");
+            final QueryCollection finalValueResult = commandData.get("values");
             optionResult.stream()
                 .filter(optionRow -> optionRow.getAsInt("command_id") == id)
                 .forEach(optionRow -> {

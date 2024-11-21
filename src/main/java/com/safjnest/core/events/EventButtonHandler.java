@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LPTracker;
@@ -242,7 +242,7 @@ public class EventButtonHandler extends ListenerAdapter {
             }
         }
 
-        ResultRow playlist = DatabaseHandler.getPlaylistByIdWithSize(playlistId);
+        QueryRecord playlist = DatabaseHandler.getPlaylistByIdWithSize(playlistId);
         switch (args) {
             case "left":
                 page -= 1;
@@ -378,7 +378,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "delete":
                 Bot.getGuildData(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
-                if (DatabaseHandler.getTwitchSubscriptions(streamerId).getAffectedRows() == 0)
+                if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
                     TwitchClient.unregisterSubEvent(streamerId);
                     
                 event.deferEdit().queue();
@@ -1168,7 +1168,7 @@ public class EventButtonHandler extends ListenerAdapter {
         }
         order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
 
-        QueryResult sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
+        QueryCollection sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
@@ -1289,7 +1289,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 userId = b.getId().split("-")[2];
             }
         }
-        QueryResult sounds = null;
+        QueryCollection sounds = null;
         if (!timeOrder) {
             sounds = (userId.equals(event.getMember().getId())) 
                                ? DatabaseHandler.getlistUserSounds(userId) 

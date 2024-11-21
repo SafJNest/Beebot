@@ -7,8 +7,8 @@ import net.dv8tion.jda.api.entities.channel.unions.AudioChannelUnion;
 
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -67,12 +67,12 @@ public class Task {
                 }
                 break;
             case PLAY_SOUND:
-                QueryResult sound = DatabaseHandler.getSoundsById(values.get(0));
+                QueryCollection sound = DatabaseHandler.getSoundsById(values.get(0));
                 if(sound.isEmpty())
                     return;
                 
 
-                ResultRow soundRow = sound.get(0);
+                QueryRecord soundRow = sound.get(0);
 
                 PlayerManager pm = PlayerManager.get();
                 String path = "rsc" + File.separator + "SoundBoard"+ File.separator + soundRow.get("id") + "." + soundRow.get("extension");

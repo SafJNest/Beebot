@@ -17,7 +17,7 @@ import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
@@ -57,7 +57,7 @@ public class ServerInfo extends SlashCommand {
         AlertData leave = alerts.get(new AlertKey<>(AlertType.LEAVE));
         AlertData lvlup = alerts.get(new AlertKey<>(AlertType.LEVEL_UP));
 
-        ResultRow settings = DatabaseHandler.getGuildData(guild.getId());
+        QueryRecord settings = DatabaseHandler.getGuildData(guild.getId());
         
         String welcomeMessageString = null;
         if(welcome != null) {

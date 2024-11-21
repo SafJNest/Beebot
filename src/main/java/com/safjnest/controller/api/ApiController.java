@@ -7,7 +7,7 @@ import java.util.Map;
 
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryCollection;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -97,7 +97,7 @@ public class ApiController {
 
     @GetMapping("/{guildId}/leaderboard")
     public ResponseEntity<List<Map<String, String>>> getLeaderboard(@PathVariable String guildId) {
-        QueryResult leaderboard = DatabaseHandler.getUsersByExp(guildId, 0);
+        QueryCollection leaderboard = DatabaseHandler.getUsersByExp(guildId, 0);
         if(leaderboard.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No results");
         }

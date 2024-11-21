@@ -9,8 +9,8 @@ import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.log.BotLogger;
 
@@ -27,7 +27,7 @@ class TwitchEventsHandler {
     public static void onStreamOnlineEvent(StreamOnlineEvent event) {
         BotLogger.trace("[TWITCH] " + event.getBroadcasterUserName() + " is now live on Twitch!");
         
-        QueryResult result = DatabaseHandler.getTwitchSubscriptions(event.getBroadcasterUserId());
+        QueryCollection result = DatabaseHandler.getTwitchSubscriptions(event.getBroadcasterUserId());
         
         User streamer = TwitchClient.getStreamerByName(event.getBroadcasterUserLogin());
 
@@ -58,7 +58,7 @@ class TwitchEventsHandler {
         eb.setFooter("Twitch", TwitchClient.getTwitchIconUrl());
         eb.setTimestamp(Instant.now());
 
-        for (ResultRow guildRow : result) {
+        for (QueryRecord guildRow : result) {
             Guild guild = Bot.getJDA().getGuildById(guildRow.get("guild_id"));
             GuildData g = Bot.getGuildData(guild);
 

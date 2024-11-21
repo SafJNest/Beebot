@@ -2,14 +2,14 @@ package com.safjnest.model.guild.alert;
 
 import java.util.HashMap;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 
 public class TwitchData extends AlertData {
 
     private String streamerId;
     private String roleId;
 
-    public TwitchData(ResultRow data) {
+    public TwitchData(QueryRecord data) {
         super(data, null);
         this.streamerId = data.get("streamer_id");
         this.roleId = data.get("role_id");

@@ -3,7 +3,7 @@ package com.safjnest.model.guild;
 import java.time.LocalDateTime;
 
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -30,7 +30,7 @@ public class MemberData {
         this.lastMessageTime = LocalDateTime.now().minusSeconds(updateTime + 1);
     }
 
-    public MemberData(ResultRow data) {
+    public MemberData(QueryRecord data) {
         this.ID = data.getAsInt("id");
         this.USER_ID = data.get("user_id");
         this.GUILD_ID = data.get("guild_id");

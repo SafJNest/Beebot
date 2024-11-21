@@ -10,7 +10,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.ExperienceSystem;
@@ -75,7 +75,7 @@ public class MemberInfo extends SlashCommand {
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);
         }
 
-        ResultRow userExp = DatabaseHandler.getUserExp(mentionedMember.getId(), guild.getId());
+        QueryRecord userExp = DatabaseHandler.getUserExp(mentionedMember.getId(), guild.getId());
         int exp = 0, lvl = 0, msg = 0;
         if(userExp != null) {
             exp = userExp.getAsInt("experience");

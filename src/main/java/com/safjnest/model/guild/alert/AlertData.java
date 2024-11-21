@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -20,7 +20,7 @@ public class AlertData {
     private AlertSendType sendType;
     private HashMap<Integer, String> roles;
 
-    public AlertData(ResultRow data, HashMap<Integer, String> roles) {
+    public AlertData(QueryRecord data, HashMap<Integer, String> roles) {
         this.ID = data.getAsInt("alert_id");
         this.message = data.get("message");
         this.privateMessage = data.get("private_message");

@@ -8,7 +8,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryCollection;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
@@ -52,7 +52,7 @@ public class PlaylistCreate extends SlashCommand{
                 ? (!PermissionHandler.isPremium(userId) ? Bot.getSettings().maxFreePlaylistSize : Bot.getSettings().maxPremiumPlaylistSize)
                 : Integer.valueOf(Integer.MAX_VALUE);
 
-        QueryResult userPlaylists = DatabaseHandler.getPlaylists(userId);
+        QueryCollection userPlaylists = DatabaseHandler.getPlaylists(userId);
 
         if(userPlaylists.size() >= maxPlaylists && !PermissionHandler.isPremium(userId)) {
             event.getHook().editOriginal("You have already created the maximum amount of free playlists (for more playlists wait for future paid tiers [pagaaaah, sgancia, spilla, sborsa proprio maonna ragazih]).").queue();

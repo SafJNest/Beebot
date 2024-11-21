@@ -9,8 +9,8 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
@@ -41,8 +41,8 @@ public class PlaylistView extends SlashCommand{
         commandData.setThings(this);
     }
 
-    public static EmbedBuilder getTracksEmbed(ResultRow playlist, Member member, int page) {
-        QueryResult tracks = DatabaseHandler.getPlaylistTracks(playlist.getAsInt("id"), pageSize, page);
+    public static EmbedBuilder getTracksEmbed(QueryRecord playlist, Member member, int page) {
+        QueryCollection tracks = DatabaseHandler.getPlaylistTracks(playlist.getAsInt("id"), pageSize, page);
         List<AudioTrack> decodedTracks = PlayerManager.get().decodeTracks(tracks.arrayColumn("encoded_track"));
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -64,7 +64,7 @@ public class PlaylistView extends SlashCommand{
         return eb;
     }
 
-    public static ActionRow getTracksButton(ResultRow playlist, int page) {
+    public static ActionRow getTracksButton(QueryRecord playlist, int page) {
         Button left = Button.primary("playlist-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary("playlist-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
@@ -91,7 +91,7 @@ public class PlaylistView extends SlashCommand{
 
         Member member = event.getMember();
 
-        ResultRow playlist = DatabaseHandler.getPlaylistByIdWithSize(playlistId);
+        QueryRecord playlist = DatabaseHandler.getPlaylistByIdWithSize(playlistId);
 
         if(playlist.isEmpty() || (!playlist.get("user_id").equals(member.getId()) && !PermissionHandler.isUntouchable(member.getId())) ) {
             event.getHook().editOriginal("Playlist not found.").queue();

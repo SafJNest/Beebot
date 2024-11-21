@@ -46,7 +46,7 @@ public class TwitchUnlink extends SlashCommand{
 
         Bot.getGuildData(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
-        if (DatabaseHandler.getTwitchSubscriptions(streamerId).getAffectedRows() == 0)
+        if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
             TwitchClient.unregisterSubEvent(streamerId);
 
         event.reply("Twitch subscription registered").queue();

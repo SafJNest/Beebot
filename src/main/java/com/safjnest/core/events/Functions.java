@@ -6,8 +6,8 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.ExperienceSystem;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
@@ -323,7 +323,7 @@ public class Functions {
         int times = 0;
         times = times + DatabaseHandler.getBannedTimes(badGuy.getId());
 
-        QueryResult guilds = DatabaseHandler.getGuildByThreshold(times, guild.getId());
+        QueryCollection guilds = DatabaseHandler.getGuildByThreshold(times, guild.getId());
         if(guilds == null)
             return;
         
@@ -333,7 +333,7 @@ public class Functions {
         eb.setThumbnail(badGuy.getAvatarUrl());
         eb.setTitle(":radioactive:Blacklist:radioactive:");
         eb.setDescription("The member " + badGuy.getAsMention() + " is on the blacklist for being banned in " + times + " different guilds.\nYou have the discretion to choose the next steps.");
-        for(ResultRow g : guilds){
+        for(QueryRecord g : guilds){
             Guild gg = guild.getJDA().getGuildById(g.get("guild_id"));
             if(gg.getMemberById(badGuy.getId()) == null)
                 continue;

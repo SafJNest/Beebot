@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryCollection;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.TableHandler;
@@ -46,7 +46,7 @@ public class Query extends Command{
         query = query.replace("#channel", event.getChannel().getId());
         query = query.replace("#bot", event.getSelfMember().getId());
 
-        QueryResult res = DatabaseHandler.safJQuery(query);
+        QueryCollection res = DatabaseHandler.safJQuery(query);
 
         if(res.isEmpty()) {
             event.reply("```No result```");

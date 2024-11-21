@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryRecord;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 public class Sound {
@@ -36,7 +36,7 @@ public class Sound {
         this.tags = null;
     }
     
-    public Sound(ResultRow data, Tag[] tags) {
+    public Sound(QueryRecord data, Tag[] tags) {
         this.ID = data.get("id");
         this.GUILD_ID = data.get("guild_id");
         this.USER_ID = data.get("user_id");
@@ -153,7 +153,7 @@ public class Sound {
      * @return
      */
     public int[] getPlays(String userId) {
-        ResultRow plays = DatabaseHandler.getPlays(this.ID, userId);
+        QueryRecord plays = DatabaseHandler.getPlays(this.ID, userId);
         if (plays.emptyValues()) return new int[] {this.plays, 0};
 
         return new int[] {this.plays, plays.getAsInt("times")};
@@ -164,7 +164,7 @@ public class Sound {
     }
 
     public int retriveGlobalPlays() {
-        ResultRow plays = DatabaseHandler.getGlobalPlays(this.ID);
+        QueryRecord plays = DatabaseHandler.getGlobalPlays(this.ID);
         if (plays.emptyValues()) return 0;
         this.plays = plays.getAsInt("times");
 
@@ -176,7 +176,7 @@ public class Sound {
     }
 
     private int[] retriveLikeDislike() {
-        ResultRow likes = DatabaseHandler.getLikeDislike(this.ID);
+        QueryRecord likes = DatabaseHandler.getLikeDislike(this.ID);
         if (likes.emptyValues()) return new int[] {0, 0};
 
         return new int[] {likes.getAsInt("likes"), likes.getAsInt("dislikes")};

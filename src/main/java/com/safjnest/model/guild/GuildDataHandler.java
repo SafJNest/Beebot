@@ -3,8 +3,8 @@ package com.safjnest.model.guild;
 import com.safjnest.core.Bot;
 import com.safjnest.core.CacheMap;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -63,7 +63,7 @@ public class GuildDataHandler {
      */
     public GuildData retriveGuild(String guildId) {
         BotLogger.info("Retriving guild from database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
-        ResultRow guildData = DatabaseHandler.getGuildData(guildId);
+        QueryRecord guildData = DatabaseHandler.getGuildData(guildId);
         
         if(guildData.emptyValues()) {
             return insertGuild(guildId);
@@ -87,9 +87,9 @@ public class GuildDataHandler {
      * Always a {@link com.safjnest.model.Guild.GuildData guildData}, never {@code null}
      */
     public void retrieveAllGuilds() {
-        QueryResult guilds = DatabaseHandler.getGuildData();
+        QueryCollection guilds = DatabaseHandler.getGuildData();
         
-        for(ResultRow guildData : guilds){        
+        for(QueryRecord guildData : guilds){        
             GuildData guild = new GuildData(guildData);
             saveGuild(guild);
         }

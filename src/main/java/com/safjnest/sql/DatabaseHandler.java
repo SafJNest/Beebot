@@ -119,20 +119,20 @@ public class DatabaseHandler {
         queryAnalytics.put(System.currentTimeMillis(), queries);
     }
 
-    public static QueryResult safJQuery(String query) {
+    public static QueryCollection safJQuery(String query) {
         connectIfNot();
 
         Connection c = getConnection();
         if(c == null) return null;
 
-        QueryResult result = new QueryResult();
+        QueryCollection result = new QueryCollection();
 
         try (Statement stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query)) {
 
             ResultSetMetaData rsmd = rs.getMetaData();
             while (rs.next()) {
-                ResultRow beeRow = new ResultRow(rs);
+                QueryRecord beeRow = new QueryRecord(rs);
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                     String columnName = rsmd.getColumnLabel(i);
                     String columnValue = rs.getString(i);
@@ -166,21 +166,21 @@ public class DatabaseHandler {
 
 
     /**
-     * Method used for returning a {@link com.safjnest.sql.QueryResult result} from a query using default statement
+     * Method used for returning a {@link com.safjnest.sql.QueryCollection result} from a query using default statement
      * @param stmt
      * @param query
      * @throws SQLException
      */ 
-    public static QueryResult safJQuery(Statement stmt, String query) throws SQLException {
+    public static QueryCollection safJQuery(Statement stmt, String query) throws SQLException {
         connectIfNot();
 
-        QueryResult result = new QueryResult();
+        QueryCollection result = new QueryCollection();
 
         ResultSet rs = stmt.executeQuery(query);
         ResultSetMetaData rsmd = rs.getMetaData();
 
         while (rs.next()) {
-            ResultRow beeRow = new ResultRow(rs);
+            QueryRecord beeRow = new QueryRecord(rs);
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                 String columnName = rsmd.getColumnName(i);
                 String columnValue = rs.getString(i);
@@ -195,17 +195,17 @@ public class DatabaseHandler {
 
 
     /**
-     * Method used for returning a single {@link com.safjnest.sql.ResultRow row} from a query using default statement
+     * Method used for returning a single {@link com.safjnest.sql.QueryRecord row} from a query using default statement
      * @param stmt
      * @param query
      * @throws SQLException
      */
-    public static ResultRow fetchJRow(String query) {
+    public static QueryRecord fetchJRow(String query) {
         connectIfNot();
 
         Connection c = getConnection();
         if(c == null) return null;
-        ResultRow beeRow = new ResultRow(null);
+        QueryRecord beeRow = new QueryRecord(null);
         try (Statement stmt = c.createStatement();
             ResultSet rs = stmt.executeQuery(query)) {
             beeRow.setResultSet(rs);
@@ -243,17 +243,17 @@ public class DatabaseHandler {
 
 
     /**
-     * Method used for returning a single {@link com.safjnest.sql.ResultRow row} from a query.
+     * Method used for returning a single {@link com.safjnest.sql.QueryRecord row} from a query.
      * @param stmt
      * @param query
      * @throws SQLException
      */
-    public static ResultRow fetchJRow(Statement stmt, String query) throws SQLException {
+    public static QueryRecord fetchJRow(Statement stmt, String query) throws SQLException {
         connectIfNot();
         
         
         ResultSet rs = stmt.executeQuery(query);
-        ResultRow beeRow = new ResultRow(rs);
+        QueryRecord beeRow = new QueryRecord(rs);
             
         ResultSetMetaData rsmd = rs.getMetaData();
 
@@ -331,67 +331,67 @@ public class DatabaseHandler {
 
     //-------------------------------------------------------------------------
 
-    public static QueryResult getGuildsData(String filter){        
+    public static QueryCollection getGuildsData(String filter){        
         String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild WHERE " + filter + ";";
         return safJQuery(query);
     }
 
 
-    public static QueryResult getlistGuildSounds(String guild_id) {
+    public static QueryCollection getlistGuildSounds(String guild_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC");
     }
 
-    public static QueryResult getlistGuildSounds(String guild_id, int limit) {
+    public static QueryCollection getlistGuildSounds(String guild_id, int limit) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC LIMIT " + limit);
     }
 
-    public static QueryResult getlistGuildSounds(String guild_id, String orderBy) {
+    public static QueryCollection getlistGuildSounds(String guild_id, String orderBy) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY " + orderBy +" ASC ");
     }
 
 
 
-    public static QueryResult getGuildRandomSound(String guild_id){
+    public static QueryCollection getGuildRandomSound(String guild_id){
         return safJQuery("SELECT name, id FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getUserSound(String user_id){
+    public static QueryCollection getUserSound(String user_id){
         return safJQuery("SELECT name, id, guild_id, extension FROM sound WHERE user_id = '" + user_id + "';");
     }
 
-    public static QueryResult getlistUserSounds(String user_id) {
+    public static QueryCollection getlistUserSounds(String user_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' ORDER BY name ASC");
     }
 
-    public static QueryResult getlistUserSoundsTime(String user_id) {
+    public static QueryCollection getlistUserSoundsTime(String user_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' ORDER BY time ASC");
     }
 
-    public static QueryResult getlistUserSounds(String user_id, String guild_id) {
+    public static QueryCollection getlistUserSounds(String user_id, String guild_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY name ASC");
     }
 
-    public static QueryResult getlistUserSoundsTime(String user_id, String guild_id) {
+    public static QueryCollection getlistUserSoundsTime(String user_id, String guild_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' AND (guild_id = '" + guild_id + "'  OR public = 1) ORDER BY time ASC");
     }
 
-    public static QueryResult getFocusedGuildSound(String guild_id, String like){
+    public static QueryCollection getFocusedGuildSound(String guild_id, String like){
         return safJQuery("SELECT name, id FROM sound WHERE name LIKE '" + like + "%' AND guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getFocusedUserSound(String user_id, String like){
+    public static QueryCollection getFocusedUserSound(String user_id, String like){
         return safJQuery("SELECT name, id, guild_id FROM sound WHERE (name LIKE '" + like + "%' OR id LIKE '" + like + "%') AND user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getUserGuildSounds(String user_id, String guild_id) {
+    public static QueryCollection getUserGuildSounds(String user_id, String guild_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE user_id = '" + user_id + "' OR guild_id = '" + guild_id + "' ORDER BY name ASC");
     }
 
-    public static QueryResult getFocusedListUserSounds(String user_id, String guild_id, String like) {
+    public static QueryCollection getFocusedListUserSounds(String user_id, String guild_id, String like) {
         return safJQuery("SELECT name, id, guild_id, extension FROM sound WHERE name LIKE '" + like + "%' OR id LIKE '" + like + "%' AND (user_id = '" + user_id + "' OR guild_id = '" + guild_id + "') ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getSoundsById(String... sound_ids) {
+    public static QueryCollection getSoundsById(String... sound_ids) {
         StringBuilder sb = new StringBuilder();
         for(String sound_id : sound_ids)
             sb.append(sound_id + ", ");
@@ -400,27 +400,27 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time, plays, likes, dislikes FROM sound WHERE id IN (" + sb.toString() + ");");
     }
 
-    public static QueryResult getSoundsById(String id, String guild_id, String author_id) {
+    public static QueryCollection getSoundsById(String id, String guild_id, String author_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
 
-    public static ResultRow getSoundById(String id) {
+    public static QueryRecord getSoundById(String id) {
         return fetchJRow("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "'");
     } 
 
-    public static QueryResult getSoundsByName(String name, String guild_id, String author_id) {
+    public static QueryCollection getSoundsByName(String name, String guild_id, String author_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
     }
 
-    public static QueryResult getDuplicateSoundsByName(String name, String guild_id, String author_id) {
+    public static QueryCollection getDuplicateSoundsByName(String name, String guild_id, String author_id) {
         return safJQuery("SELECT id, guild_id, user_id FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "' OR user_id = '" + author_id + "')");
     }
 
-    public static ResultRow getAuthorSoundById(String id, String user_id) {
+    public static QueryRecord getAuthorSoundById(String id, String user_id) {
         return fetchJRow("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "' AND user_id = '" + user_id + "'");
     }
 
-    public static ResultRow getAuthorSoundByName(String name, String user_id) {
+    public static QueryRecord getAuthorSoundByName(String name, String user_id) {
         return fetchJRow("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE name = '" + name + "' AND user_id = '" + user_id + "'");
     }
 
@@ -474,11 +474,11 @@ public class DatabaseHandler {
         return runQuery("INSERT INTO sound_history(user_id, sound_id, source) VALUES('" + user_id + "', '" + sound_id + "', " + source + ");", "UPDATE sound SET plays = plays + 1 WHERE id = '" + sound_id + "';");
     }
 
-    public static ResultRow getPlays(String sound_id, String user_id) {
+    public static QueryRecord getPlays(String sound_id, String user_id) {
         return fetchJRow("SELECT count(id) as times FROM sound_history WHERE sound_id = '" + sound_id + "' AND user_id = '" + user_id + "'");
     }
 
-    public static ResultRow getGlobalPlays(String sound_id) {
+    public static QueryRecord getGlobalPlays(String sound_id) {
         return fetchJRow("SELECT count(id) as times FROM sound_history WHERE sound_id = '" + sound_id + "'");
     }
 
@@ -494,7 +494,7 @@ public class DatabaseHandler {
         return fetchJRow("select count(id) as sum from sound_history where user_id = '" + user_id + "';").get("sum");
     }
 
-    public static ResultRow searchSoundboard(String string, String guild_id, String user_id) {
+    public static QueryRecord searchSoundboard(String string, String guild_id, String user_id) {
         return fetchJRow("SELECT id from soundboard WHERE (ID = '" + string + "' OR name = '" + string + "') AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "')");
     }
 
@@ -510,32 +510,32 @@ public class DatabaseHandler {
         return fetchJRow("SELECT count(sound_id) as cont FROM soundboard_sounds WHERE id = '" + id + "'").getAsInt("count");
     }
 
-    public static QueryResult getSoundsFromSoundBoard(String id) {
+    public static QueryCollection getSoundsFromSoundBoard(String id) {
         return safJQuery("select soundboard_sounds.sound_id as sound_id, sound.extension as extension, sound.name as name, sound.guild_id as guild_id from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "'");
     }
 
-    public static ResultRow getSoundboardByID(String id) {
+    public static QueryRecord getSoundboardByID(String id) {
         return fetchJRow("select name, thumbnail from soundboard where id = '" + id + "'");
     }
     
-    public static QueryResult getRandomSoundboard(String guild_id, String user_id) {
+    public static QueryCollection getRandomSoundboard(String guild_id, String user_id) {
         return safJQuery("SELECT name, id, guild_id FROM soundboard WHERE guild_id = '" + guild_id + "' OR user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getFocusedSoundboard(String guild_id, String user_id, String like){
+    public static QueryCollection getFocusedSoundboard(String guild_id, String user_id, String like){
         return safJQuery("SELECT name, id, guild_id FROM soundboard WHERE name LIKE '" + like + "%' AND (guild_id = '" + guild_id + "' OR user_id = '" + user_id + "') ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult getFocusedSoundFromSounboard(String id, String like){
+    public static QueryCollection getFocusedSoundFromSounboard(String id, String like){
         return safJQuery("SELECT s.name as name, s.id as sound_id, s.guild_id as guild_id FROM soundboard_sounds ss JOIN sound s ON ss.sound_id = s.id WHERE s.name LIKE '" + like + "%' AND ss.id = '" + id + "' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryResult extremeSoundResearch(String query) {
+    public static QueryCollection extremeSoundResearch(String query) {
         return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.name like '%" + query + "%' OR t.name like '%" + query + "%';");
         //return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE MATCH(s.name) AGAINST ('" + query + "') OR t.name like '%" + query + "%';");
     }
 
-    public static QueryResult extremeSoundResearch(String query, String user_id) {
+    public static QueryCollection extremeSoundResearch(String query, String user_id) {
         return safJQuery("SELECT DISTINCT s.* FROM sound s LEFT JOIN tag_sounds ts ON s.id = ts.sound_id LEFT JOIN tag t ON ts.tag_id = t.id WHERE s.user_id = " + user_id + " AND (MATCH(s.name) AGAINST ('" + query + "') OR t.name like '%" + query + "%');");
     }
 
@@ -662,12 +662,12 @@ public class DatabaseHandler {
         return runQuery("DELETE FROM soundboard_sounds WHERE id = '" + id + "' AND sound_id = '" + sound_id + "'");
     }
  
-    public static ResultRow getDefaultVoice(String guild_id) {
+    public static QueryRecord getDefaultVoice(String guild_id) {
         return fetchJRow("SELECT name_tts, language_tts FROM guild WHERE guild_id = '" + guild_id + "';");
     }
 
     
-    public static QueryResult getLOLAccountsByUserId(String user_id){
+    public static QueryCollection getLOLAccountsByUserId(String user_id){
         String query = "SELECT account_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
         return safJQuery(query);
     }
@@ -676,11 +676,11 @@ public class DatabaseHandler {
         return fetchJRow("SELECT user_id FROM summoner WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
     }
 
-    public static QueryResult getAdvancedLOLData(String account_id) {
+    public static QueryCollection getAdvancedLOLData(String account_id) {
         return safJQuery("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `summoner_tracking` WHERE `account_id` = '" + account_id + "' GROUP BY `champion` ORDER BY `games` DESC;");
     }
 
-    public static QueryResult getAdvancedLOLData(String account_id, long time_start, long time_end) {
+    public static QueryCollection getAdvancedLOLData(String account_id, long time_start, long time_end) {
         return safJQuery("SELECT t.`champion`, COUNT(*) AS `games`, SUM(t.`win`) AS `wins`, SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(t.`gain`) AS total_lp_gain, GROUP_CONCAT(DISTINCT CONCAT(l.`lane`, '-', l.`lane_wins`, '-', l.`lane_losses`) ORDER BY l.`lane` SEPARATOR ', ') AS lanes_played FROM `summoner_tracking` t JOIN (SELECT `champion`, `lane`, SUM(`win`) AS `lane_wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` FROM `summoner_tracking` WHERE `account_id` = '" + account_id + "' AND `time_start` >= '" + new Timestamp(time_start) + "' AND `time_end` <= '" + new Timestamp(time_end) + "' GROUP BY `champion`, `lane`) AS l ON t.`champion` = l.`champion` AND t.`lane` = l.`lane` WHERE t.`account_id` = '" + account_id + "' AND t.`time_start` >= '" + new Timestamp(time_start) + "' AND t.`time_end` <= '" + new Timestamp(time_end) + "' GROUP BY t.`champion` ORDER BY `games` DESC;");
     }
 
@@ -780,12 +780,12 @@ public class DatabaseHandler {
         return runQuery(query);
     }
 
-    public static QueryResult getGuildData(){
+    public static QueryCollection getGuildData(){
         String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild;";
         return safJQuery(query);
     }
     
-    public static ResultRow getGuildData(String guild_id) {
+    public static QueryRecord getGuildData(String guild_id) {
         String query = "SELECT guild_id, PREFIX, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
         return fetchJRow(query);
     }
@@ -801,7 +801,7 @@ public class DatabaseHandler {
     }
 
 
-    public static QueryResult getUsersByExp(String guild_id, int limit) {
+    public static QueryCollection getUsersByExp(String guild_id, int limit) {
         if (limit == 0) {
             return safJQuery("SELECT user_id, messages, level, experience as exp from member WHERE guild_id = '" + guild_id + "' order by experience DESC;");
         }
@@ -859,7 +859,7 @@ public class DatabaseHandler {
         return runQuery("DELETE FROM blacklist WHERE guild_id = '" + guild_id + "' AND user_id = '" + user_id + "'");
     }
 
-    public static QueryResult getGuildByThreshold(int threshold, String guild_id){
+    public static QueryCollection getGuildByThreshold(int threshold, String guild_id){
         return safJQuery("SELECT guild_id, blacklist_channel, threshold FROM guild WHERE blacklist_enabled = 1 AND threshold <= '" + threshold + "' AND blacklist_channel IS NOT NULL AND guild_id != '" + guild_id + "'");
     }
 
@@ -876,15 +876,15 @@ public class DatabaseHandler {
     }
 
     @Deprecated
-    public static ResultRow getGreet(String user_id, String guild_id) {
+    public static QueryRecord getGreet(String user_id, String guild_id) {
         return fetchJRow("SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + user_id + "' AND (greeting.guild_id = '" + guild_id + "' OR greeting.guild_id = '0') ORDER BY CASE WHEN greeting.guild_id = '0' THEN 1 ELSE 0 END LIMIT 1;");
     }
 
-    public static ResultRow getSpecificGuildGreet(String user_id, String guild_id) {
+    public static QueryRecord getSpecificGuildGreet(String user_id, String guild_id) {
         return fetchJRow("SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + user_id + "' AND greeting.guild_id = '" + guild_id + "' LIMIT 1;");
     }
 
-    public static ResultRow getGlobalGreet(String user_id) {
+    public static QueryRecord getGlobalGreet(String user_id) {
         return fetchJRow("SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + user_id + "' AND greeting.guild_id = '0' LIMIT 1;");
     }
 
@@ -959,7 +959,7 @@ public class DatabaseHandler {
         return runQuery("UPDATE alert SET enabled = '" + (toggle ? 1 : 0) + "' WHERE ID = '" + ID + "';");
     }
 
-    public static QueryResult getAlertsRoles(String guild_id) {
+    public static QueryCollection getAlertsRoles(String guild_id) {
         return safJQuery("SELECT r.id as row_id, a.id as alert_id, r.role_id as role_id  FROM alert_role as r JOIN alert as a ON r.alert_id = a.id WHERE a.guild_id = '" + guild_id + "';");
     }
 
@@ -1038,7 +1038,7 @@ public class DatabaseHandler {
         return runQuery("UPDATE alert_twitch SET role_id = '" + roleId + "' WHERE alert_id = '" + alertId + "';");
     }
 
-    public static QueryResult getAlerts(String guild_id) {
+    public static QueryCollection getAlerts(String guild_id) {
         String query = "SELECT " +
                        "a.id AS alert_id, " +
                        "a.message, " +
@@ -1088,8 +1088,8 @@ public class DatabaseHandler {
         values = values.substring(0, values.length() - 2);
         if (deleteAlertRoles(valueOf) && runQuery("INSERT INTO alert_role(alert_id, role_id) VALUES " + values + ";")) {
             HashMap<Integer, String> roleMap = new HashMap<>();
-            QueryResult result = safJQuery("SELECT id, role_id FROM alert_role WHERE alert_id = '" + valueOf + "';");
-            for(ResultRow row : result) {
+            QueryCollection result = safJQuery("SELECT id, role_id FROM alert_role WHERE alert_id = '" + valueOf + "';");
+            for(QueryRecord row : result) {
                 roleMap.put(row.getAsInt("id"), row.get("role_id"));
             }
             return roleMap;
@@ -1131,7 +1131,7 @@ public class DatabaseHandler {
         return id;
     }
 
-    public static QueryResult getChannelData(String guild_id) {
+    public static QueryCollection getChannelData(String guild_id) {
         return safJQuery("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled FROM channel WHERE guild_id = '" + guild_id + "';");
     }
 
@@ -1183,7 +1183,7 @@ public class DatabaseHandler {
         return id;
     }
 
-    public static ResultRow getUserData(String guild_id, String user_id) {
+    public static QueryRecord getUserData(String guild_id, String user_id) {
         return fetchJRow("SELECT id, user_id, guild_id, experience, level, messages, update_time FROM member WHERE user_id = '"+ user_id +"' AND guild_id = '" + guild_id + "';");
     }
 
@@ -1195,12 +1195,12 @@ public class DatabaseHandler {
         return runQuery("UPDATE member SET update_time = '" + updateTime + "' WHERE id = '" + ID + "';");
     }
 
-    public static ResultRow getUserExp(String id, String id2) {
+    public static QueryRecord getUserExp(String id, String id2) {
         return fetchJRow("SELECT experience, level, messages FROM member WHERE user_id = '" + id + "' AND guild_id = '" + id2 + "'");
     }
 
 
-    public static QueryResult getAliases(String user_id) {
+    public static QueryCollection getAliases(String user_id) {
         return safJQuery("SELECT id, name, command FROM alias WHERE user_id = '" + user_id + "';");
     }
 
@@ -1241,9 +1241,9 @@ public class DatabaseHandler {
 
 
 
-    public static HashMap<String, QueryResult> getCustomCommandData(String guild_id) {
-        HashMap<String, QueryResult> commandData = new HashMap<>();
-        QueryResult result = DatabaseHandler.safJQuery("SELECT ID,name,description,slash FROM commands WHERE guild_id = " + guild_id);
+    public static HashMap<String, QueryCollection> getCustomCommandData(String guild_id) {
+        HashMap<String, QueryCollection> commandData = new HashMap<>();
+        QueryCollection result = DatabaseHandler.safJQuery("SELECT ID,name,description,slash FROM commands WHERE guild_id = " + guild_id);
 
         if (result.isEmpty()) {
             return null;
@@ -1252,25 +1252,25 @@ public class DatabaseHandler {
 
         String ids = String.join(", ", result.arrayColumn("ID"));
         
-        QueryResult optionResult = DatabaseHandler.safJQuery("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (" + ids + ")");
+        QueryCollection optionResult = DatabaseHandler.safJQuery("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (" + ids + ")");
         commandData.put("options", optionResult);
 
-        QueryResult valueResult = null;
+        QueryCollection valueResult = null;
         if (!optionResult.isEmpty()) {
             String optionIds = String.join(", ", optionResult.arrayColumn("ID"));
             valueResult = DatabaseHandler.safJQuery("SELECT ID,option_id,`key`,value FROM command_option_value WHERE option_id IN (" + optionIds + ")");
             commandData.put("values", valueResult);
         }
 
-        QueryResult taskResult = DatabaseHandler.safJQuery("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (" + ids + ") order by `order`");
+        QueryCollection taskResult = DatabaseHandler.safJQuery("SELECT ID,command_id,type,`order` FROM command_task WHERE command_id IN (" + ids + ") order by `order`");
         commandData.put("tasks", taskResult);
 
         String taskIds = String.join(", ", taskResult.arrayColumn("ID"));
-        QueryResult taskValueResult = DatabaseHandler.safJQuery("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (" + taskIds + ")");
+        QueryCollection taskValueResult = DatabaseHandler.safJQuery("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (" + taskIds + ")");
         commandData.put("task_values", taskValueResult);
         
         String taskValueIds = String.join(", ", taskValueResult.arrayColumn("ID"));
-        QueryResult taskMessage = DatabaseHandler.safJQuery("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (" + taskValueIds + ")");
+        QueryCollection taskMessage = DatabaseHandler.safJQuery("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (" + taskValueIds + ")");
         if (!taskMessage.isEmpty()) {
             commandData.put("task_messages", taskMessage);
         }
@@ -1281,15 +1281,15 @@ public class DatabaseHandler {
         return runQuery("UPDATE guild SET league_shard = '" + shard.ordinal() + "' WHERE guild_id = '" + valueOf + "';");
     }
 
-    public static QueryResult getTwitchSubscriptions(String streamer_id) {
+    public static QueryCollection getTwitchSubscriptions(String streamer_id) {
         return safJQuery("SELECT a.guild_id as guild_id from alert_twitch as at join alert as a on at.alert_id = a.id WHERE at.streamer_id = '" + streamer_id + "';");
     }
 
-    public static QueryResult getSoundTags(String sound_id) {
+    public static QueryCollection getSoundTags(String sound_id) {
         return safJQuery("SELECT ts.tag_id as id,t.name as name FROM tag_sounds ts JOIN tag t ON ts.tag_id = t.id WHERE ts.sound_id = '" + sound_id + "';");
     }
 
-    public static QueryResult getSoundsTags(String ...sound_id) {
+    public static QueryCollection getSoundsTags(String ...sound_id) {
         StringBuilder sb = new StringBuilder();
         for(String sound : sound_id) {
             sb.append("'" + sound + "', ");
@@ -1298,7 +1298,7 @@ public class DatabaseHandler {
         return safJQuery("SELECT ts.sound_id as sound_id, ts.tag_id as tag_id, t.name as name FROM tag_sounds ts JOIN tag t ON ts.tag_id = t.id WHERE ts.sound_id IN (" + sb.toString() + ");");
     }
 
-    public static ResultRow getTag(String tag_id) {
+    public static QueryRecord getTag(String tag_id) {
         return fetchJRow("SELECT id, name FROM tag WHERE id = '" + tag_id + "';");
     }
 
@@ -1354,7 +1354,7 @@ public class DatabaseHandler {
         return id;
     }
 
-    public static ResultRow getLikeDislike(String sound_id) {
+    public static QueryRecord getLikeDislike(String sound_id) {
         return fetchJRow("SELECT "
             + "(SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = 1) AS likes, "
             + "(SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = -1) AS dislikes;");
@@ -1365,7 +1365,7 @@ public class DatabaseHandler {
         return runQuery("INSERT INTO sound_interactions(sound_id, user_id, value) VALUES('" + sound_id + "', '" + user_id + "', '" + value + "') ON DUPLICATE KEY UPDATE value = '" + value + "';", "UPDATE sound SET likes = (SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = 1), dislikes = (SELECT COUNT(*) FROM sound_interactions WHERE sound_id = '" + sound_id + "' AND value = -1) WHERE id = '" + sound_id + "';");
     }
 
-    public static ResultRow hasInterectedSound(String sound_id, String user_id) {
+    public static QueryRecord hasInterectedSound(String sound_id, String user_id) {
         String query = "SELECT " +
                        "CASE WHEN value = 1 THEN 1 ELSE 0 END AS `like`, " +
                        "CASE WHEN value = -1 THEN 1 ELSE 0 END AS `dislike` " +
@@ -1375,11 +1375,11 @@ public class DatabaseHandler {
     }
 
 
-    public static QueryResult getRegistredLolAccount(long time_start) {
+    public static QueryCollection getRegistredLolAccount(long time_start) {
         return safJQuery("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking WHERE time_start >= '" + new Timestamp(time_start) + "') t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1;");
     }
 
-    public static ResultRow getRegistredLolAccount(String account_id, long time_start) {
+    public static QueryRecord getRegistredLolAccount(String account_id, long time_start) {
         return fetchJRow("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking WHERE time_start >= '" + new Timestamp(time_start) + "') t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1 AND s.account_id = '" + account_id + "';");
     }
 
@@ -1387,23 +1387,23 @@ public class DatabaseHandler {
         return runQuery("INSERT IGNORE INTO summoner_tracking(account_id, game_id, league_shard, win, kda, rank, lp, gain, champion, lane, time_start, time_end, patch) VALUES('" + account_id + "','" + game_id + "','" + shard.ordinal() + "','" + (win ? 1 : 0) + "','" + kda + "','" + rank + "','" + lp + "','" + gain + "','" + champion + "','" + lane.ordinal() + "','" + new Timestamp(time_start) + "','" + new Timestamp(time_end) + "','" + version + "');");
     }
 
-    public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
+    public static QueryCollection getFocusedSummoners(String query, LeagueShard shard) {
         return safJQuery("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
     }
 
-    public static QueryResult getSummonerData(String account_id) {
+    public static QueryCollection getSummonerData(String account_id) {
         return safJQuery("SELECT rank, lp, wins, losses, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "';");
     }
 
-    public static QueryResult getSummonerData(String account_id, long game_id) {
+    public static QueryCollection getSummonerData(String account_id, long game_id) {
         return safJQuery("SELECT account_id, game_id, rank, lp, gain, win time_start, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND game_id = '" + game_id + "';");
     }
 
-    public static QueryResult getSummonerData(String account_id, LeagueShard shard, long time_start, long time_end) {
+    public static QueryCollection getSummonerData(String account_id, LeagueShard shard, long time_start, long time_end) {
         return safJQuery("SELECT account_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
-    public static QueryResult getSummonerData(String account_id, String[] game_id) {
+    public static QueryCollection getSummonerData(String account_id, String[] game_id) {
         return safJQuery("SELECT account_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND game_id IN ('" + String.join("', '", game_id) + "');");
     }
 
@@ -1411,11 +1411,11 @@ public class DatabaseHandler {
         return runQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
     }
 
-    public static ResultRow getSummonerData(String user_id, String account_id) {
+    public static QueryRecord getSummonerData(String user_id, String account_id) {
         return fetchJRow("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
     }
 
-    public static QueryResult getSummonersBuPuuid(String puuid) {
+    public static QueryCollection getSummonersBuPuuid(String puuid) {
         return safJQuery("SELECT account_id, league_shard FROM summoner WHERE puuid = '" + puuid + "';");
     }
     
@@ -1454,19 +1454,19 @@ public class DatabaseHandler {
         return id;
     }
 
-    public static QueryResult getPlaylists(String user_id) {
+    public static QueryCollection getPlaylists(String user_id) {
         return safJQuery("SELECT id, name, created_at FROM playlist WHERE user_id = '" + user_id + "';");
     }
 
-    public static ResultRow getPlaylist(String user_id, int playlist_id) {
+    public static QueryRecord getPlaylist(String user_id, int playlist_id) {
         return fetchJRow("SELECT id, name, created_at FROM playlist WHERE user_id = '" + user_id + "' AND id = " + playlist_id + ";");
     }
 
-    public static QueryResult getPlaylistsWithSize(String user_id) {
+    public static QueryCollection getPlaylistsWithSize(String user_id) {
         return safJQuery("SELECT id, name, created_at, (select count(*) as size from playlist_track where playlist_id = p.id) as size FROM playlist p WHERE user_id = '" + user_id + "';");
     }
 
-    public static ResultRow getPlaylistByIdWithSize(int playlist_id) {
+    public static QueryRecord getPlaylistByIdWithSize(int playlist_id) {
         return fetchJRow("SELECT id, name, user_id, created_at, (select count(*) as size from playlist_track where playlist_id = p.id) as size FROM playlist p WHERE id = '" + playlist_id + "';");
     }
 
@@ -1476,7 +1476,7 @@ public class DatabaseHandler {
         if(c == null) return -2;
 
         try (Statement stmt = c.createStatement()) {
-            ResultRow search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
+            QueryRecord search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
             
             if(search.isEmpty()) {
                 return 0;
@@ -1516,7 +1516,7 @@ public class DatabaseHandler {
         if(c == null) return -2;
 
         try (Statement stmt = c.createStatement()) {
-            ResultRow search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
+            QueryRecord search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
             
             if(search.isEmpty()) {
                 return 0;
@@ -1555,7 +1555,7 @@ public class DatabaseHandler {
         if(c == null) return -2;
 
         try (Statement stmt = c.createStatement()) {
-            ResultRow search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
+            QueryRecord search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
             
             if(search.isEmpty()) {
                 return 0;
@@ -1598,7 +1598,7 @@ public class DatabaseHandler {
         return !safJQuery("SELECT 1 FROM playlist WHERE name = '" + name + "' AND user_id = '" + user_id + "'").isEmpty();
     }
 
-    public static QueryResult getPlaylistTracks(int playlist_id, Integer limit, Integer page) {
+    public static QueryCollection getPlaylistTracks(int playlist_id, Integer limit, Integer page) {
         String limitString = limit != null ? " LIMIT " + limit + " " : "";
         limitString += page != null ? " OFFSET " + (page * limit) + " " : "";
         return safJQuery("SELECT * FROM playlist_track WHERE playlist_id = " + playlist_id + " ORDER BY `order` ASC" + limitString);
@@ -1822,11 +1822,11 @@ public class DatabaseHandler {
         return s;
     }
 
-    public static QueryResult getWarnings(String valueOf) {
+    public static QueryCollection getWarnings(String valueOf) {
         return safJQuery("SELECT id, action, action_role, action_time, infractions, infractions_time FROM automated_action WHERE guild_id = '" + valueOf + "' ORDER BY infractions DESC");
     }
 
-    public static QueryResult getAutomatedActionsExpiring() {
+    public static QueryCollection getAutomatedActionsExpiring() {
         String query = "SELECT aae.*, u.user_id, u.guild_id " + "FROM automated_action_expiration aae " + "JOIN `member` u ON aae.member_id = u.id " + "WHERE aae.time BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 2 HOUR)";
         System.out.println(query);
         return safJQuery(query);

@@ -33,8 +33,8 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
@@ -494,9 +494,9 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static List<Summoner> getSummonersFromPuuid(String puuid) {
-        QueryResult result = DatabaseHandler.getSummonersBuPuuid(puuid);
+        QueryCollection result = DatabaseHandler.getSummonersBuPuuid(puuid);
         List<Summoner> summoners = new ArrayList<>();
-        for (ResultRow row : result) {
+        for (QueryRecord row : result) {
             summoners.add(getSummonerByAccountId(row.get("account_id"), LeagueShard.values()[Integer.valueOf(row.get("league_shard"))]));
         }
         return summoners;

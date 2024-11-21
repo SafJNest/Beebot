@@ -10,8 +10,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -72,10 +72,10 @@ public class Upload extends SlashCommand{
             return;
         }
 
-        QueryResult sounds = DatabaseHandler.getDuplicateSoundsByName(soundName, event.getGuild().getId(), event.getMember().getId());
+        QueryCollection sounds = DatabaseHandler.getDuplicateSoundsByName(soundName, event.getGuild().getId(), event.getMember().getId());
 
         if(!sounds.isEmpty()) {
-            for(ResultRow sound : sounds) {
+            for(QueryRecord sound : sounds) {
                 if(sound.get("guild_id").equals(event.getGuild().getId()))
                     event.deferReply(true).addContent("That name is already in use by you.").queue();
                 if(sound.get("user_id").equals(event.getMember().getId()))

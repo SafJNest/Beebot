@@ -21,8 +21,8 @@ import com.google.gson.Gson;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
@@ -159,13 +159,13 @@ public class GraphLpSlash extends SlashCommand {
 
     }
 
-    private static boolean splitMonths(QueryResult result) {
+    private static boolean splitMonths(QueryCollection result) {
         return result.size() > 60;
     }
 
-    private static boolean isDaily(QueryResult result) {
+    private static boolean isDaily(QueryCollection result) {
         long lowest = Long.MAX_VALUE, highest = Long.MIN_VALUE;
-        for (ResultRow row : result) {
+        for (QueryRecord row : result) {
             lowest = Math.min(lowest, row.getAsEpochSecond("time_start"));
             highest = Math.max(highest, row.getAsEpochSecond("time_start"));
         }
@@ -173,11 +173,11 @@ public class GraphLpSlash extends SlashCommand {
         return highest - lowest < (TimeConstant.DAY/1000);
     }
 
-    private static Set<String> getTimeLabels(QueryResult result) {
+    private static Set<String> getTimeLabels(QueryCollection result) {
         Set<String> labels = new LinkedHashSet<>();
         if (splitMonths(result)) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/yyyy").withZone(ZoneId.of("GMT"));
-            for (ResultRow row : result) {
+            for (QueryRecord row : result) {
                 Instant instant = Instant.ofEpochSecond(row.getAsEpochSecond("time_start"));
                 ZonedDateTime gmtTime = instant.atZone(ZoneId.of("GMT"));
                 String formattedTime = formatter.format(gmtTime);
@@ -186,7 +186,7 @@ public class GraphLpSlash extends SlashCommand {
         } 
         else if (isDaily(result)) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("GMT"));
-            for (ResultRow row : result) {
+            for (QueryRecord row : result) {
                 Instant instant = Instant.ofEpochSecond(row.getAsEpochSecond("time_start"));
                 ZonedDateTime gmtTime = instant.atZone(ZoneId.of("GMT"));
                 String formattedTime = formatter.format(gmtTime);
@@ -195,7 +195,7 @@ public class GraphLpSlash extends SlashCommand {
         }
         else {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d/M/yyyy").withZone(ZoneId.of("GMT"));
-            for (ResultRow row : result) {
+            for (QueryRecord row : result) {
                 Instant instant = Instant.ofEpochSecond(row.getAsEpochSecond("time_start"));
                 ZonedDateTime gmtTime = instant.atZone(ZoneId.of("GMT"));
                 String formattedTime = formatter.format(gmtTime);
@@ -206,13 +206,13 @@ public class GraphLpSlash extends SlashCommand {
         return labels;
     }
 
-    private static List<Integer> getValues(QueryResult result, Map<Integer, Integer> tierDivisionMapReformed) {
+    private static List<Integer> getValues(QueryCollection result, Map<Integer, Integer> tierDivisionMapReformed) {
         List<Integer> values = new ArrayList<>();
 
         if (splitMonths(result)) {
             Map<Long, Integer> dailyMaxValues = new HashMap<>();
 
-            for (ResultRow row : result) {
+            for (QueryRecord row : result) {
                 long t = SafJNest.firstDayOfMonth(row.getAsEpochSecond("time_start"));
                 int cont = tierDivisionMapReformed.get(row.getAsInt("rank")) + Integer.parseInt(row.get("lp"));
                 dailyMaxValues.put(t, Math.max(dailyMaxValues.getOrDefault(t, 0), cont));
@@ -221,7 +221,7 @@ public class GraphLpSlash extends SlashCommand {
             values.addAll(dailyMaxValues.values());
         }
         else {
-            for (ResultRow row : result) {
+            for (QueryRecord row : result) {
                 int cont = tierDivisionMapReformed.get(row.getAsInt("rank")) + Integer.parseInt(row.get("lp"));
                 values.add(cont);
             }
@@ -231,7 +231,7 @@ public class GraphLpSlash extends SlashCommand {
     }
 
     private static String createGraph(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s, long timeStart, long timeEnd) {
-        QueryResult result = DatabaseHandler.getSummonerData(s.getAccountId(), s.getPlatform(), timeStart, timeEnd);
+        QueryCollection result = DatabaseHandler.getSummonerData(s.getAccountId(), s.getPlatform(), timeStart, timeEnd);
         
         if (result.isEmpty()) return null;
 
@@ -240,7 +240,7 @@ public class GraphLpSlash extends SlashCommand {
         Set<String> labels = getTimeLabels(result);
         List<Integer> values = getValues(result, tierDivisionList);
         List<Integer> gains = new ArrayList<>();
-        for (ResultRow row : result) {
+        for (QueryRecord row : result) {
             gains.add(row.getAsInt("gain"));
         }
         System.out.println(gains);

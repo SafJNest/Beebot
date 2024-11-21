@@ -7,27 +7,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import java.util.Map.Entry;
-
-public class ResultRow {
-    private Map<String, String> row;
+public class QueryRecord extends HashMap<String, String> {
     private ResultSet resultSet;
 
-    public ResultRow(Map<String, String> row, ResultSet resultSet){
-        this.row = row;
-        this.resultSet = resultSet;
-    }
-
-
-    /**
-     * Default construct to return an empty ResultRow if the query returns nothing.
-     * <p>
-     * If the {@link com.safjnest.sql.ResultRow query} is null, the method {@code row.get(String)} will throw a NullPointerException.
-     */
-    public ResultRow(ResultSet resultSet){
-        this.row = new HashMap<String, String>();
+    public QueryRecord(ResultSet resultSet){
+        super();
         this.resultSet = resultSet;
     }
 
@@ -35,21 +20,9 @@ public class ResultRow {
         this.resultSet = resultSet;
     }
 
-    public String get(String columnName){
-        try {
-            return row.get(columnName);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public void put(String key, String value) {
-        this.row.put(key, value);
-    }
-
     public int getAsInt(String columnName){
         try {
-            return Integer.parseInt(row.get(columnName));
+            return Integer.parseInt(get(columnName));
         } catch (Exception e) {
             return 0;
         }
@@ -57,21 +30,21 @@ public class ResultRow {
 
     public long getAsLong(String columnName){
         try {
-            return Long.parseLong(row.get(columnName));
+            return Long.parseLong(get(columnName));
         } catch (Exception e) {
             return 0;
         }
     }
 
     public boolean getAsBoolean(String columnName){
-        return "1".equals(row.get(columnName)) || "true".equalsIgnoreCase(row.get(columnName));
+        return "1".equals(get(columnName)) || "true".equalsIgnoreCase(get(columnName));
     }
 
     public double getAsDouble(String columnName) {
         try {
-            return Double.parseDouble(row.get(columnName));
+            return Double.parseDouble(get(columnName));
         } catch (Exception e) {
-            throw new IllegalArgumentException();
+            return 0;
         }
     }
     /**
@@ -82,7 +55,7 @@ public class ResultRow {
     public long getAsEpochSecond(String columnName){
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            LocalDateTime dateTime = LocalDateTime.parse(row.get(columnName), formatter);
+            LocalDateTime dateTime = LocalDateTime.parse(get(columnName), formatter);
             return dateTime.toEpochSecond(java.time.ZoneOffset.UTC);
         } catch (Exception e) {
             return 0;
@@ -92,7 +65,7 @@ public class ResultRow {
     public Timestamp getAsTimestamp(String columnName){
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            LocalDateTime dateTime = LocalDateTime.parse(row.get(columnName), formatter);
+            LocalDateTime dateTime = LocalDateTime.parse(get(columnName), formatter);
             return Timestamp.valueOf(dateTime);
         } catch (Exception e) {
             return null;
@@ -107,16 +80,9 @@ public class ResultRow {
         }
     }
 
-    public int size() {
-        return row.size();
-    }
-
-    public boolean isEmpty(){
-        return row.isEmpty();
-    }
 
     public boolean emptyValues(){
-        for(String value : row.values()){
+        for(String value : values()){
             if(value != null && !value.isEmpty())
                 return false;
         }
@@ -124,35 +90,25 @@ public class ResultRow {
     }
 
     public String[] toArray() {
-        String[] array = new String[row.size()];
+        String[] array = new String[size()];
         int i = 0;
-        for(String col : row.values()) {
+        for(String col : values()) {
             array[i] = col;
             i++;
         }
         return array;
     }
 
-    public Set<String> keySet(){
-        return row.keySet();
-    }
-
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (Entry<String, String> col : row.entrySet())
-            sb.append(col.getKey()).append(": ").append(col.getValue());
-        return sb.toString();
-    }
-
     public Map<String, String> getAsMap() {
-        return row;
+        return new HashMap<>(this);
+    
     }
 
 
     public LocalDateTime getAsLocalDateTime(String string) {
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            return LocalDateTime.parse(row.get(string), formatter);
+            return LocalDateTime.parse(get(string), formatter);
         } catch (Exception e) {
             return null;
         }

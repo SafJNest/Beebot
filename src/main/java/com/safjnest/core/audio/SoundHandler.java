@@ -27,8 +27,8 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 
@@ -114,7 +114,7 @@ public class SoundHandler {
 //                                                          
 
     public static Sound getSoundByString(String regex, Guild guild, User user) {
-        QueryResult sounds = regex.matches("[0123456789]*") 
+        QueryCollection sounds = regex.matches("[0123456789]*") 
             ? DatabaseHandler.getSoundsById(regex, guild.getId(), user.getId()) 
             : DatabaseHandler.getSoundsByName(regex, guild.getId(), user.getId());
     
@@ -122,8 +122,8 @@ public class SoundHandler {
             return null;
         }
     
-        ResultRow toPlay = null;
-        for(ResultRow sound : sounds) {
+        QueryRecord toPlay = null;
+        for(QueryRecord sound : sounds) {
             if(sound.get("guild_id").equals(guild.getId())) {
                 toPlay = sound;
                 break;
@@ -150,12 +150,12 @@ public class SoundHandler {
         
         List<String> notCached = List.of(sound_ids).stream().filter(id -> !soundCache.keySet().contains(id)).toList();
 
-        QueryResult soundsResult = DatabaseHandler.getSoundsById(notCached.toArray(new String[0]));
-        QueryResult tags = DatabaseHandler.getSoundsTags(notCached.toArray(new String[0]));
+        QueryCollection soundsResult = DatabaseHandler.getSoundsById(notCached.toArray(new String[0]));
+        QueryCollection tags = DatabaseHandler.getSoundsTags(notCached.toArray(new String[0]));
 
-        for (ResultRow soundData : soundsResult) {
+        for (QueryRecord soundData : soundsResult) {
             List<Tag> tagList = new ArrayList<>();
-            for (ResultRow tag : tags) {
+            for (QueryRecord tag : tags) {
                 if (tag.get("sound_id").equals(soundData.get("id"))) {
                     tagList.add(new Tag(tag.getAsInt("tag_id"), tag.get("name")));
                 }
@@ -186,7 +186,7 @@ public class SoundHandler {
 
     
     public static List<Sound> searchSound(String regex, String author) {
-        QueryResult result = author == null ? DatabaseHandler.extremeSoundResearch(regex) : DatabaseHandler.extremeSoundResearch(regex, author);
+        QueryCollection result = author == null ? DatabaseHandler.extremeSoundResearch(regex) : DatabaseHandler.extremeSoundResearch(regex, author);
         List<Sound> sounds = getSoundsByIds(result.arrayColumn("id").toArray(new String[0]));
     
         final Pattern pattern = Pattern.compile(regex);
@@ -224,7 +224,7 @@ public class SoundHandler {
 //                                        
 
     public static Tag getTagById(String tag_id) {
-        ResultRow tagData = DatabaseHandler.getTag(tag_id);
+        QueryRecord tagData = DatabaseHandler.getTag(tag_id);
         if (tagData == null) return null;
         return new Tag(tagData.getAsInt("id"), tagData.get("name"));
     }
@@ -295,7 +295,7 @@ public class SoundHandler {
 
     public static List<LayoutComponent> getTagButton(String sound, String tag) {
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
-        ResultRow tagData = DatabaseHandler.getTag(tag);
+        QueryRecord tagData = DatabaseHandler.getTag(tag);
 
         String name_tag = tagData.get("name") == null ? " " : tagData.get("name");
         
@@ -395,7 +395,7 @@ public class SoundHandler {
 
 
     public static List<Sound> getSoundboardSounds(String soundboardID) {
-        QueryResult sounds = DatabaseHandler.getSoundsFromSoundBoard(soundboardID);
+        QueryCollection sounds = DatabaseHandler.getSoundsFromSoundBoard(soundboardID);
         return getSoundsByIds(sounds.arrayColumn("sound_id").toArray(new String[0]));
     }
 
@@ -407,7 +407,7 @@ public class SoundHandler {
     }
 
     public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardID) {
-        ResultRow data = DatabaseHandler.getSoundboardByID(soundboardID);
+        QueryRecord data = DatabaseHandler.getSoundboardByID(soundboardID);
         if (data.emptyValues()) 
             return event.deferReply().setContent("Soundboard not found").setEphemeral(true);
         
@@ -459,7 +459,7 @@ public class SoundHandler {
     }
 
     public static void composeSoundboard(CommandEvent event, String soundboardID) {
-        ResultRow data = DatabaseHandler.getSoundboardByID(soundboardID);
+        QueryRecord data = DatabaseHandler.getSoundboardByID(soundboardID);
 
         String name = data.get("name");
         Blob thumbnailBlob = data.getAsBlob("thumbnail");

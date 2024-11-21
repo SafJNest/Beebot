@@ -9,8 +9,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -69,13 +69,13 @@ public class List extends SlashCommand {
         eb.setTitle("List of " + event.getGuild().getName());
         eb.setColor(Bot.getColor());
 
-        QueryResult sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId());
+        QueryCollection sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId());
 
         eb.setDescription("Total Sound: " + sounds.size());
         
 
         for(int i = 0; i < sounds.size() && i < 24; i++){
-            ResultRow sound = sounds.get(i);
+            QueryRecord sound = sounds.get(i);
             String locket = sound.getAsBoolean("public") ? "" : ":lock:";
             eb.addField("**" + sound.get("name") + "**" + locket, "ID: " + sound.get("id"), true);
         }

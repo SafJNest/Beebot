@@ -36,8 +36,8 @@ import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.ResultRow;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
@@ -124,7 +124,7 @@ public class Test extends Command{
     @Override
     protected void execute(CommandEvent e) {
         String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
-        QueryResult res;
+        QueryCollection res;
         String query = "";
 
         String args[] = e.getArgs().split(" ", 2);
@@ -304,7 +304,7 @@ public class Test extends Command{
             case "stats":
                 query = "SELECT guild_id, room_id FROM room WHERE has_command_stats = 0";
                 res = DatabaseHandler.safJQuery(query);
-                for(ResultRow row : res){
+                for(QueryRecord row : res){
                     for (String bot : bots) {
                         query = "INSERT INTO channel(guild_id, channel_id, bot_id, stats_enabled) VALUES (" + row.get("guild_id") + ", "+ row.get("room_id") +", " + bot + ", 0)";
                         DatabaseHandler.safJQuery(query);
@@ -315,7 +315,7 @@ public class Test extends Command{
             case "insertepriainblacklist":
                 query = "SELECT id FROM guilds";
                 res = DatabaseHandler.safJQuery(query);
-                for(ResultRow row : res){
+                for(QueryRecord row : res){
                     query = "INSERT INTO blacklist(guild_id, user_id) VALUES (" + row.get("id") + "," + PermissionHandler.getEpria() + ")";
                     DatabaseHandler.safJQuery(query);
                 }
@@ -323,7 +323,7 @@ public class Test extends Command{
             case "insertalert":
                 query = "SELECT guild_id, role_id, level, message_text FROM reward";
                 res = DatabaseHandler.safJQuery(query);
-                for(ResultRow row : res){
+                for(QueryRecord row : res){
                     int id = 0;
                     java.sql.Connection c = DatabaseHandler.getConnection();
                     try (Statement stmt = c.createStatement()) {
@@ -343,7 +343,7 @@ public class Test extends Command{
             case "insertuser":
             query = "SELECT user_id, guild_id, exp, level, messages FROM experience";
             res = DatabaseHandler.safJQuery(query);
-            for(ResultRow row : res){
+            for(QueryRecord row : res){
                 for (String bot : bots) {
                     query = "INSERT INTO user(user_id, guild_id, experience, level, messages, bot_id) VALUES (" + row.get("user_id") + ", " + row.get("guild_id") + ", " + row.get("exp") + ", " + row.get("level") + ", " + row.get("messages") + ", " + bot + ")";
                     DatabaseHandler.safJQuery(query);
@@ -494,7 +494,7 @@ public class Test extends Command{
                 }
             case "soundsgozzing":
                 query = "SELECT id from sound";
-                QueryResult res1 = DatabaseHandler.safJQuery(query);
+                QueryCollection res1 = DatabaseHandler.safJQuery(query);
                 System.out.println(res1.size());
                 for (Guild g : e.getJDA().getGuilds()) {
                     System.out.println(g.getName());
@@ -505,7 +505,7 @@ public class Test extends Command{
                         int end = Math.min(i + batchSize, res1.size());
                         for (Member m : g.getMembers()) {
                             for (int j = i; j < end; j++) { // Iterate over each batch
-                                ResultRow row = res1.get(j);
+                                QueryRecord row = res1.get(j);
                                 batchValues.add("(" + m.getId() + ", " + row.get("id") + ", " + 1 + ")");
                             }
                         }
@@ -651,7 +651,7 @@ public class Test extends Command{
             case "fixlol":
                 query = "SELECT st.id, st.game_id, st.account_id, st.league_shard, s.summoner_id FROM summoner_tracking st JOIN summoner s ON st.account_id = s.account_id AND st.league_shard = s.league_shard WHERE st.lane IS NULL order by id;";
                 res = DatabaseHandler.safJQuery(query);
-                for(ResultRow row : res){
+                for(QueryRecord row : res){
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
                     String game_id = region + "_"+row.get("game_id");
                     String account_id = row.get("account_id");
@@ -680,7 +680,7 @@ public class Test extends Command{
             case "fixlolna":
                 query = "SELECT game_id, account_id from summoner_tracking where league_shard = 8";
                 res = DatabaseHandler.safJQuery(query);
-                for(ResultRow row : res){
+                for(QueryRecord row : res){
                     String game_id = "NA1_"+row.get("game_id");
                     String account_id = row.get("account_id");
 
@@ -705,7 +705,7 @@ public class Test extends Command{
                 query = "SELECT account_id, league_shard from summoner";
                 res = DatabaseHandler.safJQuery(query);
                 String ssss = "";
-                for(ResultRow row : res){
+                for(QueryRecord row : res){
                     String account_id = row.get("account_id");
                     int league_shard = row.getAsInt("league_shard");
                     Summoner summoner = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.values()[league_shard]);
@@ -741,7 +741,7 @@ public class Test extends Command{
                 query = "SELECT game_id, account_id from summoner_tracking where league_shard = 3 AND account_id = '" + args[1] + "'";
                 res = DatabaseHandler.safJQuery(query);
                 System.out.println(res.size());
-                for(ResultRow row : res){
+                for(QueryRecord row : res){
                     String game_id = "EUW1_"+row.get("game_id");
                     String account_id = row.get("account_id");
 
@@ -765,10 +765,10 @@ public class Test extends Command{
             break;
             case "playplaylist":
                 int playlistId = Integer.valueOf(args[1]);
-                QueryResult tracks = DatabaseHandler.getPlaylistTracks(playlistId, null, null);
+                QueryCollection tracks = DatabaseHandler.getPlaylistTracks(playlistId, null, null);
 
                 List<String> URIs = new ArrayList<String>();
-                for(ResultRow track : tracks) {
+                for(QueryRecord track : tracks) {
                     URIs.add(track.get("uri"));
                 }
                 PlayerManager.get().loadPlaylist(e.getGuild(), URIs, new ResultHandler(e, false, PlayTiming.LAST));
@@ -784,8 +784,8 @@ public class Test extends Command{
             break;
             case "loadtracksfromdb":
                 List<AudioTrack> tracksFinal = new ArrayList<>();
-                QueryResult tracksToLoad = DatabaseHandler.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
-                for(ResultRow trackToLoad : tracksToLoad) {
+                QueryCollection tracksToLoad = DatabaseHandler.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
+                for(QueryRecord trackToLoad : tracksToLoad) {
                     tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
                 }
                 SafjAudioPlaylist playlist = new SafjAudioPlaylist("Custom Playlist", tracksFinal, null);
@@ -797,7 +797,7 @@ public class Test extends Command{
             case "fixloldb":
                 query = "SELECT id, summoner_id, league_shard from summoner";
                 res = DatabaseHandler.safJQuery(query);
-                for (ResultRow acc : res) {
+                for (QueryRecord acc : res) {
                     String summoner_id = acc.get("summoner_id");
                     int league_shard = acc.getAsInt("league_shard");
                     Summoner summoner = LeagueHandler.getSummonerBySummonerId(summoner_id, LeagueShard.values()[league_shard]);
@@ -831,7 +831,7 @@ public class Test extends Command{
                 query = "select * from sound_interactions";
                 res = DatabaseHandler.safJQuery(query);
                 query = "";
-                for (ResultRow row : res) {
+                for (QueryRecord row : res) {
                     int times = row.getAsInt("times");
                     System.out.println(row.get("sound_id") + " " + row.get("user_id") + " " + times );
                     for (i = 0; i < times; i++) {
@@ -849,7 +849,7 @@ public class Test extends Command{
                 query = "select * from sound_interactions";
                 res = DatabaseHandler.safJQuery(query);
                 query = "";
-                for (ResultRow row : res) {
+                for (QueryRecord row : res) {
                     int likevalue = row.getAsInt("like") == 1 ? 1 : 0;
                     likevalue = row.getAsInt("dislike") == 1 ? -1 : likevalue;
                     query += "(" + row.get("user_id") + ", " + row.get("sound_id") + ", " + likevalue + "),";
@@ -861,7 +861,7 @@ public class Test extends Command{
             break;
             case "testblob":
                 query = "SELECT * FROM soundboard WHERE id = 23";
-                ResultRow row = DatabaseHandler.fetchJRow(query);
+                QueryRecord row = DatabaseHandler.fetchJRow(query);
                 String blobString = row.get("thumbnail");
                 if (blobString != null) {
                     try {
@@ -887,7 +887,7 @@ public class Test extends Command{
                 query = "select * from twitch_subscription";
                 res = DatabaseHandler.safJQuery(query);
 
-                for (ResultRow r : res) {
+                for (QueryRecord r : res) {
                     int id = 0;
                     Connection c = DatabaseHandler.getConnection();
                     query = "INSERT INTO alert(guild_id, message, channel, enabled, type, send_type) VALUES(?, ?, ?, 1, ?, ?);";
@@ -938,7 +938,7 @@ public class Test extends Command{
             case "updateconduit":
             query = "SELECT streamer_id from twitch_subscription";
             res = DatabaseHandler.safJQuery(query);
-            for (ResultRow r : res) {
+            for (QueryRecord r : res) {
                 TwitchClient.registerSubEvent(r.get("streamer_id"));
             }
             System.out.println("Done");   
@@ -997,9 +997,9 @@ public class Test extends Command{
     private static DefaultCategoryDataset createDataset() {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         String query = "select time, count(name) as count from command_analytic where MONTH(time) = 8 group by DAY(time);";
-        QueryResult res = DatabaseHandler.safJQuery(query);
+        QueryCollection res = DatabaseHandler.safJQuery(query);
         
-        for(ResultRow row : res){
+        for(QueryRecord row : res){
             System.out.println(row.get("time") + " " + row.get("count"));
             dataset.addValue(Integer.parseInt(row.get("count")), "Comandi", row.get("time"));
         }
