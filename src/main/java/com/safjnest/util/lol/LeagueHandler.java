@@ -370,7 +370,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
      * safj
      */
     public static RiotAccount getRiotAccountFromSummoner(Summoner s){
-        System.out.println(s.toString());
+        System.out.println("getRiotAccout " + s.toString());
         return riotApi.getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
     }
 
@@ -410,7 +410,9 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static Summoner getSummonerByName(String nameAccount, String tag, LeagueShard shard) {
         try {
+            System.out.println("getSummonerByName " + nameAccount + " " + tag + " " + shard);
             String puiid = riotApi.getAccountAPI().getAccountByTag(shard.toRegionShard(), nameAccount, tag).getPUUID();
+            System.out.println("getSummonerByName " + puiid);
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puiid);  
         } catch (Exception e) {
             return null;

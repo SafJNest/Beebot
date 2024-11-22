@@ -62,6 +62,7 @@ public class Summoner extends SlashCommand {
             event.reply("Couldn't find the specified summoner. Remember to specify the tag or link an account using `/summoner link`");
             return;
         }
+        System.out.println("getEventByArgs " + s.toString());
 
         EmbedBuilder builder = LeagueMessage.getSummonerEmbed(s);
         List<LayoutComponent> buttons = LeagueMessage.getSummonerButtons(s, theGuy != null ? theGuy.getId() : null);
