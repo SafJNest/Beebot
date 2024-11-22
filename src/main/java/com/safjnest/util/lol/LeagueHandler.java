@@ -370,6 +370,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
      * safj
      */
     public static RiotAccount getRiotAccountFromSummoner(Summoner s){
+        System.out.println(s.toString());
         return riotApi.getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
     }
 
