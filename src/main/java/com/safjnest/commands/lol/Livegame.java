@@ -77,11 +77,6 @@ public class Livegame extends SlashCommand {
             event.getChannel().sendMessageEmbeds(builder.build()).setComponents(row).queue();
         }
         else event.getChannel().sendMessageEmbeds(builder.build()).setComponents(row).queue();
-
-        if (users != null) {
-            LeagueHandler.updateSummonerDB(s.getCurrentGame());
-        }
-        
     }
 
     @Override
@@ -111,10 +106,6 @@ public class Livegame extends SlashCommand {
             event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
         }
         else event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
-
-        if (users != null) {
-            LeagueHandler.updateSummonerDB(s.getCurrentGame());
-        }
 	}
 
 }

@@ -11,6 +11,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -30,6 +31,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
@@ -1376,15 +1378,50 @@ public class DatabaseHandler {
 
 
     public static QueryCollection getRegistredLolAccount(long time_start) {
-        return safJQuery("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking WHERE time_start >= '" + new Timestamp(time_start) + "') t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1;");
+        return safJQuery(
+            "SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
+            + "FROM summoner s "
+            + "LEFT JOIN ("
+            + "    SELECT t.account_id, t.game_id, t.rank, t.lp, t.time_start "
+            + "    FROM ("
+            + "        SELECT st.account_id, sm.game_id, st.rank, st.lp, sm.time_start, "
+            + "        ROW_NUMBER() OVER (PARTITION BY st.account_id ORDER BY sm.time_start DESC) AS rn "
+            + "        FROM summoner_tracking st "
+            + "        JOIN summoner_match sm ON st.summoner_match_id = sm.id "
+            + "        WHERE sm.time_start >= '" + new Timestamp(time_start) + "' "
+            + "        AND sm.game_type = 43"
+            + "    ) t "
+            + "    WHERE t.rn = 1"
+            + ") st ON s.account_id = st.account_id "
+            + "WHERE s.tracking = 1;"
+        );
     }
+    
+    
+    
+    
 
     public static QueryRecord getRegistredLolAccount(String account_id, long time_start) {
-        return fetchJRow("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start FROM summoner s LEFT JOIN (SELECT account_id, game_id, rank, lp, time_start FROM (SELECT account_id, game_id, rank, lp, time_start, ROW_NUMBER() OVER (PARTITION BY account_id ORDER BY time_start DESC) AS rn FROM summoner_tracking WHERE time_start >= '" + new Timestamp(time_start) + "') t WHERE t.rn = 1) st ON s.account_id = st.account_id WHERE s.tracking = 1 AND s.account_id = '" + account_id + "';");
+        return fetchJRow("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
+                + "FROM summoner s "
+                + "LEFT JOIN (SELECT t.account_id, t.game_id, t.rank, t.lp, t.time_start "
+                + "           FROM (SELECT st.account_id, sm.game_id, st.rank, st.lp, sm.time_start, "
+                + "                        ROW_NUMBER() OVER (PARTITION BY st.account_id ORDER BY sm.time_start DESC) AS rn "
+                + "                 FROM summoner_tracking st "
+                + "                 JOIN summoner_match sm ON st.summoner_match_id = sm.id "
+                + "                 WHERE sm.time_start >= '" + new Timestamp(time_start) + "' "
+                + "                   AND sm.game_type = 43 "
+                + "                   AND st.account_id = '" + account_id + "') t "
+                + "    WHERE t.rn = 1) st "
+                + "ON s.account_id = st.account_id "
+                + "WHERE s.tracking = 1 AND s.account_id = '" + account_id + "';");
     }
+    
+    
+    
 
-    public static boolean setSummonerData(String account_id, long game_id, LeagueShard shard, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, long time_start, long time_end, String version) {
-        return runQuery("INSERT IGNORE INTO summoner_tracking(account_id, game_id, league_shard, win, kda, rank, lp, gain, champion, lane, time_start, time_end, patch) VALUES('" + account_id + "','" + game_id + "','" + shard.ordinal() + "','" + (win ? 1 : 0) + "','" + kda + "','" + rank + "','" + lp + "','" + gain + "','" + champion + "','" + lane.ordinal() + "','" + new Timestamp(time_start) + "','" + new Timestamp(time_end) + "','" + version + "');");
+    public static boolean setSummonerData(String account_id, int summonerMatchId, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, TeamType side, String build) {
+        return runQuery("INSERT IGNORE INTO summoner_tracking(account_id, summoner_match_id, win, kda, rank, lp, gain, champion, lane, side, build) VALUES('" + account_id + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "');");
     }
 
     public static QueryCollection getFocusedSummoners(String query, LeagueShard shard) {
@@ -1417,6 +1454,87 @@ public class DatabaseHandler {
 
     public static QueryCollection getSummonersBuPuuid(String puuid) {
         return safJQuery("SELECT account_id, league_shard FROM summoner WHERE puuid = '" + puuid + "';");
+    }
+
+    public static boolean setChampionData(LOLMatch match, HashMap<String, HashMap<String, String>> matchData) {
+       String query = "INSERT INTO summoner_build(game_id, shard, game_type, champion, win, lane, starter, build, first_root, second_root, shard_root, summoner_spells, skill_order, patch, boots) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            for (String account_id : matchData.keySet()) {
+                HashMap<String, String> data = matchData.get(account_id);
+                if (data.get("items") == null || data.get("starter") == null || data.get("starter").isBlank()) {
+                    continue;
+                }
+                pstmt.setLong(1, match.getGameId());
+                pstmt.setInt(2, match.getPlatform().ordinal());
+                pstmt.setInt(3, match.getQueue().ordinal());
+                pstmt.setInt(4, Integer.parseInt(data.get("champion")));
+                pstmt.setInt(5, data.get("win").equals("1") ? 1 : 0);
+                pstmt.setInt(6, Integer.parseInt(data.get("lane")));
+                pstmt.setString(7, normalize(data.get("starter")));
+                pstmt.setString(8, data.get("items"));
+                pstmt.setString(9, data.get("perks-0"));
+                pstmt.setString(10, data.get("perks-1"));
+                pstmt.setString(11, data.get("stats"));
+                pstmt.setString(12, normalize(data.get("summoner_spells")));
+                pstmt.setString(13, data.get("skill_order"));
+                pstmt.setString(14, match.getGameVersion());
+                pstmt.setString(15, data.get("boots"));
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static int setMatchData(LOLMatch match) {
+        int id = 0;
+
+        Connection c = getConnection();
+        if(c == null) return id;
+
+        try (Statement stmt = c.createStatement()) {
+            PreparedStatement ps = c.prepareStatement("SELECT id FROM summoner_match WHERE game_id = ? AND league_shard = ?;");
+            ps.setString(1, String.valueOf(match.getGameId()));
+            ps.setInt(2, match.getPlatform().ordinal());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                id = rs.getInt("id");
+            } else{
+                ps = c.prepareStatement("INSERT INTO summoner_match(game_id, league_shard, game_type, time_start, time_end, patch) VALUES (?,?,?,?,?,?);");
+                ps.setString(1, String.valueOf(match.getGameId()));
+                ps.setInt(2, match.getPlatform().ordinal());
+                ps.setInt(3, match.getQueue().ordinal());
+                ps.setTimestamp(4, new Timestamp(match.getGameCreation()));
+                ps.setTimestamp(5, new Timestamp(match.getGameEndTimestamp()));
+                ps.setString(6, match.getGameVersion());
+
+                ps.executeUpdate();
+                id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+                c.commit();
+            }
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+        return id;
     }
     
 
@@ -1792,36 +1910,6 @@ public class DatabaseHandler {
         return fetchJRow("SELECT COUNT(*) AS warning_count FROM warning WHERE member_id = " + memberId + " GROUP BY member_id").getAsInt("warning_count");
     }
 
-    
-
-
-
-    
-
-
-
-
-    /** 
-     * What the actual fuck sunyx?
-     * eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee la cannuccia
-     * weru9fgt9uehrgferwfghreyuio
-    */
-    public static String getCannuccia() {
-        return ":cannuccia:";
-    }
-
-    /**
-     * @deprecated
-     * deprecated this shit and use querySafe
-     * @param s
-     * @return
-     */
-    public static String fixSQL(String s){
-        s = s.replace("\"", "\\\"");
-        s = s.replace("\'", "\\\'");
-        return s;
-    }
-
     public static QueryCollection getWarnings(String valueOf) {
         return safJQuery("SELECT id, action, action_role, action_time, infractions, infractions_time FROM automated_action WHERE guild_id = '" + valueOf + "' ORDER BY infractions DESC");
     }
@@ -1865,4 +1953,58 @@ public class DatabaseHandler {
     public static String getMutedRole(String valueOf) {
         return fetchJRow("SELECT action_role FROM automated_action WHERE action = 1 AND guild_id = '" + valueOf + "';").get("action_role");
     }
+
+    
+
+
+
+    
+
+
+
+
+
+
+    /** 
+     * What the actual fuck sunyx?
+     * eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee la cannuccia
+     * weru9fgt9uehrgferwfghreyuio
+    */
+    public static String getCannuccia() {
+        return ":cannuccia:";
+    }
+
+    /**
+     * @deprecated
+     * deprecated this shit and use querySafe
+     * @param s
+     * @return
+     */
+    public static String fixSQL(String s){
+        s = s.replace("\"", "\\\"");
+        s = s.replace("\'", "\\\'");
+        return s;
+    }
+
+    public static String normalize(String string) {
+        String[] parts = string.split(",");
+
+        List<Integer> list = new ArrayList<>();
+        for (String part : parts) {
+            list.add(Integer.parseInt(part.trim()));
+        }
+
+        Collections.sort(list);
+
+        StringBuilder sortedString = new StringBuilder();
+        for (int i = 0; i < list.size(); i++) {
+            sortedString.append(list.get(i));
+            if (i < list.size() - 1) {
+                sortedString.append(",");
+            }
+        }
+
+        return sortedString.toString();
+    }
+
 }

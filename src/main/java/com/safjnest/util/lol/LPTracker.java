@@ -1,9 +1,13 @@
 package com.safjnest.util.lol;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import org.json.JSONObject;
 
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
@@ -16,11 +20,16 @@ import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
+import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
+import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrameEvent;
+import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import java.time.LocalDateTime;
 
@@ -41,7 +50,7 @@ public class LPTracker {
 			}
 		};
 
-		scheduler.scheduleAtFixedRate(task, TimeConstant.MINUTE, period, TimeUnit.MILLISECONDS);
+		scheduler.scheduleAtFixedRate(task, 0, period, TimeUnit.MILLISECONDS);
 	} 
 
 	private void trackSummoners() {
@@ -67,7 +76,7 @@ public class LPTracker {
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
         
-        try { Thread.sleep(350); } 
+        try { Thread.sleep(1000); } 
         catch (InterruptedException e) {e.printStackTrace();}
 
         List<String> matchIds = summoner.getLeagueGames().withCount(20).withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).get();
@@ -90,17 +99,45 @@ public class LPTracker {
         LOLMatch match = api.getLoLAPI().getMatchAPI().getMatch(matchShard.toRegionShard(), matchId);
         if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp())) return;
         
-        boolean win = false;
-        int champion = 0;
-        String kda = "";
-        LaneType lane = null;
-        for (MatchParticipant partecipant : match.getParticipants()) {
+        int summoner_match_id = DatabaseHandler.setMatchData(match);
+        LeagueHandler.updateSummonerDB(match);
+
+        HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
+        
+        
+        for (MatchParticipant partecipant : match.getParticipants()) {      
             if (partecipant.getPuuid().equals(summoner.getPUUID())) {
-                win = partecipant.didWin();
-                champion = partecipant.getChampionId();
-                kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists();
-                lane = partecipant.getChampionSelectLane() != null ? partecipant.getChampionSelectLane() : partecipant.getLane();
+                try { Thread.sleep(500); } 
+                catch (InterruptedException e) {e.printStackTrace();}
+                pushSummoner(match, summoner_match_id, summoner, partecipant, dataGame, matchData.get(partecipant.getPuuid()));
+                continue;
             }
+
+            Summoner toPush = LeagueHandler.getSummonerByPuiid(partecipant.getPuuid(), matchShard);
+            if (toPush == null) continue;
+            
+            pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
+        }
+        
+
+    }
+
+    public static void pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant partecipant, HashMap<String, String> matchData) {
+        QueryRecord row = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
+        pushSummoner(match, summonerMatch, summoner, partecipant, row, matchData);
+    }
+
+    private static void pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant partecipant, QueryRecord dataGame, HashMap<String, String> matchData) {
+        boolean win = partecipant.didWin();
+        int champion = partecipant.getChampionId();
+        String kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists();
+        LaneType lane = partecipant.getChampionSelectLane() != null ? partecipant.getChampionSelectLane() : partecipant.getLane();
+        TeamType side = partecipant.getTeam();
+
+        if (match.getGameId() == dataGame.getAsLong("game_id")) return;
+
+        if (matchData.get("items") == null || matchData.get("starter") == null || matchData.get("starter").isBlank()) {
+            return;
         }
 
         LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
@@ -123,8 +160,125 @@ public class LPTracker {
         else gain = lp - dataGame.getAsInt("lp");
         
         BotLogger.info("[LPTracker] Push match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
-        DatabaseHandler.setSummonerData(summoner.getAccountId(), match.getGameId(), matchShard, win, kda, rank, lp, gain, champion, lane, match.getGameCreation(), match.getGameEndTimestamp(), match.getGameVersion());
-        LeagueHandler.updateSummonerDB(match);
+        DatabaseHandler.setSummonerData(summoner.getAccountId(), summonerMatch, win, kda, rank, lp, gain, champion, lane, side, createJSONBuild(matchData));
+        
+    }
+
+    private static String createJSONBuild(HashMap<String, String> matchData) {
+        JSONObject json = new JSONObject();
+        JSONObject build = new JSONObject();
+
+        JSONObject runes = new JSONObject();
+
+
+        build.put("starter", matchData.get("starter").split(","));
+        build.put("build", matchData.get("items").split(","));
+        build.put("boots", matchData.getOrDefault("boots", "0"));
+        
+        json.put("build", build);
+        json.put("skill_order", matchData.get("skill_order").split(","));
+
+        runes.put("primary", matchData.get("perks-0").split(","));
+        runes.put("secondary", matchData.get("perks-1").split(","));
+        runes.put("stats", matchData.get("stats").split(","));
+
+        json.put("runes", runes);
+
+        return json.toString();
+
+
+        
+
+    }
+
+
+    public static HashMap<String, HashMap<String, String>> analyzeMatchBuild(LOLMatch match, List<MatchParticipant> partecipants) {
+        Map<Integer, Item> items = LeagueHandler.getRiotApi().getDDragonAPI().getItems();
+
+        HashMap<String, HashMap<String, String>> matchData = new HashMap<>();
+        for (MatchParticipant partecipant : partecipants) {
+            matchData.put(partecipant.getPuuid(), new HashMap<>());
+            matchData.get(partecipant.getPuuid()).put("win", partecipant.didWin() ? "1" : "0");      
+            matchData.get(partecipant.getPuuid()).put("lane", String.valueOf(partecipant.getChampionSelectLane().ordinal()));
+            matchData.get(partecipant.getPuuid()).put("champion", String.valueOf(partecipant.getChampionId()));  
+            matchData.get(partecipant.getPuuid()).put("stats", partecipant.getPerks().getStatPerks().getDefense() + "," + partecipant.getPerks().getStatPerks().getFlex() + "," + partecipant.getPerks().getStatPerks().getOffense());
+            for (int i = 0; i < 2; i++) {
+                for (PerkSelection perk : partecipant.getPerks().getPerkStyles().get(i).getSelections()) {
+                    String perkList = matchData.get(partecipant.getPuuid()).getOrDefault("perks-" + i, "");
+                    if (perkList.isEmpty()) perkList = perk.getPerk() + "";
+                    else perkList += "," + perk.getPerk();
+                    matchData.get(partecipant.getPuuid()).put("perks-" + i, perkList);
+                }
+                matchData.get(partecipant.getPuuid()).put("perks-" + i, partecipant.getPerks().getPerkStyles().get(i).getStyle() + "," + matchData.get(partecipant.getPuuid()).get("perks-" + i));
+            }
+            matchData.get(partecipant.getPuuid()).put("summoner_spells", partecipant.getSummoner1Id() + "," + partecipant.getSummoner2Id());
+        
+        }
+        
+        LOLTimeline timeline = match.getTimeline();
+        timeline.getParticipants().forEach(partecipant -> {
+            matchData.put(String.valueOf(partecipant.getParticipantId()), matchData.get(partecipant.getPuuid()));
+            matchData.remove(partecipant.getPuuid());
+        });
+
+        for (int i = 0; i < timeline.getFrames().size(); i++) {
+            for (TimelineFrameEvent event : timeline.getFrames().get(i).getEvents()) {
+                Item item;
+                String participantId = String.valueOf(event.getParticipantId());
+                String itemType = i == 1 ? "starter" : "items";
+
+                switch (event.getType()) {
+                    case ITEM_PURCHASED:
+                        item = items.get(event.getItemId());
+                        if (item == null) continue;
+
+                        if (item.getFrom() != null && item.getFrom().contains("1001")) {
+                            matchData.get(participantId).put("boots", item.getId() + "");    
+                            continue;
+                        }
+
+                        if (i != 1 && item.getDepth() != 3) continue;
+    
+                        String itemList = matchData.get(participantId).getOrDefault(itemType, "");
+                        if (itemList.isEmpty()) itemList = item.getId() + "";
+                        else itemList += "," + item.getId();
+                        matchData.get(participantId).put(itemType, itemList);    
+                        break;
+                    case ITEM_UNDO:
+                    case ITEM_SOLD:
+                        item = items.get(event.getBeforeId());
+                        if (item == null) continue;
+                        if (i != 1 && item.getDepth() != 3) continue;
+    
+                        String[] itemsList = matchData.get(participantId).get(itemType).split(",");
+                        String undoList = "";
+                        for (String itemStr : itemsList) {
+                            if (!itemStr.equals(item.getId() + "")) {
+                               
+                                if (!undoList.isEmpty()) undoList += ",";
+                                undoList += itemStr;
+                            }
+                        }
+                        matchData.get(participantId).put(itemType, undoList);
+                        break;
+                    case SKILL_LEVEL_UP:
+                        String skillList = matchData.get(participantId).getOrDefault("skill_order", "");
+                        if (skillList.isEmpty()) skillList = event.getSkillSlot() + "";
+                        else skillList += "," + event.getSkillSlot();
+                        matchData.get(participantId).put("skill_order", skillList);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        timeline.getParticipants().forEach(partecipant -> {
+            matchData.put(partecipant.getPuuid(), matchData.get(String.valueOf(partecipant.getParticipantId())));
+            matchData.remove(String.valueOf(partecipant.getParticipantId()));
+
+        });
+        return matchData;
     }
 
 }

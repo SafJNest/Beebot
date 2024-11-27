@@ -43,6 +43,7 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TableHandler;
+import com.safjnest.util.lol.LPTracker;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.twitch.TwitchClient;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -956,6 +957,24 @@ public class Test extends Command{
                     vc.getManager().putPermissionOverride(role, null, Collections.singleton(Permission.VOICE_SPEAK)).queue();
                 }
                 e.reply("Role created");
+            break;
+            case "movematch":
+                query = "SELECT game_id, league_shard, id from summoner_tracking where game_id in(select game_id from summoner_tracking where game_id not in (select game_id from summoner_match))";
+                res = DatabaseHandler.safJQuery(query);
+                System.out.println(res.size());
+                for (QueryRecord r : res) {
+                    System.out.println(r.get("id") + " - " + r.get("game_id"));
+                    String game_id = r.get("game_id");
+                    int league_shard = r.getAsInt("league_shard");
+                    String region = LeagueShard.values()[league_shard].name();
+                    LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[league_shard].toRegionShard(), region + "_"+game_id);
+                    if (m == null) {
+                        System.out.println("Match not found");
+                        continue;
+                    }
+                    System.out.println(DatabaseHandler.setMatchData(m));
+                }
+                
         }
     }  
 
