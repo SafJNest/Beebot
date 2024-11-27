@@ -183,6 +183,7 @@ public class LPTracker {
         runes.put("stats", matchData.get("stats").split(","));
 
         json.put("runes", runes);
+        json.put("summoner_spells", matchData.get("summoner_spells").split(","));
 
         return json.toString();
 
