@@ -855,6 +855,7 @@ public class LeagueMessage {
                     break;
             }
 
+            LeagueHandler.updateSummonerDB(summoner.getCurrentGame());
 
 
             builder.setFooter("For every gamemode would be use the SoloQ ranked data. Flex would be shown only if the game is a Flex game.");

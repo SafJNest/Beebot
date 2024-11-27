@@ -16,6 +16,7 @@ import com.github.twitch4j.eventsub.socket.IEventSubConduit;
 import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.Stream;
+import com.github.twitch4j.helix.domain.Team;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.opencsv.CSVReader;
@@ -43,6 +44,7 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TableHandler;
+import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.twitch.TwitchClient;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -64,6 +66,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
@@ -649,7 +652,8 @@ public class Test extends Command{
                 e.getChannel().sendMessageEmbeds(eb.build()).setActionRow(streamerButtonLink).queue();
                 break;
             case "fixlol":
-                query = "SELECT st.id, st.game_id, st.account_id, st.league_shard, s.summoner_id FROM summoner_tracking st JOIN summoner s ON st.account_id = s.account_id AND st.league_shard = s.league_shard WHERE st.lane IS NULL order by id;";
+            query = "SELECT st.id, sm.game_id, sm.league_shard, st.account_id, s.summoner_id FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id JOIN summoner s ON st.account_id = s.account_id WHERE st.id > 6746 ORDER BY st.id;";
+            
                 res = DatabaseHandler.safJQuery(query);
                 for(QueryRecord row : res){
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
@@ -657,24 +661,30 @@ public class Test extends Command{
                     String account_id = row.get("account_id");
                     String summoner_id = row.get("summoner_id");
                     LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
-                    try {
-                        Thread.sleep(400);
-                    } catch (Exception eee) { eee.printStackTrace(); }
-                    if (match == null) {
-                        System.out.println("Match not found");
-                        continue;
-                    }
+                    String puuid = "";
 
                     LaneType lane = null;
+                    TeamType team = null;
                     for (MatchParticipant partecipant : match.getParticipants()) {
                         if (partecipant.getSummonerId().equals(summoner_id)) {
                             lane = partecipant.getChampionSelectLane();
+                            team = partecipant.getTeam();
+                            puuid = partecipant.getPuuid();
                         }
                     }
+                    HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(match, match.getParticipants());
+                    if (matchData.get(puuid).get("items") == null || matchData.get(puuid).get("starter") == null || matchData.get(puuid).get("starter").isBlank()) {
+                        continue;
+                    }
+                    String build = MatchTracker.createJSONBuild(matchData.get(puuid));
 
-                    query = "UPDATE summoner_tracking SET lane = " + lane.ordinal() + " WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
-                    System.out.println(row.get("id") + " " + query);
+                    query = "UPDATE summoner_tracking SET lane = '" + lane.ordinal() + "', side = '" + team.ordinal() + "', build = '" + build + "' WHERE id = " + row.get("id") + ";";
+                    System.out.println(row.get("id"));
                     DatabaseHandler.runQuery(query);
+                    try {
+                        Thread.sleep(450);
+                    } catch (Exception eee) { eee.printStackTrace(); }
+                    
                 }
             break;
             case "fixlolna":
@@ -956,6 +966,41 @@ public class Test extends Command{
                     vc.getManager().putPermissionOverride(role, null, Collections.singleton(Permission.VOICE_SPEAK)).queue();
                 }
                 e.reply("Role created");
+            break;
+            case "movematch":
+                query = "SELECT game_id, league_shard, id from summoner_tracking where game_id in(select game_id from summoner_tracking where game_id not in (select game_id from summoner_match))";
+                res = DatabaseHandler.safJQuery(query);
+                System.out.println(res.size());
+                for (QueryRecord r : res) {
+                    System.out.println(r.get("id") + " - " + r.get("game_id"));
+                    String game_id = r.get("game_id");
+                    int league_shard = r.getAsInt("league_shard");
+                    String region = LeagueShard.values()[league_shard].name();
+                    LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[league_shard].toRegionShard(), region + "_"+game_id);
+                    if (m == null) {
+                        System.out.println("Match not found");
+                        continue;
+                    }
+                    System.out.println(DatabaseHandler.setMatchData(m));
+                }
+                break;
+            case "pushbuild":
+                query = "SELECT st.id, sm.game_id, sm.league_shard, st.account_id, s.summoner_id FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id JOIN summoner s ON st.account_id = s.account_id AND st.league_shard = s.league_shard ORDER BY st.id;";
+                res = DatabaseHandler.safJQuery(query);
+                System.out.println(res.size());
+                for (QueryRecord r : res) {
+                    System.out.println(r.get("id") + " - " + r.get("game_id"));
+                    String game_id = r.get("game_id");
+                    int league_shard = r.getAsInt("league_shard");
+                    String region = LeagueShard.values()[league_shard].name();
+                    LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[league_shard].toRegionShard(), region + "_"+game_id);
+                    if (m == null) {
+                        System.out.println("Match not found");
+                        continue;
+                    }
+                    System.out.println(DatabaseHandler.setMatchData(m));
+                }
+                
         }
     }  
 
