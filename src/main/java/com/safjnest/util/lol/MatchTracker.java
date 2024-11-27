@@ -33,12 +33,12 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import java.time.LocalDateTime;
 
-public class LPTracker {
+public class MatchTracker {
 
     private static R4J api = LeagueHandler.getRiotApi();
     private static long period = TimeConstant.MINUTE * 15;
 
-	public LPTracker() {
+	public MatchTracker() {
 
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 		Runnable task = new Runnable() {
@@ -105,10 +105,10 @@ public class LPTracker {
         HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
         
         
-        for (MatchParticipant partecipant : match.getParticipants()) {      
+        for (MatchParticipant partecipant : match.getParticipants()) {   
+            try { Thread.sleep(500); } 
+            catch (InterruptedException e) {e.printStackTrace();}   
             if (partecipant.getPuuid().equals(summoner.getPUUID())) {
-                try { Thread.sleep(500); } 
-                catch (InterruptedException e) {e.printStackTrace();}
                 pushSummoner(match, summoner_match_id, summoner, partecipant, dataGame, matchData.get(partecipant.getPuuid()));
                 continue;
             }
@@ -118,7 +118,7 @@ public class LPTracker {
             
             pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
         }
-        BotLogger.info("[LPTracker] Push match data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
+        BotLogger.info("[LPTracker] Pushed match data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         
 
     }

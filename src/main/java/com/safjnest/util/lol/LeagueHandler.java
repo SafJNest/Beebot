@@ -89,7 +89,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         loadRunes();
         loadAguments();
 
-        if (!App.isExtremeTesting()) new LPTracker();
+        if (!App.isExtremeTesting()) new MatchTracker();
     }
 
     public static String getVersion() {

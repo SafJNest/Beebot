@@ -44,7 +44,7 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TableHandler;
-import com.safjnest.util.lol.LPTracker;
+import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.twitch.TwitchClient;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -672,11 +672,11 @@ public class Test extends Command{
                             puuid = partecipant.getPuuid();
                         }
                     }
-                    HashMap<String, HashMap<String, String>> matchData = LPTracker.analyzeMatchBuild(match, match.getParticipants());
+                    HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(match, match.getParticipants());
                     if (matchData.get(puuid).get("items") == null || matchData.get(puuid).get("starter") == null || matchData.get(puuid).get("starter").isBlank()) {
                         continue;
                     }
-                    String build = LPTracker.createJSONBuild(matchData.get(puuid));
+                    String build = MatchTracker.createJSONBuild(matchData.get(puuid));
 
                     query = "UPDATE summoner_tracking SET lane = '" + lane.ordinal() + "', side = '" + team.ordinal() + "', build = '" + build + "' WHERE id = " + row.get("id") + ";";
                     System.out.println(row.get("id"));
