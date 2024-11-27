@@ -118,6 +118,7 @@ public class LPTracker {
             
             pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
         }
+        BotLogger.info("[LPTracker] Push match data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         
 
     }
@@ -159,7 +160,6 @@ public class LPTracker {
         }
         else gain = lp - dataGame.getAsInt("lp");
         
-        BotLogger.info("[LPTracker] Push match history for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         DatabaseHandler.setSummonerData(summoner.getAccountId(), summonerMatch, win, kda, rank, lp, gain, champion, lane, side, createJSONBuild(matchData));
         
     }
