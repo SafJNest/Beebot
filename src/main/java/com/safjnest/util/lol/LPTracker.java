@@ -164,7 +164,7 @@ public class LPTracker {
         
     }
 
-    private static String createJSONBuild(HashMap<String, String> matchData) {
+    public static String createJSONBuild(HashMap<String, String> matchData) {
         JSONObject json = new JSONObject();
         JSONObject build = new JSONObject();
 

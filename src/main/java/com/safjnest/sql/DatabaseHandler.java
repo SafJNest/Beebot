@@ -1441,7 +1441,13 @@ public class DatabaseHandler {
     }
 
     public static QueryCollection getSummonerData(String account_id, String[] game_id) {
-        return safJQuery("SELECT account_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND game_id IN ('" + String.join("', '", game_id) + "');");
+        return safJQuery(
+            "SELECT st.account_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
+            "FROM summoner_tracking st " +
+            "JOIN summoner_match sm ON st.summoner_match_id = sm.id " +
+            "WHERE st.account_id = '" + account_id + "' " +
+            "AND sm.game_id IN ('" + String.join("', '", game_id) + "');"
+        );
     }
 
     public static boolean trackSummoner(String user_id, String account_id, boolean track) {
