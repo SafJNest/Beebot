@@ -137,10 +137,6 @@ public class MatchTracker {
 
         if (match.getGameId() == dataGame.getAsLong("game_id")) return;
 
-        if (matchData.get("items") == null || matchData.get("starter") == null || matchData.get("starter").isBlank()) {
-            return;
-        }
-
         LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
         
         TierDivisionType oldDivision = TierDivisionType.values()[dataGame.getAsInt("rank")];
@@ -170,9 +166,16 @@ public class MatchTracker {
 
         JSONObject runes = new JSONObject();
 
+        if (matchData.get("starter") == null) 
+            build.put("starter", "[]");
+        else
+            build.put("starter", matchData.get("starter").split(","));
 
-        build.put("starter", matchData.get("starter").split(","));
-        build.put("build", matchData.get("items").split(","));
+        if (matchData.get("items") == null) 
+            build.put("build", "[]");
+        else
+            build.put("build", matchData.get("items").split(","));
+
         build.put("boots", matchData.getOrDefault("boots", "0"));
         
         json.put("build", build);
