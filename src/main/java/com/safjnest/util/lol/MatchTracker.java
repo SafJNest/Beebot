@@ -76,7 +76,7 @@ public class MatchTracker {
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
         
-        try { Thread.sleep(1000); } 
+        try { Thread.sleep(350); } 
         catch (InterruptedException e) {e.printStackTrace();}
 
         List<String> matchIds = summoner.getLeagueGames().withCount(20).withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).get();
@@ -166,20 +166,13 @@ public class MatchTracker {
 
         JSONObject runes = new JSONObject();
 
-        if (matchData.get("starter") == null) 
-            build.put("starter", "[]");
-        else
-            build.put("starter", matchData.get("starter").split(","));
 
-        if (matchData.get("items") == null) 
-            build.put("build", "[]");
-        else
-            build.put("build", matchData.get("items").split(","));
-
+        build.put("starter", matchData.getOrDefault("starter", "").split(","));
+        build.put("build", matchData.getOrDefault("items", "").split(","));
         build.put("boots", matchData.getOrDefault("boots", "0"));
         
         json.put("build", build);
-        json.put("skill_order", matchData.get("skill_order").split(","));
+        json.put("skill_order", matchData.getOrDefault("skill_order", "").split(","));
 
         runes.put("primary", matchData.get("perks-0").split(","));
         runes.put("secondary", matchData.get("perks-1").split(","));
