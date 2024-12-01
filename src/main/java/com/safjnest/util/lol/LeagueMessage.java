@@ -696,29 +696,42 @@ public class LeagueMessage {
                     break;
 
                     default:
-                    String gain = "";
-                    for (QueryRecord row : result) {
-                        if (row.getAsLong("game_id") == match.getGameId()) {
-                            if (row.getAsInt("rank") == TierDivisionType.UNRANKED.ordinal()) {
-                                gain = "(Placement)";
-                                break;
-                            }
-                            if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) gain = "-0"; //demotion shield
-                            else gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") : String.valueOf(row.getAsInt("gain"));
-                            
-                            gain += " LP";
-                            break;
+                    String matchTitle = LeagueHandler.formatMatchName(match.getQueue()) + ": " + (me.didWin() ? "WIN" : "LOSE");
+                    for (int j = 0; j < result.size(); j ++) {
+                        QueryRecord row = result.get(j);
+                        TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
+                        String division = rank.getDivision() != null ? rank.getDivision().length() + "" : "";
+                        if (division.equals("2") && rank.getDivision().equals("IV"))
+                            division = "4"; 
+                        
+                        String displayRank = CustomEmojiHandler.getFormattedEmoji(rank.getTier()) 
+                            + " " + rank.prettyName().charAt(0) + division;
+                        
+                        if (row.getAsLong("game_id") != match.getGameId()) continue;
+
+                        if (rank == TierDivisionType.UNRANKED) {
+                            matchTitle += "(Placement)";
+                        }
+                        else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
+                            matchTitle = "Promoted " + displayRank;
+                        }
+                        else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
+                            matchTitle = "Demoted " + displayRank;
+                        }
+                        else if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) {
+                            matchTitle += "-0 LP"; //demotion shield
+                        }
+                        else {
+                            matchTitle += row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") : String.valueOf(row.getAsInt("gain")) + " LP";
                         }
                     }
-
-                    gain = gain.isBlank() ? "" : gain;
                     content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
                                 + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
                                 + CustomEmojiHandler.getFormattedEmoji( String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, 0) + "\n"
                                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, 1) + "\n"
                                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
                                 eb.addField(
-                                    LeagueHandler.formatMatchName(match.getQueue()) + ": " + (me.didWin() ? "WIN" : "LOSE") + " " + gain , content, true);
+                                    matchTitle, content, true);
                                 String blueS = "";
                                 String redS = "";
                                 for(int j = 0; j < 5; j++)

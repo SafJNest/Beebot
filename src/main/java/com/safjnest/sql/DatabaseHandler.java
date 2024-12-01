@@ -683,27 +683,58 @@ public class DatabaseHandler {
     }
 
     public static QueryCollection getAdvancedLOLData(String account_id, long time_start, long time_end) {
-        return safJQuery(
-            "SELECT t.`champion`, COUNT(*) AS `games`, SUM(t.`win`) AS `wins`, " +
-            "SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, " +
-            "AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, " +
-            "AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, " +
-            "AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, " +
-            "SUM(t.`gain`) AS total_lp_gain, " +
-            "GROUP_CONCAT(DISTINCT CONCAT(l.`lane`, '-', l.`lane_wins`, '-', l.`lane_losses`) ORDER BY l.`lane` SEPARATOR ', ') AS lanes_played " +
+        String overallQuery = 
+            "SELECT " +
+            "  t.`champion`, " +
+            "  COUNT(*) AS `games`, " +
+            "  SUM(t.`win`) AS `wins`, " +
+            "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, " +
+            "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, " +
+            "  AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, " +
+            "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, " +
+            "  SUM(t.`gain`) AS total_lp_gain " +
             "FROM `summoner_tracking` t " +
             "JOIN `summoner_match` sm ON t.`summoner_match_id` = sm.`id` " +
-            "JOIN (SELECT `champion`, `lane`, SUM(`win`) AS `lane_wins`, " +
-            "             SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` " +
-            "      FROM `summoner_tracking` " +
-            "      WHERE `account_id` = '" + account_id + "' " +
-            "      GROUP BY `champion`, `lane`) AS l " +
-            "ON t.`champion` = l.`champion` AND t.`lane` = l.`lane` " +
             "WHERE t.`account_id` = '" + account_id + "' " +
             "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
             "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
-            "GROUP BY t.`champion` ORDER BY `games` DESC;"
-        );
+            "GROUP BY t.`champion`";
+    
+        String laneQuery = 
+            "SELECT " +
+            "  t.`champion`, " +
+            "  t.`lane`, " +
+            "  COUNT(*) AS `lane_games`, " +
+            "  SUM(t.`win`) AS `lane_wins`, " +
+            "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` " +
+            "FROM `summoner_tracking` t " +
+            "JOIN `summoner_match` sm ON t.`summoner_match_id` = sm.`id` " +
+            "WHERE t.`account_id` = '" + account_id + "' " +
+            "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
+            "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
+            "GROUP BY t.`champion`, t.`lane`";
+    
+        String combinedQuery = 
+            "SELECT " +
+            "  overall.`champion`, " +
+            "  overall.`games`, " +
+            "  overall.`wins`, " +
+            "  overall.`losses`, " +
+            "  overall.`avg_kills`, " +
+            "  overall.`avg_deaths`, " +
+            "  overall.`avg_assists`, " +
+            "  overall.`total_lp_gain`, " +
+            "  GROUP_CONCAT( " +
+            "    CONCAT(lane.`lane`, '-', lane.`lane_wins`, '-', lane.`lane_losses`) " +
+            "    ORDER BY lane.`lane` SEPARATOR ', ' " +
+            "  ) AS lanes_played " +
+            "FROM (" + overallQuery + ") AS overall " +
+            "LEFT JOIN (" + laneQuery + ") AS lane " +
+            "ON overall.`champion` = lane.`champion` " +
+            "GROUP BY overall.`champion` " +
+            "ORDER BY `games` DESC;";
+    
+        return safJQuery(combinedQuery);
     }
     
     
@@ -1469,7 +1500,7 @@ public class DatabaseHandler {
             "FROM summoner_tracking st " +
             "JOIN summoner_match sm ON st.summoner_match_id = sm.id " +
             "WHERE st.account_id = '" + account_id + "' " +
-            "AND sm.game_id IN ('" + String.join("', '", game_id) + "');"
+            "ORDER BY sm.game_id"
         );
     }
 
