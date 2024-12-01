@@ -699,7 +699,10 @@ public class LeagueMessage {
                     String matchTitle = LeagueHandler.formatMatchName(match.getQueue()) + ": " + (me.didWin() ? "WIN" : "LOSE");
                     for (int j = 0; j < result.size(); j ++) {
                         QueryRecord row = result.get(j);
+                        if (row.getAsLong("game_id") != match.getGameId()) continue;
+
                         TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
+                        
                         String division = rank.getDivision() != null ? rank.getDivision().length() + "" : "";
                         if (division.equals("2") && rank.getDivision().equals("IV"))
                             division = "4"; 
@@ -707,22 +710,23 @@ public class LeagueMessage {
                         String displayRank = CustomEmojiHandler.getFormattedEmoji(rank.getTier()) 
                             + " " + rank.prettyName().charAt(0) + division;
                         
-                        if (row.getAsLong("game_id") != match.getGameId()) continue;
+                        String gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") + " LP" : row.getAsInt("gain") + " LP";
+                        
 
                         if (rank == TierDivisionType.UNRANKED) {
                             matchTitle += "(Placement)";
                         }
                         else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
-                            matchTitle = "Promoted " + displayRank;
+                            matchTitle = "Promoted " + displayRank + "(" + gain + ")";
                         }
-                        else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
-                            matchTitle = "Demoted " + displayRank;
+                        else if (j > 0 && row.getAsInt("rank") > result.get(j - 1).getAsInt("rank")) {
+                            matchTitle = "Demoted " + displayRank + "(" + gain + ")";
                         }
                         else if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) {
                             matchTitle += "-0 LP"; //demotion shield
                         }
                         else {
-                            matchTitle += row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") : String.valueOf(row.getAsInt("gain")) + " LP";
+                            matchTitle += gain;
                         }
                     }
                     content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
