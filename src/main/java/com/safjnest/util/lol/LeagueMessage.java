@@ -9,6 +9,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+
 import java.text.DecimalFormat;
 
 import com.safjnest.core.Bot;
@@ -161,14 +163,6 @@ public class LeagueMessage {
             
             int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
     
-            QueryRecord mostPlayedChamp = advanceData.get(0), bestChampion = advanceData.get(0), worstChampion = advanceData.get(0);
-    
-            for (QueryRecord row : advanceData) {
-                if (Integer.parseInt(row.get("games")) > Integer.parseInt(mostPlayedChamp.get("games"))) mostPlayedChamp = row;
-                if (Integer.parseInt(row.get("total_lp_gain")) > Integer.parseInt(bestChampion.get("total_lp_gain"))) bestChampion = row;
-                if (Integer.parseInt(row.get("total_lp_gain")) < Integer.parseInt(worstChampion.get("total_lp_gain"))) worstChampion = row;
-            }
-
             String laneString = "";
             for (LaneType lane : laneStats.keySet()) {
                 String wins = laneStats.get(lane).split("-")[0];
@@ -574,7 +568,7 @@ public class LeagueMessage {
 
         List<String> gameIds = getMatchIds(s, queue);
         
-        QueryCollection result = DatabaseHandler.getSummonerData(s.getAccountId(), gameIds.stream().map(gameId -> gameId.split("_")[1]).collect(Collectors.toList()).toArray(new String[0]));
+        QueryCollection result = DatabaseHandler.getSummonerData(s.getAccountId());
 
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
