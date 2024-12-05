@@ -5,8 +5,6 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +12,8 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 
 import com.safjnest.core.Bot;
+import com.safjnest.core.Chronos;
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.guild.AutomatedAction;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
@@ -23,15 +23,13 @@ import com.safjnest.util.log.BotLogger;
 public class AutomatedActionTimer {
     private static final long rescheduleTiming = TimeConstant.HOUR * 2;
 
-    private final ScheduledExecutorService scheduler;
     private final Map<String, ScheduledFuture<?>> scheduledTasks;
 
     private LocalDateTime nextReschedule; 
 
     public AutomatedActionTimer() {
-        this.scheduler = Executors.newScheduledThreadPool(1);
         this.scheduledTasks = new HashMap<>();
-        this.scheduler.scheduleAtFixedRate(getAAScheduler(), 0, rescheduleTiming, TimeUnit.MILLISECONDS);
+        Chronos.scheduleAtFixedRate(getAAScheduler(), 0, rescheduleTiming, TimeUnit.MILLISECONDS);
     }
 
     public void scheduleAATask(LocalDateTime dateTime, String id, int actionId, String userId, String guildId) {
@@ -57,13 +55,9 @@ public class AutomatedActionTimer {
         final User user = Bot.getJDA().getUserById(userId);
         final Guild guild = Bot.getJDA().getGuildById(guildId);
 
-        Runnable task = () -> {
+        ChronoTask task = () -> {
             switch (action.getAction()) {
                 case 1:
-                    guild.mute(user, false).queue(
-                        success -> {},
-                        failure -> failure.printStackTrace()
-                    );
                     guild.removeRoleFromMember(user, guild.getRoleById(action.getRoleId())).queue(
                         success -> {},
                         failure -> failure.printStackTrace()
@@ -80,10 +74,10 @@ public class AutomatedActionTimer {
                     BotLogger.error("[AutomatedActionTimer] Invalid action: " + action.getId());
                     break;
             }
-            scheduledTasks.remove(id);
+            scheduledTasks.remove(id).cancel(false);
         };
 
-        scheduledTasks.put(id, scheduler.schedule(task, delay, TimeUnit.MILLISECONDS));
+        scheduledTasks.put(id, task.schedule(delay, TimeUnit.MILLISECONDS));
 
         BotLogger.info("[AutomatedActionTimer] Scheduled task: " + id + " for " + dateTime);
     }

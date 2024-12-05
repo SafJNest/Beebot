@@ -16,7 +16,6 @@ import com.github.twitch4j.eventsub.socket.IEventSubConduit;
 import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.Stream;
-import com.github.twitch4j.helix.domain.Team;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.opencsv.CSVReader;
@@ -658,7 +657,7 @@ public class Test extends Command{
                 for(QueryRecord row : res){
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
                     String game_id = region + "_"+row.get("game_id");
-                    String account_id = row.get("account_id");
+                    //String account_id = row.get("account_id");
                     String summoner_id = row.get("summoner_id");
                     LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                     String puuid = "";
@@ -1000,6 +999,13 @@ public class Test extends Command{
                     }
                     System.out.println(DatabaseHandler.setMatchData(m));
                 }
+                break;
+            case "trackoldgames":
+                if (true) {
+                    Summoner sum = LeagueHandler.getSummonerByAccountId(args[1], LeagueShard.EUW1);
+                    MatchTracker.retriveOldGames(sum).queue();
+                }
+            break;
                 
         }
     }  

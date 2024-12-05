@@ -56,9 +56,6 @@ public class EventHandlerBeebot extends BeebotListenerAdapter {
                 case AutomatedAction.MUTE:
                     event.getGuild().addRoleToMember(member, guild.getRoleById(action.getRoleId())).queue(
                         success -> {
-                            event.getGuild().mute(member, true).queue(
-                                failure -> {}
-                            );
                             onSuccess.run();
                         },
                         failure -> failure.printStackTrace()

@@ -63,6 +63,7 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -963,14 +964,17 @@ public class EventButtonHandler extends ListenerAdapter {
 
                         accountId = parts[2].substring(0, parts[2].indexOf("#"));
                         platform = parts[2].substring(parts[2].indexOf("#") + 1);
-                        break;
+                    }
+                    else if (b.getId().startsWith("match-queue-") && b.getStyle() == ButtonStyle.SUCCESS) {
+                        queue = GameQueueType.valueOf(b.getId().split("-")[2]);
                     }
                 }
 
                 if (event.getMessage().getButtonById("match-left") == null) user_id = "";
 
                 s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
-                MatchTracker.analyzeMatchHistory(s);
+                LOLMatch lastMatch = queue != null ? s.getLeagueGames().withCount(1).withQueue(queue).getMatchIterator().iterator().next() : s.getLeagueGames().withCount(1).getMatchIterator().iterator().next();
+                MatchTracker.analyzeMatchHistory(lastMatch.getQueue(), s);
 
                 LeagueHandler.clearSummonerCache(s);
                 break;
