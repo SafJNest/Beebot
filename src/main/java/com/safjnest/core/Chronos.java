@@ -10,6 +10,10 @@ import java.util.concurrent.TimeUnit;
 public class Chronos {
     private static final int THREAD_POOL = 2; // insane beebot thread pool pls no one can stop us
     private static ScheduledExecutorService executorService;
+    public static final ChronoTask NULL = new ChronoTask() {
+        @Override
+        public void run() {}
+    };
 
     static{
         executorService = Executors.newScheduledThreadPool(THREAD_POOL);

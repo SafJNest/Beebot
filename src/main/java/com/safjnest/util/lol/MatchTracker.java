@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.json.JSONObject;
 
+import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
@@ -36,12 +37,11 @@ public class MatchTracker {
 
     private static R4J api = LeagueHandler.getRiotApi();
     private static long period = TimeConstant.MINUTE * 10;
-    private static List<GameQueueType> toTrack;
+    private static List<GameQueueType> toTrack = List.of(GameQueueType.TEAM_BUILDER_DRAFT_RANKED_5X5, GameQueueType.CHERRY);
 
     private static int UNKNOWN_RANK = TierDivisionType.UNRANKED.ordinal() + 1;
 
 	public MatchTracker() {
-        toTrack = List.of(GameQueueType.TEAM_BUILDER_DRAFT_RANKED_5X5, GameQueueType.CHERRY);
 		ChronoTask task = new ChronoTask() {
 			@Override
 			public void run() {
@@ -78,10 +78,10 @@ public class MatchTracker {
 
 
     public static ChronoTask analyzeMatchHistory(GameQueueType queue, Summoner summoner) {
-        if (toTrack.indexOf(queue) == -1) return null;
+        if (toTrack.indexOf(queue) == -1) return Chronos.NULL;
 
         QueryRecord row = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
-        if (row.emptyValues() && queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return null;
+        if (row.emptyValues() && queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return Chronos.NULL;
 
         return analyzeMatchHistory(queue, summoner, row);
     }
