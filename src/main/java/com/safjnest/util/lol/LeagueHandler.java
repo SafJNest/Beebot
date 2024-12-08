@@ -63,20 +63,20 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * This class is used to handle all the League of Legends related stuff
- * 
+ *
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  */
 
  public class LeagueHandler {
-    
+
     private static R4J riotApi;
-    
+
     private static String version;
-    
+
     private static String runesURL;
-    
+
     private static String[] champions;
-    
+
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
     private static ArrayList<AugmentData> augments = new ArrayList<>();
 
@@ -84,7 +84,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         LeagueHandler.riotApi = riotApi;
         LeagueHandler.version = getVersion();
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
-        
+
         loadChampions();
         loadRunes();
         loadAguments();
@@ -103,7 +103,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
                 // Get the latest version (first element in the array)
                 version = (String) file.get(0);
-                
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -113,7 +113,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static HashMap<String, PageRunes> getRunesHandler() {
         return runesHandler;
-    } 
+    }
 
     public static ArrayList<AugmentData> getAugments() {
         return augments;
@@ -129,7 +129,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             .stream()
             .filter(t -> !t.name().endsWith("_V"))
             .collect(Collectors.toList());
-        
+
         TierDivisionType[] tierDivisionTypesArray = tierDivisionList.toArray(new TierDivisionType[tierDivisionList.size()]);
 
         for (int i = tierDivisionTypesArray.length - 1, value = 0; i >= 0; i--, value += 100) {
@@ -274,15 +274,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return name;
     }
 
-//   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████ 
-//  ███       ███    ███   ███    ███ ███   ▀███      ▀█████████▄   ███    ███   ███  ███▀▀▀██▄   ███    ███   ███    ███ 
-//  ███       ███    ███   ███    ███ ███    ███         ▀███▀▀██   ███    ███   ███▌ ███   ███   ███    █▀    ███    █▀  
-//  ███       ███    ███   ███    ███ ███    ███          ███   ▀  ▄███▄▄▄▄███▄▄ ███▌ ███   ███  ▄███          ███        
-//  ███       ███    ███ ▀███████████ ███    ███          ███     ▀▀███▀▀▀▀███▀  ███▌ ███   ███ ▀▀███ ████▄  ▀███████████ 
-//  ███       ███    ███   ███    ███ ███    ███          ███       ███    ███   ███  ███   ███   ███    ███          ███ 
-//  ███▌    ▄ ███    ███   ███    ███ ███   ▄███          ███       ███    ███   ███  ███   ███   ███    ███    ▄█    ███ 
-//  █████▄▄██  ▀██████▀    ███    █▀  ████████▀          ▄████▀     ███    █▀    █▀    ▀█   █▀    ████████▀   ▄████████▀  
-//  ▀                                                                                                                     
+//   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████
+//  ███       ███    ███   ███    ███ ███   ▀███      ▀█████████▄   ███    ███   ███  ███▀▀▀██▄   ███    ███   ███    ███
+//  ███       ███    ███   ███    ███ ███    ███         ▀███▀▀██   ███    ███   ███▌ ███   ███   ███    █▀    ███    █▀
+//  ███       ███    ███   ███    ███ ███    ███          ███   ▀  ▄███▄▄▄▄███▄▄ ███▌ ███   ███  ▄███          ███
+//  ███       ███    ███ ▀███████████ ███    ███          ███     ▀▀███▀▀▀▀███▀  ███▌ ███   ███ ▀▀███ ████▄  ▀███████████
+//  ███       ███    ███   ███    ███ ███    ███          ███       ███    ███   ███  ███   ███   ███    ███          ███
+//  ███▌    ▄ ███    ███   ███    ███ ███   ▄███          ███       ███    ███   ███  ███   ███   ███    ███    ▄█    ███
+//  █████▄▄██  ▀██████▀    ███    █▀  ████████▀          ▄████▀     ███    █▀    █▀    ▀█   █▀    ████████▀   ▄████████▀
+//  ▀
 
     /**
      * Load all the runes data into {@link #runesHandler runesHandler}
@@ -333,10 +333,10 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
             JSONArray augmentsArray = (JSONArray) file.get("augments");
-    
+
             for (Object obj : augmentsArray) {
                 JSONObject augment = (JSONObject) obj;
-    
+
                 HashMap<String, String> spellDataValues = new HashMap<>();
                 JSONObject spellData = (JSONObject) augment.get("dataValues");
                 for (Object key : spellData.keySet()) {
@@ -354,15 +354,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
     }
 
-//     ▄████████ ███    █▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄    ▄██████▄  ███▄▄▄▄      ▄████████    ▄████████ 
-//    ███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄ ▄██▀▀▀███▀▀▀██▄ ███    ███ ███▀▀▀██▄   ███    ███   ███    ███ 
-//    ███    █▀  ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    █▀    ███    ███ 
-//    ███        ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███  ▄███▄▄▄      ▄███▄▄▄▄██▀ 
-//  ▀███████████ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   
-//           ███ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    █▄  ▀███████████ 
-//     ▄█    ███ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    ███   ███    ███ 
-//   ▄████████▀  ████████▀   ▀█   ███   █▀   ▀█   ███   █▀   ▀██████▀   ▀█   █▀    ██████████   ███    ███ 
-//                                                                                              ███    ███ 
+//     ▄████████ ███    █▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄    ▄██████▄  ███▄▄▄▄      ▄████████    ▄████████
+//    ███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄ ▄██▀▀▀███▀▀▀██▄ ███    ███ ███▀▀▀██▄   ███    ███   ███    ███
+//    ███    █▀  ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    █▀    ███    ███
+//    ███        ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███  ▄███▄▄▄      ▄███▄▄▄▄██▀
+//  ▀███████████ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀
+//           ███ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    █▄  ▀███████████
+//     ▄█    ███ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    ███   ███    ███
+//   ▄████████▀  ████████▀   ▀█   ███   █▀   ▀█   ███   █▀   ▀██████▀   ▀█   █▀    ██████████   ███    ███
+//                                                                                              ███    ███
 
     /**
      * After like 2 years I realized that this method COULD save me a lot of time.
@@ -402,7 +402,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static int getNumberOfProfile(String userId){
-        try { 
+        try {
             return Bot.getUserData(userId).getRiotAccounts().size();
         } catch (Exception e) { return 0; }
     }
@@ -410,7 +410,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     public static Summoner getSummonerByName(String nameAccount, String tag, LeagueShard shard) {
         try {
             String puiid = riotApi.getAccountAPI().getAccountByTag(shard.toRegionShard(), nameAccount, tag).getPUUID();
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puiid);  
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puiid);
         } catch (Exception e) {
             return null;
         }
@@ -425,13 +425,13 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static Summoner getSummonerBySummonerId(String id, LeagueShard shard){
-        try { 
+        try {
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerById(shard, id);
         } catch (Exception e) {return null; }
     }
-    
+
     public static Summoner getSummonerByAccountId(String id, LeagueShard shard){
-        try { 
+        try {
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, id);
         } catch (Exception e) { return null; }
     }
@@ -458,30 +458,29 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         String tag = "";
         if (!args.contains("#")) {
             name = args;
-            tag = guild.getLeagueShard().getRealmValue();
+            tag = getRegionCode(guild.getLeagueShard(event.getChannel().getIdLong()));
         } else {
             name = args.split("#", 2)[0];
             tag = args.split("#", 2)[1];
         }
-
-        return getSummonerByName(name, tag, guild.getLeagueShard());
+        return getSummonerByName(name, tag, guild.getLeagueShard(event.getChannel().getIdLong()));
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
         GuildData guild = Bot.getGuildData(event.getGuild().getId());
 
         User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();
-        
+
         Summoner s = null;
-        
+
         if (event.getOption("summoner") == null && (s = getSummonerFromDB(user.getId())) != null) {
             return s;
         }
 
-        LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guild.getLeagueShard();
-        
+        LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guild.getLeagueShard(event.getChannel().getIdLong());
+
         String summoner = event.getOption("summoner").getAsString().replaceAll("[\\p{C}]", ""); //when you copy the name from riot chat it adds some weird characters
-        String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : shard.name();
+        String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : getRegionCode(shard);
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
 
         return getSummonerByName(name, tag, shard);
@@ -514,15 +513,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         DatabaseHandler.addLOLAccountFromMatch(match);
     }
 
-//     ▄███████▄  ▄█   ▄████████ 
-//    ███    ███ ███  ███    ███ 
-//    ███    ███ ███▌ ███    █▀  
-//    ███    ███ ███▌ ███        
-//  ▀█████████▀  ███▌ ███        
-//    ███        ███  ███    █▄  
-//    ███        ███  ███    ███ 
-//   ▄████▀      █▀   ████████▀  
-//                               
+//     ▄███████▄  ▄█   ▄████████
+//    ███    ███ ███  ███    ███
+//    ███    ███ ███▌ ███    █▀
+//    ███    ███ ███▌ ███
+//  ▀█████████▀  ███▌ ███
+//    ███        ███  ███    █▄
+//    ███        ███  ███    ███
+//   ▄████▀      █▀   ████████▀
+//
 
     public static String getSummonerProfilePic(Summoner s){
         return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/profileicon/"+s.getProfileIconId()+".png";
@@ -536,15 +535,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/champion/"+champ+".png";
     }
 
-//     ▄████████ ███▄▄▄▄       ███        ▄████████ ▄██   ▄   
-//    ███    ███ ███▀▀▀██▄ ▀█████████▄   ███    ███ ███   ██▄ 
-//    ███    █▀  ███   ███    ▀███▀▀██   ███    ███ ███▄▄▄███ 
-//   ▄███▄▄▄     ███   ███     ███   ▀  ▄███▄▄▄▄██▀ ▀▀▀▀▀▀███ 
-//  ▀▀███▀▀▀     ███   ███     ███     ▀▀███▀▀▀▀▀   ▄██   ███ 
-//    ███    █▄  ███   ███     ███     ▀███████████ ███   ███ 
-//    ███    ███ ███   ███     ███       ███    ███ ███   ███ 
-//    ██████████  ▀█   █▀     ▄████▀     ███    ███  ▀█████▀  
-//                                       ███    ███           
+//     ▄████████ ███▄▄▄▄       ███        ▄████████ ▄██   ▄
+//    ███    ███ ███▀▀▀██▄ ▀█████████▄   ███    ███ ███   ██▄
+//    ███    █▀  ███   ███    ▀███▀▀██   ███    ███ ███▄▄▄███
+//   ▄███▄▄▄     ███   ███     ███   ▀  ▄███▄▄▄▄██▀ ▀▀▀▀▀▀███
+//  ▀▀███▀▀▀     ███   ███     ███     ▀▀███▀▀▀▀▀   ▄██   ███
+//    ███    █▄  ███   ███     ███     ▀███████████ ███   ███
+//    ███    ███ ███   ███     ███       ███    ███ ███   ███
+//    ██████████  ▀█   █▀     ▄████▀     ███    ███  ▀█████▀
+//                                       ███    ███
 
     public static String getSoloQStats(Summoner s){
         String stats = "";
@@ -619,16 +618,16 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 if(cont == nChamp){
                     int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
                     masteryString += CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " ";
-                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
-                                    + " **[" + mastery.getChampionLevel()+ "]** " 
-                                    + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName() 
-                                    + " " + df.format(mastery.getChampionPoints()) 
+                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
+                                    + " **[" + mastery.getChampionLevel()+ "]** "
+                                    + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()
+                                    + " " + df.format(mastery.getChampionPoints())
                                     + " points";
                     break;
                 }
                 cont++;
             }
-            
+
         } catch (Exception e) { }
         return masteryString;
     }
@@ -640,12 +639,12 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 if(mastery.getChampionId() == champId){
                     int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
                     masteryString += CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " ";
-                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) 
+                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
                                     + " **[" + mastery.getChampionLevel()+ "]** ";
                     return masteryString;
                 }
             }
-            
+
         } catch (Exception e) { }
         return masteryString;
     }
@@ -662,7 +661,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
                 if(partecipant.getSummonerId().equals(s.getSummonerId())) {
                     String gameName = LeagueHandler.formatMatchName(s.getCurrentGame().getGameQueueConfig());
-                    return "Playing a " + gameName + " as " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName(); 
+                    return "Playing a " + gameName + " as " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName();
                 }
             }
         } catch (Exception e) {
@@ -671,15 +670,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return "Not in a game";
     }
 
-//     ▄████████ ███    █▄  ███▄▄▄▄      ▄████████ 
-//    ███    ███ ███    ███ ███▀▀▀██▄   ███    ███ 
-//    ███    ███ ███    ███ ███   ███   ███    █▀  
-//   ▄███▄▄▄▄██▀ ███    ███ ███   ███  ▄███▄▄▄     
-//  ▀▀███▀▀▀▀▀   ███    ███ ███   ███ ▀▀███▀▀▀     
-//  ▀███████████ ███    ███ ███   ███   ███    █▄  
-//    ███    ███ ███    ███ ███   ███   ███    ███ 
-//    ███    ███ ████████▀   ▀█   █▀    ██████████ 
-//    ███    ███                                   
+//     ▄████████ ███    █▄  ███▄▄▄▄      ▄████████
+//    ███    ███ ███    ███ ███▀▀▀██▄   ███    ███
+//    ███    ███ ███    ███ ███   ███   ███    █▀
+//   ▄███▄▄▄▄██▀ ███    ███ ███   ███  ▄███▄▄▄
+//  ▀▀███▀▀▀▀▀   ███    ███ ███   ███ ▀▀███▀▀▀
+//  ▀███████████ ███    ███ ███   ███   ███    █▄
+//    ███    ███ ███    ███ ███   ███   ███    ███
+//    ███    ███ ████████▀   ▀█   █▀    ██████████
+//    ███    ███
 
     public static String getFatherRune(String son){
         for(PageRunes page : runesHandler.values()){
@@ -724,15 +723,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return id;
     }
 
-//     ▄████████    ▄█    █▄       ▄████████    ▄████████ ████████▄  
-//    ███    ███   ███    ███     ███    ███   ███    ███ ███   ▀███ 
-//    ███    █▀    ███    ███     ███    ███   ███    ███ ███    ███ 
-//    ███         ▄███▄▄▄▄███▄▄   ███    ███  ▄███▄▄▄▄██▀ ███    ███ 
-//  ▀███████████ ▀▀███▀▀▀▀███▀  ▀███████████ ▀▀███▀▀▀▀▀   ███    ███ 
-//           ███   ███    ███     ███    ███ ▀███████████ ███    ███ 
-//     ▄█    ███   ███    ███     ███    ███   ███    ███ ███   ▄███ 
-//   ▄████████▀    ███    █▀      ███    █▀    ███    ███ ████████▀  
-//                                             ███    ███            
+//     ▄████████    ▄█    █▄       ▄████████    ▄████████ ████████▄
+//    ███    ███   ███    ███     ███    ███   ███    ███ ███   ▀███
+//    ███    █▀    ███    ███     ███    ███   ███    ███ ███    ███
+//    ███         ▄███▄▄▄▄███▄▄   ███    ███  ▄███▄▄▄▄██▀ ███    ███
+//  ▀███████████ ▀▀███▀▀▀▀███▀  ▀███████████ ▀▀███▀▀▀▀▀   ███    ███
+//           ███   ███    ███     ███    ███ ▀███████████ ███    ███
+//     ▄█    ███   ███    ███     ███    ███   ███    ███ ███   ▄███
+//   ▄████████▀    ███    █▀      ███    █▀    ███    ███ ████████▀
+//                                             ███    ███
 
 
     public static OptionData getLeagueShardOptions(boolean required) {
@@ -741,8 +740,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             if (LeagueShard.values()[i] == LeagueShard.UNKNOWN) continue;
             choices.add(new Choice(LeagueShard.values()[i].getRealmValue().toUpperCase(), String.valueOf(i)));
         }
-        
-        return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", required).addChoices(choices);                
+
+        return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", required).addChoices(choices);
     }
 
     public static LeagueShard getShardFromOrdinal(int ordinal){
@@ -757,16 +756,39 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return CustomEmojiHandler.getFormattedEmoji(shard.getRealmValue().toUpperCase() + "_server");
     }
 
+    public static String getRegionCode(LeagueShard shard) {
+        String code = shard.getRealmValue();
+        switch (shard) {
+            case NA1:
+            case JP1:
+            case BR1:
+            case TR1:
+            case SG2:
+            case PH2:
+            case TW2:
+            case VN2:
+            case TH2:
+                code = shard.getValue();
+            break;
+            case KR:
+            case RU:
+                code = code + "1";
+            default:
+            break;
+        }
+        return code;
+    }
 
-//  ▀█████████▄     ▄████████    ▄████████  ▄█    █▄     ▄████████    ▄████████ ▄██   ▄   
-//    ███    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ ███   ██▄ 
-//    ███    ███   ███    ███   ███    ███ ███    ███   ███    █▀    ███    ███ ███▄▄▄███ 
-//   ▄███▄▄▄██▀   ▄███▄▄▄▄██▀   ███    ███ ███    ███  ▄███▄▄▄      ▄███▄▄▄▄██▀ ▀▀▀▀▀▀███ 
-//  ▀▀███▀▀▀██▄  ▀▀███▀▀▀▀▀   ▀███████████ ███    ███ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   ▄██   ███ 
-//    ███    ██▄ ▀███████████   ███    ███ ███    ███   ███    █▄  ▀███████████ ███   ███ 
-//    ███    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ ███   ███ 
-//  ▄█████████▀    ███    ███   ███    █▀   ▀██████▀    ██████████   ███    ███  ▀█████▀  
-//                 ███    ███                                        ███    ███           
+
+//  ▀█████████▄     ▄████████    ▄████████  ▄█    █▄     ▄████████    ▄████████ ▄██   ▄
+//    ███    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ ███   ██▄
+//    ███    ███   ███    ███   ███    ███ ███    ███   ███    █▀    ███    ███ ███▄▄▄███
+//   ▄███▄▄▄██▀   ▄███▄▄▄▄██▀   ███    ███ ███    ███  ▄███▄▄▄      ▄███▄▄▄▄██▀ ▀▀▀▀▀▀███
+//  ▀▀███▀▀▀██▄  ▀▀███▀▀▀▀▀   ▀███████████ ███    ███ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   ▄██   ███
+//    ███    ██▄ ▀███████████   ███    ███ ███    ███   ███    █▄  ▀███████████ ███   ███
+//    ███    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ ███   ███
+//  ▄█████████▀    ███    ███   ███    █▀   ▀██████▀    ██████████   ███    ███  ▀█████▀
+//                 ███    ███                                        ███    ███
 
 
 
@@ -799,7 +821,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             e.printStackTrace();
             return null;
         }
-        
+
     }
 
     public static String getBraveryBuildJSON() {
@@ -809,15 +831,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return getBraveryBuildJSON(lvl, roles, champs);
     }
 
-//   ▄████████    ▄█    █▄       ▄████████   ▄▄▄▄███▄▄▄▄      ▄███████▄  ▄█   ▄██████▄  ███▄▄▄▄   
-//  ███    ███   ███    ███     ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███  ███    ███ ███▀▀▀██▄ 
-//  ███    █▀    ███    ███     ███    ███ ███   ███   ███   ███    ███ ███▌ ███    ███ ███   ███ 
-//  ███         ▄███▄▄▄▄███▄▄   ███    ███ ███   ███   ███   ███    ███ ███▌ ███    ███ ███   ███ 
-//  ███        ▀▀███▀▀▀▀███▀  ▀███████████ ███   ███   ███ ▀█████████▀  ███▌ ███    ███ ███   ███ 
-//  ███    █▄    ███    ███     ███    ███ ███   ███   ███   ███        ███  ███    ███ ███   ███ 
-//  ███    ███   ███    ███     ███    ███ ███   ███   ███   ███        ███  ███    ███ ███   ███ 
-//  ████████▀    ███    █▀      ███    █▀   ▀█   ███   █▀   ▄████▀      █▀    ▀██████▀   ▀█   █▀  
-//                                                                                                
+//   ▄████████    ▄█    █▄       ▄████████   ▄▄▄▄███▄▄▄▄      ▄███████▄  ▄█   ▄██████▄  ███▄▄▄▄
+//  ███    ███   ███    ███     ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███  ███    ███ ███▀▀▀██▄
+//  ███    █▀    ███    ███     ███    ███ ███   ███   ███   ███    ███ ███▌ ███    ███ ███   ███
+//  ███         ▄███▄▄▄▄███▄▄   ███    ███ ███   ███   ███   ███    ███ ███▌ ███    ███ ███   ███
+//  ███        ▀▀███▀▀▀▀███▀  ▀███████████ ███   ███   ███ ▀█████████▀  ███▌ ███    ███ ███   ███
+//  ███    █▄    ███    ███     ███    ███ ███   ███   ███   ███        ███  ███    ███ ███   ███
+//  ███    ███   ███    ███     ███    ███ ███   ███   ███   ███        ███  ███    ███ ███   ███
+//  ████████▀    ███    █▀      ███    █▀   ▀█   ███   █▀   ▄████▀      █▀    ▀██████▀   ▀█   █▀
+//
 
     private void loadChampions(){
         champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
@@ -854,7 +876,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             }
         }
         return champ;
-        
+
     }
 
     public static StaticChampion getChampionById(int id) {
@@ -866,7 +888,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             }
         }
         return champ;
-    } 
+    }
 
     public static Emoji getEmojiByChampion(int champId) {
         StaticChampion champion = riotApi.getDDragonAPI().getChampion(champId);
@@ -879,15 +901,15 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(champion).getName());
     }
 
-//   ▄████████    ▄████████  ▄████████    ▄█    █▄       ▄████████ 
-//  ███    ███   ███    ███ ███    ███   ███    ███     ███    ███ 
-//  ███    █▀    ███    ███ ███    █▀    ███    ███     ███    █▀  
-//  ███          ███    ███ ███         ▄███▄▄▄▄███▄▄  ▄███▄▄▄     
-//  ███        ▀███████████ ███        ▀▀███▀▀▀▀███▀  ▀▀███▀▀▀     
-//  ███    █▄    ███    ███ ███    █▄    ███    ███     ███    █▄  
-//  ███    ███   ███    ███ ███    ███   ███    ███     ███    ███ 
-//  ████████▀    ███    █▀  ████████▀    ███    █▀      ██████████ 
-//                                                                 
+//   ▄████████    ▄████████  ▄████████    ▄█    █▄       ▄████████
+//  ███    ███   ███    ███ ███    ███   ███    ███     ███    ███
+//  ███    █▀    ███    ███ ███    █▀    ███    ███     ███    █▀
+//  ███          ███    ███ ███         ▄███▄▄▄▄███▄▄  ▄███▄▄▄
+//  ███        ▀███████████ ███        ▀▀███▀▀▀▀███▀  ▀▀███▀▀▀
+//  ███    █▄    ███    ███ ███    █▄    ███    ███     ███    █▄
+//  ███    ███   ███    ███ ███    ███   ███    ███     ███    ███
+//  ████████▀    ███    █▀  ████████▀    ███    █▀      ██████████
+//
 
     public static void clearCache(URLEndpoint endpoint, Summoner summoner) {
         Map<String, Object> data = new LinkedHashMap<>();
@@ -895,7 +917,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         switch (endpoint) {
             case V4_SUMMONER_BY_ACCOUNT:
                 data.put("platform", summoner.getPlatform());
-                data.put("accountid", summoner.getAccountId());     
+                data.put("accountid", summoner.getAccountId());
                 break;
             case V4_SUMMONER_BY_ID:
                 data.put("platform", summoner.getPlatform());
@@ -927,7 +949,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 data.put("platform", summoner.getPlatform());
                 data.put("summoner", summoner.getPUUID());
                 break;
-        
+
             default:
                 break;
         }
@@ -944,19 +966,19 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner);
     }
 
-//     ▄████████    ▄███████▄  ▄█        ▄█      ███     
-//    ███    ███   ███    ███ ███       ███  ▀█████████▄ 
-//    ███    █▀    ███    ███ ███       ███▌    ▀███▀▀██ 
-//    ███          ███    ███ ███       ███▌     ███   ▀ 
-//  ▀███████████ ▀█████████▀  ███       ███▌     ███     
-//           ███   ███        ███       ███      ███     
-//     ▄█    ███   ███        ███▌    ▄ ███      ███     
-//   ▄████████▀   ▄████▀      █████▄▄██ █▀      ▄████▀   
-//                            ▀                          
+//     ▄████████    ▄███████▄  ▄█        ▄█      ███
+//    ███    ███   ███    ███ ███       ███  ▀█████████▄
+//    ███    █▀    ███    ███ ███       ███▌    ▀███▀▀██
+//    ███          ███    ███ ███       ███▌     ███   ▀
+//  ▀███████████ ▀█████████▀  ███       ███▌     ███
+//           ███   ███        ███       ███      ███
+//     ▄█    ███   ███        ███▌    ▄ ███      ███
+//   ▄████████▀   ▄████▀      █████▄▄██ █▀      ▄████▀
+//                            ▀
 
     public static long[] getCurrentSplitRange() {
         long[] range = new long[2];
-        
+
         long now = System.currentTimeMillis();
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
@@ -964,7 +986,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             JSONObject file = (JSONObject) parser.parse(reader);
             JSONArray season = (JSONArray) file.get("seasons");
             JSONObject current = (JSONObject) season.get(season.size() - 1);
-            
+
             JSONArray splits = (JSONArray) current.get("splits");
             for (int i = 0; i < splits.size(); i++) {
                 JSONObject split = (JSONObject) splits.get(i);
@@ -972,7 +994,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 String end = (String) split.get("end_date");
                 long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
                 long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
-                
+
                 if (now >= startMillis && now <= endMillis) {
                     range[0] = startMillis;
                     range[1] = endMillis;
@@ -991,33 +1013,33 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static String getCurrentSplitFormatted() {
         long now = System.currentTimeMillis();
-    
+
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
             JSONArray season = (JSONArray) file.get("seasons");
             JSONObject current = (JSONObject) season.get(season.size() - 1);
-    
+
             JSONArray splits = (JSONArray) current.get("splits");
             for (int i = 0; i < splits.size(); i++) {
                 JSONObject split = (JSONObject) splits.get(i);
                 String start = split.get("start_date").toString();
                 String end = split.get("end_date").toString();
-    
+
                 long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
                 long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
-    
+
                 if (now >= startMillis && now <= endMillis && split.get("current") != null) {
                     return "Season " + current.get("season").toString() + " split " + split.get("split").toString();
                 }
             }
-    
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
-    
+
         return null;
     }
 

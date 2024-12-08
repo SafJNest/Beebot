@@ -1188,7 +1188,7 @@ public class DatabaseHandler {
     }
 
     public static QueryCollection getChannelData(String guild_id) {
-        return safJQuery("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled FROM channel WHERE guild_id = '" + guild_id + "';");
+        return safJQuery("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled, league_shard FROM channel WHERE guild_id = '" + guild_id + "';");
     }
 
     public static boolean setChannelExpModifier(int ID, double exp_modifier) {
@@ -1335,6 +1335,10 @@ public class DatabaseHandler {
 
     public static boolean updateShard(String valueOf, LeagueShard shard) {
         return runQuery("UPDATE guild SET league_shard = '" + shard.ordinal() + "' WHERE guild_id = '" + valueOf + "';");
+    }
+
+    public static boolean updateShardChannel(int valueOf, LeagueShard shard) {
+        return runQuery("UPDATE channel SET league_shard = '" + shard.ordinal() + "' WHERE id = '" + valueOf + "';");
     }
 
     public static QueryCollection getTwitchSubscriptions(String streamer_id) {

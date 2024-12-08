@@ -223,7 +223,7 @@ public class EventHandler extends ListenerAdapter {
                     }
                 }       
             }
-            for (LayoutComponent layoutComponent : LeagueMessage.getOpggButtons(s, platform)) {
+            for (LayoutComponent layoutComponent : LeagueMessage.getOpggButtons(s, platform, null, 0)) {
                 compontens.add(layoutComponent);
             }
 

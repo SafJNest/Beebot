@@ -5,6 +5,8 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+
 /**
  * Class that stores all the settings for a guild.
  * <ul>
@@ -26,6 +28,8 @@ public class ChannelData {
 
     private boolean statisticsEnabled;
 
+    private LeagueShard leagueShard;
+
     public ChannelData(long CHANNEL_ID, String GUILD_ID) {
         this.ID = 0;
         this.CHANNEL_ID = CHANNEL_ID;
@@ -35,6 +39,8 @@ public class ChannelData {
         this.experienceModifier = 1;
 
         this.statisticsEnabled = true;
+
+        this.leagueShard = null;
     }
     
     public ChannelData(QueryRecord data) {
@@ -46,6 +52,9 @@ public class ChannelData {
         this.experienceModifier = data.getAsDouble("exp_modifier");
 
         this.statisticsEnabled = data.getAsBoolean("stats_enabled");//TODO: find a better name	
+
+        this.leagueShard = data.getAsInt("league_shard") != 0 ? LeagueShard.values()[data.getAsInt("league_shard")] : null;
+
     }
 
     public int getId() {
@@ -97,6 +106,20 @@ public class ChannelData {
             this.experienceModifier = value;
         }
         return result;
+    }
+
+    public boolean setLeagueShard(LeagueShard shard) {
+        handleEmptyID();
+
+        boolean result = DatabaseHandler.updateShardChannel(ID, shard);
+        if (result) {
+            this.leagueShard = shard;
+        }
+        return result;
+    }
+
+    public LeagueShard getLeagueShard() {
+        return leagueShard;
     }
 
     public boolean terminator5LaRivolta() {
