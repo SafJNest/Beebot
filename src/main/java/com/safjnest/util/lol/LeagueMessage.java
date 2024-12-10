@@ -759,7 +759,6 @@ public class LeagueMessage {
 
         if (rank.getDivision().equals("IV"))division = "4";
         else if (rank.ordinal() < 3) division = "";
-        System.out.println(rank.ordinal());
 
         String tier = rank.prettyName().charAt(0) + "";
         if (rank == TierDivisionType.GRANDMASTER_I) tier  = "GM";
@@ -881,7 +880,7 @@ public class LeagueMessage {
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
                         LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getSummonerId(), summoner.getPlatform());
                         if (entry != null) {
-                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + getFormatedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + " LP " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"% WR`";
+                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + getFormatedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"% WR`";
                             entryName = LeagueHandler.formatMatchName(entry.getQueueType());
                         }
 
