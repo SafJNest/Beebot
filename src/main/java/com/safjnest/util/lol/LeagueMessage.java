@@ -761,7 +761,10 @@ public class LeagueMessage {
         else if (rank.ordinal() < 3) division = "";
 
         String tier = rank.prettyName().charAt(0) + "";
-        if (rank == TierDivisionType.GRANDMASTER_I) tier  = "GM";
+
+        if(rank == TierDivisionType.MASTER_I) tier = "MS";
+        else if (rank == TierDivisionType.GRANDMASTER_I) tier  = "GM";
+        else if (rank == TierDivisionType.CHALLENGER_I) tier = "CH";
 
         if (withEmoji) return CustomEmojiHandler.getFormattedEmoji(rank.getTier()) + tier + division;
         else return tier + division;
