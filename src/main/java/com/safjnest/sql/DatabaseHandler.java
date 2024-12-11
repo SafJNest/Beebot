@@ -683,27 +683,58 @@ public class DatabaseHandler {
     }
 
     public static QueryCollection getAdvancedLOLData(String account_id, long time_start, long time_end) {
-        return safJQuery(
-            "SELECT t.`champion`, COUNT(*) AS `games`, SUM(t.`win`) AS `wins`, " +
-            "SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, " +
-            "AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, " +
-            "AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, " +
-            "AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, " +
-            "SUM(t.`gain`) AS total_lp_gain, " +
-            "GROUP_CONCAT(DISTINCT CONCAT(l.`lane`, '-', l.`lane_wins`, '-', l.`lane_losses`) ORDER BY l.`lane` SEPARATOR ', ') AS lanes_played " +
+        String overallQuery = 
+            "SELECT " +
+            "  t.`champion`, " +
+            "  COUNT(*) AS `games`, " +
+            "  SUM(t.`win`) AS `wins`, " +
+            "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, " +
+            "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, " +
+            "  AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, " +
+            "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, " +
+            "  SUM(t.`gain`) AS total_lp_gain " +
             "FROM `summoner_tracking` t " +
             "JOIN `summoner_match` sm ON t.`summoner_match_id` = sm.`id` " +
-            "JOIN (SELECT `champion`, `lane`, SUM(`win`) AS `lane_wins`, " +
-            "             SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` " +
-            "      FROM `summoner_tracking` " +
-            "      WHERE `account_id` = '" + account_id + "' " +
-            "      GROUP BY `champion`, `lane`) AS l " +
-            "ON t.`champion` = l.`champion` AND t.`lane` = l.`lane` " +
             "WHERE t.`account_id` = '" + account_id + "' " +
             "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
             "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
-            "GROUP BY t.`champion` ORDER BY `games` DESC;"
-        );
+            "GROUP BY t.`champion`";
+    
+        String laneQuery = 
+            "SELECT " +
+            "  t.`champion`, " +
+            "  t.`lane`, " +
+            "  COUNT(*) AS `lane_games`, " +
+            "  SUM(t.`win`) AS `lane_wins`, " +
+            "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` " +
+            "FROM `summoner_tracking` t " +
+            "JOIN `summoner_match` sm ON t.`summoner_match_id` = sm.`id` " +
+            "WHERE t.`account_id` = '" + account_id + "' " +
+            "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
+            "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
+            "GROUP BY t.`champion`, t.`lane`";
+    
+        String combinedQuery = 
+            "SELECT " +
+            "  overall.`champion`, " +
+            "  overall.`games`, " +
+            "  overall.`wins`, " +
+            "  overall.`losses`, " +
+            "  overall.`avg_kills`, " +
+            "  overall.`avg_deaths`, " +
+            "  overall.`avg_assists`, " +
+            "  overall.`total_lp_gain`, " +
+            "  GROUP_CONCAT( " +
+            "    CONCAT(lane.`lane`, '-', lane.`lane_wins`, '-', lane.`lane_losses`) " +
+            "    ORDER BY lane.`lane` SEPARATOR ', ' " +
+            "  ) AS lanes_played " +
+            "FROM (" + overallQuery + ") AS overall " +
+            "LEFT JOIN (" + laneQuery + ") AS lane " +
+            "ON overall.`champion` = lane.`champion` " +
+            "GROUP BY overall.`champion` " +
+            "ORDER BY `games` DESC;";
+    
+        return safJQuery(combinedQuery);
     }
     
     
@@ -1157,7 +1188,7 @@ public class DatabaseHandler {
     }
 
     public static QueryCollection getChannelData(String guild_id) {
-        return safJQuery("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled FROM channel WHERE guild_id = '" + guild_id + "';");
+        return safJQuery("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled, league_shard FROM channel WHERE guild_id = '" + guild_id + "';");
     }
 
     public static boolean setChannelExpModifier(int ID, double exp_modifier) {
@@ -1306,6 +1337,10 @@ public class DatabaseHandler {
         return runQuery("UPDATE guild SET league_shard = '" + shard.ordinal() + "' WHERE guild_id = '" + valueOf + "';");
     }
 
+    public static boolean updateShardChannel(int valueOf, LeagueShard shard) {
+        return runQuery("UPDATE channel SET league_shard = '" + shard.ordinal() + "' WHERE id = '" + valueOf + "';");
+    }
+
     public static QueryCollection getTwitchSubscriptions(String streamer_id) {
         return safJQuery("SELECT a.guild_id as guild_id from alert_twitch as at join alert as a on at.alert_id = a.id WHERE at.streamer_id = '" + streamer_id + "';");
     }
@@ -1451,9 +1486,6 @@ public class DatabaseHandler {
         return safJQuery("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
     }
 
-    public static QueryCollection getSummonerData(String account_id) {
-        return safJQuery("SELECT rank, lp, wins, losses, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "';");
-    }
 
     public static QueryCollection getSummonerData(String account_id, long game_id) {
         return safJQuery("SELECT account_id, game_id, rank, lp, gain, win time_start, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND game_id = '" + game_id + "';");
@@ -1463,13 +1495,13 @@ public class DatabaseHandler {
         return safJQuery("SELECT account_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM summoner_tracking WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
-    public static QueryCollection getSummonerData(String account_id, String[] game_id) {
+    public static QueryCollection getSummonerData(String account_id) {
         return safJQuery(
             "SELECT st.account_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
             "FROM summoner_tracking st " +
             "JOIN summoner_match sm ON st.summoner_match_id = sm.id " +
             "WHERE st.account_id = '" + account_id + "' " +
-            "AND sm.game_id IN ('" + String.join("', '", game_id) + "');"
+            "ORDER BY sm.game_id"
         );
     }
 

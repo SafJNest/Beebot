@@ -47,10 +47,10 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
  */
 public class GuildData {
 
-    private final Long ID;    
+    private final Long ID;
 
     private String prefix;
-    
+
 
     private boolean experience;
 
@@ -63,7 +63,7 @@ public class GuildData {
     private BlacklistData blacklistData;
 
     private HashMap<AlertKey<?>, AlertData> alerts;
-    
+
     private HashMap<Long, ChannelData> channels;
     private HashMap<String, MemberData> members;
     private HashMap<String, CustomCommand> customCommands;
@@ -82,7 +82,7 @@ public class GuildData {
         this.members = new HashMap<>();
         this.channels = new HashMap<>();
         this.customCommands = new HashMap<>();
-        
+
         this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
 
         this.leagueShard = LeagueShard.EUW1;
@@ -100,7 +100,7 @@ public class GuildData {
         this.experience = data.getAsBoolean("exp_enabled");
 
         this.members = new HashMap<>();
-        
+
         this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
 
         this.leagueShard = LeagueShard.values()[Integer.parseInt(data.get("league_shard"))];
@@ -121,15 +121,15 @@ public class GuildData {
         retriveCustomCommand();
     }
 
-//     ▄██████▄  ███    █▄   ▄█   ▄█       ████████▄  
-//    ███    ███ ███    ███ ███  ███       ███   ▀███ 
-//    ███    █▀  ███    ███ ███▌ ███       ███    ███ 
-//   ▄███        ███    ███ ███▌ ███       ███    ███ 
-//  ▀▀███ ████▄  ███    ███ ███▌ ███       ███    ███ 
-//    ███    ███ ███    ███ ███  ███       ███    ███ 
-//    ███    ███ ███    ███ ███  ███▌    ▄ ███   ▄███ 
-//    ████████▀  ████████▀  █▀   █████▄▄██ ████████▀  
-//                               ▀                    
+//     ▄██████▄  ███    █▄   ▄█   ▄█       ████████▄
+//    ███    ███ ███    ███ ███  ███       ███   ▀███
+//    ███    █▀  ███    ███ ███▌ ███       ███    ███
+//   ▄███        ███    ███ ███▌ ███       ███    ███
+//  ▀▀███ ████▄  ███    ███ ███▌ ███       ███    ███
+//    ███    ███ ███    ███ ███  ███       ███    ███
+//    ███    ███ ███    ███ ███  ███▌    ▄ ███   ▄███
+//    ████████▀  ████████▀  █▀   █████▄▄██ ████████▀
+//                               ▀
 
     public Long getId() {
         return ID;
@@ -168,6 +168,12 @@ public class GuildData {
         return this.leagueShard;
     }
 
+    public LeagueShard getLeagueShard(long channelId) {
+        LeagueShard shard = getChannelData(channelId).getLeagueShard();
+        if (shard != null) return shard;
+        return this.leagueShard;
+    }
+
     public RegionShard getRegionShard() {
         return this.reagionShard;
     }
@@ -203,19 +209,19 @@ public class GuildData {
     }
 
     public String getMutedRoleId() {
-        if (mutedRoleId != null && !mutedRoleId.isEmpty()) 
+        if (mutedRoleId != null && !mutedRoleId.isEmpty())
             return mutedRoleId;
-        
+
         mutedRoleId = DatabaseHandler.getMutedRole(String.valueOf(ID));
         if (mutedRoleId == null) mutedRoleId = "";
-        
+
         if (mutedRoleId.isEmpty()) {
             Guild guild = Bot.getJDA().getGuildById(ID);
             Role role = guild.createRole().setName("Beebot-muted").complete();
             mutedRoleId = role.getId();
             for (TextChannel tc : guild.getTextChannels()) {
                 tc.getManager().putRolePermissionOverride(role.getIdLong(), null, Collections.singleton(Permission.MESSAGE_SEND)).queue();
-            
+
             }
             for (VoiceChannel vc : guild.getVoiceChannels()) {
                 vc.getManager().putPermissionOverride(role, null, Collections.singleton(Permission.VOICE_SPEAK)).queue();
@@ -235,16 +241,16 @@ public class GuildData {
         return "{ID: " + ID + ", Prefix: " + prefix + ", ExpSystem: " + experience + ", Shard: " + leagueShard + "}";
     }
 
-//     ▄████████  ▄█          ▄████████    ▄████████     ███          ████████▄     ▄████████     ███        ▄████████ 
-//    ███    ███ ███         ███    ███   ███    ███ ▀█████████▄      ███   ▀███   ███    ███ ▀█████████▄   ███    ███ 
-//    ███    ███ ███         ███    █▀    ███    ███    ▀███▀▀██      ███    ███   ███    ███    ▀███▀▀██   ███    ███ 
-//    ███    ███ ███        ▄███▄▄▄      ▄███▄▄▄▄██▀     ███   ▀      ███    ███   ███    ███     ███   ▀   ███    ███ 
-//  ▀███████████ ███       ▀▀███▀▀▀     ▀▀███▀▀▀▀▀       ███          ███    ███ ▀███████████     ███     ▀███████████ 
-//    ███    ███ ███         ███    █▄  ▀███████████     ███          ███    ███   ███    ███     ███       ███    ███ 
-//    ███    ███ ███▌    ▄   ███    ███   ███    ███     ███          ███   ▄███   ███    ███     ███       ███    ███ 
-//    ███    █▀  █████▄▄██   ██████████   ███    ███    ▄████▀        ████████▀    ███    █▀     ▄████▀     ███    █▀  
-//               ▀                        ███    ███                                                                   
-//                                                                                                                                                                    
+//     ▄████████  ▄█          ▄████████    ▄████████     ███          ████████▄     ▄████████     ███        ▄████████
+//    ███    ███ ███         ███    ███   ███    ███ ▀█████████▄      ███   ▀███   ███    ███ ▀█████████▄   ███    ███
+//    ███    ███ ███         ███    █▀    ███    ███    ▀███▀▀██      ███    ███   ███    ███    ▀███▀▀██   ███    ███
+//    ███    ███ ███        ▄███▄▄▄      ▄███▄▄▄▄██▀     ███   ▀      ███    ███   ███    ███     ███   ▀   ███    ███
+//  ▀███████████ ███       ▀▀███▀▀▀     ▀▀███▀▀▀▀▀       ███          ███    ███ ▀███████████     ███     ▀███████████
+//    ███    ███ ███         ███    █▄  ▀███████████     ███          ███    ███   ███    ███     ███       ███    ███
+//    ███    ███ ███▌    ▄   ███    ███   ███    ███     ███          ███   ▄███   ███    ███     ███       ███    ███
+//    ███    █▀  █████▄▄██   ██████████   ███    ███    ▄████▀        ████████▀    ███    █▀     ▄████▀     ███    █▀
+//               ▀                        ███    ███
+//
 
     /**
      * If the {@link #alerts alerts map} is null, it will be retrieved from the database and cached.
@@ -261,7 +267,7 @@ public class GuildData {
             this.alerts = new HashMap<>();
             QueryCollection alertResult = DatabaseHandler.getAlerts(String.valueOf(ID));
             QueryCollection roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID));
-            
+
             HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
             for (QueryRecord row : roleResult) {
                 int alertId = row.getAsInt("alert_id");
@@ -283,13 +289,13 @@ public class GuildData {
                         TwitchData td = new TwitchData(row);
                         this.alerts.put(td.getKey(), td);
                         break;
-                
+
                     default:
                         AlertData ad = new AlertData(row, roles.get(row.getAsInt("alert_id")));
                         this.alerts.put(ad.getKey(), ad);
                     break;
                 }
-                
+
             }
         }
         return this.alerts;
@@ -379,16 +385,16 @@ public class GuildData {
 
 
 
-//  ▀█████████▄   ▄█          ▄████████  ▄████████    ▄█   ▄█▄  ▄█        ▄█     ▄████████     ███     
-//    ███    ███ ███         ███    ███ ███    ███   ███ ▄███▀ ███       ███    ███    ███ ▀█████████▄ 
-//    ███    ███ ███         ███    ███ ███    █▀    ███▐██▀   ███       ███▌   ███    █▀     ▀███▀▀██ 
-//   ▄███▄▄▄██▀  ███         ███    ███ ███         ▄█████▀    ███       ███▌   ███            ███   ▀ 
-//  ▀▀███▀▀▀██▄  ███       ▀███████████ ███        ▀▀█████▄    ███       ███▌ ▀███████████     ███     
-//    ███    ██▄ ███         ███    ███ ███    █▄    ███▐██▄   ███       ███           ███     ███     
-//    ███    ███ ███▌    ▄   ███    ███ ███    ███   ███ ▀███▄ ███▌    ▄ ███     ▄█    ███     ███     
-//  ▄█████████▀  █████▄▄██   ███    █▀  ████████▀    ███   ▀█▀ █████▄▄██ █▀    ▄████████▀     ▄████▀   
-//               ▀                                   ▀         ▀                                       
-//                                                                                                    
+//  ▀█████████▄   ▄█          ▄████████  ▄████████    ▄█   ▄█▄  ▄█        ▄█     ▄████████     ███
+//    ███    ███ ███         ███    ███ ███    ███   ███ ▄███▀ ███       ███    ███    ███ ▀█████████▄
+//    ███    ███ ███         ███    ███ ███    █▀    ███▐██▀   ███       ███▌   ███    █▀     ▀███▀▀██
+//   ▄███▄▄▄██▀  ███         ███    ███ ███         ▄█████▀    ███       ███▌   ███            ███   ▀
+//  ▀▀███▀▀▀██▄  ███       ▀███████████ ███        ▀▀█████▄    ███       ███▌ ▀███████████     ███
+//    ███    ██▄ ███         ███    ███ ███    █▄    ███▐██▄   ███       ███           ███     ███
+//    ███    ███ ███▌    ▄   ███    ███ ███    ███   ███ ▀███▄ ███▌    ▄ ███     ▄█    ███     ███
+//  ▄█████████▀  █████▄▄██   ███    █▀  ████████▀    ███   ▀█▀ █████▄▄██ █▀    ▄████████▀     ▄████▀
+//               ▀                                   ▀         ▀
+//
 
     public BlacklistData getBlacklistData() {
         return this.blacklistData;
@@ -419,21 +425,21 @@ public class GuildData {
     public boolean blacklistEnabled() {
         return getBlacklistData().isBlacklistEnabled();
     }
-    
+
     public boolean setBlacklistEnabled(boolean blacklist_enabled) {
         return getBlacklistData().setBlacklistEnabled(blacklist_enabled);
     }
 
 
-//   ▄████████    ▄█    █▄       ▄████████ ███▄▄▄▄   ███▄▄▄▄      ▄████████  ▄█       
-//  ███    ███   ███    ███     ███    ███ ███▀▀▀██▄ ███▀▀▀██▄   ███    ███ ███       
-//  ███    █▀    ███    ███     ███    ███ ███   ███ ███   ███   ███    █▀  ███       
-//  ███         ▄███▄▄▄▄███▄▄   ███    ███ ███   ███ ███   ███  ▄███▄▄▄     ███       
-//  ███        ▀▀███▀▀▀▀███▀  ▀███████████ ███   ███ ███   ███ ▀▀███▀▀▀     ███       
-//  ███    █▄    ███    ███     ███    ███ ███   ███ ███   ███   ███    █▄  ███       
-//  ███    ███   ███    ███     ███    ███ ███   ███ ███   ███   ███    ███ ███▌    ▄ 
-//  ████████▀    ███    █▀      ███    █▀   ▀█   █▀   ▀█   █▀    ██████████ █████▄▄██ 
-//                                                                          ▀         
+//   ▄████████    ▄█    █▄       ▄████████ ███▄▄▄▄   ███▄▄▄▄      ▄████████  ▄█
+//  ███    ███   ███    ███     ███    ███ ███▀▀▀██▄ ███▀▀▀██▄   ███    ███ ███
+//  ███    █▀    ███    ███     ███    ███ ███   ███ ███   ███   ███    █▀  ███
+//  ███         ▄███▄▄▄▄███▄▄   ███    ███ ███   ███ ███   ███  ▄███▄▄▄     ███
+//  ███        ▀▀███▀▀▀▀███▀  ▀███████████ ███   ███ ███   ███ ▀▀███▀▀▀     ███
+//  ███    █▄    ███    ███     ███    ███ ███   ███ ███   ███   ███    █▄  ███
+//  ███    ███   ███    ███     ███    ███ ███   ███ ███   ███   ███    ███ ███▌    ▄
+//  ████████▀    ███    █▀      ███    █▀   ▀█   █▀   ▀█   █▀    ██████████ █████▄▄██
+//                                                                          ▀
 
     public void retriveChannels() {
         this.channels = new HashMap<>();
@@ -489,15 +495,15 @@ public class GuildData {
         return getChannelData(id).getExperienceModifier();
     }
 
-//     ▄▄▄▄███▄▄▄▄      ▄████████   ▄▄▄▄███▄▄▄▄   ▀█████████▄     ▄████████    ▄████████ 
-//   ▄██▀▀▀███▀▀▀██▄   ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███   ███    ███   ███    ███ 
-//   ███   ███   ███   ███    █▀  ███   ███   ███   ███    ███   ███    █▀    ███    ███ 
-//   ███   ███   ███  ▄███▄▄▄     ███   ███   ███  ▄███▄▄▄██▀   ▄███▄▄▄      ▄███▄▄▄▄██▀ 
-//   ███   ███   ███ ▀▀███▀▀▀     ███   ███   ███ ▀▀███▀▀▀██▄  ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   
-//   ███   ███   ███   ███    █▄  ███   ███   ███   ███    ██▄   ███    █▄  ▀███████████ 
-//   ███   ███   ███   ███    ███ ███   ███   ███   ███    ███   ███    ███   ███    ███ 
-//    ▀█   ███   █▀    ██████████  ▀█   ███   █▀  ▄█████████▀    ██████████   ███    ███ 
-//                                                                            ███    ███ 
+//     ▄▄▄▄███▄▄▄▄      ▄████████   ▄▄▄▄███▄▄▄▄   ▀█████████▄     ▄████████    ▄████████
+//   ▄██▀▀▀███▀▀▀██▄   ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███   ███    ███   ███    ███
+//   ███   ███   ███   ███    █▀  ███   ███   ███   ███    ███   ███    █▀    ███    ███
+//   ███   ███   ███  ▄███▄▄▄     ███   ███   ███  ▄███▄▄▄██▀   ▄███▄▄▄      ▄███▄▄▄▄██▀
+//   ███   ███   ███ ▀▀███▀▀▀     ███   ███   ███ ▀▀███▀▀▀██▄  ▀▀███▀▀▀     ▀▀███▀▀▀▀▀
+//   ███   ███   ███   ███    █▄  ███   ███   ███   ███    ██▄   ███    █▄  ▀███████████
+//   ███   ███   ███   ███    ███ ███   ███   ███   ███    ███   ███    ███   ███    ███
+//    ▀█   ███   █▀    ██████████  ▀█   ███   █▀  ▄█████████▀    ██████████   ███    ███
+//                                                                            ███    ███
 
     private MemberData retriveMemberData(String userId) {
         MemberData member = null;
@@ -535,15 +541,15 @@ public class GuildData {
         return this.isExperienceEnabled() && this.getExpSystemRoom(channelId) && getMemberData(userId).canReceiveExperience();
     }
 
-//     ▄████████  ▄████████     ███      ▄█   ▄██████▄  ███▄▄▄▄   
-//    ███    ███ ███    ███ ▀█████████▄ ███  ███    ███ ███▀▀▀██▄ 
-//    ███    ███ ███    █▀     ▀███▀▀██ ███▌ ███    ███ ███   ███ 
-//    ███    ███ ███            ███   ▀ ███▌ ███    ███ ███   ███ 
-//  ▀███████████ ███            ███     ███▌ ███    ███ ███   ███ 
-//    ███    ███ ███    █▄      ███     ███  ███    ███ ███   ███ 
-//    ███    ███ ███    ███     ███     ███  ███    ███ ███   ███ 
-//    ███    █▀  ████████▀     ▄████▀   █▀    ▀██████▀   ▀█   █▀  
-//                                                                
+//     ▄████████  ▄████████     ███      ▄█   ▄██████▄  ███▄▄▄▄
+//    ███    ███ ███    ███ ▀█████████▄ ███  ███    ███ ███▀▀▀██▄
+//    ███    ███ ███    █▀     ▀███▀▀██ ███▌ ███    ███ ███   ███
+//    ███    ███ ███            ███   ▀ ███▌ ███    ███ ███   ███
+//  ▀███████████ ███            ███     ███▌ ███    ███ ███   ███
+//    ███    ███ ███    █▄      ███     ███  ███    ███ ███   ███
+//    ███    ███ ███    ███     ███     ███  ███    ███ ███   ███
+//    ███    █▀  ████████▀     ▄████▀   █▀    ▀██████▀   ▀█   █▀
+//
 
     private void retriveActions() {
         actions = new ArrayList<>();
@@ -592,15 +598,15 @@ public class GuildData {
 
 
 
-//   ▄████████  ▄██████▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄      ▄████████ ███▄▄▄▄   ████████▄  
-//  ███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███▀▀▀██▄ ███   ▀███ 
-//  ███    █▀  ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███ 
-//  ███        ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███ 
-//  ███        ███    ███ ███   ███   ███ ███   ███   ███ ▀███████████ ███   ███ ███    ███ 
-//  ███    █▄  ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███ 
-//  ███    ███ ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███   ▄███ 
-//  ████████▀   ▀██████▀   ▀█   ███   █▀   ▀█   ███   █▀    ███    █▀   ▀█   █▀  ████████▀  
-//                                                                                          
+//   ▄████████  ▄██████▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄      ▄████████ ███▄▄▄▄   ████████▄
+//  ███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███▀▀▀██▄ ███   ▀███
+//  ███    █▀  ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███
+//  ███        ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███
+//  ███        ███    ███ ███   ███   ███ ███   ███   ███ ▀███████████ ███   ███ ███    ███
+//  ███    █▄  ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███
+//  ███    ███ ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███   ▄███
+//  ████████▀   ▀██████▀   ▀█   ███   █▀   ▀█   ███   █▀    ███    █▀   ▀█   █▀  ████████▀
+//
 
 
     private void retriveCustomCommand() {
@@ -632,29 +638,29 @@ public class GuildData {
                     String optionDescription = optionRow.get("description");
                     boolean isRequired = optionRow.getAsBoolean("required");
                     OptionType type = OptionType.fromKey(Integer.parseInt(optionRow.get("type")));
-            
+
                     Option option;
                     if (!finalValueResult.isEmpty()) {
                         List<OptionValue> values = finalValueResult.stream()
                             .filter(valueRow -> valueRow.getAsInt("option_id") == optionId)
                             .map(valueRow -> new OptionValue(valueRow.getAsInt("ID"), valueRow.get("key"), valueRow.get("value")))
                             .collect(Collectors.toList());
-            
+
                         option = new Option(optionId, key, optionDescription, isRequired, values);
                     } else {
                         option = new Option(optionId, key, optionDescription, isRequired, type);
                     }
-            
+
                     cc.addOption(option);
                 });
-            
+
             taskResult.stream()
                 .filter(taskRow -> taskRow.getAsInt("command_id") == id)
                 .forEach(taskRow -> {
                     int taskId = taskRow.getAsInt("ID");
                     TaskType type = TaskType.fromValue(taskRow.getAsInt("type"));
                     Task task = new Task(taskId, type);
-            
+
                     taskValueResult.stream()
                         .filter(taskValueRow -> taskValueRow.getAsInt("task_id") == taskId)
                         .forEach(taskValueRow -> {
@@ -725,5 +731,5 @@ public class GuildData {
         return this.alerts != null;
     }
 
-    
+
 }

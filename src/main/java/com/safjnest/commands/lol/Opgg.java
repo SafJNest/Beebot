@@ -1,8 +1,6 @@
 package com.safjnest.commands.lol;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -16,9 +14,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -66,14 +61,7 @@ public class Opgg extends SlashCommand {
         
         
         EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);
-        StringSelectMenu menu = LeagueMessage.getOpggMenu(s);
-        List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null));
-        row.add(0, LeagueMessage.getOpggQueueTypeButtons(null));
-        
-        if (menu != null) row.add(0, ActionRow.of(menu));
-        else System.out.println("Menu is null");
-
-        event.getChannel().sendMessageEmbeds(builder.build()).setComponents(row).queue();
+        event.getChannel().sendMessageEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
         
     }
 
@@ -92,15 +80,8 @@ public class Opgg extends SlashCommand {
         if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
         else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
-        EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);
-        StringSelectMenu menu = LeagueMessage.getOpggMenu(s);
-        List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null));
-        row.add(0, LeagueMessage.getOpggQueueTypeButtons(null));
-        
-        if (menu != null) row.add(0, ActionRow.of(menu));
-        else System.out.println("Menu is null");
-        
-        event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
+        EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);        
+        event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
 	}
     
 }

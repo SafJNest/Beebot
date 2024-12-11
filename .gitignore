@@ -30,11 +30,18 @@ rsc/Upload/*
 rsc/tts/*
 .fleet/
 .idea/
+.settings/
 l4j8cache/
+
+.project
+.classpath
+
+.DS_Store
 
 rsc/settings.json
 
 config.properties
 
-/TODO 
+/TODO
+ 
  

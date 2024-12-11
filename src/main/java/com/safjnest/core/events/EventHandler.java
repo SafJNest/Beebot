@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.safjnest.App;
 import com.safjnest.core.Bot;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
@@ -73,7 +74,7 @@ public class EventHandler extends ListenerAdapter {
         if (Functions.isBotAlone(connectChannel, channelLeft))
             Functions.handleBotLeave(guild);
         
-        if (channelJoined != null && (afkChannel != null && channelJoined.getIdLong() != afkChannel.getIdLong()) &&
+        if (!App.isExtremeTesting() && channelJoined != null && (afkChannel != null && channelJoined.getIdLong() != afkChannel.getIdLong()) &&
             (connectChannel == null || channelJoined.getId().equals(connectChannel.getId())) && !userJoined.isBot()) {
             Functions.handleGreetSound(channelJoined, userJoined, guild);
         }
@@ -222,7 +223,7 @@ public class EventHandler extends ListenerAdapter {
                     }
                 }       
             }
-            for (LayoutComponent layoutComponent : LeagueMessage.getOpggButtons(s, platform)) {
+            for (LayoutComponent layoutComponent : LeagueMessage.getOpggButtons(s, platform, null, 0)) {
                 compontens.add(layoutComponent);
             }
 

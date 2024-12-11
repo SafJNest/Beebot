@@ -63,6 +63,7 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -77,7 +78,7 @@ public class EventButtonHandler extends ListenerAdapter {
             sound(event);
             return;
         }
-        
+
         else if (buttonId.startsWith("tag")) {
             tag(event);
             return;
@@ -92,7 +93,7 @@ public class EventButtonHandler extends ListenerAdapter {
             greet(event);
             return;
         }
-        
+
 
         event.deferEdit().queue();
 
@@ -101,25 +102,25 @@ public class EventButtonHandler extends ListenerAdapter {
             case "lol":
                 lolButtonEvent(event);
                 break;
-        
+
             default:
                 break;
         }
         */
 
-        if (buttonId.startsWith("lol-")) 
+        if (buttonId.startsWith("lol-"))
             lolButtonEvent(event);
-        
-        else if (buttonId.startsWith("match-")) 
+
+        else if (buttonId.startsWith("match-"))
             matchButtonEvent(event);
 
-        else if (buttonId.startsWith("rank-")) 
+        else if (buttonId.startsWith("rank-"))
             rankButtonEvent(event);
 
-        else if (buttonId.startsWith("list-")) 
+        else if (buttonId.startsWith("list-"))
             listButtonEvent(event);
 
-        else if (buttonId.startsWith("listuser-")) 
+        else if (buttonId.startsWith("listuser-"))
             listUserButtonEvent(event);
 
         else if(buttonId.startsWith("ban-"))
@@ -139,13 +140,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if(buttonId.startsWith("queue-"))
             queue(event);
-        
+
         else if (buttonId.startsWith("reward-"))
             reward(event);
-        
+
         else if (buttonId.startsWith("player-"))
             player(event);
-        
+
         else if (buttonId.startsWith("soundplay-"))
             soundplay(event);
 
@@ -157,13 +158,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if (buttonId.startsWith("chat-"))
             chat(event);
-        
+
     }
 
     private void greet(ButtonInteractionEvent event) {
         String args = event.getButton().getId().split("-", 3)[1];
         Button clicked = event.getButton();
-        
+
 
         // if (!soundData.getUserId().equals(event.getUser().getId())) {
         //     event.deferReply(true).addContent("You can only modify your own sounds").queue();
@@ -174,12 +175,12 @@ public class EventButtonHandler extends ListenerAdapter {
         String soundId = "";
         String type = "";
         String userId = "";
-        
+
         for (Button b : event.getMessage().getButtons()) {
             if (b.getId().startsWith("greet-user-") || b.getId().startsWith("greet-back-"))
                 userId = b.getId().split("-")[2];
         }
-        
+
         if (!userId.equals(event.getUser().getId())) {
             event.deferReply(true).addContent("You can modify only your greets.").queue();
             return;
@@ -217,11 +218,11 @@ public class EventButtonHandler extends ListenerAdapter {
                 type = clicked.getId().split("-")[2];
                 if (type.equals("global"))
                     Bot.getUserData(event.getUser().getId()).unsetGreet("0");
-                else 
+                else
                     Bot.getUserData(event.getUser().getId()).unsetGreet(event.getGuild().getId());
         }
 
-        List<LayoutComponent> buttons = soundSwitch ? SoundHandler.getGreetSoundButton(event.getUser().getId(), type, soundId) : SoundHandler.getGreetButton(event.getUser().getId(), event.getGuild().getId()); 
+        List<LayoutComponent> buttons = soundSwitch ? SoundHandler.getGreetSoundButton(event.getUser().getId(), type, soundId) : SoundHandler.getGreetButton(event.getUser().getId(), event.getGuild().getId());
 
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(SoundHandler.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
@@ -231,7 +232,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
     private void playlist(ButtonInteractionEvent event) {
         String args = event.getButton().getId().split("-", 2)[1];
-        
+
         int page = 0;
         int playlistId = 0;
         for (Button b : event.getMessage().getButtons()) {
@@ -261,11 +262,11 @@ public class EventButtonHandler extends ListenerAdapter {
 
     public void help(ButtonInteractionEvent event) {
         String args = event.getButton().getId().split("-", 2)[1];
-        
+
 
         BotCommand command = Help.searchCommand(args, CommandsLoader.getCommandsData(event.getUser().getId()));
         List<LayoutComponent> rows = Help.getCommandButton(command);
-        
+
 
         if (rows != null) event.getMessage().editMessageEmbeds(Help.getCommandHelp(command).build()).setComponents(rows).queue();
         else event.getMessage().editMessageEmbeds(Help.getCommandHelp(command).build()).queue();
@@ -308,20 +309,20 @@ public class EventButtonHandler extends ListenerAdapter {
                     .setMinLength(17)
                     .setMaxLength(100)
                     .build();
-                
+
                 roleInput = TextInput.create("twitch-changeRole", "Role to ping", TextInputStyle.SHORT)
                     .setPlaceholder("Name or id (better) of the role")
                     .setRequired(false)
                     .setMaxLength(100)
                     .build();
-                
+
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
                         .addComponents(
-                                ActionRow.of(streamerInput), 
+                                ActionRow.of(streamerInput),
                                 ActionRow.of(messageInput),
-                                ActionRow.of(privateInput), 
-                                ActionRow.of(channelInput), 
+                                ActionRow.of(privateInput),
+                                ActionRow.of(channelInput),
                                 ActionRow.of(roleInput))
                         .build();
 
@@ -380,7 +381,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
                     TwitchClient.unregisterSubEvent(streamerId);
-                    
+
                 event.deferEdit().queue();
                 event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchEmbed().build())
                         .setComponents(TwitchMenu.getTwitchButtons(event.getGuild().getId()))
@@ -414,22 +415,22 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (channelJoin == null)  return;
 
                 sound.increaseUserPlays(event.getUser().getId());
-     
+
                 pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
                     @Override
                     public void trackLoaded(AudioTrack track) {
                         if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(channelJoin);
-        
+
                         track.setUserData(new TrackData(AudioType.SOUND));
                         pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUND);
                     }
-        
+
                     @Override
                     public void playlistLoaded(AudioPlaylist playlist) {}
-                    
+
                     @Override
                     public void noMatches() {}
-        
+
                     @Override
                     public void loadFailed(FriendlyException throwable) {
                         System.out.println("error: " + throwable.getMessage());
@@ -501,7 +502,7 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         Button clicked = event.getButton();
-        
+
         Sound soundData = SoundHandler.getSoundById(soundId);
         int tagId = 0;
 
@@ -543,7 +544,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        List<LayoutComponent> buttons = tagSwitch ? SoundHandler.getTagButton(soundId, String.valueOf(tagId)) : SoundHandler.getSoundButton(soundId); 
+        List<LayoutComponent> buttons = tagSwitch ? SoundHandler.getTagButton(soundId, String.valueOf(tagId)) : SoundHandler.getSoundButton(soundId);
 
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(CustomizeSound.getEmbed(event.getUser(), soundData).build())
@@ -568,12 +569,12 @@ public class EventButtonHandler extends ListenerAdapter {
                 level = b.getLabel().substring(b.getLabel().indexOf(":") + 2);
             }
         }
-        
+
         switch (args) {
             case "right":
                 RewardData nextReward = Bot.getGuildData(guild.getId()).getHigherReward(Integer.parseInt(level));
                 RewardData nextNextReward = Bot.getGuildData(guild.getId()).getHigherReward(nextReward.getLevel());
-                
+
                 if (nextNextReward == null) {
                     right = right.asDisabled();
                     right = right.withStyle(ButtonStyle.DANGER);
@@ -588,7 +589,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
 
             case "left":
-                
+
                 RewardData previousRewardData = Bot.getGuildData(guild.getId()).getLowerReward(Integer.parseInt(level));
                 RewardData previousPreviousRewardData = Bot.getGuildData(guild.getId()).getLowerReward(previousRewardData.getLevel());
                 if (previousPreviousRewardData == null) {
@@ -624,7 +625,7 @@ public class EventButtonHandler extends ListenerAdapter {
         if(nextIndex > ts.getQueue().size())
             nextIndex = ts.getQueue().size() - 1;
 
-        int startIndex = ts.getIndex(); 
+        int startIndex = ts.getIndex();
 
         switch (args) {
             case "repeat":
@@ -681,7 +682,7 @@ public class EventButtonHandler extends ListenerAdapter {
             default:
                 break;
         }
-        
+
         List<LayoutComponent> rows = QueueHandler.getButtons(guild);
         if (ts.getMessage().getType() == EmbedType.QUEUE)
             rows = QueueHandler.getQueueButtons(guild, startIndex);
@@ -742,7 +743,7 @@ public class EventButtonHandler extends ListenerAdapter {
             default:
                 break;
         }
-        
+
         List<LayoutComponent> rows = QueueHandler.getButtons(guild);
 
         event.getMessage().editMessageEmbeds(QueueHandler.getEmbed(guild).build())
@@ -769,7 +770,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 ebRequester.setDescription("Channel connection accepted");
                 ChatHandler.addConnection(event.getChannelId(), channel.getId());
                 break;
-        
+
             default:
                 break;
         }
@@ -794,10 +795,10 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
-        
+
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
-        
+
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         String account_id = puuid;
 
@@ -843,7 +844,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         break;
                     }
                 }
-                
+
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
 
                 s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
@@ -851,28 +852,21 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "match":
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
-                
+
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
-
-                StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s);
-                List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
-                opggRow.add(0, LeagueMessage.getOpggQueueTypeButtons(null));
-                
-                if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
-
-                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(opggRow).queue();
+                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, null, 0)).queue();
                 return;
             case "rank":
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
-                
+
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
 
                 List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-                
+
                 StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
                 EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
                 List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
-        
+
                 if (menu != null) {
                     row.add(0, ActionRow.of(menu));
                     event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
@@ -894,7 +888,7 @@ public class EventButtonHandler extends ListenerAdapter {
         EmbedBuilder eb = LeagueMessage.getSummonerEmbed(s);
         List<LayoutComponent> row = LeagueMessage.getSummonerButtons(s, user_id);
         event.getMessage().editMessageEmbeds(eb.build()).setComponents(row).queue();
-        
+
     }
 
     public void matchButtonEvent(ButtonInteractionEvent event) {
@@ -905,6 +899,7 @@ public class EventButtonHandler extends ListenerAdapter {
         int index = 0;
 
         GameQueueType queue = null;
+        int page = 0;
 
         for (Button b : event.getMessage().getButtons()) {
             if (b.getId().startsWith("match-center-")) {
@@ -914,13 +909,15 @@ public class EventButtonHandler extends ListenerAdapter {
             if (b.getId().startsWith("match-queue-") && b.getStyle() == ButtonStyle.SUCCESS) {
                 queue = GameQueueType.valueOf(b.getId().split("-")[2]);
             }
+            if (b.getId().startsWith("match-index-"))
+                page = Integer.parseInt(b.getId().split("-")[2]);
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
-        
+
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
-        
+
         String account_id = puuid;
 
         int i = 0;
@@ -944,8 +941,9 @@ public class EventButtonHandler extends ListenerAdapter {
                 else index += 1;
 
                 account_id = (String) accounts.keySet().toArray()[index];
+                page = 0;
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
-                
+
                 break;
 
             case "left":
@@ -953,8 +951,9 @@ public class EventButtonHandler extends ListenerAdapter {
                 else index -= 1;
 
                 account_id = (String) accounts.keySet().toArray()[index];
+                page = 0;
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
-                
+
                 break;
             case "refresh":
                 for (Button b : event.getMessage().getButtons()) {
@@ -963,14 +962,17 @@ public class EventButtonHandler extends ListenerAdapter {
 
                         accountId = parts[2].substring(0, parts[2].indexOf("#"));
                         platform = parts[2].substring(parts[2].indexOf("#") + 1);
-                        break;
+                    }
+                    else if (b.getId().startsWith("match-queue-") && b.getStyle() == ButtonStyle.SUCCESS) {
+                        queue = GameQueueType.valueOf(b.getId().split("-")[2]);
                     }
                 }
 
                 if (event.getMessage().getButtonById("match-left") == null) user_id = "";
 
                 s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
-                MatchTracker.analyzeMatchHistory(s);
+                LOLMatch lastMatch = queue != null ? s.getLeagueGames().withCount(1).withQueue(queue).getMatchIterator().iterator().next() : s.getLeagueGames().withCount(1).getMatchIterator().iterator().next();
+                MatchTracker.analyzeMatchHistory(lastMatch.getQueue(), s).queue();
 
                 LeagueHandler.clearSummonerCache(s);
                 break;
@@ -993,22 +995,22 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "lol":
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
-                
+
                 if (event.getMessage().getButtonById("match-left") == null) user_id = "";
-                
+
                 event.getMessage().editMessageEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(LeagueMessage.getSummonerButtons(s, user_id)).queue();
                 return;
             case "rank":
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
-                
+
                 if (event.getMessage().getButtonById("match-left") == null) user_id = "";
 
                 List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-                
+
                 StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
                 EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
                 List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
-        
+
                 if (menu != null) {
                     row.add(0, ActionRow.of(menu));
                     event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
@@ -1016,16 +1018,23 @@ public class EventButtonHandler extends ListenerAdapter {
                 else event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
 
                 return;
+            case "matchleft":
+                page = page - 5;
+                if (page < 0) page = 0;
+                if (event.getMessage().getButtonById("match-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+            break;
+            case "matchright":
+                page = page + 5;
+
+                if (event.getMessage().getButtonById("match-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+            break;
         }
 
-        EmbedBuilder eb = LeagueMessage.getOpggEmbed(s, queue);
-        StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s, queue);
-        List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
-        opggRow.add(0, LeagueMessage.getOpggQueueTypeButtons(queue));
-        
-        if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
+        EmbedBuilder eb = LeagueMessage.getOpggEmbed(s, queue, page);
 
-        event.getMessage().editMessageEmbeds(eb.build()).setComponents(opggRow).queue();
+        event.getMessage().editMessageEmbeds(eb.build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, queue, page)).queue();
     }
 
     public void rankButtonEvent(ButtonInteractionEvent event) {
@@ -1043,10 +1052,10 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
-        
+
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
-        
+
         String account_id = puuid;
         int i = 0;
         for (String k : accounts.keySet()) {
@@ -1073,10 +1082,10 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 account_id = (String) accounts.keySet().toArray()[index];
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
-                
+
                 account = LeagueHandler.getRiotAccountFromSummoner(s);
                 riotAccounts.add(account);
-                
+
 
                 break;
 
@@ -1087,10 +1096,10 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 account_id = (String) accounts.keySet().toArray()[index];
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
-                
+
                 account = LeagueHandler.getRiotAccountFromSummoner(s);
                 riotAccounts.add(account);
-                         
+
                 break;
             case "refresh":
                 String accountId = "";
@@ -1112,27 +1121,21 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 account = LeagueHandler.getRiotAccountFromSummoner(s);
                 riotAccounts.add(account);
-  
+
                 break;
             case "lol":
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
-                
+
                 if (event.getMessage().getButtonById("rank-left") == null) user_id = "";
-                
+
                 event.getMessage().editMessageEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(LeagueMessage.getSummonerButtons(s, user_id)).queue();
                 return;
             case "match":
                 s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
-                    
-                if (event.getMessage().getButtonById("rank-left") == null) user_id = "";
-                
-                StringSelectMenu opggMenu = LeagueMessage.getOpggMenu(s);
-                List<LayoutComponent> opggRow = new ArrayList<>(LeagueMessage.getOpggButtons(s, user_id));
-                opggRow.add(0, LeagueMessage.getOpggQueueTypeButtons(null));
-                
-                if (opggMenu != null) opggRow.add(0, ActionRow.of(opggMenu));
 
-                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(opggRow).queue();
+                if (event.getMessage().getButtonById("rank-left") == null) user_id = "";
+
+                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, null, 0)).queue();
 
                 return;
         }
@@ -1160,7 +1163,7 @@ public class EventButtonHandler extends ListenerAdapter {
         Button order = Button.secondary("list-order", " ").withEmoji(CustomEmojiHandler.getRichEmoji("clock"));
 
         Button center = null;
-        
+
         boolean timeOrder = false;
         for (Button b : event.getMessage().getButtons()) {
             if (b.getId().startsWith("list-order"))
@@ -1177,7 +1180,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setColor(Bot.getColor());
         eb.setDescription("Total Sound: " + sounds.size());
-        
+
         switch (args) {
 
             case "right":
@@ -1291,12 +1294,12 @@ public class EventButtonHandler extends ListenerAdapter {
         }
         QueryCollection sounds = null;
         if (!timeOrder) {
-            sounds = (userId.equals(event.getMember().getId())) 
-                               ? DatabaseHandler.getlistUserSounds(userId) 
+            sounds = (userId.equals(event.getMember().getId()))
+                               ? DatabaseHandler.getlistUserSounds(userId)
                                : DatabaseHandler.getlistUserSounds(userId, event.getGuild().getId());
         } else {
-            sounds = (userId.equals(event.getMember().getId())) 
-                               ? DatabaseHandler.getlistUserSoundsTime(userId) 
+            sounds = (userId.equals(event.getMember().getId()))
+                               ? DatabaseHandler.getlistUserSoundsTime(userId)
                                : DatabaseHandler.getlistUserSoundsTime(userId, event.getGuild().getId());
         }
 
@@ -1307,7 +1310,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setThumbnail(event.getJDA().getSelfUser().getAvatarUrl());
         eb.setColor(Bot.getColor());
         eb.setDescription("Total Sound: " + sounds.size());
-        
+
 
         switch (args) {
 
@@ -1351,12 +1354,12 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
                 if (!timeOrder) {
-                    sounds = (userId.equals(event.getMember().getId())) 
-                                       ? DatabaseHandler.getlistUserSounds(userId) 
+                    sounds = (userId.equals(event.getMember().getId()))
+                                       ? DatabaseHandler.getlistUserSounds(userId)
                                        : DatabaseHandler.getlistUserSounds(userId, event.getGuild().getId());
                 } else {
-                    sounds = (userId.equals(event.getMember().getId())) 
-                                       ? DatabaseHandler.getlistUserSoundsTime(userId) 
+                    sounds = (userId.equals(event.getMember().getId()))
+                                       ? DatabaseHandler.getlistUserSoundsTime(userId)
                                        : DatabaseHandler.getlistUserSoundsTime(userId, event.getGuild().getId());
                 }
 
@@ -1420,7 +1423,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         ErrorResponse.MISSING_PERMISSIONS,
                         (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
                 );
-        
+
     }
 
     private void kickUserEvent(ButtonInteractionEvent event) {
@@ -1448,7 +1451,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 ErrorResponse.MISSING_PERMISSIONS,
                 (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
         );
-        
+
     }
 
     private void ignoreUserEvent(ButtonInteractionEvent event) {
@@ -1457,7 +1460,7 @@ public class EventButtonHandler extends ListenerAdapter {
             return;
         }
         event.getMessage().editMessageEmbeds(event.getMessage().getEmbeds().get(0)).setComponents().queue();
-        
+
     }
 
 
@@ -1473,7 +1476,7 @@ public class EventButtonHandler extends ListenerAdapter {
         eb.setColor(Bot.getColor());
 
         event.getGuild().unban(theGuy).queue(
-            (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(), 
+            (e) -> event.getMessage().editMessageEmbeds(eb.build()).setComponents().queue(),
             new ErrorHandler().handle(
                 ErrorResponse.MISSING_PERMISSIONS,
                 (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
@@ -1505,7 +1508,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {}
-            
+
             @Override
             public void noMatches() {
                 textChannel.sendMessage("File not found").queue();
@@ -1516,7 +1519,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 System.out.println("error: " + throwable.getMessage());
             }
         });
-        
+
     }
 
 }
