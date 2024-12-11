@@ -706,16 +706,16 @@ public class LeagueMessage {
                             matchTitle += "(Placement)";
                         }
                         else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
-                            matchTitle = "Promoted " + displayRank + "(" + gain + ")";
+                            matchTitle = "Promoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
                         }
                         else if (j > 0 && row.getAsInt("rank") > result.get(j - 1).getAsInt("rank")) {
-                            matchTitle = "Demoted " + displayRank + "(" + gain + ")";
+                            matchTitle = "Demoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
                         }
                         else if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) {
                             matchTitle += "-0 LP"; //demotion shield
                         }
                         else {
-                            matchTitle += gain;
+                            matchTitle += " " + gain;
                         }
                     }
                     content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
