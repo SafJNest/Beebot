@@ -315,7 +315,8 @@ public class GuildData {
     }
 
     public RewardData getAlert(AlertType type, int level) {
-        AlertData alert = getAlerts().get(new AlertKey<Integer>(type, level));
+        AlertKey<?> key = level != 0 ? new AlertKey<Integer>(type, level) : new AlertKey<>(type);
+        AlertData alert = getAlerts().get(key);
         if (alert instanceof RewardData) {
             return (RewardData) alert;
         } else {
@@ -352,7 +353,8 @@ public class GuildData {
     }
 
     public boolean deleteAlert(AlertType type, int level) {
-        AlertData toDelete = getAlerts().remove(new AlertKey<Integer>(type, level));
+        AlertKey<?> key = level != 0 ? new AlertKey<Integer>(type, level) : new AlertKey<>(type);
+        AlertData toDelete = getAlerts().remove(key);
         if (toDelete == null) {
             return false;
         }
