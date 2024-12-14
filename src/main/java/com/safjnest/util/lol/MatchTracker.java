@@ -169,7 +169,7 @@ public class MatchTracker {
 
                 LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
                 
-                TierDivisionType oldDivision = TierDivisionType.values()[dataGame.getAsInt("rank")];
+                TierDivisionType oldDivision = dataGame.getAsInt("rank") != UNKNOWN_RANK ? TierDivisionType.values()[dataGame.getAsInt("rank")] : null;
                 TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
 
                 int rank = division.ordinal();
