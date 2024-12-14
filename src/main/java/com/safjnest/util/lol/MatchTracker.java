@@ -39,7 +39,7 @@ public class MatchTracker {
     private static long period = TimeConstant.MINUTE * 10;
     private static List<GameQueueType> toTrack = List.of(GameQueueType.TEAM_BUILDER_DRAFT_RANKED_5X5, GameQueueType.CHERRY);
 
-    private static int UNKNOWN_RANK = TierDivisionType.UNRANKED.ordinal() + 1;
+    static int UNKNOWN_RANK = TierDivisionType.UNRANKED.ordinal() + 1;
 
 	public MatchTracker() {
 		ChronoTask task = new ChronoTask() {
@@ -60,21 +60,21 @@ public class MatchTracker {
                     BotLogger.info("[LPTracker] Finish tracking summoners. Next check at " + SafJNest.getFormattedDate(LocalDateTime.now().plusSeconds(period / 1000), "yyyy-MM-dd HH:mm:ss"));
                 }
                 catch (Exception e) {e.printStackTrace();}
-				
+
 			}
 		};
         task.scheduleAtFixedRate(TimeConstant.MINUTE, period, TimeUnit.MILLISECONDS);
-	} 
+	}
 
-//     ▄████████ ███▄▄▄▄      ▄████████  ▄█       ▄██   ▄    ▄███████▄     ▄████████ 
-//    ███    ███ ███▀▀▀██▄   ███    ███ ███       ███   ██▄ ██▀     ▄██   ███    ███ 
-//    ███    ███ ███   ███   ███    ███ ███       ███▄▄▄███       ▄███▀   ███    █▀  
-//    ███    ███ ███   ███   ███    ███ ███       ▀▀▀▀▀▀███  ▀█▀▄███▀▄▄  ▄███▄▄▄     
-//  ▀███████████ ███   ███ ▀███████████ ███       ▄██   ███   ▄███▀   ▀ ▀▀███▀▀▀     
-//    ███    ███ ███   ███   ███    ███ ███       ███   ███ ▄███▀         ███    █▄  
-//    ███    ███ ███   ███   ███    ███ ███▌    ▄ ███   ███ ███▄     ▄█   ███    ███ 
-//    ███    █▀   ▀█   █▀    ███    █▀  █████▄▄██  ▀█████▀   ▀████████▀   ██████████ 
-//                                      ▀                                            
+//     ▄████████ ███▄▄▄▄      ▄████████  ▄█       ▄██   ▄    ▄███████▄     ▄████████
+//    ███    ███ ███▀▀▀██▄   ███    ███ ███       ███   ██▄ ██▀     ▄██   ███    ███
+//    ███    ███ ███   ███   ███    ███ ███       ███▄▄▄███       ▄███▀   ███    █▀
+//    ███    ███ ███   ███   ███    ███ ███       ▀▀▀▀▀▀███  ▀█▀▄███▀▄▄  ▄███▄▄▄
+//  ▀███████████ ███   ███ ▀███████████ ███       ▄██   ███   ▄███▀   ▀ ▀▀███▀▀▀
+//    ███    ███ ███   ███   ███    ███ ███       ███   ███ ▄███▀         ███    █▄
+//    ███    ███ ███   ███   ███    ███ ███▌    ▄ ███   ███ ███▄     ▄█   ███    ███
+//    ███    █▀   ▀█   █▀    ███    █▀  █████▄▄██  ▀█████▀   ▀████████▀   ██████████
+//                                      ▀
 
 
     public static ChronoTask analyzeMatchHistory(GameQueueType queue, Summoner summoner) {
@@ -89,8 +89,8 @@ public class MatchTracker {
     public static ChronoTask analyzeMatchHistory(GameQueueType queue, Summoner summoner, QueryRecord dataGame) {
         LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
         LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
-        
-        try { Thread.sleep(350); } 
+
+        try { Thread.sleep(350); }
         catch (InterruptedException e) {e.printStackTrace();}
 
         List<String> matchIds = summoner.getLeagueGames().withCount(20).withQueue(queue).get();
@@ -106,23 +106,23 @@ public class MatchTracker {
             return analyzeMatchHistory(queue, LeagueHandler.getSummonerByPuiid(summoner.getPUUID(), matchShard));
         }
         final LeagueShard shard = matchShard;
-        
+
         if (Long.parseLong(matchId.split("_")[1]) == dataGame.getAsLong("game_id")) return null;
         ChronoTask task = new ChronoTask() {
             @Override
             public void run() {
                 LOLMatch match = api.getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), matchId);
                 if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp()) && match.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return;
-                
+
                 int summoner_match_id = DatabaseHandler.setMatchData(match);
                 LeagueHandler.updateSummonerDB(match);
 
                 HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
-                
-                
-                for (MatchParticipant partecipant : match.getParticipants()) {   
-                    try { Thread.sleep(500); } 
-                    catch (InterruptedException e) {e.printStackTrace();}   
+
+
+                for (MatchParticipant partecipant : match.getParticipants()) {
+                    try { Thread.sleep(500); }
+                    catch (InterruptedException e) {e.printStackTrace();}
                     if (partecipant.getPuuid().equals(summoner.getPUUID())) {
                         pushSummoner(match, summoner_match_id, summoner, partecipant, dataGame, matchData.get(partecipant.getPuuid())).complete();
                         continue;
@@ -130,7 +130,7 @@ public class MatchTracker {
 
                     Summoner toPush = LeagueHandler.getSummonerByPuiid(partecipant.getPuuid(), shard);
                     if (toPush == null) continue;
-                    
+
                     pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())).complete();
                 }
                 BotLogger.info("[LPTracker] Pushed match data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
@@ -140,15 +140,15 @@ public class MatchTracker {
         return task;
     }
 
-//     ▄███████▄ ███    █▄     ▄████████    ▄█    █▄    
-//    ███    ███ ███    ███   ███    ███   ███    ███   
-//    ███    ███ ███    ███   ███    █▀    ███    ███   
-//    ███    ███ ███    ███   ███         ▄███▄▄▄▄███▄▄ 
-//  ▀█████████▀  ███    ███ ▀███████████ ▀▀███▀▀▀▀███▀  
-//    ███        ███    ███          ███   ███    ███   
-//    ███        ███    ███    ▄█    ███   ███    ███   
-//   ▄████▀      ████████▀   ▄████████▀    ███    █▀    
-//                                                      
+//     ▄███████▄ ███    █▄     ▄████████    ▄█    █▄
+//    ███    ███ ███    ███   ███    ███   ███    ███
+//    ███    ███ ███    ███   ███    █▀    ███    ███
+//    ███    ███ ███    ███   ███         ▄███▄▄▄▄███▄▄
+//  ▀█████████▀  ███    ███ ▀███████████ ▀▀███▀▀▀▀███▀
+//    ███        ███    ███          ███   ███    ███
+//    ███        ███    ███    ▄█    ███   ███    ███
+//   ▄████▀      ████████▀   ▄████████▀    ███    █▀
+//
 
     public static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant partecipant, HashMap<String, String> matchData) {
         QueryRecord row = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
@@ -168,7 +168,7 @@ public class MatchTracker {
                 if (match.getGameId() == dataGame.getAsLong("game_id")) return;
 
                 LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
-                
+
                 TierDivisionType oldDivision = dataGame.getAsInt("rank") != UNKNOWN_RANK ? TierDivisionType.values()[dataGame.getAsInt("rank")] : null;
                 TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
 
@@ -186,21 +186,21 @@ public class MatchTracker {
                 } else {
                     gain = lp - dataGame.getAsInt("lp");
                 }
-                
+
                 DatabaseHandler.setSummonerData(summoner.getAccountId(), summonerMatch, win, kda, rank, lp, gain, champion, lane, side, createJSONBuild(matchData));
             }
         };
     }
 
-//  ███    █▄      ███      ▄█   ▄█       
-//  ███    ███ ▀█████████▄ ███  ███       
-//  ███    ███    ▀███▀▀██ ███▌ ███       
-//  ███    ███     ███   ▀ ███▌ ███       
-//  ███    ███     ███     ███▌ ███       
-//  ███    ███     ███     ███  ███       
-//  ███    ███     ███     ███  ███▌    ▄ 
-//  ████████▀     ▄████▀   █▀   █████▄▄██ 
-//                              ▀         
+//  ███    █▄      ███      ▄█   ▄█
+//  ███    ███ ▀█████████▄ ███  ███
+//  ███    ███    ▀███▀▀██ ███▌ ███
+//  ███    ███     ███   ▀ ███▌ ███
+//  ███    ███     ███     ███▌ ███
+//  ███    ███     ███     ███  ███
+//  ███    ███     ███     ███  ███▌    ▄
+//  ████████▀     ▄████▀   █▀   █████▄▄██
+//                              ▀
 
 
     public static boolean isRemake(LOLMatch match) {
@@ -217,7 +217,10 @@ public class MatchTracker {
         build.put("starter", matchData.getOrDefault("starter", "").split(","));
         build.put("build", matchData.getOrDefault("items", "").split(","));
         build.put("boots", matchData.getOrDefault("boots", "0"));
-        
+
+        if (matchData.containsKey("support_item"))
+            build.put("support_item", matchData.get("support_item"));
+
         json.put("build", build);
         json.put("skill_order", matchData.getOrDefault("skill_order", "").split(","));
 
@@ -233,9 +236,6 @@ public class MatchTracker {
 
         return json.toString();
 
-
-        
-
     }
 
 
@@ -244,10 +244,12 @@ public class MatchTracker {
 
         HashMap<String, HashMap<String, String>> matchData = new HashMap<>();
         for (MatchParticipant partecipant : partecipants) {
+            LaneType lane = partecipant.getChampionSelectLane() != null ? partecipant.getChampionSelectLane() : partecipant.getLane();
+
             matchData.put(partecipant.getPuuid(), new HashMap<>());
-            matchData.get(partecipant.getPuuid()).put("win", partecipant.didWin() ? "1" : "0");      
-            matchData.get(partecipant.getPuuid()).put("lane", String.valueOf(partecipant.getChampionSelectLane().ordinal()));
-            matchData.get(partecipant.getPuuid()).put("champion", String.valueOf(partecipant.getChampionId()));  
+            matchData.get(partecipant.getPuuid()).put("win", partecipant.didWin() ? "1" : "0");
+            matchData.get(partecipant.getPuuid()).put("lane", String.valueOf(lane.ordinal()));
+            matchData.get(partecipant.getPuuid()).put("champion", String.valueOf(partecipant.getChampionId()));
             matchData.get(partecipant.getPuuid()).put("stats", partecipant.getPerks().getStatPerks().getDefense() + "," + partecipant.getPerks().getStatPerks().getFlex() + "," + partecipant.getPerks().getStatPerks().getOffense());
             for (int i = 0; i < 2; i++) {
                 for (PerkSelection perk : partecipant.getPerks().getPerkStyles().get(i).getSelections()) {
@@ -259,6 +261,7 @@ public class MatchTracker {
                 matchData.get(partecipant.getPuuid()).put("perks-" + i, partecipant.getPerks().getPerkStyles().get(i).getStyle() + "," + matchData.get(partecipant.getPuuid()).get("perks-" + i));
             }
             matchData.get(partecipant.getPuuid()).put("summoner_spells", partecipant.getSummoner1Id() + "," + partecipant.getSummoner2Id());
+
             if (match.getQueue() == GameQueueType.CHERRY) {
                 String augmentList = "";
                 if (partecipant.getPlayerAugment1() != 0) augmentList = partecipant.getPlayerAugment1() + "";
@@ -266,13 +269,35 @@ public class MatchTracker {
                 if (partecipant.getPlayerAugment3() != 0) augmentList += "," + partecipant.getPlayerAugment3();
                 if (partecipant.getPlayerAugment4() != 0) augmentList += "," + partecipant.getPlayerAugment4();
 
-                System.out.println(augmentList);
-
                 matchData.get(partecipant.getPuuid()).put("augments", augmentList);
             }
-        
+
+            /**
+             * i cant get the evolution of support item from the event
+             * so i can just check all the slot and see which item i have and how i built it
+             */
+            if (lane == LaneType.UTILITY) {
+                String supportItem = null;
+                if (isSuppItemFromId(partecipant.getItem0()) != null)
+                    supportItem = String.valueOf(partecipant.getItem0());
+                else if (isSuppItemFromId(partecipant.getItem1()) != null)
+                    supportItem = String.valueOf(partecipant.getItem1());
+                else if (isSuppItemFromId(partecipant.getItem2()) != null)
+                    supportItem = String.valueOf(partecipant.getItem2());
+                else if (isSuppItemFromId(partecipant.getItem3()) != null)
+                    supportItem = String.valueOf(partecipant.getItem3());
+                else if (isSuppItemFromId(partecipant.getItem4()) != null)
+                    supportItem = String.valueOf(partecipant.getItem4());
+                else if (isSuppItemFromId(partecipant.getItem5()) != null)
+                    supportItem = String.valueOf(partecipant.getItem5());
+                else if (isSuppItemFromId(partecipant.getItem6()) != null)
+                    supportItem = String.valueOf(partecipant.getItem6());
+
+                if (supportItem != null) matchData.get(partecipant.getPuuid()).put("support_item", supportItem);
+            }
+
         }
-        
+
         LOLTimeline timeline = match.getTimeline();
         timeline.getParticipants().forEach(partecipant -> {
             matchData.put(String.valueOf(partecipant.getParticipantId()), matchData.get(partecipant.getPuuid()));
@@ -291,28 +316,27 @@ public class MatchTracker {
                         if (item == null) continue;
 
                         if (item.getFrom() != null && item.getFrom().contains("1001")) {
-                            matchData.get(participantId).put("boots", item.getId() + "");    
+                            matchData.get(participantId).put("boots", item.getId() + "");
                             continue;
                         }
 
                         if (i != 1 && item.getDepth() != 3) continue;
-    
+
                         String itemList = matchData.get(participantId).getOrDefault(itemType, "");
                         if (itemList.isEmpty()) itemList = item.getId() + "";
                         else itemList += "," + item.getId();
-                        matchData.get(participantId).put(itemType, itemList);    
+                        matchData.get(participantId).put(itemType, itemList);
                         break;
                     case ITEM_UNDO:
                     case ITEM_SOLD:
                         item = items.get(event.getBeforeId());
                         if (item == null) continue;
                         if (i != 1 && item.getDepth() != 3) continue;
-    
+
                         String[] itemsList = matchData.get(participantId).get(itemType).split(",");
                         String undoList = "";
                         for (String itemStr : itemsList) {
                             if (!itemStr.equals(item.getId() + "")) {
-                               
                                 if (!undoList.isEmpty()) undoList += ",";
                                 undoList += itemStr;
                             }
@@ -339,6 +363,14 @@ public class MatchTracker {
         return matchData;
     }
 
+    private static Item isSuppItemFromId(int itemId) {
+        if (itemId == 0) return null;
+        Item item = LeagueHandler.getRiotApi().getDDragonAPI().getItems().get(itemId);
+        if (item == null) return null;//old item or removed one? not sure
+        if (item.getFrom() == null) return null;
+        return item.getFrom().contains("3867") ? item : null;
+    }
+
 
 
     public static ChronoTask retriveOldGames(Summoner summoner) {
@@ -355,28 +387,28 @@ public class MatchTracker {
                         idx++;
                         if (result.arrayColumn("game_id").contains(matchId.split("_")[1]))
                             continue;
-                        
+
                         LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
-                        
+
                         int summonerMatch = DatabaseHandler.setMatchData(match);
                         HashMap<String, String> matchData = analyzeMatchBuild(match, match.getParticipants()).get(summoner.getPUUID());
-                
+
                         MatchParticipant partecipant = null;
                         for (MatchParticipant p : match.getParticipants()) {
                             if (p.getPuuid().equals(summoner.getPUUID()))
                                 partecipant = p;
                         }
-                
-                
+
+
                         boolean win = partecipant.didWin();
                         int champion = partecipant.getChampionId();
                         String kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists();
                         LaneType lane = partecipant.getChampionSelectLane() != null ? partecipant.getChampionSelectLane() : partecipant.getLane();
                         TeamType side = partecipant.getTeam();
-                        
+
                         int lp = 0;
                         int gain = 0;
-                
+
                         DatabaseHandler.setSummonerData(summoner.getAccountId(), summonerMatch, win, kda, UNKNOWN_RANK, lp, gain, champion, lane, side, createJSONBuild(matchData));
                         BotLogger.info("[LPTracker] Pushed old match ( " + idx + " ) data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
 

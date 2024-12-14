@@ -16,11 +16,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.json.simple.JSONObject;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 
+import com.alibaba.fastjson.JSON;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
@@ -32,8 +35,10 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
+import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
@@ -63,7 +68,7 @@ public class DatabaseHandler {
 
     /**
      * Constructor
-     * 
+     *
      * @param hostName Hostname, as 'keria123.eu-west-1.compute.fakerAws.com'
      * @param database Name of the database to connect in
      * @param user Username
@@ -74,7 +79,7 @@ public class DatabaseHandler {
         DatabaseHandler.database = database;
         DatabaseHandler.user = user;
         DatabaseHandler.password = password;
-        
+
         connectIfNot();
     }
 
@@ -90,7 +95,7 @@ public class DatabaseHandler {
 
     public static void initializeConnectionPool() {
         HikariConfig config = new HikariConfig();
-        
+
         config.setJdbcUrl("jdbc:mariadb://" + hostName + "/" + database + "?autoReconnect=true");
         config.setUsername(user);
         config.setPassword(password);
@@ -172,7 +177,7 @@ public class DatabaseHandler {
      * @param stmt
      * @param query
      * @throws SQLException
-     */ 
+     */
     public static QueryCollection safJQuery(Statement stmt, String query) throws SQLException {
         connectIfNot();
 
@@ -192,7 +197,7 @@ public class DatabaseHandler {
         }
         insertAnalytics(query);
 
-        return result; 
+        return result;
     }
 
 
@@ -252,11 +257,11 @@ public class DatabaseHandler {
      */
     public static QueryRecord fetchJRow(Statement stmt, String query) throws SQLException {
         connectIfNot();
-        
-        
+
+
         ResultSet rs = stmt.executeQuery(query);
         QueryRecord beeRow = new QueryRecord(rs);
-            
+
         ResultSetMetaData rsmd = rs.getMetaData();
 
         if (rs.next()) {
@@ -282,7 +287,7 @@ public class DatabaseHandler {
         if(c == null) return false;
 
         try (Statement stmt = c.createStatement()) {
-            for (String query : queries) 
+            for (String query : queries)
                 stmt.execute(query);
             insertAnalytics(queries.toString());
             c.commit();
@@ -319,12 +324,12 @@ public class DatabaseHandler {
      */
     public static void runQuery(Statement stmt, String... queries) throws SQLException {
         connectIfNot();
-        
-        for (String query : queries) 
+
+        for (String query : queries)
             stmt.execute(query);
-        
+
         insertAnalytics(queries.toString());
-        
+
     }
 
     public static HashMap<Long, List<String>> getQueryAnalytics() {
@@ -333,7 +338,7 @@ public class DatabaseHandler {
 
     //-------------------------------------------------------------------------
 
-    public static QueryCollection getGuildsData(String filter){        
+    public static QueryCollection getGuildsData(String filter){
         String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild WHERE " + filter + ";";
         return safJQuery(query);
     }
@@ -408,7 +413,7 @@ public class DatabaseHandler {
 
     public static QueryRecord getSoundById(String id) {
         return fetchJRow("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE id = '" + id + "'");
-    } 
+    }
 
     public static QueryCollection getSoundsByName(String name, String guild_id, String author_id) {
         return safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE name = '" + name + "' AND  (guild_id = '" + guild_id + "'  OR public = 1 OR user_id = '" + author_id + "')");
@@ -519,7 +524,7 @@ public class DatabaseHandler {
     public static QueryRecord getSoundboardByID(String id) {
         return fetchJRow("select name, thumbnail from soundboard where id = '" + id + "'");
     }
-    
+
     public static QueryCollection getRandomSoundboard(String guild_id, String user_id) {
         return safJQuery("SELECT name, id, guild_id FROM soundboard WHERE guild_id = '" + guild_id + "' OR user_id = '" + user_id + "' ORDER BY RAND() LIMIT 25;");
     }
@@ -554,10 +559,10 @@ public class DatabaseHandler {
 
         Connection c = getConnection();
         if(c == null) return false;
-        
+
         try (Statement stmt = c.createStatement()) {
             //runQuery(stmt, "INSERT INTO soundboard (name, thumbnail, guild_id, user_id) VALUES ('" + name + "', '" + (attachment != null ? attachment.getUrl() : "") + "', '" + guild_id + "', '" + user_id + "'); ");
-            
+
             String query = "INSERT INTO soundboard (name, thumbnail, guild_id, user_id) VALUES (?, ?, ?, ?);";
             try (PreparedStatement pstmt = c.prepareStatement(query)) {
                 pstmt.setString(1, name);
@@ -570,15 +575,15 @@ public class DatabaseHandler {
                 }
                 pstmt.setString(3, guild_id);
                 pstmt.setString(4, user_id);
-    
+
                 pstmt.execute();
             } catch (SQLException e) {
                 e.printStackTrace();
                 return false;
             }
-            
-            
-            
+
+
+
             System.out.println("INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
             runQuery(stmt, "INSERT INTO soundboard_sounds (id, sound_id) VALUES " + sb.toString() + ";");
             c.commit();
@@ -615,7 +620,7 @@ public class DatabaseHandler {
                 InputStream thumbnailStream = futureInputStream.join();
                 pstmt.setBlob(1, thumbnailStream);
                 pstmt.setString(2, id);
-    
+
                 pstmt.execute();
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -663,12 +668,12 @@ public class DatabaseHandler {
     public static boolean deleteSoundFromSoundboard(String id, String sound_id) {
         return runQuery("DELETE FROM soundboard_sounds WHERE id = '" + id + "' AND sound_id = '" + sound_id + "'");
     }
- 
+
     public static QueryRecord getDefaultVoice(String guild_id) {
         return fetchJRow("SELECT name_tts, language_tts FROM guild WHERE guild_id = '" + guild_id + "';");
     }
 
-    
+
     public static QueryCollection getLOLAccountsByUserId(String user_id){
         String query = "SELECT account_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
         return safJQuery(query);
@@ -683,7 +688,7 @@ public class DatabaseHandler {
     }
 
     public static QueryCollection getAdvancedLOLData(String account_id, long time_start, long time_end) {
-        String overallQuery = 
+        String overallQuery =
             "SELECT " +
             "  t.`champion`, " +
             "  COUNT(*) AS `games`, " +
@@ -699,8 +704,8 @@ public class DatabaseHandler {
             "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
             "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
             "GROUP BY t.`champion`";
-    
-        String laneQuery = 
+
+        String laneQuery =
             "SELECT " +
             "  t.`champion`, " +
             "  t.`lane`, " +
@@ -713,8 +718,8 @@ public class DatabaseHandler {
             "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
             "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
             "GROUP BY t.`champion`, t.`lane`";
-    
-        String combinedQuery = 
+
+        String combinedQuery =
             "SELECT " +
             "  overall.`champion`, " +
             "  overall.`games`, " +
@@ -733,17 +738,17 @@ public class DatabaseHandler {
             "ON overall.`champion` = lane.`champion` " +
             "GROUP BY overall.`champion` " +
             "ORDER BY `games` DESC;";
-    
+
         return safJQuery(combinedQuery);
     }
-    
-    
-     
+
+
+
 
     public static boolean addLOLAccount(Summoner summoner) {
         return addLOLAccount(null, summoner);
     }
-    
+
     public static boolean addLOLAccount(String user_id, Summoner summoner) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         String query = "INSERT INTO summoner(user_id, summoner_id, account_id, puuid, riot_id, league_shard) " +
@@ -840,7 +845,7 @@ public class DatabaseHandler {
         String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild;";
         return safJQuery(query);
     }
-    
+
     public static QueryRecord getGuildData(String guild_id) {
         String query = "SELECT guild_id, PREFIX, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
         return fetchJRow(query);
@@ -890,7 +895,7 @@ public class DatabaseHandler {
     public static boolean deleteGreet(String user_id, String guild_id) {
         return runQuery("DELETE from greeting WHERE guild_id = '" + guild_id + "' AND user_id = '" + user_id + "';");
     }
-    
+
     public static boolean setBlacklistChannel(String blacklist_channel, String guild_id) {
         return runQuery("UPDATE guild SET blacklist_channel = '" + blacklist_channel + "' WHERE guild_id = '" + guild_id +  "';");
     }
@@ -926,7 +931,7 @@ public class DatabaseHandler {
     public static int getBannedTimes(String user_id){
         return fetchJRow("SELECT count(user_id) as times from blacklist WHERE user_id = '" + user_id + "'").getAsInt("times");
     }
-    
+
     public static int getBannedTimesInGuild(String guild_id){
         return fetchJRow("SELECT count(user_id) as times from blacklist WHERE guild_id = '" + guild_id + "'").getAsInt("times");
     }
@@ -1022,7 +1027,7 @@ public class DatabaseHandler {
     public static int createAlert(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, AlertType type) {
         int id = 0;
         String query = "INSERT INTO alert(guild_id, message, private_message, channel, enabled, send_type, type) VALUES(?, ?, ?, ?, 1, ?, ?);";
-        
+
         Connection c = getConnection();
         if(c == null) return id;
 
@@ -1039,7 +1044,7 @@ public class DatabaseHandler {
             pstmt.setInt(6, type.ordinal());
 
             pstmt.executeUpdate();
-            
+
             try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     id = generatedKeys.getInt(1);
@@ -1129,7 +1134,7 @@ public class DatabaseHandler {
     }
 
     public static HashMap<Integer, String> createRolesAlert(String valueOf, String[] roles) {
-        
+
         String values = "";
         for(String role : roles) {
             if(role != null) {
@@ -1152,7 +1157,7 @@ public class DatabaseHandler {
         }
 
         return null;
-                
+
     }
 
 
@@ -1307,7 +1312,7 @@ public class DatabaseHandler {
         commandData.put("commands", result);
 
         String ids = String.join(", ", result.arrayColumn("ID"));
-        
+
         QueryCollection optionResult = DatabaseHandler.safJQuery("SELECT ID,command_id,`key`,description,required,type FROM command_option WHERE command_id IN (" + ids + ")");
         commandData.put("options", optionResult);
 
@@ -1324,7 +1329,7 @@ public class DatabaseHandler {
         String taskIds = String.join(", ", taskResult.arrayColumn("ID"));
         QueryCollection taskValueResult = DatabaseHandler.safJQuery("SELECT ID,task_id,value,from_option FROM command_task_value WHERE task_id IN (" + taskIds + ")");
         commandData.put("task_values", taskValueResult);
-        
+
         String taskValueIds = String.join(", ", taskValueResult.arrayColumn("ID"));
         QueryCollection taskMessage = DatabaseHandler.safJQuery("SELECT ID,task_value_id,message FROM command_task_message WHERE task_value_id IN (" + taskValueIds + ")");
         if (!taskMessage.isEmpty()) {
@@ -1454,10 +1459,10 @@ public class DatabaseHandler {
             + "WHERE s.tracking = 1;"
         );
     }
-    
-    
-    
-    
+
+
+
+
 
     public static QueryRecord getRegistredLolAccount(String account_id, long time_start) {
         return fetchJRow("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
@@ -1474,9 +1479,9 @@ public class DatabaseHandler {
                 + "ON s.account_id = st.account_id "
                 + "WHERE s.tracking = 1 AND s.account_id = '" + account_id + "';");
     }
-    
-    
-    
+
+
+
 
     public static boolean setSummonerData(String account_id, int summonerMatchId, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, TeamType side, String build) {
         return runQuery("INSERT IGNORE INTO summoner_tracking(account_id, summoner_match_id, win, kda, rank, lp, gain, champion, lane, side, build) VALUES('" + account_id + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "');");
@@ -1565,13 +1570,25 @@ public class DatabaseHandler {
             if (rs.next()) {
                 id = rs.getInt("id");
             } else{
-                ps = c.prepareStatement("INSERT INTO summoner_match(game_id, league_shard, game_type, time_start, time_end, patch) VALUES (?,?,?,?,?,?);");
+                ps = c.prepareStatement("INSERT INTO summoner_match(game_id, league_shard, game_type, bans, time_start, time_end, patch) VALUES (?,?,?,?,?,?,?);");
                 ps.setString(1, String.valueOf(match.getGameId()));
                 ps.setInt(2, match.getPlatform().ordinal());
                 ps.setInt(3, match.getQueue().ordinal());
-                ps.setTimestamp(4, new Timestamp(match.getGameCreation()));
-                ps.setTimestamp(5, new Timestamp(match.getGameEndTimestamp()));
-                ps.setString(6, match.getGameVersion());
+
+                JSONObject bans = new JSONObject();
+                for (MatchTeam team : match.getTeams()) {
+                    String teamID = team.getTeamId().ordinal() + "";
+                    List<Integer> list = new ArrayList<>();
+                    for (ChampionBan champion : team.getBans()) {
+                        if (champion.getChampionId() != -1) list.add(champion.getChampionId());
+                    }
+                    bans.put(teamID, list);
+                }
+
+                ps.setString(4, bans.toString());
+                ps.setTimestamp(5, new Timestamp(match.getGameCreation()));
+                ps.setTimestamp(6, new Timestamp(match.getGameEndTimestamp()));
+                ps.setString(7, match.getGameVersion());
 
                 ps.executeUpdate();
                 id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
@@ -1597,9 +1614,9 @@ public class DatabaseHandler {
         }
         return id;
     }
-    
 
-    
+
+
 
 
     public static int createPlaylist(String name, String user_id) {
@@ -1656,7 +1673,7 @@ public class DatabaseHandler {
 
         try (Statement stmt = c.createStatement()) {
             QueryRecord search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
-            
+
             if(search.isEmpty()) {
                 return 0;
             }
@@ -1696,7 +1713,7 @@ public class DatabaseHandler {
 
         try (Statement stmt = c.createStatement()) {
             QueryRecord search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
-            
+
             if(search.isEmpty()) {
                 return 0;
             }
@@ -1735,7 +1752,7 @@ public class DatabaseHandler {
 
         try (Statement stmt = c.createStatement()) {
             QueryRecord search = fetchJRow("SELECT user_id FROM playlist WHERE id = '" + playlist_id + "';");
-            
+
             if(search.isEmpty()) {
                 return 0;
             }
@@ -1793,7 +1810,7 @@ public class DatabaseHandler {
 
     public static boolean addTrackToPlaylist(int playlist_id, List<AudioTrack> tracks, Integer order) {
         StringBuilder queryBuilder = new StringBuilder("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES ");
-        
+
         Connection c = getConnection();
         if(c == null) return false;
 
@@ -1809,7 +1826,7 @@ public class DatabaseHandler {
             queryBuilder.setLength(queryBuilder.length() - 1);
             queryBuilder.append(";");
             runQuery(stmt, queryBuilder.toString());
-            
+
             c.commit();
             return true;
         } catch (SQLException ex) {
@@ -1835,7 +1852,7 @@ public class DatabaseHandler {
 
     public static boolean addTrackToPlaylist(String playlist_name, String user_id, List<AudioTrack> tracks, Integer order) {
         StringBuilder queryBuilder = new StringBuilder("INSERT INTO playlist_track (playlist_id, uri, encoded_track, `order`) VALUES ");
-        
+
         Connection c = getConnection();
         if(c == null) return false;
 
@@ -1852,7 +1869,7 @@ public class DatabaseHandler {
             queryBuilder.setLength(queryBuilder.length() - 1);
             queryBuilder.append(";");
             runQuery(stmt, queryBuilder.toString());
-            
+
             c.commit();
             return true;
         } catch (SQLException ex) {
@@ -2015,18 +2032,18 @@ public class DatabaseHandler {
         return fetchJRow("SELECT action_role FROM automated_action WHERE action = 1 AND guild_id = '" + valueOf + "';").get("action_role");
     }
 
-    
-
-
-
-    
 
 
 
 
 
 
-    /** 
+
+
+
+
+
+    /**
      * What the actual fuck sunyx?
      * eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee la cannuccia
      * weru9fgt9uehrgferwfghreyuio

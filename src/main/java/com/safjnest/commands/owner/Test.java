@@ -66,8 +66,10 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
+import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
@@ -651,7 +653,7 @@ public class Test extends Command{
                 e.getChannel().sendMessageEmbeds(eb.build()).setActionRow(streamerButtonLink).queue();
                 break;
             case "fixlol":
-            query = "SELECT st.id, sm.game_id, sm.league_shard, st.account_id, s.summoner_id FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id JOIN summoner s ON st.account_id = s.account_id WHERE st.id > 6746 ORDER BY st.id;";
+            query = "SELECT st.id, sm.game_id, sm.league_shard, st.account_id, s.summoner_id FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id JOIN summoner s ON st.account_id = s.account_id WHERE st.id > 0 AND st.lane = 4 ORDER BY st.id;";
             
                 res = DatabaseHandler.safJQuery(query);
                 for(QueryRecord row : res){
@@ -670,7 +672,7 @@ public class Test extends Command{
                             team = partecipant.getTeam();
                             puuid = partecipant.getPuuid();
                         }
-                    }
+                    }//TODO: add ban
                     HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(match, match.getParticipants());
                     if (matchData.get(puuid).get("items") == null || matchData.get(puuid).get("starter") == null || matchData.get(puuid).get("starter").isBlank()) {
                         continue;
@@ -683,6 +685,7 @@ public class Test extends Command{
                     try {
                         Thread.sleep(450);
                     } catch (Exception eee) { eee.printStackTrace(); }
+
                     
                 }
             break;
@@ -870,8 +873,8 @@ public class Test extends Command{
             break;
             case "testblob":
                 query = "SELECT * FROM soundboard WHERE id = 23";
-                QueryRecord row = DatabaseHandler.fetchJRow(query);
-                String blobString = row.get("thumbnail");
+                QueryRecord row1 = DatabaseHandler.fetchJRow(query);
+                String blobString = row1.get("thumbnail");
                 if (blobString != null) {
                     try {
                         // Decode the base64 string to get the byte array
@@ -1006,7 +1009,55 @@ public class Test extends Command{
                     MatchTracker.retriveOldGames(sum).queue();
                 }
             break;
-                
+            case "mergelol":
+            query = "SELECT st.id, sm.game_id, sm.league_shard, st.account_id, s.summoner_id FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id JOIN summoner s ON st.account_id = s.account_id WHERE st.id > 294 ORDER BY st.id;";
+            
+                res = DatabaseHandler.safJQuery(query);
+                System.out.println(res.size());
+                for(QueryRecord row : res){
+                    String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
+                    String game_id = region + "_"+row.get("game_id");
+                    //String account_id = row.get("account_id");
+                    String summoner_id = row.get("summoner_id");
+                    LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
+                    String puuid = "";
+                    int summoner_match_id = DatabaseHandler.setMatchData(m);
+
+                    HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(m, m.getParticipants());
+
+                    System.out.println(row.get("id"));
+                    for (MatchParticipant partecipant : m.getParticipants()) {
+                        Summoner toPush = LeagueHandler.getSummonerByPuiid(partecipant.getPuuid(), LeagueShard.values()[row.getAsInt("league_shard")]);
+                        MatchTracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())).complete();
+                        try {
+                            Thread.sleep(1000);
+                        } catch (Exception eee) { eee.printStackTrace(); }
+                    }
+
+                }
+                break;
+
+            case "fixmatch":
+                query = "select id, game_id, league_shard from summoner_match";
+                res = DatabaseHandler.safJQuery(query);
+                for (QueryRecord row : res) {
+                    String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
+                    String game_id = region + "_"+row.get("game_id");
+                    LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
+                    
+                    JSONObject bans = new JSONObject();
+                    for (MatchTeam team : m.getTeams()) {
+                        String teamID = team.getTeamId().ordinal() + "";
+                        List<Integer> list = new ArrayList<>();
+                        for (ChampionBan champion : team.getBans()) {
+                            if (champion.getChampionId() != -1) list.add(champion.getChampionId());
+                        }
+                        bans.put(teamID, list);
+                    }
+                    query = "UPDATE summoner_match SET bans = '" + bans.toString() + "' WHERE id = " + row.get("id");
+                    DatabaseHandler.runQuery(query);
+                }
+                break;
         }
     }  
 

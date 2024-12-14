@@ -695,7 +695,7 @@ public class LeagueMessage {
                         QueryRecord row = result.get(j);
                         if (row.getAsLong("game_id") != match.getGameId()) continue;
 
-                        TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
+                        TierDivisionType rank = row.getAsInt("rank") != MatchTracker.UNKNOWN_RANK ? TierDivisionType.values()[row.getAsInt("rank")] : null;
 
                         String displayRank = getFormatedRank(rank, true);
 
