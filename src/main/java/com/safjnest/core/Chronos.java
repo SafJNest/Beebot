@@ -6,9 +6,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class Chronos {
-    private static final int THREAD_POOL = 2; // insane beebot thread pool pls no one can stop us
+    private static final int THREAD_POOL = 10; // insane beebot thread pool pls no one can stop us
     private static ScheduledExecutorService executorService;
     public static final ChronoTask NULL = new ChronoTask() {
         @Override
@@ -34,6 +35,15 @@ public class Chronos {
 
         public default void queue() {
             CompletableFuture.runAsync(this, executorService);
+        }
+
+        public default void queue(Consumer<Void> onSuccess, Consumer<Throwable> onFailure) {
+            CompletableFuture.runAsync(this, executorService)
+                .thenAccept(result -> onSuccess.accept(null))
+                .exceptionally(ex -> {
+                    onFailure.accept(ex);
+                    return null;
+                });
         }
 
         public default void complete() {
