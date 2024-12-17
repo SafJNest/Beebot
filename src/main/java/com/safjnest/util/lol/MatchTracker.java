@@ -422,4 +422,30 @@ public class MatchTracker {
         };
     }
 
+    public static ChronoTask retriveSampleGames(int page) {
+        return new ChronoTask() {
+            @Override
+            public void run() {
+                BotLogger.info("[LPTracker] Pushing sample matches");
+                List<LeagueShard> shards = List.of(LeagueShard.KR, LeagueShard.EUW1, LeagueShard.NA1);
+                for (LeagueShard shard : shards) {
+                    for (int i =  TierDivisionType.CHALLENGER_I.ordinal(); i <= TierDivisionType.SILVER_IV.ordinal(); i++) {
+                        TierDivisionType rank = TierDivisionType.values()[i];
+                        if (rank.getDivision().equals("V")) continue;
+
+                        List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, rank, page);
+                        for (int j = 20; j < 30; j++) {
+                            LeagueEntry entry = entries.get(j);
+                            Summoner summoner = LeagueHandler.getSummonerBySummonerId(entry.getSummonerId(), shard);
+    
+                            BotLogger.info("[LPTracker] Pushed match data for region " + shard + " and rank " + rank);
+                            QueryRecord row = DatabaseHandler.getRegistredLolAccount(summoner.getAccountId(), LeagueHandler.getCurrentSplitRange()[0]);
+                            analyzeMatchHistory(GameQueueType.TEAM_BUILDER_RANKED_SOLO, summoner, row).complete();
+                        }
+                    }
+                }
+            }
+        };
+    }
+
 }
