@@ -755,6 +755,7 @@ public class LeagueMessage {
     *
     */
     private static String getFormatedRank(TierDivisionType rank, boolean withEmoji) {
+        if (rank == null) return "";
         String division = rank.getDivision() != null ? rank.getDivision().length() + "" : "";
 
         if (rank.getDivision().equals("IV"))division = "4";
