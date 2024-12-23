@@ -758,7 +758,7 @@ public class LeagueMessage {
         if (rank == null) return "";
         String division = rank.getDivision() != null ? rank.getDivision().length() + "" : "";
 
-        if (rank.getDivision().equals("IV"))division = "4";
+        if (division.equals("IV")) division = "4";
         else if (rank.ordinal() < 3) division = "";
 
         String tier = rank.prettyName().charAt(0) + "";
