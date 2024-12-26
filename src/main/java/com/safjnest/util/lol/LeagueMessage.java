@@ -574,6 +574,7 @@ public class LeagueMessage {
             try {
 
                 match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
+                MatchTracker.queueMatch(match);
                 if (match.getParticipants().size() == 0)
                     continue; //riot di merda che quando crasha il game lascia dati sporchi
 
