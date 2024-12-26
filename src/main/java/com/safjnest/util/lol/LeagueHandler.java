@@ -27,7 +27,6 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
 import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -88,8 +87,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         loadChampions();
         loadRunes();
         loadAguments();
-
-        if (!App.isExtremeTesting()) new MatchTracker();
+        new MatchTracker();
     }
 
     public static String getVersion() {

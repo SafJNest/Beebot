@@ -23,7 +23,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 
-import com.alibaba.fastjson.JSON;
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
@@ -33,6 +33,7 @@ import com.safjnest.util.lol.LeagueHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
@@ -311,6 +312,15 @@ public class DatabaseHandler {
             }
         }
         return false;
+    }
+
+    public static CompletableFuture<Void> runQueryAsync(String... queries) {
+        return new ChronoTask() {
+            @Override
+            public void run() {
+                runQuery(queries);
+            }
+        }.queueFuture();
     }
 
 
@@ -703,6 +713,7 @@ public class DatabaseHandler {
             "WHERE t.`account_id` = '" + account_id + "' " +
             "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
             "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
+            "AND sm.game_type = " + GameQueueType.TEAM_BUILDER_RANKED_SOLO.ordinal() + " " +
             "GROUP BY t.`champion`";
 
         String laneQuery =
@@ -1505,7 +1516,7 @@ public class DatabaseHandler {
             "SELECT st.account_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
             "FROM summoner_tracking st " +
             "JOIN summoner_match sm ON st.summoner_match_id = sm.id " +
-            "WHERE st.account_id = '" + account_id + "' " +
+            "WHERE st.account_id = '" + account_id + "' AND sm.game_type = " + GameQueueType.TEAM_BUILDER_RANKED_SOLO.ordinal() + " " +
             "ORDER BY sm.game_id"
         );
     }
@@ -1557,6 +1568,11 @@ public class DatabaseHandler {
     }
 
     public static int setMatchData(LOLMatch match) {
+        return setMatchData(match, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static int setMatchData(LOLMatch match, boolean emptyIfExist) {
         int id = 0;
 
         Connection c = getConnection();
@@ -1568,7 +1584,7 @@ public class DatabaseHandler {
             ps.setInt(2, match.getPlatform().ordinal());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                id = rs.getInt("id");
+                id = emptyIfExist ? 0 : rs.getInt("id");
             } else{
                 ps = c.prepareStatement("INSERT INTO summoner_match(game_id, league_shard, game_type, bans, time_start, time_end, patch) VALUES (?,?,?,?,?,?,?);");
                 ps.setString(1, String.valueOf(match.getGameId()));
@@ -1994,7 +2010,6 @@ public class DatabaseHandler {
 
     public static QueryCollection getAutomatedActionsExpiring() {
         String query = "SELECT aae.*, u.user_id, u.guild_id " + "FROM automated_action_expiration aae " + "JOIN `member` u ON aae.member_id = u.id " + "WHERE aae.time BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 2 HOUR)";
-        System.out.println(query);
         return safJQuery(query);
     }
 
