@@ -1,12 +1,14 @@
 package com.safjnest.util.lol;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.safjnest.core.Chronos;
@@ -48,9 +50,8 @@ public class MatchTracker {
         track.scheduleAtFixedRate(TimeConstant.MINUTE * 1, period, TimeUnit.MILLISECONDS);
 
         ChronoTask trackQueuedGames = () -> popSet();
-        trackQueuedGames.schedule(TimeConstant.MINUTE * 2, TimeUnit.MILLISECONDS);
-
-        retriveSampleGames(1).schedule(TimeConstant.MINUTE * 0, TimeUnit.MILLISECONDS);
+        trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
+        //trackQueuedGames.scheduleAtFixedRate(TimeConstant.MINUTE * 1, TimeConstant.MINUTE * 1, TimeUnit.MILLISECONDS);
 	}
 
 
@@ -94,16 +95,35 @@ public class MatchTracker {
         catch (Exception e) {e.printStackTrace();}
     }
 
-
+    /**
+     * In the future, this function will not save the games but will simply analyze them and push the data into tables with already processed data to reduce db size.
+     * <p>
+     * For now, it will just save the data into the db
+     * <p>
+     * im lazy UwU
+     */
     private static void popSet() {
-        matchQueue.forEach(match -> {
-            matchQueue.remove(match);
+        Set<LOLMatch> toAnalyze = null;
+        
+        synchronized (matchQueue) {
+            if (matchQueue.isEmpty()) return;
+
+            toAnalyze = new HashSet<>(matchQueue);
+            matchQueue.clear();
+        }
+        
+        BotLogger.info("[LPTracker] Analyzing " + toAnalyze.size() + " queued matches");
+        for (LOLMatch match : toAnalyze) {
             analyzeMatchHistory(match).complete();
-        });
+        }
     }
 
     public static void queueMatch(LOLMatch match) {
         matchQueue.add(match);
+    }
+
+    public synchronized static Set<LOLMatch> getMatchQueueCopy() {
+        return new HashSet<>(matchQueue);
     }
 
 
@@ -502,6 +522,65 @@ public class MatchTracker {
                 }
             }
         };
+    }
+
+    /**
+     * WIP
+     * @param champion
+     * @param lane
+     */
+    public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
+        QueryCollection matchDatas = DatabaseHandler.safJQuery("SELECT * FROM summoner_match");
+        QueryCollection championDatas = DatabaseHandler.safJQuery("SELECT * FROM summoner_tracking WHERE champion = " + champion + " AND lane = " + lane.ordinal());
+
+        HashMap<String, String> result = new HashMap<>();
+
+        int totalGames = matchDatas.size();
+
+        int totalBans = 0;
+        int totalPicks = 0;
+
+        int totalWins = 0;
+        int totalLosses = 0;
+
+        for (QueryRecord record : matchDatas) {
+            JSONObject ban = new JSONObject(record.get("bans"));
+            JSONArray bans;
+            boolean banned = false;
+            if (ban.has("1")) {
+                bans = (JSONArray) ban.get("1");
+                for (int i = 0; i < bans.length(); i++) {
+                    if (champion == bans.getInt(i)) banned = true;
+                }
+            }
+            if (ban.has("2") && !banned) {
+                bans = (JSONArray) ban.get("2");
+                for (int i = 0; i < bans.length(); i++) {
+                    if (champion == bans.getInt(i)) banned = true;
+                }
+            }
+            if (banned) totalBans++;
+        }
+        for (QueryRecord record : championDatas) {
+            totalPicks++;
+            if (record.getAsBoolean("win")) totalWins++;
+            else totalLosses++;
+        }
+
+        double winrate = (double) totalWins / totalPicks * 100;
+        double banrate = (double) totalBans / totalGames * 100;
+        double pickrate = (double) totalPicks / totalGames * 100;
+
+        result.put("games", String.valueOf(totalGames));
+        result.put("bans", String.valueOf(totalBans));
+        result.put("picks", String.valueOf(totalPicks));
+        result.put("wins", String.valueOf(totalWins));
+        result.put("losses", String.valueOf(totalLosses));
+        result.put("winrate", String.valueOf(Math.round(winrate * 100.0) / 100.0));
+        result.put("banrate", String.valueOf(Math.round(banrate * 100.0) / 100.0));
+        result.put("pickrate", String.valueOf(Math.round(pickrate * 100.0) / 100.0));
+        
+        return result;
     }
 
 }

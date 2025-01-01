@@ -674,7 +674,7 @@ public class Test extends Command{
                             team = partecipant.getTeam();
                             puuid = partecipant.getPuuid();
                         }
-                    }//TODO: add ban
+                    }
                     HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(match, match.getParticipants());
                     if (matchData.get(puuid) == null) continue;
                     if (matchData.get(puuid).get("items") == null || matchData.get(puuid).get("starter") == null || matchData.get(puuid).get("starter").isBlank()) {
@@ -1063,9 +1063,12 @@ public class Test extends Command{
                     try {
                         Thread.sleep(1500);
                     } catch (Exception e1) {
-                        // TODO: handle exception
+                        
                     }
                 }
+                break;
+                case "lolqueue":
+                    System.out.println(MatchTracker.getMatchQueueCopy().size());
                 break;
         }
     }  
