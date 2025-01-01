@@ -2,10 +2,13 @@ package com.safjnest.core.chat;
 
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.safjnest.commands.misc.Help;
 import com.safjnest.core.Bot;
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.lol.LeagueHandler;
@@ -28,10 +31,13 @@ public class ChatHandler {
 
     private static final Map<String, Set<String>> channelGroups = new HashMap<>();
     private static final Map<String, OmegleChannel> omegleChannels = new HashMap<>();
+
     private static final Queue<TextChannel> waitingRoom = new SynchronizedQueue<TextChannel>();
+    @SuppressWarnings("unused")
     private static final Map<String, Queue<TextChannel>> interestsWaitingRooms = new HashMap<>();
-    private static final Map<String, Timer> connectTimers = new HashMap<>();
-    private static final Map<String, Timer> disconnectTimers = new HashMap<>();
+    
+    private static final Map<String, ScheduledFuture<?>> connectTimers = new HashMap<>();
+    private static final Map<String, ScheduledFuture<?>> disconnectTimers = new HashMap<>();
     
     public static List<LayoutComponent> getRequesstButtons(String channelID) {
         List<LayoutComponent> buttons = new ArrayList<>();
@@ -176,8 +182,7 @@ public class ChatHandler {
             return;
         }
 
-        System.out.println("timer cancellato");
-        connectTimers.get(otherChannel.getId()).cancel();
+        connectTimers.get(otherChannel.getId()).cancel(true);
         connectTimers.remove(otherChannel.getId());
 
         makeDisconnectTimer(channel, otherChannel);
@@ -198,7 +203,7 @@ public class ChatHandler {
         omegle.getWebhook().delete().queue();
         otherOmegle.getWebhook().delete().queue();
 
-        disconnectTimers.remove(channel).cancel();
+        disconnectTimers.remove(channel).cancel(true);
         disconnectTimers.remove(omegle.getConnectedChannel());
         
         sendDisconnectEmbed(channel);
@@ -257,28 +262,24 @@ public class ChatHandler {
     }
 
     private static void makeConnectTimer(TextChannel channel) {
-        TimerTask connectTimeout = new TimerTask() {
-            public void run() {
-                System.out.println("time out");
-                
-                EmbedBuilder eb = new EmbedBuilder();
-                eb.setTitle("You got timed out.");
-                eb.setColor(Bot.getColor());
-                eb.setDescription("To avoid waiting forever you got timed out, you are welcome to try again.");
+        ChronoTask connectTimeout = () -> {
+            EmbedBuilder eb = new EmbedBuilder();
+            eb.setTitle("You got timed out.");
+            eb.setColor(Bot.getColor());
+            eb.setDescription("To avoid waiting forever you got timed out, you are welcome to try again.");
 
-                if (omegleChannels.get(channel.getId()).getMessage() != null)
-                    omegleChannels.get(channel.getId()).getMessage().delete().queue();
+            if (omegleChannels.get(channel.getId()).getMessage() != null)
+                omegleChannels.get(channel.getId()).getMessage().delete().queue();
 
-                if (omegleChannels.get(channel.getId()).getHook() != null)
-                    omegleChannels.get(channel.getId()).getHook().editOriginalEmbeds(eb.build()).queue();
-                else
-                    channel.sendMessageEmbeds(eb.build()).queue();
-                waitingRoom.remove(channel);
-            }
+            if (omegleChannels.get(channel.getId()).getHook() != null)
+                omegleChannels.get(channel.getId()).getHook().editOriginalEmbeds(eb.build()).queue();
+            else
+                channel.sendMessageEmbeds(eb.build()).queue();
+            waitingRoom.remove(channel);
         };
-        Timer timer = new Timer(channel.getId() + "connectTimeoutTimer");
-        connectTimers.put(channel.getId(), timer);
-        timer.schedule(connectTimeout, connectTimeoutDelay);
+
+        ScheduledFuture<?> schedule = connectTimeout.schedule(connectTimeoutDelay, TimeUnit.MILLISECONDS);
+        connectTimers.put(channel.getId(), schedule);
     }
 
     private static void sendDisconnectTimerEmbed(TextChannel channel) {
@@ -291,33 +292,30 @@ public class ChatHandler {
     }
 
     private static void makeDisconnectTimer(TextChannel channel, TextChannel otherChannel) {
-        TimerTask disconnectTimeout = new TimerTask() {
-            public void run() {                
-                sendDisconnectTimerEmbed(channel);
-                sendDisconnectTimerEmbed(otherChannel);
-                
-                if(!omegleChannels.containsKey(channel.getId()))
-                    return;
-                
-                OmegleChannel omegle = omegleChannels.remove(channel.getId());
-                OmegleChannel otherOmegle = omegleChannels.remove(omegle.getConnectedChannel());
-        
-                omegle.getWebhook().delete().queue();
-                otherOmegle.getWebhook().delete().queue();
-        
-                disconnectTimers.remove(channel.getId());
-                disconnectTimers.remove(omegle.getConnectedChannel());
-            }
+        ChronoTask disconnectTimeout = () -> {          
+            sendDisconnectTimerEmbed(channel);
+            sendDisconnectTimerEmbed(otherChannel);
+            
+            if(!omegleChannels.containsKey(channel.getId()))
+                return;
+            
+            OmegleChannel omegle = omegleChannels.remove(channel.getId());
+            OmegleChannel otherOmegle = omegleChannels.remove(omegle.getConnectedChannel());
+    
+            omegle.getWebhook().delete().queue();
+            otherOmegle.getWebhook().delete().queue();
+    
+            disconnectTimers.remove(channel.getId());
+            disconnectTimers.remove(omegle.getConnectedChannel());
+            
         };
 
         if(disconnectTimers.get(channel.getId()) != null) {
-           disconnectTimers.get(channel.getId()).cancel();
+           disconnectTimers.get(channel.getId()).cancel(true);
         }
 
-        Timer timer = new Timer(channel.getId() + "-" + otherChannel.getId() + "disconnectTimeoutTimer");
-
-        disconnectTimers.put(channel.getId(), timer);
-        disconnectTimers.put(otherChannel.getId(), timer);
-        timer.schedule(disconnectTimeout, disconnectTimeoutDelay);
+        ScheduledFuture<?> schedule = disconnectTimeout.schedule(disconnectTimeoutDelay, TimeUnit.MILLISECONDS);
+        disconnectTimers.put(channel.getId(), schedule);
+        disconnectTimers.put(otherChannel.getId(), schedule);
     }
 }
