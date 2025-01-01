@@ -2047,6 +2047,11 @@ public class DatabaseHandler {
         return fetchJRow("SELECT action_role FROM automated_action WHERE action = 1 AND guild_id = '" + valueOf + "';").get("action_role");
     }
 
+    public static QueryCollection getMatchData() {
+        return safJQuery("SELECT sm.id, sm.game_id, sm.league_shard, sm.game_type, sm.bans, sm.time_start, sm.time_end, sm.patch, st.account_id, st.win, st.kda, st.rank, st.lp, st.gain, st.champion, st.lane, st.side, st.build FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id where sm.id > 10353;");
+    }
+    
+
 
 
 

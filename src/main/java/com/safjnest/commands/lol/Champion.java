@@ -2,6 +2,7 @@ package com.safjnest.commands.lol;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -11,11 +12,13 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.MobalyticsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 
 
@@ -56,36 +59,47 @@ public class Champion extends SlashCommand {
         event.deferReply(false).queue();
         
         String champName = event.getOption("champion").getAsString();
+        int championId = 0;
+        
         String lane = event.getOption("role").getAsString();
         String laneFormatName =  "";
+        LaneType laneType = null;
         switch(lane){
             case "TOP":
                 laneFormatName = "Top Lane";
+                laneType = LaneType.TOP;
                 break;
             case "JUNGLE":
                 laneFormatName = "Jungle";
+                laneType = LaneType.JUNGLE;
                 break;
             case "MID":
                 laneFormatName = "Mid Lane";
+                laneType = LaneType.MID;
                 break;
             case "ADC":
                 laneFormatName = "ADC";
+                laneType = LaneType.BOT;
                 break;
             case "SUPPORT":
                 laneFormatName = "Support";
+                laneType = LaneType.UTILITY;
                 break;
         }
+
         ArrayList<String> championsName = new ArrayList<>();
         for (String champion : LeagueHandler.getChampions()) {
             championsName.add(champion);
         }
         champName = SafJNest.findSimilarWord(champName, championsName);
+        championId = LeagueHandler.getChampionByName(champName).getId();
     
         
         EmbedBuilder eb = new EmbedBuilder(); 
         eb = new EmbedBuilder(); 
         eb.setTitle(champName + " " + laneFormatName + " " + CustomEmojiHandler.getFormattedEmoji(laneFormatName)); 
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
+        HashMap<String, String> champInfo = MatchTracker.analyzeChampionData(championId, laneType);
         
 
 
@@ -114,6 +128,7 @@ public class Champion extends SlashCommand {
          */
         //eb.setDescription("**Highest Win Rate** info for " + RiotHandler.getFormattedEmoji(event.getJDA(), champName) + " " + champName + " " + RiotHandler.getFormattedEmoji(event.getJDA(), laneFormatName) + " **" + laneFormatName + "**");
         eb.setDescription("Patch **" + patch + "** | Win rate **" + winRate + "%** based on **" + matchCount + "** matches");
+        eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + patch + ")**");
         
         /*
         *  Skill Order
@@ -225,7 +240,7 @@ public class Champion extends SlashCommand {
         
         champName = LeagueHandler.transposeChampionNameForDataDragon(champName);
         eb.setThumbnail(LeagueHandler.getChampionProfilePic(champName));
-        eb.setFooter("We analyze thousands of games (Platinum+) everyday to suggest you the best builds!", "https://cdn.discordapp.com/emojis/776346468700389436.png"); 
+        eb.setFooter("We are doing our best to analyze more game as possible everyday to suggest you the best builds!", "https://cdn.discordapp.com/emojis/776346468700389436.png"); 
 
         event.getHook().editOriginalEmbeds(eb.build()).queue();
 	}
