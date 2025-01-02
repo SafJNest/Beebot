@@ -1,7 +1,7 @@
 package com.safjnest.controller;
 
 
-import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.core.GuildDataHandler;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -26,7 +26,6 @@ public class Postman {
           /**
          * Smurfing
          */
-        gs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
     }
 
     public String getServerList(String userId, String ids){

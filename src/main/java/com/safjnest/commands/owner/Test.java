@@ -31,7 +31,6 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;

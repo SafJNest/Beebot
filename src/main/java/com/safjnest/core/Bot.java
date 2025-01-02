@@ -68,7 +68,6 @@ import com.safjnest.core.events.*;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.util.AutomatedActionTimer;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.Settings;
@@ -94,7 +93,6 @@ public class Bot {
     private static Settings settings;
     
     private static GuildDataHandler gs;
-    private static CacheMap<String, UserData> userData;
 
     private static CommandClient client;
 
@@ -128,7 +126,6 @@ public class Bot {
         botID = jda.getSelfUser().getId();
 
         gs = new GuildDataHandler();
-        userData = new CacheMap<String, UserData>(50);
         
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(settings.helpWord);
@@ -289,14 +286,18 @@ public class Bot {
     }
 
     public static UserData getUserData(String userId) {
-        if (!userData.containsKey(userId)) {
-            userData.put(userId, new UserData(userId));
+        UserData userData = UserDataHandler.get(userId);
+        if (userData == null) {
+            userData = new UserData(userId);
+            UserDataHandler.put(userData);
         }
-        return userData.get(userId);
+        return userData;
     }
 
     public static CacheMap<String, UserData> getUsers() {
-        return userData;
+        CacheMap<String, UserData> users = new CacheMap<>();
+        UserDataHandler.asMap().forEach(users::put);
+        return users;
     }
 
     public static void handleEvent(GenericEvent event) {

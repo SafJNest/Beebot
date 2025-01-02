@@ -9,7 +9,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.core.GuildDataHandler;
 import com.safjnest.sql.DatabaseHandler;
 
 public class Connection extends WebSocketServer {
@@ -33,7 +33,6 @@ public class Connection extends WebSocketServer {
        * Smurfing
        */
       jda.getClass();
-      gs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
   }
     
     @Override

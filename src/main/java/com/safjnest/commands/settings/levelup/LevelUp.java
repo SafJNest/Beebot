@@ -5,13 +5,11 @@ import java.util.Collections;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.core.GuildDataHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 public class LevelUp extends SlashCommand {
-
-    private GuildDataHandler gs;
 
     public LevelUp(GuildDataHandler gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -30,12 +28,11 @@ public class LevelUp extends SlashCommand {
 
         commandData.setThings(this);                               
         
-        this.gs = gs;
     }
 
     @Override
     protected void execute(SlashCommandEvent event) { 
-        gs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
+        
     }
     
 }
