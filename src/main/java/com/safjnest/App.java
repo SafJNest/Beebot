@@ -8,8 +8,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
-import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.tts.TTSHandler;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
@@ -87,14 +87,14 @@ public class App {
             settingsLoader.getDBPassword()
         );
 
-        new SoundHandler();
+        new SoundCache();
         
         new TwitchClient(
             settingsLoader.getTwitchClientId(),
             settingsLoader.getTwitchClientSecret()
         );
         
-        if(!isExtremeTesting()) {
+        if(isExtremeTesting()) {
             TwitchClient.init();
         }
 

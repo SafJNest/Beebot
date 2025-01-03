@@ -11,9 +11,9 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.ExperienceSystem;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundHandler;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.AliasData;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.BlacklistData;
@@ -400,7 +400,7 @@ public class Functions {
         String sound_id = Bot.getUserData(theGuy.getId()).getGreet(guild.getId());
         if (sound_id == null || sound_id.isEmpty()) return;
         
-        Sound sound = SoundHandler.getSoundById(sound_id);
+        Sound sound = SoundCache.getSoundById(sound_id);
 
         if(sound == null)  return;
 

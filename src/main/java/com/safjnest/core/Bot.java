@@ -64,6 +64,8 @@ import com.safjnest.commands.settings.leave.Leave;
 import com.safjnest.commands.settings.levelup.LevelUp;
 import com.safjnest.commands.settings.reward.Reward;
 import com.safjnest.commands.settings.welcome.Welcome;
+import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.core.events.*;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -92,7 +94,8 @@ public class Bot {
     private static String botID;
     private static Settings settings;
     
-    private static GuildDataHandler gs;
+    private static GuilddataCache gs;
+    private static UserdataCache us = new UserdataCache();
 
     private static CommandClient client;
 
@@ -125,7 +128,7 @@ public class Bot {
 
         botID = jda.getSelfUser().getId();
 
-        gs = new GuildDataHandler();
+        gs = new GuilddataCache();
         
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(settings.helpWord);
@@ -269,7 +272,7 @@ public class Bot {
         return settings.color;
     }
 
-    public static GuildDataHandler getGuildSettings() {
+    public static GuilddataCache getGuildSettings() {
         return gs;
     }
 
@@ -286,18 +289,16 @@ public class Bot {
     }
 
     public static UserData getUserData(String userId) {
-        UserData userData = UserDataHandler.get(userId);
+        UserData userData = us.get(userId);
         if (userData == null) {
             userData = new UserData(userId);
-            UserDataHandler.put(userData);
+            us.put(userData);
         }
         return userData;
     }
 
-    public static CacheMap<String, UserData> getUsers() {
-        CacheMap<String, UserData> users = new CacheMap<>();
-        UserDataHandler.asMap().forEach(users::put);
-        return users;
+    public static UserdataCache getUsers() {
+        return us;
     }
 
     public static void handleEvent(GenericEvent event) {

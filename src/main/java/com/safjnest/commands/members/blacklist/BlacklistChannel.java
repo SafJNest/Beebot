@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -15,9 +15,9 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistChannel extends SlashCommand {
 
-    private GuildDataHandler gs;
+    private GuilddataCache gs;
     
-    public BlacklistChannel(String father, GuildDataHandler gs){
+    public BlacklistChannel(String father, GuilddataCache gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);

@@ -7,7 +7,8 @@ import java.util.List;
 import com.safjnest.commands.audio.CustomizeSound;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.Bot;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.SoundEmbed;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
@@ -46,7 +47,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         String type = event.getModalId().split("-", 2)[1];
         String input = event.getValue("greet-set").getAsString();
 
-        Sound sound = SoundHandler.getSoundByString(input, event.getGuild(), event.getUser());
+        Sound sound = SoundCache.getSoundByString(input, event.getGuild(), event.getUser());
         if (sound == null) {
             event.deferReply(true).setContent("Sound not found. Use command /list or /search sound").queue();
             return;
@@ -57,29 +58,29 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             Bot.getUserData(event.getUser().getId()).setGreet(event.getGuild().getId(), sound.getId());
         
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(SoundHandler.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
-                .setComponents(SoundHandler.getGreetButton(event.getUser().getId(), event.getGuild().getId())).queue();
+        event.getMessage().editMessageEmbeds(SoundEmbed.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
+                .setComponents(SoundEmbed.getGreetButton(event.getUser().getId(), event.getGuild().getId())).queue();
     }
 
     private static void sound(ModalInteractionEvent event) {
         String soundId = event.getModalId().split("-", 2)[1];
 
         EmbedBuilder eb = null;
-        Sound sound = SoundHandler.getSoundById(soundId);
+        Sound sound = SoundCache.getSoundById(soundId);
         String newName = event.getValue("sound-name").getAsString();
         sound.setName(newName);
 
         eb = CustomizeSound.getEmbed(event.getUser(), sound);
-        event.editMessageEmbeds(eb.build()).setComponents(SoundHandler.getSoundButton(soundId)).queue();
+        event.editMessageEmbeds(eb.build()).setComponents(SoundEmbed.getSoundButton(soundId)).queue();
     }
 
     private static void tag(ModalInteractionEvent event) {
         String soundId = event.getModalId().split("-", 2)[1];
 
         EmbedBuilder eb = null;
-        Sound sound = SoundHandler.getSoundById(soundId.split("-")[0]);
+        Sound sound = SoundCache.getSoundById(soundId.split("-")[0]);
         String newTagName = event.getValue("tag-name").getAsString();
-        Tag tag = SoundHandler.getTagByName(newTagName);
+        Tag tag = SoundCache.getTagByName(newTagName);
         Tag[] tags = sound.getTags();
         for (int i = 0; i < tags.length; i++) {
             if (tags[i].getId() == Integer.parseInt(soundId.split("-")[1])) {
@@ -90,7 +91,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         sound.setTags(tags);
 
         eb = CustomizeSound.getEmbed(event.getUser(), sound);
-        event.editMessageEmbeds(eb.build()).setComponents(SoundHandler.getSoundButton(soundId.split("-")[0])).queue();
+        event.editMessageEmbeds(eb.build()).setComponents(SoundEmbed.getSoundButton(soundId.split("-")[0])).queue();
     }
 
     private static void twitch(ModalInteractionEvent event) {

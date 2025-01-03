@@ -1,7 +1,7 @@
 package com.safjnest.commands.members.blacklist;
 
 
-import com.safjnest.core.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -19,7 +19,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
  */
 public class Blacklist extends SlashCommand{
 
-    public Blacklist(GuildDataHandler gs){
+    public Blacklist(GuilddataCache gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);

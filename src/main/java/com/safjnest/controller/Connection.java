@@ -9,7 +9,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.safjnest.core.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.sql.DatabaseHandler;
 
 public class Connection extends WebSocketServer {
@@ -17,9 +17,9 @@ public class Connection extends WebSocketServer {
     private JDA jda;
     private static int TCP_PORT = 8096;
     private Postman postman;
-    private GuildDataHandler gs;
+    private GuilddataCache gs;
     
-    public Connection(JDA jda, GuildDataHandler gs){
+    public Connection(JDA jda, GuilddataCache gs){
         super(new InetSocketAddress(TCP_PORT));
         this.jda = jda;
         this.gs = gs;

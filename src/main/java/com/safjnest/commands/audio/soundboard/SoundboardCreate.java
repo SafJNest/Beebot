@@ -7,7 +7,8 @@ import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.SoundEmbed;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.BotCommand;
@@ -71,8 +72,8 @@ public class SoundboardCreate extends SlashCommand{
             DatabaseHandler.insertSoundBoard(soundboardName, attachment, event.getGuild().getId(), event.getUser().getId(), soundIDs.toArray(new String[0]));
         }
 
-        List<Sound> sounds = SoundHandler.getSoundsByIds(soundIDs.toArray(new String[0]));
-        SoundHandler.composeSoundboard(event, soundboardName, sounds).queue();
+        List<Sound> sounds = SoundCache.getSoundsByIds(soundIDs.toArray(new String[0]));
+        SoundEmbed.composeSoundboard(event, soundboardName, sounds).queue();
 
         
 

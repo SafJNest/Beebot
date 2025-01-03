@@ -1,7 +1,7 @@
 package com.safjnest.controller;
 
 
-import com.safjnest.core.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuilddataCache;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -10,11 +10,11 @@ public class Postman {
     
     private JDA jda;
 
-    private GuildDataHandler gs;
+    private GuilddataCache gs;
 
 
 
-    public Postman(JDA jda, GuildDataHandler gs){
+    public Postman(JDA jda, GuilddataCache gs){
 
         this.jda = jda;
         this.gs = gs;

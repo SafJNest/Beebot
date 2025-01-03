@@ -1,6 +1,8 @@
 package com.safjnest.util.twitch;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import com.github.philippheuer.events4j.api.domain.IEventSubscription;
@@ -15,8 +17,7 @@ import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
-import com.safjnest.core.CacheMap;
-import com.safjnest.util.TimeConstant;
+import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.util.log.BotLogger;
 
 public class TwitchClient {
@@ -26,7 +27,7 @@ public class TwitchClient {
     private static ITwitchClient client = null;
     private static TwitchConduitSocketPool conduit = null;
 
-    private static CacheMap<String, User> streamersCache;
+    private static GenericCache<String, User> streamersCache;
 
     private static String userUrl = "https://www.twitch.tv/{user}";
     private static String boxArtUrl = "https://static-cdn.jtvnw.net/ttv-boxart/{game}-{width}x{height}.jpg";
@@ -36,10 +37,10 @@ public class TwitchClient {
         TwitchClient.clientId = clientId;
         TwitchClient.clientSecret = clientSecret;
 
-        streamersCache = new CacheMap<>(TimeConstant.MINUTE, TimeConstant.MINUTE, 100);
+        streamersCache = new GenericCache<String, User>(100, 1, TimeUnit.MINUTES, String.class, User.class);
     }
 
-    public static CacheMap<String, User> getStreamersCache() {
+    public static GenericCache<String, User> getStreamersCache() {
         return streamersCache;
     }
 
@@ -128,7 +129,7 @@ public class TwitchClient {
 
     public static List<User> getStreamersById(List<String> streamerIds) {
         if (streamersCache.keySet().containsAll(streamerIds)) {
-            return streamersCache.get(streamerIds);
+            return new ArrayList<>(streamersCache.get(streamerIds));
         }
 
         List<String> notCached = streamerIds.stream().filter(id -> !streamersCache.keySet().contains(id)).toList();
@@ -138,7 +139,7 @@ public class TwitchClient {
             streamersCache.put(user.getId(), user);
         }
 
-        return streamersCache.get(streamerIds);
+        return new ArrayList<>(streamersCache.get(streamerIds));
     }
 
     public static User getStreamerById(String streamerId) {

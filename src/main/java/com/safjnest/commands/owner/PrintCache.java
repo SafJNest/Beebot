@@ -9,9 +9,9 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.core.CacheMap;
-import com.safjnest.core.GuildDataHandler;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.cache.managers.GenericCache;
+import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -34,9 +34,9 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
  */
 public class PrintCache extends Command {
     
-    private GuildDataHandler gs;
+    private GuilddataCache gs;
     private CommandEvent event;
-    public PrintCache(GuildDataHandler gs) {
+    public PrintCache(GuilddataCache gs) {
         this.name = this.getClass().getSimpleName().toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -75,21 +75,21 @@ public class PrintCache extends Command {
                 printTwitch();
                 break;
             case "guildsize":
-                Bot.getGuildSettings().getGuilds().setMaxSize(Integer.valueOf(args[1]));
+                //Bot.getGuildSettings().getGuilds().setMaxSize(Integer.valueOf(args[1]));
                 event.reply("Guild size set to " + args[1]);
                 break;
             case "usersize":
-                Bot.getUsers().setMaxSize(Integer.valueOf(args[1]));
+                //Bot.getUsers().setMaxSize(Integer.valueOf(args[1]));
                 event.reply("User size set to " + args[1]);
                 break;
             case "soundsize":
-                SoundHandler.getSoundCache().setMaxSize(Integer.valueOf(args[1]));
+                //SoundHandler.getSoundCache().setMaxSize(Integer.valueOf(args[1]));
                 event.reply("Sound size set to " + args[1]);
                 break;
             case "clear":
-                Bot.getGuildSettings().getGuilds().clear();
-                Bot.getUsers().clear();
-                SoundHandler.getSoundCache().clear();
+                // Bot.getGuildSettings().clear();
+                // Bot.getUsers().clear();
+                //SoundHandler.getSoundCache().clear();
                 event.reply("Cache cleared");
                 break;
             default:
@@ -101,9 +101,10 @@ public class PrintCache extends Command {
     private void printTwitch() {
         String msg = "";
         ArrayList<String> cache = new ArrayList<>();
-        CacheMap<String, com.github.twitch4j.helix.domain.User> streamers = TwitchClient.getStreamersCache();
+        GenericCache<String, com.github.twitch4j.helix.domain.User> streamers = TwitchClient.getStreamersCache();
         for(String s : streamers.keySet()) {
-            long time = streamers.getExpirationTime(s);
+            System.out.println("keyset: " + s);
+            long time = streamers.expiresAfter(s);
 
             msg += "**" + s + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
                 + "name: " + streamers.get(s).getDisplayName() + "```";
@@ -111,7 +112,7 @@ public class PrintCache extends Command {
             msg = "";
         }
 
-        String header = "**Tier god information about the insane beebots cache**```" + "Total Streamer: " + streamers.size() + " / " + streamers.getMaxSize() + "\n"
+        String header = "**Tier god information about the insane beebots cache**```" + "Total Streamer: " + streamers.getSize() + " / " + streamers.getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
             + "League Version: " + LeagueHandler.getVersion() + "```";
@@ -133,10 +134,10 @@ public class PrintCache extends Command {
         int totalAlerts = 0;
         int totalBlackList = 0;
 
-        for(GuildData gd : gs.getGuilds().values(false)){
+        for(GuildData gd : gs.values()){
             try {
                 if(!forbidden.contains(String.valueOf(gd.getId()))) {
-                    long time = gs.getGuilds().getExpirationTime(gd.getID());
+                    long time = gs.expiresAfter(gd.getID());
                     totalUsers += gd.getMembers().size();
                     totalChannels += gd.getChannels().size();
                     totalAlerts += gd.isAlertsCached() ? 1 : 0;
@@ -153,13 +154,14 @@ public class PrintCache extends Command {
                 }
 
             } catch (Exception e) {
+                e.printStackTrace();
                continue;
             }
         }
-
-        String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
-            + "Total Users: " + Bot.getUsers().size() + " / " + Bot.getUsers().getMaxSize() + "\n"
-            + "Total Sounds: " + SoundHandler.getSoundCache().size() + " / " + SoundHandler.getSoundCache().getMaxSize() + "\n"
+        SoundCache ss = SoundCache.getInstance();
+        String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getSize() + " / " + gs.getMaxSize() + "\n"
+            + "Total Users: " + Bot.getUsers().getSize() + " / " + Bot.getUsers().getMaxSize() + "\n"
+            + "Total Sounds: " + ss.getSize() + " / " + ss.getMaxSize() + "\n"
             + "Total Members: " + totalUsers + "\n"
             + "Total Channels: " + totalChannels + "\n"
             + "Total Alerts: " + totalAlerts + "\n"
@@ -178,11 +180,10 @@ public class PrintCache extends Command {
 
     private void printUsers() {
         ArrayList<String> cache = new ArrayList<>();
-        CacheMap<String, UserData> users = Bot.getUsers();
 
         String msg = "";
-        for(UserData ud : users.values(false)) {
-            long time = users.getExpirationTime(ud.getId());
+        for(UserData ud : Bot.getUsers().values()) {
+            long time = Bot.getUsers().expiresAfter(ud.getId());
 
             HashMap<String, String> lolAccounts = ud.getRiotAccounts();
             String lolAccountsString = "";
@@ -210,8 +211,8 @@ public class PrintCache extends Command {
 
 
 
-        String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
-            + "Total Users: " + users.size() + " / " + users.getMaxSize() + "\n"
+        String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getMaxSize() + "\n"
+            + "Total Users: " + Bot.getUsers().getSize() + " / " + Bot.getUsers().getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
             + "League Version: " + LeagueHandler.getVersion() + "```";
@@ -227,11 +228,11 @@ public class PrintCache extends Command {
 
     private void printSounds() {
         ArrayList<String> cache = new ArrayList<>();
-        CacheMap<String, Sound> sounds = SoundHandler.getSoundCache();
+        SoundCache ss = SoundCache.getInstance();
 
         String msg = "";
-        for(Sound s : sounds.values(false)) {
-            long time = sounds.getExpirationTime(s.getId());
+        for(Sound s : ss.values()) {
+            long time = ss.expiresAfter(s.getId());
 
             msg += "**" + s.getName() + "** expires " + "<t:" + ((time + System.currentTimeMillis())/1000) + ":R>" + "```"
                 + "Name: " + s.getName() + "(" + s.getId() + ")" + "\n"
@@ -247,9 +248,9 @@ public class PrintCache extends Command {
             msg = "";
         }
 
-        String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getGuilds().getMaxSize() + "\n"
-        + "Total Users: " + Bot.getUsers().size() + " / " + Bot.getUsers().getMaxSize() + "\n"
-        + "Total Sounds: " + SoundHandler.getSoundCache().size() + " / " + SoundHandler.getSoundCache().getMaxSize() + "\n"
+        String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getMaxSize() + "\n"
+        + "Total Users: " + Bot.getUsers().getSize() + " / " + Bot.getUsers().getMaxSize() + "\n"
+        + "Total Sounds: " + ss.getSize() + " / " + ss.getMaxSize() + "\n"
         + "Other bot information\n"
         + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
         + "League Version: " + LeagueHandler.getVersion() + "```";

@@ -7,8 +7,9 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.audio.types.AudioType;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -85,7 +86,7 @@ public class PlaySound extends SlashCommand{
             return;
         }
         
-        Sound sound = SoundHandler.getSoundByString(fileName, guild, event.getUser());
+        Sound sound = SoundCache.getSoundByString(fileName, guild, event.getUser());
 
         if(sound == null) {
             event.deferReply().addContent("Couldn't find a sound with that name/id. You can upload a new one using /upload").queue();
@@ -124,7 +125,7 @@ public class PlaySound extends SlashCommand{
             return;
         }
         
-        Sound sound = SoundHandler.getSoundByString(fileName, guild, event.getAuthor());
+        Sound sound = SoundCache.getSoundByString(fileName, guild, event.getAuthor());
 
         if(sound == null) {
             event.reply("Couldn't find a sound with that name/id.");
@@ -175,9 +176,9 @@ public class PlaySound extends SlashCommand{
 
 
             if (commandEvent != null) 
-                commandEvent.getChannel().sendMessageEmbeds(SoundHandler.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundHandler.getSoundEmbedButtons(sound)).queue();
+                commandEvent.getChannel().sendMessageEmbeds(SoundEmbed.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(sound)).queue();
             else 
-                slashEvent.deferReply(false).addEmbeds(SoundHandler.getSoundEmbed(sound, author.getUser()).build()).addComponents(SoundHandler.getSoundEmbedButtons(sound)).queue();
+                slashEvent.deferReply(false).addEmbeds(SoundEmbed.getSoundEmbed(sound, author.getUser()).build()).addComponents(SoundEmbed.getSoundEmbedButtons(sound)).queue();
         }
 
         @Override

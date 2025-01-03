@@ -1,7 +1,10 @@
-package com.safjnest.core;
+package com.safjnest.core.cache.managers;
 
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import com.safjnest.core.Bot;
+import com.safjnest.core.cache.CacheAdapter;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
@@ -10,22 +13,20 @@ import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
 /**
- * Class that stores in a {@link GuildDataHandler#cache guilds} all the settings for a guild.
+ * Class that stores in a {@link GuilddataCache#cache guilds} all the settings for a guild.
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  */
-public class GuildDataHandler extends CacheHandler<String, GuildData> {
+public class GuilddataCache extends CacheAdapter<String, GuildData> {
 
-    private static final String KEY = "guild_data";
-    private static final GuildDataHandler instance = new GuildDataHandler();
-
-    public GuildDataHandler() {
+    public GuilddataCache() {
+        super();
         setExpireTime(12, TimeUnit.HOURS);
-        setTypeLimit(2);
+        setTypeLimit(50);
     }
     
     public GuildData getGuild(String id) {
-        GuildData guild = instance.getInternal(KEY + "-" + id);
+        GuildData guild = super.get(id);
         if(guild == null) {
             guild = retriveGuild(id);
         }
@@ -34,12 +35,13 @@ public class GuildDataHandler extends CacheHandler<String, GuildData> {
 
     /**
      * Born deprecated
+     * old getGuildIfCached
      * @Deprecated
      * @param id
      * @return
      */
-    public GuildData getGuildIfCached(String id) {
-        return instance.getInternal(KEY + "-" + id);
+    public GuildData get(String id) {
+        return super.get(id);
     }
 
     public GuildData retriveGuild(String guildId) {
@@ -74,15 +76,11 @@ public class GuildDataHandler extends CacheHandler<String, GuildData> {
     }
 
     private void saveGuild(GuildData guild) {
-        instance.put(KEY + "-" + guild.getId(), guild);
+        super.put(guild.getID(), guild);
     }
 
-    public CacheMap<String, GuildData> getGuilds() {
-        CacheMap<String, GuildData> users = new CacheMap<>();
-        for(String key : instance.asMap(GuildData.class).keySet()) {
-            users.put(key, instance.getInternal(key));
-        }
-        return users;
+    public ConcurrentMap<String, GuildData> getGuilds() {
+        return super.asTypedMap();
     }
 
     /**
@@ -91,9 +89,4 @@ public class GuildDataHandler extends CacheHandler<String, GuildData> {
     public void doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed() {
         return;
 	}
-
-    @Override
-    protected Class<GuildData> getValueType() {
-        return GuildData.class;
-    }
 }

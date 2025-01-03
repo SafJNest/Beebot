@@ -26,6 +26,7 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.core.audio.SafjAudioPlaylist;
 import com.safjnest.core.audio.types.PlayTiming;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -105,9 +106,9 @@ import java.sql.Timestamp;
  */
 public class Test extends Command{
 
-    private GuildDataHandler gs;
+    private GuilddataCache gs;
 
-    public Test(GuildDataHandler gs){
+    public Test(GuilddataCache gs){
         this.name = this.getClass().getSimpleName().toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -407,7 +408,7 @@ public class Test extends Command{
                 });
                 break;
             case "cachesize":
-                Bot.getGuildSettings().getGuilds().setMaxSize(Integer.parseInt(args[1]));
+                //Bot.getGuildSettings().getGuilds().setMaxSize(Integer.parseInt(args[1]));
                 e.reply("New cache max size: " + args[1]);
                 break;
             case "userdata":
@@ -419,14 +420,14 @@ public class Test extends Command{
                 break;
             case "usersdata":
                 String users = "";
-                for (UserData ud : Bot.getUsers().values(false)) {
+                for (UserData ud : Bot.getUsers().values()) {
                     users += ud.getName() + "-";
                 }
                 e.reply(users);
                 break;
             case "clearcache":
                 Bot.getGuildSettings().getGuilds().clear();
-                Bot.getUsers().clear();
+                //Bot.getUsers().clear();
                 e.reply("Cache cleared");
                 break;
             case "spotify":

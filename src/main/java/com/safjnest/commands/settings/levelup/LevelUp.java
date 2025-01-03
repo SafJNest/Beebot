@@ -5,13 +5,13 @@ import java.util.Collections;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 public class LevelUp extends SlashCommand {
 
-    public LevelUp(GuildDataHandler gs){
+    public LevelUp(GuilddataCache gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);

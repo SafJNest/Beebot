@@ -2,7 +2,7 @@ package com.safjnest.commands.audio.greet;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -28,7 +28,7 @@ public class GreetView extends SlashCommand {
 
 	@Override
 	public void execute(SlashCommandEvent event) {
-        event.deferReply(false).addEmbeds(SoundHandler.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
-                .addComponents(SoundHandler.getGreetButton(event.getUser().getId(), event.getGuild().getId())).queue();
+        event.deferReply(false).addEmbeds(SoundEmbed.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
+                .addComponents(SoundEmbed.getGreetButton(event.getUser().getId(), event.getGuild().getId())).queue();
     }
 }

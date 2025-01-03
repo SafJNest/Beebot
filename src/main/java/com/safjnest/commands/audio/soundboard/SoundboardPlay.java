@@ -5,8 +5,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -47,7 +46,7 @@ public class SoundboardPlay extends SlashCommand{
             event.deferReply(true).addContent("Soundboard does not exist or you dont have permission to play the selected one.").queue();
             return;
         }
-        SoundHandler.composeSoundboard(event, soundboardID).queue();
+        SoundEmbed.composeSoundboard(event, soundboardID).queue();
         
     }
 }
