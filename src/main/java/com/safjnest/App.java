@@ -50,9 +50,6 @@ public class App {
         return riotApi;
     }
 
-    //empty commit
-
-
 
     public static void main(String args[]) {
         
