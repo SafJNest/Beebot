@@ -125,6 +125,7 @@ public class Test extends Command{
         commandData.setThings(this);
     }
 
+    @SuppressWarnings({ "unchecked", "unused" })
     @Override
     protected void execute(CommandEvent e) {
         String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
@@ -653,27 +654,29 @@ public class Test extends Command{
                 e.getChannel().sendMessageEmbeds(eb.build()).setActionRow(streamerButtonLink).queue();
                 break;
             case "fixlol":
-            query = "SELECT st.id, sm.game_id, sm.league_shard, st.account_id, s.summoner_id FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id JOIN summoner s ON st.account_id = s.account_id WHERE st.id > 0 AND st.lane = 4 ORDER BY st.id;";
+            query = "SELECT st.id, st.account_id, sm.game_id, sm.league_shard FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id WHERE st.lane = 4 AND NOT JSON_CONTAINS_PATH(st.build, 'one', '$.build.support_item') AND st.id > 11940;";
             
                 res = DatabaseHandler.safJQuery(query);
                 for(QueryRecord row : res){
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
                     String game_id = region + "_"+row.get("game_id");
-                    //String account_id = row.get("account_id");
-                    String summoner_id = row.get("summoner_id");
+                    String account_id = row.get("account_id");
+                    //String summoner_id = row.get("summoner_id");
                     LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                     String puuid = "";
 
                     LaneType lane = null;
                     TeamType team = null;
+                    Summoner su = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.values()[row.getAsInt("league_shard")]);
                     for (MatchParticipant partecipant : match.getParticipants()) {
-                        if (partecipant.getSummonerId().equals(summoner_id)) {
+                        if (partecipant.getSummonerId().equals(su.getSummonerId())) {
                             lane = partecipant.getChampionSelectLane();
                             team = partecipant.getTeam();
                             puuid = partecipant.getPuuid();
                         }
-                    }//TODO: add ban
+                    }
                     HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(match, match.getParticipants());
+                    if (matchData.get(puuid) == null) continue;
                     if (matchData.get(puuid).get("items") == null || matchData.get(puuid).get("starter") == null || matchData.get(puuid).get("starter").isBlank()) {
                         continue;
                     }
@@ -681,12 +684,12 @@ public class Test extends Command{
 
                     query = "UPDATE summoner_tracking SET lane = '" + lane.ordinal() + "', side = '" + team.ordinal() + "', build = '" + build + "' WHERE id = " + row.get("id") + ";";
                     System.out.println(row.get("id"));
-                    DatabaseHandler.runQuery(query);
+                    DatabaseHandler.runQueryAsync(query);
                     try {
-                        Thread.sleep(450);
-                    } catch (Exception eee) { eee.printStackTrace(); }
+                        Thread.sleep(1000);
+                    } catch (Exception e1) {
 
-                    
+                    }
                 }
             break;
             case "fixlolna":
@@ -1038,7 +1041,7 @@ public class Test extends Command{
                 break;
 
             case "fixmatch":
-                query = "select id, game_id, league_shard from summoner_match";
+                query = "select id, game_id, league_shard from summoner_match where bans = '{}' order by id";
                 res = DatabaseHandler.safJQuery(query);
                 for (QueryRecord row : res) {
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
@@ -1056,7 +1059,16 @@ public class Test extends Command{
                     }
                     query = "UPDATE summoner_match SET bans = '" + bans.toString() + "' WHERE id = " + row.get("id");
                     DatabaseHandler.runQuery(query);
+                    System.out.println(row.get("id"));
+                    try {
+                        Thread.sleep(1500);
+                    } catch (Exception e1) {
+                        
+                    }
                 }
+                break;
+                case "lolqueue":
+                    System.out.println(MatchTracker.getMatchQueueCopy().size());
                 break;
         }
     }  

@@ -1,6 +1,7 @@
 package com.safjnest.commands.misc.omegle;
 
 import java.util.Arrays;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -44,6 +45,6 @@ public class OmegleConnect extends SlashCommand{
         event.deferReply().queue();
 
         
-        ChatHandler.omegle(event.getTextChannel(), autoReconnect, anonymous, null, event.getHook());
+        ChatHandler.omegle(event.getTextChannel(), autoReconnect, anonymous, List.of(), event.getHook());
     }
 }
