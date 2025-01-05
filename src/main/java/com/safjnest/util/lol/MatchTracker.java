@@ -114,7 +114,11 @@ public class MatchTracker {
         
         BotLogger.info("[LPTracker] Analyzing " + toAnalyze.size() + " queued matches");
         for (LOLMatch match : toAnalyze) {
-            analyzeMatchHistory(match).complete();
+            try {
+                analyzeMatchHistory(match).completeWithException();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
