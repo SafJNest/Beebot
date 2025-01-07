@@ -180,8 +180,6 @@ public class MatchTracker {
 
 
             for (MatchParticipant partecipant : match.getParticipants()) {
-                try { Thread.sleep(500); }
-                catch (InterruptedException e) {e.printStackTrace();}
                 if (partecipant.getPuuid().equals(summoner.getPUUID())) {
                     pushSummoner(match, summoner_match_id, summoner, partecipant, dataGame, matchData.get(partecipant.getPuuid())).complete();
                     continue;
@@ -190,6 +188,11 @@ public class MatchTracker {
                 Summoner toPush = LeagueHandler.getSummonerByPuiid(partecipant.getPuuid(), match.getPlatform());
                 if (toPush == null) continue;
 
+                try { 
+                    LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, toPush);
+                    Thread.sleep(500); 
+                }
+                catch (InterruptedException e) {e.printStackTrace();}
                 pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())).complete();
             }
             BotLogger.info("[LPTracker] Pushed match data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
