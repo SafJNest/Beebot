@@ -553,20 +553,18 @@ public class MatchTracker {
         for (QueryRecord record : matchDatas) {
             JSONObject ban = new JSONObject(record.get("bans"));
             JSONArray bans;
-            boolean banned = false;
             if (ban.has("1")) {
                 bans = (JSONArray) ban.get("1");
                 for (int i = 0; i < bans.length(); i++) {
-                    if (champion == bans.getInt(i)) banned = true;
+                    if (champion == bans.getInt(i)) totalBans++;
                 }
             }
-            if (ban.has("2") && !banned) {
+            if (ban.has("2")) {
                 bans = (JSONArray) ban.get("2");
                 for (int i = 0; i < bans.length(); i++) {
-                    if (champion == bans.getInt(i)) banned = true;
+                    if (champion == bans.getInt(i)) totalBans++;
                 }
             }
-            if (banned) totalBans++;
         }
         for (QueryRecord record : championDatas) {
             totalPicks++;
