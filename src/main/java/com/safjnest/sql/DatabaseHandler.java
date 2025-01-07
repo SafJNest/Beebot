@@ -728,6 +728,7 @@ public class DatabaseHandler {
             "WHERE t.`account_id` = '" + account_id + "' " +
             "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
             "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
+            "AND sm.game_type = " + GameQueueType.TEAM_BUILDER_RANKED_SOLO.ordinal() + " " +
             "GROUP BY t.`champion`, t.`lane`";
 
         String combinedQuery =
