@@ -976,27 +976,31 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static long[] getCurrentSplitRange() {
         long[] range = new long[2];
-
         long now = System.currentTimeMillis();
+
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
-            JSONArray season = (JSONArray) file.get("seasons");
-            JSONObject current = (JSONObject) season.get(season.size() - 1);
+            JSONArray seasons = (JSONArray) file.get("seasons");
 
-            JSONArray splits = (JSONArray) current.get("splits");
-            for (int i = 0; i < splits.size(); i++) {
-                JSONObject split = (JSONObject) splits.get(i);
-                String start = (String) split.get("start_date");
-                String end = (String) split.get("end_date");
-                long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
-                long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
+            for (int seasonIndex = seasons.size() - 1; seasonIndex >= 0; seasonIndex--) {
+                JSONObject current = (JSONObject) seasons.get(seasonIndex);
+                JSONArray splits = (JSONArray) current.get("splits");
 
-                if (now >= startMillis && now <= endMillis) {
-                    range[0] = startMillis;
-                    range[1] = endMillis;
-                    break;
+                for (int i = 0; i < splits.size(); i++) {
+                    JSONObject split = (JSONObject) splits.get(i);
+                    String start = split.get("start_date").toString();
+                    String end = split.get("end_date").toString();
+
+                    long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
+                    long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
+
+                    if (now >= startMillis && now <= endMillis) {
+                        range[0] = startMillis;
+                        range[1] = endMillis;
+                        return range;
+                    }
                 }
             }
 
@@ -1006,7 +1010,6 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
 
         return range;
-
     }
 
     public static String getCurrentSplitFormatted() {
@@ -1016,29 +1019,35 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
-            JSONArray season = (JSONArray) file.get("seasons");
-            JSONObject current = (JSONObject) season.get(season.size() - 1);
+            JSONArray seasons = (JSONArray) file.get("seasons");
 
-            JSONArray splits = (JSONArray) current.get("splits");
-            for (int i = 0; i < splits.size(); i++) {
-                JSONObject split = (JSONObject) splits.get(i);
-                String start = split.get("start_date").toString();
-                String end = split.get("end_date").toString();
+            for (int seasonIndex = seasons.size() - 1; seasonIndex >= 0; seasonIndex--) {
+                System.out.println(seasonIndex);
+                JSONObject current = (JSONObject) seasons.get(seasonIndex);
+                JSONArray splits = (JSONArray) current.get("splits");
 
-                long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
-                long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
+                for (int i = 0; i < splits.size(); i++) {
+                    JSONObject split = (JSONObject) splits.get(i);
+                    String start = split.get("start_date").toString();
+                    String end = split.get("end_date").toString();
 
-                if (now >= startMillis && now <= endMillis && split.get("current") != null) {
-                    return "Season " + current.get("season").toString() + " split " + split.get("split").toString();
+                    long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
+                    long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
+
+                    System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime() + "-" + now + "-" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime());
+
+                    if (now >= startMillis && now <= endMillis && split.get("is_current") != null) {
+                        return "Season " + current.get("season").toString() + " split " + split.get("split").toString();
+                    }
                 }
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return "Error occurred: " + e.getMessage();
         }
 
-        return null;
+        return "No current split found";
     }
 
     public static boolean isCurrentSplit(long time) {

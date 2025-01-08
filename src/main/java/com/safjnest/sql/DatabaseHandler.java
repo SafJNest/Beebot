@@ -751,8 +751,6 @@ public class DatabaseHandler {
             "GROUP BY overall.`champion` " +
             "ORDER BY `games` DESC;";
 
-            System.out.println(combinedQuery);
-
         return safJQuery(combinedQuery);
     }
 
