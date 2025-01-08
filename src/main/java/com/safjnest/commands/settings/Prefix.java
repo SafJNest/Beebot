@@ -20,7 +20,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 1.1
  */
 public class Prefix extends SlashCommand {
-    private GuilddataCache gs;
     
     public Prefix(GuilddataCache gs){
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -40,8 +39,6 @@ public class Prefix extends SlashCommand {
         );
 
         commandData.setThings(this);
-
-        this.gs = gs;
     }
 
     @Override
@@ -53,7 +50,7 @@ public class Prefix extends SlashCommand {
         }
         String guildId = event.getGuild().getId();
         
-        if(gs.getGuild(guildId).setPrefix(prefix)){
+        if(GuilddataCache.getGuild(guildId).setPrefix(prefix)){
             event.reply("The new prefix is: " + prefix);
         }
         else
@@ -62,7 +59,7 @@ public class Prefix extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(gs.getGuild(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
+        if(GuilddataCache.getGuild(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
             event.deferReply(false).addContent("The new Prefix is " + event.getOption("prefix").getAsString()).queue();
         else
             event.deferReply(true).addContent("Error").queue();   

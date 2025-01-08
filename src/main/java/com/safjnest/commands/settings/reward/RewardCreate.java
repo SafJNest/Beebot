@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
@@ -14,6 +13,7 @@ import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import com.safjnest.core.cache.managers.GuilddataCache;
 
 public class RewardCreate extends SlashCommand{
 
@@ -53,7 +53,7 @@ public class RewardCreate extends SlashCommand{
         
         String guildId = event.getGuild().getId();
 
-        GuildData gs = Bot.getGuildData(guildId);
+        GuildData gs = GuilddataCache.getGuild(guildId);
 
         RewardData reward = gs.getAlert(AlertType.REWARD, level);
 

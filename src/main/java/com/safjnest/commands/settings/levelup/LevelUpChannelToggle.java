@@ -13,10 +13,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class LevelUpChannelToggle extends SlashCommand{
-    private GuilddataCache gs;
 
     public LevelUpChannelToggle(String father, GuilddataCache gs){
-        this.gs = gs;
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -43,7 +41,7 @@ public class LevelUpChannelToggle extends SlashCommand{
 
         String guildId = event.getGuild().getId();
 
-        if(!gs.getGuild(guildId).getChannelData(channelId).enableExperience(toggle)) {
+        if(!GuilddataCache.getGuild(guildId).getChannelData(channelId).enableExperience(toggle)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

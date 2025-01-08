@@ -13,6 +13,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
@@ -52,7 +53,7 @@ public class ServerInfo extends SlashCommand {
     }
 
     private static EmbedBuilder createEmbed(Guild guild) {
-        HashMap<AlertKey<?>, AlertData> alerts = Bot.getGuildData(guild.getId()).getAlerts();
+        HashMap<AlertKey<?>, AlertData> alerts = GuilddataCache.getGuild(guild.getId()).getAlerts();
         AlertData welcome = alerts.get(new AlertKey<>(AlertType.WELCOME));
         AlertData leave = alerts.get(new AlertKey<>(AlertType.LEAVE));
         AlertData lvlup = alerts.get(new AlertKey<>(AlertType.LEVEL_UP));

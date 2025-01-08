@@ -31,6 +31,8 @@ public abstract class CacheAdapter<K, V> extends AbstractCache<K, V> {
         return (K) (PREFIX + "-" + k);
     }
 
+    
+
     @Override
     public void put(K key, V value) {
         super.put(getPrefixedKey(key), value);
@@ -62,18 +64,6 @@ public abstract class CacheAdapter<K, V> extends AbstractCache<K, V> {
         return super.get(getPrefixedKey(key)) != null;
     }
 
-    @Override
-    public long expiresAfter(K key) {
-        return super.expiresAfter(getPrefixedKey(key));
-    }
-
-    public int getSize() {
-        return super.getTypeSize(getValueType());
-    }
-
-    public int getMaxSize() {
-        return super.getTypeLimit(getValueType());
-    }
 
     @SuppressWarnings("unchecked")
     public Collection<K> keySet() {
@@ -93,6 +83,23 @@ public abstract class CacheAdapter<K, V> extends AbstractCache<K, V> {
         return map;
     }
 
+
+    @Override
+    public long expiresAfter(K key) {
+        return super.expiresAfter(getPrefixedKey(key));
+    }
+
+    public int getSize() {
+        return super.getTypeSize(getValueType());
+    }
+
+    public int getMaxSize() {
+        return super.getTypeLimit(getValueType());
+    }
+
+
+    
+    
     @SuppressWarnings("unchecked")
     protected Class<K> getKeyType() {
         if (key != null) 

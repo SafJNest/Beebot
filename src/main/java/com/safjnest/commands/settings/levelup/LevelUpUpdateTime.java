@@ -12,10 +12,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class LevelUpUpdateTime extends SlashCommand{
-    private GuilddataCache gs;
-
     public LevelUpUpdateTime(String father, GuilddataCache gs){
-        this.gs = gs;
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -39,7 +36,7 @@ public class LevelUpUpdateTime extends SlashCommand{
         //TODO: this command will be only for vip user
         String guildId = event.getGuild().getId();
         String userId = event.getUser().getId();
-        if(!gs.getGuild(guildId).getMemberData(userId).setUpdateTime(updateTime)) { 
+        if(!GuilddataCache.getGuild(guildId).getMemberData(userId).setUpdateTime(updateTime)) { 
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

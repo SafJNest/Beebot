@@ -6,6 +6,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.core.events.types.WarningEvent;
 import com.safjnest.model.guild.MemberData;
 import com.safjnest.util.BotCommand;
@@ -52,7 +53,7 @@ public class Warn extends SlashCommand {
         Member member = PermissionHandler.getMentionedMember(event, event.getArgs().split(" ")[0]);
         String reason = event.getArgs().split(" ")[1];
 
-        MemberData memberData = Bot.getGuildData(event.getGuild()).getMemberData(member.getId());
+        MemberData memberData = GuilddataCache.getGuild(event.getGuild()).getMemberData(member.getId());
         int warningId = memberData.warn(reason);
         if (warningId != -1) {
             event.reply("Error");
@@ -77,7 +78,7 @@ public class Warn extends SlashCommand {
         String reason = event.getOption("reason") == null ? "" : event.getOption("reason").getAsString();
         Member member = event.getOption("user").getAsMember();
 
-        MemberData memberData = Bot.getGuildData(event.getGuild()).getMemberData(member.getId());
+        MemberData memberData = GuilddataCache.getGuild(event.getGuild()).getMemberData(member.getId());
         
         int warningId = memberData.warn(reason);
         if (warningId == -1) {

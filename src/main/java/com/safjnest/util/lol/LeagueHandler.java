@@ -59,6 +59,8 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.core.cache.managers.GuilddataCache;
+
 
 /**
  * This class is used to handle all the League of Legends related stuff
@@ -438,7 +440,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static Summoner getSummonerByArgs(CommandEvent event) {
         String args = event.getArgs();
-        GuildData guild = Bot.getGuildData(event.getGuild().getId());
+        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
 
         if (args.isEmpty()) {
             return getSummonerFromDB(event.getAuthor().getId());
@@ -467,7 +469,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
-        GuildData guild = Bot.getGuildData(event.getGuild().getId());
+        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
 
         User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();
 

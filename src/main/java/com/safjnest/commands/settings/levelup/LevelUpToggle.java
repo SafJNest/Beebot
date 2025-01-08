@@ -13,8 +13,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class LevelUpToggle extends SlashCommand{
 
-    private GuilddataCache gs;
-
     public LevelUpToggle(GuilddataCache gs, String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
@@ -24,7 +22,6 @@ public class LevelUpToggle extends SlashCommand{
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         
-        this.gs = gs;
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "toggle", "on or off", true)
                 .addChoice("on", "on")
@@ -40,7 +37,7 @@ public class LevelUpToggle extends SlashCommand{
 
         String guildId = event.getGuild().getId();
         
-        if(!gs.getGuild(guildId).setExpSystem(toggle)){
+        if(!GuilddataCache.getGuild(guildId).setExpSystem(toggle)){
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

@@ -13,6 +13,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.AliasData;
 import com.safjnest.model.UserData;
@@ -205,7 +206,7 @@ public class Functions {
     public static void handleAlert(User theGuy, Guild guild, AlertType type) {
         MessageChannel channel = null;
 
-        AlertData alert = Bot.getGuildSettings().getGuild(guild.getId()).getAlert(type);
+        AlertData alert = GuilddataCache.getGuild(guild.getId()).getAlert(type);
         if (alert == null || !alert.isValid()) {
             return;
         }
@@ -279,7 +280,7 @@ public class Functions {
 
     public static void handleBlacklist(User badGuy, Guild guild) {
         MessageChannel channel = null;
-        GuildData guildData = Bot.getGuildSettings().getGuild(guild.getId());
+        GuildData guildData = GuilddataCache.getGuild(guild.getId());
 
 
         int threshold = guildData.getThreshold();
@@ -312,7 +313,7 @@ public class Functions {
     }
 
     public static void handleBlacklistAlert(User badGuy, Guild guild) {
-        GuildData guildData = Bot.getGuildSettings().getGuild(guild.getId());
+        GuildData guildData = GuilddataCache.getGuild(guild.getId());
         int threshold = guildData.getThreshold();
 
         if(threshold == 0)
@@ -352,7 +353,7 @@ public class Functions {
     }
 
     public static void handleChannelDeleteAlert(Guild guild, String channelID) {
-        GuildData g = Bot.getGuildSettings().getGuild(guild.getId());
+        GuildData g = GuilddataCache.getGuild(guild.getId());
 
         String alertChannel = guild.getDefaultChannel().getId();
         String alertMessage = "";
@@ -434,7 +435,7 @@ public class Functions {
 
 
     public static void handleCustomCommand(String commandName, SlashCommandInteractionEvent event) {
-        GuildData guild = Bot.getGuildSettings().getGuild(event.getGuild().getId());
+        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
         CustomCommand command = guild.getCustomCommand(commandName);
 
         if(command == null) {
@@ -448,7 +449,7 @@ public class Functions {
     }
 
     public static void updateCommandStatitics(SlashCommandInteractionEvent event) {
-        GuildData guild = Bot.getGuildSettings().getGuild(event.getGuild().getId());
+        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         
@@ -458,7 +459,7 @@ public class Functions {
     }
 
     public static void updateCommandStatitics(CommandEvent event, Command command) {
-        GuildData guild = Bot.getGuildSettings().getGuild(event.getGuild().getId());
+        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         
@@ -468,7 +469,7 @@ public class Functions {
     }
 
     public static void handleRoleDeleteAlert(Guild guild, String role_id) {
-        GuildData g = Bot.getGuildSettings().getGuild(guild.getId());
+        GuildData g = GuilddataCache.getGuild(guild.getId());
         g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().containsValue(role_id)).forEach(alert -> {
             alert.removeRole(role_id);
         });

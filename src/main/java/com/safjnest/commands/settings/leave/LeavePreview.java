@@ -2,12 +2,13 @@ package com.safjnest.commands.settings.leave;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
+
+import com.safjnest.core.cache.managers.GuilddataCache;
 
 public class LeavePreview extends SlashCommand{
 
@@ -27,7 +28,7 @@ public class LeavePreview extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String guildId = event.getGuild().getId();
 
-        GuildData gs = Bot.getGuildData(guildId);
+        GuildData gs = GuilddataCache.getGuild(guildId);
 
         AlertData leave = gs.getAlert(AlertType.LEAVE);
 

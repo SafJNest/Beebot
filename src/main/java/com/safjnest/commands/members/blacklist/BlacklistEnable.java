@@ -14,8 +14,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistEnable extends SlashCommand{
 
-    private GuilddataCache gs;
-
     public BlacklistEnable(String father, GuilddataCache gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
@@ -34,7 +32,6 @@ public class BlacklistEnable extends SlashCommand{
             new OptionData(OptionType.CHANNEL, "channel", "Notification channel", true)
         );
         commandData.setThings(this);
-        this.gs = gs;
     }
 
     @Override
@@ -42,7 +39,7 @@ public class BlacklistEnable extends SlashCommand{
         String threshold = event.getOption("threshold").getAsString();
         String channelId = event.getOption("channel").getAsChannel().getId();
 
-        if (!gs.getGuild(event.getGuild().getId()).setBlackListData(Integer.parseInt(threshold), channelId)) {
+        if (!GuilddataCache.getGuild(event.getGuild()).setBlackListData(Integer.parseInt(threshold), channelId)) {
             event.deferReply(false).addContent("Something went wrong.").queue();
             return;  
         }

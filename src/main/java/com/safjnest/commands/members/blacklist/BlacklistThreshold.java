@@ -14,8 +14,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistThreshold extends SlashCommand{
 
-    private GuilddataCache gs;
-
     public BlacklistThreshold(String father, GuilddataCache gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
@@ -32,8 +30,6 @@ public class BlacklistThreshold extends SlashCommand{
                 .setMinValue(3)    
                 .setMaxValue(100));
         
-        this.gs = gs;
-
         commandData.setThings(this);
     }
 
@@ -41,7 +37,7 @@ public class BlacklistThreshold extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String threshold = event.getOption("threshold").getAsString();
 
-        if(!gs.getGuild(event.getGuild().getId()).setThreshold(Integer.parseInt(threshold))) {
+        if(!GuilddataCache.getGuild(event.getGuild()).setThreshold(Integer.parseInt(threshold))) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

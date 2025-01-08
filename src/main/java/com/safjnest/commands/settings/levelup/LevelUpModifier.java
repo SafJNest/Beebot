@@ -13,10 +13,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class LevelUpModifier extends SlashCommand{
-    private GuilddataCache gs;
 
     public LevelUpModifier(String father, GuilddataCache gs){
-        this.gs = gs;
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -42,7 +40,7 @@ public class LevelUpModifier extends SlashCommand{
 
         String guildId = event.getGuild().getId();
 
-        if(!gs.getGuild(guildId).getChannelData(channelId).setExperienceModifier(modifier)) {
+        if(!GuilddataCache.getGuild(guildId).getChannelData(channelId).setExperienceModifier(modifier)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

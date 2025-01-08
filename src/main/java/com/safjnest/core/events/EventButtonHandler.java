@@ -68,6 +68,8 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.core.cache.managers.GuilddataCache;
+
 
 public class EventButtonHandler extends ListenerAdapter {
 
@@ -378,7 +380,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 break;
             case "delete":
-                Bot.getGuildData(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
+                GuilddataCache.getGuild(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
                 if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
                     TwitchClient.unregisterSubEvent(streamerId);
@@ -573,8 +575,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
         switch (args) {
             case "right":
-                RewardData nextReward = Bot.getGuildData(guild.getId()).getHigherReward(Integer.parseInt(level));
-                RewardData nextNextReward = Bot.getGuildData(guild.getId()).getHigherReward(nextReward.getLevel());
+                RewardData nextReward = GuilddataCache.getGuild(guild.getId()).getHigherReward(Integer.parseInt(level));
+                RewardData nextNextReward = GuilddataCache.getGuild(guild.getId()).getHigherReward(nextReward.getLevel());
 
                 if (nextNextReward == null) {
                     right = right.asDisabled();
@@ -591,8 +593,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
 
-                RewardData previousRewardData = Bot.getGuildData(guild.getId()).getLowerReward(Integer.parseInt(level));
-                RewardData previousPreviousRewardData = Bot.getGuildData(guild.getId()).getLowerReward(previousRewardData.getLevel());
+                RewardData previousRewardData = GuilddataCache.getGuild(guild.getId()).getLowerReward(Integer.parseInt(level));
+                RewardData previousPreviousRewardData = GuilddataCache.getGuild(guild.getId()).getLowerReward(previousRewardData.getLevel());
                 if (previousPreviousRewardData == null) {
                     left = left.asDisabled();
                     left = left.withStyle(ButtonStyle.DANGER);

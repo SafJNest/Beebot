@@ -43,6 +43,8 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
+import com.safjnest.core.cache.managers.GuilddataCache;
+
 /**
  * This class handles all events that could occur during the listening:
  * <ul>
@@ -91,7 +93,7 @@ public class EventHandler extends ListenerAdapter {
             return;
         }
 
-        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+        GuildData guildData = GuilddataCache.getGuild(e.getGuild().getId());
         UserData userData = Bot.getUserData(e.getAuthor().getId());
 
         Functions.handleAlias(guildData, userData, e);
@@ -102,7 +104,7 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent event){
-        Bot.getGuildData(event.getGuild().getId());
+        GuilddataCache.getGuild(event.getGuild().getId());
     }
 
     @Override
@@ -166,8 +168,8 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onChannelCreate(ChannelCreateEvent event){      
-        if (Bot.getGuildData(event.getGuild()).hasMutedRole()) {
-            Role role = event.getGuild().getRoleById(Bot.getGuildData(event.getGuild()).getMutedRoleId());
+        if (GuilddataCache.getGuild(event.getGuild()).hasMutedRole()) {
+            Role role = event.getGuild().getRoleById(GuilddataCache.getGuild(event.getGuild()).getMutedRoleId());
             switch (event.getChannelType()) {
                 case TEXT:
                     event.getChannel().asTextChannel().getManager().putRolePermissionOverride(role.getIdLong(), null, Collections.singleton(Permission.MESSAGE_SEND)).queue();

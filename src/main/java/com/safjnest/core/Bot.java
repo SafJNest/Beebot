@@ -11,7 +11,6 @@ import java.awt.Color;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -161,7 +160,7 @@ public class Bot {
             if (event.getChannelType() == ChannelType.PRIVATE)
                 return "";
             if (event.isFromGuild()) {
-                GuildData gd = gs.getGuild(event.getGuild().getId());
+                GuildData gd = GuilddataCache.getGuild(event.getGuild());
                 return gd == null ? settings.prefix : gd.getPrefix();
             }
             return null;
@@ -195,7 +194,7 @@ public class Bot {
             new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard(), new Warn()
         );
         
-        Collections.addAll(commandsList, new Leaderboard(), new Test(gs), new ListGuild());
+        Collections.addAll(commandsList, new Leaderboard(), new Test(), new ListGuild());
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
@@ -270,18 +269,6 @@ public class Bot {
 
     public static Color getColor() {
         return settings.color;
-    }
-
-    public static GuilddataCache getGuildSettings() {
-        return gs;
-    }
-
-    public static GuildData getGuildData(Guild guild) {
-        return getGuildData(guild.getId());
-    }
-
-    public static GuildData getGuildData(String id) {
-        return gs.getGuild(id);
     }
 
     public static CommandClient getClient() {

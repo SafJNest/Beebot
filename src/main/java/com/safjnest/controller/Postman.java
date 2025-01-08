@@ -10,14 +10,9 @@ public class Postman {
     
     private JDA jda;
 
-    private GuilddataCache gs;
-
-
-
     public Postman(JDA jda, GuilddataCache gs){
 
         this.jda = jda;
-        this.gs = gs;
 
 
     }
@@ -57,7 +52,7 @@ public class Postman {
 
     public String getPrefix(String userId, String guilId){
         
-        String list = "{\"prefix\":" + "\"" + gs.getGuild(userId).getPrefix() + "\"" + "}";
+        String list = "{\"prefix\":" + "\"" + GuilddataCache.getGuild(userId).getPrefix() + "\"" + "}";
         return list;
     }
     

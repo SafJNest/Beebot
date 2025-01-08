@@ -9,6 +9,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
+import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -53,7 +54,7 @@ public class Help extends SlashCommand {
 
 
     public static EmbedBuilder getGenericHelp(String guildId, String userId) {
-        String prefix = Bot.getGuildData(guildId).getPrefix();
+        String prefix = GuilddataCache.getGuild(guildId).getPrefix();
         EmbedBuilder eb = new EmbedBuilder();
 
         HashMap<String, BotCommand> commands = CommandsLoader.getCommandsData(userId);

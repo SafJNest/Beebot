@@ -12,10 +12,12 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public abstract class AbstractCache<K, V> {
+    
     private static final Cache<Object, Object> cache;
 
     protected static final Map<Class<?>, Integer> typeLimits = new HashMap<>();
     protected static final Map<Class<?>, Map<Object, Integer>> typeCounts = new HashMap<>();
+
     protected static final Map<Class<?>, Long> expireTimes = new HashMap<>();
 
     static {
@@ -50,6 +52,8 @@ public abstract class AbstractCache<K, V> {
         expireTimes.put(getValueType(), unit.toNanos(duration));
     }
 
+
+
     @SuppressWarnings("unchecked")
     protected void put(K key, V value) {
         Class<?> type = value.getClass();
@@ -62,11 +66,6 @@ public abstract class AbstractCache<K, V> {
         countMap.put(key, 1);
     }
     
-    private void removeOldest(Map<K, Integer> countMap) {
-        K oldestKey = countMap.keySet().iterator().next();
-        cache.invalidate(oldestKey);
-        countMap.remove(oldestKey);
-    }
 
     protected V get(K key) {
         Object value = cache.getIfPresent(key);
@@ -86,6 +85,10 @@ public abstract class AbstractCache<K, V> {
                 .toList();
     }
 
+    protected boolean contains(K key) {
+        return cache.getIfPresent(key) != null;
+    }
+
     @SuppressWarnings("unchecked")
     protected Collection<K> keySet() {
         return cache.asMap().entrySet().stream()
@@ -94,8 +97,22 @@ public abstract class AbstractCache<K, V> {
                 .toList();
     }
 
+    public Collection<V> values() {
+        return cache.asMap().values().stream()
+                .filter(getValueType()::isInstance)
+                .map(getValueType()::cast)
+                .toList();
+    }
+
+
+
+
     protected void invalidate(K key) {
         cache.invalidate(key);
+    }
+
+    protected void invalidateAll() {
+        cache.invalidateAll();
     }
 
     protected V remove(K key) {
@@ -107,19 +124,28 @@ public abstract class AbstractCache<K, V> {
         return null;
     }
 
-    public Collection<V> values() {
-        return cache.asMap().values().stream()
-                .filter(getValueType()::isInstance)
-                .map(getValueType()::cast)
-                .toList();
+
+
+
+    protected ConcurrentMap<Object,Object> asMap() {
+        return cache.asMap();
     }
 
-    protected void invalidateAll() {
-        cache.invalidateAll();
+    private void removeOldest(Map<K, Integer> countMap) {
+        K oldestKey = countMap.keySet().iterator().next();
+        cache.invalidate(oldestKey);
+        countMap.remove(oldestKey);
     }
 
-    protected boolean contains(K key) {
-        return cache.getIfPresent(key) != null;
+
+
+
+    protected int getTypeLimit(Class<?> type) {
+        return typeLimits.getOrDefault(type, Integer.MAX_VALUE);
+    }
+
+    protected int getTypeSize(Class<?> type) {
+        return typeCounts.getOrDefault(type, new HashMap<>()).size();
     }
 
     protected long expiresAfter(K key) {
@@ -131,28 +157,7 @@ public abstract class AbstractCache<K, V> {
                 .orElse(0L);
     }
 
-    protected int getTypeLimit(Class<?> type) {
-        return typeLimits.getOrDefault(type, Integer.MAX_VALUE);
-    }
 
-    protected int getTypeSize(Class<?> type) {
-        return typeCounts.getOrDefault(type, new HashMap<>()).size();
-    }
-
-    protected ConcurrentMap<Object,Object> asMap() {
-        return cache.asMap();
-    }
-
-    @SuppressWarnings("unchecked")
-    protected Map<K, V> asMap(Class<V> type) {
-        HashMap<K, V> map = new HashMap<>();
-        cache.asMap().forEach((key, value) -> {
-            if (type.isInstance(value)) {
-                map.put((K) key, (V) value);
-            }
-        });
-        return map;
-    }
 
     protected abstract Class<K> getKeyType();
     protected abstract Class<V> getValueType();

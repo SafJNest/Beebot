@@ -13,8 +13,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistToggle extends SlashCommand{
 
-    private GuilddataCache gs;
-
     public BlacklistToggle(String father, GuilddataCache gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
@@ -30,8 +28,6 @@ public class BlacklistToggle extends SlashCommand{
                 .addChoice("off", "off")
         );
 
-        this.gs = gs;
-
         commandData.setThings(this);
     }
 
@@ -39,12 +35,12 @@ public class BlacklistToggle extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         boolean toggle = event.getOption("toggle").getAsString().equalsIgnoreCase("on") ? true : false;
 
-        if(gs.getGuild(event.getGuild().getId()).getBlackChannelId() == null) {
+        if(GuilddataCache.getGuild(event.getGuild().getId()).getBlackChannelId() == null) {
             event.deferReply(true).addContent("This guild doesn't have blacklist set.").queue();
             return;
         }
 
-        if(!gs.getGuild(event.getGuild().getId()).setBlacklistEnabled(toggle)) {
+        if(!GuilddataCache.getGuild(event.getGuild().getId()).setBlacklistEnabled(toggle)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

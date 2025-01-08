@@ -19,6 +19,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.core.cache.managers.GuilddataCache;
 
 public class AutomatedActionTimer {
     private static final long rescheduleTiming = TimeConstant.HOUR * 2;
@@ -46,7 +47,7 @@ public class AutomatedActionTimer {
         }
 
 
-        AutomatedAction action = Bot.getGuildData(guildId).getAction(actionId);
+        AutomatedAction action = GuilddataCache.getGuild(guildId).getAction(actionId);
         if (action == null) {
             BotLogger.error("[AutomatedActionTimer] Action not found: " + actionId);
             return;

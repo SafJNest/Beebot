@@ -1,6 +1,5 @@
 package com.safjnest.commands.settings;
 
-import com.safjnest.core.Bot;
 import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -14,6 +13,8 @@ import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+
+import com.safjnest.core.cache.managers.GuilddataCache;
 
 /**
  * @author <a href="https://github.com/NeuntronSun">NeutronSun</a>
@@ -59,7 +60,7 @@ public class Voice extends SlashCommand {
             return;
         }
 
-        if (!Bot.getGuildData(event.getGuild().getId()).setVoice(voice, language)) {
+        if (!GuilddataCache.getGuild(event.getGuild().getId()).setVoice(voice, language)) {
             event.deferReply(true).addContent("There was an error while changing the voice.").queue();
             return;
         }

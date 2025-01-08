@@ -94,7 +94,7 @@ public class App {
             settingsLoader.getTwitchClientSecret()
         );
         
-        if(isExtremeTesting()) {
+        if(!isExtremeTesting()) {
             TwitchClient.init();
         }
 

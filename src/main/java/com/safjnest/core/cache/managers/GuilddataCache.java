@@ -12,6 +12,8 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
+import net.dv8tion.jda.api.entities.Guild;
+
 /**
  * Class that stores in a {@link GuilddataCache#cache guilds} all the settings for a guild.
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -19,17 +21,32 @@ import com.safjnest.util.log.LoggerIDpair;
  */
 public class GuilddataCache extends CacheAdapter<String, GuildData> {
 
+    private static GuilddataCache instante = new GuilddataCache();
+
     public GuilddataCache() {
         super();
         setExpireTime(12, TimeUnit.HOURS);
         setTypeLimit(50);
     }
+
+    public static GuildData getGuild(Guild guild) {
+        return getGuild(guild.getId());
+    }
     
-    public GuildData getGuild(String id) {
-        GuildData guild = super.get(id);
+    public static GuildData getGuild(String id) {
+        GuildData guild = instante.get(id);
         if(guild == null) {
-            guild = retriveGuild(id);
+            guild = instante.retriveGuild(id);
         }
+        return guild;
+    }
+
+    public static GuildData putGuild(String guildId) {
+        DatabaseHandler.insertGuild(guildId, Bot.getPrefix());
+        BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
+
+        GuildData guild = new GuildData(Long.parseLong(guildId));
+        instante.put(guild);
         return guild;
     }
 
@@ -44,16 +61,16 @@ public class GuilddataCache extends CacheAdapter<String, GuildData> {
         return super.get(id);
     }
 
-    public GuildData retriveGuild(String guildId) {
+    private GuildData retriveGuild(String guildId) {
         BotLogger.info("Retriving guild from database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
         QueryRecord guildData = DatabaseHandler.getGuildData(guildId);
         
         if(guildData.emptyValues()) {
-            return insertGuild(guildId);
+            return putGuild(guildId);
         }
 
         GuildData guild = new GuildData(guildData);
-        saveGuild(guild);
+        put(guild);
         return guild;
     }
 
@@ -62,20 +79,11 @@ public class GuilddataCache extends CacheAdapter<String, GuildData> {
         
         for(QueryRecord guildData : guilds){        
             GuildData guild = new GuildData(guildData);
-            saveGuild(guild);
+            put(guild);
         }
     }
 
-    public GuildData insertGuild(String guildId) {
-        DatabaseHandler.insertGuild(guildId, Bot.getPrefix());
-        BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
-
-        GuildData guild = new GuildData(Long.parseLong(guildId));
-        saveGuild(guild);
-        return guild;
-    }
-
-    private void saveGuild(GuildData guild) {
+    private void put(GuildData guild) {
         super.put(guild.getID(), guild);
     }
 

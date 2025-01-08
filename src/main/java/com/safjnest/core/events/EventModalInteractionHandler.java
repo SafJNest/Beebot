@@ -19,6 +19,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import com.safjnest.core.cache.managers.GuilddataCache;
 
 public class EventModalInteractionHandler extends ListenerAdapter {
 
@@ -123,7 +124,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             roleID = null;
         }
 
-        TwitchData twitch = Bot.getGuildData(guild).getTwitchdata(streamerId);
+        TwitchData twitch = GuilddataCache.getGuild(guild).getTwitchdata(streamerId);
         if (twitch == null) {
             AlertSendType sendType = (privateMessage != null && !privateMessage.isBlank()) ? AlertSendType.BOTH : AlertSendType.CHANNEL;
             
@@ -136,7 +137,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 return;
             }
     
-            Bot.getGuildData(event.getGuild().getId()).getAlerts().put(newTwitchData.getKey(), newTwitchData);
+            GuilddataCache.getGuild(event.getGuild().getId()).getAlerts().put(newTwitchData.getKey(), newTwitchData);
             TwitchClient.registerSubEvent(streamerId);
             event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
                 .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))

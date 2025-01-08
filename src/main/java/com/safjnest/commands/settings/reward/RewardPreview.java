@@ -2,7 +2,6 @@ package com.safjnest.commands.settings.reward;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.util.BotCommand;
@@ -10,6 +9,7 @@ import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import com.safjnest.core.cache.managers.GuilddataCache;
 
 public class RewardPreview extends SlashCommand{
 
@@ -29,7 +29,7 @@ public class RewardPreview extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String guildId = event.getGuild().getId();
 
-        GuildData gs = Bot.getGuildData(guildId);
+        GuildData gs = GuilddataCache.getGuild(guildId);
         
         RewardData lowerReward = (RewardData) gs.getHigherReward(0);
 

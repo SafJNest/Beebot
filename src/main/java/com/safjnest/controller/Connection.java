@@ -17,12 +17,10 @@ public class Connection extends WebSocketServer {
     private JDA jda;
     private static int TCP_PORT = 8096;
     private Postman postman;
-    private GuilddataCache gs;
     
     public Connection(JDA jda, GuilddataCache gs){
         super(new InetSocketAddress(TCP_PORT));
         this.jda = jda;
-        this.gs = gs;
         this.postman = new Postman(jda, gs);
 
 
@@ -69,7 +67,7 @@ public class Connection extends WebSocketServer {
                 break;
             case "newPrefix":
                 try {
-                    gs.getGuild(guildId).setPrefix(parseRequest(message, "prefix"));
+                    GuilddataCache.getGuild(guildId).setPrefix(parseRequest(message, "prefix"));
                     DatabaseHandler.insertGuild(guildId, parseRequest(message, "prefix"));
                     server = "newPrefix-ok"; 
                 } catch (Exception e) {
