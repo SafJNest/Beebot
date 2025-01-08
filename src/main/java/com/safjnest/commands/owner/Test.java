@@ -21,6 +21,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import com.safjnest.core.Bot;
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.core.audio.SafjAudioPlaylist;
@@ -1069,6 +1070,10 @@ public class Test extends Command{
                 break;
                 case "lolqueue":
                     System.out.println(MatchTracker.getMatchQueueCopy().size());
+                break;
+                case "pushlolqueue":
+                    ChronoTask task =  () -> MatchTracker.popSet();
+                    task.queue();
                 break;
         }
     }  

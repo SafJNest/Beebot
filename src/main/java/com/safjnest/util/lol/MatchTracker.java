@@ -102,7 +102,7 @@ public class MatchTracker {
      * <p>
      * im lazy UwU
      */
-    private static void popSet() {
+    public static void popSet() {
         Set<LOLMatch> toAnalyze = null;
         
         synchronized (matchQueue) {

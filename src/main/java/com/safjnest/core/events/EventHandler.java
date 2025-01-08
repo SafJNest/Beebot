@@ -216,15 +216,15 @@ public class EventHandler extends ListenerAdapter {
             List<LayoutComponent> compontens = new ArrayList<>();
             compontens.add(0, ActionRow.of(LeagueMessage.getSelectedMatchMenu(match)));
             
-            for (LayoutComponent layoutComponent : event.getMessage().getComponents()) {
-                for (ItemComponent component : layoutComponent.getComponents()) {
-                    if (component.toData().get("custom_id").equals("opgg-select")) {
-                        compontens.add(ActionRow.of(component));
-                    }
-                }       
-            }
             for (LayoutComponent layoutComponent : LeagueMessage.getOpggButtons(s, platform, null, 0)) {
                 compontens.add(layoutComponent);
+            }
+
+            for (LayoutComponent component : compontens) {
+                if (component.getButtons().size() > 0 && component.getButtons().get(0).getId().equals("match-queue-TEAM_BUILDER_RANKED_SOLO")) {
+                    compontens.remove(component);
+                    break;
+                }
             }
 
             event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbedMatch(s, match).build()).setComponents(compontens).queue(); 
