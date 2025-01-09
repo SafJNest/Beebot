@@ -379,68 +379,68 @@ public class MatchTracker {
 
         }
 
-        // LOLTimeline timeline = match.getTimeline();
-        // timeline.getParticipants().forEach(partecipant -> {
-        //     matchData.put(String.valueOf(partecipant.getParticipantId()), matchData.get(partecipant.getPuuid()));
-        //     matchData.remove(partecipant.getPuuid());
-        // });
+        LOLTimeline timeline = match.getTimeline();
+        timeline.getParticipants().forEach(partecipant -> {
+            matchData.put(String.valueOf(partecipant.getParticipantId()), matchData.get(partecipant.getPuuid()));
+            matchData.remove(partecipant.getPuuid());
+        });
 
-        // for (int i = 0; i < timeline.getFrames().size(); i++) {
-        //     for (TimelineFrameEvent event : timeline.getFrames().get(i).getEvents()) {
-        //         Item item;
-        //         String participantId = String.valueOf(event.getParticipantId());
-        //         String itemType = i == 1 ? "starter" : "items";
+        for (int i = 0; i < timeline.getFrames().size(); i++) {
+            for (TimelineFrameEvent event : timeline.getFrames().get(i).getEvents()) {
+                Item item;
+                String participantId = String.valueOf(event.getParticipantId());
+                String itemType = i == 1 ? "starter" : "items";
 
-        //         switch (event.getType()) {
-        //             case ITEM_PURCHASED:
-        //                 item = items.get(event.getItemId());
-        //                 if (item == null) continue;
+                switch (event.getType()) {
+                    case ITEM_PURCHASED:
+                        item = items.get(event.getItemId());
+                        if (item == null) continue;
 
-        //                 if (item.getFrom() != null && item.getFrom().contains("1001")) {
-        //                     matchData.get(participantId).put("boots", item.getId() + "");
-        //                     continue;
-        //                 }
+                        if (item.getFrom() != null && item.getFrom().contains("1001")) {
+                            matchData.get(participantId).put("boots", item.getId() + "");
+                            continue;
+                        }
 
-        //                 if (i != 1 && item.getDepth() != 3) continue;
+                        if (i != 1 && item.getDepth() != 3) continue;
 
-        //                 String itemList = matchData.get(participantId).getOrDefault(itemType, "");
-        //                 if (itemList.isEmpty()) itemList = item.getId() + "";
-        //                 else itemList += "," + item.getId();
-        //                 matchData.get(participantId).put(itemType, itemList);
-        //                 break;
-        //             case ITEM_UNDO:
-        //             case ITEM_SOLD:
-        //                 item = items.get(event.getBeforeId());
-        //                 if (item == null) continue;
-        //                 if (i != 1 && item.getDepth() != 3) continue;
+                        String itemList = matchData.get(participantId).getOrDefault(itemType, "");
+                        if (itemList.isEmpty()) itemList = item.getId() + "";
+                        else itemList += "," + item.getId();
+                        matchData.get(participantId).put(itemType, itemList);
+                        break;
+                    case ITEM_UNDO:
+                    case ITEM_SOLD:
+                        item = items.get(event.getBeforeId());
+                        if (item == null) continue;
+                        if (i != 1 && item.getDepth() != 3) continue;
 
-        //                 String[] itemsList = matchData.get(participantId).get(itemType).split(",");
-        //                 String undoList = "";
-        //                 for (String itemStr : itemsList) {
-        //                     if (!itemStr.equals(item.getId() + "")) {
-        //                         if (!undoList.isEmpty()) undoList += ",";
-        //                         undoList += itemStr;
-        //                     }
-        //                 }
-        //                 matchData.get(participantId).put(itemType, undoList);
-        //                 break;
-        //             case SKILL_LEVEL_UP:
-        //                 String skillList = matchData.get(participantId).getOrDefault("skill_order", "");
-        //                 if (skillList.isEmpty()) skillList = event.getSkillSlot() + "";
-        //                 else skillList += "," + event.getSkillSlot();
-        //                 matchData.get(participantId).put("skill_order", skillList);
-        //                 break;
-        //             default:
-        //                 break;
-        //         }
-        //     }
-        // }
+                        String[] itemsList = matchData.get(participantId).get(itemType).split(",");
+                        String undoList = "";
+                        for (String itemStr : itemsList) {
+                            if (!itemStr.equals(item.getId() + "")) {
+                                if (!undoList.isEmpty()) undoList += ",";
+                                undoList += itemStr;
+                            }
+                        }
+                        matchData.get(participantId).put(itemType, undoList);
+                        break;
+                    case SKILL_LEVEL_UP:
+                        String skillList = matchData.get(participantId).getOrDefault("skill_order", "");
+                        if (skillList.isEmpty()) skillList = event.getSkillSlot() + "";
+                        else skillList += "," + event.getSkillSlot();
+                        matchData.get(participantId).put("skill_order", skillList);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
 
-        // timeline.getParticipants().forEach(partecipant -> {
-        //     matchData.put(partecipant.getPuuid(), matchData.get(String.valueOf(partecipant.getParticipantId())));
-        //     matchData.remove(String.valueOf(partecipant.getParticipantId()));
+        timeline.getParticipants().forEach(partecipant -> {
+            matchData.put(partecipant.getPuuid(), matchData.get(String.valueOf(partecipant.getParticipantId())));
+            matchData.remove(String.valueOf(partecipant.getParticipantId()));
 
-        // });
+        });
         return matchData;
     }
 

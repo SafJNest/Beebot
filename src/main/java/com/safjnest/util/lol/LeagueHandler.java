@@ -207,6 +207,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             case ULTBOOK:
                 name = "Ultimate Spellbook";
                 break;
+            case SWIFTPLAY:
+                name = "Swiftplay";
             default:
                 break;
         }
