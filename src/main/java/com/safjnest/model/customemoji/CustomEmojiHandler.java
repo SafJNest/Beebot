@@ -65,7 +65,7 @@ public class CustomEmojiHandler {
         if(name == 0) {
             return ":black_large_square:";
         }
-        String ss = emoji.get(String.valueOf(name)).toString();            
+        String ss = emoji.get(String.valueOf(name)) != null ? emoji.get(String.valueOf(name)).toString() : null;       
         return ss != null ? ss : String.valueOf(name);
     }
 
