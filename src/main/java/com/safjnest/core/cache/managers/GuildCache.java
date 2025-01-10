@@ -21,7 +21,7 @@ import net.dv8tion.jda.api.entities.Guild;
  */
 public class GuildCache extends CacheAdapter<String, GuildData> {
 
-    private static GuildCache instante = new GuildCache();
+    private static GuildCache instance = new GuildCache();
 
     public GuildCache() {
         super();
@@ -30,7 +30,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
 
     public static GuildCache getInstance() {
-        return instante;
+        return instance;
     }
 
     public static GuildData getGuild(Guild guild) {
@@ -38,9 +38,9 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
     
     public static GuildData getGuild(String id) {
-        GuildData guild = instante.get(id);
+        GuildData guild = instance.get(id);
         if(guild == null) {
-            guild = instante.retriveGuild(id);
+            guild = instance.retriveGuild(id);
         }
         return guild;
     }
@@ -50,7 +50,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
         BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
 
         GuildData guild = new GuildData(Long.parseLong(guildId));
-        instante.put(guild);
+        instance.put(guild);
         return guild;
     }
 

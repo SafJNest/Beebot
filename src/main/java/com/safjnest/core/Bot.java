@@ -255,7 +255,6 @@ public class Bot {
         return settings.prefix;
     }
     
-
     public static String getBotId() {
         return botID;
     }
