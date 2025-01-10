@@ -64,9 +64,7 @@ import com.safjnest.commands.settings.levelup.LevelUp;
 import com.safjnest.commands.settings.reward.Reward;
 import com.safjnest.commands.settings.welcome.Welcome;
 import com.safjnest.core.cache.managers.GuilddataCache;
-import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.core.events.*;
-import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.AutomatedActionTimer;
@@ -92,9 +90,6 @@ public class Bot {
     private static JDA jda;
     private static String botID;
     private static Settings settings;
-    
-    private static GuilddataCache gs;
-    private static UserdataCache us = new UserdataCache();
 
     private static CommandClient client;
 
@@ -127,8 +122,6 @@ public class Bot {
 
         botID = jda.getSelfUser().getId();
 
-        gs = new GuilddataCache();
-        
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(settings.helpWord);
         builder.setOwnerId(settings.ownerID);
@@ -177,7 +170,7 @@ public class Bot {
         new CommandsLoader();
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new PrintCache(gs), new Ping(), new Ram(), new Help(), new Prefix(gs));
+        Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix());
 
         Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
             new LastMatches(), new Opgg(), new Calculator(), new Dice(), 
@@ -199,7 +192,7 @@ public class Bot {
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix(gs));
+        Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix());
 
         
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
@@ -213,8 +206,8 @@ public class Bot {
         Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
             new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
             new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
-            new Permissions(), new ModifyNickname(), new Welcome(gs), new Leave(), new Boost(), 
-            new Blacklist(gs), new Twitch(), new Omegle()
+            new Permissions(), new ModifyNickname(), new Welcome(), new Leave(), new Boost(), 
+            new Blacklist(), new Twitch(), new Omegle()
         );
 
         
@@ -224,7 +217,7 @@ public class Bot {
             new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn()
         );
 
-        Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp(gs));
+        Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         
@@ -273,19 +266,6 @@ public class Bot {
 
     public static CommandClient getClient() {
         return client;
-    }
-
-    public static UserData getUserData(String userId) {
-        UserData userData = us.get(userId);
-        if (userData == null) {
-            userData = new UserData(userId);
-            us.put(userData);
-        }
-        return userData;
-    }
-
-    public static UserdataCache getUsers() {
-        return us;
     }
 
     public static void handleEvent(GenericEvent event) {

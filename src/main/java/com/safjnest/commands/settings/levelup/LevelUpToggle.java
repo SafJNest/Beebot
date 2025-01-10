@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class LevelUpToggle extends SlashCommand{
 
-    public LevelUpToggle(GuilddataCache gs, String father){
+    public LevelUpToggle(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);

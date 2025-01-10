@@ -14,7 +14,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistThreshold extends SlashCommand{
 
-    public BlacklistThreshold(String father, GuilddataCache gs){
+    public BlacklistThreshold(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);

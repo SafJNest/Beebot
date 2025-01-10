@@ -29,6 +29,10 @@ public class GuilddataCache extends CacheAdapter<String, GuildData> {
         setTypeLimit(50);
     }
 
+    public static GuilddataCache getInstance() {
+        return instante;
+    }
+
     public static GuildData getGuild(Guild guild) {
         return getGuild(guild.getId());
     }

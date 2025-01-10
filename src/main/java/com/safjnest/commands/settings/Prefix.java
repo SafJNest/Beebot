@@ -21,7 +21,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  */
 public class Prefix extends SlashCommand {
     
-    public Prefix(GuilddataCache gs){
+    public Prefix(){
         this.name = this.getClass().getSimpleName().toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);

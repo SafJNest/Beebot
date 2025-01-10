@@ -6,9 +6,9 @@ import java.util.List;
 
 import com.safjnest.commands.audio.CustomizeSound;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
-import com.safjnest.core.Bot;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
@@ -54,9 +54,9 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             return;
         }
         if (type.equals("global"))
-            Bot.getUserData(event.getUser().getId()).setGreet("0", sound.getId());
+            UserdataCache.getUser(event.getUser().getId()).setGreet("0", sound.getId());
         else 
-            Bot.getUserData(event.getUser().getId()).setGreet(event.getGuild().getId(), sound.getId());
+            UserdataCache.getUser(event.getUser().getId()).setGreet(event.getGuild().getId(), sound.getId());
         
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(SoundEmbed.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())

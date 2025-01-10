@@ -27,7 +27,6 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -60,6 +59,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 
 
 /**
@@ -388,7 +388,7 @@ import com.safjnest.core.cache.managers.GuilddataCache;
 
         //     return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
         // } catch (Exception e) {return null;}
-        return getSummonerByUserData(Bot.getUserData(discordId));
+        return getSummonerByUserData(UserdataCache.getUser(discordId));
     }
 
     public static Summoner getSummonerByUserData(UserData user){
@@ -405,7 +405,7 @@ import com.safjnest.core.cache.managers.GuilddataCache;
 
     public static int getNumberOfProfile(String userId){
         try {
-            return Bot.getUserData(userId).getRiotAccounts().size();
+            return UserdataCache.getUser(userId).getRiotAccounts().size();
         } catch (Exception e) { return 0; }
     }
 

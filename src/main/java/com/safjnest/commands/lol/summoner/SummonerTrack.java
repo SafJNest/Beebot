@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.model.UserData;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.BotCommand;
@@ -49,7 +49,7 @@ public class SummonerTrack extends SlashCommand {
             return;
         }
 
-        UserData data = Bot.getUserData(event.getMember().getId());
+        UserData data = UserdataCache.getUser(event.getMember().getId());
         if (!data.getRiotAccounts().containsKey(account_id)) {
             event.deferReply(false).addContent("This account is not connected to your profile.").queue();
             return;

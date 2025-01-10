@@ -15,6 +15,7 @@ import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.model.AliasData;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.BlacklistData;
@@ -398,7 +399,7 @@ public class Functions {
 
 
     public static void handleGreetSound(AudioChannel channelJoin, User theGuy, Guild guild) {
-        String sound_id = Bot.getUserData(theGuy.getId()).getGreet(guild.getId());
+        String sound_id = UserdataCache.getUser(theGuy.getId()).getGreet(guild.getId());
         if (sound_id == null || sound_id.isEmpty()) return;
         
         Sound sound = SoundCache.getSoundById(sound_id);

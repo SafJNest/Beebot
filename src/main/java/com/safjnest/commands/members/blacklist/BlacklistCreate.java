@@ -15,7 +15,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistCreate extends SlashCommand{
 
-    public BlacklistCreate(String father, GuilddataCache gs){
+    public BlacklistCreate(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);

@@ -8,18 +8,29 @@ import com.safjnest.model.UserData;
 
 public class UserdataCache extends CacheAdapter<String, UserData> {
 
+    private static UserdataCache instance = new UserdataCache();
+
     public UserdataCache() {
         super();
         setExpireTime(12, TimeUnit.HOURS);
         setTypeLimit(50);
     }
 
-    public void put(UserData userData) {
-        super.put(userData.getId(), userData);
+    public static UserdataCache getInstance() {
+        return instance;
     }
 
-    public UserData getUser(String id) {
-        return super.get(id);
+    public static void put(UserData userData) {
+        instance.put(userData.getId(), userData);
+    }
+
+    public static UserData getUser(String id) {
+        UserData userData = instance.get(id);
+        if (userData == null) {
+            userData = new UserData(id);
+            put(userData);
+        }
+        return userData;
     }
 
     public ConcurrentMap<String, UserData> asTypedMap() {

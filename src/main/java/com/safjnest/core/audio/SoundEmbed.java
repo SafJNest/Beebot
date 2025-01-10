@@ -11,6 +11,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
@@ -319,8 +320,8 @@ public class SoundEmbed {
     }
 
     public static EmbedBuilder getGreetViewEmbed(String userId, String guildId) {
-        String globalGreetId = Bot.getUserData(userId).getGlobalGreet();
-        String guildGreetId = Bot.getUserData(userId).getGuildGreet(guildId);
+        String globalGreetId = UserdataCache.getUser(userId).getGlobalGreet();
+        String guildGreetId = UserdataCache.getUser(userId).getGuildGreet(guildId);
 
         Sound globalGreet = (globalGreetId != null && !globalGreetId.isBlank())
                 ? SoundCache.getSoundById(globalGreetId)
@@ -346,8 +347,8 @@ public class SoundEmbed {
     public static List<LayoutComponent> getGreetButton(String userId, String GuildId) {
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
 
-        String globalGreetId = Bot.getUserData(userId).getGlobalGreet();
-        String guildGreetId = Bot.getUserData(userId).getGuildGreet(GuildId);
+        String globalGreetId = UserdataCache.getUser(userId).getGlobalGreet();
+        String guildGreetId = UserdataCache.getUser(userId).getGuildGreet(GuildId);
 
         Sound globalGreet = (globalGreetId != null && !globalGreetId.isBlank())
                 ? SoundCache.getSoundById(globalGreetId)
@@ -356,7 +357,7 @@ public class SoundEmbed {
                 : null;
 
         Button globalGreetButton, guildGreetButton,
-                userButton = Button.primary("greet-user-" + userId, Bot.getUserData(userId).getName()).asDisabled()
+                userButton = Button.primary("greet-user-" + userId, UserdataCache.getUser(userId).getName()).asDisabled()
                         .withEmoji(CustomEmojiHandler.getRichEmoji("user"));
         if (globalGreet != null)
             globalGreetButton = Button.primary("greet-global", globalGreet.getName());

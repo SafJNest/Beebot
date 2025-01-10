@@ -15,7 +15,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistChannel extends SlashCommand {
     
-    public BlacklistChannel(String father, GuilddataCache gs){
+    public BlacklistChannel(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);

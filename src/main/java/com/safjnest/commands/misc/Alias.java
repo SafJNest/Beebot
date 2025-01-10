@@ -2,7 +2,7 @@ package com.safjnest.commands.misc;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.core.Bot;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.model.UserData;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -35,7 +35,7 @@ public class Alias extends Command {
 	@Override
 	protected void execute(CommandEvent event) {
         User author = event.getAuthor();
-        UserData userData = Bot.getUserData(author.getId());
+        UserData userData = UserdataCache.getUser(author.getId());
 
         String args = event.getArgs();
 

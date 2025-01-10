@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 
 import com.safjnest.App;
-import com.safjnest.core.Bot;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
@@ -44,6 +43,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -94,7 +94,7 @@ public class EventHandler extends ListenerAdapter {
         }
 
         GuildData guildData = GuilddataCache.getGuild(e.getGuild().getId());
-        UserData userData = Bot.getUserData(e.getAuthor().getId());
+        UserData userData = UserdataCache.getUser(e.getAuthor().getId());
 
         Functions.handleAlias(guildData, userData, e);
         Functions.handleExperience(guildData, e);

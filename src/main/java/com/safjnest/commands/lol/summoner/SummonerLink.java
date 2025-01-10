@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.model.UserData;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.BotCommand;
@@ -54,7 +54,7 @@ public class SummonerLink extends SlashCommand {
 
         String name = event.getOption("summoner").getAsString();
 
-        UserData data = Bot.getUserData(event.getMember().getId());
+        UserData data = UserdataCache.getUser(event.getMember().getId());
         if(data.getRiotAccounts().containsKey(s.getAccountId())){
             event.getHook().editOriginal("This account is already connected to your profile.").queue();
             return;

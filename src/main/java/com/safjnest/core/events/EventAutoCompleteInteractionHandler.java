@@ -38,6 +38,7 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private boolean isFocused;
@@ -494,7 +495,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> personalSummoner(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
+        HashMap<String, String> accounts = UserdataCache.getUser(e.getUser().getId()).getRiotAccounts();
         R4J r4j = LeagueHandler.getRiotApi();
 
         if (accounts == null || accounts.isEmpty()) {
@@ -531,7 +532,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : GuilddataCache.getGuild(e.getGuild().getId()).getLeagueShard(e.getChannelIdLong());
         
         if (!isFocused) {
-            HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
+            HashMap<String, String> accounts = UserdataCache.getUser(e.getUser().getId()).getRiotAccounts();
             R4J r4j = LeagueHandler.getRiotApi();
     
             if (accounts == null || accounts.isEmpty()) {

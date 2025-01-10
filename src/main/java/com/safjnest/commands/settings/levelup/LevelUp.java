@@ -5,13 +5,12 @@ import java.util.Collections;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 public class LevelUp extends SlashCommand {
 
-    public LevelUp(GuilddataCache gs){
+    public LevelUp(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -23,7 +22,7 @@ public class LevelUp extends SlashCommand {
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new LevelUpPreview(father), new LevelUpMessage(father), new LevelUpToggle(gs, father), new LevelUpChannelToggle(father, gs), new LevelUpModifier(father, gs), new LevelUpUpdateTime(father, gs));
+        Collections.addAll(slashCommandsList, new LevelUpPreview(father), new LevelUpMessage(father), new LevelUpToggle(father), new LevelUpChannelToggle(father), new LevelUpModifier(father), new LevelUpUpdateTime(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);                               

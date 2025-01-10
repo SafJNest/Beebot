@@ -14,7 +14,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class LevelUpModifier extends SlashCommand{
 
-    public LevelUpModifier(String father, GuilddataCache gs){
+    public LevelUpModifier(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);

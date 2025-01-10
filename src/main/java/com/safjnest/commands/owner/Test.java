@@ -27,6 +27,7 @@ import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.core.audio.SafjAudioPlaylist;
 import com.safjnest.core.audio.types.PlayTiming;
 import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -294,7 +295,7 @@ public class Test extends Command{
                     }
                     for(Member m : g.getMembers()){
                         GuilddataCache.getGuild(g.getId()).getMemberData(m.getId());
-                        Bot.getUserData(m.getId());
+                        UserdataCache.getUser(m.getId());
                     }
                 }
                 e.reply("Done");
@@ -409,14 +410,14 @@ public class Test extends Command{
                 break;
             case "userdata":
                 try {
-                    e.reply(Bot.getUserData(args[1]).toString());
+                    e.reply(UserdataCache.getUser(args[1]).toString());
                 } catch (Exception e1) {
-                    e.reply(Bot.getUserData(e.getAuthor().getId()).toString());
+                    e.reply(UserdataCache.getUser(e.getAuthor().getId()).toString());
                 }
                 break;
             case "usersdata":
                 String users = "";
-                for (UserData ud : Bot.getUsers().values()) {
+                for (UserData ud : UserdataCache.getInstance().values()) {
                     users += ud.getName() + "-";
                 }
                 e.reply(users);

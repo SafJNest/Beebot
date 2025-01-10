@@ -5,13 +5,12 @@ import java.util.Collections;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 public class Welcome extends SlashCommand{
 
-    public Welcome(GuilddataCache gs){
+    public Welcome(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);

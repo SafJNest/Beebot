@@ -31,6 +31,7 @@ import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.core.cache.managers.UserdataCache;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.AlertType;
@@ -192,12 +193,12 @@ public class EventButtonHandler extends ListenerAdapter {
         switch (args) {
             case "global":
                 soundSwitch = true;
-                soundId = Bot.getUserData(event.getUser().getId()).getGlobalGreet();
+                soundId = UserdataCache.getUser(event.getUser().getId()).getGlobalGreet();
                 type = "global";
                 break;
             case "guild":
                 soundSwitch = true;
-                soundId = Bot.getUserData(event.getUser().getId()).getGreet(event.getGuild().getId());
+                soundId = UserdataCache.getUser(event.getUser().getId()).getGreet(event.getGuild().getId());
                 type = "guild";
                 break;
             case "back":
@@ -220,9 +221,9 @@ public class EventButtonHandler extends ListenerAdapter {
             case "delete":
                 type = clicked.getId().split("-")[2];
                 if (type.equals("global"))
-                    Bot.getUserData(event.getUser().getId()).unsetGreet("0");
+                    UserdataCache.getUser(event.getUser().getId()).unsetGreet("0");
                 else
-                    Bot.getUserData(event.getUser().getId()).unsetGreet(event.getGuild().getId());
+                    UserdataCache.getUser(event.getUser().getId()).unsetGreet(event.getGuild().getId());
         }
 
         List<LayoutComponent> buttons = soundSwitch ? SoundEmbed.getGreetSoundButton(event.getUser().getId(), type, soundId) : SoundEmbed.getGreetButton(event.getUser().getId(), event.getGuild().getId());
@@ -800,7 +801,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserdataCache.getUser(user_id).getRiotAccounts();
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         String account_id = puuid;
@@ -919,7 +920,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserdataCache.getUser(user_id).getRiotAccounts();
 
         String account_id = puuid;
 
@@ -1057,7 +1058,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserdataCache.getUser(user_id).getRiotAccounts();
 
         String account_id = puuid;
         int i = 0;
