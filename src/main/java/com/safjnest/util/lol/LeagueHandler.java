@@ -87,7 +87,7 @@ import com.safjnest.core.cache.managers.UserCache;
     static {
         try {
             LeagueHandler.riotApi = new R4J(new APICredentials(App.getSettingsLoader().getRiotKey()));
-            BotLogger.error("[R4J] Connection Successful!");
+            BotLogger.info("[R4J] Connection Successful!");
         } catch (Exception e) {
             BotLogger.error("[R4J] Annodam Not Successful!");
         }

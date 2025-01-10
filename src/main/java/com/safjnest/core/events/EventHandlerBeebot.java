@@ -11,6 +11,7 @@ import com.safjnest.model.guild.AutomatedAction;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.MemberData;
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.util.AutomatedActionTimer;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -44,7 +45,7 @@ public class EventHandlerBeebot extends BeebotListenerAdapter {
             
             Runnable onSuccess = () -> {
                 if (action.getActionTime() != 0) {
-                    Bot.getAutomatedActionTimer().scheduleAATask(dateTime, automatedActionExpiringId, action.getId(), event.getMemberData().getUserId(), event.getGuild().getId());
+                    AutomatedActionTimer.scheduleAATask(dateTime, automatedActionExpiringId, action.getId(), event.getMemberData().getUserId(), event.getGuild().getId());
                 }
                 EmbedBuilder eb = new EmbedBuilder();
                 eb.setTitle(":skull: User got punished :skull:");

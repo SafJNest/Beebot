@@ -1,15 +1,12 @@
 package com.safjnest;
 
 import java.io.FileReader;
-import java.security.SecureRandom;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -61,18 +58,11 @@ public class App {
             //app.run(args);
         }
 
-        SecureRandom secureRandom = new SecureRandom();
-        BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider().getInfo());
-
         bot = App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
         settingsLoader = new SettingsLoader(bot, App.isExtremeTesting());
                 
         if(!isExtremeTesting()) TwitchClient.init();
         
-
-        BotLogger.info("[CANNUCCIA] " + DatabaseHandler.getCannuccia());
-        BotLogger.info("[EPRIA] ID " + PermissionHandler.getEpria());
-
         extreme_safj_beebot = new Bot();
         extreme_safj_beebot.il_risveglio_della_bestia();
     }

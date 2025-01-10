@@ -57,7 +57,7 @@ public class PlayerManager {
         //lavalink = new LavalinkClient(Long.parseLong(Bot.getBotId()));
         //lavalink.addNode(new NodeOptions.Builder("beebot", URI.create(settingsLoader.getLavalinkHost()), settingsLoader.getLavalinkPassword(), null, 0).build());
 
-        SettingsLoader settingsLoader = new SettingsLoader(App.getBot());
+        SettingsLoader settingsLoader = App.getSettingsLoader();
         lyricsManager = new LyricsManager();
 
         registerYoutube(settingsLoader);

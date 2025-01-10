@@ -68,9 +68,7 @@ import com.safjnest.core.events.*;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.AutomatedActionTimer;
-import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.Settings;
-import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 
 /**
@@ -93,7 +91,6 @@ public class Bot {
 
     private static CommandClient client;
 
-    private static AutomatedActionTimer automatedActionTimer;
     /**
      * Where the magic happens.
      *
@@ -106,10 +103,9 @@ public class Bot {
         //fastest way to comment
         //https://patorjk.com/software/taag/#p=display&c=c%2B%2B&f=Delta%20Corps%20Priest%201
 
-        SettingsLoader settingsLoader = new SettingsLoader(App.getBot());
-        settings = new Settings(settingsLoader);
+        settings = new Settings();
 
-        BotLogger.warning(settingsLoader.getInfo());
+        BotLogger.warning(App.getSettingsLoader().getInfo());
 
         jda = JDABuilder
             .createLight(settings.token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
@@ -144,8 +140,9 @@ public class Bot {
                 // jda.getGuildById("474935164451946506").updateCommands().addCommands(
                 //         scd
                 // ).queue();
-                new CustomEmojiHandler();
-                BotLogger.debug("[JDA] Custom emoji cached correctly");
+                CustomEmojiHandler.loadEmoji();
+                AutomatedActionTimer.init();
+                BotLogger.info("Bot ready");
             }
         });
 
@@ -164,10 +161,6 @@ public class Bot {
                 return settings.prefix;
             });
         }
-
-        automatedActionTimer = new AutomatedActionTimer();
-
-        new CommandsLoader();
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
         Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix());
@@ -269,9 +262,5 @@ public class Bot {
 
     public static void handleEvent(GenericEvent event) {
         jda.getEventManager().handle(event);
-    }
-
-    public static AutomatedActionTimer getAutomatedActionTimer() {
-        return automatedActionTimer;
     }
 }
