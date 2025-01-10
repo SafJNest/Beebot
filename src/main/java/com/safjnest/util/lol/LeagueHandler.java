@@ -34,6 +34,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
 
@@ -42,6 +43,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -58,6 +60,7 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.App;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 
@@ -81,8 +84,14 @@ import com.safjnest.core.cache.managers.UserCache;
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
     private static ArrayList<AugmentData> augments = new ArrayList<>();
 
-    public LeagueHandler(R4J riotApi, String version){
-        LeagueHandler.riotApi = riotApi;
+    static {
+        try {
+            LeagueHandler.riotApi = new R4J(new APICredentials(App.getSettingsLoader().getRiotKey()));
+            BotLogger.error("[R4J] Connection Successful!");
+        } catch (Exception e) {
+            BotLogger.error("[R4J] Annodam Not Successful!");
+        }
+        
         LeagueHandler.version = getVersion();
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
 
@@ -289,7 +298,7 @@ import com.safjnest.core.cache.managers.UserCache;
     /**
      * Load all the runes data into {@link #runesHandler runesHandler}
      */
-    private void loadRunes(){
+    private static void loadRunes(){
         try {
             URI uri = new URI(runesURL);
             URL url = uri.toURL();
@@ -329,7 +338,7 @@ import com.safjnest.core.cache.managers.UserCache;
         }
     }
 
-    private void loadAguments() {
+    private static void loadAguments() {
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "augments.json");
             JSONParser parser = new JSONParser();
@@ -843,7 +852,7 @@ import com.safjnest.core.cache.managers.UserCache;
 //  ████████▀    ███    █▀      ███    █▀   ▀█   ███   █▀   ▄████▀      █▀    ▀██████▀   ▀█   █▀
 //
 
-    private void loadChampions(){
+    private static void loadChampions(){
         champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
     }
 

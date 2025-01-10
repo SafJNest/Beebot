@@ -11,7 +11,6 @@ import java.util.Map;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
@@ -53,7 +52,7 @@ public class LastMatches extends SlashCommand {
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );
         
-        this.r = App.getRiotApi();
+        this.r = LeagueHandler.getRiotApi();
 
         commandData.setThings(this);
     }

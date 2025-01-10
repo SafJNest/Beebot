@@ -8,26 +8,19 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
-import com.safjnest.core.audio.tts.TTSHandler;
-import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.twitch.TwitchClient;
-
-import no.stelar7.api.r4j.basic.APICredentials;
-import no.stelar7.api.r4j.impl.R4J;
 
 @SpringBootApplication
 public class App {
-    private static TTSHandler tts;
-    private static R4J riotApi;
     public static String key;
 
     private static Properties properties;
+    private static SettingsLoader settingsLoader;
 
     private static Bot extreme_safj_beebot;
 
@@ -42,12 +35,8 @@ public class App {
         return EXTREME_TESTING;
     }
 
-    public static TTSHandler getTTS() {
-        return tts;
-    }
-
-    public static R4J getRiotApi() {
-        return riotApi;
+    public static SettingsLoader getSettingsLoader() {
+        return settingsLoader;
     }
 
 
@@ -76,37 +65,10 @@ public class App {
         BotLogger.info("[System]: System Entropy: " + secureRandom.getProvider().getInfo());
 
         bot = App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
-        SettingsLoader settingsLoader = new SettingsLoader(bot, App.isExtremeTesting());
-
-        tts = new TTSHandler(settingsLoader.getTTSApiKey());
+        settingsLoader = new SettingsLoader(bot, App.isExtremeTesting());
+                
+        if(!isExtremeTesting()) TwitchClient.init();
         
-        new DatabaseHandler(
-            settingsLoader.getDBHostname(),
-            settingsLoader.getDBName(),
-            settingsLoader.getDBUser(),
-            settingsLoader.getDBPassword()
-        );
-
-        new SoundCache();
-        
-        new TwitchClient(
-            settingsLoader.getTwitchClientId(),
-            settingsLoader.getTwitchClientSecret()
-        );
-        
-        if(!isExtremeTesting()) {
-            TwitchClient.init();
-        }
-
-        riotApi = null;
-        try {
-            riotApi = new R4J(new APICredentials(settingsLoader.getRiotKey()));
-            BotLogger.info("[R4J] Connection Successful!");
-        } catch (Exception e) {
-            BotLogger.error("[R4J] Annodam Not Successful!");
-        }
-        
-        new LeagueHandler(riotApi, settingsLoader.getLOLVersion());
 
         BotLogger.info("[CANNUCCIA] " + DatabaseHandler.getCannuccia());
         BotLogger.info("[EPRIA] ID " + PermissionHandler.getEpria());
