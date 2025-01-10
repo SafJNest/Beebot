@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -36,7 +36,7 @@ public class LevelUpUpdateTime extends SlashCommand{
         //TODO: this command will be only for vip user
         String guildId = event.getGuild().getId();
         String userId = event.getUser().getId();
-        if(!GuilddataCache.getGuild(guildId).getMemberData(userId).setUpdateTime(updateTime)) { 
+        if(!GuildCache.getGuild(guildId).getMemberData(userId).setUpdateTime(updateTime)) { 
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

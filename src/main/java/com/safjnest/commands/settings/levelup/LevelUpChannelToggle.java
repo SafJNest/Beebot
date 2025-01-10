@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -41,7 +41,7 @@ public class LevelUpChannelToggle extends SlashCommand{
 
         String guildId = event.getGuild().getId();
 
-        if(!GuilddataCache.getGuild(guildId).getChannelData(channelId).enableExperience(toggle)) {
+        if(!GuildCache.getGuild(guildId).getChannelData(channelId).enableExperience(toggle)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

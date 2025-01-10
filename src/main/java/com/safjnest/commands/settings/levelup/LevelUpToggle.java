@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -37,7 +37,7 @@ public class LevelUpToggle extends SlashCommand{
 
         String guildId = event.getGuild().getId();
         
-        if(!GuilddataCache.getGuild(guildId).setExpSystem(toggle)){
+        if(!GuildCache.getGuild(guildId).setExpSystem(toggle)){
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

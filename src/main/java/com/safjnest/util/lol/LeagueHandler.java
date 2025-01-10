@@ -58,8 +58,8 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
 
 
 /**
@@ -388,7 +388,7 @@ import com.safjnest.core.cache.managers.UserdataCache;
 
         //     return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
         // } catch (Exception e) {return null;}
-        return getSummonerByUserData(UserdataCache.getUser(discordId));
+        return getSummonerByUserData(UserCache.getUser(discordId));
     }
 
     public static Summoner getSummonerByUserData(UserData user){
@@ -405,7 +405,7 @@ import com.safjnest.core.cache.managers.UserdataCache;
 
     public static int getNumberOfProfile(String userId){
         try {
-            return UserdataCache.getUser(userId).getRiotAccounts().size();
+            return UserCache.getUser(userId).getRiotAccounts().size();
         } catch (Exception e) { return 0; }
     }
 
@@ -440,7 +440,7 @@ import com.safjnest.core.cache.managers.UserdataCache;
 
     public static Summoner getSummonerByArgs(CommandEvent event) {
         String args = event.getArgs();
-        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
 
         if (args.isEmpty()) {
             return getSummonerFromDB(event.getAuthor().getId());
@@ -469,7 +469,7 @@ import com.safjnest.core.cache.managers.UserdataCache;
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
-        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
 
         User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();
 

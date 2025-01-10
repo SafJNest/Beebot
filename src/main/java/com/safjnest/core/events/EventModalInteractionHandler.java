@@ -8,7 +8,7 @@ import com.safjnest.commands.audio.CustomizeSound;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
@@ -19,7 +19,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 public class EventModalInteractionHandler extends ListenerAdapter {
 
@@ -54,9 +54,9 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             return;
         }
         if (type.equals("global"))
-            UserdataCache.getUser(event.getUser().getId()).setGreet("0", sound.getId());
+            UserCache.getUser(event.getUser().getId()).setGreet("0", sound.getId());
         else 
-            UserdataCache.getUser(event.getUser().getId()).setGreet(event.getGuild().getId(), sound.getId());
+            UserCache.getUser(event.getUser().getId()).setGreet(event.getGuild().getId(), sound.getId());
         
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(SoundEmbed.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
@@ -124,7 +124,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             roleID = null;
         }
 
-        TwitchData twitch = GuilddataCache.getGuild(guild).getTwitchdata(streamerId);
+        TwitchData twitch = GuildCache.getGuild(guild).getTwitchdata(streamerId);
         if (twitch == null) {
             AlertSendType sendType = (privateMessage != null && !privateMessage.isBlank()) ? AlertSendType.BOTH : AlertSendType.CHANNEL;
             
@@ -137,7 +137,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 return;
             }
     
-            GuilddataCache.getGuild(event.getGuild().getId()).getAlerts().put(newTwitchData.getKey(), newTwitchData);
+            GuildCache.getGuild(event.getGuild().getId()).getAlerts().put(newTwitchData.getKey(), newTwitchData);
             TwitchClient.registerSubEvent(streamerId);
             event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
                 .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))

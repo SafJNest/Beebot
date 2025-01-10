@@ -13,9 +13,9 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.AliasData;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.BlacklistData;
@@ -207,7 +207,7 @@ public class Functions {
     public static void handleAlert(User theGuy, Guild guild, AlertType type) {
         MessageChannel channel = null;
 
-        AlertData alert = GuilddataCache.getGuild(guild.getId()).getAlert(type);
+        AlertData alert = GuildCache.getGuild(guild.getId()).getAlert(type);
         if (alert == null || !alert.isValid()) {
             return;
         }
@@ -281,7 +281,7 @@ public class Functions {
 
     public static void handleBlacklist(User badGuy, Guild guild) {
         MessageChannel channel = null;
-        GuildData guildData = GuilddataCache.getGuild(guild.getId());
+        GuildData guildData = GuildCache.getGuild(guild.getId());
 
 
         int threshold = guildData.getThreshold();
@@ -314,7 +314,7 @@ public class Functions {
     }
 
     public static void handleBlacklistAlert(User badGuy, Guild guild) {
-        GuildData guildData = GuilddataCache.getGuild(guild.getId());
+        GuildData guildData = GuildCache.getGuild(guild.getId());
         int threshold = guildData.getThreshold();
 
         if(threshold == 0)
@@ -354,7 +354,7 @@ public class Functions {
     }
 
     public static void handleChannelDeleteAlert(Guild guild, String channelID) {
-        GuildData g = GuilddataCache.getGuild(guild.getId());
+        GuildData g = GuildCache.getGuild(guild.getId());
 
         String alertChannel = guild.getDefaultChannel().getId();
         String alertMessage = "";
@@ -399,7 +399,7 @@ public class Functions {
 
 
     public static void handleGreetSound(AudioChannel channelJoin, User theGuy, Guild guild) {
-        String sound_id = UserdataCache.getUser(theGuy.getId()).getGreet(guild.getId());
+        String sound_id = UserCache.getUser(theGuy.getId()).getGreet(guild.getId());
         if (sound_id == null || sound_id.isEmpty()) return;
         
         Sound sound = SoundCache.getSoundById(sound_id);
@@ -436,7 +436,7 @@ public class Functions {
 
 
     public static void handleCustomCommand(String commandName, SlashCommandInteractionEvent event) {
-        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
         CustomCommand command = guild.getCustomCommand(commandName);
 
         if(command == null) {
@@ -450,7 +450,7 @@ public class Functions {
     }
 
     public static void updateCommandStatitics(SlashCommandInteractionEvent event) {
-        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         
@@ -460,7 +460,7 @@ public class Functions {
     }
 
     public static void updateCommandStatitics(CommandEvent event, Command command) {
-        GuildData guild = GuilddataCache.getGuild(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         
@@ -470,7 +470,7 @@ public class Functions {
     }
 
     public static void handleRoleDeleteAlert(Guild guild, String role_id) {
-        GuildData g = GuilddataCache.getGuild(guild.getId());
+        GuildData g = GuildCache.getGuild(guild.getId());
         g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().containsValue(role_id)).forEach(alert -> {
             alert.removeRole(role_id);
         });

@@ -9,7 +9,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
@@ -62,7 +62,7 @@ public class MemberInfo extends SlashCommand {
 
         String permissionNames = PermissionHandler.getFilteredPermissionNames(mentionedMember).toString();
 
-        HashMap<String, String> lolAccounts = UserdataCache.getUser(mentionedMember.getId()).getRiotAccounts();
+        HashMap<String, String> lolAccounts = UserCache.getUser(mentionedMember.getId()).getRiotAccounts();
         String lolAccountsString = "";
         if(lolAccounts == null || lolAccounts.isEmpty()) {
             lolAccountsString = mentionedMember.getEffectiveName() + " has not connected a riot account.";

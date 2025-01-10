@@ -10,9 +10,9 @@ import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.GenericCache;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -35,7 +35,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
  */
 public class PrintCache extends Command {
     
-    private GuilddataCache gs;
+    private GuildCache gs;
     private CommandEvent event;
     public PrintCache() {
         this.name = this.getClass().getSimpleName().toLowerCase();
@@ -52,7 +52,7 @@ public class PrintCache extends Command {
 
         commandData.setThings(this);
 
-        this.gs = GuilddataCache.getInstance();
+        this.gs = GuildCache.getInstance();
     }
 
     @Override
@@ -161,7 +161,7 @@ public class PrintCache extends Command {
         }
         SoundCache ss = SoundCache.getInstance();
         String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getSize() + " / " + gs.getMaxSize() + "\n"
-            + "Total Users: " + UserdataCache.getInstance().getSize() + " / " + UserdataCache.getInstance().getMaxSize() + "\n"
+            + "Total Users: " + UserCache.getInstance().getSize() + " / " + UserCache.getInstance().getMaxSize() + "\n"
             + "Total Sounds: " + ss.getSize() + " / " + ss.getMaxSize() + "\n"
             + "Total Members: " + totalUsers + "\n"
             + "Total Channels: " + totalChannels + "\n"
@@ -183,8 +183,8 @@ public class PrintCache extends Command {
         ArrayList<String> cache = new ArrayList<>();
 
         String msg = "";
-        for(UserData ud : UserdataCache.getInstance().values()) {
-            long time = UserdataCache.getInstance().expiresAfter(ud.getId());
+        for(UserData ud : UserCache.getInstance().values()) {
+            long time = UserCache.getInstance().expiresAfter(ud.getId());
 
             HashMap<String, String> lolAccounts = ud.getRiotAccounts();
             String lolAccountsString = "";
@@ -213,7 +213,7 @@ public class PrintCache extends Command {
 
 
         String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getMaxSize() + "\n"
-            + "Total Users: " + UserdataCache.getInstance().getSize() + " / " + UserdataCache.getInstance().getMaxSize() + "\n"
+            + "Total Users: " + UserCache.getInstance().getSize() + " / " + UserCache.getInstance().getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
             + "League Version: " + LeagueHandler.getVersion() + "```";
@@ -250,7 +250,7 @@ public class PrintCache extends Command {
         }
 
         String header = "**Tier god information about the insane beebots cache**```" + "Total Guilds: " + gs.getGuilds().size() + " / " + gs.getMaxSize() + "\n"
-        + "Total Users: " + UserdataCache.getInstance().getSize() + " / " + UserdataCache.getInstance().getMaxSize() + "\n"
+        + "Total Users: " + UserCache.getInstance().getSize() + " / " + UserCache.getInstance().getMaxSize() + "\n"
         + "Total Sounds: " + ss.getSize() + " / " + ss.getMaxSize() + "\n"
         + "Other bot information\n"
         + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"

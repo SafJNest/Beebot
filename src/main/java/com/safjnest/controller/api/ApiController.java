@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 
 
@@ -58,7 +58,7 @@ public class ApiController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prefix is required");
         }
         prefix = prefix.replace("\"", "");
-        boolean response = GuilddataCache.getGuild(guildId).setPrefix(prefix);
+        boolean response = GuildCache.getGuild(guildId).setPrefix(prefix);
         String responseString = response ? "{\"status\":\"success\"}" : "{\"status\":\"error\"}";
         return responseString;
     }

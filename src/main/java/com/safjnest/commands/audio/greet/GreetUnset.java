@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -39,7 +39,7 @@ public class GreetUnset extends SlashCommand{
 	public void execute(SlashCommandEvent event) {
         String guildId = (event.getOption("global") != null && event.getOption("global").getAsBoolean()) ? "0" : event.getGuild().getId();
 
-        if (!UserdataCache.getUser(event.getUser().getId()).unsetGreet(guildId)) {
+        if (!UserCache.getUser(event.getUser().getId()).unsetGreet(guildId)) {
             event.deferReply(false).addContent("An error occurred while unsetting the greet").queue();
             return;
         }

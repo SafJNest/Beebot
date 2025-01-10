@@ -13,7 +13,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 public class LevelUpPreview extends SlashCommand{
 
@@ -33,7 +33,7 @@ public class LevelUpPreview extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuilddataCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuild(guildId);
 
         AlertData level = gs.getAlert(AlertType.LEVEL_UP);
 

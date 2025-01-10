@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -35,12 +35,12 @@ public class BlacklistToggle extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         boolean toggle = event.getOption("toggle").getAsString().equalsIgnoreCase("on") ? true : false;
 
-        if(GuilddataCache.getGuild(event.getGuild().getId()).getBlackChannelId() == null) {
+        if(GuildCache.getGuild(event.getGuild().getId()).getBlackChannelId() == null) {
             event.deferReply(true).addContent("This guild doesn't have blacklist set.").queue();
             return;
         }
 
-        if(!GuilddataCache.getGuild(event.getGuild().getId()).setBlacklistEnabled(toggle)) {
+        if(!GuildCache.getGuild(event.getGuild().getId()).setBlacklistEnabled(toggle)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

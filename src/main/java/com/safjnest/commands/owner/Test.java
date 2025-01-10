@@ -26,8 +26,8 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.core.audio.SafjAudioPlaylist;
 import com.safjnest.core.audio.types.PlayTiming;
-import com.safjnest.core.cache.managers.GuilddataCache;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -272,36 +272,36 @@ public class Test extends Command{
                 }
             break;
             case "getBlacklist":
-                System.out.println(GuilddataCache.getGuild(e.getGuild().getId()).getBlacklistData().toString());
+                System.out.println(GuildCache.getGuild(e.getGuild().getId()).getBlacklistData().toString());
                 break;
             case "13":
-                HashMap<AlertKey<?>, AlertData> prova = GuilddataCache.getGuild(e.getGuild().getId()).getAlerts();
+                HashMap<AlertKey<?>, AlertData> prova = GuildCache.getGuild(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
-                e.reply("```json\n" + GuilddataCache.getGuild(e.getGuild().getId()).toString() + "```");
+                e.reply("```json\n" + GuildCache.getGuild(e.getGuild().getId()).toString() + "```");
                 e.reply("```json\n" + s + "```");
-                BlacklistData bd = GuilddataCache.getGuild(e.getGuild().getId()).getBlacklistData();
+                BlacklistData bd = GuildCache.getGuild(e.getGuild().getId()).getBlacklistData();
                 e.reply("```json\n" + bd.toString()+ "```");
-                HashMap<Long, ChannelData> channels = GuilddataCache.getGuild(e.getGuild().getId()).getChannels();
+                HashMap<Long, ChannelData> channels = GuildCache.getGuild(e.getGuild().getId()).getChannels();
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(GuilddataCache.getGuild(e.getGuild().getId()).getMembers()).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(GuilddataCache.getGuild(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getMembers()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
                 break;
             case "14":
                 for(Guild g : e.getJDA().getGuilds()) {
-                    GuilddataCache.getGuild(g.getId()).getAlerts();
-                    GuilddataCache.getGuild(g.getId()).getBlacklistData();
+                    GuildCache.getGuild(g.getId()).getAlerts();
+                    GuildCache.getGuild(g.getId()).getBlacklistData();
                     for(GuildChannel cd : g.getChannels()) {
-                        GuilddataCache.getGuild(g.getId()).getChannelData(cd.getId());
+                        GuildCache.getGuild(g.getId()).getChannelData(cd.getId());
                     }
                     for(Member m : g.getMembers()){
-                        GuilddataCache.getGuild(g.getId()).getMemberData(m.getId());
-                        UserdataCache.getUser(m.getId());
+                        GuildCache.getGuild(g.getId()).getMemberData(m.getId());
+                        UserCache.getUser(m.getId());
                     }
                 }
                 e.reply("Done");
                 break;
             case "getServer":
-                String sss = new JSONObject(GuilddataCache.getGuild(e.getGuild().getId()).getChannels()).toJSONString();
+                String sss = new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getChannels()).toJSONString();
                 e.reply("```json\n" + sss + "```");
                 break;
             case "stats":
@@ -390,18 +390,18 @@ public class Test extends Command{
                 break;
             case "disablecommands":
                 e.getGuild().getTextChannels().forEach(c -> {
-                    GuilddataCache.getGuild(e.getGuild()).getChannelData(c.getId()).setCommand(false);
+                    GuildCache.getGuild(e.getGuild()).getChannelData(c.getId()).setCommand(false);
                 });
                 break;
             case "disablecommand":
-                GuilddataCache.getGuild(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(false);
+                GuildCache.getGuild(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(false);
                 break;
             case "enablecommand":
-                GuilddataCache.getGuild(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(true);
+                GuildCache.getGuild(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(true);
                 break;
             case "enablecommands":
                 e.getGuild().getTextChannels().forEach(c -> {
-                    GuilddataCache.getGuild(e.getGuild()).getChannelData(c.getId()).setCommand(true);
+                    GuildCache.getGuild(e.getGuild()).getChannelData(c.getId()).setCommand(true);
                 });
                 break;
             case "cachesize":
@@ -410,14 +410,14 @@ public class Test extends Command{
                 break;
             case "userdata":
                 try {
-                    e.reply(UserdataCache.getUser(args[1]).toString());
+                    e.reply(UserCache.getUser(args[1]).toString());
                 } catch (Exception e1) {
-                    e.reply(UserdataCache.getUser(e.getAuthor().getId()).toString());
+                    e.reply(UserCache.getUser(e.getAuthor().getId()).toString());
                 }
                 break;
             case "usersdata":
                 String users = "";
-                for (UserData ud : UserdataCache.getInstance().values()) {
+                for (UserData ud : UserCache.getInstance().values()) {
                     users += ud.getName() + "-";
                 }
                 e.reply(users);
@@ -525,7 +525,7 @@ public class Test extends Command{
                 break;
             case "dbsgozz":
                 for (Guild g : e.getJDA().getGuilds()) {
-                    GuildData gd = GuilddataCache.getGuild(g);
+                    GuildData gd = GuildCache.getGuild(g);
                     for (Member m : g.getMembers()) {
                         gd.getMemberData(m.getId()).setUpdateTime(61);
                     }

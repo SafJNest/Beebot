@@ -42,8 +42,8 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -93,8 +93,8 @@ public class EventHandler extends ListenerAdapter {
             return;
         }
 
-        GuildData guildData = GuilddataCache.getGuild(e.getGuild().getId());
-        UserData userData = UserdataCache.getUser(e.getAuthor().getId());
+        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
+        UserData userData = UserCache.getUser(e.getAuthor().getId());
 
         Functions.handleAlias(guildData, userData, e);
         Functions.handleExperience(guildData, e);
@@ -104,7 +104,7 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent event){
-        GuilddataCache.getGuild(event.getGuild().getId());
+        GuildCache.getGuild(event.getGuild().getId());
     }
 
     @Override
@@ -168,8 +168,8 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onChannelCreate(ChannelCreateEvent event){      
-        if (GuilddataCache.getGuild(event.getGuild()).hasMutedRole()) {
-            Role role = event.getGuild().getRoleById(GuilddataCache.getGuild(event.getGuild()).getMutedRoleId());
+        if (GuildCache.getGuild(event.getGuild()).hasMutedRole()) {
+            Role role = event.getGuild().getRoleById(GuildCache.getGuild(event.getGuild()).getMutedRoleId());
             switch (event.getChannelType()) {
                 case TEXT:
                     event.getChannel().asTextChannel().getManager().putRolePermissionOverride(role.getIdLong(), null, Collections.singleton(Permission.MESSAGE_SEND)).queue();

@@ -25,7 +25,7 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import rx.internal.util.SynchronizedQueue;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 public class ChatHandler {
     private static final long connectTimeoutDelay = TimeConstant.MINUTE * 3;
@@ -224,7 +224,7 @@ public class ChatHandler {
         String channelId = e.getChannel().getId();
         
         /**god of if */
-        if (e.getMessage().getContentRaw().startsWith(GuilddataCache.getGuild(e.getGuild()).getPrefix()) && Help.searchCommand(e.getMessage().getContentRaw().split(" ", 2)[0].substring(GuilddataCache.getGuild(e.getGuild()).getPrefix().length()), CommandsLoader.getCommandsData(e.getMember().getId())) != null)
+        if (e.getMessage().getContentRaw().startsWith(GuildCache.getGuild(e.getGuild()).getPrefix()) && Help.searchCommand(e.getMessage().getContentRaw().split(" ", 2)[0].substring(GuildCache.getGuild(e.getGuild()).getPrefix().length()), CommandsLoader.getCommandsData(e.getMember().getId())) != null)
             return;
         
         if(channelGroups.containsKey(channelId)) {

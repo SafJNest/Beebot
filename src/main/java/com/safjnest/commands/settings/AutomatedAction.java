@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -60,11 +60,11 @@ public class AutomatedAction extends SlashCommand {
         int infractions_times = event.getOption("infractions_time") != null ? convertDurationToSeconds(event.getOption("infractions_time").getAsString()) : 0;
 
         if (action == com.safjnest.model.guild.AutomatedAction.MUTE) {
-            actionRole = GuilddataCache.getGuild(event.getGuild()).getMutedRoleId();
+            actionRole = GuildCache.getGuild(event.getGuild()).getMutedRoleId();
             System.out.println(actionRole);
         }
 
-        if (!GuilddataCache.getGuild(event.getGuild()).addAction(action, actionRole, actionTime, infractions, infractions_times)) {
+        if (!GuildCache.getGuild(event.getGuild()).addAction(action, actionRole, actionTime, infractions, infractions_times)) {
             event.reply("An automated action with the same parameters already exists").queue();
             return;
         }

@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.TwitchData;
@@ -74,7 +74,7 @@ public class TwitchLink extends SlashCommand{
 
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuilddataCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuild(guildId);
 
         TwitchData twitchData = gs.getTwitchdata(streamerId);
 

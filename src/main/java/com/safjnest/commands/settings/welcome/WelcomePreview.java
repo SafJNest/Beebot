@@ -8,7 +8,7 @@ import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 public class WelcomePreview extends SlashCommand{
 
@@ -28,7 +28,7 @@ public class WelcomePreview extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuilddataCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuild(guildId);
 
         AlertData welcome = gs.getAlert(AlertType.WELCOME);
 

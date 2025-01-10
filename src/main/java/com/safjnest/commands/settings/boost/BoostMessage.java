@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
@@ -43,7 +43,7 @@ public class BoostMessage extends SlashCommand {
 
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuilddataCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuild(guildId);
 
         AlertData boost = gs.getAlert(AlertType.BOOST);   
 

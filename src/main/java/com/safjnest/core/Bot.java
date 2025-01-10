@@ -63,7 +63,7 @@ import com.safjnest.commands.settings.leave.Leave;
 import com.safjnest.commands.settings.levelup.LevelUp;
 import com.safjnest.commands.settings.reward.Reward;
 import com.safjnest.commands.settings.welcome.Welcome;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.*;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -153,7 +153,7 @@ public class Bot {
             if (event.getChannelType() == ChannelType.PRIVATE)
                 return "";
             if (event.isFromGuild()) {
-                GuildData gd = GuilddataCache.getGuild(event.getGuild());
+                GuildData gd = GuildCache.getGuild(event.getGuild());
                 return gd == null ? settings.prefix : gd.getPrefix();
             }
             return null;

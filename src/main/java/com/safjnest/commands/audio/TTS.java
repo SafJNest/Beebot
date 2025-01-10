@@ -14,7 +14,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.tts.TTSHandler;
 import com.safjnest.core.audio.tts.TTSVoices;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -68,7 +68,7 @@ public class TTS extends SlashCommand{
         String speech = event.getOption("text").getAsString();
 
         Guild guild = event.getGuild();
-        GuildData guildData = GuilddataCache.getGuild(guild);
+        GuildData guildData = GuildCache.getGuild(guild);
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
@@ -118,7 +118,7 @@ public class TTS extends SlashCommand{
         String speech = event.getArgs();
 
         Guild guild = event.getGuild();
-        GuildData guildData = GuilddataCache.getGuild(guild.getId());
+        GuildData guildData = GuildCache.getGuild(guild.getId());
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
 

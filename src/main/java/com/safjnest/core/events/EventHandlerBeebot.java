@@ -17,7 +17,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 /**
  * Guess who's back, back again
@@ -27,7 +27,7 @@ public class EventHandlerBeebot extends BeebotListenerAdapter {
     @Override
     public void onWarning(WarningEvent event) {
         Guild guild = event.getGuild();
-        GuildData guildData = GuilddataCache.getGuild(guild);
+        GuildData guildData = GuildCache.getGuild(guild);
 
         TextChannel channel = event.getChannel().asTextChannel();
 

@@ -31,7 +31,7 @@ import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.core.cache.managers.SoundCache;
-import com.safjnest.core.cache.managers.UserdataCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.AlertType;
@@ -69,7 +69,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 
 public class EventButtonHandler extends ListenerAdapter {
@@ -193,12 +193,12 @@ public class EventButtonHandler extends ListenerAdapter {
         switch (args) {
             case "global":
                 soundSwitch = true;
-                soundId = UserdataCache.getUser(event.getUser().getId()).getGlobalGreet();
+                soundId = UserCache.getUser(event.getUser().getId()).getGlobalGreet();
                 type = "global";
                 break;
             case "guild":
                 soundSwitch = true;
-                soundId = UserdataCache.getUser(event.getUser().getId()).getGreet(event.getGuild().getId());
+                soundId = UserCache.getUser(event.getUser().getId()).getGreet(event.getGuild().getId());
                 type = "guild";
                 break;
             case "back":
@@ -221,9 +221,9 @@ public class EventButtonHandler extends ListenerAdapter {
             case "delete":
                 type = clicked.getId().split("-")[2];
                 if (type.equals("global"))
-                    UserdataCache.getUser(event.getUser().getId()).unsetGreet("0");
+                    UserCache.getUser(event.getUser().getId()).unsetGreet("0");
                 else
-                    UserdataCache.getUser(event.getUser().getId()).unsetGreet(event.getGuild().getId());
+                    UserCache.getUser(event.getUser().getId()).unsetGreet(event.getGuild().getId());
         }
 
         List<LayoutComponent> buttons = soundSwitch ? SoundEmbed.getGreetSoundButton(event.getUser().getId(), type, soundId) : SoundEmbed.getGreetButton(event.getUser().getId(), event.getGuild().getId());
@@ -381,7 +381,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 break;
             case "delete":
-                GuilddataCache.getGuild(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
+                GuildCache.getGuild(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
                 if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
                     TwitchClient.unregisterSubEvent(streamerId);
@@ -576,8 +576,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
         switch (args) {
             case "right":
-                RewardData nextReward = GuilddataCache.getGuild(guild.getId()).getHigherReward(Integer.parseInt(level));
-                RewardData nextNextReward = GuilddataCache.getGuild(guild.getId()).getHigherReward(nextReward.getLevel());
+                RewardData nextReward = GuildCache.getGuild(guild.getId()).getHigherReward(Integer.parseInt(level));
+                RewardData nextNextReward = GuildCache.getGuild(guild.getId()).getHigherReward(nextReward.getLevel());
 
                 if (nextNextReward == null) {
                     right = right.asDisabled();
@@ -594,8 +594,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
 
-                RewardData previousRewardData = GuilddataCache.getGuild(guild.getId()).getLowerReward(Integer.parseInt(level));
-                RewardData previousPreviousRewardData = GuilddataCache.getGuild(guild.getId()).getLowerReward(previousRewardData.getLevel());
+                RewardData previousRewardData = GuildCache.getGuild(guild.getId()).getLowerReward(Integer.parseInt(level));
+                RewardData previousPreviousRewardData = GuildCache.getGuild(guild.getId()).getLowerReward(previousRewardData.getLevel());
                 if (previousPreviousRewardData == null) {
                     left = left.asDisabled();
                     left = left.withStyle(ButtonStyle.DANGER);
@@ -801,7 +801,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = UserdataCache.getUser(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         String account_id = puuid;
@@ -920,7 +920,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = UserdataCache.getUser(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
         String account_id = puuid;
 
@@ -1058,7 +1058,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = UserdataCache.getUser(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
         String account_id = puuid;
         int i = 0;

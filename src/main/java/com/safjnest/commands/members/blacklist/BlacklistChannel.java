@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -36,14 +36,14 @@ public class BlacklistChannel extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(GuilddataCache.getGuild(event.getGuild()).getThreshold() == 0){
+        if(GuildCache.getGuild(event.getGuild()).getThreshold() == 0){
             event.deferReply(true).addContent("Blacklist is disabled.").queue();
             return;
         }
 
         String channelID = event.getOption("channel").getAsChannel().getId();
 
-        if(!GuilddataCache.getGuild(event.getGuild()).setBlackChannel(channelID)) {
+        if(!GuildCache.getGuild(event.getGuild()).setBlackChannel(channelID)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

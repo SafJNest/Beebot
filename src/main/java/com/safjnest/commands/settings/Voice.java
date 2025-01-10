@@ -14,7 +14,7 @@ import java.util.Set;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 /**
  * @author <a href="https://github.com/NeuntronSun">NeutronSun</a>
@@ -60,7 +60,7 @@ public class Voice extends SlashCommand {
             return;
         }
 
-        if (!GuilddataCache.getGuild(event.getGuild().getId()).setVoice(voice, language)) {
+        if (!GuildCache.getGuild(event.getGuild().getId()).setVoice(voice, language)) {
             event.deferReply(true).addContent("There was an error while changing the voice.").queue();
             return;
         }

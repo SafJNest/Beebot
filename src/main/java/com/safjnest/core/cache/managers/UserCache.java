@@ -6,17 +6,17 @@ import java.util.concurrent.TimeUnit;
 import com.safjnest.core.cache.CacheAdapter;
 import com.safjnest.model.UserData;
 
-public class UserdataCache extends CacheAdapter<String, UserData> {
+public class UserCache extends CacheAdapter<String, UserData> {
 
-    private static UserdataCache instance = new UserdataCache();
+    private static UserCache instance = new UserCache();
 
-    public UserdataCache() {
+    public UserCache() {
         super();
         setExpireTime(12, TimeUnit.HOURS);
         setTypeLimit(50);
     }
 
-    public static UserdataCache getInstance() {
+    public static UserCache getInstance() {
         return instance;
     }
 

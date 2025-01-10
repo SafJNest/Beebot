@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -14,7 +14,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistEnable extends SlashCommand{
 
-    public BlacklistEnable(String father, GuilddataCache gs){
+    public BlacklistEnable(String father, GuildCache gs){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -39,7 +39,7 @@ public class BlacklistEnable extends SlashCommand{
         String threshold = event.getOption("threshold").getAsString();
         String channelId = event.getOption("channel").getAsChannel().getId();
 
-        if (!GuilddataCache.getGuild(event.getGuild()).setBlackListData(Integer.parseInt(threshold), channelId)) {
+        if (!GuildCache.getGuild(event.getGuild()).setBlackListData(Integer.parseInt(threshold), channelId)) {
             event.deferReply(false).addContent("Something went wrong.").queue();
             return;  
         }

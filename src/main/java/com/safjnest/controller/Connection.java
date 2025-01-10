@@ -9,7 +9,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.sql.DatabaseHandler;
 
 public class Connection extends WebSocketServer {
@@ -18,7 +18,7 @@ public class Connection extends WebSocketServer {
     private static int TCP_PORT = 8096;
     private Postman postman;
     
-    public Connection(JDA jda, GuilddataCache gs){
+    public Connection(JDA jda, GuildCache gs){
         super(new InetSocketAddress(TCP_PORT));
         this.jda = jda;
         this.postman = new Postman(jda, gs);
@@ -67,7 +67,7 @@ public class Connection extends WebSocketServer {
                 break;
             case "newPrefix":
                 try {
-                    GuilddataCache.getGuild(guildId).setPrefix(parseRequest(message, "prefix"));
+                    GuildCache.getGuild(guildId).setPrefix(parseRequest(message, "prefix"));
                     DatabaseHandler.insertGuild(guildId, parseRequest(message, "prefix"));
                     server = "newPrefix-ok"; 
                 } catch (Exception e) {

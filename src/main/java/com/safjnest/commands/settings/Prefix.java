@@ -5,7 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -50,7 +50,7 @@ public class Prefix extends SlashCommand {
         }
         String guildId = event.getGuild().getId();
         
-        if(GuilddataCache.getGuild(guildId).setPrefix(prefix)){
+        if(GuildCache.getGuild(guildId).setPrefix(prefix)){
             event.reply("The new prefix is: " + prefix);
         }
         else
@@ -59,7 +59,7 @@ public class Prefix extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(GuilddataCache.getGuild(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
+        if(GuildCache.getGuild(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
             event.deferReply(false).addContent("The new Prefix is " + event.getOption("prefix").getAsString()).queue();
         else
             event.deferReply(true).addContent("Error").queue();   

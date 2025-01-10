@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
 import com.safjnest.core.Bot;
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.TwitchData;
 
@@ -28,7 +28,7 @@ public class TwitchMenu extends SlashCommand{
         List<Button> buttons = new ArrayList<>();
 
         List<String> subs = new ArrayList<>();
-        for (TwitchData twitch : GuilddataCache.getGuild(guildId).getTwitchDatas().values()) {
+        for (TwitchData twitch : GuildCache.getGuild(guildId).getTwitchDatas().values()) {
             subs.add(twitch.getStreamer());
         }
         List<com.github.twitch4j.helix.domain.User> streamers = TwitchClient.getStreamersById(subs);
@@ -89,7 +89,7 @@ public class TwitchMenu extends SlashCommand{
     }
 
     public static EmbedBuilder getTwitchStreamerEmbed(String StreamerId, String guildId) {
-        TwitchData twitch = GuilddataCache.getGuild(guildId).getTwitchdata(StreamerId);
+        TwitchData twitch = GuildCache.getGuild(guildId).getTwitchdata(StreamerId);
         com.github.twitch4j.helix.domain.User streamer = TwitchClient.getStreamerById(StreamerId);
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Bot.getColor());

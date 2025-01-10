@@ -1,7 +1,7 @@
 package com.safjnest.controller;
 
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -10,7 +10,7 @@ public class Postman {
     
     private JDA jda;
 
-    public Postman(JDA jda, GuilddataCache gs){
+    public Postman(JDA jda, GuildCache gs){
 
         this.jda = jda;
 
@@ -52,7 +52,7 @@ public class Postman {
 
     public String getPrefix(String userId, String guilId){
         
-        String list = "{\"prefix\":" + "\"" + GuilddataCache.getGuild(userId).getPrefix() + "\"" + "}";
+        String list = "{\"prefix\":" + "\"" + GuildCache.getGuild(userId).getPrefix() + "\"" + "}";
         return list;
     }
     

@@ -14,7 +14,7 @@ import com.safjnest.util.CommandsLoader;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
-import com.safjnest.core.cache.managers.GuilddataCache;
+import com.safjnest.core.cache.managers.GuildCache;
 
 public class WelcomeMessage extends SlashCommand {
 
@@ -44,7 +44,7 @@ public class WelcomeMessage extends SlashCommand {
 
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuilddataCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuild(guildId);
 
         AlertData welcome = gs.getAlert(AlertType.WELCOME);
 

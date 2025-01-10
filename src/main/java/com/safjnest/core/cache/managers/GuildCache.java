@@ -15,21 +15,21 @@ import com.safjnest.util.log.LoggerIDpair;
 import net.dv8tion.jda.api.entities.Guild;
 
 /**
- * Class that stores in a {@link GuilddataCache#cache guilds} all the settings for a guild.
+ * Class that stores in a {@link GuildCache#cache guilds} all the settings for a guild.
  * @author <a href="https://github.com/Leon412">Leon412</a>
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  */
-public class GuilddataCache extends CacheAdapter<String, GuildData> {
+public class GuildCache extends CacheAdapter<String, GuildData> {
 
-    private static GuilddataCache instante = new GuilddataCache();
+    private static GuildCache instante = new GuildCache();
 
-    public GuilddataCache() {
+    public GuildCache() {
         super();
         setExpireTime(12, TimeUnit.HOURS);
         setTypeLimit(50);
     }
 
-    public static GuilddataCache getInstance() {
+    public static GuildCache getInstance() {
         return instante;
     }
 
