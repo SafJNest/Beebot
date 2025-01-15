@@ -814,7 +814,12 @@ public class EventButtonHandler extends ListenerAdapter {
 
         String accountId = "";
         String platform = "";
+
         String[] parts;
+        String queueString = "";
+
+        long[] time = LeagueHandler.getCurrentSplitRange();
+        GameQueueType queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
 
         switch (args) {
 
@@ -883,10 +888,61 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
             break;
+            case "queue":
+                parts = event.getButton().getId().split("-", 3);
+                queueString = parts[2];
+                queue = queueString.equals("all") ? null : GameQueueType.valueOf(queueString);
+
+                for (Button b : event.getMessage().getButtons()) {
+                    if (b.getId().startsWith("lol-season") && b.getStyle() == ButtonStyle.SUCCESS) {
+                        parts = b.getId().split("-", 3);
+
+                        switch (parts[2]) {
+                            case "all":
+                                time = new long[] {0, 0};
+                                break;
+                            case "current":
+                                time = LeagueHandler.getCurrentSplitRange();
+                                break;
+                            case "previous":
+                                time = LeagueHandler.getPreviousSplitRange();
+                                break;
+                        }
+                        break;
+                    }
+                }
+                if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+            break;
+            case "season":
+                parts = event.getButton().getId().split("-", 3);
+                switch (parts[2]) {
+                    case "all":
+                        time = new long[] {0, 0};
+                        break;
+                    case "current":
+                        time = LeagueHandler.getCurrentSplitRange();
+                        break;
+                    case "previous":
+                        time = LeagueHandler.getPreviousSplitRange();
+                        break;
+                }
+
+                for (Button b : event.getMessage().getButtons()) {
+                    if (b.getId().startsWith("lol-queue") && b.getStyle() == ButtonStyle.SUCCESS) {
+                        parts = b.getId().split("-", 3);
+                        queueString = parts[2];
+                        queue = queueString.equals("all") ? null : GameQueueType.valueOf(queueString);
+                        break;
+                    }
+                }
+                if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+            break;
         }
 
-        EmbedBuilder eb = LeagueMessage.getSummonerEmbed(s);
-        List<LayoutComponent> row = LeagueMessage.getSummonerButtons(s, user_id);
+        EmbedBuilder eb = LeagueMessage.getSummonerEmbed(s, time[0], time[1], queue);
+        List<LayoutComponent> row = LeagueMessage.getSummonerButtons(s, user_id, time[0], time[1], queue);
         event.getMessage().editMessageEmbeds(eb.build()).setComponents(row).queue();
 
     }

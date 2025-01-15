@@ -36,6 +36,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
+import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
@@ -96,6 +97,12 @@ public class LeagueMessage {
 //                                                                                              ███    ███
 
     public static EmbedBuilder getSummonerEmbed(Summoner s) {
+        long[] split = LeagueHandler.getCurrentSplitRange();
+        return getSummonerEmbed(s, split[0], split[1], GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+    }
+
+
+    public static EmbedBuilder getSummonerEmbed(Summoner s, long time_start, long time_end, GameQueueType queue) {
         LeagueHandler.updateSummonerDB(s);
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
 
@@ -123,12 +130,10 @@ public class LeagueMessage {
 
         builder.addField("Highest Masteries", masteryString, false);
 
-        long[] split = LeagueHandler.getCurrentSplitRange();
-        QueryCollection advanceData = DatabaseHandler.getAdvancedLOLData(s.getAccountId(), split[0], split[1]);
+
+        QueryCollection advanceData = DatabaseHandler.getAdvancedLOLData(s.getAccountId(), time_start, time_end, queue);
 
         if (!advanceData.isEmpty()) {
-            LeagueEntry entry = LeagueHandler.getRankEntry(s.getSummonerId(), s.getPlatform());
-
             LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
             for (String stats : advanceData.arrayColumn("lanes_played")) {
                 String[] lanes = stats.split(",");
@@ -161,48 +166,176 @@ public class LeagueMessage {
                     LinkedHashMap::new
                 ));
 
-            int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
-
             String laneString = "";
             for (LaneType lane : laneStats.keySet()) {
                 String wins = laneStats.get(lane).split("-")[0];
                 String losses = laneStats.get(lane).split("-")[1];
                 int games = Integer.valueOf(wins) + Integer.valueOf(losses);
 
-                if (lane == LaneType.NONE) {
-                    laneString += LeagueHandler.getLaneTypeEmoji(lane) + " " + LeagueHandler.getPrettyName(lane) + " " + games + " games\n";
+                if (lane == LaneType.NONE) 
                     continue;
-                }
 
                 String percent = String.format("%.2f", Double.parseDouble(wins) * 100 / (Double.parseDouble(wins) + Double.parseDouble(losses)));
-                laneString += LeagueHandler.getLaneTypeEmoji(lane) + " " + LeagueHandler.getPrettyName(lane) + " " + games + " games (" +  wins + "W/" + losses + "L) - " + percent +"% WR\n";
+                laneString += LeagueHandler.getLaneTypeEmoji(lane) + " " + LeagueHandler.getPrettyName(lane) + " " + games + " games\n`(" +  wins + "W/" + losses + "L) - " + percent +"% WR`\n";
             }
 
-            String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
-            builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + totalGames + " you have played this split.\n" + laneString , false);
+            if (queue == null) {
+                QueryCollection gameData = DatabaseHandler.getAllGamesForAccount(s.getAccountId(), time_start, time_end);
+                LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
+                for (QueryRecord row : gameData) {
+                    GameQueueType type = GameQueueType.values()[row.getAsInt("game_type")];
+                    boolean win = row.getAsBoolean("win");
+    
+                    String stats = gameTypeStats.getOrDefault(type, "0-0");
+                    int wins = Integer.valueOf(stats.split("-")[0]);
+                    int losses = Integer.valueOf(stats.split("-")[1]);
+    
+                    if (win) wins++;
+                    else losses++;
+    
+                    gameTypeStats.put(type, wins + "-" + losses);
+                }
+    
+                gameTypeStats = gameTypeStats.entrySet()
+                    .stream()
+                    .sorted((entry1, entry2) -> {
+                        String[] stats1 = entry1.getValue().split("-");
+                        String[] stats2 = entry2.getValue().split("-");
+                        int wins1 = Integer.parseInt(stats1[0]);
+                        int losses1 = Integer.parseInt(stats1[1]);
+                        int totalGames1 = wins1 + losses1;
+                
+                        int wins2 = Integer.parseInt(stats2[0]);
+                        int losses2 = Integer.parseInt(stats2[1]);
+                        int totalGames2 = wins2 + losses2;
+                
+                        if (totalGames1 != totalGames2) {
+                            return Integer.compare(totalGames2, totalGames1);
+                        }
+                
+                        double winRate1 = (totalGames1 > 0) ? (double) wins1 / totalGames1 : 0;
+                        double winRate2 = (totalGames2 > 0) ? (double) wins2 / totalGames2 : 0;
+                        return Double.compare(winRate2, winRate1);
+                    })
+                    .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                    ));
+    
+                String gameString = "";
+                for (GameQueueType game : gameTypeStats.keySet()) {
+                    String wins = gameTypeStats.get(game).split("-")[0];
+                    String losses = gameTypeStats.get(game).split("-")[1];
+                    int games = Integer.valueOf(wins) + Integer.valueOf(losses);
+    
+                    String percent = String.format("%.2f", Double.parseDouble(wins) * 100 / (Double.parseDouble(wins) + Double.parseDouble(losses)));
+    
+                    gameString += LeagueHandler.getMapEmoji(game) + " " + LeagueHandler.formatMatchName(game) + " " +  games + " games\n`(" +  wins + "W/" + losses + "L) - " + percent +"% WR`\n";
+                }
+                builder.addField("Games", gameString, true);
+                builder.addField("Roles", laneString , true);
+            }
+            else if (queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) {
+                LeagueEntry entry = LeagueHandler.getRankEntry(s.getSummonerId(), s.getPlatform());
+                
+                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
+                String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
+                
+                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + totalGames + " you have played this split.\n" + laneString , false);
+            }
+            else if (queue == GameQueueType.RANKED_FLEX_SR) {
+                LeagueEntry entry = LeagueHandler.getFlexEntry(s.getSummonerId(), s.getPlatform());
+                
+                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
+                String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
+                
+                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + totalGames + " you have played this split.\n" + laneString , false);
+            }
+            else {                
+                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();            
+                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games.\n" + laneString , false);
+            }
 
+            HashMap<Integer, ChampionMastery> masteries = LeagueHandler.getMastery(s);
             String champStats = "";
-            for (int i = 0; i < 5 && i < advanceData.size(); i++) {
+            for (int i = 0; i < 6 && i < advanceData.size(); i++) {
                 QueryRecord row = advanceData.get(i);
-                champStats += formatAdvancedData(row);
+                ChampionMastery mastery = masteries.get(row.getAsInt("champion"));
+                champStats += formatAdvancedData(row, mastery);
             }
             builder.addField("Champions", champStats, false);
         }
 
-        builder.addField("Activity", LeagueHandler.getActivity(s), true);
+        builder.addField("Activity", LeagueHandler.getActivity(s), false);
 
         return builder;
     }
 
-    private static String formatAdvancedData(QueryRecord data) {
+    private static String formatAdvancedData(QueryRecord data, ChampionMastery mastery) {
         StaticChampion champion = LeagueHandler.getChampionById(data.getAsInt("champion"));
-        return CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) - " + (data.getAsInt("wins") * 100 / (data.getAsInt("wins") + data.getAsInt("losses"))) + "% WR | " + data.get("total_lp_gain") + " LP\n"
+        int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+        return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + mastery.getChampionLevel()+ "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) - " + (data.getAsInt("wins") * 100 / (data.getAsInt("wins") + data.getAsInt("losses"))) + "% WR | " + data.get("total_lp_gain") + " LP\n"
             + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
     }
 
     public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id) {
+        long[] time = LeagueHandler.getCurrentSplitRange();
+        return getSummonerButtons(s, user_id, time[0], time[1], GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+    }
+
+    public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id, long start, long end, GameQueueType queue) {
+        int index = 0;
+
         List<LayoutComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
+
+        boolean hasTrackedGames = DatabaseHandler.hasSummonerData(s.getAccountId());
         List<Summoner> summoners = LeagueHandler.getSummonersFromPuuid(s.getPUUID());
+
+
+        if (hasTrackedGames) {
+            long[] time = LeagueHandler.getCurrentSplitRange();
+            long[] previousTime = LeagueHandler.getPreviousSplitRange();
+
+            Button allQueue = Button.secondary("lol-queue-all", "All Queue");
+            Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
+            Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
+            Button draft = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
+
+            if (queue == null) {
+                allQueue = allQueue.withStyle(ButtonStyle.SUCCESS);
+            }
+            else {
+                switch (queue) {
+                    case TEAM_BUILDER_RANKED_SOLO:
+                        soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
+                        break;
+                    case RANKED_FLEX_SR:
+                        flex = flex.withStyle(ButtonStyle.SUCCESS);
+                        break;
+                    case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
+                        draft = draft.withStyle(ButtonStyle.SUCCESS);
+                        break;
+                    default:
+                        break;
+                }
+            }
+                
+            Button allSeason = Button.secondary("lol-season-all", "General");
+            Button currentSplit = Button.secondary("lol-season-current", "Current Split");
+            Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
+
+            if (start == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
+            else if (start == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
+            else if (start == previousTime[0] && end == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
+
+            buttons.add(index, ActionRow.of(allQueue, soloQ, flex, draft));
+            index++;
+            buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
+            index++;
+        }
+
         if (summoners.size() == 1) return buttons;
 
         List<Button> shard = new ArrayList<>();
@@ -211,7 +344,7 @@ public class LeagueMessage {
             if (summoner.getAccountId().equals(s.getAccountId())) button = button.asDisabled().withStyle(ButtonStyle.SUCCESS);
             shard.add(button);
         }
-        buttons.add(0, ActionRow.of(shard));
+        buttons.add(index, ActionRow.of(shard));
         return buttons;
 
 
@@ -228,7 +361,7 @@ public class LeagueMessage {
 //
 
     public static LayoutComponent getOpggQueueTypeButtons(GameQueueType queue) {
-        GameQueueType currentGameQueueType = GameQueueType.CHERRY;
+        GameQueueType currentGameQueueType = GameQueueType.ULTBOOK;
 
         Button soloQ = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
         Button flex = Button.primary("match-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
