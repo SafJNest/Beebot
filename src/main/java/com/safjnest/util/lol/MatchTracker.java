@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.safjnest.App;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.sql.DatabaseHandler;
@@ -57,6 +58,8 @@ public class MatchTracker {
 
     private static void retriveSummoners() {
         try {
+            if (App.isExtremeTesting()) return;
+
             QueryCollection result = DatabaseHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
 
