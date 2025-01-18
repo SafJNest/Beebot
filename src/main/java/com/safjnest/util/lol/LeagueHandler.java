@@ -256,6 +256,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
             case TEAM_BUILDER_RANKED_SOLO:
             case RANKED_FLEX_SR:
             case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
+            case QUICKPLAY_NORMAL:
             case SWIFTPLAY:
                 emoji = CustomEmojiHandler.getFormattedEmoji("rift_mode");
                 break;
