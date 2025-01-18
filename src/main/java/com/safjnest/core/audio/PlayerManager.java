@@ -72,7 +72,7 @@ public class PlayerManager {
     private void registerYoutube(SettingsLoader settingsLoader) {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 
-        if(!App.isExtremeTesting() && settingsLoader.isRotorEnabled()) {
+        if(!App.TEST_MODE && settingsLoader.isRotorEnabled()) {
             IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
             List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
             RotatingNanoIpRoutePlanner routePlanner = new RotatingNanoIpRoutePlanner(ipBlocks);

@@ -92,7 +92,7 @@ public class Bot {
     private static CommandClient client;
 
     /**
-     * Where the magic happens.
+     * Where the magic happens <3.
      *
      */
     public void il_risveglio_della_bestia() {
@@ -130,16 +130,6 @@ public class Bot {
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
-                // jda.getGuilds().forEach(guild -> {
-                //     guild.updateCommands().queue();
-                // });
-                // SubcommandData sub = new SubcommandData("menu", "Add a new twitch channel");
-                // SlashCommandData scd = Commands.slash("twitch", "ffff").addSubcommands(
-                //     sub
-                // );
-                // jda.getGuildById("474935164451946506").updateCommands().addCommands(
-                //         scd
-                // ).queue();
                 CustomEmojiHandler.loadEmoji();
                 AutomatedActionTimer.init();
                 BotLogger.info("Bot ready");
@@ -156,7 +146,7 @@ public class Bot {
             return null;
         });
 
-        if (App.isExtremeTesting()) {
+        if (App.TEST_MODE) {
             builder.setPrefixFunction(event -> {
                 return settings.prefix;
             });
@@ -224,11 +214,6 @@ public class Bot {
         jda.addEventListener(new EventButtonHandler());
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
-
-        if(App.isExtremeTesting()){
-            //Connection c = new Connection(jda, gs, bs);
-            //c.start();
-        }
     }
 
 

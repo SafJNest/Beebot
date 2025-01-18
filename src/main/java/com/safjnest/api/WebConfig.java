@@ -1,4 +1,4 @@
-package com.safjnest.controller.api;
+package com.safjnest.api;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;

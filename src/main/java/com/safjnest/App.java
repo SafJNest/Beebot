@@ -19,34 +19,17 @@ public class App {
     private static Properties properties;
     private static SettingsLoader settingsLoader;
 
-    private static Bot extreme_safj_beebot;
-
-    private static String bot;
+    private static String botName;
+    private static Bot bot;
     
-    /**
-     * Insane beebot core
-     */
-    private static boolean EXTREME_TESTING;
-
-    public static boolean isExtremeTesting() {
-        return EXTREME_TESTING;
-    }
-
-    public static SettingsLoader getSettingsLoader() {
-        return settingsLoader;
-    }
-
+    public static final boolean TEST_MODE = getPropertyAsBoolean("testing");
 
     public static void main(String args[]) {
         
         SafJNest.bee();
         new BotLogger("Beebot", null);
 
-        EXTREME_TESTING = args.length > 0 ? Boolean.parseBoolean(args[0]) : getPropertyAsBoolean("testing");
-        if (EXTREME_TESTING) BotLogger.info("Beebot is in testing mode");
-        else BotLogger.info("Beebot is in normal mode");
-
-        if (!EXTREME_TESTING) {
+        if (!TEST_MODE) {
             SpringApplication app = new SpringApplication(App.class);
             try {
                 Properties spring = new Properties();
@@ -56,26 +39,28 @@ public class App {
                 e.printStackTrace();
             }
             //app.run(args);
-        }
 
-        bot = App.isExtremeTesting() ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
-        settingsLoader = new SettingsLoader(bot, App.isExtremeTesting());
-                
-        if(!isExtremeTesting()) TwitchClient.init();
+            TwitchClient.init();
+        }
+        else BotLogger.info("Beebot is in testing mode");
         
-        extreme_safj_beebot = new Bot();
-        extreme_safj_beebot.il_risveglio_della_bestia();
+
+        botName = TEST_MODE ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
+        settingsLoader = new SettingsLoader(botName, TEST_MODE);
+                
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void shutdown() {
         BotLogger.trace("Shutting down the bot");
-        extreme_safj_beebot.distruzione_demoniaca();
+        bot.distruzione_demoniaca();
     }
 
     public static void restart() {
         BotLogger.trace("Restarting the bot");
-        extreme_safj_beebot.distruzione_demoniaca();
-        extreme_safj_beebot.il_risveglio_della_bestia();
+        bot.distruzione_demoniaca();
+        bot.il_risveglio_della_bestia();
     }
 
     public static String getProperty(String key) {
@@ -97,6 +82,10 @@ public class App {
     }
 
     public static String getBot() {
-        return bot;
+        return botName;
+    }
+
+    public static SettingsLoader getSettingsLoader() {
+        return settingsLoader;
     }
 }
