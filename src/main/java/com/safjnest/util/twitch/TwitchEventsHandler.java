@@ -22,6 +22,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 import com.github.twitch4j.helix.domain.Stream;
 
+import com.safjnest.core.cache.managers.GuildCache;
+
 class TwitchEventsHandler {
 
     public static void onStreamOnlineEvent(StreamOnlineEvent event) {
@@ -60,7 +62,7 @@ class TwitchEventsHandler {
 
         for (QueryRecord guildRow : result) {
             Guild guild = Bot.getJDA().getGuildById(guildRow.get("guild_id"));
-            GuildData g = Bot.getGuildData(guild);
+            GuildData g = GuildCache.getGuild(guild);
 
             TwitchData twitchData = g.getTwitchdata(streamer.getId());
             if (twitchData == null) {

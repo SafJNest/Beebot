@@ -25,11 +25,13 @@ import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.audio.types.EmbedType;
+import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.AlertType;
@@ -66,6 +68,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
+
+import com.safjnest.core.cache.managers.GuildCache;
 
 
 public class EventButtonHandler extends ListenerAdapter {
@@ -189,12 +193,12 @@ public class EventButtonHandler extends ListenerAdapter {
         switch (args) {
             case "global":
                 soundSwitch = true;
-                soundId = Bot.getUserData(event.getUser().getId()).getGlobalGreet();
+                soundId = UserCache.getUser(event.getUser().getId()).getGlobalGreet();
                 type = "global";
                 break;
             case "guild":
                 soundSwitch = true;
-                soundId = Bot.getUserData(event.getUser().getId()).getGreet(event.getGuild().getId());
+                soundId = UserCache.getUser(event.getUser().getId()).getGreet(event.getGuild().getId());
                 type = "guild";
                 break;
             case "back":
@@ -217,15 +221,15 @@ public class EventButtonHandler extends ListenerAdapter {
             case "delete":
                 type = clicked.getId().split("-")[2];
                 if (type.equals("global"))
-                    Bot.getUserData(event.getUser().getId()).unsetGreet("0");
+                    UserCache.getUser(event.getUser().getId()).unsetGreet("0");
                 else
-                    Bot.getUserData(event.getUser().getId()).unsetGreet(event.getGuild().getId());
+                    UserCache.getUser(event.getUser().getId()).unsetGreet(event.getGuild().getId());
         }
 
-        List<LayoutComponent> buttons = soundSwitch ? SoundHandler.getGreetSoundButton(event.getUser().getId(), type, soundId) : SoundHandler.getGreetButton(event.getUser().getId(), event.getGuild().getId());
+        List<LayoutComponent> buttons = soundSwitch ? SoundEmbed.getGreetSoundButton(event.getUser().getId(), type, soundId) : SoundEmbed.getGreetButton(event.getUser().getId(), event.getGuild().getId());
 
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(SoundHandler.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
+        event.getMessage().editMessageEmbeds(SoundEmbed.getGreetViewEmbed(event.getUser().getId(), event.getGuild().getId()).build())
                         .setComponents(buttons)
                         .queue();
     }
@@ -377,7 +381,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 break;
             case "delete":
-                Bot.getGuildData(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
+                GuildCache.getGuild(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
                 if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
                     TwitchClient.unregisterSubEvent(streamerId);
@@ -397,7 +401,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String args = event.getButton().getId().split("-", 3)[1];
         String soundId = event.getButton().getId().split("-", 3)[2];
 
-        Sound sound = SoundHandler.getSoundById(soundId);
+        Sound sound = SoundCache.getSoundById(soundId);
 
         switch (args) {
             case "like":
@@ -442,8 +446,8 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        event.getMessage().editMessageEmbeds(SoundHandler.getSoundEmbed(sound, event.getUser()).build())
-                .setComponents(SoundHandler.getSoundEmbedButtons(sound))
+        event.getMessage().editMessageEmbeds(SoundEmbed.getSoundEmbed(sound, event.getUser()).build())
+                .setComponents(SoundEmbed.getSoundEmbedButtons(sound))
                 .queue();
     }
 
@@ -451,7 +455,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String args = event.getButton().getId().split("-", 4)[1];
         String soundId = event.getButton().getId().split("-", 4)[2];
         String tagId = event.getButton().getId().split("-", 4)[3];
-        Sound soundData = SoundHandler.getSoundById(soundId);
+        Sound soundData = SoundCache.getSoundById(soundId);
 
         boolean tagSwitch = true;
         switch (args) {
@@ -485,7 +489,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        List<LayoutComponent> buttons = tagSwitch ? SoundHandler.getTagButton(soundId, args) : SoundHandler.getSoundButton(soundId);
+        List<LayoutComponent> buttons = tagSwitch ? SoundEmbed.getTagButton(soundId, args) : SoundEmbed.getSoundButton(soundId);
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(CustomizeSound.getEmbed(event.getUser(), soundData).build())
                         .setComponents(buttons)
@@ -503,7 +507,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         Button clicked = event.getButton();
 
-        Sound soundData = SoundHandler.getSoundById(soundId);
+        Sound soundData = SoundCache.getSoundById(soundId);
         int tagId = 0;
 
         if (!soundData.getUserId().equals(event.getUser().getId())) {
@@ -531,7 +535,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 soundData.setPublic(isPrivate);
                 break;
             case "delete":
-                String response = SoundHandler.deleteSound(soundId) ? "Sound deleted" : "Error deleting sound";
+                String response = SoundCache.deleteSound(soundId) ? "Sound deleted" : "Error deleting sound";
                 event.deferReply(true).addContent(response).queue();
                 return;
             case "tag":
@@ -544,7 +548,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
 
-        List<LayoutComponent> buttons = tagSwitch ? SoundHandler.getTagButton(soundId, String.valueOf(tagId)) : SoundHandler.getSoundButton(soundId);
+        List<LayoutComponent> buttons = tagSwitch ? SoundEmbed.getTagButton(soundId, String.valueOf(tagId)) : SoundEmbed.getSoundButton(soundId);
 
         event.deferEdit().queue();
         event.getMessage().editMessageEmbeds(CustomizeSound.getEmbed(event.getUser(), soundData).build())
@@ -572,8 +576,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
         switch (args) {
             case "right":
-                RewardData nextReward = Bot.getGuildData(guild.getId()).getHigherReward(Integer.parseInt(level));
-                RewardData nextNextReward = Bot.getGuildData(guild.getId()).getHigherReward(nextReward.getLevel());
+                RewardData nextReward = GuildCache.getGuild(guild.getId()).getHigherReward(Integer.parseInt(level));
+                RewardData nextNextReward = GuildCache.getGuild(guild.getId()).getHigherReward(nextReward.getLevel());
 
                 if (nextNextReward == null) {
                     right = right.asDisabled();
@@ -590,8 +594,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
 
-                RewardData previousRewardData = Bot.getGuildData(guild.getId()).getLowerReward(Integer.parseInt(level));
-                RewardData previousPreviousRewardData = Bot.getGuildData(guild.getId()).getLowerReward(previousRewardData.getLevel());
+                RewardData previousRewardData = GuildCache.getGuild(guild.getId()).getLowerReward(Integer.parseInt(level));
+                RewardData previousPreviousRewardData = GuildCache.getGuild(guild.getId()).getLowerReward(previousRewardData.getLevel());
                 if (previousPreviousRewardData == null) {
                     left = left.asDisabled();
                     left = left.withStyle(ButtonStyle.DANGER);
@@ -797,7 +801,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         String account_id = puuid;
@@ -972,7 +976,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
         String account_id = puuid;
 
@@ -1110,7 +1114,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String user_id = DatabaseHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = Bot.getUserData(user_id).getRiotAccounts();
+        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
         String account_id = puuid;
         int i = 0;
@@ -1548,7 +1552,7 @@ public class EventButtonHandler extends ListenerAdapter {
         AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
 
         String sound_id = args.split("\\.")[0];
-        Sound sound = SoundHandler.getSoundById(sound_id);
+        Sound sound = SoundCache.getSoundById(sound_id);
         String path = sound.getPath();
 
         PlayerManager pm = PlayerManager.get();

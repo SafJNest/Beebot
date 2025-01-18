@@ -233,14 +233,7 @@ public class Sound {
 
     @Override
     public String toString() {
-        return "ID: " + ID + "\n" +
-            "Guild ID: " + GUILD_ID + "\n" +
-            "User ID: " + USER_ID + "\n" +
-            "Name: " + name + "\n" +
-            "Extension: " + extension + "\n" +
-            "Public: " + isPublic + "\n" +
-            "Timestamp: " + timestamp + "\n" +
-            "Tags: " + tags;
+        return "ID: " + ID;
     }
 
 }

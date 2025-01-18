@@ -26,12 +26,13 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
 import com.safjnest.core.audio.SafjAudioPlaylist;
 import com.safjnest.core.audio.types.PlayTiming;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
@@ -106,9 +107,7 @@ import java.sql.Timestamp;
  */
 public class Test extends Command{
 
-    private GuildDataHandler gs;
-
-    public Test(GuildDataHandler gs){
+    public Test(){
         this.name = this.getClass().getSimpleName().toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -121,8 +120,6 @@ public class Test extends Command{
 
         this.ownerCommand = true;
         this.hidden = true;
-        this.gs = gs;
-
         commandData.setThings(this);
     }
 
@@ -275,36 +272,36 @@ public class Test extends Command{
                 }
             break;
             case "getBlacklist":
-                System.out.println(gs.getGuild(e.getGuild().getId()).getBlacklistData().toString());
+                System.out.println(GuildCache.getGuild(e.getGuild().getId()).getBlacklistData().toString());
                 break;
             case "13":
-                HashMap<AlertKey<?>, AlertData> prova = gs.getGuild(e.getGuild().getId()).getAlerts();
+                HashMap<AlertKey<?>, AlertData> prova = GuildCache.getGuild(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
-                e.reply("```json\n" + gs.getGuild(e.getGuild().getId()).toString() + "```");
+                e.reply("```json\n" + GuildCache.getGuild(e.getGuild().getId()).toString() + "```");
                 e.reply("```json\n" + s + "```");
-                BlacklistData bd = gs.getGuild(e.getGuild().getId()).getBlacklistData();
+                BlacklistData bd = GuildCache.getGuild(e.getGuild().getId()).getBlacklistData();
                 e.reply("```json\n" + bd.toString()+ "```");
-                HashMap<Long, ChannelData> channels = gs.getGuild(e.getGuild().getId()).getChannels();
+                HashMap<Long, ChannelData> channels = GuildCache.getGuild(e.getGuild().getId()).getChannels();
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(gs.getGuild(e.getGuild().getId()).getMembers()).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(gs.getGuild(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getMembers()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
                 break;
             case "14":
                 for(Guild g : e.getJDA().getGuilds()) {
-                    gs.getGuild(g.getId()).getAlerts();
-                    gs.getGuild(g.getId()).getBlacklistData();
+                    GuildCache.getGuild(g.getId()).getAlerts();
+                    GuildCache.getGuild(g.getId()).getBlacklistData();
                     for(GuildChannel cd : g.getChannels()) {
-                        gs.getGuild(g.getId()).getChannelData(cd.getId());
+                        GuildCache.getGuild(g.getId()).getChannelData(cd.getId());
                     }
                     for(Member m : g.getMembers()){
-                        gs.getGuild(g.getId()).getMemberData(m.getId());
-                        Bot.getUserData(m.getId());
+                        GuildCache.getGuild(g.getId()).getMemberData(m.getId());
+                        UserCache.getUser(m.getId());
                     }
                 }
                 e.reply("Done");
                 break;
             case "getServer":
-                String sss = new JSONObject(gs.getGuild(e.getGuild().getId()).getChannels()).toJSONString();
+                String sss = new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getChannels()).toJSONString();
                 e.reply("```json\n" + sss + "```");
                 break;
             case "stats":
@@ -393,41 +390,41 @@ public class Test extends Command{
                 break;
             case "disablecommands":
                 e.getGuild().getTextChannels().forEach(c -> {
-                    Bot.getGuildData(e.getGuild()).getChannelData(c.getId()).setCommand(false);
+                    GuildCache.getGuild(e.getGuild()).getChannelData(c.getId()).setCommand(false);
                 });
                 break;
             case "disablecommand":
-                Bot.getGuildData(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(false);
+                GuildCache.getGuild(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(false);
                 break;
             case "enablecommand":
-                Bot.getGuildData(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(true);
+                GuildCache.getGuild(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(true);
                 break;
             case "enablecommands":
                 e.getGuild().getTextChannels().forEach(c -> {
-                    Bot.getGuildData(e.getGuild()).getChannelData(c.getId()).setCommand(true);
+                    GuildCache.getGuild(e.getGuild()).getChannelData(c.getId()).setCommand(true);
                 });
                 break;
             case "cachesize":
-                Bot.getGuildSettings().getGuilds().setMaxSize(Integer.parseInt(args[1]));
+                //Bot.getGuildSettings().getGuilds().setMaxSize(Integer.parseInt(args[1]));
                 e.reply("New cache max size: " + args[1]);
                 break;
             case "userdata":
                 try {
-                    e.reply(Bot.getUserData(args[1]).toString());
+                    e.reply(UserCache.getUser(args[1]).toString());
                 } catch (Exception e1) {
-                    e.reply(Bot.getUserData(e.getAuthor().getId()).toString());
+                    e.reply(UserCache.getUser(e.getAuthor().getId()).toString());
                 }
                 break;
             case "usersdata":
                 String users = "";
-                for (UserData ud : Bot.getUsers().values(false)) {
+                for (UserData ud : UserCache.getInstance().values()) {
                     users += ud.getName() + "-";
                 }
                 e.reply(users);
                 break;
             case "clearcache":
-                Bot.getGuildSettings().getGuilds().clear();
-                Bot.getUsers().clear();
+                //GuilddataCache.getGuilds().clear();
+                //Bot.getUsers().clear();
                 e.reply("Cache cleared");
                 break;
             case "spotify":
@@ -528,7 +525,7 @@ public class Test extends Command{
                 break;
             case "dbsgozz":
                 for (Guild g : e.getJDA().getGuilds()) {
-                    GuildData gd = Bot.getGuildData(g);
+                    GuildData gd = GuildCache.getGuild(g);
                     for (Member m : g.getMembers()) {
                         gd.getMemberData(m.getId()).setUpdateTime(61);
                     }

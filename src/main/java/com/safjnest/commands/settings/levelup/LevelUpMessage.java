@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
@@ -14,6 +13,8 @@ import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+
+import com.safjnest.core.cache.managers.GuildCache;
 
 public class LevelUpMessage extends SlashCommand{
 
@@ -45,7 +46,7 @@ public class LevelUpMessage extends SlashCommand{
         AlertSendType sendType = event.getOption("sendtype") != null ? AlertSendType.values()[event.getOption("sendtype").getAsInt()] : AlertSendType.CHANNEL;
         String guildId = event.getGuild().getId();
 
-        GuildData gs = Bot.getGuildData(guildId);
+        GuildData gs = GuildCache.getGuild(guildId);
         
         AlertData level = gs.getAlert(AlertType.LEVEL_UP);
 

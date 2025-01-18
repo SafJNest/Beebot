@@ -11,7 +11,6 @@ import java.awt.Color;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -64,15 +63,12 @@ import com.safjnest.commands.settings.leave.Leave;
 import com.safjnest.commands.settings.levelup.LevelUp;
 import com.safjnest.commands.settings.reward.Reward;
 import com.safjnest.commands.settings.welcome.Welcome;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.*;
-import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.util.AutomatedActionTimer;
-import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.Settings;
-import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 
 /**
@@ -92,15 +88,11 @@ public class Bot {
     private static JDA jda;
     private static String botID;
     private static Settings settings;
-    
-    private static GuildDataHandler gs;
-    private static CacheMap<String, UserData> userData;
 
     private static CommandClient client;
 
-    private static AutomatedActionTimer automatedActionTimer;
     /**
-     * Where the magic happens.
+     * Where the magic happens <3.
      *
      */
     public void il_risveglio_della_bestia() {
@@ -111,10 +103,9 @@ public class Bot {
         //fastest way to comment
         //https://patorjk.com/software/taag/#p=display&c=c%2B%2B&f=Delta%20Corps%20Priest%201
 
-        SettingsLoader settingsLoader = new SettingsLoader(App.getBot());
-        settings = new Settings(settingsLoader);
+        settings = new Settings();
 
-        BotLogger.warning(settingsLoader.getInfo());
+        BotLogger.warning(App.getSettingsLoader().getInfo());
 
         jda = JDABuilder
             .createLight(settings.token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
@@ -127,9 +118,6 @@ public class Bot {
 
         botID = jda.getSelfUser().getId();
 
-        gs = new GuildDataHandler();
-        userData = new CacheMap<String, UserData>(50);
-        
         CommandClientBuilder builder = new CommandClientBuilder();
         builder.setHelpWord(settings.helpWord);
         builder.setOwnerId(settings.ownerID);
@@ -142,18 +130,9 @@ public class Bot {
         jda.addEventListener(new ListenerAdapter() {
             @Override
             public void onReady(ReadyEvent event) {
-                // jda.getGuilds().forEach(guild -> {
-                //     guild.updateCommands().queue();
-                // });
-                // SubcommandData sub = new SubcommandData("menu", "Add a new twitch channel");
-                // SlashCommandData scd = Commands.slash("twitch", "ffff").addSubcommands(
-                //     sub
-                // );
-                // jda.getGuildById("474935164451946506").updateCommands().addCommands(
-                //         scd
-                // ).queue();
-                new CustomEmojiHandler();
-                BotLogger.debug("[JDA] Custom emoji cached correctly");
+                CustomEmojiHandler.loadEmoji();
+                AutomatedActionTimer.init();
+                BotLogger.info("Bot ready");
             }
         });
 
@@ -161,24 +140,20 @@ public class Bot {
             if (event.getChannelType() == ChannelType.PRIVATE)
                 return "";
             if (event.isFromGuild()) {
-                GuildData gd = gs.getGuild(event.getGuild().getId());
+                GuildData gd = GuildCache.getGuild(event.getGuild());
                 return gd == null ? settings.prefix : gd.getPrefix();
             }
             return null;
         });
 
-        if (App.isExtremeTesting()) {
+        if (App.TEST_MODE) {
             builder.setPrefixFunction(event -> {
                 return settings.prefix;
             });
         }
 
-        automatedActionTimer = new AutomatedActionTimer();
-
-        new CommandsLoader();
-
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new PrintCache(gs), new Ping(), new Ram(), new Help(), new Prefix(gs));
+        Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix());
 
         Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
             new LastMatches(), new Opgg(), new Calculator(), new Dice(), 
@@ -195,12 +170,12 @@ public class Bot {
             new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard(), new Warn()
         );
         
-        Collections.addAll(commandsList, new Leaderboard(), new Test(gs), new ListGuild());
+        Collections.addAll(commandsList, new Leaderboard(), new Test(), new ListGuild());
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix(gs));
+        Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix());
 
         
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
@@ -214,8 +189,8 @@ public class Bot {
         Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
             new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
             new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
-            new Permissions(), new ModifyNickname(), new Welcome(gs), new Leave(), new Boost(), 
-            new Blacklist(gs), new Twitch(), new Omegle()
+            new Permissions(), new ModifyNickname(), new Welcome(), new Leave(), new Boost(), 
+            new Blacklist(), new Twitch(), new Omegle()
         );
 
         
@@ -225,7 +200,7 @@ public class Bot {
             new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn()
         );
 
-        Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp(gs));
+        Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         
@@ -239,11 +214,6 @@ public class Bot {
         jda.addEventListener(new EventButtonHandler());
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
-
-        if(App.isExtremeTesting()){
-            //Connection c = new Connection(jda, gs, bs);
-            //c.start();
-        }
     }
 
 
@@ -263,7 +233,6 @@ public class Bot {
         return settings.prefix;
     }
     
-
     public static String getBotId() {
         return botID;
     }
@@ -272,38 +241,11 @@ public class Bot {
         return settings.color;
     }
 
-    public static GuildDataHandler getGuildSettings() {
-        return gs;
-    }
-
-    public static GuildData getGuildData(Guild guild) {
-        return getGuildData(guild.getId());
-    }
-
-    public static GuildData getGuildData(String id) {
-        return gs.getGuild(id);
-    }
-
     public static CommandClient getClient() {
         return client;
     }
 
-    public static UserData getUserData(String userId) {
-        if (!userData.containsKey(userId)) {
-            userData.put(userId, new UserData(userId));
-        }
-        return userData.get(userId);
-    }
-
-    public static CacheMap<String, UserData> getUsers() {
-        return userData;
-    }
-
     public static void handleEvent(GenericEvent event) {
         jda.getEventManager().handle(event);
-    }
-
-    public static AutomatedActionTimer getAutomatedActionTimer() {
-        return automatedActionTimer;
     }
 }

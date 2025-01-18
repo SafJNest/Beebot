@@ -7,8 +7,9 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.audio.types.AudioType;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -61,7 +62,7 @@ public class SearchSound extends SlashCommand {
         String query = event.getOption("query").getAsString();
         String author = event.getOption("author") == null ? null : event.getOption("author").getAsUser().getId();
 
-        List<Sound> sounds = SoundHandler.searchSound(query, author);
+        List<Sound> sounds = SoundCache.searchSound(query, author);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor("Search by" + event.getUser().getName(), "https://discord.com/users/" + event.getUser().getId(), event.getUser().getEffectiveAvatarUrl());
@@ -148,7 +149,7 @@ public class SearchSound extends SlashCommand {
                 }
     
                 List<String> selected = event.getValues();
-                Sound sound = SoundHandler.getSoundById(selected.get(0));
+                Sound sound = SoundCache.getSoundById(selected.get(0));
     
                 PlayerManager.get().loadItemOrdered(guild, sound.getPath(), new ResultHandler(slashEvent, sound));
                 
@@ -176,7 +177,7 @@ public class SearchSound extends SlashCommand {
     
                 sound.increaseUserPlays(author.getId());
                     
-                menuEvent.editMessageEmbeds(SoundHandler.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundHandler.getSoundEmbedButtons(sound)).queue();
+                menuEvent.editMessageEmbeds(SoundEmbed.getSoundEmbed(sound, author.getUser()).build()).setComponents(SoundEmbed.getSoundEmbedButtons(sound)).queue();
             }
     
             @Override

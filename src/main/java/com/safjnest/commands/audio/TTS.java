@@ -9,11 +9,11 @@ import java.util.Set;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.App;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.tts.TTSHandler;
 import com.safjnest.core.audio.tts.TTSVoices;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -32,7 +32,6 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 
 public class TTS extends SlashCommand{
-    private TTSHandler tts;
     private PlayerManager pm;
     
     public final HashMap<String, Set<String>> voices;
@@ -56,7 +55,6 @@ public class TTS extends SlashCommand{
 
         commandData.setThings(this);
 
-        this.tts = App.getTTS();
         this.pm = PlayerManager.get();
         this.voices = TTSVoices.getVoices();
     }
@@ -67,7 +65,7 @@ public class TTS extends SlashCommand{
         String speech = event.getOption("text").getAsString();
 
         Guild guild = event.getGuild();
-        GuildData guildData = Bot.getGuildData(guild.getId());
+        GuildData guildData = GuildCache.getGuild(guild);
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
@@ -104,7 +102,7 @@ public class TTS extends SlashCommand{
         if(!file.exists())
             file.mkdirs();
 
-        tts.makeSpeech(speech, event.getMember().getEffectiveName(), voice, language);
+        TTSHandler.makeSpeech(speech, event.getMember().getEffectiveName(), voice, language);
         
         String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getMember().getEffectiveName() + ".mp3";
         
@@ -117,7 +115,7 @@ public class TTS extends SlashCommand{
         String speech = event.getArgs();
 
         Guild guild = event.getGuild();
-        GuildData guildData = Bot.getGuildData(guild.getId());
+        GuildData guildData = GuildCache.getGuild(guild.getId());
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
 
@@ -182,7 +180,7 @@ public class TTS extends SlashCommand{
         if(!file.exists())
             file.mkdirs();
 
-        tts.makeSpeech(speech, event.getAuthor().getName(), voice, language);
+        TTSHandler.makeSpeech(speech, event.getAuthor().getName(), voice, language);
         
         String ttsFileName = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
 

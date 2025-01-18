@@ -19,20 +19,20 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.core.cache.managers.GuildCache;
 
 public class AutomatedActionTimer {
     private static final long rescheduleTiming = TimeConstant.HOUR * 2;
 
-    private final Map<String, ScheduledFuture<?>> scheduledTasks;
+    private static final Map<String, ScheduledFuture<?>> scheduledTasks = new HashMap<>();
 
-    private LocalDateTime nextReschedule; 
+    private static LocalDateTime nextReschedule; 
 
-    public AutomatedActionTimer() {
-        this.scheduledTasks = new HashMap<>();
+    public static void init() {
         Chronos.scheduleAtFixedRate(getAAScheduler(), 0, rescheduleTiming, TimeUnit.MILLISECONDS);
     }
 
-    public void scheduleAATask(LocalDateTime dateTime, String id, int actionId, String userId, String guildId) {
+    public static void scheduleAATask(LocalDateTime dateTime, String id, int actionId, String userId, String guildId) {
         Date date = Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
         long delay = date.getTime() - Date.from(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant()).getTime();
 
@@ -46,7 +46,7 @@ public class AutomatedActionTimer {
         }
 
 
-        AutomatedAction action = Bot.getGuildData(guildId).getAction(actionId);
+        AutomatedAction action = GuildCache.getGuild(guildId).getAction(actionId);
         if (action == null) {
             BotLogger.error("[AutomatedActionTimer] Action not found: " + actionId);
             return;
@@ -82,7 +82,7 @@ public class AutomatedActionTimer {
         BotLogger.info("[AutomatedActionTimer] Scheduled task: " + id + " for " + dateTime);
     }
 
-    private Runnable getAAScheduler() {
+    private static Runnable getAAScheduler() {
         return () -> {
             try {
                 nextReschedule = LocalDateTime.now().plusNanos(rescheduleTiming * 1000 * 1000);

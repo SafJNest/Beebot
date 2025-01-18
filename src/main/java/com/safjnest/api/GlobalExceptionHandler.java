@@ -1,4 +1,4 @@
-package com.safjnest.controller.api;
+package com.safjnest.api;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;

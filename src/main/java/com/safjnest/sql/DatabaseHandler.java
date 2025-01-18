@@ -23,6 +23,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 
+import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.guild.alert.AlertSendType;
@@ -67,21 +68,14 @@ public class DatabaseHandler {
         }
     }
 
-    /**
-     * Constructor
-     *
-     * @param hostName Hostname, as 'keria123.eu-west-1.compute.fakerAws.com'
-     * @param database Name of the database to connect in
-     * @param user Username
-     * @param password Password
-     */
-    public DatabaseHandler(String hostName, String database, String user, String password){
-        DatabaseHandler.hostName = hostName;
-        DatabaseHandler.database = database;
-        DatabaseHandler.user = user;
-        DatabaseHandler.password = password;
+    static {
+        DatabaseHandler.hostName = App.getSettingsLoader().getDBHostname();
+        DatabaseHandler.database = App.getSettingsLoader().getDBName();
+        DatabaseHandler.user = App.getSettingsLoader().getDBUser();
+        DatabaseHandler.password = App.getSettingsLoader().getDBPassword();
 
         connectIfNot();
+
     }
 
     private static void connectIfNot() {

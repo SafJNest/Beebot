@@ -10,6 +10,8 @@ import org.voicerss.tts.Voice.VoiceParameters;
 import org.voicerss.tts.Voice.VoiceProvider;
 import org.voicerss.tts.Voice.Voices;
 
+import com.safjnest.App;
+
 /**
  * Class that provides to generate {@code .mp3} files using TTS
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -19,15 +21,11 @@ public class TTSHandler {
      * The TTS provider
      * @see <a href="https://www.voicerss.org/sdk/java.aspx"> Voice RSS</a>
      */
-    private VoiceProvider tts;
-    String path = "rsc" + File.separator + "tts";
+    private static VoiceProvider tts;
+    private static final String path = "rsc" + File.separator + "tts";
 
-    /**
-     * Default constructor
-     * @param token
-     */
-    public TTSHandler(String token){
-        tts = new VoiceProvider(token);
+    static {
+        tts = new VoiceProvider(App.getSettingsLoader().getTTSApiKey());
     }
 
     /**
@@ -35,7 +33,7 @@ public class TTSHandler {
      * @param speech {@code String} with the text to be read
      * @param userName {@code String} name's voice
      */
-    public void makeSpeech(String speech, String userName) {
+    public static void makeSpeech(String speech, String userName) {
         for (File file : new File(path).listFiles())
             file.delete();
 
@@ -64,7 +62,7 @@ public class TTSHandler {
      * @param voiceName {@code String} voice name
      * @param language {@code String} languages of the voice
      */
-    public void makeSpeech(String speech, String userName, String voiceName, String language) {
+    public static void makeSpeech(String speech, String userName, String voiceName, String language) {
         for (File file : new File(path).listFiles())
             file.delete();
 

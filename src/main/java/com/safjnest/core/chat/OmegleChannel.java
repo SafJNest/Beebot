@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.entities.Webhook;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 
 public class OmegleChannel {
+    @SuppressWarnings("unused")
     private static final int inactivityBeforeStoppingAutoreconnect = 2;
     private static final List<String> staticNamePool = List.of(LeagueHandler.getChampions());
     

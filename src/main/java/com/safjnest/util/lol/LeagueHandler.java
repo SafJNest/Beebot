@@ -27,7 +27,6 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -35,6 +34,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
 
@@ -43,6 +43,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -58,6 +59,10 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
+
+import com.safjnest.App;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
 
 
 /**
@@ -79,8 +84,14 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
     private static ArrayList<AugmentData> augments = new ArrayList<>();
 
-    public LeagueHandler(R4J riotApi, String version){
-        LeagueHandler.riotApi = riotApi;
+    static {
+        try {
+            LeagueHandler.riotApi = new R4J(new APICredentials(App.getSettingsLoader().getRiotKey()));
+            BotLogger.info("[R4J] Connection Successful!");
+        } catch (Exception e) {
+            BotLogger.error("[R4J] Annodam Not Successful!");
+        }
+        
         LeagueHandler.version = getVersion();
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
 
@@ -315,7 +326,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     /**
      * Load all the runes data into {@link #runesHandler runesHandler}
      */
-    private void loadRunes(){
+    private static void loadRunes(){
         try {
             URI uri = new URI(runesURL);
             URL url = uri.toURL();
@@ -355,7 +366,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
     }
 
-    private void loadAguments() {
+    private static void loadAguments() {
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "augments.json");
             JSONParser parser = new JSONParser();
@@ -414,7 +425,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
         //     return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
         // } catch (Exception e) {return null;}
-        return getSummonerByUserData(Bot.getUserData(discordId));
+        return getSummonerByUserData(UserCache.getUser(discordId));
     }
 
     public static Summoner getSummonerByUserData(UserData user){
@@ -431,7 +442,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static int getNumberOfProfile(String userId){
         try {
-            return Bot.getUserData(userId).getRiotAccounts().size();
+            return UserCache.getUser(userId).getRiotAccounts().size();
         } catch (Exception e) { return 0; }
     }
 
@@ -466,7 +477,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static Summoner getSummonerByArgs(CommandEvent event) {
         String args = event.getArgs();
-        GuildData guild = Bot.getGuildData(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
 
         if (args.isEmpty()) {
             return getSummonerFromDB(event.getAuthor().getId());
@@ -495,7 +506,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
-        GuildData guild = Bot.getGuildData(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
 
         User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();
 
@@ -887,7 +898,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 //  ████████▀    ███    █▀      ███    █▀   ▀█   ███   █▀   ▄████▀      █▀    ▀██████▀   ▀█   █▀
 //
 
-    private void loadChampions(){
+    private static void loadChampions(){
         champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
     }
 
