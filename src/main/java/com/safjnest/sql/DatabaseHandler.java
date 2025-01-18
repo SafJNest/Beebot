@@ -697,7 +697,30 @@ public class DatabaseHandler {
         return safJQuery("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `summoner_tracking` WHERE `account_id` = '" + account_id + "' GROUP BY `champion` ORDER BY `games` DESC;");
     }
 
-    public static QueryCollection getAdvancedLOLData(String account_id, long time_start, long time_end) {
+    public static QueryCollection getAllGamesForAccount(String account_id, long time_start, long time_end) {
+        String timeFilter = "";
+        if (time_start != 0) {
+            timeFilter = "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
+                        "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' ";
+        }
+        return safJQuery("SELECT sm.game_id, sm.game_type, st.win " +
+                         "FROM summoner_tracking st " +
+                         "INNER JOIN summoner_match sm ON st.summoner_match_id = sm.id " +
+                         "WHERE st.account_id = '" + account_id + "' " + timeFilter);
+    }
+    
+    public static QueryCollection getAdvancedLOLData(String account_id, long time_start, long time_end, GameQueueType queue) {
+        String timeFilter = "";
+        String queueFilter = "";
+        if (time_start != 0) {
+            timeFilter = "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
+                        "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' ";
+        }
+        if (queue != null) {
+            queueFilter = "AND sm.game_type = " + queue.ordinal() + " ";
+        }
+
+
         String overallQuery =
             "SELECT " +
             "  t.`champion`, " +
@@ -711,9 +734,8 @@ public class DatabaseHandler {
             "FROM `summoner_tracking` t " +
             "JOIN `summoner_match` sm ON t.`summoner_match_id` = sm.`id` " +
             "WHERE t.`account_id` = '" + account_id + "' " +
-            "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
-            "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
-            "AND sm.game_type = " + GameQueueType.TEAM_BUILDER_RANKED_SOLO.ordinal() + " " +
+            timeFilter + 
+            queueFilter +
             "GROUP BY t.`champion`";
 
         String laneQuery =
@@ -726,9 +748,8 @@ public class DatabaseHandler {
             "FROM `summoner_tracking` t " +
             "JOIN `summoner_match` sm ON t.`summoner_match_id` = sm.`id` " +
             "WHERE t.`account_id` = '" + account_id + "' " +
-            "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
-            "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' " +
-            "AND sm.game_type = " + GameQueueType.TEAM_BUILDER_RANKED_SOLO.ordinal() + " " +
+            timeFilter + 
+            queueFilter +
             "GROUP BY t.`champion`, t.`lane`";
 
         String combinedQuery =
@@ -753,9 +774,6 @@ public class DatabaseHandler {
 
         return safJQuery(combinedQuery);
     }
-
-
-
 
     public static boolean addLOLAccount(Summoner summoner) {
         return addLOLAccount(null, summoner);
@@ -1520,6 +1538,10 @@ public class DatabaseHandler {
             "WHERE st.account_id = '" + account_id + "' AND sm.game_type = " + GameQueueType.TEAM_BUILDER_RANKED_SOLO.ordinal() + " " +
             "ORDER BY sm.game_id"
         );
+    }
+
+    public static boolean hasSummonerData(String account_id) {
+        return !fetchJRow("SELECT 1 from summoner_tracking where account_id = '" + account_id + "';").isEmpty();
     }
 
     public static boolean trackSummoner(String user_id, String account_id, boolean track) {
