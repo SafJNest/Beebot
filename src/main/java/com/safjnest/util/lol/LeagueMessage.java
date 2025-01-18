@@ -361,7 +361,7 @@ public class LeagueMessage {
 //
 
     public static LayoutComponent getOpggQueueTypeButtons(GameQueueType queue) {
-        GameQueueType currentGameQueueType = GameQueueType.ULTBOOK;
+        GameQueueType currentGameQueueType = GameQueueType.SWIFTPLAY;
 
         Button soloQ = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
         Button flex = Button.primary("match-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
@@ -386,6 +386,7 @@ public class LeagueMessage {
                 break;
             case CHERRY:
             case ULTBOOK:
+            case SWIFTPLAY:
                 curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
                 break;
             default:
