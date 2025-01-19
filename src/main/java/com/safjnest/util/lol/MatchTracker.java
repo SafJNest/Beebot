@@ -58,7 +58,7 @@ public class MatchTracker {
 
     private static void retriveSummoners() {
         try {
-            if (App.isExtremeTesting()) return;
+            if (App.TEST_MODE) return;
 
             QueryCollection result = DatabaseHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");

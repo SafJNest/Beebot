@@ -672,7 +672,7 @@ public class LeagueMessage {
         MatchListBuilder builder = queue != null ? s.getLeagueGames().withCount(100).withBeginIndex(index).withQueue(queue).withPlatform(s.getPlatform()) : s.getLeagueGames().withCount(100).withBeginIndex(index).withPlatform(s.getPlatform());
 
         for (String gameId : builder.get()) {
-            if (gameId.split("_")[0].equalsIgnoreCase(s.getPlatform().toString())) {
+            if (gameId.split("_")[3].equalsIgnoreCase(s.getPlatform().toString())) {
                 gameIds.add(gameId);
             }
         }

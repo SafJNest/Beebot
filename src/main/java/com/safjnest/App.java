@@ -1,6 +1,8 @@
 package com.safjnest;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
@@ -24,30 +26,27 @@ public class App {
     
     public static final boolean TEST_MODE = getPropertyAsBoolean("testing");
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws FileNotFoundException, IOException {
         
         SafJNest.bee();
         new BotLogger("Beebot", null);
 
+        botName = TEST_MODE ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
+        settingsLoader = new SettingsLoader(botName, TEST_MODE);
+
         if (!TEST_MODE) {
-            SpringApplication app = new SpringApplication(App.class);
-            try {
-                Properties spring = new Properties();
-                spring.load(new FileReader("spring.properties"));
-                app.setDefaultProperties(spring);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            //app.run(args);
+            SpringApplication springApplication = new SpringApplication(App.class);
+            
+            Properties springProperties = new Properties();
+            springProperties.load(new FileReader("spring.properties"));
+
+            springApplication.setDefaultProperties(springProperties);
+            springApplication.run(args);
 
             TwitchClient.init();
         }
         else BotLogger.info("Beebot is in testing mode");
-        
-
-        botName = TEST_MODE ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
-        settingsLoader = new SettingsLoader(botName, TEST_MODE);
-                
+                        
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }
