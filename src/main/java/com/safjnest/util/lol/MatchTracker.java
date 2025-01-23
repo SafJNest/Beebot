@@ -154,7 +154,7 @@ public class MatchTracker {
         try { Thread.sleep(350); }
         catch (InterruptedException e) {e.printStackTrace();}
 
-        List<String> matchIds = summoner.getLeagueGames().withCount(20).withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).get();
+        List<String> matchIds = summoner.getLeagueGames().get();
         if (matchIds.isEmpty()) return Chronos.NULL;
 
         String matchId = matchIds.get(0);
@@ -169,6 +169,7 @@ public class MatchTracker {
         }
 
         LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), matchId);
+        if (match.getQueue() != GameQueueType.TEAM_BUILDER_RANKED_SOLO) return Chronos.NULL;
         return analyzeMatchHistory(match, summoner, row);
     }
 
