@@ -50,7 +50,6 @@ public class App {
         return riotApi;
     }
 
-
     public static void main(String args[]) {
         
         SafJNest.bee();

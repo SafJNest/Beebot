@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.safjnest.App;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.sql.DatabaseHandler;
@@ -46,12 +47,14 @@ public class MatchTracker {
     public static int UNKNOWN_RANK = TierDivisionType.UNRANKED.ordinal() + 1;
 
 	static {
-		ChronoTask track = () -> retriveSummoners();
-        track.scheduleAtFixedRate(TimeConstant.MINUTE * 1, period, TimeUnit.MILLISECONDS);
+        if(!App.isExtremeTesting()) {
+            ChronoTask track = () -> retriveSummoners();
+            track.scheduleAtFixedRate(TimeConstant.MINUTE * 1, period, TimeUnit.MILLISECONDS);
 
-        ChronoTask trackQueuedGames = () -> popSet();
-        trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
-        //trackQueuedGames.scheduleAtFixedRate(TimeConstant.MINUTE * 1, TimeConstant.MINUTE * 1, TimeUnit.MILLISECONDS);
+            ChronoTask trackQueuedGames = () -> popSet();
+            trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
+            //trackQueuedGames.scheduleAtFixedRate(TimeConstant.MINUTE * 1, TimeConstant.MINUTE * 1, TimeUnit.MILLISECONDS);
+        }
 	}
 
 

@@ -1,5 +1,6 @@
 package com.safjnest.commands.misc.omegle;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -14,6 +15,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class OmegleConnect extends SlashCommand{
+    private static final int MAX_INTERESTS = 5;
 
     public OmegleConnect(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
@@ -24,10 +26,13 @@ public class OmegleConnect extends SlashCommand{
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         
-        this.options = Arrays.asList(
+        this.options = new ArrayList<>(Arrays.asList(
             new OptionData(OptionType.BOOLEAN, "autoreconnect", "reconnect automatically on disconnect (default false)", false),
             new OptionData(OptionType.BOOLEAN, "anonymous", "don't show names and pictures of users (default false)", false)
-        );
+        ));
+        for(int i = 0; i < MAX_INTERESTS; i++) {
+            this.options.add(new OptionData(OptionType.STRING, "interest-" + i+1, "add an interest to the chat", false));
+        }
 
         commandData.setThings(this);
     }
@@ -42,9 +47,15 @@ public class OmegleConnect extends SlashCommand{
         boolean autoReconnect = event.getOption("autoreconnect") != null ? event.getOption("autoreconnect").getAsBoolean() : false;
         boolean anonymous = event.getOption("anonymous") != null ? event.getOption("anonymous").getAsBoolean() : false;
 
+        List<String> interests = new ArrayList<>();
+        for (int i = 0; i < MAX_INTERESTS; i++) {
+            if (event.getOption("interest-" + i) != null) {
+                interests.add(event.getOption("interest-" + i).getAsString());
+            }
+        }
+
         event.deferReply().queue();
 
-        
-        ChatHandler.omegle(event.getTextChannel(), autoReconnect, anonymous, List.of(), event.getHook());
+        ChatHandler.omegle(event.getTextChannel(), autoReconnect, anonymous, interests, event.getHook());
     }
 }
