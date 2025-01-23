@@ -29,6 +29,7 @@ public class OmegleDisconnect extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
+        event.deferReply().queue();
         ChatHandler.omegleDisconnect(event.getTextChannel().getId(), event.getHook());
     }
 }

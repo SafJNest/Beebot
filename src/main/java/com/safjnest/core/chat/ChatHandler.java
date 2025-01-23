@@ -16,6 +16,7 @@ import com.safjnest.util.lol.LeagueHandler;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Icon;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -117,12 +118,13 @@ public class ChatHandler {
         }
     }
 
-    public static void omegle(TextChannel channel, boolean autoReconnect, boolean anonymous, List<String> interests, InteractionHook hook) {
-        omegleChannels.putIfAbsent(channel.getId(), new OmegleChannel(channel.getId(), null, hook, null, null, autoReconnect, anonymous, interests));
+    public static void omegle(TextChannel textChannel, boolean autoReconnect, boolean anonymous, List<String> interests, InteractionHook hook) {
+        omegleChannels.putIfAbsent(textChannel.getId(), new OmegleChannel(textChannel.getId(), null, hook, null, null, autoReconnect, anonymous, interests));
+        OmegleChannel channel = omegleChannels.get(textChannel.getId());
 
-        if(waitingRoom.contains(channel)) {
+        if(waitingRoom.contains(textChannel)) {
             if(hook == null) {
-                channel.sendMessage("You are already waiting!").queue();
+                textChannel.sendMessage("You are already waiting!").queue();
             }
             else {
                 hook.editOriginal("You are already waiting!").queue();
@@ -130,9 +132,9 @@ public class ChatHandler {
             return;
         }
 
-        if(omegleChannels.get(channel.getId()).getConnectedChannel() != null) {
+        if(channel.getConnectedChannel() != null) {
             if(hook == null) {
-                channel.sendMessage("You are already connected with another channel!").queue();
+                textChannel.sendMessage("You are already connected with another channel!").queue();
             }
             else {
                 hook.editOriginal("You are already connected with another channel!").queue();
@@ -140,32 +142,35 @@ public class ChatHandler {
             return;
         }
 
-        TextChannel otherChannel = waitingRoom.peek();
+        TextChannel otherTextChannel = null;
         Iterator<TextChannel> waitingChannels = waitingRoom.iterator();
         while(waitingChannels.hasNext()) {
-            TextChannel cchannel = waitingChannels.next();
-            if (omegleChannels.get(cchannel.getId()).getInterests().stream()
-                .filter(omegleChannels.get(channel.getId()).getInterests()::contains)
-                .collect(Collectors.toList())
-                .isEmpty()
-            ) {
-                //TODO common interests
+            TextChannel waitingChannel = waitingChannels.next();
+            OmegleChannel selectedChannel = omegleChannels.get(waitingChannel.getId());
+            if (selectedChannel.getInterests().isEmpty() && channel.getInterests().isEmpty()) {
+                otherTextChannel = Bot.getJDA().getTextChannelById(selectedChannel.getChannel());
+                waitingChannels.remove();
+                break;
+            }
+            if (!selectedChannel.getInterests().stream().filter(channel.getInterests()::contains).collect(Collectors.toList()).isEmpty()) {
+                otherTextChannel = Bot.getJDA().getTextChannelById(selectedChannel.getChannel());
+                waitingChannels.remove();
+                break;
             }
         }
 
-        if(otherChannel == null) {
-            waitingRoom.add(channel);
-            makeConnectTimer(channel);
-            sendWaitingEmbed(channel);
+        //add channel to waiting room
+        if(otherTextChannel == null) {
+            waitingRoom.add(textChannel);
+            makeConnectTimer(textChannel);
+            sendWaitingEmbed(textChannel);
             return;
         }
 
-        waitingRoom.poll();
+        if (omegleChannels.get(otherTextChannel.getId()).getMessage() != null)
+            omegleChannels.get(otherTextChannel.getId()).getMessage().delete().queue();
 
-        if (omegleChannels.get(otherChannel.getId()).getMessage() != null)
-            omegleChannels.get(otherChannel.getId()).getMessage().delete().queue();
-
-        omegleConnect(channel, otherChannel);
+        omegleConnect(textChannel, otherTextChannel);
     }
 
     public static void omegleConnect(TextChannel channel, TextChannel otherChannel) {
@@ -207,17 +212,17 @@ public class ChatHandler {
 
         disconnectTimers.remove(channel).cancel(true);
         disconnectTimers.remove(omegle.getConnectedChannel());
-        
-        sendDisconnectEmbed(channel);
-        sendDisconnectEmbed(omegle.getConnectedChannel());
+
+        hook.editOriginalEmbeds(getDisconnectEmbed()).queue();
+        Bot.getJDA().getTextChannelById(omegle.getConnectedChannel()).sendMessageEmbeds(getDisconnectEmbed()).queue();
     }
 
-    public static void sendDisconnectEmbed(String channel) {
+    public static MessageEmbed getDisconnectEmbed() {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Disconnected!");
         eb.setColor(Bot.getColor());
         eb.setDescription("You have been disconnected from the chat.");
-        Bot.getJDA().getTextChannelById(channel).sendMessageEmbeds(eb.build()).queue();
+        return eb.build();
     }
     
     public static void relayMessage(MessageReceivedEvent e) {
