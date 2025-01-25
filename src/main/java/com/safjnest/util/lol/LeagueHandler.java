@@ -220,6 +220,11 @@ import com.safjnest.core.cache.managers.UserCache;
                 break;
             case SWIFTPLAY:
                 name = "Swiftplay";
+                break;
+            case URF:
+            case ALL_RANDOM_URF:
+                name = "URF";
+                break;
             default:
                 break;
         }
@@ -273,6 +278,7 @@ import com.safjnest.core.cache.managers.UserCache;
                 break;
             case ULTBOOK:
             case URF:
+            case ALL_RANDOM_URF:
                 emoji = CustomEmojiHandler.getFormattedEmoji("special_mode");
                 break;
             case ARAM:
