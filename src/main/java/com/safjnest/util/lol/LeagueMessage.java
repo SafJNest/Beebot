@@ -67,7 +67,7 @@ public class LeagueMessage {
                 profile = profile.asDisabled().withStyle(ButtonStyle.SUCCESS);
                 break;
             case "match":
-                opgg = opgg.asDisabled().withStyle(ButtonStyle.SUCCESS);
+                opgg = opgg.withStyle(ButtonStyle.SUCCESS);
                 break;
             case "rank":
                 livegame = livegame.asDisabled().withStyle(ButtonStyle.SUCCESS);
@@ -442,7 +442,7 @@ public class LeagueMessage {
                 me = mp;
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(me.getRiotIdName() + "#" + me.getRiotIdTagline());
+        eb.setAuthor(me.getRiotIdName() + "#" + me.getRiotIdTagline(), null, LeagueHandler.getSummonerProfilePic(s));
         eb.setColor(Bot.getColor());
         eb.setTitle(LeagueHandler.formatMatchName(match.getQueue()));
         eb.setDescription((me.didWin() ? "Win" : "Lose") + " as " + CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " " + me.getChampionName() + " in " + match.getGameDurationAsDuration().toMinutes() + " minutes");
@@ -556,6 +556,39 @@ public class LeagueMessage {
                 String blueSide = "";
                 String redSide = "";
 
+                String lpLabel = "";
+                QueryCollection result = DatabaseHandler.getSummonerData(s.getAccountId());
+                for (int j = 0; j < result.size(); j ++) {
+                    QueryRecord row = result.get(j);
+                    QueryRecord previosRow = j > 0 ? result.get(j - 1) : null;
+
+                    if (row.getAsLong("game_id") != match.getGameId()) continue;
+
+                    TierDivisionType rank = row.getAsInt("rank") != MatchTracker.UNKNOWN_RANK ? TierDivisionType.values()[row.getAsInt("rank")] : null;
+                    TierDivisionType prevRank = previosRow != null && previosRow.getAsInt("rank") != MatchTracker.UNKNOWN_RANK ? TierDivisionType.values()[previosRow.getAsInt("rank")] : null;
+
+                    String displayRank = getFormatedRank(rank, true);
+
+                    String gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") + " LP" : row.getAsInt("gain") + "";
+                    if (prevRank != null) {
+                        lpLabel = getFormatedRank(prevRank, true) + " " + previosRow.getAsInt("lp") + "LP to " + displayRank + " " + row.getAsInt("lp") + "LP (" + gain + ")";
+                    }
+
+
+                    if (rank == TierDivisionType.UNRANKED) {
+                        lpLabel += "(Placement)";
+                    }
+                    else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
+                        lpLabel = "Promoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
+                    }
+                    else if (j > 0 && row.getAsInt("rank") > result.get(j - 1).getAsInt("rank")) {
+                        lpLabel = "Demoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
+                    }
+                    else if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) {
+                        lpLabel += "-0 LP"; //demotion shield
+                    }
+                }
+
                 for (MatchTeam team : match.getTeams()) {
                     if (team.getTeamId() != TeamType.BLUE && team.getTeamId() != TeamType.RED) continue;
 
@@ -600,6 +633,8 @@ public class LeagueMessage {
                     totalStats.put(partecipant, stats);
 
                 }
+
+                eb.setDescription((me.didWin() ? "Win" : "Lose") + " as " + CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " " + me.getChampionName() + " in " + match.getGameDurationAsDuration().toMinutes() + " minutes\n" + lpLabel);
 
                 String killsIcon = CustomEmojiHandler.getFormattedEmoji("kda");
                 String goldIcon = CustomEmojiHandler.getFormattedEmoji("golds2");
@@ -696,8 +731,8 @@ public class LeagueMessage {
         R4J r4j = LeagueHandler.getRiotApi();
 
         eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
-        eb.setTitle("Showing matches from " + LeagueHandler.getShardFlag(shard) + " " + shard.getRealmValue());
         eb.setColor(Bot.getColor());
+        eb.setTitle("Showing matches from " + LeagueHandler.getShardFlag(shard) + " " + shard.getRealmValue());
 
         List<String> gameIds = getMatchIds(s, queue, index);
 

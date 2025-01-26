@@ -1078,6 +1078,11 @@ public class EventButtonHandler extends ListenerAdapter {
                 else event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
 
                 return;
+            case "match":
+                page = 0;
+                if (event.getMessage().getButtonById("match-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+            break;
             case "matchleft":
                 page = page - 5;
                 if (page < 0) page = 0;

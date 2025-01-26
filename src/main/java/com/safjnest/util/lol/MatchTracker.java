@@ -119,12 +119,15 @@ public class MatchTracker {
         }
         
         BotLogger.info("[LPTracker] Analyzing " + toAnalyze.size() + " queued matches");
+        int i = 0;
         for (LOLMatch match : toAnalyze) {
             try {
                 analyzeMatchHistory(match).completeWithException();
+                BotLogger.info("[LPTracker] [" + i + " / " + toAnalyze.size() + "] Pushed match data for " + match.getGameId() + " (" + match.getPlatform() + " - " + match.getQueue() + ")");
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            i++;
         }
     }
 
@@ -227,7 +230,6 @@ public class MatchTracker {
 
                 pushSummoner(match, summoner_match_id, summoner, partecipant, matchData.get(partecipant.getPuuid())).complete();
             }
-            BotLogger.info("[LPTracker] Pushed match data for " + match.getGameId() + " (" + match.getPlatform() + " - " + match.getQueue() + ")");
         };
     }
 
