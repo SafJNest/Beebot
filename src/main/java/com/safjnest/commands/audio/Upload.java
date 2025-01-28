@@ -7,7 +7,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
@@ -101,7 +101,7 @@ public class Upload extends SlashCommand{
                 }
             }
         }
-        if (tags.size() > 0) SoundHandler.getSoundById(id).setTags(tags.toArray(new Tag[tags.size()]));
+        if (tags.size() > 0) SoundCache.getSoundById(id).setTags(tags.toArray(new Tag[tags.size()]));
 
         File saveFile = new File("rsc" + File.separator + "SoundBoard" + File.separator + (id + "." + attachment.getFileExtension()));
 

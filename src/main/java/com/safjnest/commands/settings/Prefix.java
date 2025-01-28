@@ -5,7 +5,7 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -20,9 +20,8 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @since 1.1
  */
 public class Prefix extends SlashCommand {
-    private GuildDataHandler gs;
     
-    public Prefix(GuildDataHandler gs){
+    public Prefix(){
         this.name = this.getClass().getSimpleName().toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -40,8 +39,6 @@ public class Prefix extends SlashCommand {
         );
 
         commandData.setThings(this);
-
-        this.gs = gs;
     }
 
     @Override
@@ -53,7 +50,7 @@ public class Prefix extends SlashCommand {
         }
         String guildId = event.getGuild().getId();
         
-        if(gs.getGuild(guildId).setPrefix(prefix)){
+        if(GuildCache.getGuild(guildId).setPrefix(prefix)){
             event.reply("The new prefix is: " + prefix);
         }
         else
@@ -62,7 +59,7 @@ public class Prefix extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(gs.getGuild(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
+        if(GuildCache.getGuild(event.getGuild().getId()).setPrefix(event.getOption("prefix").getAsString()))
             event.deferReply(false).addContent("The new Prefix is " + event.getOption("prefix").getAsString()).queue();
         else
             event.deferReply(true).addContent("Error").queue();   

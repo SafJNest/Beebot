@@ -57,7 +57,7 @@ public class PlayerManager {
         //lavalink = new LavalinkClient(Long.parseLong(Bot.getBotId()));
         //lavalink.addNode(new NodeOptions.Builder("beebot", URI.create(settingsLoader.getLavalinkHost()), settingsLoader.getLavalinkPassword(), null, 0).build());
 
-        SettingsLoader settingsLoader = new SettingsLoader(App.getBot());
+        SettingsLoader settingsLoader = App.getSettingsLoader();
         lyricsManager = new LyricsManager();
 
         registerYoutube(settingsLoader);
@@ -72,7 +72,7 @@ public class PlayerManager {
     private void registerYoutube(SettingsLoader settingsLoader) {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 
-        if(!App.isExtremeTesting() && settingsLoader.isRotorEnabled()) {
+        if(!App.TEST_MODE && settingsLoader.isRotorEnabled()) {
             IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
             List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
             RotatingNanoIpRoutePlanner routePlanner = new RotatingNanoIpRoutePlanner(ipBlocks);

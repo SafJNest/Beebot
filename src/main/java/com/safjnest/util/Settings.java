@@ -2,6 +2,8 @@ package com.safjnest.util;
 
 import java.awt.Color;
 
+import com.safjnest.App;
+
 import net.dv8tion.jda.api.entities.Activity;
 
 public class Settings {
@@ -21,7 +23,8 @@ public class Settings {
     public Integer maxPremiumPlaylists;
     public Integer maxPremiumPlaylistSize;
 
-    public Settings(SettingsLoader settingsLoader) {
+    public Settings() {
+        SettingsLoader settingsLoader = App.getSettingsLoader();
         this.prefix = settingsLoader.getPrefix();
         this.activity = settingsLoader.getActivity();
         this.token = settingsLoader.getDiscordToken();

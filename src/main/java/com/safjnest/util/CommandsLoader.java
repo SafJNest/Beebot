@@ -20,7 +20,7 @@ public class CommandsLoader {
     private static String path = "rsc" + File.separator + "commands.json";
     private static HashMap<String, BotCommand> commands = new HashMap<>();
  
-    public CommandsLoader() {
+    static {
         try {
             FileReader reader = new FileReader(path);
             JSONParser jsonParser = new JSONParser();
@@ -32,7 +32,7 @@ public class CommandsLoader {
     }
 
     @SuppressWarnings("unchecked")
-    private void registerAllCommands(JSONObject commandsJson) {
+    private static void registerAllCommands(JSONObject commandsJson) {
         if (commandsJson != null) {
             commandsJson.forEach((key, value) -> {
                 JSONObject command = (JSONObject) value;

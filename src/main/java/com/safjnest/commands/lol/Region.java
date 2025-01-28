@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -39,7 +39,7 @@ public class Region extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
 
-        GuildData gs = Bot.getGuildData(event.getGuild().getId());
+        GuildData gs = GuildCache.getGuild(event.getGuild().getId());
         LeagueShard shard = LeagueShard.values()[Integer.parseInt(event.getOption("region").getAsString())];
 
         TextChannel channel = event.getOption("channel") != null ? event.getOption("channel").getAsChannel().asTextChannel() : null;

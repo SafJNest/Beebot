@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -14,9 +14,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistThreshold extends SlashCommand{
 
-    private GuildDataHandler gs;
-
-    public BlacklistThreshold(String father, GuildDataHandler gs){
+    public BlacklistThreshold(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -32,8 +30,6 @@ public class BlacklistThreshold extends SlashCommand{
                 .setMinValue(3)    
                 .setMaxValue(100));
         
-        this.gs = gs;
-
         commandData.setThings(this);
     }
 
@@ -41,7 +37,7 @@ public class BlacklistThreshold extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String threshold = event.getOption("threshold").getAsString();
 
-        if(!gs.getGuild(event.getGuild().getId()).setThreshold(Integer.parseInt(threshold))) {
+        if(!GuildCache.getGuild(event.getGuild()).setThreshold(Integer.parseInt(threshold))) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

@@ -47,7 +47,7 @@ public class MatchTracker {
     public static int UNKNOWN_RANK = TierDivisionType.UNRANKED.ordinal() + 1;
 
 	static {
-        if(!App.isExtremeTesting()) {
+        if(!App.TEST_MODE) {
             ChronoTask track = () -> retriveSummoners();
             track.scheduleAtFixedRate(TimeConstant.MINUTE * 1, period, TimeUnit.MILLISECONDS);
 
@@ -60,6 +60,8 @@ public class MatchTracker {
 
     private static void retriveSummoners() {
         try {
+            if (App.TEST_MODE) return;
+
             QueryCollection result = DatabaseHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
 
@@ -117,12 +119,15 @@ public class MatchTracker {
         }
         
         BotLogger.info("[LPTracker] Analyzing " + toAnalyze.size() + " queued matches");
+        int i = 0;
         for (LOLMatch match : toAnalyze) {
             try {
                 analyzeMatchHistory(match).completeWithException();
+                BotLogger.info("[LPTracker] [" + i + " / " + toAnalyze.size() + "] Pushed match data for " + match.getGameId() + " (" + match.getPlatform() + " - " + match.getQueue() + ")");
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            i++;
         }
     }
 
@@ -225,7 +230,6 @@ public class MatchTracker {
 
                 pushSummoner(match, summoner_match_id, summoner, partecipant, matchData.get(partecipant.getPuuid())).complete();
             }
-            BotLogger.info("[LPTracker] Pushed match data for " + match.getGameId() + " (" + match.getPlatform() + " - " + match.getQueue() + ")");
         };
     }
 

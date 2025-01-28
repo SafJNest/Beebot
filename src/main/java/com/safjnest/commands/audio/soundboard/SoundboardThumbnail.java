@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.audio.SoundHandler;
+import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -48,7 +48,7 @@ public class SoundboardThumbnail extends SlashCommand{
 
         String soundboardID = event.getOption("soundboard_name").getAsString();
         Attachment thumbnail = event.getOption("thumbnail").getAsAttachment();
-        if (!SoundHandler.isValidThumbnail(thumbnail)) {
+        if (!SoundEmbed.isValidThumbnail(thumbnail)) {
             event.deferReply(true).addContent("Invalid thumbnail.").queue();
             return;
         }

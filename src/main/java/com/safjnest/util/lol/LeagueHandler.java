@@ -27,7 +27,6 @@ import org.json.simple.parser.JSONParser;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -35,6 +34,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
 
@@ -43,6 +43,7 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -58,6 +59,10 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
+
+import com.safjnest.App;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
 
 
 /**
@@ -79,8 +84,14 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
     private static ArrayList<AugmentData> augments = new ArrayList<>();
 
-    public LeagueHandler(R4J riotApi, String version){
-        LeagueHandler.riotApi = riotApi;
+    static {
+        try {
+            LeagueHandler.riotApi = new R4J(new APICredentials(App.getSettingsLoader().getRiotKey()));
+            BotLogger.info("[R4J] Connection Successful!");
+        } catch (Exception e) {
+            BotLogger.error("[R4J] Annodam Not Successful!");
+        }
+        
         LeagueHandler.version = getVersion();
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
 
@@ -209,6 +220,11 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 break;
             case SWIFTPLAY:
                 name = "Swiftplay";
+                break;
+            case URF:
+            case ALL_RANDOM_URF:
+                name = "URF";
+                break;
             default:
                 break;
         }
@@ -246,6 +262,35 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return emoji;
     }
 
+    public static String getMapEmoji(GameQueueType type) {
+        String emoji = "";
+        switch (type) {
+            case CHERRY:
+            case STRAWBERRY:
+                emoji = CustomEmojiHandler.getFormattedEmoji("arena_mode");
+                break;
+            case TEAM_BUILDER_RANKED_SOLO:
+            case RANKED_FLEX_SR:
+            case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
+            case QUICKPLAY_NORMAL:
+            case SWIFTPLAY:
+                emoji = CustomEmojiHandler.getFormattedEmoji("rift_mode");
+                break;
+            case ULTBOOK:
+            case URF:
+            case ALL_RANDOM_URF:
+                emoji = CustomEmojiHandler.getFormattedEmoji("special_mode");
+                break;
+            case ARAM:
+            case ARAM_CLASH:
+                emoji = CustomEmojiHandler.getFormattedEmoji("bridge_mode");
+                break;
+            default:
+                break;
+        }
+        return emoji;
+    }
+
     public static String getPrettyName(LaneType type) {
         String name = "";
         switch (type) {
@@ -265,7 +310,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
                 name = "Support";
                 break;
             case NONE:
-                name = "Remake";
+                name = "Remake Or NoLane";
                 break;
             default:
                 name = type.name();
@@ -287,7 +332,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     /**
      * Load all the runes data into {@link #runesHandler runesHandler}
      */
-    private void loadRunes(){
+    private static void loadRunes(){
         try {
             URI uri = new URI(runesURL);
             URL url = uri.toURL();
@@ -327,7 +372,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
     }
 
-    private void loadAguments() {
+    private static void loadAguments() {
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "augments.json");
             JSONParser parser = new JSONParser();
@@ -386,7 +431,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
         //     return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
         // } catch (Exception e) {return null;}
-        return getSummonerByUserData(Bot.getUserData(discordId));
+        return getSummonerByUserData(UserCache.getUser(discordId));
     }
 
     public static Summoner getSummonerByUserData(UserData user){
@@ -403,7 +448,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static int getNumberOfProfile(String userId){
         try {
-            return Bot.getUserData(userId).getRiotAccounts().size();
+            return UserCache.getUser(userId).getRiotAccounts().size();
         } catch (Exception e) { return 0; }
     }
 
@@ -438,7 +483,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
     public static Summoner getSummonerByArgs(CommandEvent event) {
         String args = event.getArgs();
-        GuildData guild = Bot.getGuildData(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
 
         if (args.isEmpty()) {
             return getSummonerFromDB(event.getAuthor().getId());
@@ -467,7 +512,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
-        GuildData guild = Bot.getGuildData(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
 
         User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();
 
@@ -587,6 +632,17 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         return null;
     }
 
+    public static LeagueEntry getFlexEntry(String summonerId, LeagueShard shard) {
+        try {
+            for(int i = 0; i < 3; i++){
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId).get(i);
+                if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
+                    return entry;
+            }
+        } catch (Exception e) { }
+        return null;
+    }
+
     public static LeagueEntry getRankEntry(Summoner s) {
         return getRankEntry(s.getSummonerId(), s.getPlatform());
     }
@@ -630,6 +686,13 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
         } catch (Exception e) { }
         return masteryString;
+    }
+
+    public static HashMap<Integer, ChampionMastery> getMastery(Summoner s) {
+        HashMap<Integer, ChampionMastery> masteries = new HashMap<>();
+        for(ChampionMastery mastery : s.getChampionMasteries())
+            masteries.put(mastery.getChampionId(), mastery);
+        return masteries;
     }
 
     public static String getMasteryByChamp(Summoner s, int champId) {
@@ -841,7 +904,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 //  ████████▀    ███    █▀      ███    █▀   ▀█   ███   █▀   ▄████▀      █▀    ▀██████▀   ▀█   █▀
 //
 
-    private void loadChampions(){
+    private static void loadChampions(){
         champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
     }
 
@@ -1012,6 +1075,61 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
         }
 
         return range;
+    }
+
+    public static long[] getPreviousSplitRange() {
+        long[] range = new long[2];
+        long now = System.currentTimeMillis();
+    
+        try {
+            FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
+            JSONParser parser = new JSONParser();
+            JSONObject file = (JSONObject) parser.parse(reader);
+            JSONArray seasons = (JSONArray) file.get("seasons");
+    
+            List<long[]> allSplits = new ArrayList<>();
+    
+            for (int seasonIndex = 0; seasonIndex < seasons.size(); seasonIndex++) {
+                JSONObject current = (JSONObject) seasons.get(seasonIndex);
+                JSONArray splits = (JSONArray) current.get("splits");
+    
+                for (int i = 0; i < splits.size(); i++) {
+                    JSONObject split = (JSONObject) splits.get(i);
+                    String start = split.get("start_date").toString();
+                    String end = split.get("end_date").toString();
+    
+                    long startMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(start).getTime();
+                    long endMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(end).getTime();
+    
+                    allSplits.add(new long[]{startMillis, endMillis});
+                }
+            }
+    
+            long[] currentSplit = null;
+    
+            for (long[] split : allSplits) {
+                if (now >= split[0] && now <= split[1]) {
+                    currentSplit = split;
+                    break;
+                }
+            }
+    
+            if (currentSplit != null) {
+                for (int i = allSplits.size() - 1; i >= 0; i--) {
+                    if (allSplits.get(i)[1] < currentSplit[0]) {
+                        range[0] = allSplits.get(i)[0];
+                        range[1] = allSplits.get(i)[1];
+                        return range;
+                    }
+                }
+            }
+    
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    
+        return null; // Nessuno split precedente trovato
     }
 
     public static String getCurrentSplitFormatted() {

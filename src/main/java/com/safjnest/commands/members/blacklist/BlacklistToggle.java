@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -13,9 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class BlacklistToggle extends SlashCommand{
 
-    private GuildDataHandler gs;
-
-    public BlacklistToggle(String father, GuildDataHandler gs){
+    public BlacklistToggle(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -30,8 +28,6 @@ public class BlacklistToggle extends SlashCommand{
                 .addChoice("off", "off")
         );
 
-        this.gs = gs;
-
         commandData.setThings(this);
     }
 
@@ -39,12 +35,12 @@ public class BlacklistToggle extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         boolean toggle = event.getOption("toggle").getAsString().equalsIgnoreCase("on") ? true : false;
 
-        if(gs.getGuild(event.getGuild().getId()).getBlackChannelId() == null) {
+        if(GuildCache.getGuild(event.getGuild().getId()).getBlackChannelId() == null) {
             event.deferReply(true).addContent("This guild doesn't have blacklist set.").queue();
             return;
         }
 
-        if(!gs.getGuild(event.getGuild().getId()).setBlacklistEnabled(toggle)) {
+        if(!GuildCache.getGuild(event.getGuild().getId()).setBlacklistEnabled(toggle)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

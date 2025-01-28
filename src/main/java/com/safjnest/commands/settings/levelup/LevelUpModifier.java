@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.model.guild.GuildDataHandler;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -13,10 +13,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class LevelUpModifier extends SlashCommand{
-    private GuildDataHandler gs;
 
-    public LevelUpModifier(String father, GuildDataHandler gs){
-        this.gs = gs;
+    public LevelUpModifier(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -42,7 +40,7 @@ public class LevelUpModifier extends SlashCommand{
 
         String guildId = event.getGuild().getId();
 
-        if(!gs.getGuild(guildId).getChannelData(channelId).setExperienceModifier(modifier)) {
+        if(!GuildCache.getGuild(guildId).getChannelData(channelId).setExperienceModifier(modifier)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

@@ -37,6 +37,9 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
+
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private boolean isFocused;
     private String value;
@@ -397,7 +400,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private ArrayList<Choice> alert(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
-        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
 
         AlertData alert = guildData.getAlert(AlertType.WELCOME);
 
@@ -429,7 +432,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private ArrayList<Choice> rewardsLevel(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
-        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
 
         HashMap<AlertKey<?>, AlertData> alerts = guildData.getAlerts();
         List<String> levels = new ArrayList<>();
@@ -458,7 +461,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private ArrayList<Choice> rewardRole(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
-        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
+        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
 
         if (e.getOption("reward_level") == null) return choices;;
 
@@ -492,7 +495,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> personalSummoner(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
+        HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
         R4J r4j = LeagueHandler.getRiotApi();
 
         if (accounts == null || accounts.isEmpty()) {
@@ -526,10 +529,10 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         QueryCollection summoners = new QueryCollection();
-        LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : Bot.getGuildData(e.getGuild().getId()).getLeagueShard(e.getChannelIdLong());
+        LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : GuildCache.getGuild(e.getGuild().getId()).getLeagueShard(e.getChannelIdLong());
         
         if (!isFocused) {
-            HashMap<String, String> accounts = Bot.getUserData(e.getUser().getId()).getRiotAccounts();
+            HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
             R4J r4j = LeagueHandler.getRiotApi();
     
             if (accounts == null || accounts.isEmpty()) {
@@ -565,7 +568,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         List<String> subs = new ArrayList<>();
-        for (TwitchData twitch : Bot.getGuildData(e.getGuild()).getTwitchDatas().values()) {
+        for (TwitchData twitch : GuildCache.getGuild(e.getGuild()).getTwitchDatas().values()) {
             subs.add(twitch.getStreamer());
         }
         List<com.github.twitch4j.helix.domain.User> users = TwitchClient.getStreamersById(subs);

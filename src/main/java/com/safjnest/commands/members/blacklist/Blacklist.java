@@ -1,7 +1,5 @@
 package com.safjnest.commands.members.blacklist;
 
-
-import com.safjnest.model.guild.GuildDataHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -19,10 +17,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
  */
 public class Blacklist extends SlashCommand{
 
-    private GuildDataHandler gs;
-
-
-    public Blacklist(GuildDataHandler gs){
+    public Blacklist(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -34,17 +29,13 @@ public class Blacklist extends SlashCommand{
 
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
-        this.gs = gs;
-
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new BlacklistChannel(father, gs), new BlacklistCreate(father, gs), new BlacklistThreshold(father, gs), new BlacklistToggle(father, gs));
+        Collections.addAll(slashCommandsList, new BlacklistChannel(father), new BlacklistCreate(father), new BlacklistThreshold(father), new BlacklistToggle(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);
     }
 
     @Override
-    protected void execute(SlashCommandEvent event) {
-        gs.doSomethingSoSunxIsNotHurtBySeeingTheFuckingThingSayItsNotUsed();
-    }
+    protected void execute(SlashCommandEvent event) {}
 }

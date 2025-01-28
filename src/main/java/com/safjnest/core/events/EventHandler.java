@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 
 import com.safjnest.App;
-import com.safjnest.core.Bot;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
@@ -43,6 +42,9 @@ import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.UserCache;
+
 /**
  * This class handles all events that could occur during the listening:
  * <ul>
@@ -74,7 +76,7 @@ public class EventHandler extends ListenerAdapter {
         if (Functions.isBotAlone(connectChannel, channelLeft))
             Functions.handleBotLeave(guild);
         
-        if (!App.isExtremeTesting() && channelJoined != null && (afkChannel != null && channelJoined.getIdLong() != afkChannel.getIdLong()) &&
+        if (!App.TEST_MODE && channelJoined != null && (afkChannel != null && channelJoined.getIdLong() != afkChannel.getIdLong()) &&
             (connectChannel == null || channelJoined.getId().equals(connectChannel.getId())) && !userJoined.isBot()) {
             Functions.handleGreetSound(channelJoined, userJoined, guild);
         }
@@ -91,8 +93,8 @@ public class EventHandler extends ListenerAdapter {
             return;
         }
 
-        GuildData guildData = Bot.getGuildData(e.getGuild().getId());
-        UserData userData = Bot.getUserData(e.getAuthor().getId());
+        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
+        UserData userData = UserCache.getUser(e.getAuthor().getId());
 
         Functions.handleAlias(guildData, userData, e);
         Functions.handleExperience(guildData, e);
@@ -102,7 +104,7 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent event){
-        Bot.getGuildData(event.getGuild().getId());
+        GuildCache.getGuild(event.getGuild().getId());
     }
 
     @Override
@@ -166,8 +168,8 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onChannelCreate(ChannelCreateEvent event){      
-        if (Bot.getGuildData(event.getGuild()).hasMutedRole()) {
-            Role role = event.getGuild().getRoleById(Bot.getGuildData(event.getGuild()).getMutedRoleId());
+        if (GuildCache.getGuild(event.getGuild()).hasMutedRole()) {
+            Role role = event.getGuild().getRoleById(GuildCache.getGuild(event.getGuild()).getMutedRoleId());
             switch (event.getChannelType()) {
                 case TEXT:
                     event.getChannel().asTextChannel().getManager().putRolePermissionOverride(role.getIdLong(), null, Collections.singleton(Permission.MESSAGE_SEND)).queue();

@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
@@ -12,6 +11,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import com.safjnest.core.cache.managers.GuildCache;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class WelcomeAddRole extends SlashCommand {
@@ -38,7 +38,7 @@ public class WelcomeAddRole extends SlashCommand {
 
         String guildId = event.getGuild().getId();
 
-        GuildData gs = Bot.getGuildData(guildId);
+        GuildData gs = GuildCache.getGuild(guildId);
 
         AlertData welcome = gs.getAlert(AlertType.WELCOME);
 

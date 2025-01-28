@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.TwitchData;
@@ -54,7 +54,7 @@ public class TwitchMessage extends SlashCommand {
         AlertSendType sendType = event.getOption("sendtype") != null ? AlertSendType.values()[event.getOption("sendtype").getAsInt()] : AlertSendType.CHANNEL;
         
         String guildId = event.getGuild().getId();
-        GuildData gs = Bot.getGuildData(guildId);
+        GuildData gs = GuildCache.getGuild(guildId);
         
         TwitchData twitch = gs.getTwitchdata(streamerId);
 
