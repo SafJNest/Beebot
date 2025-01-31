@@ -267,6 +267,7 @@ import com.safjnest.core.cache.managers.UserCache;
         switch (type) {
             case CHERRY:
             case STRAWBERRY:
+            case NEXUS_BLITZ:
                 emoji = CustomEmojiHandler.getFormattedEmoji("arena_mode");
                 break;
             case TEAM_BUILDER_RANKED_SOLO:
@@ -274,11 +275,13 @@ import com.safjnest.core.cache.managers.UserCache;
             case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
             case QUICKPLAY_NORMAL:
             case SWIFTPLAY:
+            case NORMAL_5V5_BLIND_PICK:
                 emoji = CustomEmojiHandler.getFormattedEmoji("rift_mode");
                 break;
             case ULTBOOK:
             case URF:
             case ALL_RANDOM_URF:
+            case ONEFORALL_5X5:
                 emoji = CustomEmojiHandler.getFormattedEmoji("special_mode");
                 break;
             case ARAM:
