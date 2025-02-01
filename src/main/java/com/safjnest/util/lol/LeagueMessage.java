@@ -110,10 +110,9 @@ public class LeagueMessage {
         builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
         builder.setColor(Bot.getColor());
         builder.setThumbnail(LeagueHandler.getSummonerProfilePic(s));
-
+        
         String userId = DatabaseHandler.getUserIdByLOLAccountId(s.getAccountId(), s.getPlatform());
         if(userId != null){
-
             QueryRecord data = DatabaseHandler.getSummonerData(userId, s.getAccountId());
             if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
             else builder.setFooter("LPs tracking disabled for the current summoner");
@@ -122,8 +121,9 @@ public class LeagueMessage {
         String description = "Summoner is level **" + s.getSummonerLevel() + "** on " + LeagueHandler.getShardFlag(s.getPlatform()) + s.getPlatform().getRealmValue() + " server.";
         builder.setDescription(description);
 
-        builder.addField("Solo/duo Queue", LeagueHandler.getSoloQStats(s), true);
-        builder.addField("Flex Queue", LeagueHandler.getFlexStats(s), true);
+        builder.addField("Solo/duo", LeagueHandler.getSoloQStats(s), true);
+        builder.addField("Flex", LeagueHandler.getFlexStats(s), true);
+
         String masteryString = "";
         for(int i = 1; i < 4; i++)
             masteryString += LeagueHandler.getMastery(s, i) + "\n";
@@ -276,7 +276,7 @@ public class LeagueMessage {
     private static String formatAdvancedData(QueryRecord data, ChampionMastery mastery) {
         StaticChampion champion = LeagueHandler.getChampionById(data.getAsInt("champion"));
         int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
-        return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + level+ "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) - " + (data.getAsInt("wins") * 100 / (data.getAsInt("wins") + data.getAsInt("losses"))) + "% WR | " + data.get("total_lp_gain") + " LP\n"
+        return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + level+ "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
             + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
     }
 
@@ -1080,7 +1080,6 @@ public class LeagueMessage {
             return builder;
 
         } catch (Exception e) {
-            e.printStackTrace();
             EmbedBuilder builder = new EmbedBuilder();
             builder.setTitle(account.getName() + "'s Game");
             builder.setColor(Bot.getColor());

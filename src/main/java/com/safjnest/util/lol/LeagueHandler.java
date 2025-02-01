@@ -616,12 +616,12 @@ import com.safjnest.core.cache.managers.UserCache;
             } catch (Exception e) { }
         }
         return (stats.equals("")) ? (CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked") : stats;
-    }
+    }  
 
     private static String getStatsByEntry(LeagueEntry entry){
-        return CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()+ " " +String.valueOf(entry.getLeaguePoints()) + " LP\n"
-        + entry.getWins() + "W/"+entry.getLosses()+"L\n"
-        + "Winrate:" + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"%";
+        return CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank() + " " + entry.getLeaguePoints() + " LP\n"
+        + "`(" + entry.getWins() + "W/"+entry.getLosses()+"L) - " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100) + "% WR`";
+
     }
 
     public static LeagueEntry getRankEntry(String summonerId, LeagueShard shard) {
