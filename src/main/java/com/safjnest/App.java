@@ -41,7 +41,7 @@ public class App {
             springProperties.load(new FileReader("spring.properties"));
 
             springApplication.setDefaultProperties(springProperties);
-            springApplication.run(args);
+            //springApplication.run(args);
 
             TwitchClient.init();
         }
