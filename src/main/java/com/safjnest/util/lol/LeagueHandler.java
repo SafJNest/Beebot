@@ -1004,10 +1004,10 @@ import com.safjnest.core.cache.managers.UserCache;
             case V5_MATCHLIST:
                 data.put("platform", summoner.getPlatform().toRegionShard());
                 data.put("puuid", summoner.getPUUID());
-                data.put("queue", GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+                data.put("queue", "null");
                 data.put("type", "null");
                 data.put("start", "null");
-                data.put("count", 20);
+                data.put("count", "null");
                 data.put("startTime", "null");
                 data.put("endTime", "null");
                 break;
