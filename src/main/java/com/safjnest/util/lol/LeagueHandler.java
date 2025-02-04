@@ -1007,7 +1007,7 @@ import com.safjnest.core.cache.managers.UserCache;
                 data.put("queue", "null");
                 data.put("type", "null");
                 data.put("start", "null");
-                data.put("count", 20);
+                data.put("count", "null");
                 data.put("startTime", "null");
                 data.put("endTime", "null");
                 break;
