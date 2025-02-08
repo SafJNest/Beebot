@@ -109,9 +109,6 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        String commandName = event.getName();
-
-        Functions.handleCustomCommand(commandName, event);
         Functions.updateCommandStatitics(event);
     }
 

@@ -19,20 +19,12 @@ import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
-import com.safjnest.model.guild.customcommand.CustomCommand;
-import com.safjnest.model.guild.customcommand.Option;
-import com.safjnest.model.guild.customcommand.OptionValue;
-import com.safjnest.model.guild.customcommand.Task;
-import com.safjnest.model.guild.customcommand.TaskType;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.Commands;
-import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 
@@ -66,7 +58,6 @@ public class GuildData {
 
     private HashMap<Long, ChannelData> channels;
     private HashMap<String, MemberData> members;
-    private HashMap<String, CustomCommand> customCommands;
     private List<AutomatedAction> actions;
 
     private LeagueShard leagueShard;
@@ -81,7 +72,6 @@ public class GuildData {
 
         this.members = new HashMap<>();
         this.channels = new HashMap<>();
-        this.customCommands = new HashMap<>();
 
         this.loggerIDpair = new LoggerIDpair(String.valueOf(ID), LoggerIDpair.IDType.GUILD);
 
@@ -118,7 +108,6 @@ public class GuildData {
 
         retriveChannels();
         retriveActions();
-        retriveCustomCommand();
     }
 
 //     ▄██████▄  ███    █▄   ▄█   ▄█       ████████▄
@@ -592,137 +581,6 @@ public class GuildData {
         }
         return null;
     }
-
-
-
-
-
-
-
-
-//   ▄████████  ▄██████▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄      ▄████████ ███▄▄▄▄   ████████▄
-//  ███    ███ ███    ███ ▄██▀▀▀███▀▀▀██▄ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███▀▀▀██▄ ███   ▀███
-//  ███    █▀  ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███
-//  ███        ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███
-//  ███        ███    ███ ███   ███   ███ ███   ███   ███ ▀███████████ ███   ███ ███    ███
-//  ███    █▄  ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███    ███
-//  ███    ███ ███    ███ ███   ███   ███ ███   ███   ███   ███    ███ ███   ███ ███   ▄███
-//  ████████▀   ▀██████▀   ▀█   ███   █▀   ▀█   ███   █▀    ███    █▀   ▀█   █▀  ████████▀
-//
-
-
-    private void retriveCustomCommand() {
-        customCommands = new HashMap<>();
-        HashMap<String, QueryCollection> commandData = DatabaseHandler.getCustomCommandData(String.valueOf(ID));
-        if (commandData == null) { return; }
-
-        QueryCollection result = commandData.get("commands");
-        QueryCollection optionResult = commandData.get("options");
-        QueryCollection taskResult = commandData.get("tasks");
-        QueryCollection taskValueResult = commandData.get("task_values");
-        QueryCollection taskMessage = commandData.get("task_messages");
-
-
-        for (QueryRecord row : result) {
-            int id = row.getAsInt("ID");
-            String name = row.get("name");
-            String description = row.get("description");
-            boolean isSlash = row.getAsBoolean("slash");
-
-            CustomCommand cc = new CustomCommand(id, name, description, isSlash);
-
-            final QueryCollection finalValueResult = commandData.get("values");
-            optionResult.stream()
-                .filter(optionRow -> optionRow.getAsInt("command_id") == id)
-                .forEach(optionRow -> {
-                    int optionId = optionRow.getAsInt("ID");
-                    String key = optionRow.get("key");
-                    String optionDescription = optionRow.get("description");
-                    boolean isRequired = optionRow.getAsBoolean("required");
-                    OptionType type = OptionType.fromKey(Integer.parseInt(optionRow.get("type")));
-
-                    Option option;
-                    if (!finalValueResult.isEmpty()) {
-                        List<OptionValue> values = finalValueResult.stream()
-                            .filter(valueRow -> valueRow.getAsInt("option_id") == optionId)
-                            .map(valueRow -> new OptionValue(valueRow.getAsInt("ID"), valueRow.get("key"), valueRow.get("value")))
-                            .collect(Collectors.toList());
-
-                        option = new Option(optionId, key, optionDescription, isRequired, values);
-                    } else {
-                        option = new Option(optionId, key, optionDescription, isRequired, type);
-                    }
-
-                    cc.addOption(option);
-                });
-
-            taskResult.stream()
-                .filter(taskRow -> taskRow.getAsInt("command_id") == id)
-                .forEach(taskRow -> {
-                    int taskId = taskRow.getAsInt("ID");
-                    TaskType type = TaskType.fromValue(taskRow.getAsInt("type"));
-                    Task task = new Task(taskId, type);
-
-                    taskValueResult.stream()
-                        .filter(taskValueRow -> taskValueRow.getAsInt("task_id") == taskId)
-                        .forEach(taskValueRow -> {
-                            boolean fromOption = taskValueRow.getAsBoolean("from_option");
-                            String value = taskValueRow.get("value");
-                            if (fromOption) {
-                                value = "#" + value;
-                            }
-                            if (type == TaskType.SEND_MESSAGE) {
-                                value = taskMessage.stream()
-                                    .filter(messageRow -> messageRow.getAsInt("task_value_id") == taskValueRow.getAsInt("ID"))
-                                    .map(messageRow -> messageRow.get("message"))
-                                    .findFirst()
-                                    .orElse(value);
-                            }
-                            task.addValue(value);
-                        });
-                    cc.addTask(task);
-                });
-            customCommands.put(name, cc);
-        }
-
-        updateCommands();
-    }
-
-    private void updateCommands() {
-        Guild g = Bot.getJDA().getGuildById(ID);
-        List<SlashCommandData> commands = new ArrayList<>();
-        for (CustomCommand cc : customCommands.values()) {
-            if (!cc.isSlash()) {
-                continue;
-            }
-
-            if (cc.getOptions().isEmpty()) {
-                SlashCommandData scd = Commands.slash(cc.getName(), cc.getDescription());
-                commands.add(scd);
-                continue;
-            }
-
-            cc.getOptions().forEach(option -> {
-                SlashCommandData scd = Commands.slash(cc.getName(), cc.getDescription());
-                scd.addOption(option.getType(), option.getKey(), option.getDescription());
-                commands.add(scd);
-            });
-        }
-        g.updateCommands().addCommands(commands).queue();
-    }
-
-
-    public CustomCommand getCustomCommand(String name) {
-        return customCommands.get(name);
-    }
-
-
-
-
-
-
-
-
 
 
     public boolean isBlackListCached() {

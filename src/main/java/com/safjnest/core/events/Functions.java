@@ -21,9 +21,7 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
-import com.safjnest.model.guild.customcommand.Task;
 import com.safjnest.model.sound.Sound;
-import com.safjnest.model.guild.customcommand.CustomCommand;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.MemberData;
@@ -432,21 +430,6 @@ public class Functions {
                 System.out.println("error: " + throwable.getMessage());
             }
         });
-    }
-
-
-    public static void handleCustomCommand(String commandName, SlashCommandInteractionEvent event) {
-        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
-        CustomCommand command = guild.getCustomCommand(commandName);
-
-        if(command == null) {
-            return;
-        }
-        
-        event.deferReply().queue();
-        for(Task task : command.getTasks()) {
-            task.execute(command, event);
-        }
     }
 
     public static void updateCommandStatitics(SlashCommandInteractionEvent event) {
