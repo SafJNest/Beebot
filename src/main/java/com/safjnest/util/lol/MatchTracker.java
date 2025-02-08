@@ -69,7 +69,8 @@ public class MatchTracker {
                 Summoner summoner = null;
                 try {
                     summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
-                    System.out.println(summoner.getAccountId() + '-' + summoner.getPUUID() + '-' + summoner.getSummonerId());
+                    if (summoner == null) 
+                        throw new Exception("account null");
                 } catch (Exception e) {
                     BotLogger.error("SUMMONER NOT FOUND (" + account.get("account_id") + ")");
                     e.printStackTrace();
@@ -203,7 +204,7 @@ public class MatchTracker {
                 }
 
                 Summoner toPush = LeagueHandler.getSummonerByPuiid(partecipant.getPuuid(), match.getPlatform());
-                if (toPush == null) continue;
+                System.out.println(toPush.getAccountId() + '-' + toPush.getPUUID() + '-' + toPush.getSummonerId());
 
                 try { 
                     LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, toPush);
