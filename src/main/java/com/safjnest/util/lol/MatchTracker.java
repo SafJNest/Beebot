@@ -2,6 +2,7 @@ package com.safjnest.util.lol;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,8 +61,6 @@ public class MatchTracker {
 
     private static void retriveSummoners() {
         try {
-            if (App.TEST_MODE) return;
-
             QueryCollection result = DatabaseHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
 
@@ -147,6 +146,28 @@ public class MatchTracker {
         return new HashSet<>(matchQueue);
     }
 
+    public static Summoner checkSummoner(MatchParticipant participant, Summoner summoner) {
+        if (summoner.getSummonerId().equals(participant.getSummonerId()) && summoner.getPUUID().equals(participant.getPuuid()))
+            return summoner;
+        
+        Map<String, Object> data = new LinkedHashMap<>();
+
+        data.put("platform", summoner.getPlatform());
+        data.put("puuid", participant.getPuuid());
+        LeagueHandler.clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, data);
+
+        data = new LinkedHashMap<>();
+
+        data.put("platform", summoner.getPlatform());
+        data.put("id", participant.getSummonerId());
+        LeagueHandler.clearCache(URLEndpoint.V4_SUMMONER_BY_ID, data);
+
+        summoner = LeagueHandler.getSummonerByPuiid(participant.getPuuid(), summoner.getPlatform());
+        if (summoner.getSummonerId().equals(participant.getSummonerId()) && summoner.getPUUID().equals(participant.getPuuid()))
+            return summoner;
+        return null;
+    }
+
 
 //     ▄████████ ███▄▄▄▄      ▄████████  ▄█       ▄██   ▄    ▄███████▄     ▄████████
 //    ███    ███ ███▀▀▀██▄   ███    ███ ███       ███   ██▄ ██▀     ▄██   ███    ███
@@ -204,8 +225,11 @@ public class MatchTracker {
                 }
 
                 Summoner toPush = LeagueHandler.getSummonerByPuiid(partecipant.getPuuid(), match.getPlatform());
-                System.out.println(partecipant.getPuuid() + " @@ " + toPush.getAccountId() + " @@ " + toPush.getPUUID() + " @@ " + toPush.getSummonerId());
-
+                toPush = checkSummoner(partecipant, toPush);
+                if (toPush == null) {
+                    BotLogger.error("CLEAR " + partecipant.getPuuid());
+                    continue;
+                }
                 try { 
                     LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, toPush);
                     Thread.sleep(500); 

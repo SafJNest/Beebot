@@ -977,6 +977,10 @@ import com.safjnest.core.cache.managers.UserCache;
 //  ████████▀    ███    █▀  ████████▀    ███    █▀      ██████████
 //
 
+    public static void clearCache(URLEndpoint endpoint, Map<String, Object> data) {
+        DataCall.getCacheProvider().clear(endpoint, data);
+    }
+
     public static void clearCache(URLEndpoint endpoint, Summoner summoner) {
         Map<String, Object> data = new LinkedHashMap<>();
 
