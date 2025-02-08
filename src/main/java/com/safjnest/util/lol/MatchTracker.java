@@ -204,7 +204,7 @@ public class MatchTracker {
                 }
 
                 Summoner toPush = LeagueHandler.getSummonerByPuiid(partecipant.getPuuid(), match.getPlatform());
-                System.out.println(toPush.getAccountId() + '-' + toPush.getPUUID() + '-' + toPush.getSummonerId());
+                System.out.println(partecipant.getPuuid() + " @@ " + toPush.getAccountId() + " @@ " + toPush.getPUUID() + " @@ " + toPush.getSummonerId());
 
                 try { 
                     LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, toPush);
