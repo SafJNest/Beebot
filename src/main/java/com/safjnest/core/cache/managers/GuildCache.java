@@ -26,7 +26,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     public GuildCache() {
         super();
         setExpireTime(12, TimeUnit.HOURS);
-        setTypeLimit(50);
+        setTypeLimit(60);
     }
 
     public static GuildCache getInstance() {
