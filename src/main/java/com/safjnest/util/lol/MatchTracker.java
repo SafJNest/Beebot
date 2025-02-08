@@ -66,6 +66,7 @@ public class MatchTracker {
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
 
             for (QueryRecord account : result) {
+                System.out.println(account.get("account_id"));
                 Summoner summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
                 if (summoner == null) continue;
                 
