@@ -13,7 +13,7 @@ public class UserCache extends CacheAdapter<String, UserData> {
     public UserCache() {
         super();
         setExpireTime(12, TimeUnit.HOURS);
-        setTypeLimit(50);
+        setTypeLimit(2000);
     }
 
     public static UserCache getInstance() {
