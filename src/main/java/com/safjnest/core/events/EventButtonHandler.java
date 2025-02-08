@@ -346,6 +346,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 privateInput = TextInput.create("twitch-changePrivateMessage", "New Private Message", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hello #streamer is now live!")
+                    .setRequired(false)
                     .setMaxLength(1000)
                     .build();
 
