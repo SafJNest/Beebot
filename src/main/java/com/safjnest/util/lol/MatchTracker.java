@@ -69,8 +69,7 @@ public class MatchTracker {
                 Summoner summoner = null;
                 try {
                     summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
-                    if (summoner == null) 
-                        throw new Exception("account null");
+                    System.out.println(summoner.getAccountId() + '-' + summoner.getPUUID() + '-' + summoner.getSummonerId());
                 } catch (Exception e) {
                     BotLogger.error("SUMMONER NOT FOUND (" + account.get("account_id") + ")");
                     e.printStackTrace();
