@@ -17,6 +17,7 @@ import com.safjnest.util.log.BotLogger;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
@@ -84,16 +85,21 @@ class TwitchEventsHandler {
             final String finalMessage = message;
             final String finalPrivateMessage = privateMessage;
 
+            final MessageEmbed finalMessageEmbed = eb.build();
+
+            eb.setFooter("Message sent from " + guild.getName(), guild.getIconUrl());
+            final MessageEmbed finalPrivateMessageEmbed = eb.build();
+
             switch (twitchData.getSendType()) {
                 case CHANNEL:
-                    channel.sendMessage(finalMessage).addEmbeds(eb.build()).queue();
+                    channel.sendMessage(finalMessage).addEmbeds(finalMessageEmbed).queue();
                     break;
                 case PRIVATE:
                     for (Member member : guild.getMembersWithRoles(role)) {
                         if (member.getUser().isBot()) continue;
                         try {
                             member.getUser().openPrivateChannel().queue(channelPrivate -> {
-                                channelPrivate.sendMessage(finalPrivateMessage).addEmbeds(eb.build()).queue();
+                                channelPrivate.sendMessage(finalPrivateMessage).addEmbeds(finalPrivateMessageEmbed).queue();
                             }); 
                         } catch (Exception e) { 
                             BotLogger.error("[TWITCH] Error sending private message to " + member.getUser().getAsTag() + " in " + guild.getName());
@@ -102,12 +108,12 @@ class TwitchEventsHandler {
                     }
                     break;
                 case BOTH:
-                    channel.sendMessage(finalMessage).addEmbeds(eb.build()).queue();
+                    channel.sendMessage(finalMessage).addEmbeds(finalMessageEmbed).queue();
                     for (Member member : guild.getMembersWithRoles(role)) {
                         if (member.getUser().isBot()) continue;
                         try {
                             member.getUser().openPrivateChannel().queue(channelPrivate -> {
-                                channelPrivate.sendMessage(finalPrivateMessage).addEmbeds(eb.build()).queue();
+                                channelPrivate.sendMessage(finalPrivateMessage).addEmbeds(finalPrivateMessageEmbed).queue();
                             }); 
                         } catch (Exception e) { 
                             BotLogger.error("[TWITCH] Error sending private message to " + member.getUser().getAsTag() + " in " + guild.getName());
