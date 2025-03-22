@@ -2,7 +2,7 @@ import json
 import requests
 
 # Load the JSON data from a file in the same folder
-with open('rsc/Testing/lol_testing/augments.json', 'r') as file:
+with open('augments.json', 'r') as file:
     json_data = json.load(file)
 
 # Base URL for downloading images
