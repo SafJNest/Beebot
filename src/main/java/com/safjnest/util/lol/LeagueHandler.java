@@ -515,7 +515,8 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
-        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
+        GuildData guild = event.isFromGuild() ? GuildCache.getGuild(event.getGuild().getId()) : null;
+
 
         User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();
 
@@ -525,7 +526,8 @@ import com.safjnest.core.cache.managers.UserCache;
             return s;
         }
 
-        LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guild.getLeagueShard(event.getChannel().getIdLong());
+        LeagueShard guildShard = event.isFromGuild()  ? guild.getLeagueShard(event.getChannel().getIdLong()) : LeagueShard.EUW1;
+        LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guildShard;
 
         String summoner = event.getOption("summoner").getAsString().replaceAll("[\\p{C}]", ""); //when you copy the name from riot chat it adds some weird characters
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : getRegionCode(shard);

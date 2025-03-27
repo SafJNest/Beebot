@@ -14,6 +14,7 @@ import com.safjnest.util.lol.LeagueMessage;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;;
 
 /**
@@ -32,6 +33,8 @@ public class Summoner extends SlashCommand {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
+
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
 
         String father = this.getClass().getSimpleName().replace("Slash", "");

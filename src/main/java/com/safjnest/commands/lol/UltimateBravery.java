@@ -16,6 +16,7 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
@@ -39,6 +40,8 @@ public class UltimateBravery extends SlashCommand {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
+
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "champion", "Filter for a specific champion", false).setAutoComplete(true),
