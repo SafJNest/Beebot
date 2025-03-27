@@ -12,6 +12,7 @@ import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -26,6 +27,8 @@ public class Region extends SlashCommand {
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
+
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
         this.options = Arrays.asList(
             LeagueHandler.getLeagueShardOptions(true),

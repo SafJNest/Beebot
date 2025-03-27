@@ -16,6 +16,7 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
@@ -29,6 +30,8 @@ public class Item extends SlashCommand {
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
+
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "item", "Item name", true).setAutoComplete(true)

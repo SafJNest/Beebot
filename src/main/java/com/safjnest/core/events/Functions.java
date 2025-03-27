@@ -433,13 +433,15 @@ public class Functions {
     }
 
     public static void updateCommandStatitics(SlashCommandInteractionEvent event) {
-        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
+        String guildId = event.isFromGuild() ? event.getGuild().getId() : "0";
+
+        GuildData guild = GuildCache.getGuild(guildId);
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
-        
+                
         String commandName = event.getName();
         String args = event.getOptions().toString();
-        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
+        DatabaseHandler.insertCommand(guildId, event.getUser().getId(), commandName, args);
     }
 
     public static void updateCommandStatitics(CommandEvent event, Command command) {

@@ -16,6 +16,7 @@ import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.MobalyticsHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -40,6 +41,8 @@ public class Champion extends SlashCommand {
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
+
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "champion", "Champion Name", true).setAutoComplete(true),

@@ -12,6 +12,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.lol.builders.champion.ChampionBuilder;
@@ -37,6 +38,8 @@ public class FreeChamp extends SlashCommand {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
+
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
         commandData.setThings(this);
     }

@@ -34,8 +34,9 @@ public class Opgg extends SlashCommand {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
-        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
         
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
+
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false).setAutoComplete(true),
             LeagueHandler.getLeagueShardOptions(),
