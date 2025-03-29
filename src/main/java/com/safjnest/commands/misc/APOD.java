@@ -1,7 +1,6 @@
 package com.safjnest.commands.misc;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -52,7 +51,7 @@ public class APOD extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        event.deferReply(true).queue();
+        event.deferReply(true).setEphemeral(false).queue();
         JSONObject jsonResponse = null;
         int responseCode = 0;
         try {
