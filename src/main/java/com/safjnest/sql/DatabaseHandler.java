@@ -522,7 +522,7 @@ public class DatabaseHandler {
     }
 
     public static QueryCollection getSoundsFromSoundBoard(String id) {
-        return safJQuery("select soundboard_sounds.sound_id as sound_id, sound.extension as extension, sound.name as name, sound.guild_id as guild_id from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "'");
+        return safJQuery("select soundboard_sounds.sound_id as sound_id, sound.extension as extension, sound.name as name, sound.guild_id as guild_id from soundboard_sounds join soundboard on soundboard.id = soundboard_sounds.id join sound on soundboard_sounds.sound_id = sound.id where soundboard.id = '" + id + "' order by name");
     }
 
     public static QueryRecord getSoundboardByID(String id) {

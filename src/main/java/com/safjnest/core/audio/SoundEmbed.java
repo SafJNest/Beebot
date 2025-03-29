@@ -251,7 +251,7 @@ public class SoundEmbed {
 
         eb.setDescription("Press a button to play a sound");
         eb.setColor(Bot.getColor());
-        eb.setFooter(sounds.size() + " sounds");
+        eb.setFooter(sounds.size() + " / 25 sounds");
 
         List<LayoutComponent> rows = new ArrayList<>();
         List<Button> row = new ArrayList<>();
