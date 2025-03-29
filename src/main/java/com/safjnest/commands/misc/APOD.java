@@ -1,6 +1,7 @@
 package com.safjnest.commands.misc;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.dv8tion.jda.api.utils.FileUpload;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -50,6 +52,7 @@ public class APOD extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
+        event.deferReply(true).queue();
         JSONObject jsonResponse = null;
         int responseCode = 0;
         try {
@@ -110,8 +113,16 @@ public class APOD extends SlashCommand {
         eb.setDescription(explanation);
         eb.setColor(Bot.getColor());
 
+        FileUpload imageUpload = null;
         if(type.equals("image")) {
-            eb.setImage(jsonResponse.get("hdurl").toString());
+            try {
+                InputStream imageStream = new URL(jsonResponse.get("url").toString()).openStream();
+                byte[] imageBytes = imageStream.readAllBytes();
+                imageUpload = FileUpload.fromData(imageBytes, "apod.jpg");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            eb.setImage("attachment://apod.jpg");
         }
         else if(type.equals("video")) {
             eb.appendDescription("\n\n**The apod is a video, click the link in the title to watch it**");
@@ -124,6 +135,10 @@ public class APOD extends SlashCommand {
         
         eb.setFooter("Date: " + date);
 
-        event.deferReply(false).addEmbeds(eb.build()).queue();
+        if (imageUpload != null) {
+            event.getHook().sendMessageEmbeds(eb.build()).addFiles(imageUpload).queue();
+        } else {
+            event.getHook().sendMessageEmbeds(eb.build()).queue();
+        }
     }
 }

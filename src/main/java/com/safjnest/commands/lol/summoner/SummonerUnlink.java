@@ -9,6 +9,7 @@ import com.safjnest.model.UserData;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
+import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
@@ -30,6 +31,8 @@ public class SummonerUnlink extends SlashCommand {
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
+
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "personal_summoner", "Accont to unlink", true)
