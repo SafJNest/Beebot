@@ -2,6 +2,7 @@ package com.safjnest.util.lol;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,14 +61,20 @@ public class MatchTracker {
 
     private static void retriveSummoners() {
         try {
-            if (App.TEST_MODE) return;
-
             QueryCollection result = DatabaseHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
 
             for (QueryRecord account : result) {
-                Summoner summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
-                if (summoner == null) continue;
+                Summoner summoner = null;
+                try {
+                    summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
+                    if (summoner == null) 
+                        throw new Exception("account null");
+                } catch (Exception e) {
+                    BotLogger.error("SUMMONER NOT FOUND (" + account.get("account_id") + ")");
+                    e.printStackTrace();
+                    continue;
+                }
                 
                 LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
                 LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
@@ -139,6 +146,28 @@ public class MatchTracker {
         return new HashSet<>(matchQueue);
     }
 
+    public static Summoner checkSummoner(MatchParticipant participant, Summoner summoner) {
+        if (summoner.getSummonerId().equals(participant.getSummonerId()) && summoner.getPUUID().equals(participant.getPuuid()))
+            return summoner;
+        
+        Map<String, Object> data = new LinkedHashMap<>();
+
+        data.put("platform", summoner.getPlatform());
+        data.put("puuid", participant.getPuuid());
+        LeagueHandler.clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, data);
+
+        data = new LinkedHashMap<>();
+
+        data.put("platform", summoner.getPlatform());
+        data.put("id", participant.getSummonerId());
+        LeagueHandler.clearCache(URLEndpoint.V4_SUMMONER_BY_ID, data);
+
+        summoner = LeagueHandler.getSummonerByPuiid(participant.getPuuid(), summoner.getPlatform());
+        if (summoner.getSummonerId().equals(participant.getSummonerId()) && summoner.getPUUID().equals(participant.getPuuid()))
+            return summoner;
+        return null;
+    }
+
 
 //     ▄████████ ███▄▄▄▄      ▄████████  ▄█       ▄██   ▄    ▄███████▄     ▄████████
 //    ███    ███ ███▀▀▀██▄   ███    ███ ███       ███   ██▄ ██▀     ▄██   ███    ███
@@ -196,8 +225,11 @@ public class MatchTracker {
                 }
 
                 Summoner toPush = LeagueHandler.getSummonerByPuiid(partecipant.getPuuid(), match.getPlatform());
-                if (toPush == null) continue;
-
+                toPush = checkSummoner(partecipant, toPush);
+                if (toPush == null) {
+                    BotLogger.error("CLEAR " + partecipant.getPuuid());
+                    continue;
+                }
                 try { 
                     LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY, toPush);
                     Thread.sleep(500); 

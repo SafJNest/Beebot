@@ -302,6 +302,7 @@ public class LeagueMessage {
             Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
             Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
             Button draft = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
+            Button curretModeButton = Button.secondary("lol-queue-" + GameQueueType.CHERRY, "Arena");
 
             if (queue == null) {
                 allQueue = allQueue.withStyle(ButtonStyle.SUCCESS);
@@ -317,6 +318,11 @@ public class LeagueMessage {
                     case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
                         draft = draft.withStyle(ButtonStyle.SUCCESS);
                         break;
+                    case CHERRY:
+                    case ULTBOOK:
+                    case SWIFTPLAY:
+                        curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
+                        break;
                     default:
                         break;
                 }
@@ -330,7 +336,7 @@ public class LeagueMessage {
             else if (start == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
             else if (start == previousTime[0] && end == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
-            buttons.add(index, ActionRow.of(allQueue, soloQ, flex, draft));
+            buttons.add(index, ActionRow.of(allQueue, soloQ, flex, draft, curretModeButton));
             index++;
             buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
             index++;
@@ -361,7 +367,7 @@ public class LeagueMessage {
 //
 
     public static LayoutComponent getOpggQueueTypeButtons(GameQueueType queue) {
-        GameQueueType currentGameQueueType = GameQueueType.SWIFTPLAY;
+        GameQueueType currentGameQueueType = GameQueueType.CHERRY;
 
         Button soloQ = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
         Button flex = Button.primary("match-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
