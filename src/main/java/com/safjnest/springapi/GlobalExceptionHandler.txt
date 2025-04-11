@@ -1,4 +1,4 @@
-package com.safjnest.api;
+package com.safjnest.springapi;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;

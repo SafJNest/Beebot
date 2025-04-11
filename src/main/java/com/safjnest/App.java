@@ -26,29 +26,41 @@ public class App {
     
     public static final boolean TEST_MODE = getPropertyAsBoolean("testing");
 
-    public static void main(String args[]) throws FileNotFoundException, IOException {
+    public static void main(String args[]) {
         
         SafJNest.bee();
+        
         new BotLogger("Beebot", null);
 
         botName = TEST_MODE ? (args.length > 1 ? args[1] : App.getProperty("bot")) : "beebot";
         settingsLoader = new SettingsLoader(botName, TEST_MODE);
 
-        if (!TEST_MODE) {
-            SpringApplication springApplication = new SpringApplication(App.class);
-            
-            Properties springProperties = new Properties();
-            springProperties.load(new FileReader("spring.properties"));
-
-            springApplication.setDefaultProperties(springProperties);
-            //springApplication.run(args);
-
+        if (TEST_MODE) {
+            BotLogger.info("Beebot is in testing mode");
+            runSpring();
+        }
+        else {
             TwitchClient.init();
         }
-        else BotLogger.info("Beebot is in testing mode");
                         
         bot = new Bot();
         bot.il_risveglio_della_bestia();
+    }
+
+    public static void runSpring() {
+        SpringApplication springApplication = new SpringApplication(App.class);
+            
+        Properties springProperties = new Properties();
+        try {
+            springProperties.load(new FileReader("spring.properties"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        springApplication.setDefaultProperties(springProperties);
+        springApplication.run();
     }
 
     public static void shutdown() {
