@@ -33,7 +33,7 @@ public class LevelUpPreview extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuildCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuildOrPut(guildId);
 
         AlertData level = gs.getAlert(AlertType.LEVEL_UP);
 

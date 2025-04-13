@@ -60,7 +60,7 @@ public class Voice extends SlashCommand {
             return;
         }
 
-        if (!GuildCache.getGuild(event.getGuild().getId()).setVoice(voice, language)) {
+        if (!GuildCache.getGuildOrPut(event.getGuild().getId()).setVoice(voice, language)) {
             event.deferReply(true).addContent("There was an error while changing the voice.").queue();
             return;
         }

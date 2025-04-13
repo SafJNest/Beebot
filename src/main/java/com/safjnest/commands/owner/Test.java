@@ -272,36 +272,36 @@ public class Test extends Command{
                 }
             break;
             case "getBlacklist":
-                System.out.println(GuildCache.getGuild(e.getGuild().getId()).getBlacklistData().toString());
+                System.out.println(GuildCache.getGuildOrPut(e.getGuild().getId()).getBlacklistData().toString());
                 break;
             case "13":
-                HashMap<AlertKey<?>, AlertData> prova = GuildCache.getGuild(e.getGuild().getId()).getAlerts();
+                HashMap<AlertKey<?>, AlertData> prova = GuildCache.getGuildOrPut(e.getGuild().getId()).getAlerts();
                 String s = new JSONObject(prova).toJSONString();
-                e.reply("```json\n" + GuildCache.getGuild(e.getGuild().getId()).toString() + "```");
+                e.reply("```json\n" + GuildCache.getGuildOrPut(e.getGuild().getId()).toString() + "```");
                 e.reply("```json\n" + s + "```");
-                BlacklistData bd = GuildCache.getGuild(e.getGuild().getId()).getBlacklistData();
+                BlacklistData bd = GuildCache.getGuildOrPut(e.getGuild().getId()).getBlacklistData();
                 e.reply("```json\n" + bd.toString()+ "```");
-                HashMap<Long, ChannelData> channels = GuildCache.getGuild(e.getGuild().getId()).getChannels();
+                HashMap<Long, ChannelData> channels = GuildCache.getGuildOrPut(e.getGuild().getId()).getChannels();
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getMembers()).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getMembers()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
                 break;
             case "14":
                 for(Guild g : e.getJDA().getGuilds()) {
-                    GuildCache.getGuild(g.getId()).getAlerts();
-                    GuildCache.getGuild(g.getId()).getBlacklistData();
+                    GuildCache.getGuildOrPut(g.getId()).getAlerts();
+                    GuildCache.getGuildOrPut(g.getId()).getBlacklistData();
                     for(GuildChannel cd : g.getChannels()) {
-                        GuildCache.getGuild(g.getId()).getChannelData(cd.getId());
+                        GuildCache.getGuildOrPut(g.getId()).getChannelData(cd.getId());
                     }
                     for(Member m : g.getMembers()){
-                        GuildCache.getGuild(g.getId()).getMemberData(m.getId());
+                        GuildCache.getGuildOrPut(g.getId()).getMemberData(m.getId());
                         UserCache.getUser(m.getId());
                     }
                 }
                 e.reply("Done");
                 break;
             case "getServer":
-                String sss = new JSONObject(GuildCache.getGuild(e.getGuild().getId()).getChannels()).toJSONString();
+                String sss = new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getChannels()).toJSONString();
                 e.reply("```json\n" + sss + "```");
                 break;
             case "stats":
@@ -390,18 +390,18 @@ public class Test extends Command{
                 break;
             case "disablecommands":
                 e.getGuild().getTextChannels().forEach(c -> {
-                    GuildCache.getGuild(e.getGuild()).getChannelData(c.getId()).setCommand(false);
+                    GuildCache.getGuildOrPut(e.getGuild()).getChannelData(c.getId()).setCommand(false);
                 });
                 break;
             case "disablecommand":
-                GuildCache.getGuild(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(false);
+                GuildCache.getGuildOrPut(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(false);
                 break;
             case "enablecommand":
-                GuildCache.getGuild(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(true);
+                GuildCache.getGuildOrPut(e.getGuild()).getChannelData(e.getTextChannel().getId()).setCommand(true);
                 break;
             case "enablecommands":
                 e.getGuild().getTextChannels().forEach(c -> {
-                    GuildCache.getGuild(e.getGuild()).getChannelData(c.getId()).setCommand(true);
+                    GuildCache.getGuildOrPut(e.getGuild()).getChannelData(c.getId()).setCommand(true);
                 });
                 break;
             case "cachesize":
@@ -525,7 +525,7 @@ public class Test extends Command{
                 break;
             case "dbsgozz":
                 for (Guild g : e.getJDA().getGuilds()) {
-                    GuildData gd = GuildCache.getGuild(g);
+                    GuildData gd = GuildCache.getGuildOrPut(g);
                     for (Member m : g.getMembers()) {
                         gd.getMemberData(m.getId()).setUpdateTime(61);
                     }

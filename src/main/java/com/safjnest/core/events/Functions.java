@@ -205,7 +205,7 @@ public class Functions {
     public static void handleAlert(User theGuy, Guild guild, AlertType type) {
         MessageChannel channel = null;
 
-        AlertData alert = GuildCache.getGuild(guild.getId()).getAlert(type);
+        AlertData alert = GuildCache.getGuildOrPut(guild.getId()).getAlert(type);
         if (alert == null || !alert.isValid()) {
             return;
         }
@@ -279,7 +279,7 @@ public class Functions {
 
     public static void handleBlacklist(User badGuy, Guild guild) {
         MessageChannel channel = null;
-        GuildData guildData = GuildCache.getGuild(guild.getId());
+        GuildData guildData = GuildCache.getGuildOrPut(guild.getId());
 
 
         int threshold = guildData.getThreshold();
@@ -312,7 +312,7 @@ public class Functions {
     }
 
     public static void handleBlacklistAlert(User badGuy, Guild guild) {
-        GuildData guildData = GuildCache.getGuild(guild.getId());
+        GuildData guildData = GuildCache.getGuildOrPut(guild.getId());
         int threshold = guildData.getThreshold();
 
         if(threshold == 0)
@@ -352,7 +352,7 @@ public class Functions {
     }
 
     public static void handleChannelDeleteAlert(Guild guild, String channelID) {
-        GuildData g = GuildCache.getGuild(guild.getId());
+        GuildData g = GuildCache.getGuildOrPut(guild.getId());
 
         String alertChannel = guild.getDefaultChannel().getId();
         String alertMessage = "";
@@ -435,7 +435,7 @@ public class Functions {
     public static void updateCommandStatitics(SlashCommandInteractionEvent event) {
         String guildId = event.isFromGuild() ? event.getGuild().getId() : "0";
 
-        GuildData guild = GuildCache.getGuild(guildId);
+        GuildData guild = GuildCache.getGuildOrPut(guildId);
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
                 
@@ -445,7 +445,7 @@ public class Functions {
     }
 
     public static void updateCommandStatitics(CommandEvent event, Command command) {
-        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuildOrPut(event.getGuild().getId());
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
             return;
         
@@ -455,7 +455,7 @@ public class Functions {
     }
 
     public static void handleRoleDeleteAlert(Guild guild, String role_id) {
-        GuildData g = GuildCache.getGuild(guild.getId());
+        GuildData g = GuildCache.getGuildOrPut(guild.getId());
         g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().containsValue(role_id)).forEach(alert -> {
             alert.removeRole(role_id);
         });

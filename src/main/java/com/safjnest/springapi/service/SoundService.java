@@ -1,16 +1,21 @@
 package com.safjnest.springapi.service;
 
+import org.springframework.stereotype.Service;
+
 import com.safjnest.springapi.api.model.Sound;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
 
+@Service
 public class SoundService {
 
     public Sound getSoundById(String id) {
         QueryRecord sound = DatabaseHandler.getSoundById(id);
-        if (sound == null) {
+
+        if (sound.emptyValues()) {
             return null;
         }
+        
         return new Sound(
             sound.getAsInt("id"),
             sound.get("name"),

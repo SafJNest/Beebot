@@ -124,7 +124,7 @@ public class GuildData {
         return ID;
     }
 
-    public String getID() {
+    public String getIdString() {
         return String.valueOf(ID);
     }
 
@@ -454,7 +454,7 @@ public class GuildData {
     public ChannelData getChannelData(long channel_id) {
         ChannelData cd = this.channels.get(channel_id);
         if (cd == null) {
-            cd = new ChannelData(channel_id, this.getID());
+            cd = new ChannelData(channel_id, this.getIdString());
             BotLogger.debug("Caching local ChannelData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(channel_id), LoggerIDpair.IDType.CHANNEL));
             this.channels.put(channel_id, cd);
         }
@@ -517,7 +517,7 @@ public class GuildData {
         }
         member = retriveMemberData(userId);
         if (member == null) {
-            member = new MemberData(userId, this.getID());
+            member = new MemberData(userId, this.getIdString());
             BotLogger.debug("Caching local MemberData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
         }
         this.members.put(userId, member);

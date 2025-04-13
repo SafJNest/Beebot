@@ -54,7 +54,7 @@ public class Help extends SlashCommand {
 
 
     public static EmbedBuilder getGenericHelp(String guildId, String userId) {
-        String prefix = GuildCache.getGuild(guildId).getPrefix();
+        String prefix = GuildCache.getGuildOrPut(guildId).getPrefix();
         EmbedBuilder eb = new EmbedBuilder();
 
         HashMap<String, BotCommand> commands = CommandsLoader.getCommandsData(userId);
