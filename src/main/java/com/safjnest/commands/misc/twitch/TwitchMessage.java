@@ -54,7 +54,7 @@ public class TwitchMessage extends SlashCommand {
         AlertSendType sendType = event.getOption("sendtype") != null ? AlertSendType.values()[event.getOption("sendtype").getAsInt()] : AlertSendType.CHANNEL;
         
         String guildId = event.getGuild().getId();
-        GuildData gs = GuildCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuildOrPut(guildId);
         
         TwitchData twitch = gs.getTwitchdata(streamerId);
 

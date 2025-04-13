@@ -46,7 +46,7 @@ public class AutomatedActionTimer {
         }
 
 
-        AutomatedAction action = GuildCache.getGuild(guildId).getAction(actionId);
+        AutomatedAction action = GuildCache.getGuildOrPut(guildId).getAction(actionId);
         if (action == null) {
             BotLogger.error("[AutomatedActionTimer] Action not found: " + actionId);
             return;

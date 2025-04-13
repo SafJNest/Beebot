@@ -124,7 +124,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             roleID = null;
         }
 
-        TwitchData twitch = GuildCache.getGuild(guild).getTwitchdata(streamerId);
+        TwitchData twitch = GuildCache.getGuildOrPut(guild).getTwitchdata(streamerId);
         if (twitch == null) {
             AlertSendType sendType = (privateMessage != null && !privateMessage.isBlank()) ? AlertSendType.BOTH : AlertSendType.CHANNEL;
             
@@ -137,7 +137,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 return;
             }
     
-            GuildCache.getGuild(event.getGuild().getId()).getAlerts().put(newTwitchData.getKey(), newTwitchData);
+            GuildCache.getGuildOrPut(event.getGuild().getId()).getAlerts().put(newTwitchData.getKey(), newTwitchData);
             TwitchClient.registerSubEvent(streamerId);
             event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
                 .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))

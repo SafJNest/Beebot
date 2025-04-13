@@ -382,7 +382,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 break;
             case "delete":
-                GuildCache.getGuild(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
+                GuildCache.getGuildOrPut(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
                 if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
                     TwitchClient.unregisterSubEvent(streamerId);
@@ -577,8 +577,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
         switch (args) {
             case "right":
-                RewardData nextReward = GuildCache.getGuild(guild.getId()).getHigherReward(Integer.parseInt(level));
-                RewardData nextNextReward = GuildCache.getGuild(guild.getId()).getHigherReward(nextReward.getLevel());
+                RewardData nextReward = GuildCache.getGuildOrPut(guild.getId()).getHigherReward(Integer.parseInt(level));
+                RewardData nextNextReward = GuildCache.getGuildOrPut(guild.getId()).getHigherReward(nextReward.getLevel());
 
                 if (nextNextReward == null) {
                     right = right.asDisabled();
@@ -595,8 +595,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
 
-                RewardData previousRewardData = GuildCache.getGuild(guild.getId()).getLowerReward(Integer.parseInt(level));
-                RewardData previousPreviousRewardData = GuildCache.getGuild(guild.getId()).getLowerReward(previousRewardData.getLevel());
+                RewardData previousRewardData = GuildCache.getGuildOrPut(guild.getId()).getLowerReward(Integer.parseInt(level));
+                RewardData previousPreviousRewardData = GuildCache.getGuildOrPut(guild.getId()).getLowerReward(previousRewardData.getLevel());
                 if (previousPreviousRewardData == null) {
                     left = left.asDisabled();
                     left = left.withStyle(ButtonStyle.DANGER);

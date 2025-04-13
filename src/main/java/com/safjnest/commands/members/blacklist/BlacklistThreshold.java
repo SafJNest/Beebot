@@ -37,7 +37,7 @@ public class BlacklistThreshold extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String threshold = event.getOption("threshold").getAsString();
 
-        if(!GuildCache.getGuild(event.getGuild()).setThreshold(Integer.parseInt(threshold))) {
+        if(!GuildCache.getGuildOrPut(event.getGuild()).setThreshold(Integer.parseInt(threshold))) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }
