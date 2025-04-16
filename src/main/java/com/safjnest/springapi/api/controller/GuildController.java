@@ -123,20 +123,29 @@ public class GuildController {
     }
     
     // /api/users/@me/guilds
-    @GetMapping("/guilds")
+    @PostMapping("/guilds")
     public ResponseEntity<List<Map<String, String>>> getGuilds(@RequestBody List<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing guild ids");
+        }
+
         JDA jda = Bot.getJDA();
+
         List<Map<String, String>> guilds = new ArrayList<>();
         for(String guildId : ids){
-            try {
-                Guild g = jda.getGuildById(guildId);
-                Map<String, String> guildInfo = new HashMap<>();
-                guildInfo.put("id", g.getId());
-                guildInfo.put("name", g.getName());
-                guildInfo.put("icon", g.getIconUrl());
-                guilds.add(guildInfo);
-            } catch (Exception ignored) { }
+            Guild g = jda.getGuildById(guildId);
+            if(g == null) {
+                continue;
+            }
+
+            Map<String, String> guildInfo = new HashMap<>();
+            guildInfo.put("id", g.getId());
+            guildInfo.put("name", g.getName());
+            guildInfo.put("icon", g.getIconId() != null ? g.getIconId() : "");
+
+            guilds.add(guildInfo);
         }
+
         return ResponseEntity.ok(guilds);
     }
 
