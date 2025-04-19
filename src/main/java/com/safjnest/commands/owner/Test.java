@@ -1072,6 +1072,10 @@ public class Test extends Command{
                     ChronoTask task =  () -> MatchTracker.popSet();
                     task.queue();
                 break;
+                case "error":
+                    List a = new ArrayList<String>();
+                    a.get(0);
+                break;
         }
     }  
 
