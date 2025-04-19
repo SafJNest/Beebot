@@ -22,15 +22,15 @@ import javax.xml.bind.DatatypeConverter;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final String jwtSecret;
+    private final SecretKey jwtKey;
 
     public JwtAuthenticationFilter(String jwtSecret) {
-        this.jwtSecret = jwtSecret;
+        this.jwtKey = getSignInKey(jwtSecret);
     }
 
-    private SecretKey getSignInKey() {
-        byte[] bytes = Base64.getDecoder().decode(jwtSecret.getBytes(StandardCharsets.UTF_8));
-        return new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
+    private SecretKey getSignInKey(String jwtSecret) {
+        byte[] bytes = Base64.getUrlDecoder().decode(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        return new SecretKeySpec(bytes, "HmacSHA256");
     }
 
     @Override
@@ -44,10 +44,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
             try {
                 Claims claims = Jwts.parser()
-                .verifyWith(getSignInKey())
+                .verifyWith(jwtKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+
+                System.out.println("JWT Claims: " + claims);
 
                 request.setAttribute("claims", claims);
                 
