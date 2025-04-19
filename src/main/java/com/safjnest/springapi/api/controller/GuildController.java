@@ -1,5 +1,6 @@
 package com.safjnest.springapi.api.controller;
 
+import net.dv8tion.jda.api.Permission;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,8 +27,12 @@ import com.safjnest.springapi.service.GuildService;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.HttpServletRequest;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.UserSnowflake;
 
 @RestController
 @RequestMapping("/api/guild")
@@ -124,17 +129,29 @@ public class GuildController {
     
     // /api/users/@me/guilds
     @PostMapping("/guilds")
-    public ResponseEntity<List<Map<String, String>>> getGuilds(@RequestBody List<String> ids) {
+    public ResponseEntity<List<Map<String, String>>> getGuilds(HttpServletRequest request, @RequestBody List<String> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing guild ids");
+        }
+
+        Claims claims = (Claims) request.getAttribute("claims");
+        String userId = claims.getSubject();
+
+        if(userId == null || userId.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user id");
         }
 
         JDA jda = Bot.getJDA();
 
         List<Map<String, String>> guilds = new ArrayList<>();
-        for(String guildId : ids){
+        for(String guildId : ids) {
             Guild g = jda.getGuildById(guildId);
             if(g == null) {
+                continue;
+            }
+
+            Member member = g.retrieveMemberById(userId).complete();
+            if(member == null || !member.hasPermission(Permission.ADMINISTRATOR)) {
                 continue;
             }
 
