@@ -51,7 +51,7 @@ public class APOD extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        event.deferReply(true).queue();
+        event.deferReply(true).setEphemeral(false).queue();
         JSONObject jsonResponse = null;
         int responseCode = 0;
         try {
