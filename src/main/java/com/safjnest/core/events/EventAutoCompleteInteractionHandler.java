@@ -529,7 +529,8 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         QueryCollection summoners = new QueryCollection();
-        LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : GuildCache.getGuild(e.getGuild().getId()).getLeagueShard(e.getChannelIdLong());
+        LeagueShard defaultShard = e.isFromGuild() ? GuildCache.getGuild(e.getGuild().getId()).getLeagueShard(e.getChannelIdLong()) : LeagueShard.EUW1;
+        LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : defaultShard;
         
         if (!isFocused) {
             HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
