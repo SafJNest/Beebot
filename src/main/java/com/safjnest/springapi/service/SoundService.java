@@ -11,7 +11,6 @@ import org.springframework.web.server.ResponseStatusException;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryRecord;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
