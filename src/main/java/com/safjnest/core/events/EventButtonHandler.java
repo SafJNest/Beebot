@@ -476,10 +476,10 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 return;
             case "delete":
-                Tag[] tags = soundData.getTags();
-                for (int i = 0; i < tags.length; i++) {
-                    if (tags[i].getId() == Integer.parseInt(tagId)) {
-                        tags[i] = new Tag();
+                List<Tag> tags = soundData.getTags();
+                for (int i = 0; i < tags.size(); i++) {
+                    if (tags.get(i).getId() == Integer.parseInt(tagId)) {
+                        tags.set(i, new Tag());
                         break;
                     }
                 }

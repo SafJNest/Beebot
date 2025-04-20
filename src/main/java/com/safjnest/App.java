@@ -37,6 +37,7 @@ public class App {
 
         if (TEST_MODE) {
             BotLogger.info("Beebot is in testing mode");
+            runSpring();
         }
         else {
             TwitchClient.init();
