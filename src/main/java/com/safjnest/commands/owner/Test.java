@@ -1073,7 +1073,7 @@ public class Test extends Command{
                     task.queue();
                 break;
                 case "error":
-                    List a = new ArrayList<String>();
+                    List<String> a = new ArrayList<String>();
                     a.get(0);
                 break;
         }

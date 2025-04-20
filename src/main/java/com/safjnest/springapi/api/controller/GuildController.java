@@ -9,6 +9,8 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -129,17 +131,13 @@ public class GuildController {
     
     // /api/users/@me/guilds
     @PostMapping("/guilds")
-    public ResponseEntity<List<Map<String, String>>> getGuilds(HttpServletRequest request, @RequestBody List<String> ids) {
+    //@PreAuthorize("hasAuthority('admin') or #userId == authentication.name")
+    public ResponseEntity<List<Map<String, String>>> getGuilds(@RequestBody List<String> ids) {
         if (ids == null || ids.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing guild ids");
         }
 
-        Claims claims = (Claims) request.getAttribute("claims");
-        String userId = claims.getSubject();
-
-        if(userId == null || userId.trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid user id");
-        }
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
 
         JDA jda = Bot.getJDA();
 
@@ -150,8 +148,13 @@ public class GuildController {
                 continue;
             }
 
-            Member member = g.retrieveMemberById(userId).complete();
-            if(member == null || !member.hasPermission(Permission.ADMINISTRATOR)) {
+            try {
+                Member member = g.retrieveMemberById(userId).complete();
+                if(member == null || !member.hasPermission(Permission.ADMINISTRATOR)) {
+                    continue;
+                }
+            }
+            catch (Exception e) {
                 continue;
             }
 
@@ -164,6 +167,45 @@ public class GuildController {
         }
 
         return ResponseEntity.ok(guilds);
+    }
+
+    @GetMapping("/{id}/settings")
+    public Map<String, String> getSettings(@PathVariable String id, @RequestBody List<String> settings) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing guild id");
+        }
+        if (settings == null || settings.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing settings");
+        }
+
+        GuildData guild = GuildCache.getGuild(id);
+
+        if(guild == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Guild not found");
+        }
+
+        return guild.getSettings(settings);
+    }
+
+    @PostMapping("/{id}/settings")
+    public Map<String, String> setSettings(@PathVariable String id, @RequestBody Map<String, String> settings) {
+        if (id == null || id.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing guild id");
+        }
+        if (settings == null || settings.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing settings");
+        }
+
+        GuildData guild = GuildCache.getGuild(id);
+        if(guild == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Guild not found");
+        }
+
+        if (guild.setSettings(settings)) {
+            return guild.getSettings(new ArrayList<>(settings.keySet()));
+        } else {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update settings");
+        }
     }
 
     //api/sound/cose dei suoni

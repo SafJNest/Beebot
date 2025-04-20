@@ -1,29 +1,54 @@
 package com.safjnest.springapi.service;
 
-import org.springframework.stereotype.Service;
+import java.net.MalformedURLException;
 
-import com.safjnest.springapi.api.model.Sound;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.model.sound.Sound;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Optional;
+
 @Service
 public class SoundService {
+    private static final Path SOUND_DIRECTORY = Paths.get("rsc", "SoundBoard").toAbsolutePath().normalize();
 
-    public Sound getSoundById(String id) {
-        QueryRecord sound = DatabaseHandler.getSoundById(id);
+    public Optional<Sound> getSoundById(String id) {
+        Sound sound = SoundCache.getSoundById(id);
+        return sound == null ? Optional.empty() : Optional.of(sound);
+    }
 
-        if (sound.emptyValues()) {
-            return null;
+    public List<Sound> getSounds(String userId, int page, int limit) {
+        return DatabaseHandler.getSounds(userId, page, limit);
+    }
+
+    public Optional<Resource> getSoundFile(Sound sound) {
+        if (!Files.exists(SOUND_DIRECTORY) || !Files.isDirectory(SOUND_DIRECTORY)) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Directory not found");
         }
-        
-        return new Sound(
-            sound.getAsInt("id"),
-            sound.get("name"),
-            sound.get("guild_id"),
-            sound.get("user_id"),
-            sound.get("extension"),
-            sound.getAsInt("public") == 1,
-            sound.getAsDate("time").toLocalDate()
-        );
+
+        try {
+            Path filePath = SOUND_DIRECTORY.resolve(sound.getId() + "." + sound.getExtension());
+            return Optional.of(new UrlResource(filePath.toUri()));
+        } catch (MalformedURLException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Sound file not found");
+        }
+    }
+
+    public boolean userHasAuth(String userId, Sound sound) {
+        if (sound.isPublic() || sound.getUserId().equals(userId)) { // || PermissionHandler.isUntouchable(userId)
+            return true;
+        }
+        return false;
     }
 }

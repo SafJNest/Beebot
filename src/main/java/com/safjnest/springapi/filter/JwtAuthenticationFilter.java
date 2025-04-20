@@ -9,12 +9,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -33,13 +39,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return new SecretKeySpec(bytes, "HmacSHA256");
     }
 
+    private List<SimpleGrantedAuthority> getAuthorities(Claims claims) {
+        Object scopesObj = claims.get("scopes");
+        List<String> scopes;
+        if (scopesObj instanceof List<?> rawList) {
+            scopes = rawList.stream()
+                            .filter(item -> item instanceof String)
+                            .map(item -> (String) item)
+                            .toList();
+        } else {
+            scopes = Collections.emptyList();
+        }
+        List<SimpleGrantedAuthority> authorities = scopes == null ? 
+            Collections.emptyList() :
+            scopes.stream()
+                .map(SimpleGrantedAuthority::new)
+                .toList();
+        return authorities;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         
         String authHeader = request.getHeader("Authorization");
 
-        System.out.println("Authorization Header: " + authHeader);
-        
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             try {
@@ -48,10 +71,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+                
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(claims.getSubject(), 
+                        null, 
+                        getAuthorities(claims));
 
-                System.out.println("JWT Claims: " + claims);
-
-                request.setAttribute("claims", claims);
+                SecurityContextHolder.getContext().setAuthentication(auth);
                 
             } catch (JwtException e) {
                 System.out.println("Invalid JWT token: " + e.getMessage());
@@ -62,7 +87,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing Authorization header");
             return;
         }
-        System.out.println("JWT token is valid, proceeding with request...");
         filterChain.doFilter(request, response);
     }
 }

@@ -56,7 +56,7 @@ public class SoundEmbed {
                 download,
                 delete));
 
-        Tag[] tags = soundData.getTags();
+        List<Tag> tags = soundData.getTags();
         List<Button> tagButtons = new ArrayList<>();
         int n = 1;
         for (Tag tag : tags) {
@@ -69,7 +69,7 @@ public class SoundEmbed {
                         .withEmoji(CustomEmojiHandler.getRichEmoji("tag"));
 
             tagButtons.add(tagButton);
-            if (n % 5 == 0 || n == tags.length) {
+            if (n % 5 == 0 || n == tags.size()) {
                 buttonRows.add(ActionRow.of(tagButtons));
                 tagButtons = new ArrayList<>();
             }
@@ -137,7 +137,7 @@ public class SoundEmbed {
                 + Bot.getJDA().getGuildById(sound.getGuildId()).getName()
                 + "```", true);
 
-        Tag[] tags = sound.getTags();
+        List<Tag> tags = sound.getTags();
         StringBuilder tagList = new StringBuilder();
         for (Tag tag : tags) {
             if (!tag.getName().isBlank())

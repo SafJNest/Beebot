@@ -101,7 +101,7 @@ public class Upload extends SlashCommand{
                 }
             }
         }
-        if (tags.size() > 0) SoundCache.getSoundById(id).setTags(tags.toArray(new Tag[tags.size()]));
+        if (tags.size() > 0) SoundCache.getSoundById(id).setTags(tags);
 
         File saveFile = new File("rsc" + File.separator + "SoundBoard" + File.separator + (id + "." + attachment.getFileExtension()));
 
