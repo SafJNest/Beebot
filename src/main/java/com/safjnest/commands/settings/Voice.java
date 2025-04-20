@@ -1,6 +1,5 @@
 package com.safjnest.commands.settings;
 
-import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -8,8 +7,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
