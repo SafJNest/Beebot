@@ -44,7 +44,7 @@ public class WelcomeMessage extends SlashCommand {
 
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuildCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuildOrPut(guildId);
 
         AlertData welcome = gs.getAlert(AlertType.WELCOME);
 

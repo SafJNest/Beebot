@@ -1,6 +1,7 @@
 package com.safjnest.model.sound;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.sql.DatabaseHandler;
@@ -23,7 +24,7 @@ public class Sound {
 
     private AudioTrack track;
 
-    private Tag[] tags;
+    private List<Tag> tags;
 
     public Sound() {
         this.ID = null;
@@ -35,8 +36,8 @@ public class Sound {
         this.timestamp = null;
         this.tags = null;
     }
-    
-    public Sound(QueryRecord data, Tag[] tags) {
+
+    public Sound(QueryRecord data, List<Tag> tags) {
         this.ID = data.get("id");
         this.GUILD_ID = data.get("guild_id");
         this.USER_ID = data.get("user_id");
@@ -89,7 +90,7 @@ public class Sound {
         return track;
     }
 
-    public Tag[] getTags() {
+    public List<Tag> getTags() {
         return tags;
     }
 
@@ -117,7 +118,7 @@ public class Sound {
         return result;
     }
 
-    public boolean setTags(Tag[] tags) {
+    public boolean setTags(List<Tag> tags) {
         boolean result = DatabaseHandler.setSoundTags(this.ID, tags);
         if (result) {
             this.tags = tags;

@@ -229,7 +229,7 @@ public class ChatHandler {
         String channelId = e.getChannel().getId();
         
         /**god of if */
-        if (e.getMessage().getContentRaw().startsWith(GuildCache.getGuild(e.getGuild()).getPrefix()) && Help.searchCommand(e.getMessage().getContentRaw().split(" ", 2)[0].substring(GuildCache.getGuild(e.getGuild()).getPrefix().length()), CommandsLoader.getCommandsData(e.getMember().getId())) != null)
+        if (e.getMessage().getContentRaw().startsWith(GuildCache.getGuildOrPut(e.getGuild()).getPrefix()) && Help.searchCommand(e.getMessage().getContentRaw().split(" ", 2)[0].substring(GuildCache.getGuildOrPut(e.getGuild()).getPrefix().length()), CommandsLoader.getCommandsData(e.getMember().getId())) != null)
             return;
         
         if(channelGroups.containsKey(channelId)) {

@@ -35,12 +35,12 @@ public class BlacklistToggle extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         boolean toggle = event.getOption("toggle").getAsString().equalsIgnoreCase("on") ? true : false;
 
-        if(GuildCache.getGuild(event.getGuild().getId()).getBlackChannelId() == null) {
+        if(GuildCache.getGuildOrPut(event.getGuild().getId()).getBlackChannelId() == null) {
             event.deferReply(true).addContent("This guild doesn't have blacklist set.").queue();
             return;
         }
 
-        if(!GuildCache.getGuild(event.getGuild().getId()).setBlacklistEnabled(toggle)) {
+        if(!GuildCache.getGuildOrPut(event.getGuild().getId()).setBlacklistEnabled(toggle)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

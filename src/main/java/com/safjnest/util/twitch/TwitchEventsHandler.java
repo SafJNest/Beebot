@@ -63,7 +63,7 @@ class TwitchEventsHandler {
 
         for (QueryRecord guildRow : result) {
             Guild guild = Bot.getJDA().getGuildById(guildRow.get("guild_id"));
-            GuildData g = GuildCache.getGuild(guild);
+            GuildData g = GuildCache.getGuildOrPut(guild);
 
             TwitchData twitchData = g.getTwitchdata(streamer.getId());
             if (twitchData == null) {

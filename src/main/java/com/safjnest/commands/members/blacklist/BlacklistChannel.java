@@ -36,14 +36,14 @@ public class BlacklistChannel extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        if(GuildCache.getGuild(event.getGuild()).getThreshold() == 0){
+        if(GuildCache.getGuildOrPut(event.getGuild()).getThreshold() == 0){
             event.deferReply(true).addContent("Blacklist is disabled.").queue();
             return;
         }
 
         String channelID = event.getOption("channel").getAsChannel().getId();
 
-        if(!GuildCache.getGuild(event.getGuild()).setBlackChannel(channelID)) {
+        if(!GuildCache.getGuildOrPut(event.getGuild()).setBlackChannel(channelID)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

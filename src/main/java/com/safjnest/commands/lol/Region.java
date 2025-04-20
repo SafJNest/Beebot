@@ -42,7 +42,7 @@ public class Region extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
 
-        GuildData gs = GuildCache.getGuild(event.getGuild().getId());
+        GuildData gs = GuildCache.getGuildOrPut(event.getGuild().getId());
         LeagueShard shard = LeagueShard.values()[Integer.parseInt(event.getOption("region").getAsString())];
 
         TextChannel channel = event.getOption("channel") != null ? event.getOption("channel").getAsChannel().asTextChannel() : null;

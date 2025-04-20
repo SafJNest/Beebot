@@ -40,7 +40,7 @@ public class BlacklistCreate extends SlashCommand{
         String threshold = event.getOption("threshold").getAsString();
         String channelId = event.getOption("channel").getAsChannel().getId();
 
-        if (!GuildCache.getGuild(event.getGuild()).setBlackListData(Integer.parseInt(threshold), channelId)) {
+        if (!GuildCache.getGuildOrPut(event.getGuild()).setBlackListData(Integer.parseInt(threshold), channelId)) {
             event.deferReply(false).addContent("Something went wrong.").queue();
             return;  
         }
