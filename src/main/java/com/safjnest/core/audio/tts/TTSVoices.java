@@ -67,4 +67,24 @@ public class TTSVoices {
         return formattedVoices.toString();
     }
 
+    public static String getLanguage(String voice) {
+        for (Map.Entry<String, Set<String>> entry : voices.entrySet()) {
+            String language = entry.getKey();
+            Set<String> voiceNames = entry.getValue();
+            if (voiceNames.contains(voice)) {
+                return language;
+            }
+        }
+        return null;
+    }
+
+    public static boolean isVoice(String voice) {
+        for (Map.Entry<String, Set<String>> entry : voices.entrySet()) {
+            Set<String> voiceNames = entry.getValue();
+            if (voiceNames.contains(voice)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

@@ -53,7 +53,7 @@ public class ServerInfo extends SlashCommand {
     }
 
     private static EmbedBuilder createEmbed(Guild guild) {
-        HashMap<AlertKey<?>, AlertData> alerts = GuildCache.getGuild(guild.getId()).getAlerts();
+        HashMap<AlertKey<?>, AlertData> alerts = GuildCache.getGuildOrPut(guild.getId()).getAlerts();
         AlertData welcome = alerts.get(new AlertKey<>(AlertType.WELCOME));
         AlertData leave = alerts.get(new AlertKey<>(AlertType.LEAVE));
         AlertData lvlup = alerts.get(new AlertKey<>(AlertType.LEVEL_UP));

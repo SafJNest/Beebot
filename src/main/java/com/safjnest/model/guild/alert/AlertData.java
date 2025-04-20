@@ -27,7 +27,12 @@ public class AlertData {
         this.channelId = data.get("channel");
         this.enabled = data.getAsBoolean("enabled");
         this.type = AlertType.getFromOrdinal(data.getAsInt("type"));
-        this.roles = roles;
+        if(roles == null) {
+            this.roles = new HashMap<Integer, String>();
+        }
+        else {
+            this.roles = roles;
+        }
         this.sendType = AlertSendType.getFromOrdinal(data.getAsInt("send_type"));
     }
 

@@ -37,7 +37,7 @@ public class LevelUpToggle extends SlashCommand{
 
         String guildId = event.getGuild().getId();
         
-        if(!GuildCache.getGuild(guildId).setExpSystem(toggle)){
+        if(!GuildCache.getGuildOrPut(guildId).setExpSystem(toggle)){
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

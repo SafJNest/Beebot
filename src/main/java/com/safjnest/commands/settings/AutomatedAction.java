@@ -60,11 +60,11 @@ public class AutomatedAction extends SlashCommand {
         int infractions_times = event.getOption("infractions_time") != null ? convertDurationToSeconds(event.getOption("infractions_time").getAsString()) : 0;
 
         if (action == com.safjnest.model.guild.AutomatedAction.MUTE) {
-            actionRole = GuildCache.getGuild(event.getGuild()).getMutedRoleId();
+            actionRole = GuildCache.getGuildOrPut(event.getGuild()).getMutedRoleId();
             System.out.println(actionRole);
         }
 
-        if (!GuildCache.getGuild(event.getGuild()).addAction(action, actionRole, actionTime, infractions, infractions_times)) {
+        if (!GuildCache.getGuildOrPut(event.getGuild()).addAction(action, actionRole, actionTime, infractions, infractions_times)) {
             event.reply("An automated action with the same parameters already exists").queue();
             return;
         }

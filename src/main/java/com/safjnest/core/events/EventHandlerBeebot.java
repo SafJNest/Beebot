@@ -28,7 +28,7 @@ public class EventHandlerBeebot extends BeebotListenerAdapter {
     @Override
     public void onWarning(WarningEvent event) {
         Guild guild = event.getGuild();
-        GuildData guildData = GuildCache.getGuild(guild);
+        GuildData guildData = GuildCache.getGuildOrPut(guild);
 
         TextChannel channel = event.getChannel().asTextChannel();
 

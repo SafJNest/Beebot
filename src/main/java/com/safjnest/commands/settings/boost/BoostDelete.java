@@ -27,7 +27,7 @@ public class BoostDelete extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuildCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuildOrPut(guildId);
 
         AlertData boost = gs.getAlert(AlertType.BOOST);   
 
