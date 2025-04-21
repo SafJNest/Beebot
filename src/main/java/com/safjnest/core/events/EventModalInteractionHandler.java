@@ -4,7 +4,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.util.List;
 
-import com.safjnest.commands.audio.CustomizeSound;
+import com.safjnest.commands.audio.sound.SoundCustomize;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
@@ -71,7 +71,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         String newName = event.getValue("sound-name").getAsString();
         sound.setName(newName);
 
-        eb = CustomizeSound.getEmbed(event.getUser(), sound);
+        eb = SoundCustomize.getEmbed(event.getUser(), sound);
         event.editMessageEmbeds(eb.build()).setComponents(SoundEmbed.getSoundButton(soundId)).queue();
     }
 
@@ -91,7 +91,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         }
         sound.setTags(tags);
 
-        eb = CustomizeSound.getEmbed(event.getUser(), sound);
+        eb = SoundCustomize.getEmbed(event.getUser(), sound);
         event.editMessageEmbeds(eb.build()).setComponents(SoundEmbed.getSoundButton(soundId.split("-")[0])).queue();
     }
 

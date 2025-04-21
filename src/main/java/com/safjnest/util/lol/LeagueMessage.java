@@ -225,14 +225,29 @@ public class LeagueMessage {
                     ));
     
                 String gameString = "";
+                int count = 0;
+                int otherWins = 0;
+                int otherLosses = 0;         
                 for (GameQueueType game : gameTypeStats.keySet()) {
                     String wins = gameTypeStats.get(game).split("-")[0];
                     String losses = gameTypeStats.get(game).split("-")[1];
                     int games = Integer.valueOf(wins) + Integer.valueOf(losses);
-    
+                
                     String percent = String.format("%.2f", Double.parseDouble(wins) * 100 / (Double.parseDouble(wins) + Double.parseDouble(losses)));
-    
-                    gameString += LeagueHandler.getMapEmoji(game) + " " + LeagueHandler.formatMatchName(game) + " " +  games + " games\n`(" +  wins + "W/" + losses + "L) - " + percent +"% WR`\n";
+                
+                    if (count < 4) {
+                        gameString += LeagueHandler.getMapEmoji(game) + " " + LeagueHandler.formatMatchName(game) + " " + games + " games\n`(" + wins + "W/" + losses + "L) - " + percent + "% WR`\n";
+                    } else {
+                        otherWins += Integer.valueOf(wins);
+                        otherLosses += Integer.valueOf(losses);
+                    }
+                    count++;
+                }
+                
+                if (otherWins > 0 || otherLosses > 0) {
+                    int otherGames = otherWins + otherLosses;
+                    String otherPercent = String.format("%.2f", (double) otherWins * 100 / otherGames);
+                    gameString += CustomEmojiHandler.getFormattedEmoji("special_mode") + "Others " + otherGames + " games\n`(" + otherWins + "W/" + otherLosses + "L) - " + otherPercent + "% WR`\n";
                 }
                 builder.addField("Games", gameString, true);
                 builder.addField("Roles", laneString , true);
