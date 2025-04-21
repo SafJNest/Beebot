@@ -1,4 +1,4 @@
-package com.safjnest.commands.audio;
+package com.safjnest.commands.audio.sound;
 
 import java.io.File;
 import java.util.Arrays;
@@ -15,13 +15,13 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.FileUpload;
 
-public class DownloadSound extends SlashCommand{
+public class SoundDownload extends SlashCommand{
     String path = "rsc" + File.separator + "SoundBoard" + File.separator;
 
-    public DownloadSound(){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
+    public SoundDownload(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
-        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
         
         this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
@@ -29,7 +29,7 @@ public class DownloadSound extends SlashCommand{
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "sound", "Sound to download", true)
+            new OptionData(OptionType.STRING, "sound", "Sound to download", true).setAutoComplete(true)
         );
 
         commandData.setThings(this);
