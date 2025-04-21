@@ -1,20 +1,20 @@
 package com.safjnest.commands.lol;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.AugmentData;
 import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -32,55 +32,13 @@ public class Augment extends SlashCommand {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
         this.arguments = commandData.getArguments();
-        this.hidden = true;
+
+        this.options = Arrays.asList(
+            new OptionData(OptionType.STRING, "augment", "Augment name or ID", true).setAutoComplete(true)
+        );
 
         commandData.setThings(this);
     }
-
-	@Override
-	protected void execute(CommandEvent event) {
-        String args = event.getArgs();
-
-        ArrayList<AugmentData> augments = LeagueHandler.getAugments();
-        ArrayList<String> augmentNames = new ArrayList<>();
-
-        for(AugmentData a : augments){
-            augmentNames.add(a.getName());
-        }
-
-        EmbedBuilder eb = new EmbedBuilder();
-        
-        eb.setColor(Bot.getColor());
-        
-        AugmentData augment = null;
-        for(AugmentData a : augments){
-            //regex is number
-            if(args.matches("\\d+")){
-                if(a.getId().equalsIgnoreCase(args)){
-                    augment = a;
-                    break;
-                }
-            }
-            else{
-                args = SafJNest.findSimilarWord(args, augmentNames);
-                if(a.getName().equalsIgnoreCase(args)){
-                    augment = a;
-                    break;
-                }
-            }
-        }
-
-        if(augment == null) {
-            event.reply("Couldn't find an augment with that name/id.");
-            return;
-        }
-        
-        RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji("a"+augment.getId());
-        eb.setTitle(augment.getName().toUpperCase() + " (" + augment.getId() + ")");
-        eb.setDescription(augment.getFormattedDesc());
-        eb.setThumbnail(emoji.getImageUrl());
-        event.reply(eb.build());
-	}
 
     @Override
 	protected void execute(SlashCommandEvent event) {
