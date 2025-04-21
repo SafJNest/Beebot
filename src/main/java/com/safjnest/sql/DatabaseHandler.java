@@ -29,6 +29,7 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Tag;
+import com.safjnest.model.sound.Sound;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.lol.LeagueHandler;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -345,6 +346,30 @@ public class DatabaseHandler {
     public static QueryCollection getGuildsData(String filter){
         String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild WHERE " + filter + ";";
         return safJQuery(query);
+    }
+
+    public static List<Sound> getSounds(String user_id, int page, int limit) {
+        QueryCollection res = safJQuery("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE user_id = '" + user_id + "' OR public = '1' ORDER BY id ASC LIMIT " + (page-1)*limit + ", " + limit);
+        QueryCollection tags = DatabaseHandler.getSoundsTags(res.arrayColumn("id").toArray(new String[0]));
+        
+        List<Sound> sounds = new ArrayList<>();
+        for(QueryRecord qr : res) {
+            List<Tag> tagList = new ArrayList<>();
+            for (QueryRecord tag : tags) {
+                if (tag.get("sound_id").equals(qr.get("id"))) {
+                    tagList.add(new Tag(tag.getAsInt("tag_id"), tag.get("name")));
+                }
+            }
+
+            if (tagList.size() != Tag.MAX_TAG_SOUND) {
+                for (int i = tagList.size(); i < Tag.MAX_TAG_SOUND; i++) {
+                    tagList.add(new Tag());
+                }
+            }
+            sounds.add(new Sound(qr, tagList));
+        }
+
+        return sounds;
     }
 
 
@@ -1391,7 +1416,7 @@ public class DatabaseHandler {
         return fetchJRow("SELECT id, name FROM tag WHERE id = '" + tag_id + "';");
     }
 
-    public static boolean setSoundTags(String sound_id, Tag[] tags) {
+    public static boolean setSoundTags(String sound_id, List<Tag> tags) {
         String values = "";
         for(Tag tag : tags) {
             if (tag.getId() != 0) values += "('" + sound_id + "', '" + tag.getId() + "'), ";

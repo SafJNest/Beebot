@@ -1,6 +1,7 @@
 package com.safjnest.sql;
 
 import java.sql.Blob;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -67,6 +68,16 @@ public class QueryRecord extends HashMap<String, String> {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             LocalDateTime dateTime = LocalDateTime.parse(get(columnName), formatter);
             return Timestamp.valueOf(dateTime);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public Date getAsDate(String columnName){
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime dateTime = LocalDateTime.parse(get(columnName), formatter);
+            return Date.valueOf(dateTime.toLocalDate());
         } catch (Exception e) {
             return null;
         }

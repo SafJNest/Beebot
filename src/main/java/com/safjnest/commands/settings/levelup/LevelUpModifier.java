@@ -40,7 +40,7 @@ public class LevelUpModifier extends SlashCommand{
 
         String guildId = event.getGuild().getId();
 
-        if(!GuildCache.getGuild(guildId).getChannelData(channelId).setExperienceModifier(modifier)) {
+        if(!GuildCache.getGuildOrPut(guildId).getChannelData(channelId).setExperienceModifier(modifier)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

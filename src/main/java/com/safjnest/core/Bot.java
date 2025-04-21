@@ -140,7 +140,7 @@ public class Bot {
             if (event.getChannelType() == ChannelType.PRIVATE)
                 return "";
             if (event.isFromGuild()) {
-                GuildData gd = GuildCache.getGuild(event.getGuild());
+                GuildData gd = GuildCache.getGuildOrPut(event.getGuild());
                 return gd == null ? settings.prefix : gd.getPrefix();
             }
             return null;

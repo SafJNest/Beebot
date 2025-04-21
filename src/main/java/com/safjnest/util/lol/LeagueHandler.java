@@ -486,7 +486,7 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static Summoner getSummonerByArgs(CommandEvent event) {
         String args = event.getArgs();
-        GuildData guild = GuildCache.getGuild(event.getGuild().getId());
+        GuildData guild = GuildCache.getGuildOrPut(event.getGuild().getId());
 
         if (args.isEmpty()) {
             return getSummonerFromDB(event.getAuthor().getId());
@@ -515,7 +515,7 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
-        GuildData guild = event.isFromGuild() ? GuildCache.getGuild(event.getGuild().getId()) : null;
+        GuildData guild = event.isFromGuild() ? GuildCache.getGuildOrPut(event.getGuild().getId()) : null;
 
 
         User user = event.getOption("user") != null ? event.getOption("user").getAsUser() : event.getUser();

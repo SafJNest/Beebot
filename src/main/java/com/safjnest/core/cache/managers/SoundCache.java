@@ -79,9 +79,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     public static Sound getSoundById(String sound_id) {
-        if (instance.keySet().contains(sound_id)) return instance.get(sound_id);
-        Sound sound = getSoundsByIds(new String[] {sound_id}).get(0);
-        return sound;
+        return getSoundsByIds(new String[] {sound_id}).get(0);
     }
 
     public static List<Sound> getSoundsByIds(String[] sound_ids) {
@@ -107,7 +105,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
                 }
             }
 
-            Sound sound = new Sound(soundData, tagList.toArray(new Tag[tagList.size()]));
+            Sound sound = new Sound(soundData, tagList);
             instance.put(sound.getId(), sound);
         }
 

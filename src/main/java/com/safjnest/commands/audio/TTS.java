@@ -65,7 +65,7 @@ public class TTS extends SlashCommand{
         String speech = event.getOption("text").getAsString();
 
         Guild guild = event.getGuild();
-        GuildData guildData = GuildCache.getGuild(guild);
+        GuildData guildData = GuildCache.getGuildOrPut(guild);
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
         
@@ -115,7 +115,7 @@ public class TTS extends SlashCommand{
         String speech = event.getArgs();
 
         Guild guild = event.getGuild();
-        GuildData guildData = GuildCache.getGuild(guild.getId());
+        GuildData guildData = GuildCache.getGuildOrPut(guild.getId());
         AudioChannel myChannel = event.getMember().getVoiceState().getChannel();
         AudioChannel botChannel = guild.getSelfMember().getVoiceState().getChannel();
 

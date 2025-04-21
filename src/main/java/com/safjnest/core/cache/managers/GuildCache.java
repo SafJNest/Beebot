@@ -36,11 +36,26 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     public static GuildData getGuild(Guild guild) {
         return getGuild(guild.getId());
     }
-    
+
     public static GuildData getGuild(String id) {
         GuildData guild = instance.get(id);
         if(guild == null) {
             guild = instance.retriveGuild(id);
+        }
+        return guild;
+    }
+
+    public static GuildData getGuildOrPut(Guild guild) {
+        return getGuildOrPut(guild.getId());
+    }
+    
+    public static GuildData getGuildOrPut(String id) {
+        GuildData guild = instance.get(id);
+        if(guild == null) {
+            guild = instance.retriveGuild(id);
+        }
+        if(guild == null) {
+            guild = putGuild(id);
         }
         return guild;
     }
@@ -70,7 +85,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
         QueryRecord guildData = DatabaseHandler.getGuildData(guildId);
         
         if(guildData.emptyValues()) {
-            return putGuild(guildId);
+            return null;
         }
 
         GuildData guild = new GuildData(guildData);
@@ -88,7 +103,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
 
     private void put(GuildData guild) {
-        super.put(guild.getID(), guild);
+        super.put(guild.getIdString(), guild);
     }
 
     public ConcurrentMap<String, GuildData> getGuilds() {
