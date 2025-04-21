@@ -18,8 +18,8 @@ import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.util.twitch.TwitchClient;
-import com.safjnest.commands.audio.CustomizeSound;
 import com.safjnest.commands.audio.playlist.PlaylistView;
+import com.safjnest.commands.audio.sound.SoundCustomize;
 import com.safjnest.commands.misc.Help;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.Bot;
@@ -402,6 +402,9 @@ public class EventButtonHandler extends ListenerAdapter {
         String args = event.getButton().getId().split("-", 3)[1];
         String soundId = event.getButton().getId().split("-", 3)[2];
 
+        PlayerManager pm = PlayerManager.get();
+        Guild guild = event.getGuild();
+
         Sound sound = SoundCache.getSoundById(soundId);
 
         switch (args) {
@@ -412,9 +415,6 @@ public class EventButtonHandler extends ListenerAdapter {
                 sound.dislike(event.getUser().getId(), !sound.hasDisliked(event.getUser().getId()));
                 break;
             case "replay":
-
-                PlayerManager pm = PlayerManager.get();
-                Guild guild = event.getGuild();
                 String path = sound.getPath();
                 AudioChannel channelJoin = event.getMember().getVoiceState().getChannel();
                 if (channelJoin == null)  return;
@@ -441,6 +441,9 @@ public class EventButtonHandler extends ListenerAdapter {
                         System.out.println("error: " + throwable.getMessage());
                     }
                 });
+                break;
+            case "stop":
+                pm.getGuildMusicManager(guild).getTrackScheduler().stop();
                 break;
 
             default:
@@ -492,7 +495,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         List<LayoutComponent> buttons = tagSwitch ? SoundEmbed.getTagButton(soundId, args) : SoundEmbed.getSoundButton(soundId);
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(CustomizeSound.getEmbed(event.getUser(), soundData).build())
+        event.getMessage().editMessageEmbeds(SoundCustomize.getEmbed(event.getUser(), soundData).build())
                         .setComponents(buttons)
                         .queue();
 
@@ -552,7 +555,7 @@ public class EventButtonHandler extends ListenerAdapter {
         List<LayoutComponent> buttons = tagSwitch ? SoundEmbed.getTagButton(soundId, String.valueOf(tagId)) : SoundEmbed.getSoundButton(soundId);
 
         event.deferEdit().queue();
-        event.getMessage().editMessageEmbeds(CustomizeSound.getEmbed(event.getUser(), soundData).build())
+        event.getMessage().editMessageEmbeds(SoundCustomize.getEmbed(event.getUser(), soundData).build())
                         .setComponents(buttons)
                         .queue();
 
