@@ -92,41 +92,45 @@
         }
     },
 
+    "sound": {
+        "help"  : "Upload, download and manage your sounds.",
+        "longhelp"  : "Upload, download and manage your sounds.",
+        "category" : "Audio",
+        "children": {
+            "upload":{
+                "alias" : ["up", "add"],
+                "help"  :"Upload a sound to the soundboard.",
+                "longhelp"  : "Upload a sound to the soundboard.\nThe supported format are .mp3 and .opus, up to 1MB.\nYou can also insert 5 tags for an easier search.",
+                "category" : "Audio"
+            },
+            "download":{
+                "help"  : "Download a sound from the soundboard.",
+                "longhelp"  : "Download a sound from the soundboard.",
+                "category" : "Audio",
+                "arguments" : "[CommandName] [soundName]"
+            },
+            "delete":{
+                "alias" : ["ds", "forget"],
+                "help"  : "Delete a sound from the soundboard.",
+                "longhelp": "Delete a sound from the soundboard.",
+                "category" : "Audio",
+                "arguments" : "[CommandName]"
+            },
+            "customize":{
+                "help"  : "Modify a custom sound",
+                "longhelp": "Allow to modify the name, manage tags and if a sound is public or not.\nN.B. You can only modify your sounds.",
+                "category" : "Audio"
+            }
+        }
+    },
+
+
     "stop":{
         "alias" : ["stp", "donteventhinkaboutit"],
         "help"  : "Stop the bot from playing.",
         "longhelp"  : "Stop the bot from playing.",
         "category" : "Audio Queue",
         "arguments" : "[CommandName]"
-    },
-
-    "upload":{
-        "alias" : ["up", "add"],
-        "help"  :"Upload a sound to the soundboard.",
-        "longhelp"  : "Upload a sound to the soundboard.\nThe supported format are .mp3 and .opus, up to 1MB.\nYou can also insert 5 tags for an easier search.",
-        "category" : "Audio"
-    },
-
-    "downloadsound":{
-        "alias" : ["download"],
-        "help"  : "Download a sound from the soundboard.",
-        "longhelp"  : "Download a sound from the soundboard.",
-        "category" : "Audio",
-        "arguments" : "[CommandName] [soundName]"
-    },
-
-    "deletesound":{
-        "alias" : ["delete", "ds", "forget"],
-        "help"  : "Delete a sound from the soundboard.",
-        "longhelp": "Delete a sound from the soundboard.",
-        "category" : "Audio",
-        "arguments" : "[CommandName]"
-    },
-
-    "customizesound":{
-        "help"  : "Modify a custom sound",
-        "longhelp": "Allow to modify the name, manage tags and if a sound is public or not.\nN.B. You can only modify your sounds.",
-        "category" : "Audio"
     },
 
     "pause":{
