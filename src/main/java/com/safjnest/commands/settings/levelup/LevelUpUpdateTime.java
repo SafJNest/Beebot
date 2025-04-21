@@ -36,7 +36,7 @@ public class LevelUpUpdateTime extends SlashCommand{
         //TODO: this command will be only for vip user
         String guildId = event.getGuild().getId();
         String userId = event.getUser().getId();
-        if(!GuildCache.getGuild(guildId).getMemberData(userId).setUpdateTime(updateTime)) { 
+        if(!GuildCache.getGuildOrPut(guildId).getMemberData(userId).setUpdateTime(updateTime)) { 
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

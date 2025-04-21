@@ -93,7 +93,7 @@ public class EventHandler extends ListenerAdapter {
             return;
         }
 
-        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
+        GuildData guildData = GuildCache.getGuildOrPut(e.getGuild().getId());
         UserData userData = UserCache.getUser(e.getAuthor().getId());
 
         Functions.handleAlias(guildData, userData, e);
@@ -104,7 +104,7 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent event){
-        GuildCache.getGuild(event.getGuild().getId());
+        GuildCache.getGuildOrPut(event.getGuild().getId());
     }
 
     @Override
@@ -165,8 +165,8 @@ public class EventHandler extends ListenerAdapter {
 
     @Override
     public void onChannelCreate(ChannelCreateEvent event){      
-        if (GuildCache.getGuild(event.getGuild()).hasMutedRole()) {
-            Role role = event.getGuild().getRoleById(GuildCache.getGuild(event.getGuild()).getMutedRoleId());
+        if (GuildCache.getGuildOrPut(event.getGuild()).hasMutedRole()) {
+            Role role = event.getGuild().getRoleById(GuildCache.getGuildOrPut(event.getGuild()).getMutedRoleId());
             switch (event.getChannelType()) {
                 case TEXT:
                     event.getChannel().asTextChannel().getManager().putRolePermissionOverride(role.getIdLong(), null, Collections.singleton(Permission.MESSAGE_SEND)).queue();

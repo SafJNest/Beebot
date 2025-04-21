@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.safjnest.sql.DatabaseHandler;
@@ -14,6 +15,7 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 import com.safjnest.core.Bot;
+import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
@@ -124,7 +126,7 @@ public class GuildData {
         return ID;
     }
 
-    public String getID() {
+    public String getIdString() {
         return String.valueOf(ID);
     }
 
@@ -188,12 +190,18 @@ public class GuildData {
         return this.language;
     }
 
-    public synchronized boolean setVoice(String voice, String language) {
+    public synchronized boolean setVoice(String voice) {
+        String language = TTSVoices.getLanguage(voice);
+        if(language == null) {
+            return false;
+        }
+
         boolean result = DatabaseHandler.updateVoiceGuild(String.valueOf(ID), language, voice);
         if (result) {
             this.voice = voice;
             this.language = language;
         }
+
         return result;
     }
 
@@ -224,6 +232,60 @@ public class GuildData {
             mutedRoleId = DatabaseHandler.getMutedRole(String.valueOf(ID));
         }
         return mutedRoleId != null && !mutedRoleId.isEmpty();
+    }
+
+    public Map<String, String> getSettings(List<String> settings) {
+        Map<String, String> result = new HashMap<>();
+
+        for (String setting : settings) {
+            switch (setting) {
+                case "prefix":
+                    result.put("prefix", getPrefix());
+                    break;
+                case "expSystem":
+                    result.put("expSystem", String.valueOf(isExperienceEnabled()));
+                    break;
+                case "voice":
+                    result.put("voice", getVoice());
+                    result.put("language", getLanguage());
+                    break;
+                case "leagueShard":
+                    result.put("leagueShard", String.valueOf(getLeagueShard().ordinal())); //.getRealmValue().toUpperCase()
+                    break;
+                default:
+                    System.out.println("Unknown setting: " + setting);
+                    break;
+            }
+        }
+        return result;
+    }
+
+    public boolean setSettings(Map<String, String> settings) {
+        if (settings == null || settings.isEmpty()) {
+            return false;
+        }
+
+        for (String key : settings.keySet()) {
+            switch (key) {
+                case "prefix":
+                    setPrefix(settings.get(key));
+                    break;
+                case "expSystem":
+                    setExpSystem(Boolean.parseBoolean(settings.get(key)));
+                    break;
+                case "voice":
+                    setVoice(settings.get(key));
+                    break;
+                case "leagueShard":
+                    LeagueShard shard = LeagueShard.values()[Integer.parseInt(settings.get(key))];
+                    setLeagueShard(shard);
+                    break;
+                default:
+                    System.out.println("Unknown setting: " + key);
+                    break;
+            }
+        }
+        return true;
     }
 
     public String toString(){
@@ -454,7 +516,7 @@ public class GuildData {
     public ChannelData getChannelData(long channel_id) {
         ChannelData cd = this.channels.get(channel_id);
         if (cd == null) {
-            cd = new ChannelData(channel_id, this.getID());
+            cd = new ChannelData(channel_id, this.getIdString());
             BotLogger.debug("Caching local ChannelData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(channel_id), LoggerIDpair.IDType.CHANNEL));
             this.channels.put(channel_id, cd);
         }
@@ -517,7 +579,7 @@ public class GuildData {
         }
         member = retriveMemberData(userId);
         if (member == null) {
-            member = new MemberData(userId, this.getID());
+            member = new MemberData(userId, this.getIdString());
             BotLogger.debug("Caching local MemberData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
         }
         this.members.put(userId, member);

@@ -28,7 +28,7 @@ public class TwitchMenu extends SlashCommand{
         List<Button> buttons = new ArrayList<>();
 
         List<String> subs = new ArrayList<>();
-        for (TwitchData twitch : GuildCache.getGuild(guildId).getTwitchDatas().values()) {
+        for (TwitchData twitch : GuildCache.getGuildOrPut(guildId).getTwitchDatas().values()) {
             subs.add(twitch.getStreamer());
         }
         List<com.github.twitch4j.helix.domain.User> streamers = TwitchClient.getStreamersById(subs);
@@ -89,7 +89,7 @@ public class TwitchMenu extends SlashCommand{
     }
 
     public static EmbedBuilder getTwitchStreamerEmbed(String StreamerId, String guildId) {
-        TwitchData twitch = GuildCache.getGuild(guildId).getTwitchdata(StreamerId);
+        TwitchData twitch = GuildCache.getGuildOrPut(guildId).getTwitchdata(StreamerId);
         com.github.twitch4j.helix.domain.User streamer = TwitchClient.getStreamerById(StreamerId);
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Bot.getColor());

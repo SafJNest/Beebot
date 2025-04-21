@@ -400,7 +400,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private ArrayList<Choice> alert(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
-        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
+        GuildData guildData = GuildCache.getGuildOrPut(e.getGuild().getId());
 
         AlertData alert = guildData.getAlert(AlertType.WELCOME);
 
@@ -432,7 +432,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private ArrayList<Choice> rewardsLevel(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
-        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
+        GuildData guildData = GuildCache.getGuildOrPut(e.getGuild().getId());
 
         HashMap<AlertKey<?>, AlertData> alerts = guildData.getAlerts();
         List<String> levels = new ArrayList<>();
@@ -461,7 +461,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private ArrayList<Choice> rewardRole(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>(); 
-        GuildData guildData = GuildCache.getGuild(e.getGuild().getId());
+        GuildData guildData = GuildCache.getGuildOrPut(e.getGuild().getId());
 
         if (e.getOption("reward_level") == null) return choices;;
 
@@ -569,7 +569,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         List<String> subs = new ArrayList<>();
-        for (TwitchData twitch : GuildCache.getGuild(e.getGuild()).getTwitchDatas().values()) {
+        for (TwitchData twitch : GuildCache.getGuildOrPut(e.getGuild()).getTwitchDatas().values()) {
             subs.add(twitch.getStreamer());
         }
         List<com.github.twitch4j.helix.domain.User> users = TwitchClient.getStreamersById(subs);

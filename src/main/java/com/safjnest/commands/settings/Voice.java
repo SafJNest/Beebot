@@ -1,6 +1,5 @@
 package com.safjnest.commands.settings;
 
-import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -8,8 +7,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -22,7 +19,6 @@ import com.safjnest.core.cache.managers.GuildCache;
  * @since 1.3
  */
 public class Voice extends SlashCommand {
-    private final HashMap<String, Set<String>> voices;
 
     public Voice() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
@@ -39,32 +35,21 @@ public class Voice extends SlashCommand {
         );
 
         commandData.setThings(this);
-        
-        this.voices = TTSVoices.getVoices();
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String voice= null, language = null;
-
-
-        voice = event.getOption("voice").getAsString();
-        for(String key : voices.keySet()) {
-            if(voices.get(key).contains(voice)) {
-                language = key;
-                break;
-            }
-        }
+        String voice = event.getOption("voice").getAsString();
         if(voice == null) {
             event.deferReply(true).addContent("Voice not found").queue();
             return;
         }
 
-        if (!GuildCache.getGuild(event.getGuild().getId()).setVoice(voice, language)) {
+        if (!GuildCache.getGuildOrPut(event.getGuild().getId()).setVoice(voice)) {
             event.deferReply(true).addContent("There was an error while changing the voice.").queue();
             return;
         }
 
-        event.deferReply(false).addContent("Voice set to " + voice + " (" + language + ")").queue();
+        event.deferReply(false).addContent("Voice set to " + voice).queue();
     }
 }

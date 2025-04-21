@@ -41,7 +41,7 @@ public class LevelUpChannelToggle extends SlashCommand{
 
         String guildId = event.getGuild().getId();
 
-        if(!GuildCache.getGuild(guildId).getChannelData(channelId).enableExperience(toggle)) {
+        if(!GuildCache.getGuildOrPut(guildId).getChannelData(channelId).enableExperience(toggle)) {
             event.deferReply(true).addContent("Something went wrong.").queue();
             return;
         }

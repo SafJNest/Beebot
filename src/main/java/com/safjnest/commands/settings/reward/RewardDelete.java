@@ -39,7 +39,7 @@ public class RewardDelete extends SlashCommand {
 
         String guildId = event.getGuild().getId();
 
-        GuildData gs = GuildCache.getGuild(guildId);
+        GuildData gs = GuildCache.getGuildOrPut(guildId);
         
         RewardData reward = (RewardData) gs.getAlert(AlertType.REWARD, rewardLevel);
 
