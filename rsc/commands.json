@@ -98,7 +98,6 @@
         "category" : "Audio",
         "children": {
             "upload":{
-                "alias" : ["up", "add"],
                 "help"  :"Upload a sound to the soundboard.",
                 "longhelp"  : "Upload a sound to the soundboard.\nThe supported format are .mp3 and .opus, up to 1MB.\nYou can also insert 5 tags for an easier search.",
                 "category" : "Audio"
