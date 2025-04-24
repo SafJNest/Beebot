@@ -83,7 +83,7 @@ public class AutomatedAction {
         this.infractionsTime = infractionsTime;
     }
 
-    public boolean canExecute(int memberId) {
+    public boolean canExecute(String memberId) {
         int memberInfractions = 0;
         if (infractionsTime == 0)  memberInfractions = DatabaseHandler.getMemberWarnings(memberId);
         else memberInfractions = DatabaseHandler.getMemberWarnings(memberId, infractionsTime);
