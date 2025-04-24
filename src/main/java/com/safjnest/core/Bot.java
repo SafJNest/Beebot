@@ -27,13 +27,10 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 
 import com.safjnest.App;
 import com.safjnest.commands.audio.Connect;
-import com.safjnest.commands.audio.CustomizeSound;
 import com.safjnest.commands.audio.DeleteSound;
 import com.safjnest.commands.audio.Disconnect;
-import com.safjnest.commands.audio.DownloadSound;
 import com.safjnest.commands.audio.Stop;
 import com.safjnest.commands.audio.TTS;
-import com.safjnest.commands.audio.Upload;
 import com.safjnest.commands.audio.greet.Greet;
 import com.safjnest.commands.audio.list.List;
 import com.safjnest.commands.audio.list.ListUser;
@@ -42,6 +39,7 @@ import com.safjnest.commands.audio.play.PlaySound;
 import com.safjnest.commands.audio.play.PlayYoutube;
 import com.safjnest.commands.audio.playlist.Playlist;
 import com.safjnest.commands.audio.search.Search;
+import com.safjnest.commands.audio.sound.Sound;
 import com.safjnest.commands.audio.soundboard.Soundboard;
 import com.safjnest.commands.guild.*;
 import com.safjnest.commands.lol.*;
@@ -195,9 +193,9 @@ public class Bot {
         );
 
         
-        Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), new DownloadSound(), 
-            new List(), new Play(), new Playlist(), new Upload(), new TTS(), new Stop(), 
-            new Voice(), new CustomizeSound(), new Soundboard(), new Greet(), new Pause(), new Resume(),
+        Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), 
+            new List(), new Play(), new Playlist(), new TTS(), new Stop(), new Sound(),
+            new Voice(), new Soundboard(), new Greet(), new Pause(), new Resume(),
             new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn()
         );
 

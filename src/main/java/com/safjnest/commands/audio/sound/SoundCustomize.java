@@ -1,4 +1,4 @@
-package com.safjnest.commands.audio;
+package com.safjnest.commands.audio.sound;
 
 import java.util.Arrays;
 
@@ -23,12 +23,12 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * 
  * @since 1.3
  */
-public class CustomizeSound extends SlashCommand {
+public class SoundCustomize extends SlashCommand {
 
-    public CustomizeSound() {
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
+    public SoundCustomize(String father) {
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
-        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
         
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();

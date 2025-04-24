@@ -1,52 +1,23 @@
 package com.safjnest.sql;
 
-import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import org.json.simple.JSONObject;
-
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import net.dv8tion.jda.api.entities.Message.Attachment;
-
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.model.guild.alert.AlertSendType;
-import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.model.sound.Tag;
 import com.safjnest.springapi.api.model.ApiKey;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.LeagueHandler;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
-import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
-import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class WebsiteDBHandler {
     private static String hostName;

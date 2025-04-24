@@ -1,4 +1,4 @@
-package com.safjnest.commands.audio;
+package com.safjnest.commands.audio.sound;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -25,13 +25,13 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * 
  * @since 1.2.5
  */
-public class Upload extends SlashCommand{
+public class SoundUpload extends SlashCommand{
     private String soundName;
     
-    public Upload(){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
+    public SoundUpload(String father){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
-        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
         
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();

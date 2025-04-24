@@ -170,11 +170,15 @@ public class SoundEmbed {
         Button replay = Button.success("soundplay-replay-" + sound.getId(), " ")
                 .withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
 
+        Button stop = Button.danger("soundplay-stop-" + sound.getId(), " ")
+        .withEmoji(CustomEmojiHandler.getRichEmoji("stop"));
+
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
         buttonRows.add(ActionRow.of(
                 like,
                 dislike,
-                replay));
+                replay,
+                stop));
 
         return buttonRows;
     }
@@ -251,7 +255,7 @@ public class SoundEmbed {
 
         eb.setDescription("Press a button to play a sound");
         eb.setColor(Bot.getColor());
-        eb.setFooter(sounds.size() + " sounds");
+        eb.setFooter(sounds.size() + " / 25 sounds");
 
         List<LayoutComponent> rows = new ArrayList<>();
         List<Button> row = new ArrayList<>();
