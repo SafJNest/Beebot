@@ -47,7 +47,7 @@ public class LevelUpPreview extends SlashCommand{
             return;
         }
         
-        HashMap<Long, ChannelData> channels = gs.getChannels();
+        HashMap<String, ChannelData> channels = gs.getChannels();
 
         ArrayList<String> expChannels = new ArrayList<>();
         ArrayList<String> noExpChannels = new ArrayList<>();
@@ -66,7 +66,7 @@ public class LevelUpPreview extends SlashCommand{
             String modifiedChannels= "";
 
             for(String channel_id : expChannels) {
-                modifiedChannels += event.getGuild().getTextChannelById(channel_id).getName() + ": " + channels.get(Long.parseLong(channel_id)).getExperienceModifier() + " exp\n";
+                modifiedChannels += event.getGuild().getTextChannelById(channel_id).getName() + ": " + channels.get(channel_id).getExperienceModifier() + " exp\n";
             }
             eb.addField("Modified Exp Channels", "```" + modifiedChannels + "```", true);
         }
