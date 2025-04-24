@@ -8,7 +8,7 @@ import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
 public class MemberData {
-    private int ID;
+    private String ID;
     private final String USER_ID;
     private final String GUILD_ID;
 
@@ -19,7 +19,7 @@ public class MemberData {
     private LocalDateTime lastMessageTime;
 
     public MemberData(String USER_ID, String GUILD_ID) {
-        this.ID = 0;
+        this.ID = "0";
         this.USER_ID = USER_ID;
         this.GUILD_ID = GUILD_ID;
 
@@ -31,7 +31,7 @@ public class MemberData {
     }
 
     public MemberData(QueryRecord data) {
-        this.ID = data.getAsInt("id");
+        this.ID = data.get("id");
         this.USER_ID = data.get("user_id");
         this.GUILD_ID = data.get("guild_id");
 
@@ -43,18 +43,14 @@ public class MemberData {
     }
 
     private void handleEmptyID() {
-        if (this.ID == 0) {
+        if (this.ID.equals("0")) {
             BotLogger.info("Pushing local UserData into Database => {0}", new LoggerIDpair(String.valueOf(this.USER_ID), LoggerIDpair.IDType.USER));
             this.ID = DatabaseHandler.insertUserData(this.GUILD_ID, this.USER_ID);
         }
     }
 
-    public int getID() {
+    public String getId() {
         return ID;
-    }
-
-    public String getIdString() {
-        return String.valueOf(ID);
     }
 
     public String getUserId() {

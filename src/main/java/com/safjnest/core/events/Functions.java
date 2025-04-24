@@ -85,10 +85,10 @@ public class Functions {
         Guild guild = e.getGuild();
         User newGuy = e.getAuthor();
 
-        if (!guildData.canReceiveExperience(newGuy.getIdLong(), channel.getIdLong())) 
+        if (!guildData.canReceiveExperience(newGuy.getIdLong(), channel.getId())) 
             return;
     
-        double modifier = guildData.getExperienceModifier(channel.getIdLong());
+        double modifier = guildData.getExperienceModifier(channel.getId());
         
         MemberData member = guildData.getMemberData(newGuy.getIdLong());
 
@@ -436,7 +436,7 @@ public class Functions {
         String guildId = event.isFromGuild() ? event.getGuild().getId() : "0";
 
         GuildData guild = GuildCache.getGuildOrPut(guildId);
-        if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
+        if(!guild.getCommandStatsRoom(event.getChannel().getId()))
             return;
                 
         String commandName = event.getName();
@@ -446,7 +446,7 @@ public class Functions {
 
     public static void updateCommandStatitics(CommandEvent event, Command command) {
         GuildData guild = GuildCache.getGuildOrPut(event.getGuild().getId());
-        if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
+        if(!guild.getCommandStatsRoom(event.getChannel().getId()))
             return;
         
         String commandName = command.getName();
