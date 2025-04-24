@@ -1,7 +1,6 @@
 package com.safjnest.model.guild.alert;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
 

@@ -20,7 +20,6 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
-import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
@@ -359,7 +358,6 @@ public class GuildData {
             for (QueryRecord row : roleResult) {
                 int alertId = row.getAsInt("alert_id");
                 String roleId = row.get("role_id");
-                int rowId = row.getAsInt("row_id");
                 if (!roles.containsKey(alertId)) {
                     roles.put(alertId, new ArrayList<>());
                 }

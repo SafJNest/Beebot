@@ -1,13 +1,9 @@
 package com.safjnest.model.guild.alert;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.checkerframework.checker.units.qual.g;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
