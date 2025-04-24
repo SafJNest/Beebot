@@ -1210,15 +1210,15 @@ public class DatabaseHandler {
     }
 
 
-    public static int insertChannelData(long guild_id, long channel_id) {
-        int id = 0;
+    public static String insertChannelData(String guild_id, String channel_id) {
+        String id = "0";
 
         Connection c = getConnection();
         if(c == null) return id;
 
         try (Statement stmt = c.createStatement()) {
             runQuery(stmt, "INSERT INTO channel(guild_id, channel_id) VALUES('" + guild_id + "','" + channel_id + "');");
-            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").get("id");
             c.commit();
         } catch (SQLException ex) {
             if (c != null) {
@@ -1245,32 +1245,32 @@ public class DatabaseHandler {
         return safJQuery("SELECT id, channel_id, guild_id, exp_enabled, exp_modifier, stats_enabled, league_shard FROM channel WHERE guild_id = '" + guild_id + "';");
     }
 
-    public static boolean setChannelExpModifier(int ID, double exp_modifier) {
+    public static boolean setChannelExpModifier(String ID, double exp_modifier) {
         return runQuery("UPDATE channel SET exp_modifier = '" + exp_modifier + "' WHERE id = '" + ID + "';");
     }
 
-    public static boolean setChannelExpEnabled(int ID, boolean toggle) {
+    public static boolean setChannelExpEnabled(String ID, boolean toggle) {
         return runQuery("UPDATE channel SET exp_enabled = '" + (toggle ? 1 : 0) + "' WHERE id = '" + ID + "';");
     }
 
-    public static boolean setChannelCommandEnabled(int ID, boolean toggle) {
+    public static boolean setChannelCommandEnabled(String ID, boolean toggle) {
         return runQuery("UPDATE channel SET stats_enabled = '" + (toggle ? 1 : 0) + "' WHERE id = '" + ID + "';");
     }
 
-    public static boolean deleteChannelData(int ID) {
+    public static boolean deleteChannelData(String ID) {
         return runQuery("DELETE FROM channel WHERE id = '" + ID + "';");
     }
 
 
-    public static int insertUserData(String guild_id, String user_id) {
-        int id = 0;
+    public static String insertUserData(String guild_id, String user_id) {
+        String id = "0";
 
         Connection c = getConnection();
         if(c == null) return id;
 
         try (Statement stmt = c.createStatement()) {
             runQuery(stmt, "INSERT INTO member(guild_id, user_id) VALUES('" + guild_id + "','" + user_id + "');");
-            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+            id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").get("id");
             c.commit();
         } catch (SQLException ex) {
             if (c != null) {
@@ -1297,11 +1297,11 @@ public class DatabaseHandler {
         return fetchJRow("SELECT id, user_id, guild_id, experience, level, messages, update_time FROM member WHERE user_id = '"+ user_id +"' AND guild_id = '" + guild_id + "';");
     }
 
-    public static boolean updateUserDataExperience(int ID, int experience, int level, int messages) {
+    public static boolean updateUserDataExperience(String ID, int experience, int level, int messages) {
         return runQuery("UPDATE member SET experience = '" + experience + "', level = '" + level + "', messages = '" + messages + "' WHERE id = '" + ID + "';");
     }
 
-    public static boolean updateUserDataUpdateTime(int ID, int updateTime) {
+    public static boolean updateUserDataUpdateTime(String ID, int updateTime) {
         return runQuery("UPDATE member SET update_time = '" + updateTime + "' WHERE id = '" + ID + "';");
     }
 
@@ -1391,7 +1391,7 @@ public class DatabaseHandler {
         return runQuery("UPDATE guild SET league_shard = '" + shard.ordinal() + "' WHERE guild_id = '" + valueOf + "';");
     }
 
-    public static boolean updateShardChannel(int valueOf, LeagueShard shard) {
+    public static boolean updateShardChannel(String valueOf, LeagueShard shard) {
         return runQuery("UPDATE channel SET league_shard = '" + shard.ordinal() + "' WHERE id = '" + valueOf + "';");
     }
 
@@ -2008,7 +2008,7 @@ public class DatabaseHandler {
         }
     }
 
-    public static int insertWarn(int memberId, String description) {
+    public static int insertWarn(String memberId, String description) {
         Connection c = getConnection();
         if(c == null) return -1;
 
@@ -2038,11 +2038,11 @@ public class DatabaseHandler {
         return id;
     }
 
-    public static int getMemberWarnings(int memberId, int infractionsTime) {
+    public static int getMemberWarnings(String memberId, int infractionsTime) {
         return fetchJRow("SELECT COUNT(*) AS warning_count FROM warning WHERE member_id = " + memberId + " AND `time` >= NOW() - INTERVAL " + infractionsTime + " SECOND " +  "GROUP BY member_id").getAsInt("warning_count");
     }
 
-    public static int getMemberWarnings(int memberId) {
+    public static int getMemberWarnings(String memberId) {
         return fetchJRow("SELECT COUNT(*) AS warning_count FROM warning WHERE member_id = " + memberId + " GROUP BY member_id").getAsInt("warning_count");
     }
 
@@ -2055,7 +2055,7 @@ public class DatabaseHandler {
         return safJQuery(query);
     }
 
-    public static String insertAutomatedActionExpiring(int member_id, int action, long time) {
+    public static String insertAutomatedActionExpiring(String member_id, int action, long time) {
         Connection c = getConnection();
         if(c == null) return "-1";;
 

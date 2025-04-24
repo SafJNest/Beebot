@@ -138,7 +138,7 @@ public class PrintCache extends Command {
         for(GuildData gd : gs.values()){
             try {
                 if(!forbidden.contains(String.valueOf(gd.getId()))) {
-                    long time = gs.expiresAfter(gd.getIdString());
+                    long time = gs.expiresAfter(gd.getId());
                     totalUsers += gd.getMembers().size();
                     totalChannels += gd.getChannels().size();
                     totalAlerts += gd.isAlertsCached() ? 1 : 0;

@@ -281,7 +281,7 @@ public class Test extends Command{
                 e.reply("```json\n" + s + "```");
                 BlacklistData bd = GuildCache.getGuildOrPut(e.getGuild().getId()).getBlacklistData();
                 e.reply("```json\n" + bd.toString()+ "```");
-                HashMap<Long, ChannelData> channels = GuildCache.getGuildOrPut(e.getGuild().getId()).getChannels();
+                HashMap<String, ChannelData> channels = GuildCache.getGuildOrPut(e.getGuild().getId()).getChannels();
                 e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
                 e.reply("```json\n" + new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getMembers()).toJSONString() + "```");
                 e.reply("```json\n" + new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
