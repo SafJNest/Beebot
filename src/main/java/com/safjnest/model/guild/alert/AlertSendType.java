@@ -23,4 +23,17 @@ public enum AlertSendType {
         }
         return null;
     }
+
+    public static AlertSendType parse(String string) {
+        switch (string.toLowerCase()) {
+            case "channel":
+                return AlertSendType.CHANNEL;
+            case "private":
+                return AlertSendType.PRIVATE;
+            case "both":
+                return AlertSendType.BOTH;
+            default:
+                throw new IllegalArgumentException("Invalid AlertSendType: " + string);
+        }
+    }
 }

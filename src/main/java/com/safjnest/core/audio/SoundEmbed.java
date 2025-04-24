@@ -117,8 +117,8 @@ public class SoundEmbed {
 
         String formattedDuration = "";
         try {
-            if (sound.getAsTrack() != null)
-                formattedDuration = SafJNest.getFormattedDuration(sound.getAsTrack().getDuration());
+            if (sound.getTrack() != null)
+                formattedDuration = SafJNest.getFormattedDuration(sound.getTrack().getDuration());
             else if (sound.getExtension().equals("opus"))
                 formattedDuration = SafJNest
                         .getFormattedDuration((Math.round(SoundCache.getOpusDuration(sound.getPath()))) * 1000);

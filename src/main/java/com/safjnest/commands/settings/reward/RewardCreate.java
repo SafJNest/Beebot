@@ -62,9 +62,7 @@ public class RewardCreate extends SlashCommand{
             return;
         }
 
-        String[] roles = new String[]{roleId};
-
-        RewardData newReward = RewardData.createRewardData(guildId, message, privateText, sendType, roles, level, temporary);
+        RewardData newReward = RewardData.createRewardData(guildId, message, privateText, sendType, Arrays.asList(roleId), level, temporary);
         
         if(newReward.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

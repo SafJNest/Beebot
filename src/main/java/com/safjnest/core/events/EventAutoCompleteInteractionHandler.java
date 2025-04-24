@@ -407,11 +407,11 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         if (alert == null || alert.getRoles() == null)
             return choices;
 
-        HashMap<Integer, String> alertRoles = alert.getRoles();  
+        List<String> alertRoles = alert.getRoles();  
 
         List<Role> roles = new ArrayList<>();
         for (Role r : e.getGuild().getRoles()) {
-            if (alertRoles.containsValue(r.getId()))
+            if (alertRoles.contains(r.getId()))
                 roles.add(r);
         }
 
@@ -469,10 +469,10 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         RewardData reward = guildData.getAlert(AlertType.REWARD, Integer.parseInt(rewardLevel));
         if (reward == null || reward.getRoles() == null) return choices;
         
-        HashMap<Integer, String> rewardRoles = reward.getRoles();
+        List<String> rewardRoles = reward.getRoles();
         List<Role> roles = new ArrayList<>();
         for (Role r : e.getGuild().getRoles()) {
-            if (rewardRoles.containsValue(r.getId()))
+            if (rewardRoles.contains(r.getId()))
                 roles.add(r);
         }
 

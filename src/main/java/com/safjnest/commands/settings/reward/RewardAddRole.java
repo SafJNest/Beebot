@@ -50,7 +50,7 @@ public class RewardAddRole extends SlashCommand {
             return;
         }
 
-        if (reward.getRoles() != null && reward.getRoles().containsValue(roleID)) {
+        if (reward.getRoles() != null && reward.getRoles().contains(roleID)) {
             event.deferReply(true).addContent("This role is already set as reward").queue();
             return;
         }

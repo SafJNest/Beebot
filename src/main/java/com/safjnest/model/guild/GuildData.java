@@ -5,6 +5,7 @@ package com.safjnest.model.guild;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -12,12 +13,14 @@ import java.util.stream.Collectors;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.util.SafJNest;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
+import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
@@ -234,58 +237,91 @@ public class GuildData {
         return mutedRoleId != null && !mutedRoleId.isEmpty();
     }
 
-    public Map<String, String> getSettings(List<String> settings) {
-        Map<String, String> result = new HashMap<>();
-
+    public Map<String, Object> getSettings(List<String> settings) {
+        Map<String, Object> result = new HashMap<>();
+    
         for (String setting : settings) {
             switch (setting) {
-                case "prefix":
-                    result.put("prefix", getPrefix());
-                    break;
-                case "expSystem":
-                    result.put("expSystem", String.valueOf(isExperienceEnabled()));
-                    break;
-                case "voice":
+                case "prefix" -> result.put("prefix", getPrefix());
+                case "expSystem" -> result.put("expSystem", Boolean.valueOf(isExperienceEnabled()));
+                case "voice" -> {
                     result.put("voice", getVoice());
                     result.put("language", getLanguage());
-                    break;
-                case "leagueShard":
-                    result.put("leagueShard", String.valueOf(getLeagueShard().ordinal())); //.getRealmValue().toUpperCase()
-                    break;
-                default:
-                    System.out.println("Unknown setting: " + setting);
-                    break;
+                }
+                case "leagueShard" -> result.put("leagueShard", Integer.valueOf(getLeagueShard().ordinal()));
+                case "welcome" -> result.put("welcome", getWelcome());
+                case "leave" -> result.put("leave", getAlert(AlertType.LEAVE));
+                case "levelUp" -> result.put("levelUp", getAlert(AlertType.LEVEL_UP));
+                case "boost" -> result.put("boost", getAlert(AlertType.BOOST));
+                case "reward" -> result.put("reward", getRewards().entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getKey().getKey(), Map.Entry::getValue)));
+                case "twitch" -> result.put("twitch", getTwitchDatas().entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getKey().getKey(), Map.Entry::getValue)));
+
+                default -> System.out.println("Unknown setting: " + setting);
             }
         }
         return result;
     }
 
-    public boolean setSettings(Map<String, String> settings) {
+    public boolean setSettings(Map<String, Object> settings) {
         if (settings == null || settings.isEmpty()) {
             return false;
         }
-
-        for (String key : settings.keySet()) {
+    
+        for (Map.Entry<String, Object> entry : settings.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+    
             switch (key) {
-                case "prefix":
-                    setPrefix(settings.get(key));
-                    break;
-                case "expSystem":
-                    setExpSystem(Boolean.parseBoolean(settings.get(key)));
-                    break;
-                case "voice":
-                    setVoice(settings.get(key));
-                    break;
-                case "leagueShard":
-                    LeagueShard shard = LeagueShard.values()[Integer.parseInt(settings.get(key))];
-                    setLeagueShard(shard);
-                    break;
-                default:
-                    System.out.println("Unknown setting: " + key);
-                    break;
+                case "prefix" -> setPrefix((String) value);
+                case "expSystem" -> setExpSystem(Boolean.parseBoolean((String) value));
+                case "voice" -> setVoice((String) value);
+                case "leagueShard" -> setLeagueShard(LeagueShard.values()[Integer.parseInt((String) value)]);
+                case "welcome" -> handleAlert(AlertType.WELCOME, settings, key);
+                case "leave" -> handleAlert(AlertType.LEAVE, settings, key);
+                case "levelUp" -> handleAlert(AlertType.LEVEL_UP, settings, key);
+                case "boost" -> handleAlert(AlertType.BOOST, settings, key);
+                case "reward" -> handleAlert(AlertType.REWARD, settings, key);
+                case "twitch" -> updateTwitchAlerts(SafJNest.getMap(settings, key));
+                default -> System.out.println("Unknown setting: " + key);
             }
         }
+    
         return true;
+    }
+    
+    private void handleAlert(AlertType type, Map<String, Object> settings, String setting) {
+        if(settings.get(setting) == null) {
+            deleteAlert(type);
+            return;
+        }
+
+        Map<String, Object> data = SafJNest.getMap(settings, setting);
+        AlertKey<AlertData> key = new AlertKey<>(type);
+        if (getAlert(type) == null) {
+            getAlerts().put(key, new AlertData(getIdString(), type, data));
+        } else {
+            getAlert(type).set(data);
+        }
+    }
+    
+    private void updateTwitchAlerts(Map<String, Object> subs) {
+        for (Iterator<Map.Entry<String, Object>> it = subs.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<String, Object> subEntry = it.next();
+            String subKey = subEntry.getKey();
+    
+            AlertKey<String> key = new AlertKey<>(AlertType.TWITCH, subKey);
+    
+            if (getTwitchDatas().containsKey(key)) {
+                getTwitchDatas().get(key).set(SafJNest.getMap(subs, subKey));
+                it.remove();
+            }
+        }
+    
+        for (String newKey : subs.keySet()) {
+            // TODO add new twitch alerts
+        }
     }
 
     public String toString(){
@@ -319,15 +355,15 @@ public class GuildData {
             QueryCollection alertResult = DatabaseHandler.getAlerts(String.valueOf(ID));
             QueryCollection roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID));
 
-            HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
+            HashMap<Integer, List<String>> roles = new HashMap<>();
             for (QueryRecord row : roleResult) {
                 int alertId = row.getAsInt("alert_id");
                 String roleId = row.get("role_id");
                 int rowId = row.getAsInt("row_id");
                 if (!roles.containsKey(alertId)) {
-                    roles.put(alertId, new HashMap<>());
+                    roles.put(alertId, new ArrayList<>());
                 }
-                roles.get(alertId).put(rowId, roleId);
+                roles.get(alertId).add(roleId);
             }
 
             for (QueryRecord row : alertResult) {
@@ -340,7 +376,6 @@ public class GuildData {
                         TwitchData td = new TwitchData(row);
                         this.alerts.put(td.getKey(), td);
                         break;
-
                     default:
                         AlertData ad = new AlertData(row, roles.get(row.getAsInt("alert_id")));
                         this.alerts.put(ad.getKey(), ad);
@@ -363,6 +398,13 @@ public class GuildData {
             }
         }
         return null;
+    }
+
+    public HashMap<AlertKey<Integer>, RewardData> getRewards() {
+        return getAlerts().values().stream()
+            .filter(alert -> alert instanceof RewardData)
+            .map(alert -> (RewardData) alert)
+            .collect(Collectors.toMap(RewardData::getKey, reward -> reward, (a, b) -> a, HashMap::new));
     }
 
     public RewardData getAlert(AlertType type, int level) {

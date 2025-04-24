@@ -14,26 +14,26 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import org.json.simple.JSONObject;
 
+import com.safjnest.App;
+import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.model.guild.alert.AlertSendType;
+import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.sound.Sound;
+import com.safjnest.model.sound.Tag;
+import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.LeagueHandler;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
-
-import com.safjnest.App;
-import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.model.guild.alert.AlertSendType;
-import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.model.sound.Tag;
-import com.safjnest.model.sound.Sound;
-import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.LeagueHandler;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -998,6 +998,72 @@ public class DatabaseHandler {
         return fetchJRow("SELECT sound.id, sound.extension from greeting join sound on greeting.sound_id = sound.id WHERE greeting.user_id = '" + user_id + "' AND greeting.guild_id = '0' LIMIT 1;");
     }
 
+    public static boolean updateAlertandRoles(String alertId, AlertData alert) {
+        Connection c = getConnection();
+        if(c == null) return false;
+
+        try {
+            try (PreparedStatement pstmt = c.prepareStatement("UPDATE alert SET message = ?, private_message = ?, channel = ?, send_type = ?, enabled = ? WHERE ID = ?")) {
+                pstmt.setString(1, alert.getMessage());
+                pstmt.setString(2, alert.getPrivateMessage());
+                pstmt.setString(3, alert.getChannelId());
+                pstmt.setInt(4, alert.getSendType().ordinal());
+                pstmt.setInt(5, alert.isEnabled() ? 1 : 0);
+                pstmt.setString(6, alertId);
+                int affectedRows = pstmt.executeUpdate();
+                if (affectedRows == 0) {
+                    c.rollback();
+                    return false;
+                }
+            }
+
+            try (PreparedStatement deleteStmt = c.prepareStatement("DELETE FROM alert_role WHERE alert_id = ?")) {
+                deleteStmt.setString(1, alertId);
+                deleteStmt.executeUpdate();
+            }
+
+            List<String> roles = alert.getRoles();
+
+            if(roles.isEmpty()) {
+                return true;
+            }
+    
+            StringBuilder rolesString = new StringBuilder("");
+            for(String role : roles) {
+                if(role != null) {
+                    rolesString.append("('").append(alertId).append("', '").append(role).append("'), ");
+                }
+            }
+            rolesString.setLength(rolesString.length() - 2);
+
+            String insertSQL = "INSERT INTO alert_role(alert_id, role_id) VALUES " + rolesString;
+            try (PreparedStatement insertStmt = c.prepareStatement(insertSQL)) {
+                insertStmt.executeUpdate();
+            }
+
+            c.commit();
+            return true;
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+        return false;
+    }
+
 
     public static boolean setAlertMessage(String ID, String message) {
         Connection c = getConnection();
@@ -1182,31 +1248,24 @@ public class DatabaseHandler {
         return runQuery("UPDATE alert SET send_type = '" + sendType.ordinal() + "' WHERE id = '" + valueOf + "';");
     }
 
-    public static HashMap<Integer, String> createRolesAlert(String valueOf, String[] roles) {
+    public static boolean createRolesAlert(String alertId, List<String> roles) {
+        if(roles.isEmpty()) {
+            return true;
+        }
 
-        String values = "";
+        StringBuilder values = new StringBuilder("");
         for(String role : roles) {
             if(role != null) {
-                values += "('" + valueOf + "', '" + role + "'), ";
+                values.append("('").append(alertId).append("', '").append(role).append("'), ");
             }
         }
+        values.setLength(values.length() - 2);
 
-        if (values.isEmpty()) {
-            return null;
+        if (deleteAlertRoles(alertId) && runQuery("INSERT INTO alert_role(alert_id, role_id) VALUES " + values + ";")) {
+            return true;
         }
 
-        values = values.substring(0, values.length() - 2);
-        if (deleteAlertRoles(valueOf) && runQuery("INSERT INTO alert_role(alert_id, role_id) VALUES " + values + ";")) {
-            HashMap<Integer, String> roleMap = new HashMap<>();
-            QueryCollection result = safJQuery("SELECT id, role_id FROM alert_role WHERE alert_id = '" + valueOf + "';");
-            for(QueryRecord row : result) {
-                roleMap.put(row.getAsInt("id"), row.get("role_id"));
-            }
-            return roleMap;
-        }
-
-        return null;
-
+        return false;
     }
 
 

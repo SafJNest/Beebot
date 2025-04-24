@@ -15,6 +15,8 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -444,6 +446,35 @@ public class SafJNest extends Thread {
         BigDecimal bd = BigDecimal.valueOf(value);
         bd = bd.setScale(places, RoundingMode.HALF_UP);
         return bd.doubleValue();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> getMap(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value instanceof Map<?, ?> rawMap) {
+            boolean valid = rawMap.keySet().stream().allMatch(k -> k instanceof String);
+            if (valid) return (Map<String, Object>) rawMap;
+        }
+        throw new IllegalArgumentException("Invalid map value for key: " + key);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<String> getStringList(Object value, String key) {
+        if (value instanceof List<?> rawList) {
+            boolean allStrings = rawList.stream().allMatch(item -> item instanceof String);
+            if (allStrings) {
+                return (List<String>) rawList;
+            }
+        }
+        throw new IllegalArgumentException("Invalid List<String> value for key: " + key);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<Object> getObjectList(Object value, String key) {
+        if (value instanceof List<?>) {
+            return (List<Object>) value;
+        }
+        throw new IllegalArgumentException("Invalid List<Object> value for key: " + key);
     }
     
 }

@@ -1,10 +1,17 @@
 package com.safjnest.model.guild.alert;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.checkerframework.checker.units.qual.g;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -18,9 +25,9 @@ public class AlertData {
     private boolean enabled;
     private AlertType type;
     private AlertSendType sendType;
-    private HashMap<Integer, String> roles;
+    private List<String> roles;
 
-    public AlertData(QueryRecord data, HashMap<Integer, String> roles) {
+    public AlertData(QueryRecord data, List<String> roles) {
         this.ID = data.getAsInt("alert_id");
         this.message = data.get("message");
         this.privateMessage = data.get("private_message");
@@ -28,7 +35,7 @@ public class AlertData {
         this.enabled = data.getAsBoolean("enabled");
         this.type = AlertType.getFromOrdinal(data.getAsInt("type"));
         if(roles == null) {
-            this.roles = new HashMap<Integer, String>();
+            this.roles = new ArrayList<String>();
         }
         else {
             this.roles = roles;
@@ -36,7 +43,7 @@ public class AlertData {
         this.sendType = AlertSendType.getFromOrdinal(data.getAsInt("send_type"));
     }
 
-    public AlertData(int ID, String message, String privateMessage, String channelId, boolean enabled, AlertSendType sendType, AlertType type, HashMap<Integer, String> roles) {
+    public AlertData(int ID, String message, String privateMessage, String channelId, boolean enabled, AlertSendType sendType, AlertType type, List<String> roles) {
         this.ID = ID;
         this.message = message;
         this.privateMessage = privateMessage;
@@ -57,7 +64,7 @@ public class AlertData {
         this.sendType = sendType;
     }
 
-    public AlertData(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, String[] roles) {
+    public AlertData(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, List<String> roles) {
         this.ID = DatabaseHandler.createAlert(guild_id, message, privateMessage, channelId, sendType, AlertType.WELCOME);
         this.message = message;
         this.privateMessage = privateMessage;
@@ -65,7 +72,9 @@ public class AlertData {
         this.enabled = true;
         this.type = AlertType.WELCOME;
         this.sendType = sendType;
-        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
+
+        DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
+        this.roles = roles;
     }
 
     public AlertData(String guild_id, String message, String privateMessage, AlertSendType sendType) {
@@ -76,6 +85,125 @@ public class AlertData {
         this.enabled = true;
         this.sendType = sendType;
         this.type = AlertType.LEVEL_UP;
+    }
+
+    public AlertData(String guildId, AlertType alertType, Map<String, Object> data) {
+        validateInputs(guildId, alertType, data);
+    
+        this.type = alertType;
+        this.enabled = true;
+    
+        initializeFromData(data);
+        validateMessageConsistency();
+        if(this.sendType == null) {
+            inferSendType();
+        }
+    
+        this.ID = DatabaseHandler.createAlert(guildId, message, privateMessage, channelId, sendType, alertType);
+
+        if (this.ID == 0) {
+            throw new RuntimeException("Failed to create alert in the database");
+        }
+    
+        if (roles != null && !roles.isEmpty()) {
+            DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
+        }
+    
+        if (!this.enabled) {
+            DatabaseHandler.setAlertEnabled(String.valueOf(this.ID), false);
+        }
+    }
+    
+    private void validateInputs(String guildId, AlertType alertType, Map<String, Object> data) {
+        if (guildId == null || guildId.isEmpty()) throw new IllegalArgumentException("Guild ID cannot be null or empty");
+        if (alertType == null) throw new IllegalArgumentException("Alert type cannot be null");
+        if (data == null || data.isEmpty()) throw new IllegalArgumentException("Data cannot be null or empty");
+    }
+    
+    private void initializeFromData(Map<String, Object> data) {
+        changeSettings(this, data);
+    }
+
+    private void changeSettings(AlertData alert, Map<String, Object> data) {
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+    
+            switch (key) {
+                case "message" -> alert.message = (String) value;
+                case "privateMessage" -> alert.privateMessage = (String) value;
+                case "channelId" -> alert.channelId = (String) value;
+                case "enabled" -> alert.enabled = (boolean) value;
+                case "sendType" -> alert.sendType = AlertSendType.parse((String) value);
+                case "roles" -> alert.roles = SafJNest.getStringList(value, key);
+                default -> throw new IllegalArgumentException("Unknown key: " + key);
+            }
+        }
+    }
+
+    private void validateMessageConsistency() {
+        validateMessageConsistency(this);
+    }
+    
+    private void validateMessageConsistency(AlertData alert) {
+        boolean msgEmpty = alert.message == null || alert.message.isEmpty();
+        boolean pmEmpty = alert.privateMessage == null || alert.privateMessage.isEmpty();
+    
+        if (msgEmpty && pmEmpty)
+            throw new IllegalArgumentException("Message and privateMessage cannot both be null or empty");
+    
+        if (alert.sendType == AlertSendType.BOTH && (msgEmpty || pmEmpty))
+            throw new IllegalArgumentException("Both messages cannot be null or empty if sendType is BOTH");
+    
+        if (alert.sendType == AlertSendType.CHANNEL && msgEmpty)
+            throw new IllegalArgumentException("Public message cannot be null or empty if sendType is CHANNEL");
+    
+        if (alert.sendType == AlertSendType.PRIVATE && pmEmpty)
+            throw new IllegalArgumentException("Private message cannot be null or empty if sendType is PRIVATE");
+    }
+
+    private boolean isMessageConsistent(AlertData alert) {
+        boolean msgEmpty = alert.message == null || alert.message.isEmpty();
+        boolean pmEmpty = alert.privateMessage == null || alert.privateMessage.isEmpty();
+    
+        if (msgEmpty && pmEmpty)
+            return false;
+    
+        if (alert.sendType == AlertSendType.BOTH && (msgEmpty || pmEmpty))
+            return false;
+    
+        if (alert.sendType == AlertSendType.CHANNEL && msgEmpty)
+            return false;
+    
+        if (alert.sendType == AlertSendType.PRIVATE && pmEmpty)
+            return false;
+        return true;
+    }
+    
+    private void inferSendType() {
+        inferSendType(this);
+    }
+
+    private void inferSendType(AlertData alert) {
+        boolean hasMsg = alert.message != null && !alert.message.isEmpty();
+        boolean hasPm = alert.privateMessage != null && !alert.privateMessage.isEmpty();
+
+        if (hasMsg && hasPm) alert.sendType = AlertSendType.BOTH;
+        else if (hasMsg) alert.sendType = AlertSendType.CHANNEL;
+        else if (hasPm) alert.sendType = AlertSendType.PRIVATE;
+    }
+
+    private AlertData cloneState() {
+        return new AlertData(
+            this.ID,
+            this.message,
+            this.privateMessage,
+            this.channelId,
+            this.enabled,
+            this.sendType,
+            this.type,
+            this.roles == null ? null : new ArrayList<String>(this.roles)
+        );
     }
 
     /**
@@ -118,6 +246,35 @@ public class AlertData {
         return result;
     }
 
+    public boolean set(Map<String, Object> settings) {
+        if (settings == null || settings.isEmpty()) {
+            return false;
+        }
+    
+        AlertData newAlert = cloneState();
+        changeSettings(newAlert, settings);
+        if(settings.containsKey("sendType")) {
+            validateMessageConsistency(newAlert);
+        }
+        else if(!isMessageConsistent(newAlert)) {
+            inferSendType(newAlert);
+            validateMessageConsistency(newAlert);
+        }
+
+        if (!DatabaseHandler.updateAlertandRoles(String.valueOf(this.ID), newAlert)) {
+            return false;
+        }
+
+        this.message = newAlert.message;
+        this.privateMessage = newAlert.privateMessage;
+        this.channelId = newAlert.channelId;
+        this.sendType = newAlert.sendType;
+        this.enabled = newAlert.enabled;
+        this.roles = newAlert.roles == null ? null : new ArrayList<String>(newAlert.roles);
+    
+        return true;
+    }
+
     /**
      * The method first adds the new role to the local roles map at position 0, 
      * because the actual database row ID for the new role is not known yet.
@@ -133,13 +290,12 @@ public class AlertData {
      * 
      */
     public boolean addRole(String roleId) {
-        HashMap<Integer, String> roles = this.roles;
+        List<String> roles = this.roles;
         if (roles == null) {
-            roles = new HashMap<>();
+            roles = new ArrayList<>();
         }
-        roles.put(0, roleId);
-        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
-        return this.roles != null;
+        roles.add(roleId);
+        return DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
     }
 
 
@@ -158,20 +314,19 @@ public class AlertData {
      * 
      */
     public boolean removeRole(String roleId) {
-        HashMap<Integer, String> roles = this.roles;
-        if (roles == null || !roles.containsValue(roleId)) {
+        List<String> roles = this.roles;
+        if (roles == null || !roles.contains(roleId)) {
             return false;
         }
         
-        roles.values().removeIf(role -> role.equals(roleId));
+        roles.removeIf(role -> role.equals(roleId));
         boolean result = false;
         if (roles.isEmpty()) {
             result = DatabaseHandler.deleteAlertRoles(String.valueOf(this.ID));
             this.roles = null;
         }
         else {
-            this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
-            result = this.roles != null;
+            result = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
         }
         
         return result;
@@ -207,12 +362,8 @@ public class AlertData {
         return type;
     }
 
-    public HashMap<Integer, String> getRoles() {
+    public List<String> getRoles() {
         return roles;
-    }
-
-    public String[] getRolesAsArray() {
-        return roles.values().toArray(new String[0]);
     }
 
     public boolean isEnabled() {
@@ -247,7 +398,7 @@ public class AlertData {
         String roleText = "";
         if (this.type == AlertType.WELCOME && this.getRoles() != null) {
             roleText += "Roles that would be given to the user:";
-            for (String role : this.getRoles().values().toArray(new String[0])) {
+            for (String role : this.getRoles()) {
                 roleText += "\n" + guild.getRoleById(role).getName();
             }
         }
@@ -304,7 +455,7 @@ public class AlertData {
             }
             else {
                 String roleText = "```";
-                for (String role : this.getRoles().values().toArray(new String[0])) {
+                for (String role : this.getRoles()) {
                     roleText += guild.getRoleById(role).getName() + "\n";
                 }
                 roleText += "```";

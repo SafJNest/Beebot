@@ -15,24 +15,24 @@ public class RewardData extends AlertData{
     private int level;
     private boolean temporary;
 
-    public RewardData(QueryRecord data, HashMap<Integer, String> roles) {
+    public RewardData(QueryRecord data, List<String> roles) {
         super(data, roles);
         this.level = data.getAsInt("level");
         this.temporary = data.getAsBoolean("temporary");
     }
     
-    public RewardData(int ID, String message, String privateMessage, boolean enabled, AlertSendType sendType, HashMap<Integer, String> roles, int level, boolean temporary) {
+    public RewardData(int ID, String message, String privateMessage, boolean enabled, AlertSendType sendType, List<String> roles, int level, boolean temporary) {
         super(ID, message, privateMessage, null, enabled, sendType, AlertType.REWARD, roles);
         this.level = level;
         this.temporary = temporary;
     }
 
 
-    public static RewardData createRewardData(String guild_id, String message, String privateMessage, AlertSendType sendType, String[] roles, int level, boolean temporary) {
+    public static RewardData createRewardData(String guild_id, String message, String privateMessage, AlertSendType sendType, List<String> roles, int level, boolean temporary) {
         int id = DatabaseHandler.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.REWARD);
-        HashMap<Integer, String> rolesMap = DatabaseHandler.createRolesAlert(String.valueOf(id), roles);
+        DatabaseHandler.createRolesAlert(String.valueOf(id), roles);
         DatabaseHandler.createRewardData(String.valueOf(id), level, temporary);
-        return new RewardData(id, message, privateMessage, true, sendType, rolesMap, level, temporary);
+        return new RewardData(id, message, privateMessage, true, sendType, roles, level, temporary);
     }
 
     public int getLevel() {
@@ -58,7 +58,7 @@ public class RewardData extends AlertData{
 
     @Override
     public EmbedBuilder getSampleEmbed(Guild guild) {
-        List<String> roleNames = this.getRoles().values().stream()
+        List<String> roleNames = this.getRoles().stream()
             .map(role -> "@" + guild.getRoleById(role).getName())
             .collect(Collectors.toList());
 

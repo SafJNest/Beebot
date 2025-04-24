@@ -3,6 +3,9 @@ package com.safjnest.model.sound;
 import java.sql.Timestamp;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
@@ -12,16 +15,16 @@ public class Sound {
     private final String ID;
     private final String GUILD_ID;
     private final String USER_ID;
-
+    
     private String name;
     private String extension;
     private boolean isPublic;
     private Timestamp timestamp;
-
     private int plays;
     private int likes;
     private int dislikes;
 
+    @JsonIgnore
     private AudioTrack track;
 
     private List<Tag> tags;
@@ -78,15 +81,17 @@ public class Sound {
         return isPublic;
     }
 
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     public Timestamp getTimestamp() {
         return timestamp;
     }
 
+    @JsonIgnore
     public long getTimestampSecond() {
         return timestamp.getTime() / 1000;
     }
 
-    public AudioTrack getAsTrack() {
+    public AudioTrack getTrack() {
         return track;
     }
 
@@ -94,10 +99,12 @@ public class Sound {
         return tags;
     }
 
+    @JsonIgnore
     public String getPath() {
         return "rsc" + java.io.File.separator + "SoundBoard" + java.io.File.separator + ID + "." + extension;
     }
 
+    @JsonIgnore
     public boolean isOpus() {
         return extension.equals("opus");
     }
@@ -140,6 +147,7 @@ public class Sound {
         this.track = track;
     }
 
+    @JsonIgnore
     public String getFormattedTags() {
         StringBuilder sb = new StringBuilder();
         for (Tag tag : tags) {
@@ -160,6 +168,7 @@ public class Sound {
         return new int[] {this.plays, plays.getAsInt("times")};
     }
 
+    @JsonIgnore
     public int getGlobalPlays() {
         return this.plays;
     }

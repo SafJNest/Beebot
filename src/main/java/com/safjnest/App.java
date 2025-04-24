@@ -3,6 +3,8 @@ package com.safjnest;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
@@ -27,7 +29,6 @@ public class App {
     public static final boolean TEST_MODE = getPropertyAsBoolean("testing");
 
     public static void main(String args[]) {
-        
         SafJNest.bee();
         
         new BotLogger("Beebot", null);
@@ -38,6 +39,7 @@ public class App {
         if (TEST_MODE) {
             BotLogger.info("Beebot is in testing mode");
             runSpring();
+            TwitchClient.init();
         }
         else {
             TwitchClient.init();

@@ -49,7 +49,7 @@ public class WelcomeRemoveRole extends SlashCommand{
             return;
         }
 
-        if (welcome.getRoles() == null || !welcome.getRoles().containsValue(roleID)) {
+        if (welcome.getRoles() == null || !welcome.getRoles().contains(roleID)) {
             event.deferReply(true).addContent("This role is not setted.").queue();
             return;
         }

@@ -26,4 +26,23 @@ public enum AlertType {
         }
         return null;
     }
+
+    public static AlertType getAlertType(String type) {
+        switch (type) {
+            case "boost":
+                return AlertType.BOOST;
+            case "leave":
+                return AlertType.LEAVE;
+            case "levelUp":
+                return AlertType.LEVEL_UP;
+            case "welcome":
+                return AlertType.WELCOME;
+            case "reward":
+                return AlertType.REWARD;
+            case "twitch":
+                return AlertType.TWITCH;
+            default:
+                return null;
+        }
+    }
 }

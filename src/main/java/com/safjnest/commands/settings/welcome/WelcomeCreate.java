@@ -72,9 +72,7 @@ public class WelcomeCreate extends SlashCommand{
             return;
         }
 
-        String[] roles = new String[]{roleID};
-
-        AlertData newWelcome = new AlertData(guildId, welcomeText, privateText, channelID, sendType, roles);
+        AlertData newWelcome = new AlertData(guildId, welcomeText, privateText, channelID, sendType, Arrays.asList(roleID));
 
         if(newWelcome.getID() == 0) {
             event.deferReply(true).addContent("Something went wrong.").queue();

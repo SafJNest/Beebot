@@ -37,16 +37,14 @@ public class Upload extends SlashCommand{
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
 
-        this.options = Arrays.asList(
+        this.options = new ArrayList<>(Arrays.asList(
             new OptionData(OptionType.STRING, "name", "Sound name", true),
             new OptionData(OptionType.ATTACHMENT, "file", "Sound file (mp3 or opus)", true),
-            new OptionData(OptionType.BOOLEAN, "public", "true or false", false),
-            new OptionData(OptionType.STRING, "tag-1", "Tag", false),
-            new OptionData(OptionType.STRING, "tag-2", "Tag", false),
-            new OptionData(OptionType.STRING, "tag-3", "Tag", false),
-            new OptionData(OptionType.STRING, "tag-4", "Tag", false),
-            new OptionData(OptionType.STRING, "tag-5", "Tag", false)
-        );
+            new OptionData(OptionType.BOOLEAN, "public", "true or false", false)
+        ));
+        for(int i = 1; i <= Tag.MAX_TAG_SOUND; i++){
+            this.options.add(new OptionData(OptionType.STRING, "tag-" + i, "Tag", false));
+        }
 
         commandData.setThings(this);
     }

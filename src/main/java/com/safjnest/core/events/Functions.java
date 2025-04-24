@@ -1,14 +1,11 @@
 package com.safjnest.core.events;
 
 import java.util.HashMap;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryCollection;
-import com.safjnest.sql.QueryRecord;
-import com.safjnest.util.ExperienceSystem;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.TrackData;
@@ -19,13 +16,17 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.AliasData;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.BlacklistData;
+import com.safjnest.model.guild.GuildData;
+import com.safjnest.model.guild.MemberData;
+import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.sound.Sound;
-import com.safjnest.model.guild.alert.AlertData;
-import com.safjnest.model.guild.alert.AlertKey;
-import com.safjnest.model.guild.MemberData;
-import com.safjnest.model.guild.GuildData;
+import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
+import com.safjnest.util.ExperienceSystem;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -110,7 +111,7 @@ public class Functions {
             String message = reward.getMessage();
             String privateMessage = reward.hasPrivateMessage() ? reward.getPrivateMessage() : message;
 
-            String[] roles = reward.getRolesAsArray();
+            List<String> roles = reward.getRoles();
             message = message.replace("#user", newGuy.getAsMention());
             message = message.replace("#level", String.valueOf(lvl));
 
@@ -155,7 +156,7 @@ public class Functions {
 
             RewardData toDelete = null;
             if ((toDelete = guildData.getLowerReward(lvl)) != null && toDelete.isTemporary()) {
-                roles = toDelete.getRolesAsArray();
+                roles = toDelete.getRoles();
                 for (String roleID : roles) {
                     Role role = guild.getRoleById(roleID);
                     if (role == null)
@@ -224,7 +225,7 @@ public class Functions {
         String privateMessage = alert.hasPrivateMessage() ? alert.getPrivateMessage().replace("#user", theGuy.getAsMention()) : message;
 
         if (alert.getRoles() != null && !alert.getRoles().isEmpty()) {
-            String[] roles = alert.getRoles().values().toArray(new String[0]);
+            List<String> roles = alert.getRoles();
             String mentionedRoles = "";
             for (String role : roles) {
                 mentionedRoles += guild.getRoleById(role).getAsMention() + ", ";
@@ -261,8 +262,8 @@ public class Functions {
     }
 
 
-    public static void givesRoles(User theGuy, Guild guild, String[] roles) {
-        if (roles == null || roles.length == 0) {
+    public static void givesRoles(User theGuy, Guild guild, List<String> roles) {
+        if (roles == null || roles.size() == 0) {
             return;
         }
         for (String role : roles) {
@@ -273,7 +274,6 @@ public class Functions {
 
             try { guild.addRoleToMember(theGuy, r).queue();} 
             catch (Exception e) { }
-            
         }
     }
 
@@ -456,7 +456,7 @@ public class Functions {
 
     public static void handleRoleDeleteAlert(Guild guild, String role_id) {
         GuildData g = GuildCache.getGuildOrPut(guild.getId());
-        g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().containsValue(role_id)).forEach(alert -> {
+        g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().contains(role_id)).forEach(alert -> {
             alert.removeRole(role_id);
         });
     }

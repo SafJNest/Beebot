@@ -1,5 +1,6 @@
 package com.safjnest.model.guild.alert;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
@@ -16,7 +17,7 @@ public class TwitchData extends AlertData {
     }
 
     public TwitchData(int ID, String message, String privateMessage, String channel, boolean enabled, AlertSendType sendType, String streamerId, String roleId) {
-        super(ID, message, privateMessage, channel, enabled, sendType, AlertType.REWARD, new HashMap<>());
+        super(ID, message, privateMessage, channel, enabled, sendType, AlertType.REWARD, new ArrayList<>());
         this.streamerId = streamerId;
         this.roleId = roleId;
     }

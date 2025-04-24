@@ -1,6 +1,5 @@
 package com.safjnest.springapi.api.controller;
 
-import net.dv8tion.jda.api.Permission;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,7 +8,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,12 +27,10 @@ import com.safjnest.springapi.service.GuildService;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 
-import io.jsonwebtoken.Claims;
-import jakarta.servlet.http.HttpServletRequest;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.UserSnowflake;
 
 @RestController
 @RequestMapping("/api/guild")
@@ -48,7 +44,7 @@ public class GuildController {
     }
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
-
+    
     public static String toJson(Object object) {
         try {
             return objectMapper.writeValueAsString(object);
@@ -170,7 +166,7 @@ public class GuildController {
     }
 
     @GetMapping("/{id}/settings")
-    public Map<String, String> getSettings(@PathVariable String id, @RequestBody List<String> settings) {
+    public Map<String, Object> getSettings(@PathVariable String id, @RequestBody List<String> settings) {
         if (id == null || id.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing guild id");
         }
@@ -188,7 +184,7 @@ public class GuildController {
     }
 
     @PostMapping("/{id}/settings")
-    public Map<String, String> setSettings(@PathVariable String id, @RequestBody Map<String, String> settings) {
+    public Map<String, Object> setSettings(@PathVariable String id, @RequestBody Map<String, Object> settings) {
         if (id == null || id.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing guild id");
         }

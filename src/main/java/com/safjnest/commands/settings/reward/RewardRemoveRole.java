@@ -51,7 +51,7 @@ public class RewardRemoveRole extends SlashCommand {
             return;
         }
         
-        if (reward.getRoles() == null || !reward.getRoles().containsValue(roleID)) {
+        if (reward.getRoles() == null || !reward.getRoles().contains(roleID)) {
             event.deferReply(true).addContent("This role is not set as reward").queue();
             return;
         }
