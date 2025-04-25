@@ -256,18 +256,17 @@ public class GuildData {
                     .collect(Collectors.toMap(e -> e.getKey().getKey(), Map.Entry::getValue)));
                 case "twitch" -> result.put("twitch", getTwitchDatas().entrySet().stream()
                     .collect(Collectors.toMap(e -> e.getKey().getKey(), Map.Entry::getValue)));
-
-                default -> System.out.println("Unknown setting: " + setting);
+                default -> throw new IllegalArgumentException("Unknown setting: " + setting);
             }
         }
         return result;
     }
 
-    public boolean setSettings(Map<String, Object> settings) {
+    public void setSettings(Map<String, Object> settings) {
         if (settings == null || settings.isEmpty()) {
-            return false;
+            throw new IllegalArgumentException("Settings cannot be null or empty");
         }
-    
+        
         for (Map.Entry<String, Object> entry : settings.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -283,11 +282,9 @@ public class GuildData {
                 case "boost" -> handleAlert(AlertType.BOOST, settings, key);
                 case "reward" -> handleAlert(AlertType.REWARD, settings, key);
                 case "twitch" -> updateTwitchAlerts(SafJNest.getMap(settings, key));
-                default -> System.out.println("Unknown setting: " + key);
+                default -> throw new IllegalArgumentException("Unknown setting: " + key);
             }
         }
-    
-        return true;
     }
     
     private void handleAlert(AlertType type, Map<String, Object> settings, String setting) {
@@ -301,7 +298,7 @@ public class GuildData {
         if (getAlert(type) == null) {
             getAlerts().put(key, new AlertData(getIdString(), type, data));
         } else {
-            getAlert(type).set(data);
+            getAlert(type).set(getIdString(), data);
         }
     }
     
@@ -313,7 +310,7 @@ public class GuildData {
             AlertKey<String> key = new AlertKey<>(AlertType.TWITCH, subKey);
     
             if (getTwitchDatas().containsKey(key)) {
-                getTwitchDatas().get(key).set(SafJNest.getMap(subs, subKey));
+                getTwitchDatas().get(key).set(getIdString(), SafJNest.getMap(subs, subKey));
                 it.remove();
             }
         }

@@ -197,10 +197,13 @@ public class GuildController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Guild not found");
         }
 
-        if (guild.setSettings(settings)) {
+        try {
+            guild.setSettings(settings);
             return guild.getSettings(new ArrayList<>(settings.keySet()));
-        } else {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update settings");
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }
 

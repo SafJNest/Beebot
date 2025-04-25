@@ -11,6 +11,7 @@ import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 
 public class AlertData {
 
@@ -89,11 +90,13 @@ public class AlertData {
         this.type = alertType;
         this.enabled = true;
     
-        initializeFromData(data);
+        initializeFromData(guildId, data);
         validateMessageConsistency();
         if(this.sendType == null) {
             inferSendType();
         }
+
+        setSystemChannelIfNull(guildId);
     
         this.ID = DatabaseHandler.createAlert(guildId, message, privateMessage, channelId, sendType, alertType);
 
@@ -115,12 +118,29 @@ public class AlertData {
         if (alertType == null) throw new IllegalArgumentException("Alert type cannot be null");
         if (data == null || data.isEmpty()) throw new IllegalArgumentException("Data cannot be null or empty");
     }
-    
-    private void initializeFromData(Map<String, Object> data) {
-        changeSettings(this, data);
+
+    private void setSystemChannelIfNull(String guildId) {
+        setSystemChannelIfNull(guildId, this);
     }
 
-    private void changeSettings(AlertData alert, Map<String, Object> data) {
+    private void setSystemChannelIfNull(String guildId, AlertData alert) {
+        if(alert.type == AlertType.LEVEL_UP || alert.sendType == AlertSendType.PRIVATE) {
+            return;
+        }
+        if(alert.channelId == null) {
+            TextChannel systemChannel = Bot.getJDA().getGuildById(guildId).getSystemChannel();
+            if(systemChannel == null) {
+                throw new IllegalArgumentException("System channel is null and no channel ID provided");
+            }
+            alert.channelId = systemChannel.getId();
+        }
+    }
+    
+    private void initializeFromData(String guildId, Map<String, Object> data) {
+        changeSettings(guildId, this, data);
+    }
+
+    private void changeSettings(String guildId, AlertData alert, Map<String, Object> data) {
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -128,7 +148,12 @@ public class AlertData {
             switch (key) {
                 case "message" -> alert.message = (String) value;
                 case "privateMessage" -> alert.privateMessage = (String) value;
-                case "channelId" -> alert.channelId = (String) value;
+                case "channelId" -> {
+                    alert.channelId = (String) value;
+                    if (alert.channelId != null && Bot.getJDA().getGuildById(guildId).getTextChannelById(alert.channelId) == null) {
+                        throw new IllegalArgumentException("Invalid channel ID: " + alert.channelId);
+                    }
+                }
                 case "enabled" -> alert.enabled = (boolean) value;
                 case "sendType" -> alert.sendType = AlertSendType.parse((String) value);
                 case "roles" -> alert.roles = SafJNest.getStringList(value, key);
@@ -159,21 +184,12 @@ public class AlertData {
     }
 
     private boolean isMessageConsistent(AlertData alert) {
-        boolean msgEmpty = alert.message == null || alert.message.isEmpty();
-        boolean pmEmpty = alert.privateMessage == null || alert.privateMessage.isEmpty();
-    
-        if (msgEmpty && pmEmpty)
+        try {
+            validateMessageConsistency(alert);
+            return true;
+        } catch (IllegalArgumentException e) {
             return false;
-    
-        if (alert.sendType == AlertSendType.BOTH && (msgEmpty || pmEmpty))
-            return false;
-    
-        if (alert.sendType == AlertSendType.CHANNEL && msgEmpty)
-            return false;
-    
-        if (alert.sendType == AlertSendType.PRIVATE && pmEmpty)
-            return false;
-        return true;
+        }
     }
     
     private void inferSendType() {
@@ -207,7 +223,10 @@ public class AlertData {
      * @return true if the alert is valid, false otherwise
      */
     public boolean isValid() {
-        return this.message != null && (this.type == AlertType.LEVEL_UP ||  this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) && this.enabled;
+        return isMessageConsistent(this) 
+            && (this.type == AlertType.LEVEL_UP || this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) 
+            && this.enabled;
+        //the level up check should probably be made in an override method in a subclass
     }
     
     public boolean setMessage(String message) {
@@ -242,13 +261,13 @@ public class AlertData {
         return result;
     }
 
-    public boolean set(Map<String, Object> settings) {
+    public boolean set(String guildId, Map<String, Object> settings) {
         if (settings == null || settings.isEmpty()) {
             return false;
         }
     
         AlertData newAlert = cloneState();
-        changeSettings(newAlert, settings);
+        changeSettings(guildId, newAlert, settings);
         if(settings.containsKey("sendType")) {
             validateMessageConsistency(newAlert);
         }
@@ -256,6 +275,8 @@ public class AlertData {
             inferSendType(newAlert);
             validateMessageConsistency(newAlert);
         }
+
+        setSystemChannelIfNull(guildId, newAlert);
 
         if (!DatabaseHandler.updateAlertandRoles(String.valueOf(this.ID), newAlert)) {
             return false;
@@ -294,7 +315,6 @@ public class AlertData {
         return DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
     }
 
-
     /**
      * The method first removes the role from the local roles map, 
      * using the provided role ID.
@@ -331,8 +351,6 @@ public class AlertData {
     public boolean terminator4LaRinascita() {
         return DatabaseHandler.deleteAlert(String.valueOf(this.ID));
     }
-
-
 
     public int getID() {
         return ID;
