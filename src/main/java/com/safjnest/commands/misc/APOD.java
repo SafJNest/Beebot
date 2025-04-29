@@ -22,6 +22,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.SettingsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -30,7 +31,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 public class APOD extends SlashCommand {
     private String nasaApiKey;
 
-    public APOD(String nasaApiKey) {
+    public APOD() {
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -45,7 +46,7 @@ public class APOD extends SlashCommand {
 
         commandData.setThings(this);
 
-        this.nasaApiKey = nasaApiKey;
+        this.nasaApiKey = SettingsLoader.getSettings().getJsonSettings().getNasaApiKey();
     }
 
 

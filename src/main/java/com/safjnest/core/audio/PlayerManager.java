@@ -19,6 +19,9 @@ import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
 import com.github.topi314.lavasrc.mirror.DefaultMirroringAudioTrackResolver;
 import com.github.topi314.lavasrc.spotify.SpotifySourceManager;
 import com.safjnest.App;
+import com.safjnest.model.BotSettings.LavalinkSettings;
+import com.safjnest.model.BotSettings.PoTokenSettings;
+import com.safjnest.model.BotSettings.SpotifySettings;
 import com.safjnest.util.SettingsLoader;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -57,11 +60,10 @@ public class PlayerManager {
         //lavalink = new LavalinkClient(Long.parseLong(Bot.getBotId()));
         //lavalink.addNode(new NodeOptions.Builder("beebot", URI.create(settingsLoader.getLavalinkHost()), settingsLoader.getLavalinkPassword(), null, 0).build());
 
-        SettingsLoader settingsLoader = App.getSettingsLoader();
         lyricsManager = new LyricsManager();
 
-        registerYoutube(settingsLoader);
-        registerSpotify(settingsLoader);
+        registerYoutube();
+        registerSpotify();
 
         AudioSourceManagers.registerRemoteSources(audioPlayerManager);
         AudioSourceManagers.registerLocalSource(audioPlayerManager);
@@ -69,11 +71,13 @@ public class PlayerManager {
 
     //registers youtube source and starts the rotator
     @SuppressWarnings("rawtypes")
-    private void registerYoutube(SettingsLoader settingsLoader) {
+    private void registerYoutube() {
         dev.lavalink.youtube.YoutubeAudioSourceManager youtube = new dev.lavalink.youtube.YoutubeAudioSourceManager();
 
-        if(!App.TEST_MODE && settingsLoader.isRotorEnabled()) {
-            IpBlock ipBlock = new Ipv6Block(settingsLoader.getIpv6Block());
+        LavalinkSettings lavalinkSettings = SettingsLoader.getSettings().getJsonSettings().getLavalink();
+
+        if(!App.testing && lavalinkSettings.isRotorEnabled()) {
+            IpBlock ipBlock = new Ipv6Block(lavalinkSettings.getIpv6block());
             List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
             RotatingNanoIpRoutePlanner routePlanner = new RotatingNanoIpRoutePlanner(ipBlocks);
             YoutubeIpRotatorSetup rotator = new YoutubeIpRotatorSetup(routePlanner);
@@ -82,19 +86,21 @@ public class PlayerManager {
                 .setup();
         }
 
-        if (settingsLoader.isPoTokenEnabled()) {
-            Web.setPoTokenAndVisitorData(settingsLoader.getPoToken(), settingsLoader.getVisitorData());
+        if (lavalinkSettings.isPotokenEnabled()) {
+            PoTokenSettings poTokenSettings = lavalinkSettings.getTokens().get(SettingsLoader.getSettings().getConfig().getHost());
+            Web.setPoTokenAndVisitorData(poTokenSettings.getPotoken(), poTokenSettings.getVisitordata());
         }
 
         audioPlayerManager.registerSourceManager(youtube);
     }
 
-    private void registerSpotify(SettingsLoader settingsLoader) {
+    private void registerSpotify() {
+        SpotifySettings spotifySettings = SettingsLoader.getSettings().getJsonSettings().getSpotify();
         SpotifySourceManager spotify = new SpotifySourceManager(
-                settingsLoader.getSpotifyClientID(),
-                settingsLoader.getSpotifyClientSecret(),
-                settingsLoader.getSpotifySPDC(),
-                settingsLoader.getSpotifyCountryCode(),
+                spotifySettings.getClientId(),
+                spotifySettings.getClientSecret(),
+                spotifySettings.getSpdc(),
+                spotifySettings.getCountryCode(),
                 (Void v) -> audioPlayerManager,
                 new DefaultMirroringAudioTrackResolver(null));
 

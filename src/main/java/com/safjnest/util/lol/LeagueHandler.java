@@ -34,6 +34,7 @@ import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.lol.Runes.PageRunes;
 import com.safjnest.util.lol.Runes.Rune;
@@ -86,7 +87,7 @@ import com.safjnest.core.cache.managers.UserCache;
 
     static {
         try {
-            LeagueHandler.riotApi = new R4J(new APICredentials(App.getSettingsLoader().getRiotKey()));
+            LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey()));
             BotLogger.info("[R4J] Connection Successful!");
         } catch (Exception e) {
             BotLogger.error("[R4J] Annodam Not Successful!");
