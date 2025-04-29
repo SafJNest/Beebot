@@ -18,22 +18,21 @@ import java.util.concurrent.CompletableFuture;
 
 import org.json.simple.JSONObject;
 
+import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.model.BotSettings.DatabaseSettings;
+import com.safjnest.model.guild.alert.AlertSendType;
+import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.sound.Sound;
+import com.safjnest.model.sound.Tag;
+import com.safjnest.util.SettingsLoader;
+import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.LeagueHandler;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
-
-import com.safjnest.App;
-import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.model.guild.alert.AlertSendType;
-import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.model.sound.Tag;
-import com.safjnest.model.sound.Sound;
-import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.LeagueHandler;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -70,13 +69,16 @@ public class DatabaseHandler {
     }
 
     static {
-        DatabaseHandler.hostName = App.getSettingsLoader().getDBHostname();
-        DatabaseHandler.database = App.getSettingsLoader().getDBName();
-        DatabaseHandler.user = App.getSettingsLoader().getDBUser();
-        DatabaseHandler.password = App.getSettingsLoader().getDBPassword();
+        DatabaseSettings settings = SettingsLoader.getSettings().getConfig().isTesting() 
+            ? SettingsLoader.getSettings().getJsonSettings().getTestDatabase() 
+            :  SettingsLoader.getSettings().getJsonSettings().getDatabase();
+
+        hostName = settings.getHost();
+        database = settings.getDatabaseName();
+        user = settings.getUsername();
+        password = settings.getPassword();
 
         connectIfNot();
-
     }
 
     private static void connectIfNot() {

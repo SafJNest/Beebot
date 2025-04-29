@@ -16,7 +16,9 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.springapi.api.model.ApiKey;
+import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 
 public class WebsiteDBHandler {
@@ -38,10 +40,14 @@ public class WebsiteDBHandler {
     }
 
     static {
-        WebsiteDBHandler.hostName = App.getSettingsLoader().getDBHostname();
-        WebsiteDBHandler.database = "website_dev";
-        WebsiteDBHandler.user = App.getSettingsLoader().getDBUser();
-        WebsiteDBHandler.password = App.getSettingsLoader().getDBPassword();
+        DatabaseSettings settings = SettingsLoader.getSettings().getConfig().isTesting() 
+            ? SettingsLoader.getSettings().getJsonSettings().getTestWebsiteDatabase() 
+            :  SettingsLoader.getSettings().getJsonSettings().getTestDatabase(); //da cambiare con il database di produzione
+
+        hostName = settings.getHost();
+        database = settings.getDatabaseName();
+        user = settings.getUsername();
+        password = settings.getPassword();
 
         connectIfNot();
     }
