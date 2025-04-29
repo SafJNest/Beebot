@@ -19,14 +19,9 @@ import com.safjnest.util.twitch.TwitchClient;
 @SpringBootApplication
 public class App {
     private static final String settingsPath = "rsc" + File.separator + "settings.json";
-    public static String key;
 
     private static Settings settings;
-
-    private static String botName;
     private static Bot bot;
-    
-    public static boolean testing;
 
     public static void main(String args[]) {
         
@@ -42,10 +37,7 @@ public class App {
         }
         settings = SettingsLoader.getSettings();
 
-        testing = settings.getConfig().isTesting();
-        botName = settings.getConfig().getBot();
-
-        if (testing) {
+        if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
             runSpring();
         }
@@ -85,8 +77,8 @@ public class App {
         bot.il_risveglio_della_bestia();
     }
 
-    public static String getBot() {
-        return botName;
+    public static boolean isTesting() {
+        return settings.getConfig().isTesting();
     }
 
 }

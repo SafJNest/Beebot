@@ -151,7 +151,7 @@ public class Bot {
             return null;
         });
 
-        if (App.testing) {
+        if (App.isTesting()) {
             builder.setPrefixFunction(event -> {
                 return settings.getPrefix();
             });

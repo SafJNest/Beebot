@@ -76,7 +76,7 @@ public class PlayerManager {
 
         LavalinkSettings lavalinkSettings = SettingsLoader.getSettings().getJsonSettings().getLavalink();
 
-        if(!App.testing && lavalinkSettings.isRotorEnabled()) {
+        if(!App.isTesting() && lavalinkSettings.isRotorEnabled()) {
             IpBlock ipBlock = new Ipv6Block(lavalinkSettings.getIpv6block());
             List<IpBlock> ipBlocks = Collections.singletonList(ipBlock);
             RotatingNanoIpRoutePlanner routePlanner = new RotatingNanoIpRoutePlanner(ipBlocks);
