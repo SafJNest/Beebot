@@ -1,9 +1,0 @@
-[] tags are padded to 5
-[] sound plays cache
-[] make a getRewards and the set/create because they are different from normal alerts
-[] check when some alert setting is null
-[] change the set method and the other stuff in reward and twitch alerts
-[] when it fails sometimes it still return 200 ok
-[x] also when it fails and i throw an error it just says internal error, i should make it send errors and not jsut print them
-[x] fix isValid alert
-[] se crei un alert e non metti channel prende system channel ok ma poi se il system channel cambia è un casino no? oppure dal punto di vista del funzionamento dovrebbe prenderti quello che è al momento della creazione dell'alert e rimanere sempre quello? bo io credo non sia troppo intuitivo forse? però cambiare tutto è un casiiiiiiiiiiiiiino oiiiiiiiid
