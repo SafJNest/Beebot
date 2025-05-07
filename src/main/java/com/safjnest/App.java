@@ -41,7 +41,7 @@ public class App {
         }
         else {
             TwitchClient.init();
-            runSpring();
+            //runSpring();
         }
                         
         bot = new Bot();
