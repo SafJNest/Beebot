@@ -48,9 +48,9 @@ public class MatchTracker {
     public static int UNKNOWN_RANK = TierDivisionType.UNRANKED.ordinal() + 1;
 
 	static {
-        if(App.TEST_MODE) {
+        if(!App.TEST_MODE) {
             ChronoTask track = () -> retriveSummoners();
-            track.scheduleAtFixedRate(TimeConstant.MINUTE * 0, period, TimeUnit.MILLISECONDS);
+            track.scheduleAtFixedRate(TimeConstant.MINUTE * 1, period, TimeUnit.MILLISECONDS);
 
             ChronoTask trackQueuedGames = () -> popSet();
             trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
