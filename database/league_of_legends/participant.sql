@@ -1,0 +1,20 @@
+CREATE TABLE `participant` (
+ `id` int(11) NOT NULL AUTO_INCREMENT,
+ `account_id` varchar(191) NOT NULL,
+ `match_id` int(11) NOT NULL,
+ `win` tinyint(1) NOT NULL,
+ `kda` varchar(191) NOT NULL DEFAULT '',
+ `rank` int(11) NOT NULL,
+ `lp` int(11) NOT NULL,
+ `gain` int(11) NOT NULL,
+ `champion` int(11) NOT NULL DEFAULT 0,
+ `lane` int(11) DEFAULT NULL,
+ `side` int(11) NOT NULL,
+ `build` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`build`)),
+ PRIMARY KEY (`id`),
+ UNIQUE KEY `participant_account_id_match_id_key` (`account_id`,`match_id`),
+ UNIQUE KEY `unique_game_analyzed` (`account_id`,`match_id`),
+ KEY `participant_match_id_fkey` (`match_id`),
+ KEY `champx` (`champion`),
+ CONSTRAINT `participant_match_id_fkey` FOREIGN KEY (`match_id`) REFERENCES `match` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=196606 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
