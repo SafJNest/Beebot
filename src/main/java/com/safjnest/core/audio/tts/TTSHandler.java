@@ -10,8 +10,6 @@ import org.voicerss.tts.Voice.VoiceParameters;
 import org.voicerss.tts.Voice.VoiceProvider;
 import org.voicerss.tts.Voice.Voices;
 
-import com.safjnest.App;
-import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.util.SettingsLoader;
 
 /**

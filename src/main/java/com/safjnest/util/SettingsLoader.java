@@ -8,7 +8,6 @@ import com.safjnest.model.BotSettings.JsonSettings;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -47,10 +46,6 @@ public class SettingsLoader {
             throw new IllegalStateException("Missing 'bots' object in settings file");
         }
         JsonNode botNode = botsNode.get(botName);
-        if (botsNode == null) {
-            throw new IllegalStateException("Missing" + botName + " object in settings file");
-        }
-
         return mapper.treeToValue(botNode, BotSettings.class);
     }
 

@@ -66,7 +66,6 @@ import com.safjnest.commands.settings.welcome.Welcome;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.*;
 import com.safjnest.model.BotSettings.BotSettings;
-import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.AutomatedActionTimer;
