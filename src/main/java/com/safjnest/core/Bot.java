@@ -8,9 +8,11 @@ package com.safjnest.core;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.awt.Color;
+import java.text.MessageFormat;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.GenericEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
@@ -63,10 +65,12 @@ import com.safjnest.commands.settings.reward.Reward;
 import com.safjnest.commands.settings.welcome.Welcome;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.*;
+import com.safjnest.model.BotSettings.BotSettings;
+import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.AutomatedActionTimer;
-import com.safjnest.util.Settings;
+import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 
 /**
@@ -85,7 +89,7 @@ public class Bot {
 
     private static JDA jda;
     private static String botID;
-    private static Settings settings;
+    private static BotSettings settings;
 
     private static CommandClient client;
 
@@ -101,12 +105,12 @@ public class Bot {
         //fastest way to comment
         //https://patorjk.com/software/taag/#p=display&c=c%2B%2B&f=Delta%20Corps%20Priest%201
 
-        settings = new Settings();
+        settings = SettingsLoader.getSettings().getBotSettings();
 
-        BotLogger.warning(App.getSettingsLoader().getInfo());
+        BotLogger.warning(settings.getInfo());
 
         jda = JDABuilder
-            .createLight(settings.token, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
+            .createLight(settings.getDiscordToken(), GatewayIntent.MESSAGE_CONTENT, GatewayIntent.GUILD_MESSAGES,
                 GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_MEMBERS,
                 GatewayIntent.GUILD_EXPRESSIONS, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MODERATION)
             .setMemberCachePolicy(MemberCachePolicy.ALL)
@@ -117,10 +121,13 @@ public class Bot {
         botID = jda.getSelfUser().getId();
 
         CommandClientBuilder builder = new CommandClientBuilder();
-        builder.setHelpWord(settings.helpWord);
-        builder.setOwnerId(settings.ownerID);
-        builder.setCoOwnerIds(settings.coOwnersIDs);
-        builder.setActivity(settings.activity);
+        builder.setHelpWord(settings.getHelpWord());
+        builder.setOwnerId(settings.getOwnerId());
+        builder.setCoOwnerIds(settings.getCoOwnersIds().toArray(new String[0]));
+
+        Activity activity = Activity.listening(MessageFormat.format(settings.getActivity().replace("{0}", settings.getPrefix()), settings.getPrefix()));
+        builder.setActivity(activity);
+        //builder.setScheduleExecutor(null);
         //builder.forceGuildOnly("876606568412639272"); //server di leon
         //builder.forceGuildOnly("1150154886005133492"); //guitarrin
         //builder.forceGuildOnly("474935164451946506"); //safj
@@ -139,14 +146,14 @@ public class Bot {
                 return "";
             if (event.isFromGuild()) {
                 GuildData gd = GuildCache.getGuildOrPut(event.getGuild());
-                return gd == null ? settings.prefix : gd.getPrefix();
+                return gd == null ? settings.getPrefix() : gd.getPrefix();
             }
             return null;
         });
 
-        if (App.TEST_MODE) {
+        if (App.isTesting()) {
             builder.setPrefixFunction(event -> {
-                return settings.prefix;
+                return settings.getPrefix();
             });
         }
 
@@ -178,8 +185,8 @@ public class Bot {
         
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
             new Livegame(), new LastMatches(), new GraphSlash(),
-            new Prime(settings.maxPrime), new Calculator(), new Dice(), new Champion(), new Opgg(), 
-            new Weather(settings.weatherApiKey), new APOD(settings.nasaApiKey), new SpecialChar(), 
+            new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), new Champion(), new Opgg(), 
+            new Weather(), new APOD(), new SpecialChar(), 
             new Region(), new UltimateBravery(), new Item(), new QRCode()
         );
         
@@ -223,12 +230,12 @@ public class Bot {
         return jda;
     }
 
-    public static Settings getSettings() {
+    public static BotSettings getSettings() {
         return settings;
     }
 
     public static String getPrefix() {
-        return settings.prefix;
+        return settings.getPrefix();
     }
     
     public static String getBotId() {
@@ -236,7 +243,7 @@ public class Bot {
     }
 
     public static Color getColor() {
-        return settings.color;
+        return settings.getEmbedColor();
     }
 
     public static CommandClient getClient() {
