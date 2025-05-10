@@ -1,9 +1,5 @@
 package com.safjnest.model.BotSettings;
 
-import java.util.Properties;
-
-import com.safjnest.App;
-
 public class Settings {
     private AppConfig config;
     private JsonSettings jsonSettings;

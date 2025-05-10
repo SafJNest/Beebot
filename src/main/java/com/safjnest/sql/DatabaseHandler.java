@@ -16,16 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-
-import org.json.simple.JSONObject;
-
-
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
-
-import com.safjnest.App;
 
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.core.audio.PlayerManager;
@@ -37,10 +31,6 @@ import com.safjnest.model.sound.Tag;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
-import net.dv8tion.jda.api.entities.Message.Attachment;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 /**

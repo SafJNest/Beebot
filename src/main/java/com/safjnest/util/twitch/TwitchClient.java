@@ -17,7 +17,6 @@ import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
-import com.safjnest.App;
 import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;

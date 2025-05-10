@@ -14,7 +14,6 @@ import java.util.concurrent.CompletableFuture;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.springapi.api.model.ApiKey;
