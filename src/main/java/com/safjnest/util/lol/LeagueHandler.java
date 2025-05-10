@@ -30,7 +30,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
@@ -544,7 +544,7 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static List<Summoner> getSummonersFromPuuid(String puuid) {
-        QueryCollection result = DatabaseHandler.getSummonersBuPuuid(puuid);
+        QueryCollection result = LeagueDBHandler.getSummonersBuPuuid(puuid);
         List<Summoner> summoners = new ArrayList<>();
         for (QueryRecord row : result) {
             summoners.add(getSummonerByAccountId(row.get("account_id"), LeagueShard.values()[Integer.valueOf(row.get("league_shard"))]));
@@ -553,15 +553,15 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static void updateSummonerDB(Summoner summoner) {
-        DatabaseHandler.addLOLAccount(summoner);
+        LeagueDBHandler.addLOLAccount(summoner);
     }
 
     public static void updateSummonerDB(SpectatorGameInfo game) {
-        DatabaseHandler.addLOLAccount(game);
+        LeagueDBHandler.addLOLAccount(game);
     }
 
     public static void updateSummonerDB(LOLMatch match) {
-        DatabaseHandler.addLOLAccountFromMatch(match);
+        LeagueDBHandler.addLOLAccountFromMatch(match);
     }
 
 //     ▄███████▄  ▄█   ▄████████
