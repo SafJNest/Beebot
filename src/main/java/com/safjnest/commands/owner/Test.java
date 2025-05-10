@@ -38,6 +38,7 @@ import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
@@ -984,7 +985,7 @@ public class Test extends Command{
                         System.out.println("Match not found");
                         continue;
                     }
-                    System.out.println(DatabaseHandler.setMatchData(m));
+                    System.out.println(LeagueDBHandler.setMatchData(m));
                 }
                 break;
             case "pushbuild":
@@ -1001,7 +1002,7 @@ public class Test extends Command{
                         System.out.println("Match not found");
                         continue;
                     }
-                    System.out.println(DatabaseHandler.setMatchData(m));
+                    System.out.println(LeagueDBHandler.setMatchData(m));
                 }
                 break;
             case "trackoldgames":
@@ -1022,7 +1023,7 @@ public class Test extends Command{
                     String summoner_id = row.get("summoner_id");
                     LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                     String puuid = "";
-                    int summoner_match_id = DatabaseHandler.setMatchData(m);
+                    int summoner_match_id = LeagueDBHandler.setMatchData(m);
 
                     HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(m, m.getParticipants());
 

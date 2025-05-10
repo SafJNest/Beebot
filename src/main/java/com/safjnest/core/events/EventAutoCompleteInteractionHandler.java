@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.CommandsLoader;
@@ -554,7 +555,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             return choices;
         }
         
-        summoners = DatabaseHandler.getFocusedSummoners(value, shard);
+        summoners = LeagueDBHandler.getFocusedSummoners(value, shard);
         
 
         for (QueryRecord summoner : summoners) {

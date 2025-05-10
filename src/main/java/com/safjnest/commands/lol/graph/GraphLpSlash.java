@@ -20,7 +20,7 @@ import java.util.Set;
 import com.google.gson.Gson;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
@@ -231,7 +231,7 @@ public class GraphLpSlash extends SlashCommand {
     }
 
     private static String createGraph(no.stelar7.api.r4j.pojo.lol.summoner.Summoner s, long timeStart, long timeEnd) {
-        QueryCollection result = DatabaseHandler.getSummonerData(s.getAccountId(), s.getPlatform(), timeStart, timeEnd);
+        QueryCollection result = LeagueDBHandler.getSummonerData(s.getAccountId(), s.getPlatform(), timeStart, timeEnd);
         
         if (result.isEmpty()) return null;
 

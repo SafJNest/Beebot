@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
@@ -184,7 +185,7 @@ public class UserData {
 //  ▀                                                                        
 
     private void retriveRiotAccounts() {
-        QueryCollection result = DatabaseHandler.getLOLAccountsByUserId(USER_ID);
+        QueryCollection result = LeagueDBHandler.getLOLAccountsByUserId(USER_ID);
         if (result == null) { return; }
 
         this.riotAccounts = new LinkedHashMap<>();
@@ -205,7 +206,7 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = DatabaseHandler.addLOLAccount(USER_ID, s);
+        boolean result = LeagueDBHandler.addLOLAccount(USER_ID, s);
         if (result) riotAccounts.put(s.getAccountId(), String.valueOf(s.getPlatform().ordinal()));
         
         return result;
@@ -213,7 +214,7 @@ public class UserData {
 
     public boolean deleteRiotAccount(String account_id) {
         checkRiotAccounts();
-        boolean result = DatabaseHandler.deleteLOLaccount(USER_ID, account_id);
+        boolean result = LeagueDBHandler.deleteLOLaccount(USER_ID, account_id);
         if (result) riotAccounts.remove(account_id);
         
         return result;
