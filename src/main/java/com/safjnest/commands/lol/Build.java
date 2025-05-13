@@ -18,7 +18,6 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
@@ -65,27 +64,21 @@ public class Build extends SlashCommand {
         String champName = champion.getName();
         
         String laneFormatName =  "";
-        LaneType laneType = null;
         switch(lane){
             case 0:
                 laneFormatName = "Top Lane";
-                laneType = LaneType.TOP;
                 break;
             case 1:
                 laneFormatName = "Jungle";
-                laneType = LaneType.JUNGLE;
                 break;
             case 2:
                 laneFormatName = "Mid Lane";
-                laneType = LaneType.MID;
                 break;
             case 3:
                 laneFormatName = "ADC";
-                laneType = LaneType.BOT;
                 break;
             case 4:
                 laneFormatName = "Support";
-                laneType = LaneType.UTILITY;
                 break;
         }
 
