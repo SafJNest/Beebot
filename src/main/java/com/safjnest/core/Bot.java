@@ -201,7 +201,7 @@ public class Bot {
         Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), 
             new List(), new Play(), new Playlist(), new TTS(), new Stop(), new Sound(),
             new Voice(), new Soundboard(), new Greet(), new Pause(), new Resume(),
-            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn()
+            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn(), new Build()
         );
 
         Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());

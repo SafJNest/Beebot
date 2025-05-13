@@ -1063,6 +1063,12 @@
         "arguments" : "[CommandName]"
     },
 
+    "build":{
+        "help"  : "Show the best build and runes for a champion.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName]"
+    },
+
     "augment":{
         "alias" : ["aug"],
         "help"  : "Show information about an augment.",

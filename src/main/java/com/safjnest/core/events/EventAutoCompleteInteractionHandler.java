@@ -113,6 +113,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else if (e.getFocusedOption().getName().equals("playlist-order"))
             name = "playlist_order";
 
+        else if (e.getFocusedOption().getName().equals("custom-build"))
+            name = "custom_build";
+
         
         switch (name) {
             case "play":
@@ -178,6 +181,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 break;
             case "summoner":
                 choices = summoner(e);
+                break;
+            case "custom_build":
+                choices = customBuild(e);
                 break;
                 
         }
@@ -698,5 +704,21 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         return choices;
 
     }
+
+    private ArrayList<Choice> customBuild(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+
+
+        QueryCollection builds = null;
+        if (isFocused) builds = LeagueDBHandler.getFocusedCustomBuild(e.getFocusedOption().getValue());
+        else builds = LeagueDBHandler.getCustomBuildByUser(e.getUser().getId());
+
+        for (QueryRecord build : builds) {
+            choices.add(new Choice(build.get("name"), build.get("id")));
+        }
+
+        return choices;
+    }
+
 }
 

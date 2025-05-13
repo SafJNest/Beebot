@@ -726,5 +726,17 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         return sortedString.toString();
     }
 
+    public static QueryCollection getFocusedCustomBuild(String name){
+        return safJQuery("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
+    }
+
+    public static QueryRecord getCustomBuild(String id){
+        return fetchJRow("SELECT id, name, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + "");
+    }
+
+    public static QueryCollection getCustomBuildByUser(String user_id){
+        return safJQuery("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
+    }
+
 
 }
