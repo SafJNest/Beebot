@@ -161,7 +161,7 @@ public class Build extends SlashCommand {
         
         
         champName = LeagueHandler.transposeChampionNameForDataDragon(champName);
-        eb.setThumbnail(LeagueHandler.getChampionProfilePic(champName));
+        eb.setThumbnail(LeagueHandler.getChampionProfilePic(build.getChampion().getId(), build.getSkin()));
         eb.setFooter("Do not run it down mid!", "https://cdn.discordapp.com/emojis/776346468700389436.png"); 
 
         event.getHook().editOriginalEmbeds(eb.build()).queue();
