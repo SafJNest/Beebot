@@ -35,6 +35,7 @@ import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.CustomBuildData;
 import com.safjnest.util.lol.LeagueHandler;
 
 public class LeagueDBHandler {
@@ -730,8 +731,8 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         return safJQuery("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static QueryRecord getCustomBuild(String id){
-        return fetchJRow("SELECT id, name, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + "");
+    public static CustomBuildData getCustomBuild(String id){
+        return new CustomBuildData(fetchJRow("SELECT id, name, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
     }
 
     public static QueryCollection getCustomBuildByUser(String user_id){

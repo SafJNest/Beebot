@@ -2,6 +2,10 @@ package com.safjnest.util.lol;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safjnest.sql.QueryRecord;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 import java.util.*;
 
@@ -19,6 +23,61 @@ public class BuildData {
     private List<String> skillOrder;
 
     private LinkedHashMap<String, List<String>> buildMap;
+
+    private StaticChampion champion;
+    private LaneType lane;
+
+    private String winrate;
+    private String matchCount;
+    private String patch;
+
+    public BuildData(QueryRecord query) {
+
+      this.champion = LeagueHandler.getChampionById(query.getAsInt("champion"));
+      this.lane = LaneType.values()[query.getAsInt("lane")];
+
+      ObjectMapper mapper = new ObjectMapper();
+      try {
+          JsonNode root = mapper.readTree(query.get("build"));
+
+          JsonNode runes = root.get("runes");
+          this.primaryRunes = jsonArrayToList(runes.get("primary"));
+          this.secondaryRunes = jsonArrayToList(runes.get("secondary"));
+          this.statRunes = jsonArrayToList(runes.get("stats"));
+
+          JsonNode build = root.get("build");
+          this.buildMap = new LinkedHashMap<>();
+
+          for (Iterator<String> it = build.fieldNames(); it.hasNext(); ) {
+              String key = it.next();
+              JsonNode value = build.get(key);
+
+              List<String> list;
+              if (value.isArray()) {
+                  list = new ArrayList<>();
+                  for (JsonNode item : value) {
+                      list.add(item.asText());
+                  }
+              } else {
+                  list = List.of(value.asText());
+              }
+
+              this.buildMap.put(key, list);
+          }
+
+          this.starterItems = this.buildMap.getOrDefault("starter", Collections.emptyList());
+          this.buildItems = this.buildMap.getOrDefault("build", Collections.emptyList());
+          this.boots = this.buildMap.getOrDefault("boots", List.of()).stream().findFirst().orElse("");
+          
+
+          this.summonerSpells = jsonArrayToList(root.get("summoner_spells"));
+          this.skillOrder = jsonArrayToList(root.get("skill_order"));
+
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+
+    }
 
     public String getPrimaryRunesRoot() {
         return primaryRunes.get(0);
@@ -84,63 +143,12 @@ public class BuildData {
         return buildMap;
     }
 
+    public StaticChampion getChampion() {
+      return champion;
+    }
 
-    /**
-     * da rifare assolutamente da capo
-     * fatta random chatgpt solo per vedere se il comando funzionava
-     * magari metterlo nel costrutture in cui passi il json o qualche puttanata dal genere
-     * estendere anche per le build di mobalytics
-     * @param json
-     * @return
-     */
-    public static BuildData fromJson(String json) {
-        BuildData data = new BuildData();
-        ObjectMapper mapper = new ObjectMapper();
-
-        try {
-            JsonNode root = mapper.readTree(json);
-
-            // Runes
-            JsonNode runes = root.get("runes");
-            data.primaryRunes = jsonArrayToList(runes.get("primary"));
-            data.secondaryRunes = jsonArrayToList(runes.get("secondary"));
-            data.statRunes = jsonArrayToList(runes.get("stats"));
-
-            // Build
-            JsonNode build = root.get("build");
-            data.buildMap = new LinkedHashMap<>();
-
-            if (build != null) {
-                for (Iterator<String> it = build.fieldNames(); it.hasNext(); ) {
-                    String key = it.next();
-                    JsonNode value = build.get(key);
-
-                    List<String> list;
-                    if (value.isArray()) {
-                        list = new ArrayList<>();
-                        for (JsonNode item : value) {
-                            list.add(item.asText());
-                        }
-                    } else {
-                        list = List.of(value.asText());
-                    }
-
-                    data.buildMap.put(key, list);
-                }
-
-                data.starterItems = data.buildMap.getOrDefault("starter", Collections.emptyList());
-                data.buildItems = data.buildMap.getOrDefault("build", Collections.emptyList());
-                data.boots = data.buildMap.getOrDefault("boots", List.of()).stream().findFirst().orElse("");
-            }
-
-            data.summonerSpells = jsonArrayToList(root.get("summoner_spells"));
-            data.skillOrder = jsonArrayToList(root.get("skill_order"));
-
-        } catch (Exception e) {
-            e.printStackTrace(); // gestiscilo meglio in produzione
-        }
-
-        return data;
+    public LaneType getLane() {
+      return lane;
     }
 
     private static List<String> jsonArrayToList(JsonNode arrayNode) {
