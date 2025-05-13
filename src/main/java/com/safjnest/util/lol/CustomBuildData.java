@@ -7,12 +7,14 @@ public class CustomBuildData extends BuildData {
     private String name;
     private String description;
     private String userId;
+    private String skin;
 
     public CustomBuildData(QueryRecord result) {
       super(result);
       this.name = result.get("name");
       this.description = result.get("description");
       this.userId = result.get("user_id");
+      this.skin = result.get("skin");
     }
 
     public String getName() {
@@ -25,5 +27,9 @@ public class CustomBuildData extends BuildData {
 
     public String getUserId() {
       return userId;
+    }
+
+    public String getSkin() {
+      return skin;
     }
 }

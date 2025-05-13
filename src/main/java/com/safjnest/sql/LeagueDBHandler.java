@@ -732,7 +732,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
     }
 
     public static CustomBuildData getCustomBuild(String id){
-        return new CustomBuildData(fetchJRow("SELECT id, name, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
+        return new CustomBuildData(fetchJRow("SELECT id, name, skin, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
     }
 
     public static QueryCollection getCustomBuildByUser(String user_id){
