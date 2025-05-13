@@ -8,17 +8,15 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.lol.BuildData;
+import com.safjnest.util.lol.CustomBuildData;
 import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
 
@@ -54,17 +52,12 @@ public class Build extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
 
-        QueryRecord result = LeagueDBHandler.getCustomBuild(event.getOption("custom-build").getAsString());
-        BuildData build = BuildData.fromJson(result.get("build"));
+        CustomBuildData build = LeagueDBHandler.getCustomBuild(event.getOption("custom-build").getAsString());
         
-        int championId = result.getAsInt("champion");
-        int lane = result.getAsInt("lane");
-
-        StaticChampion champion = LeagueHandler.getChampionById(championId);
-        String champName = champion.getName();
+        String champName = build.getChampion().getName();
         
         String laneFormatName =  "";
-        switch(lane){
+        switch(build.getLane().ordinal()){
             case 0:
                 laneFormatName = "Top Lane";
                 break;
@@ -85,13 +78,13 @@ public class Build extends SlashCommand {
         
         EmbedBuilder eb = new EmbedBuilder(); 
         eb = new EmbedBuilder(); 
-        eb.setTitle(result.get("name")); 
-        if (!result.get("user_id").isEmpty())
-            eb.setAuthor(event.getJDA().getUserById(result.get("user_id")).getName(), "https://github.com/SafJNest", event.getJDA().getUserById(result.get("user_id")).getAvatarUrl());   
+        eb.setTitle(build.getName()); 
+        if (!build.getUserId().isEmpty())
+            eb.setAuthor(event.getJDA().getUserById(build.getUserId()).getName(), "https://github.com/SafJNest", event.getJDA().getUserById(build.getUserId()).getAvatarUrl());   
         else
             eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl());       
         
-        eb.setDescription(result.get("description"));
+        eb.setDescription(build.getDescription());
 
 
         

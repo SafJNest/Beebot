@@ -1064,7 +1064,7 @@
     },
 
     "build":{
-        "help"  : "Show the best build and runes for a champion.",
+        "help"  : "Search for a build made by other user!",
         "category" : "League Of Legends",
         "arguments" : "[CommandName]"
     },
