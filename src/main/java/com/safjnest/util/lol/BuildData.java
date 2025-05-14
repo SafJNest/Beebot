@@ -79,6 +79,47 @@ public class BuildData {
 
     }
 
+    public BuildData(StaticChampion champion, LaneType lane, String json) {
+        this.champion = champion;
+        this.lane = lane;
+
+        String[] runes = MobalyticsHandler.getRunes(json);
+        String[] roots = MobalyticsHandler.getRunesRoot(json);
+        this.primaryRunes = List.of(roots[0], runes[0], runes[1], runes[2], runes[3]);
+        this.secondaryRunes = List.of(roots[1], runes[4], runes[5]);
+        this.statRunes = List.of(runes[6], runes[7], runes[8]);
+
+        this.summonerSpells = List.of(MobalyticsHandler.getSummonerSpell(json));
+        this.skillOrder = List.of(MobalyticsHandler.getSkillsOrder(json));
+
+        this.buildMap = new LinkedHashMap<>();
+
+        String[] starter = MobalyticsHandler.getBuild(json, 0);
+        if (starter != null) this.buildMap.put("starter", List.of(starter));
+
+        String[] core = MobalyticsHandler.getBuild(json, 2);
+        if (core != null) this.buildMap.put("core", List.of(core));
+
+        String[] fullBuild = MobalyticsHandler.getBuild(json, 3);
+        if (fullBuild != null) this.buildMap.put("fullbuild", List.of(fullBuild));
+
+        String[] situational = MobalyticsHandler.getBuild(json, 4);
+        if (situational != null) this.buildMap.put("situational", List.of(situational));
+
+        this.starterItems = this.buildMap.getOrDefault("starter", Collections.emptyList());
+        this.buildItems = this.buildMap.getOrDefault("build", Collections.emptyList());
+
+        List<String> bootsList = this.buildMap.getOrDefault("boots", List.of());
+        this.boots = bootsList.isEmpty() ? "" : bootsList.get(0);
+
+        this.patch = MobalyticsHandler.getPatch(json);
+        
+        String winRateRaw = MobalyticsHandler.getWinRate(json);
+        this.winrate = winRateRaw.substring(0, winRateRaw.indexOf(".") + 3);
+
+        this.matchCount = MobalyticsHandler.getMatchCount(json);
+    }
+
     public String getPrimaryRunesRoot() {
         return primaryRunes.get(0);
     }
@@ -159,6 +200,18 @@ public class BuildData {
             }
         }
         return list;
+    }
+
+    public String getPatch() {
+        return patch;
+    }
+
+    public String getWinrate() {
+        return winrate;
+    }
+
+    public String getGames() {
+        return matchCount;
     }
 
     @Override
