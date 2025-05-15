@@ -115,20 +115,10 @@ public class Champion extends SlashCommand {
         }
 
         BuildData build = new BuildData(champion, laneType, json);
-
-        System.out.println(build);
-        
                 
-        /*
-         * Description
-         */
-        //eb.setDescription("**Highest Win Rate** info for " + RiotHandler.getFormattedEmoji(event.getJDA(), champName) + " " + champName + " " + RiotHandler.getFormattedEmoji(event.getJDA(), laneFormatName) + " **" + laneFormatName + "**");
         eb.setDescription("Patch **" + build.getPatch() + "** | Win rate **" + build.getWinrate() + "%** based on **" + build.getGames() + "** matches");
         eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + build.getPatch() + ")**");
         
-        /*
-        *  Skill Order
-        */
         String msg = "";
         for(int i = 0; i < 18; i++){
             switch (build.getSkillOrder().get(i)){
@@ -149,9 +139,6 @@ public class Champion extends SlashCommand {
         }
         
         eb.addField("**Skill Order**", msg.substring(0, msg.length()-2), false);
-        /*
-        *  Summoner Spells
-        */
         eb.addField("**Summoner Spells**", CustomEmojiHandler.getFormattedEmoji(build.getD() + "_") + " " + CustomEmojiHandler.getFormattedEmoji(build.getF() + "_") + "\n​\n", false);//DO NOT TOUCH \N\N THERE IS AN INVISIBLEAR CHARFATERT
 
         msg = "";
@@ -163,9 +150,7 @@ public class Champion extends SlashCommand {
         String support = LeagueHandler.getRunesHandler().get(build.getPrimaryRunesRoot()).getName();
         eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
 
-        /*
-         * Second Runes Root
-        */
+
         msg = "";
         List<String> secondaryRunes = build.getSecondaryRunes();
         for (int i = 1; i < secondaryRunes.size(); i++) {
@@ -175,9 +160,7 @@ public class Champion extends SlashCommand {
         support = LeagueHandler.getRunesHandler().get(build.getSecondaryRunesRoot()).getName();
         eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
 
-        /*
-        * shard
-        */
+
         msg = "";
         msg += CustomEmojiHandler.getFormattedEmoji(build.getOffense()) + " Offense\n";
         msg += CustomEmojiHandler.getFormattedEmoji(build.getFlex()) + " Flex\n";
