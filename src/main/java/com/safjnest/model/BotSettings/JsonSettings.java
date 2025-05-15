@@ -1,7 +1,5 @@
 package com.safjnest.model.BotSettings;
 
-import com.apollographql.apollo.subscription.OperationServerMessage.Data;
-
 public class JsonSettings {
     private AWSSettings amazonAWS;
     private DatabaseSettings postgreSQL;
@@ -10,6 +8,7 @@ public class JsonSettings {
     private DatabaseSettings database;
     private DatabaseSettings testDatabase;
     private DatabaseSettings testWebsiteDatabase;
+    private DatabaseSettings leagueDatabase;
     private OpenAISettings openAI;
     private RiotSettings riot;
     private TwitchSettings twitch;
@@ -63,6 +62,12 @@ public class JsonSettings {
     }
     public void setTestWebsiteDatabase(DatabaseSettings testWebsiteDatabase) {
         this.testWebsiteDatabase = testWebsiteDatabase;
+    }
+    public DatabaseSettings getLeagueDatabase() {
+        return leagueDatabase;
+    }
+    public void setLeagueDatabase(DatabaseSettings leagueDatabase) {
+        this.leagueDatabase = leagueDatabase;
     }
     public OpenAISettings getOpenAI() {
         return openAI;
