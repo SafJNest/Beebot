@@ -585,6 +585,10 @@ import com.safjnest.core.cache.managers.UserCache;
         return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/champion/"+champ+".png";
     }
 
+    public static String getChampionProfilePic(int champ, String skin){
+        return "https://cdn.communitydragon.org/"+version+"/champion/"+champ+"/tile/skin/" + skin;
+    }
+
 //     ▄████████ ███▄▄▄▄       ███        ▄████████ ▄██   ▄
 //    ███    ███ ███▀▀▀██▄ ▀█████████▄   ███    ███ ███   ██▄
 //    ███    █▀  ███   ███    ▀███▀▀██   ███    ███ ███▄▄▄███

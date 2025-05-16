@@ -1063,6 +1063,12 @@
         "arguments" : "[CommandName]"
     },
 
+    "build":{
+        "help"  : "Search for a build made by other user!",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName]"
+    },
+
     "augment":{
         "alias" : ["aug"],
         "help"  : "Show information about an augment.",
