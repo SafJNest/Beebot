@@ -1077,6 +1077,30 @@ public class Test extends Command{
                     List<String> a = new ArrayList<String>();
                     a.get(0);
                 break;
+                case "pushsamplegame":
+                    ChronoTask sampleTask =  () -> MatchTracker.retriveSampleGames();
+                    sampleTask.queue();
+                break;
+                case "fixaccountid":
+                    query = "SELECT id, puuid, league_shard FROM summoner WHERE account_id IS NULL ORDER BY id DESC";
+                    res = LeagueDBHandler.safJQuery(query);
+                    ChronoTask fixaccountTask = () -> {
+                        int n = 0;
+                        for (QueryRecord sum : res) {
+                            Summoner sssss = LeagueHandler.getSummonerByPuiid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
+                            String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
+                            LeagueDBHandler.runQuery(fixQuery);
+                            n++;
+                            try {
+                                Thread.sleep(500);
+                            } catch (Exception ee) {
+                               ee.printStackTrace();
+                            }
+                            System.out.println(n + "/" + res.size());
+                        }
+                    };
+                    fixaccountTask.queue();
+                break;
         }
     }  
 
