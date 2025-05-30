@@ -206,7 +206,7 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = LeagueDBHandler.addLOLAccount(USER_ID, s);
+        boolean result = LeagueDBHandler.addLOLAccount(USER_ID, s) > 0;
         if (result) riotAccounts.put(s.getAccountId(), String.valueOf(s.getPlatform().ordinal()));
         
         return result;

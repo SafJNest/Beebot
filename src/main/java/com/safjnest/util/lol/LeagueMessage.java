@@ -103,7 +103,7 @@ public class LeagueMessage {
 
 
     public static EmbedBuilder getSummonerEmbed(Summoner s, long time_start, long time_end, GameQueueType queue) {
-        LeagueHandler.updateSummonerDB(s);
+        int summonerId = LeagueHandler.updateSummonerDB(s);
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
 
         EmbedBuilder builder = new EmbedBuilder();
@@ -123,6 +123,9 @@ public class LeagueMessage {
 
         builder.addField("Solo/duo", LeagueHandler.getSoloQStats(s), true);
         builder.addField("Flex", LeagueHandler.getFlexStats(s), true);
+
+        LeagueDBHandler.updateSummonerMasteries(summonerId, s.getChampionMasteries());
+        LeagueDBHandler.updateSummonerEntries(summonerId, s.getLeagueEntry());
 
         String masteryString = "";
         for(int i = 1; i < 4; i++)
