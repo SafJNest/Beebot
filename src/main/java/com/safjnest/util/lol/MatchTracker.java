@@ -55,8 +55,8 @@ public class MatchTracker {
             ChronoTask trackQueuedGames = () -> popSet();
             trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
             
-            ChronoTask trackSampleGames = () -> retriveSampleGames();
-            trackSampleGames.scheduleAtFixedTime(2, 0, 0);
+            //ChronoTask trackSampleGames = () -> retriveSampleGames();
+            //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
         }
 	}
 
