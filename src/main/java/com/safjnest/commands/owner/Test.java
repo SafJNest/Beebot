@@ -1087,15 +1087,19 @@ public class Test extends Command{
                     ChronoTask fixaccountTask = () -> {
                         int n = 0;
                         for (QueryRecord sum : res) {
-                            Summoner sssss = LeagueHandler.getSummonerByPuiid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
-                            String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
-                            LeagueDBHandler.runQuery(fixQuery);
-                            n++;
                             try {
-                                Thread.sleep(500);
-                            } catch (Exception ee) {
-                               ee.printStackTrace();
+                                Summoner sssss = LeagueHandler.getSummonerByPuiid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
+                                String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
+                                LeagueDBHandler.runQuery(fixQuery);
+                                try {
+                                    Thread.sleep(500);
+                                } catch (Exception ee) {
+                                ee.printStackTrace();
+                                }
+                            } catch (Exception eeee) {
+                               eeee.printStackTrace();
                             }
+                            n++;
                             System.out.println(n + "/" + res.size());
                         }
                     };
@@ -1107,16 +1111,20 @@ public class Test extends Command{
                     ChronoTask bullshit = () -> {
                         int n = 0;
                         for (QueryRecord sum : res) {
-                            Summoner sssss = LeagueHandler.getSummonerByPuiid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
-                            int summonerId = LeagueHandler.updateSummonerDB(sssss);
-                            n++;
                             try {
-                                Thread.sleep(500);
-                            } catch (Exception ee) {
-                               ee.printStackTrace();
+                                Summoner sssss = LeagueHandler.getSummonerByPuiid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
+                                int summonerId = LeagueHandler.updateSummonerDB(sssss);
+                                try {
+                                    Thread.sleep(500);
+                                } catch (Exception ee) {
+                                ee.printStackTrace();
+                                }
+                                LeagueDBHandler.updateSummonerMasteries(summonerId, sssss.getChampionMasteries());
+                                LeagueDBHandler.updateSummonerEntries(summonerId, sssss.getLeagueEntry());
+                            } catch (Exception eeee) {
+                                eeee.printStackTrace();
                             }
-                            LeagueDBHandler.updateSummonerMasteries(summonerId, sssss.getChampionMasteries());
-                            LeagueDBHandler.updateSummonerEntries(summonerId, sssss.getLeagueEntry());
+                            n++;
                             System.out.println(n + "/" + res.size());
                         }
                     };
