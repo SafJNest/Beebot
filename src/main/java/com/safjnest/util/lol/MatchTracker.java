@@ -547,6 +547,7 @@ public class MatchTracker {
         BotLogger.info("[LPTracker] Pushing sample matches");
         List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.PH2, LeagueShard.ME1, LeagueShard.TR1);
         for (LeagueShard shard : shards) {
+            System.out.println(shard);
             for (int i =  TierDivisionType.CHALLENGER_I.ordinal(); i <= TierDivisionType.MASTER_I.ordinal(); i++) {
                 try {
                     TierDivisionType rank = TierDivisionType.values()[i];
