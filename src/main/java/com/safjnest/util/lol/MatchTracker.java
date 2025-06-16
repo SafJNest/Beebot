@@ -55,8 +55,8 @@ public class MatchTracker {
             ChronoTask trackQueuedGames = () -> popSet();
             trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
             
-            //ChronoTask trackSampleGames = () -> retriveSampleGames();
-            //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
+            ChronoTask trackSampleGames = () -> retriveSampleGames();
+            trackSampleGames.scheduleAtFixedTime(2, 0, 0);
         }
 	}
 
@@ -551,7 +551,7 @@ public class MatchTracker {
                     if (rank.getDivision().equals("V")) continue;
 
                     List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, rank, 0);
-                    int size = entries.size() < 711 ? entries.size() : 711;
+                    int size = TierDivisionType.CHALLENGER_I == rank ? entries.size() : (entries.size() < 117 ? entries.size() : 117);
 
                     BotLogger.info("[LPTracker] Start analyzing " + size + " matches for region " + shard + " and rank " + rank);
 
