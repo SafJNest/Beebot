@@ -289,7 +289,8 @@ public class MatchTracker {
 
             if (match.getGameId() == dataGame.getAsLong("game_id")) return;
 
-            LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
+            List<LeagueEntry> entries = summoner.getLeagueEntry();
+            LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
 
             TierDivisionType oldDivision = dataGame.getAsInt("rank") != UNKNOWN_RANK ? TierDivisionType.values()[dataGame.getAsInt("rank")] : null;
             TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
@@ -309,7 +310,8 @@ public class MatchTracker {
                 gain = lp - dataGame.getAsInt("lp");
             }
 
-            LeagueDBHandler.addLOLAccount(summoner);
+            int summonerId = LeagueDBHandler.addLOLAccount(summoner);
+            LeagueDBHandler.updateSummonerEntries(summonerId, entries);
             LeagueDBHandler.setSummonerData(summoner.getAccountId(), summonerMatch, win, kda, rank, lp, gain, champion, lane, side, createJSONBuild(matchData));
         };
     }
