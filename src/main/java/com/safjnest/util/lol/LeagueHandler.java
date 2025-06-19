@@ -556,8 +556,8 @@ import com.safjnest.core.cache.managers.UserCache;
         return summoners;
     }
 
-    public static void updateSummonerDB(Summoner summoner) {
-        LeagueDBHandler.addLOLAccount(summoner);
+    public static int updateSummonerDB(Summoner summoner) {
+        return LeagueDBHandler.addLOLAccount(summoner);
     }
 
     public static void updateSummonerDB(SpectatorGameInfo game) {

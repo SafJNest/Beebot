@@ -289,7 +289,8 @@ public class MatchTracker {
 
             if (match.getGameId() == dataGame.getAsLong("game_id")) return;
 
-            LeagueEntry league = summoner.getLeagueEntry().stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
+            List<LeagueEntry> entries = summoner.getLeagueEntry();
+            LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
 
             TierDivisionType oldDivision = dataGame.getAsInt("rank") != UNKNOWN_RANK ? TierDivisionType.values()[dataGame.getAsInt("rank")] : null;
             TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
@@ -309,7 +310,8 @@ public class MatchTracker {
                 gain = lp - dataGame.getAsInt("lp");
             }
 
-            LeagueDBHandler.addLOLAccount(summoner);
+            int summonerId = LeagueDBHandler.addLOLAccount(summoner);
+            LeagueDBHandler.updateSummonerEntries(summonerId, entries);
             LeagueDBHandler.setSummonerData(summoner.getAccountId(), summonerMatch, win, kda, rank, lp, gain, champion, lane, side, createJSONBuild(matchData));
         };
     }
@@ -543,15 +545,16 @@ public class MatchTracker {
 
     public static void retriveSampleGames() {
         BotLogger.info("[LPTracker] Pushing sample matches");
-        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.PH2, LeagueShard.ME1, LeagueShard.TR1);
+        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
         for (LeagueShard shard : shards) {
+            System.out.println(shard);
             for (int i =  TierDivisionType.CHALLENGER_I.ordinal(); i <= TierDivisionType.MASTER_I.ordinal(); i++) {
                 try {
                     TierDivisionType rank = TierDivisionType.values()[i];
                     if (rank.getDivision().equals("V")) continue;
 
                     List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, rank, 0);
-                    int size = entries.size() < 711 ? entries.size() : 711;
+                    int size = TierDivisionType.CHALLENGER_I == rank ? entries.size() : (entries.size() < 117 ? entries.size() : 117);
 
                     BotLogger.info("[LPTracker] Start analyzing " + size + " matches for region " + shard + " and rank " + rank);
 
