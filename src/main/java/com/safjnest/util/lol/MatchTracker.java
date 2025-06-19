@@ -50,7 +50,7 @@ public class MatchTracker {
 	static {
         if(!App.isTesting()) {
             ChronoTask track = () -> retriveSummoners();
-            track.scheduleAtFixedRate(TimeConstant.MINUTE * 1, period, TimeUnit.MILLISECONDS);
+            track.scheduleAtFixedRate(TimeConstant.MINUTE * 0, period, TimeUnit.MILLISECONDS);
 
             ChronoTask trackQueuedGames = () -> popSet();
             trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
@@ -68,7 +68,7 @@ public class MatchTracker {
             for (QueryRecord account : result) {
                 Summoner summoner = null;
                 try {
-                    summoner = LeagueHandler.getSummonerByAccountId(account.get("account_id"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
+                    summoner = LeagueHandler.getSummonerByPuuid(account.get("puuid"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
                     if (summoner == null) 
                         throw new Exception("account null ??????");
                     
@@ -289,7 +289,7 @@ public class MatchTracker {
 
             if (match.getGameId() == dataGame.getAsLong("game_id")) return;
 
-            List<LeagueEntry> entries = summoner.getLeagueEntry();
+            List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
             LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
 
             TierDivisionType oldDivision = dataGame.getAsInt("rank") != UNKNOWN_RANK ? TierDivisionType.values()[dataGame.getAsInt("rank")] : null;

@@ -809,12 +809,10 @@ public class EventButtonHandler extends ListenerAdapter {
         HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        String account_id = puuid;
-
         int i = 0;
         for (String k : accounts.keySet()) {
-            if (LeagueHandler.getSummonerByAccountId(k, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getAccountId().equals(puuid)) {
-                account_id = k;
+            if (LeagueHandler.getSummonerByPuuid(k, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getPUUID().equals(puuid)) {
+                puuid = k;
                 index = i;
                 break;
             }
@@ -836,17 +834,16 @@ public class EventButtonHandler extends ListenerAdapter {
                 if ((index + 1) == accounts.size()) index = 0;
                 else index += 1;
 
-                account_id = (String) accounts.keySet().toArray()[index];
-
-                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
+                puuid = (String) accounts.keySet().toArray()[index];
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
+                
                 break;
             case "left":
                 if (index == 0) index = accounts.size() - 1;
                 else index -= 1;
 
-                account_id = (String) accounts.keySet().toArray()[index];
-
-                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(account_id))));
+                puuid = (String) accounts.keySet().toArray()[index];
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
                 break;
             case "refresh":
                 for (Button b : event.getMessage().getButtons()) {
@@ -861,17 +858,17 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
 
-                s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+                s = LeagueHandler.getSummonerByPuuid(accountId, LeagueShard.valueOf(platform));
                 LeagueHandler.clearSummonerCache(s);
                 break;
             case "match":
-                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
                 event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, null, 0)).queue();
                 return;
             case "rank":
-                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
 
@@ -895,7 +892,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 platform = parts[2].substring(parts[2].indexOf("#") + 1);
 
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+                s = LeagueHandler.getSummonerByPuuid(accountId, LeagueShard.valueOf(platform));
             break;
             case "queue":
                 parts = event.getButton().getId().split("-", 3);
@@ -921,7 +918,7 @@ public class EventButtonHandler extends ListenerAdapter {
                     }
                 }
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
             case "season":
                 parts = event.getButton().getId().split("-", 3);
@@ -946,7 +943,7 @@ public class EventButtonHandler extends ListenerAdapter {
                     }
                 }
                 if (event.getMessage().getButtonById("lol-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByAccountId(account_id, LeagueShard.valueOf(region));
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
         }
 

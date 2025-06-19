@@ -190,7 +190,7 @@ public class UserData {
 
         this.riotAccounts = new LinkedHashMap<>();
         for(QueryRecord row: result){
-            riotAccounts.put(row.get("account_id"), row.get("league_shard"));
+            riotAccounts.put(row.get("puuid"), row.get("league_shard"));
         }
     }
 

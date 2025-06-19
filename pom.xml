@@ -279,7 +279,7 @@
     <dependency>
       <groupId>com.github.stelar7</groupId>
       <artifactId>R4J</artifactId>
-      <version>2.5.6</version>
+      <version>c7e7a1a4b1be2787e2b7407b06d3294cea4722d0</version>
     </dependency>
 
     <dependency>

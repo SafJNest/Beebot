@@ -450,7 +450,7 @@ import com.safjnest.core.cache.managers.UserCache;
             String firstAccount = accounts.keySet().stream().findFirst().get();
             LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(firstAccount))];
 
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, firstAccount);
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, firstAccount);
         } catch (Exception e) {return null;}
     }
 
@@ -486,6 +486,12 @@ import com.safjnest.core.cache.managers.UserCache;
     public static Summoner getSummonerByAccountId(String id, LeagueShard shard){
         try {
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, id);
+        } catch (Exception e) { return null; }
+    }
+
+    public static Summoner getSummonerByPuuid(String id, LeagueShard shard){
+        try {
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, id);
         } catch (Exception e) { return null; }
     }
 
@@ -608,7 +614,7 @@ import com.safjnest.core.cache.managers.UserCache;
         String stats = "";
         for(int i = 0; i < 3; i++){
             try {
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
                     stats = getStatsByEntry(entry);
 
@@ -621,7 +627,7 @@ import com.safjnest.core.cache.managers.UserCache;
         String stats = "";
         for(int i = 0; i < 3; i++){
             try {
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
                     stats = getStatsByEntry(entry);
             } catch (Exception e) { }
@@ -638,7 +644,7 @@ import com.safjnest.core.cache.managers.UserCache;
     public static LeagueEntry getRankEntry(String summonerId, LeagueShard shard) {
         try {
             for(int i = 0; i < 3; i++){
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, summonerId).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
                     return entry;
             }
@@ -649,7 +655,7 @@ import com.safjnest.core.cache.managers.UserCache;
     public static LeagueEntry getFlexEntry(String summonerId, LeagueShard shard) {
         try {
             for(int i = 0; i < 3; i++){
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, summonerId).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
                     return entry;
             }
@@ -658,14 +664,14 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static LeagueEntry getRankEntry(Summoner s) {
-        return getRankEntry(s.getSummonerId(), s.getPlatform());
+        return getRankEntry(s.getPUUID(), s.getPlatform());
     }
 
-    public static LeagueEntry getEntry(GameQueueType type, String summonerId, LeagueShard shard) {
+    public static LeagueEntry getEntry(GameQueueType type, String puuid, LeagueShard shard) {
         if (type == GameQueueType.CHERRY) type = GameQueueType.RANKED_SOLO_5X5;
         LeagueEntry def = null;
         try {
-            List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId);
+            List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, puuid);
             for (LeagueEntry entry : entries) {
                 if (entry.getQueueType().equals(type)) return entry;
                 if (entry.getQueueType() == GameQueueType.RANKED_SOLO_5X5) def = entry;
