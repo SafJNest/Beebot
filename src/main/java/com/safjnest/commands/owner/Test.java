@@ -1087,19 +1087,48 @@ public class Test extends Command{
                     ChronoTask fixaccountTask = () -> {
                         int n = 0;
                         for (QueryRecord sum : res) {
-                            Summoner sssss = LeagueHandler.getSummonerByPuiid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
-                            String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
-                            LeagueDBHandler.runQuery(fixQuery);
-                            n++;
                             try {
-                                Thread.sleep(500);
-                            } catch (Exception ee) {
-                               ee.printStackTrace();
+                                Summoner sssss = LeagueHandler.getSummonerByPuiid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
+                                String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
+                                LeagueDBHandler.runQuery(fixQuery);
+                                try {
+                                    Thread.sleep(500);
+                                } catch (Exception ee) {
+                                ee.printStackTrace();
+                                }
+                            } catch (Exception eeee) {
+                               eeee.printStackTrace();
                             }
+                            n++;
                             System.out.println(n + "/" + res.size());
                         }
                     };
                     fixaccountTask.queue();
+                break;
+                case "insertbullshit":
+                    query = "SELECT s.id, s.puuid, s.league_shard FROM summoner s LEFT JOIN rank r ON s.id = r.summoner_id LEFT JOIN masteries m ON s.id = m.summoner_id WHERE r.summoner_id IS NULL AND m.summoner_id IS NULL ORDER BY s.id DESC;";
+                    res = LeagueDBHandler.safJQuery(query);
+                    ChronoTask bullshit = () -> {
+                        int n = 0;
+                        for (QueryRecord sum : res) {
+                            try {
+                                Summoner sssss = LeagueHandler.getSummonerByPuiid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
+                                int summonerId = LeagueHandler.updateSummonerDB(sssss);
+                                try {
+                                    Thread.sleep(500);
+                                } catch (Exception ee) {
+                                ee.printStackTrace();
+                                }
+                                LeagueDBHandler.updateSummonerMasteries(summonerId, sssss.getChampionMasteries());
+                                LeagueDBHandler.updateSummonerEntries(summonerId, sssss.getLeagueEntry());
+                            } catch (Exception eeee) {
+                                eeee.printStackTrace();
+                            }
+                            n++;
+                            System.out.println(n + "/" + res.size());
+                        }
+                    };
+                    bullshit.queue();
                 break;
         }
     }  

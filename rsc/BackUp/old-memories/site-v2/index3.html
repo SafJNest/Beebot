@@ -1,0 +1,55 @@
+ <!DOCTYPE html>
+<html>
+	<head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+        <link rel="shortcut icon" type="image/x-icon" href="../assets/img/favicon.ico" />
+		<title>Beebot</title>
+	</head>
+	<body>
+		
+        <div id="loginDiv">
+            <button id="loginBtn" onclick="redirectToDiscordLogin()">Identify Yourself</button>
+        </div>
+	
+        <script>
+            window.onload = () => {
+                const fragment = new URLSearchParams(window.location.hash.slice(1));
+                const [accessToken, tokenType] = [fragment.get('access_token'), fragment.get('token_type')];
+                if (!accessToken) {
+                    return (document.getElementById('loginBtn').style.display = 'block');
+                }
+                fetch('https://discord.com/api/users/@me', {
+                    headers: {
+                        authorization: `${tokenType} ${accessToken}`,
+                    },
+                })
+                .then(result => result.json())
+                .then(response => {
+                    const {username, discriminator, id} = response;
+                    $.ajax({
+                        type: 'POST',
+                        url: getBaseUrl() + '/assets/php/session.php',
+                        data: {'response':response, 'accessToken':accessToken, 'tokenType':tokenType},
+                        success: function(content) {
+                            window.location.href = 'dashboard.php';
+                        }
+                    });
+                    
+                })
+                .catch(console.error);
+            };
+
+            function redirectToDiscordLogin() {
+                window.location.href = 'https://discord.com/api/oauth2/authorize?client_id=938487470339801169&redirect_uri=' + getBaseUrl() + '/index3.html/&response_type=token&scope=identify%20guilds';
+            }
+
+            function getBaseUrl(){
+                let url = document.location.origin;
+                if(url.includes('localhost')){
+                    url += '/phpmyadmin/safjweb';
+                }
+                return url;
+            }
+        </script>
+    </body>
+</html>

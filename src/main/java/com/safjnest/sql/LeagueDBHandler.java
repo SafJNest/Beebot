@@ -22,6 +22,8 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
+import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
@@ -422,15 +424,16 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         return safJQuery(combinedQuery);
     }
 
-    public static boolean addLOLAccount(Summoner summoner) {
+    public static int addLOLAccount(Summoner summoner) {
         return addLOLAccount(null, summoner);
     }
 
-    public static boolean addLOLAccount(String user_id, Summoner summoner) {
+    public static int addLOLAccount(String user_id, Summoner summoner) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         String query = "INSERT INTO summoner(user_id, summoner_id, account_id, puuid, riot_id, league_shard) " +
                 "VALUES(?, ?, ?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE " +
+                "id = LAST_INSERT_ID(id), " +
                 "user_id = IF(VALUES(user_id) IS NOT NULL, VALUES(user_id), user_id), " +
                 "summoner_id = VALUES(summoner_id), " +
                 "account_id = VALUES(account_id), " +
@@ -438,7 +441,8 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
                 "riot_id = VALUES(riot_id), " +
                 "league_shard = VALUES(league_shard);";
 
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try (Connection conn = getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             if (user_id != null) {
                 pstmt.setString(1, user_id);
             } else {
@@ -450,12 +454,19 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             pstmt.setString(5, account.getName() + "#" + account.getTag());
             pstmt.setInt(6, summoner.getPlatform().ordinal());
 
-            int affectedRows = pstmt.executeUpdate();
+            pstmt.executeUpdate();
+            
+            ResultSet rs = pstmt.getGeneratedKeys();
+            int id = 0;
+            if (rs.next()) {
+                id = rs.getInt(1);
+            }
+            
             conn.commit();
-            return affectedRows > 0;
+            return id;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return 0;
         }
     }
 
@@ -737,6 +748,80 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
     public static QueryCollection getCustomBuildByUser(String user_id){
         return safJQuery("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
+    }
+
+    public static boolean updateSummonerMasteries(int summonerId, List<ChampionMastery> masteries) {
+        String query = "INSERT INTO masteries (summoner_id, champion_id, champion_level, champion_points, last_play_time) " +
+                       "VALUES (?, ?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "champion_level = VALUES(champion_level), " +
+                       "champion_points = VALUES(champion_points), " +
+                       "last_play_time = VALUES(last_play_time);";
+
+        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            for (ChampionMastery mastery : masteries) {
+                pstmt.setInt(1, summonerId);
+                pstmt.setLong(2, mastery.getChampionId());
+                pstmt.setInt(3, mastery.getChampionLevel());
+                pstmt.setInt(4, mastery.getChampionPoints());
+                pstmt.setTimestamp(5, new Timestamp(mastery.getLastPlayTime()));
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean updateSummonerEntries(int summonerId, List<LeagueEntry> entries) {
+        String query = "INSERT INTO `rank` (summoner_id, game_type, rank, lp, wins, losses) " +
+                       "VALUES (?, ?, ?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "rank = VALUES(rank), " +
+                       "lp = VALUES(lp), " +
+                       "wins = VALUES(wins), " +
+                       "losses = VALUES(losses);";
+        Connection conn = null;
+        try {
+            conn = getConnection();
+            conn.setAutoCommit(false);
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                for (LeagueEntry entry : entries) {
+                    pstmt.setInt(1, summonerId);
+                    pstmt.setInt(2, entry.getQueueType().ordinal());
+                    pstmt.setInt(3, entry.getTierDivisionType().ordinal());
+                    pstmt.setInt(4, entry.getLeaguePoints());
+                    pstmt.setInt(5, entry.getWins());
+                    pstmt.setInt(6, entry.getLosses());
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
+                conn.commit();
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
 
