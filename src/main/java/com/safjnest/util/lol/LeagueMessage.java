@@ -111,7 +111,7 @@ public class LeagueMessage {
         builder.setColor(Bot.getColor());
         builder.setThumbnail(LeagueHandler.getSummonerProfilePic(s));
         
-        String userId = LeagueDBHandler.getUserIdByLOLAccountId(s.getAccountId(), s.getPlatform());
+        String userId = LeagueDBHandler.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform());
         if(userId != null){
             QueryRecord data = LeagueDBHandler.getSummonerData(userId, s.getAccountId());
             if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
@@ -444,7 +444,7 @@ public class LeagueMessage {
                 String label = match.getGameDurationAsDuration().toMinutes() + " minutes " + LeagueHandler.formatMatchName(match.getQueue());
                 String description = "As " + me.getChampionName() + " (" + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " " + me.getTotalMinionsKilled() + " CS)";
 
-                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getAccountId()).withEmoji(icon).withDescription(description));
+                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getPUUID()).withEmoji(icon).withDescription(description));
             } catch (Exception e) {
                 continue;
             }

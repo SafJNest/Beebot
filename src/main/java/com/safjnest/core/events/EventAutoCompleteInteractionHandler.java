@@ -510,13 +510,11 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         }
         
         HashMap<String, String> accountNames = new HashMap<>();
-        for (String k : accounts.keySet()) {
-            String account_id = k;
-
-            LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(account_id))];
-            Summoner summoner = LeagueHandler.getSummonerByAccountId(account_id, shard);
+        for (String puuid : accounts.keySet()) {
+            LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(puuid))];
+            Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
             RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
-            accountNames.put(account_id, riotAccount.getName() + "#" + riotAccount.getTag());
+            accountNames.put(puuid, riotAccount.getName() + "#" + riotAccount.getTag());
         }
 
         ArrayList<Choice> personal = new ArrayList<>();
@@ -548,11 +546,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             }
             
             HashMap<String, String> accountNames = new HashMap<>();
-            for (String k : accounts.keySet()) {
-                String account_id = k;
-    
-                shard = LeagueShard.values()[Integer.valueOf(accounts.get(account_id))];
-                Summoner summoner = LeagueHandler.getSummonerByAccountId(account_id, shard);
+            for (String puuid : accounts.keySet()) {    
+                shard = LeagueShard.values()[Integer.valueOf(accounts.get(puuid))];
+                Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
                 RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
                 accountNames.put(riotAccount.getName() + "#" + riotAccount.getTag(), riotAccount.getName() + "#" + riotAccount.getTag());
             }

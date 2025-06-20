@@ -525,7 +525,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
     }
 
     public static boolean deleteLOLaccount(String user_id, String account_id){
-        String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';";
+        String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';";
         return runQuery(query);
     }
 

@@ -49,7 +49,7 @@ public class SummonerLink extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByArgs(event);
-
+        System.out.println(s.getPUUID());
         if(s == null){
             event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag").queue();
             return;
@@ -58,12 +58,12 @@ public class SummonerLink extends SlashCommand {
         String name = event.getOption("summoner").getAsString();
 
         UserData data = UserCache.getUser(event.getMember().getId());
-        if(data.getRiotAccounts().containsKey(s.getAccountId())){
+        if(data.getRiotAccounts().containsKey(s.getPUUID())){
             event.getHook().editOriginal("This account is already connected to your profile.").queue();
             return;
         }
 
-        if (LeagueDBHandler.getUserIdByLOLAccountId(s.getAccountId(), s.getPlatform()) != null) {
+        if (LeagueDBHandler.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform()) != null) {
             event.getHook().editOriginal("This account is already connected to another profile.\nIf you think someone has linked your account please write to our discord server support or use /bug").queue();
             return;
         }
