@@ -49,7 +49,6 @@ public class SummonerLink extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByArgs(event);
-        System.out.println(s.getPUUID());
         if(s == null){
             event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag").queue();
             return;
