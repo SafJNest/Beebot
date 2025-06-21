@@ -1,0 +1,18 @@
+RewriteEngine On
+
+# Aggiungi l'estensione .php o .html
+RewriteCond %{REQUEST_FILENAME}.php -f [OR]
+RewriteCond %{REQUEST_FILENAME}.html -f
+RewriteRule ^([^/]+)/?$ $1.php [L]
+
+# Reindirizza da dashboard.php a dashboard/
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/dashboard\.php [NC]
+RewriteRule ^dashboard\.php$ /dashboard? [R=301,L]
+
+
+# Riscrivi l'URL con una lettera come parametro
+RewriteRule ^dashboard/([0-9]+)(?:/([a-z]+))?/?$ guild.php?id=$1&page=$2 [L]
+
+
+
+
