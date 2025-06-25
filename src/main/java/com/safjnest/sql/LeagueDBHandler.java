@@ -334,12 +334,12 @@ public class LeagueDBHandler {
     }
 
 public static QueryCollection getLOLAccountsByUserId(String user_id){
-        String query = "SELECT account_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
+        String query = "SELECT puuid, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
         return safJQuery(query);
     }
 
     public static String getUserIdByLOLAccountId(String account_id, LeagueShard shard) {
-        return fetchJRow("SELECT user_id FROM summoner WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
+        return fetchJRow("SELECT user_id FROM summoner WHERE puuid = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
     }
 
     public static QueryCollection getAdvancedLOLData(String account_id) {
@@ -525,13 +525,13 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
     }
 
     public static boolean deleteLOLaccount(String user_id, String account_id){
-        String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';";
+        String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';";
         return runQuery(query);
     }
 
      public static QueryCollection getRegistredLolAccount(long time_start) {
         return safJQuery(
-            "SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
+            "SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
             + "FROM summoner s "
             + "LEFT JOIN ("
             + "    SELECT t.account_id, t.game_id, t.rank, t.lp, t.time_start "

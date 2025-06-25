@@ -185,7 +185,7 @@ public class EventHandler extends ListenerAdapter {
         if (event.getComponentId().equals("rank-select")) {
             String summonerId = event.getValues().get(0).split("#")[0];
             String platform =  event.getValues().get(0).split("#")[1];
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerBySummonerId(summonerId, LeagueShard.valueOf(platform));
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(summonerId, LeagueShard.valueOf(platform));
             
             List<LayoutComponent> compontens = new ArrayList<>();
             for (LayoutComponent layoutComponent : event.getMessage().getComponents()) {
@@ -205,9 +205,9 @@ public class EventHandler extends ListenerAdapter {
             event.deferEdit().queue();
             String gameId = event.getValues().get(0);
             String platform =  event.getValues().get(0).split("_")[0];
-            String accountId =  event.getValues().get(0).split("#")[1];
+            String puuid =  event.getValues().get(0).split("#")[1];
 
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByAccountId(accountId, LeagueShard.valueOf(platform));
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
             
             LeagueShard shard = LeagueShard.valueOf(platform);
             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);

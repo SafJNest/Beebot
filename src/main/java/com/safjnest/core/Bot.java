@@ -160,7 +160,7 @@ public class Bot {
         Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix());
 
         Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
-            new LastMatches(), new Opgg(), new Calculator(), new Dice(), 
+            new Opgg(), new Calculator(), new Dice(), 
             new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query(), new Alias(), new UltimateBravery());
   
         
@@ -183,7 +183,7 @@ public class Bot {
 
         
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
-            new Livegame(), new LastMatches(), new GraphSlash(),
+            new Livegame(), new GraphSlash(),
             new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), new Champion(), new Opgg(), 
             new Weather(), new APOD(), new SpecialChar(), 
             new Region(), new UltimateBravery(), new Item(), new QRCode()

@@ -190,7 +190,7 @@ public class UserData {
 
         this.riotAccounts = new LinkedHashMap<>();
         for(QueryRecord row: result){
-            riotAccounts.put(row.get("account_id"), row.get("league_shard"));
+            riotAccounts.put(row.get("puuid"), row.get("league_shard"));
         }
     }
 
@@ -207,15 +207,15 @@ public class UserData {
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
         boolean result = LeagueDBHandler.addLOLAccount(USER_ID, s) > 0;
-        if (result) riotAccounts.put(s.getAccountId(), String.valueOf(s.getPlatform().ordinal()));
+        if (result) riotAccounts.put(s.getPUUID(), String.valueOf(s.getPlatform().ordinal()));
         
         return result;
     }
 
-    public boolean deleteRiotAccount(String account_id) {
+    public boolean deleteRiotAccount(String puuid) {
         checkRiotAccounts();
-        boolean result = LeagueDBHandler.deleteLOLaccount(USER_ID, account_id);
-        if (result) riotAccounts.remove(account_id);
+        boolean result = LeagueDBHandler.deleteLOLaccount(USER_ID, puuid);
+        if (result) riotAccounts.remove(puuid);
         
         return result;
     }

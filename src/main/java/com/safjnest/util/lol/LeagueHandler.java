@@ -32,8 +32,6 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
-import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -450,7 +448,7 @@ import com.safjnest.core.cache.managers.UserCache;
             String firstAccount = accounts.keySet().stream().findFirst().get();
             LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(firstAccount))];
 
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, firstAccount);
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, firstAccount);
         } catch (Exception e) {return null;}
     }
 
@@ -469,23 +467,9 @@ import com.safjnest.core.cache.managers.UserCache;
         }
     }
 
-    public static Summoner getSummonerByPuiid(String puiid, LeagueShard shard) {
+    public static Summoner getSummonerByPuuid(String id, LeagueShard shard){
         try {
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puiid);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public static Summoner getSummonerBySummonerId(String id, LeagueShard shard){
-        try {
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerById(shard, id);
-        } catch (Exception e) {return null; }
-    }
-
-    public static Summoner getSummonerByAccountId(String id, LeagueShard shard){
-        try {
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, id);
+            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, id);
         } catch (Exception e) { return null; }
     }
 
@@ -547,15 +531,6 @@ import com.safjnest.core.cache.managers.UserCache;
         return account.getName() + "#" + account.getTag();
     }
 
-    public static List<Summoner> getSummonersFromPuuid(String puuid) {
-        QueryCollection result = LeagueDBHandler.getSummonersBuPuuid(puuid);
-        List<Summoner> summoners = new ArrayList<>();
-        for (QueryRecord row : result) {
-            summoners.add(getSummonerByAccountId(row.get("account_id"), LeagueShard.values()[Integer.valueOf(row.get("league_shard"))]));
-        }
-        return summoners;
-    }
-
     public static int updateSummonerDB(Summoner summoner) {
         return LeagueDBHandler.addLOLAccount(summoner);
     }
@@ -608,7 +583,7 @@ import com.safjnest.core.cache.managers.UserCache;
         String stats = "";
         for(int i = 0; i < 3; i++){
             try {
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
                     stats = getStatsByEntry(entry);
 
@@ -621,7 +596,7 @@ import com.safjnest.core.cache.managers.UserCache;
         String stats = "";
         for(int i = 0; i < 3; i++){
             try {
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(s.getPlatform(), s.getSummonerId()).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
                     stats = getStatsByEntry(entry);
             } catch (Exception e) { }
@@ -638,7 +613,7 @@ import com.safjnest.core.cache.managers.UserCache;
     public static LeagueEntry getRankEntry(String summonerId, LeagueShard shard) {
         try {
             for(int i = 0; i < 3; i++){
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, summonerId).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
                     return entry;
             }
@@ -649,7 +624,7 @@ import com.safjnest.core.cache.managers.UserCache;
     public static LeagueEntry getFlexEntry(String summonerId, LeagueShard shard) {
         try {
             for(int i = 0; i < 3; i++){
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId).get(i);
+                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, summonerId).get(i);
                 if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
                     return entry;
             }
@@ -658,14 +633,14 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static LeagueEntry getRankEntry(Summoner s) {
-        return getRankEntry(s.getSummonerId(), s.getPlatform());
+        return getRankEntry(s.getPUUID(), s.getPlatform());
     }
 
-    public static LeagueEntry getEntry(GameQueueType type, String summonerId, LeagueShard shard) {
+    public static LeagueEntry getEntry(GameQueueType type, String puuid, LeagueShard shard) {
         if (type == GameQueueType.CHERRY) type = GameQueueType.RANKED_SOLO_5X5;
         LeagueEntry def = null;
         try {
-            List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntries(shard, summonerId);
+            List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
             for (LeagueEntry entry : entries) {
                 if (entry.getQueueType().equals(type)) return entry;
                 if (entry.getQueueType() == GameQueueType.RANKED_SOLO_5X5) def = entry;
@@ -996,14 +971,6 @@ import com.safjnest.core.cache.managers.UserCache;
         Map<String, Object> data = new LinkedHashMap<>();
 
         switch (endpoint) {
-            case V4_SUMMONER_BY_ACCOUNT:
-                data.put("platform", summoner.getPlatform());
-                data.put("accountid", summoner.getAccountId());
-                break;
-            case V4_SUMMONER_BY_ID:
-                data.put("platform", summoner.getPlatform());
-                data.put("id", summoner.getSummonerId());
-                break;
             case V4_SUMMONER_BY_PUUID:
                 data.put("platform", summoner.getPlatform());
                 data.put("puuid", summoner.getPUUID());
@@ -1011,10 +978,6 @@ import com.safjnest.core.cache.managers.UserCache;
             case V1_SHARED_ACCOUNT_BY_PUUID:
                 data.put("platform", summoner.getPlatform().toRegionShard());
                 data.put("puuid", summoner.getPUUID());
-                break;
-            case V4_LEAGUE_ENTRY:
-                data.put("platform", summoner.getPlatform());
-                data.put("id", summoner.getSummonerId());
                 break;
             case V5_MATCHLIST:
                 data.put("platform", summoner.getPlatform().toRegionShard());
@@ -1030,6 +993,10 @@ import com.safjnest.core.cache.managers.UserCache;
                 data.put("platform", summoner.getPlatform());
                 data.put("summoner", summoner.getPUUID());
                 break;
+            case V4_LEAGUE_ENTRY_BY_PUUID:
+                data.put("platform", summoner.getPlatform());
+                data.put("puuid", summoner.getPUUID());
+                break;
 
             default:
                 break;
@@ -1039,11 +1006,8 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static void clearSummonerCache(Summoner summoner) {
-        clearCache(URLEndpoint.V4_SUMMONER_BY_ACCOUNT, summoner);
-        clearCache(URLEndpoint.V4_SUMMONER_BY_ID, summoner);
         clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner);
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner);
-        clearCache(URLEndpoint.V4_LEAGUE_ENTRY, summoner);
         clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner);
     }
 

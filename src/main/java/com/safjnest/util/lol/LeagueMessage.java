@@ -75,7 +75,7 @@ public class LeagueMessage {
         }
 
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        Button center = Button.primary(id + "-center-" + s.getAccountId() + "#" + s.getPlatform().name(), account.getName());
+        Button center = Button.primary(id + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
         if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) {
@@ -111,7 +111,7 @@ public class LeagueMessage {
         builder.setColor(Bot.getColor());
         builder.setThumbnail(LeagueHandler.getSummonerProfilePic(s));
         
-        String userId = LeagueDBHandler.getUserIdByLOLAccountId(s.getAccountId(), s.getPlatform());
+        String userId = LeagueDBHandler.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform());
         if(userId != null){
             QueryRecord data = LeagueDBHandler.getSummonerData(userId, s.getAccountId());
             if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
@@ -125,7 +125,7 @@ public class LeagueMessage {
         builder.addField("Flex", LeagueHandler.getFlexStats(s), true);
 
         LeagueDBHandler.updateSummonerMasteries(summonerId, s.getChampionMasteries());
-        LeagueDBHandler.updateSummonerEntries(summonerId, s.getLeagueEntry());
+        LeagueDBHandler.updateSummonerEntries(summonerId, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
 
         String masteryString = "";
         for(int i = 1; i < 4; i++)
@@ -256,7 +256,7 @@ public class LeagueMessage {
                 builder.addField("Roles", laneString , true);
             }
             else if (queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) {
-                LeagueEntry entry = LeagueHandler.getRankEntry(s.getSummonerId(), s.getPlatform());
+                LeagueEntry entry = LeagueHandler.getRankEntry(s.getPUUID(), s.getPlatform());
                 
                 int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
                 String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
@@ -309,8 +309,6 @@ public class LeagueMessage {
         List<LayoutComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
 
         boolean hasTrackedGames = LeagueDBHandler.hasSummonerData(s.getAccountId());
-        List<Summoner> summoners = LeagueHandler.getSummonersFromPuuid(s.getPUUID());
-
 
         if (hasTrackedGames) {
             long[] time = LeagueHandler.getCurrentSplitRange();
@@ -360,18 +358,7 @@ public class LeagueMessage {
             index++;
         }
 
-        if (summoners.size() == 1) return buttons;
-
-        List<Button> shard = new ArrayList<>();
-        for (Summoner summoner : summoners) {
-            Button button = Button.primary("lol-shard-" + summoner.getAccountId() + "#" + summoner.getPlatform().name(), summoner.getPlatform().getRealmValue().toUpperCase()).withEmoji(CustomEmojiHandler.getRichEmoji(summoner.getPlatform().getRealmValue().toUpperCase() + "_server"));
-            if (summoner.getAccountId().equals(s.getAccountId())) button = button.asDisabled().withStyle(ButtonStyle.SUCCESS);
-            shard.add(button);
-        }
-        buttons.add(index, ActionRow.of(shard));
         return buttons;
-
-
     }
 
 //   ▄██████▄     ▄███████▄    ▄██████▄     ▄██████▄
@@ -444,7 +431,7 @@ public class LeagueMessage {
                 String label = match.getGameDurationAsDuration().toMinutes() + " minutes " + LeagueHandler.formatMatchName(match.getQueue());
                 String description = "As " + me.getChampionName() + " (" + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " " + me.getTotalMinionsKilled() + " CS)";
 
-                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getAccountId()).withEmoji(icon).withDescription(description));
+                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getPUUID()).withEmoji(icon).withDescription(description));
             } catch (Exception e) {
                 continue;
             }
@@ -509,7 +496,7 @@ public class LeagueMessage {
 
 
                 for(MatchParticipant mt : match.getParticipants()){
-                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(mt.getSummonerId(), match.getPlatform()));
+                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(mt.getPuuid(), match.getPlatform()));
                     String name = "**" + mt.getRiotIdName() + "#" + mt.getRiotIdTagline() + "**" + rank;
                     String score = "`" + mt.getKills() + "/" + mt.getDeaths() + "/" + mt.getAssists() + "`";
 
@@ -641,7 +628,7 @@ public class LeagueMessage {
 
                     String championText = teamStats.get(partecipant.getTeam()).getOrDefault("champions", "**Picks**\n");
 
-                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(partecipant.getSummonerId(), match.getPlatform()));
+                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(partecipant.getPuuid(), match.getPlatform()));
                     String name = CustomEmojiHandler.getFormattedEmoji(partecipant.getChampionName()) + " **" + partecipant.getRiotIdName() + "#" + partecipant.getRiotIdTagline() + "**";
                     String kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists() + "(" + (partecipant.getTotalMinionsKilled() + partecipant.getNeutralMinionsKilled()) + " CS)";
 
@@ -1012,7 +999,7 @@ public class LeagueMessage {
         ArrayList<SelectOption> options = new ArrayList<>();
         for(MatchParticipant p : match.getParticipants()){
             Emoji icon = LeagueHandler.getEmojiByChampion(p.getChampionId());
-            options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getSummonerId() + "#" + match.getPlatform().name()).withEmoji(icon));
+            options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getPuuid() + "#" + match.getPlatform().name()).withEmoji(icon));
         }
 
         return StringSelectMenu.create("rank-select")
@@ -1048,7 +1035,7 @@ public class LeagueMessage {
                     int i = 0;
 
                     for (SpectatorParticipant partecipant : spectators) {
-                        Summoner s = LeagueHandler.getSummonerBySummonerId(partecipant.getSummonerId(), summoner.getPlatform());
+                        Summoner s = LeagueHandler.getSummonerByPuuid(partecipant.getPuuid(), summoner.getPlatform());
                         String mastery = LeagueHandler.getMasteryByChamp(s, partecipant.getChampionId());
                         String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
                         String sum = " **" + partecipant.getRiotId() + "**";
@@ -1077,7 +1064,7 @@ public class LeagueMessage {
                         String championIcon = LeagueHandler.getFormattedEmojiByChampion(partecipant.getChampionId());
 
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
-                        LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getSummonerId(), summoner.getPlatform());
+                        LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getPuuid(), summoner.getPlatform());
                         if (entry != null) {
                             stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + getFormatedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"% WR`";
                             entryName = LeagueHandler.formatMatchName(entry.getQueueType());
@@ -1119,7 +1106,7 @@ public class LeagueMessage {
         ArrayList<SelectOption> options = new ArrayList<>();
         for(SpectatorParticipant p : spectators){
             Emoji icon = LeagueHandler.getEmojiByChampion(p.getChampionId());
-            options.add(SelectOption.of(p.getRiotId(), p.getSummonerId() + "#" + summoner.getPlatform().name()).withEmoji(icon));
+            options.add(SelectOption.of(p.getRiotId(), p.getPuuid() + "#" + summoner.getPlatform().name()).withEmoji(icon));
         }
 
         return StringSelectMenu.create("rank-select")

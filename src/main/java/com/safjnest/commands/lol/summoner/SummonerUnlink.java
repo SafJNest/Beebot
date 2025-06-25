@@ -46,19 +46,19 @@ public class SummonerUnlink extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        String account_id = event.getOption("personal_summoner") != null ? event.getOption("personal_summoner").getAsString() : ""; 
-        if (account_id.isEmpty()) {
+        String puuid = event.getOption("personal_summoner") != null ? event.getOption("personal_summoner").getAsString() : ""; 
+        if (puuid.isEmpty()) {
             event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help summoner").queue();
             return;
         }
 
         UserData data = UserCache.getUser(event.getMember().getId());
-        if (!data.getRiotAccounts().containsKey(account_id)) {
+        if (!data.getRiotAccounts().containsKey(puuid)) {
             event.deferReply(false).addContent("This account is not connected to your profile.").queue();
             return;
         }
 
-        if (!data.deleteRiotAccount(account_id)) {
+        if (!data.deleteRiotAccount(puuid)) {
             event.deferReply(false).addContent("Something went wrong while disconnecting your account.").queue();
             return;
         }
