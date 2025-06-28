@@ -338,15 +338,15 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         return safJQuery(query);
     }
 
-    public static String getUserIdByLOLAccountId(String account_id, LeagueShard shard) {
-        return fetchJRow("SELECT user_id FROM summoner WHERE puuid = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
+    public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
+        return fetchJRow("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
     }
 
-    public static QueryCollection getAdvancedLOLData(String account_id) {
-        return safJQuery("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `participant` WHERE `account_id` = '" + account_id + "' GROUP BY `champion` ORDER BY `games` DESC;");
+    public static QueryCollection getAdvancedLOLData(String summonerId) {
+        return safJQuery("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `participant` WHERE `summoner_id` = '" + summonerId + "' GROUP BY `champion` ORDER BY `games` DESC;");
     }
 
-    public static QueryCollection getAllGamesForAccount(String account_id, long time_start, long time_end) {
+    public static QueryCollection getAllGamesForAccount(int summonerId, long time_start, long time_end) {
         String timeFilter = "";
         if (time_start != 0) {
             timeFilter = "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
@@ -355,10 +355,10 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         return safJQuery("SELECT sm.game_id, sm.game_type, st.win " +
                          "FROM participant st " +
                          "INNER JOIN `match` sm ON st.match_id = sm.id " +
-                         "WHERE st.account_id = '" + account_id + "' " + timeFilter);
+                         "WHERE st.summoner_id = '" + summonerId + "' " + timeFilter);
     }
     
-    public static QueryCollection getAdvancedLOLData(String account_id, long time_start, long time_end, GameQueueType queue) {
+    public static QueryCollection getAdvancedLOLData(int summonerId, long time_start, long time_end, GameQueueType queue) {
         String timeFilter = "";
         String queueFilter = "";
         if (time_start != 0) {
@@ -382,7 +382,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             "  SUM(t.`gain`) AS total_lp_gain " +
             "FROM `participant` t " +
             "JOIN `match` sm ON t.`match_id` = sm.`id` " +
-            "WHERE t.`account_id` = '" + account_id + "' " +
+            "WHERE t.`summoner_id` = '" + summonerId + "' " +
             timeFilter + 
             queueFilter +
             "GROUP BY t.`champion`";
@@ -396,7 +396,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` " +
             "FROM `participant` t " +
             "JOIN `match` sm ON t.`match_id` = sm.`id` " +
-            "WHERE t.`account_id` = '" + account_id + "' " +
+            "WHERE t.`summoner_id` = '" + summonerId + "' " +
             timeFilter + 
             queueFilter +
             "GROUP BY t.`champion`, t.`lane`";
@@ -524,8 +524,8 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         }
     }
 
-    public static boolean deleteLOLaccount(String user_id, String account_id){
-        String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';";
+    public static boolean deleteLOLaccount(String user_id, String puuid){
+        String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';";
         return runQuery(query);
     }
 
@@ -534,17 +534,17 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             "SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
             + "FROM summoner s "
             + "LEFT JOIN ("
-            + "    SELECT t.account_id, t.game_id, t.rank, t.lp, t.time_start "
+            + "    SELECT t.summoner_id, t.game_id, t.rank, t.lp, t.time_start "
             + "    FROM ("
-            + "        SELECT st.account_id, sm.game_id, st.rank, st.lp, sm.time_start, "
-            + "        ROW_NUMBER() OVER (PARTITION BY st.account_id ORDER BY sm.time_start DESC) AS rn "
+            + "        SELECT st.summoner_id, sm.game_id, st.rank, st.lp, sm.time_start, "
+            + "        ROW_NUMBER() OVER (PARTITION BY st.summoner_id ORDER BY sm.time_start DESC) AS rn "
             + "        FROM participant st "
             + "        JOIN `match` sm ON st.match_id = sm.id "
             + "        WHERE sm.time_start >= '" + new Timestamp(time_start) + "' "
             + "        AND sm.game_type = 43"
             + "    ) t "
             + "    WHERE t.rn = 1"
-            + ") st ON s.account_id = st.account_id "
+            + ") st ON s.id = st.summoner_id "
             + "WHERE s.tracking = 1;"
         );
     }
@@ -553,27 +553,27 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
 
 
-    public static QueryRecord getRegistredLolAccount(String account_id, long time_start) {
-        return fetchJRow("SELECT s.account_id, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
+    public static QueryRecord getRegistredLolAccount(int summonerId, long time_start) {
+        return fetchJRow("SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
                 + "FROM summoner s "
-                + "LEFT JOIN (SELECT t.account_id, t.game_id, t.rank, t.lp, t.time_start "
-                + "           FROM (SELECT st.account_id, sm.game_id, st.rank, st.lp, sm.time_start, "
-                + "                        ROW_NUMBER() OVER (PARTITION BY st.account_id ORDER BY sm.time_start DESC) AS rn "
+                + "LEFT JOIN (SELECT t.summoner_id, t.game_id, t.rank, t.lp, t.time_start "
+                + "           FROM (SELECT st.summoner_id, sm.game_id, st.rank, st.lp, sm.time_start, "
+                + "                        ROW_NUMBER() OVER (PARTITION BY st.summoner_id ORDER BY sm.time_start DESC) AS rn "
                 + "                 FROM participant st "
                 + "                 JOIN `match` sm ON st.match_id = sm.id "
                 + "                 WHERE sm.time_start >= '" + new Timestamp(time_start) + "' "
                 + "                   AND sm.game_type = 43 "
-                + "                   AND st.account_id = '" + account_id + "') t "
+                + "                   AND st.summoner_id = '" + summonerId + "') t "
                 + "    WHERE t.rn = 1) st "
-                + "ON s.account_id = st.account_id "
-                + "WHERE s.tracking = 1 AND s.account_id = '" + account_id + "';");
+                + "ON s.id = st.summoner_id "
+                + "WHERE s.tracking = 1 AND s.id = '" + summonerId + "';");
     }
 
 
 
 
-    public static boolean setSummonerData(String account_id, int summonerMatchId, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, TeamType side, String build) {
-        return runQuery("INSERT IGNORE INTO participant(account_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build) VALUES('" + account_id + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "');");
+    public static boolean setSummonerData(int summonerId, int summonerMatchId, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, TeamType side, String build) {
+        return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "');");
     }
 
     public static QueryCollection getFocusedSummoners(String query, LeagueShard shard) {
@@ -581,30 +581,30 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
     }
 
 
-    public static QueryCollection getSummonerData(String account_id, long game_id) {
-        return safJQuery("SELECT account_id, game_id, rank, lp, gain, win time_start, patch FROM participant WHERE account_id = '" + account_id + "' AND game_id = '" + game_id + "';");
+    public static QueryCollection getSummonerData(int summoner_id, long game_id) {
+        return safJQuery("SELECT summoner_id, game_id, rank, lp, gain, win time_start, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND game_id = '" + game_id + "';");
     }
 
-    public static QueryCollection getSummonerData(String account_id, LeagueShard shard, long time_start, long time_end) {
-        return safJQuery("SELECT account_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE account_id = '" + account_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
+    public static QueryCollection getSummonerData(int summoner_id, LeagueShard shard, long time_start, long time_end) {
+        return safJQuery("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
-    public static QueryCollection getSummonerData(String account_id) {
+    public static QueryCollection getSummonerData(int summoner_id) {
         return safJQuery(
-            "SELECT st.account_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
+            "SELECT st.summoner_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
             "FROM participant st " +
             "JOIN `match` sm ON st.match_id = sm.id " +
-            "WHERE st.account_id = '" + account_id + "' AND sm.game_type = " + GameQueueType.TEAM_BUILDER_RANKED_SOLO.ordinal() + " " +
+            "WHERE st.summoner_id = '" + summoner_id + "' AND sm.game_type = " + GameQueueType.TEAM_BUILDER_RANKED_SOLO.ordinal() + " " +
             "ORDER BY sm.game_id"
         );
     }
 
-    public static boolean hasSummonerData(String account_id) {
-        return !fetchJRow("SELECT 1 from participant where account_id = '" + account_id + "';").isEmpty();
+    public static boolean hasSummonerData(int sumonerId) {
+        return !fetchJRow("SELECT 1 from participant where summoner_id = '" + sumonerId + "';").isEmpty();
     }
 
     public static boolean trackSummoner(String user_id, String account_id, boolean track) {
-        return runQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
+        return runQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
     }
 
     public static QueryRecord getSummonerData(String user_id, String account_id) {

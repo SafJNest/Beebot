@@ -1008,7 +1008,7 @@ public class Test extends Command{
             case "trackoldgames":
                 if (true) {
                     Summoner sum = LeagueHandler.getSummonerByPuuid(args[1], LeagueShard.EUW1);
-                    MatchTracker.retriveOldGames(sum).queue();
+                    //MatchTracker.retriveOldGames(sum).queue();
                 }
             break;
             case "mergelol":

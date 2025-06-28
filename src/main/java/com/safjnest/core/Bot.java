@@ -45,7 +45,6 @@ import com.safjnest.commands.audio.sound.Sound;
 import com.safjnest.commands.audio.soundboard.Soundboard;
 import com.safjnest.commands.guild.*;
 import com.safjnest.commands.lol.*;
-import com.safjnest.commands.lol.graph.GraphSlash;
 import com.safjnest.commands.lol.summoner.Summoner;
 import com.safjnest.commands.math.*;
 import com.safjnest.commands.members.*;
@@ -183,7 +182,7 @@ public class Bot {
 
         
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
-            new Livegame(), new GraphSlash(),
+            new Livegame(),
             new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), new Champion(), new Opgg(), 
             new Weather(), new APOD(), new SpecialChar(), 
             new Region(), new UltimateBravery(), new Item(), new QRCode()
