@@ -967,7 +967,7 @@ import com.safjnest.core.cache.managers.UserCache;
         DataCall.getCacheProvider().clear(endpoint, data);
     }
 
-    public static void clearCache(URLEndpoint endpoint, Summoner summoner) {
+    public static void clearCache(URLEndpoint endpoint, Summoner summoner, GameQueueType queueType) {
         Map<String, Object> data = new LinkedHashMap<>();
 
         switch (endpoint) {
@@ -982,7 +982,7 @@ import com.safjnest.core.cache.managers.UserCache;
             case V5_MATCHLIST:
                 data.put("platform", summoner.getPlatform().toRegionShard());
                 data.put("puuid", summoner.getPUUID());
-                data.put("queue", "null");
+                data.put("queue", queueType);
                 data.put("type", "null");
                 data.put("start", "null");
                 data.put("count", "null");
@@ -1006,9 +1006,9 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static void clearSummonerCache(Summoner summoner) {
-        clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner);
-        clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner);
-        clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner);
+        clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner, null);
+        clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner, null);
+        clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner, null);
     }
 
 //     ▄████████    ▄███████▄  ▄█        ▄█      ███

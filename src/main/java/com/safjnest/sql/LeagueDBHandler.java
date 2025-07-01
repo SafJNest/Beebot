@@ -653,6 +653,10 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         return setMatchData(match, false);
     }
 
+    public static boolean setMatchEvent(int matchId, String json) {
+        return runQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
+    }
+
     @SuppressWarnings("unchecked")
     public static int setMatchData(LOLMatch match, boolean emptyIfExist) {
         int id = 0;
