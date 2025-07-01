@@ -1,5 +1,6 @@
 package com.safjnest.util.lol;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -12,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.fasterxml.jackson.databind.deser.DataFormatReaders.Match;
 import com.safjnest.App;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
@@ -580,6 +582,35 @@ public class MatchTracker {
         result.put("pickrate", String.valueOf(Math.round(pickrate * 100.0) / 100.0));
         
         return result;
+    }
+
+    public static void retriveMatchHistory(Summoner summoner, GameQueueType type) {
+        try {
+            List<String> matchIds = new ArrayList<>();
+            List<String> retrivedMatchIds = summoner.getLeagueGames().withQueue(type).withCount(100).get();
+            do {
+                matchIds.addAll(retrivedMatchIds);
+
+                try { Thread.sleep(350); }
+                catch (InterruptedException e) {e.printStackTrace();}
+
+                int i = 0;
+                for (String matchId : retrivedMatchIds) {
+                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
+                    if (match == null) continue;
+                    System.out.println("[" + i + "/" + retrivedMatchIds.size() + "] " + match.getGameId() + " - " + match.getPlatform() + " - " + match.getQueue());
+                    i++;
+                    MatchTracker.queueMatch(match);
+                    try { Thread.sleep(350); }
+                    catch (InterruptedException e) {e.printStackTrace();}
+                }
+
+                retrivedMatchIds = summoner.getLeagueGames().withQueue(type).withCount(100).withBeginIndex(matchIds.size()).get();
+            } while (retrivedMatchIds.size() > 0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

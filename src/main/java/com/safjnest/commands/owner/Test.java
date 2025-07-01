@@ -11,6 +11,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.deser.DataFormatReaders.Match;
 import com.github.twitch4j.eventsub.events.StreamOnlineEvent;
 import com.github.twitch4j.eventsub.socket.IEventSubConduit;
 import com.github.twitch4j.eventsub.socket.conduit.TwitchConduitSocketPool;
@@ -67,6 +68,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
@@ -1129,6 +1131,13 @@ public class Test extends Command{
                         }
                     };
                     bullshit.queue();
+                break;
+                case "retriveallgames":
+                    ChronoTask retriveAllGames = () -> {
+                        System.out.println(args[1]);
+                        MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], LeagueShard.EUW1), GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+                    };
+                    retriveAllGames.queue();
                 break;
         }
     }  
