@@ -362,11 +362,19 @@ public class MatchTracker {
     public static String createJSONEvents(HashMap<String, String> matchData) {
         JSONObject json = new JSONObject();
 
-        for (String key : new String[]{"monster_events", "building_events"}) {
+        for (String key : new String[]{"monster_events", "building_events", "participants"}) {
             String raw = matchData.getOrDefault(key, "").trim();
             if (raw.isEmpty()) {
                 json.put(key, new JSONArray());
                 continue;
+            }
+
+            if (key.equals("participants")) {
+                try {
+                    JSONObject parsed = new JSONObject(raw);
+                    json.put(key, parsed);
+                    continue;
+                } catch (Exception e) { }
             }
             
             try {
@@ -532,11 +540,17 @@ public class MatchTracker {
             }
         }
 
+        HashMap<String, String> matchParticipants = new HashMap<>();
         timeline.getParticipants().forEach(partecipant -> {
+            matchParticipants.put(String.valueOf(partecipant.getParticipantId()), partecipant.getPuuid());
+
             matchData.put(partecipant.getPuuid(), matchData.get(String.valueOf(partecipant.getParticipantId())));
             matchData.remove(String.valueOf(partecipant.getParticipantId()));
 
         });
+        JSONObject matchJson = new JSONObject(matchParticipants);
+
+        matchData.get("match").put("participants", matchJson.toString());
         return matchData;
     }
 
