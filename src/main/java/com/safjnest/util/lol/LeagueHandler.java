@@ -982,7 +982,7 @@ import com.safjnest.core.cache.managers.UserCache;
             case V5_MATCHLIST:
                 data.put("platform", summoner.getPlatform().toRegionShard());
                 data.put("puuid", summoner.getPUUID());
-                data.put("queue", queueType);
+                data.put("queue", queueType != null ? queueType : "null");
                 data.put("type", "null");
                 data.put("start", "null");
                 data.put("count", "null");
