@@ -1,26 +1,19 @@
 package com.safjnest.model.spotify;
 
-public class spotifyTrackStreaming {
+public class SpotifyTrackStreaming {
     private String ts;
     private long msPlayed;
-    private String name;
-    private String artistName;
-    private String albumName;
-    private String URI;
+    private SpotifyTrack track;
 
-    public spotifyTrackStreaming(String ts, long msPlayed, String name, String artistName, String albumName, String URI) {
+    public SpotifyTrackStreaming(String ts, long msPlayed, String name, String artistName, String albumName, String URI) {
         this.ts = ts;
         this.msPlayed = msPlayed;
-        this.name = name;
-        this.artistName = artistName;
-        this.albumName = albumName;
-        this.URI = URI;
+        this.track = new SpotifyTrack(name, artistName, albumName, URI);
     }
 
     @Override
     public String toString() {
-        return String.format("[%s] %s - %s (%s) | %s", ts, artistName,
-            name, albumName, URI);
+        return String.format("[%s] %s", ts, track.toString());
     }
 
     public String getTs() {
@@ -39,35 +32,11 @@ public class spotifyTrackStreaming {
         this.msPlayed = msPlayed;
     }
 
-    public String getName() {
-        return name;
+    public SpotifyTrack getTrack() {
+        return track;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getArtistName() {
-        return artistName;
-    }
-
-    public void setArtistName(String artistName) {
-        this.artistName = artistName;
-    }
-
-    public String getAlbumName() {
-        return albumName;
-    }
-
-    public void setAlbumName(String albumName) {
-        this.albumName = albumName;
-    }
-
-    public String getURI() {
-        return URI;
-    }
-
-    public void setURI(String uRI) {
-        URI = uRI;
+    public void setTrack(SpotifyTrack track) {
+        this.track = track;
     }
 }

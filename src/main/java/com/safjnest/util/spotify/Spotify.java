@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -14,7 +16,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.safjnest.model.spotify.spotifyTrackStreaming;
+import com.safjnest.model.spotify.SpotifyTrackStreaming;
+import com.safjnest.model.spotify.SpotifyTrack;
 
 //nome
 //artista
@@ -34,20 +37,68 @@ public class Spotify {
     public static void printTracks() {
         try {
             long startTime = System.currentTimeMillis();
-            List<spotifyTrackStreaming> tracks = readTrackInfoFromZip(spotifyPath);
+            List<SpotifyTrackStreaming> streamings = readTrackInfoFromZip(spotifyPath);
             long endTime = System.currentTimeMillis();
             System.out.println("Time taken to read tracks: " + (endTime - startTime) + " ms");
-            System.out.println("Total tracks: " + tracks.size());
-            tracks.forEach(System.out::println);
+            System.out.println("Total tracks: " + streamings.size());
+            //tracks.forEach(System.out::println);
+
+            Map<SpotifyTrack, Long> tracks = streamings.stream()
+            .filter(streaming -> streaming.getMsPlayed() >= 30000)
+            .collect(Collectors.groupingBy(
+                streaming -> streaming.getTrack(),
+                Collectors.counting()
+            ));
+
+            System.out.println("Total unique tracks: " + tracks.size());
+            printTopTracks(tracks);
+            System.out.println("\nTop Albums:");
+            printTopAlbums(tracks);
+            System.out.println("\nTop Artists:");
+            printTopArtists(tracks);
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static List<spotifyTrackStreaming> readTrackInfoFromZip(String zipFilePath) throws IOException {
+    public static void printTopTracks(Map<SpotifyTrack, Long> tracks) {
+        tracks.entrySet().stream()
+            .sorted(Map.Entry.<SpotifyTrack, Long>comparingByValue().reversed())
+            .limit(10)
+            .forEach(entry -> System.out.println(entry.getKey().toString() + " - Played " + entry.getValue() + " times"));
+    }
+
+    public static void printTopAlbums(Map<SpotifyTrack, Long> tracks) {
+        Map<String, Long> albums = tracks.entrySet().stream()
+            .collect(Collectors.groupingBy(
+                entry -> entry.getKey().getAlbum(),
+                Collectors.summingLong(Map.Entry::getValue)
+            ));
+
+        albums.entrySet().stream()
+            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+            .limit(10)
+            .forEach(entry -> System.out.println(entry.getKey() + " - Played " + entry.getValue() + " times"));
+    }
+
+    public static void printTopArtists(Map<SpotifyTrack, Long> tracks) {
+        Map<String, Long> artists = tracks.entrySet().stream()
+            .collect(Collectors.groupingBy(
+                entry -> entry.getKey().getArtist(),
+                Collectors.summingLong(Map.Entry::getValue)
+            ));
+
+        artists.entrySet().stream()
+            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+            .limit(10)
+            .forEach(entry -> System.out.println(entry.getKey() + " - Played " + entry.getValue() + " times"));
+    }
+
+    public static List<SpotifyTrackStreaming> readTrackInfoFromZip(String zipFilePath) throws IOException {
         File zipFile = new File(spotifyPath);
 
-        List<spotifyTrackStreaming> trackList = new ArrayList<>();
+        List<SpotifyTrackStreaming> trackList = new ArrayList<>();
         
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
@@ -72,7 +123,7 @@ public class Spotify {
                                     continue;
                                 }
 
-                                spotifyTrackStreaming track = new spotifyTrackStreaming(
+                                SpotifyTrackStreaming track = new SpotifyTrackStreaming(
                                     node.path("ts").asText(),
                                     node.path("ms_played").asLong(0),
                                     node.path("master_metadata_track_name").asText(),

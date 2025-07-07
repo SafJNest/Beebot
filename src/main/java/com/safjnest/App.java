@@ -14,6 +14,7 @@ import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.spotify.Spotify;
 import com.safjnest.util.twitch.TwitchClient;
 
 @SpringBootApplication
@@ -24,7 +25,9 @@ public class App {
     private static Bot bot;
 
     public static void main(String args[]) {
-        
+
+        Spotify.printTracks();
+        System.exit(0);
         SafJNest.bee();
         
         new BotLogger("Beebot", null);
