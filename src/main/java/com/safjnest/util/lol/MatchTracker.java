@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.fasterxml.jackson.databind.deser.DataFormatReaders.Match;
 import com.safjnest.App;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
@@ -74,8 +73,8 @@ public class MatchTracker {
                     if (summoner == null) 
                         throw new Exception("account null ??????");
                     
-                    LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner);
-                    LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, summoner);
+                    LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner, null);
+                    LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, summoner, null);
             
                     try { Thread.sleep(350); }
                     catch (InterruptedException e) {e.printStackTrace();}
@@ -211,6 +210,7 @@ public class MatchTracker {
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
+            LeagueDBHandler.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
 
 
             for (MatchParticipant partecipant : match.getParticipants()) {
@@ -246,6 +246,8 @@ public class MatchTracker {
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
+
+            LeagueDBHandler.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
 
             for (MatchParticipant partecipant : match.getParticipants()) {
                 try { Thread.sleep(2000); }
@@ -357,6 +359,33 @@ public class MatchTracker {
 
     }
 
+    public static String createJSONEvents(HashMap<String, String> matchData) {
+        JSONObject json = new JSONObject();
+
+        for (String key : new String[]{"monster_events", "building_events", "participants"}) {
+            String raw = matchData.getOrDefault(key, "").trim();
+            if (raw.isEmpty()) {
+                json.put(key, new JSONArray());
+                continue;
+            }
+
+            if (key.equals("participants")) {
+                try {
+                    JSONObject parsed = new JSONObject(raw);
+                    json.put(key, parsed);
+                    continue;
+                } catch (Exception e) { }
+            }
+            
+            try {
+                JSONArray parsed = new JSONArray("[" + raw + "]");
+                json.put(key, parsed);
+            } catch (Exception e) { }
+        }
+
+        return json.toString();
+    }
+
 
     public static HashMap<String, HashMap<String, String>> analyzeMatchBuild(LOLMatch match, List<MatchParticipant> partecipants) {
         Map<Integer, Item> items = LeagueHandler.getRiotApi().getDDragonAPI().getItems();
@@ -422,6 +451,7 @@ public class MatchTracker {
             matchData.put(String.valueOf(partecipant.getParticipantId()), matchData.get(partecipant.getPuuid()));
             matchData.remove(partecipant.getPuuid());
         });
+        matchData.put("match", new HashMap<>());
 
         for (int i = 0; i < timeline.getFrames().size(); i++) {
             for (TimelineFrameEvent event : timeline.getFrames().get(i).getEvents()) {
@@ -468,17 +498,59 @@ public class MatchTracker {
                         else skillList += "," + event.getSkillSlot();
                         matchData.get(participantId).put("skill_order", skillList);
                         break;
+                    case ELITE_MONSTER_KILL:    
+                        if (event.getMonsterType() == null) continue;
+                        String monsterEvents = matchData.get("match").getOrDefault("monster_events", "");
+
+                        String monster = event.getMonsterType().name();
+                        String subType = event.getMonsterSubType() != null ? event.getMonsterSubType().name() : "";
+                        int killerId = event.getKillerId();
+                        List<Integer> assistIds = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+
+                        String eventJson = "{\"monster\":\"" + monster + "\",\"subtype\":\"" + subType + "\",\"killer\":" + killerId + ",\"assists\":[";
+                        for (int assistId : assistIds) {
+                            if (assistId == 0) continue;
+                            if (eventJson.endsWith("[")) eventJson += assistId;
+                            else eventJson += "," + assistId;
+                        }
+                        eventJson += "]}";
+                        if (monsterEvents.isEmpty()) monsterEvents = eventJson;
+                        else monsterEvents += "," + eventJson;
+                        matchData.get("match").put("monster_events", monsterEvents);
+                        break;
+                    case BUILDING_KILL:
+                        String buildingEvents = matchData.get("match").getOrDefault("building_events", "");
+                        String building = event.getBuildingType() != null ? event.getBuildingType().name() : "";
+                        int killerIdBuilding = event.getKillerId();
+                        List<Integer> assistIdsBuilding = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+                        String eventJsonBuilding = "{\"building\":\"" + building + "\",\"killer\":" + killerIdBuilding + ",\"assists\":[";
+                        for (int assistId : assistIdsBuilding) {
+                            if (assistId == 0) continue;
+                            if (eventJsonBuilding.endsWith("[")) eventJsonBuilding += assistId;
+                            else eventJsonBuilding += "," + assistId;
+                        }
+                        eventJsonBuilding += "]}";
+                        if (buildingEvents.isEmpty()) buildingEvents = eventJsonBuilding;
+                        else buildingEvents += "," + eventJsonBuilding;
+                        matchData.get("match").put("building_events", buildingEvents);
+                        break;
                     default:
                         break;
                 }
             }
         }
 
+        HashMap<String, String> matchParticipants = new HashMap<>();
         timeline.getParticipants().forEach(partecipant -> {
+            matchParticipants.put(String.valueOf(partecipant.getParticipantId()), partecipant.getPuuid());
+
             matchData.put(partecipant.getPuuid(), matchData.get(String.valueOf(partecipant.getParticipantId())));
             matchData.remove(String.valueOf(partecipant.getParticipantId()));
 
         });
+        JSONObject matchJson = new JSONObject(matchParticipants);
+
+        matchData.get("match").put("participants", matchJson.toString());
         return matchData;
     }
 

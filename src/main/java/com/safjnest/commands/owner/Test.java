@@ -1139,6 +1139,31 @@ public class Test extends Command{
                     };
                     retriveAllGames.queue();
                 break;
+                case "setmatchevent":
+                    query = "SELECT id, game_id, league_shard FROM `match` WHERE events = '{}' ORDER BY id DESC";
+                    res = LeagueDBHandler.safJQuery(query);
+                    ChronoTask setMatchEvent = () -> {
+                        int n = 0;
+                        for (QueryRecord row : res) {
+                            try {
+                                String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
+                                String game_id = region + "_"+row.get("game_id");
+                                LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
+                                if (m == null) continue;
+                                LeagueDBHandler.setMatchEvent(row.getAsInt("id"), MatchTracker.createJSONEvents(MatchTracker.analyzeMatchBuild(m, m.getParticipants()).get("match")));
+                                try {
+                                    Thread.sleep(400);
+                                } catch (Exception ee) {
+                                ee.printStackTrace();
+                                }
+                            } catch (Exception eeee) {
+                                eeee.printStackTrace();
+                            }
+                            n++;
+                            System.out.println(n + "/" + res.size());
+                        }
+                    };
+                    setMatchEvent.queue();
         }
     }  
 
