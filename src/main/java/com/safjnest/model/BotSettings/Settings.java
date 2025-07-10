@@ -1,5 +1,8 @@
 package com.safjnest.model.BotSettings;
 
+import lombok.Data;
+
+@Data
 public class Settings {
     private AppConfig config;
     private JsonSettings jsonSettings;
@@ -10,24 +13,4 @@ public class Settings {
         this.jsonSettings = jsonSettings;
         this.botSettings = botSettings;
     }
-
-    public AppConfig getConfig() {
-        return config;
-    }
-    public void setConfig(AppConfig config) {
-        this.config = config;
-    }
-    public JsonSettings getJsonSettings() {
-        return jsonSettings;
-    }
-    public void setJsonSettings(JsonSettings jsonSettings) {
-        this.jsonSettings = jsonSettings;
-    }
-    public BotSettings getBotSettings() {
-        return botSettings;
-    }
-    public void setBotSettings(BotSettings botSettings) {
-        this.botSettings = botSettings;
-    }
-
 }

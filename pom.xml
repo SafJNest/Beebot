@@ -187,8 +187,15 @@
     <dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
-      <version>5.3.1</version>
+      <version>5.6.1</version>
     </dependency>
+    <!--
+    <dependency>
+      <groupId>io.github.freya022</groupId>
+      <artifactId>JDA</artifactId>
+      <version>620fd62d12</version>
+    </dependency>
+    -->
 
     <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-shade-plugin -->
     <dependency>
@@ -353,6 +360,13 @@
       <groupId>io.nayuki</groupId>
       <artifactId>qrcodegen</artifactId>
       <version>1.8.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
+    <dependency>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>1.18.38</version>
     </dependency>
 
   </dependencies>
