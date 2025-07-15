@@ -97,9 +97,12 @@ public abstract class CacheAdapter<K, V> extends AbstractCache<K, V> {
         return super.getTypeLimit(getValueType());
     }
 
+    public void clear() {
+        for (K key : keySet()) {
+            remove(key);
+        }
+    }
 
-    
-    
     @SuppressWarnings("unchecked")
     protected Class<K> getKeyType() {
         if (key != null) 

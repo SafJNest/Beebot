@@ -88,9 +88,9 @@ public class PrintCache extends Command {
                 event.reply("Sound size set to " + args[1]);
                 break;
             case "clear":
-                // Bot.getGuildSettings().clear();
-                // Bot.getUsers().clear();
-                //SoundHandler.getSoundCache().clear();
+                GuildCache.getInstance().clear();
+                UserCache.getInstance().clear();
+                SoundCache.getInstance().clear();
                 event.reply("Cache cleared");
                 break;
             default:
