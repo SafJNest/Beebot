@@ -42,8 +42,9 @@ import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 
 public class Functions {
     
@@ -308,7 +309,7 @@ public class Functions {
         kick = kick.withStyle(ButtonStyle.PRIMARY);
         ban = ban.withStyle(ButtonStyle.PRIMARY);
         ignore = ignore.withStyle(ButtonStyle.SUCCESS);
-        channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
+        channel.sendMessageEmbeds(eb.build()).setComponents(ActionRow.of(ignore, kick, ban)).queue();
     }
 
     public static void handleBlacklistAlert(User badGuy, Guild guild) {
@@ -347,7 +348,7 @@ public class Functions {
             kick = kick.withStyle(ButtonStyle.PRIMARY);
             ban = ban.withStyle(ButtonStyle.PRIMARY);
             ignore = ignore.withStyle(ButtonStyle.SUCCESS);
-            channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
+            channel.sendMessageEmbeds(eb.build()).setComponents(ActionRow.of(ignore, kick, ban)).queue();
         }
     }
 

@@ -21,13 +21,13 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.DateHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.selections.SelectOption;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -53,7 +53,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 public class LeagueMessage {
 
 
-    public static List<LayoutComponent> composeButtons(Summoner s, String user_id, String id) {
+    public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, String id) {
         Button left = Button.primary(id + "-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary(id + "-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
         Button refresh = Button.primary(id + "-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
@@ -298,15 +298,15 @@ public class LeagueMessage {
             + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
     }
 
-    public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id) {
+    public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id) {
         long[] time = LeagueHandler.getCurrentSplitRange();
         return getSummonerButtons(s, user_id, time[0], time[1], GameQueueType.TEAM_BUILDER_RANKED_SOLO);
     }
 
-    public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id, long start, long end, GameQueueType queue) {
+    public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id, long start, long end, GameQueueType queue) {
         int index = 0;
 
-        List<LayoutComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
+        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
 
         boolean hasTrackedGames = LeagueDBHandler.hasSummonerData(LeagueHandler.updateSummonerDB(s));
 
@@ -371,7 +371,7 @@ public class LeagueMessage {
 //   ▀██████▀   ▄████▀        ████████▀    ████████▀
 //
 
-    public static LayoutComponent getOpggQueueTypeButtons(GameQueueType queue) {
+    public static MessageTopLevelComponent getOpggQueueTypeButtons(GameQueueType queue) {
         GameQueueType currentGameQueueType = GameQueueType.CHERRY;
 
         Button soloQ = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
@@ -954,7 +954,7 @@ public class LeagueMessage {
 
     }
 
-    public static List<LayoutComponent> getOpggButtons(Summoner s, String user_id, GameQueueType queue, int index) {
+    public static List<MessageTopLevelComponent> getOpggButtons(Summoner s, String user_id, GameQueueType queue, int index) {
         int order = 0;
         Button left = Button.primary("match-matchleft", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         if (index == 0) left = left.asDisabled();
@@ -962,7 +962,7 @@ public class LeagueMessage {
         Button page = Button.primary("match-index-" + index, "Match " + ((index/5)+1)).asDisabled();
         Button right = Button.primary("match-matchright", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
-        List<LayoutComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "match"));
+        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "match"));
 
         StringSelectMenu menu = LeagueMessage.getOpggMenu(s, queue, index);
         if (menu != null) {
@@ -1116,7 +1116,7 @@ public class LeagueMessage {
                 .build();
     }
 
-    public static List<LayoutComponent> getLivegameButtons(Summoner s, String user_id) {
+    public static List<MessageTopLevelComponent> getLivegameButtons(Summoner s, String user_id) {
         return composeButtons(s, user_id, "rank");
     }
 

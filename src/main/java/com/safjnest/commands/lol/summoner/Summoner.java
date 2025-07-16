@@ -13,9 +13,9 @@ import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -67,7 +67,7 @@ public class Summoner extends SlashCommand {
         }
 
         EmbedBuilder builder = LeagueMessage.getSummonerEmbed(s);
-        List<LayoutComponent> buttons = LeagueMessage.getSummonerButtons(s, theGuy != null ? theGuy.getId() : null);
+        List<MessageTopLevelComponent> buttons = LeagueMessage.getSummonerButtons(s, theGuy != null ? theGuy.getId() : null);
 
         event.getChannel().sendMessageEmbeds(builder.build()).setComponents(buttons).queue();
 
