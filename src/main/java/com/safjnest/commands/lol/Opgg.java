@@ -1,6 +1,8 @@
 package com.safjnest.commands.lol;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -11,10 +13,16 @@ import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.container.ContainerChildComponent;
+import net.dv8tion.jda.api.components.section.Section;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 //TODO: try separeted container like, the first user data, then 5 match, then 1 for buttons controller (to be shared with all lol commands)
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -71,7 +79,7 @@ public class Opgg extends SlashCommand {
     @Override
 	protected void execute(SlashCommandEvent event) {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        event.deferReply(false).queue();
+        //event.deferReply(false).queue();
 
         s = LeagueHandler.getSummonerByArgs(event);
         if(s == null){
@@ -79,12 +87,34 @@ public class Opgg extends SlashCommand {
             return;
         }
 
-        User theGuy = null;
-        if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
-        else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
+        // User theGuy = null;
+        // if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
+        // else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
-        EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);        
-        event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
+        // EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);        
+        // event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
+
+        List<Container> containers = new ArrayList<>();
+
+        List<String> ids = LeagueMessage. getMatchIds(s, null,0);
+        
+        int cont = 0;
+        for (String id : ids) {
+                    List<ContainerChildComponent> children = new ArrayList<>();
+            LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(s.getPlatform().toRegionShard(), id);
+            children.add(
+                Section.of(
+                    Button.secondary("wedwefwdf" + cont, "View"),
+                    TextDisplay.of(match.getGameName() + " " + match.getQueue())
+                )
+            );
+            containers.add(Container.of(children));
+            cont++;
+            if (cont > 5) break;
+        }
+
+        event.replyComponents(containers).useComponentsV2().queue();
+        
 	}
     
 }
