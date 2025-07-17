@@ -73,7 +73,7 @@ public class MatchTracker {
                     if (summoner == null) 
                         throw new Exception("account null ??????");
                     
-                    LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner, null);
+                    LeagueHandler.clearCache(URLEndpoint.V5_MATCHLIST, summoner, GameQueueType.TEAM_BUILDER_RANKED_SOLO);
                     LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, summoner, null);
             
                     try { Thread.sleep(350); }
