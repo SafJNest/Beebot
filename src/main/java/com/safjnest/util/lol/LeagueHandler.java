@@ -995,7 +995,7 @@ import com.safjnest.core.cache.managers.UserCache;
                 break;
             case V4_LEAGUE_ENTRY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());
-                data.put("puuid", summoner.getPUUID());
+                data.put("id", summoner.getPUUID());
                 break;
 
             default:
@@ -1007,6 +1007,7 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static void clearSummonerCache(Summoner summoner) {
         clearCache(URLEndpoint.V4_SUMMONER_BY_PUUID, summoner, null);
+        clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner, null);
     }
