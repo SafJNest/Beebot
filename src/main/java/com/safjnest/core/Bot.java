@@ -185,7 +185,7 @@ public class Bot {
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
             new Livegame(),
             new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), new Champion(), new Opgg(), 
-            new Weather(), new APOD(), new SpecialChar(), new Tracks(),
+            new Weather(), new APOD(), new SpecialChar(), new Tracks(), new Albums(),
             new Region(), new UltimateBravery(), new Item(), new QRCode()
         );
         

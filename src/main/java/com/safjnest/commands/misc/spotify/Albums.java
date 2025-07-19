@@ -9,12 +9,11 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.jdom2.Text;
-
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.util.BotCommand;
@@ -35,11 +34,10 @@ import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.utils.FileUpload;
 import net.dv8tion.jda.internal.components.mediagallery.MediaGalleryItemImpl;
 
-public class Tracks extends SlashCommand{
-
+public class Albums extends SlashCommand{
     private static final String spotifyPath = "rsc" + File.separator + "my_spotify_data.zip";
 
-    public Tracks() {
+    public Albums() {
         this.name = this.getClass().getSimpleName().toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -60,19 +58,19 @@ public class Tracks extends SlashCommand{
         try {
             List<SpotifyTrackStreaming> streamings = Spotify.readStreamsInfoFromZip(spotifyPath);
 
-            List<Map.Entry<SpotifyTrack, Long>> sortedEntries = Spotify.getSortedTracks(streamings);
+            List<Map.Entry<SpotifyAlbum, Long>> sortedEntries = Spotify.getSortedAlbums(streamings);
 
-            List<Map.Entry<SpotifyTrack, Long>> limitedEntries = sortedEntries.stream()
+            List<Map.Entry<SpotifyAlbum, Long>> limitedEntries = sortedEntries.stream()
                 .limit(5)
                 .toList();
             
-            List<Section> topTracks = IntStream.range(0, limitedEntries.size())
-                .mapToObj(i -> getTrackRow(i, limitedEntries.get(i).getKey(), limitedEntries.get(i).getValue()))
+            List<Section> topAlbums = IntStream.range(0, limitedEntries.size())
+                .mapToObj(i -> getAlbumRow(i, limitedEntries.get(i).getKey(), limitedEntries.get(i).getValue()))
                 .toList();
 
             List<ContainerChildComponent> children = new ArrayList<>();
-            children.add(TextDisplay.of("## Top Spotify Tracks"));
-            children.addAll(topTracks);
+            children.add(TextDisplay.of("## Top Spotify Albums"));
+            children.addAll(topAlbums);
             children.add(
                 ActionRow.of(
                     Button.primary("spotify-tracks-back", " ")
@@ -94,17 +92,18 @@ public class Tracks extends SlashCommand{
         }
     }
 
-    private Section getTrackRow(int position, SpotifyTrack track, long playCount) {
+    private Section getAlbumRow(int position, SpotifyAlbum album, long playCount) {
         String rowDescription = String.format(
             "%s - %s\n**%s**\n-# %s",
             SafJNest.intToEmojiDigits(position + 1),
             playCount > 1 ? "Played " + playCount + " times" : "",
-            track.getName(),
-            track.getArtist()
+            album.getName(),
+            album.getArtist()
+            
         );
 
         return Section.of(
-            Thumbnail.fromUrl(Spotify.getTrackImage(track.getURI())),
+            Thumbnail.fromUrl(Spotify.getTrackImage(album.getTracks().get(0).getURI())),
             TextDisplay.of(rowDescription)
         );
     }

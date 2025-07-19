@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
+import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyTrack;
 
 //nome
@@ -40,69 +41,59 @@ import com.safjnest.model.spotify.SpotifyTrack;
 public class Spotify {
     private static final String SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1";
     private static final String spotifyPath = "rsc" + File.separator + "my_spotify_data.zip";
-
-    public static void printTracks() {
-        try {
-            long startTime = System.currentTimeMillis();
-            List<SpotifyTrackStreaming> streamings = readStreamsInfoFromZip(spotifyPath);
-            long endTime = System.currentTimeMillis();
-            System.out.println("Time taken to read tracks: " + (endTime - startTime) + " ms");
-            System.out.println("Total tracks: " + streamings.size());
-            //tracks.forEach(System.out::println);
-
-            Map<SpotifyTrack, Long> tracks = streamings.stream()
+    
+    public static List<Map.Entry<SpotifyTrack, Long>> getTracks(List<SpotifyTrackStreaming> streamings){
+        return streamings.stream()
             .filter(streaming -> streaming.getMsPlayed() >= 30000)
             .collect(Collectors.groupingBy(
                 streaming -> streaming.getTrack(),
                 Collectors.counting()
-            ));
-
-            System.out.println("Total unique tracks: " + tracks.size());
-            printTopTracks(tracks);
-            System.out.println("\nTop Albums:");
-            printTopAlbums(tracks);
-            System.out.println("\nTop Artists:");
-            printTopArtists(tracks);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            )).entrySet().stream().toList();
     }
 
-    public static void printTopTracks(Map<SpotifyTrack, Long> tracks) {
-        tracks.entrySet().stream()
-            .sorted(Map.Entry.<SpotifyTrack, Long>comparingByValue().reversed())
-            .limit(10)
-            .forEach(entry -> System.out.println(entry.getKey().toString() + " - Played " + entry.getValue() + " times"));
+    //get tracks with play count from streamings (only those played for more than 30s)
+    public static List<Map.Entry<SpotifyTrack, Long>> getSortedTracks(List<SpotifyTrackStreaming> streamings){
+        return getTracks(streamings).stream()
+            .sorted(Map.Entry.<SpotifyTrack, Long>comparingByValue().reversed()).toList();
     }
 
-    public static void printTopAlbums(Map<SpotifyTrack, Long> tracks) {
-        Map<String, Long> albums = tracks.entrySet().stream()
-            .collect(Collectors.groupingBy(
-                entry -> entry.getKey().getAlbum(),
-                Collectors.summingLong(Map.Entry::getValue)
+    public static List<Map.Entry<SpotifyAlbum, Long>> getSortedAlbums(List<SpotifyTrackStreaming> streamings) {
+        Map<SpotifyTrack, Long> trackCounts = getTracks(streamings).stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        Map<String, List<SpotifyTrack>> albumToTracks = trackCounts.keySet().stream()
+            .collect(Collectors.groupingBy(SpotifyTrack::getAlbum));
+
+        Map<SpotifyAlbum, Long> albumPlayCounts = albumToTracks.entrySet().stream()
+            .collect(Collectors.toMap(
+                entry -> new SpotifyAlbum(entry.getKey(), entry.getValue().get(0).getArtist(), entry.getValue()),
+                entry -> entry.getValue().stream()
+                    .mapToLong(track -> trackCounts.getOrDefault(track, 0L))
+                    .sum()
             ));
 
-        albums.entrySet().stream()
-            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-            .limit(10)
-            .forEach(entry -> System.out.println(entry.getKey() + " - Played " + entry.getValue() + " times"));
-    }
-
-    public static void printTopArtists(Map<SpotifyTrack, Long> tracks) {
-        Map<String, Long> artists = tracks.entrySet().stream()
-            .collect(Collectors.groupingBy(
-                entry -> entry.getKey().getArtist(),
-                Collectors.summingLong(Map.Entry::getValue)
-            ));
-
-        artists.entrySet().stream()
-            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
-            .limit(10)
-            .forEach(entry -> System.out.println(entry.getKey() + " - Played " + entry.getValue() + " times"));
+        return albumPlayCounts.entrySet().stream()
+            .sorted(Map.Entry.<SpotifyAlbum, Long>comparingByValue().reversed())
+            .toList();
     }
 
     public static String getTrackImage(String trackId) {
+        String urlString = SPOTIFY_API_BASE_URL + "/tracks/" + trackId;
+        String response = getJSONFromURL(urlString);
+
+        try {
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            String imageUrl = jsonResponse.getJSONObject("album").getJSONArray("images")
+                .getJSONObject(0).getString("url");
+
+            return imageUrl;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "https://i.scdn.co/image/ab67616d0000b2739194a814e095d1347c02fd32";
+        }
+    }
+
+    public static String getAlbumImage(String trackId) {
         String urlString = SPOTIFY_API_BASE_URL + "/tracks/" + trackId;
         String response = getJSONFromURL(urlString);
 

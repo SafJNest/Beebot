@@ -1228,6 +1228,13 @@
         "arguments" : ""
     },
 
+    "albums": {
+        "alias" : [],
+        "help"  : "Top spotify albums.",
+        "category" : "Miscellaneous",
+        "arguments" : ""
+    },
+
 
 
 
