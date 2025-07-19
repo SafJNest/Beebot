@@ -1,15 +1,21 @@
 package com.safjnest.util.spotify;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -32,12 +38,13 @@ import com.safjnest.model.spotify.SpotifyTrack;
 //"spotify_track_uri": "spotify:track:7wqSzGeodspE3V6RBD5W8L" | (null if podcast)
 
 public class Spotify {
+    private static final String SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1";
     private static final String spotifyPath = "rsc" + File.separator + "my_spotify_data.zip";
 
     public static void printTracks() {
         try {
             long startTime = System.currentTimeMillis();
-            List<SpotifyTrackStreaming> streamings = readTrackInfoFromZip(spotifyPath);
+            List<SpotifyTrackStreaming> streamings = readStreamsInfoFromZip(spotifyPath);
             long endTime = System.currentTimeMillis();
             System.out.println("Time taken to read tracks: " + (endTime - startTime) + " ms");
             System.out.println("Total tracks: " + streamings.size());
@@ -95,7 +102,45 @@ public class Spotify {
             .forEach(entry -> System.out.println(entry.getKey() + " - Played " + entry.getValue() + " times"));
     }
 
-    public static List<SpotifyTrackStreaming> readTrackInfoFromZip(String zipFilePath) throws IOException {
+    public static String getTrackImage(String trackId) {
+        String urlString = SPOTIFY_API_BASE_URL + "/tracks/" + trackId;
+        String response = getJSONFromURL(urlString);
+
+        try {
+            JSONObject jsonResponse = new JSONObject(response.toString());
+            String imageUrl = jsonResponse.getJSONObject("album").getJSONArray("images")
+                .getJSONObject(0).getString("url");
+
+            return imageUrl;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "https://i.scdn.co/image/ab67616d0000b2739194a814e095d1347c02fd32";
+        }
+    }
+
+    public static String getJSONFromURL(String urlString) {
+        StringBuilder result = new StringBuilder();
+        try {
+            URL url = new URL(urlString);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + TokenManager.getAccessToken());
+
+            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String line;
+            while ((line = rd.readLine()) != null) {
+                result.append(line);
+            }
+            rd.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result.toString();
+    }
+
+
+    public static List<SpotifyTrackStreaming> readStreamsInfoFromZip(String zipFilePath) throws IOException {
         File zipFile = new File(spotifyPath);
 
         List<SpotifyTrackStreaming> trackList = new ArrayList<>();
@@ -107,8 +152,8 @@ public class Spotify {
         factory.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
 
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(zipFile), 32 * 1024);
-
             ZipInputStream zis = new ZipInputStream(bis)) {
+
             ZipEntry entry;
 
             while ((entry = zis.getNextEntry()) != null) {

@@ -53,6 +53,7 @@ import com.safjnest.commands.members.move.*;
 import com.safjnest.commands.misc.*;
 import com.safjnest.commands.misc.omegle.Omegle;
 import com.safjnest.commands.misc.twitch.*;
+import com.safjnest.commands.misc.spotify.*;
 import com.safjnest.commands.owner.*;
 import com.safjnest.commands.owner.Shutdown;
 import com.safjnest.commands.queue.*;
@@ -184,7 +185,7 @@ public class Bot {
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
             new Livegame(),
             new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), new Champion(), new Opgg(), 
-            new Weather(), new APOD(), new SpecialChar(), 
+            new Weather(), new APOD(), new SpecialChar(), new Tracks(),
             new Region(), new UltimateBravery(), new Item(), new QRCode()
         );
         

@@ -16,6 +16,7 @@ public class JsonSettings {
     private TwitchSettings twitch;
     private LavalinkSettings lavalink;
     private SpotifySettings spotify;
+    private SpotifyApiSettings spotifyApi;
 
     private String youtubeApiKey;
     private String ttsApiKey;

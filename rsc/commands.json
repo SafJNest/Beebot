@@ -1221,6 +1221,13 @@
         "arguments" : "[warn] [@user] (reason)"
     },
 
+    "tracks": {
+        "alias" : [],
+        "help"  : "Top spotify tracks.",
+        "category" : "Miscellaneous",
+        "arguments" : ""
+    },
+
 
 
 

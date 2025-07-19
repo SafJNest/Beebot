@@ -12,6 +12,9 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class SettingsLoader {
+    private static final String settingsPath = "rsc" + File.separator + "settings.json";
+    private static final String configPath = "config.properties";
+
     private static com.safjnest.model.BotSettings.Settings settings;
 
     public static AppConfig loadConfig(String filePath) throws IOException {
@@ -58,7 +61,11 @@ public class SettingsLoader {
 
     public static com.safjnest.model.BotSettings.Settings getSettings() {
         if (settings == null) {
-            throw new IllegalStateException("Settings not loaded. Call loadSettings() first.");
+            try {
+                loadSettings(settingsPath, configPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to load settings", e);
+            }
         }
         return settings;
     }
