@@ -23,6 +23,7 @@ import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import java.awt.Color;
 //TODO: try separeted container like, the first user data, then 5 match, then 1 for buttons controller (to be shared with all lol commands)
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -79,7 +80,7 @@ public class Opgg extends SlashCommand {
     @Override
 	protected void execute(SlashCommandEvent event) {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        //event.deferReply(false).queue();
+        event.deferReply(false).queue();
 
         s = LeagueHandler.getSummonerByArgs(event);
         if(s == null){
@@ -94,26 +95,9 @@ public class Opgg extends SlashCommand {
         // EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);        
         // event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
 
-        List<Container> containers = new ArrayList<>();
 
-        List<String> ids = LeagueMessage. getMatchIds(s, null,0);
-        
-        int cont = 0;
-        for (String id : ids) {
-                    List<ContainerChildComponent> children = new ArrayList<>();
-            LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(s.getPlatform().toRegionShard(), id);
-            children.add(
-                Section.of(
-                    Button.secondary("wedwefwdf" + cont, "View"),
-                    TextDisplay.of(match.getGameName() + " " + match.getQueue())
-                )
-            );
-            containers.add(Container.of(children));
-            cont++;
-            if (cont > 5) break;
-        }
 
-        event.replyComponents(containers).useComponentsV2().queue();
+        event.getHook().editOriginalComponents(LeagueMessage.getOpggEmbedV2(s, null, 0)).useComponentsV2().queue();
         
 	}
     
