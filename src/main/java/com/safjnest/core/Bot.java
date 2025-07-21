@@ -218,6 +218,7 @@ public class Bot {
         jda.addEventListener(new EventButtonHandler());
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
+        jda.addEventListener(new EventFockingComponentsFockingHandlerFockingDotJava());
     }
 
 

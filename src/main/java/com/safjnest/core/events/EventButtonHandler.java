@@ -77,6 +77,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
+        if (event.getMessage().isUsingComponentsV2()) return;
         String buttonId = event.getButton().getCustomId();
 
         if (buttonId.startsWith("sound-")) {

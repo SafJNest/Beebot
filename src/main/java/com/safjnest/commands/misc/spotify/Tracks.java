@@ -14,6 +14,7 @@ import org.jdom2.Text;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
@@ -21,6 +22,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.spotify.Spotify;
+import com.safjnest.util.spotify.SpotifyMessage;
 
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -58,54 +60,11 @@ public class Tracks extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         try {
-            List<SpotifyTrackStreaming> streamings = Spotify.readStreamsInfoFromZip(spotifyPath);
-
-            List<Map.Entry<SpotifyTrack, Long>> sortedEntries = Spotify.getSortedTracks(streamings);
-
-            List<Map.Entry<SpotifyTrack, Long>> limitedEntries = sortedEntries.stream()
-                .limit(5)
-                .toList();
-            
-            List<Section> topTracks = IntStream.range(0, limitedEntries.size())
-                .mapToObj(i -> getTrackRow(i, limitedEntries.get(i).getKey(), limitedEntries.get(i).getValue()))
-                .toList();
-
-            List<ContainerChildComponent> children = new ArrayList<>();
-            children.add(TextDisplay.of("## Top Spotify Tracks"));
-            children.addAll(topTracks);
-            children.add(
-                ActionRow.of(
-                    Button.primary("spotify-tracks-back", " ")
-                    .withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow")),
-                    Button.primary("spotify-tracks-center", "Page: 1")
-                        .withStyle(ButtonStyle.SUCCESS)
-                        .asDisabled(),
-                    Button.primary("spotify-tracks-next", " ")
-                    .withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"))
-                )
-            );
-
-            event.replyComponents(Container.of(children))
+            event.replyComponents(List.of(SpotifyMessage.getMainContent("tracks", 0), SpotifyMessage.getButtonComponents("tracks")))
                 .useComponentsV2()
                 .queue();
-
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private Section getTrackRow(int position, SpotifyTrack track, long playCount) {
-        String rowDescription = String.format(
-            "%s - %s\n**%s**\n-# %s",
-            SafJNest.intToEmojiDigits(position + 1),
-            playCount > 1 ? "Played " + playCount + " times" : "",
-            track.getName(),
-            track.getArtist()
-        );
-
-        return Section.of(
-            Thumbnail.fromUrl(Spotify.getTrackImage(track.getURI())),
-            TextDisplay.of(rowDescription)
-        );
     }
 }
