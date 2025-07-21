@@ -29,7 +29,8 @@ public class Tracks extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         try {
-            event.replyComponents(List.of(SpotifyMessage.getMainContent("tracks", 0), SpotifyMessage.getButtonComponents("tracks")))
+            event.deferReply(false).queue();
+            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent("tracks", 0), SpotifyMessage.getButtonComponents("tracks")))
                 .useComponentsV2()
                 .queue();
         } catch (IOException e) {

@@ -23,6 +23,7 @@ public class EventFockingComponentsFockingHandlerFockingDotJava  extends Listene
       String innerType = event.getComponentId().split("-", 3)[1];
       String args = event.getComponentId().split("-", 3).length > 2 ? event.getComponentId().split("-", 3)[2] : "";
 
+      event.deferEdit().queue();
       switch (type) {
         case "spotify":
           spotify(event, innerType, args);
@@ -74,7 +75,7 @@ public class EventFockingComponentsFockingHandlerFockingDotJava  extends Listene
       }
       System.out.println(innerType + " " + currentType + " " + currentIndex);
       try {
-        event.editComponents(List.of(SpotifyMessage.getMainContent(currentType, currentIndex), SpotifyMessage.getButtonComponents(currentType, currentIndex))).useComponentsV2(true).queue();
+        event.getMessage().editMessageComponents(List.of(SpotifyMessage.getMainContent(currentType, currentIndex), SpotifyMessage.getButtonComponents(currentType, currentIndex))).useComponentsV2(true).queue();
       } catch (IOException e) {
         e.printStackTrace();
       }

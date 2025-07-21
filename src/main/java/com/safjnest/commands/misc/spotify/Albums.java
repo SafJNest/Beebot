@@ -30,7 +30,8 @@ public class Albums extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         try {
-            event.replyComponents(List.of(SpotifyMessage.getMainContent("albums", 0), SpotifyMessage.getButtonComponents("albums")))
+            event.deferReply(false).queue();
+            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent("albums", 0), SpotifyMessage.getButtonComponents("albums")))
                 .useComponentsV2()
                 .queue();
         } catch (IOException e) {
