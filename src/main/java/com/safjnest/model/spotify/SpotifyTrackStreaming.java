@@ -52,4 +52,16 @@ public class SpotifyTrackStreaming {
                 safeTs, safeUserId, msPlayed, name, artist, album, uri);
     }
 
+    public String getArtistName() {
+        return track.getArtist();
+    }
+
+    public String getAlbumName() {
+        return track.getAlbum();
+    }
+
+    public String getSpotifyTrackUri() {
+        return track.getURI();
+    }
+
 }

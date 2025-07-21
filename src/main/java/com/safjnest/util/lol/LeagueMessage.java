@@ -30,6 +30,8 @@ import net.dv8tion.jda.api.components.container.ContainerChildComponent;
 import net.dv8tion.jda.api.components.section.Section;
 import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.components.separator.Separator;
+import net.dv8tion.jda.api.components.separator.Separator.Spacing;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -1050,11 +1052,23 @@ public class LeagueMessage {
 
 
                 }
-                
-                containers.add(Container.of(Section.of(
-                    Thumbnail.fromUrl(LeagueHandler.getChampionProfilePic(me.getChampionName())),
+
+                StringSelectMenu menu = getSelectedMatchMenu(match);
+                Button viewMatch = Button.primary("match-view-" + match.getGameId(), "View");
+
+                Section section = Section.of(
+                    viewMatch,
                     TextDisplay.of(content)
-                )).withAccentColor(me.didWin() ? Color.green : Color.RED));
+                );
+
+
+                
+                List<ContainerChildComponent> buttons = new ArrayList<>();
+                buttons.add(section);
+                buttons.add(Separator.createDivider(Spacing.SMALL));
+                buttons.add(ActionRow.of(menu));
+                
+                containers.add(Container.of(buttons).withAccentColor(me.didWin() ? Color.green : Color.RED));
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -1062,7 +1076,7 @@ public class LeagueMessage {
             }
         }
 
-
+        System.out.println(containers);
         return containers;
     }
 
@@ -1136,7 +1150,7 @@ public class LeagueMessage {
             options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getPuuid() + "#" + match.getPlatform().name()).withEmoji(icon));
         }
 
-        return StringSelectMenu.create("rank-select")
+        return StringSelectMenu.create("rank-select"  + "#" + match.getGameId())
                 .setPlaceholder("Select a summoner")
                 .setMaxValues(1)
                 .addOptions(options)

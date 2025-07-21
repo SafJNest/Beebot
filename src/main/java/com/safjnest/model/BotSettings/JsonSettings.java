@@ -11,6 +11,7 @@ public class JsonSettings {
     private DatabaseSettings testDatabase;
     private DatabaseSettings testWebsiteDatabase;
     private DatabaseSettings leagueDatabase;
+    private DatabaseSettings spotifyDatabase;
     private OpenAISettings openAI;
     private RiotSettings riot;
     private TwitchSettings twitch;

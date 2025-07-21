@@ -8,7 +8,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,6 +28,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.SpotifyDBHandler;
 import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyTrack;
 
@@ -149,7 +154,7 @@ public class Spotify {
             ZipEntry entry;
 
             while ((entry = zis.getNextEntry()) != null) {
-                if (!entry.isDirectory() && entry.getName().endsWith(".json")) {    
+                if (!entry.isDirectory() && entry.getName().endsWith(".json")) {
                     try (JsonParser parser = factory.createParser(zis)) {
                         if (parser.nextToken() == JsonToken.START_ARRAY) {
                             while (parser.nextToken() == JsonToken.START_OBJECT) {
@@ -175,30 +180,14 @@ public class Spotify {
                 }
             }
         }
-        insertBatch(trackList,"291624587278417920");
+        try {
+            System.out.println("Saving " + trackList.size() + " tracks to the database...");
+            SpotifyDBHandler.insertBatch(trackList,"335796793331810305");
+        } catch (NoSuchAlgorithmException | SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         return trackList;
     }
 
-    public static void insertBatch(List<SpotifyTrackStreaming> trackList, String userId) {
-        int batchSize = 10000;
-        StringBuilder query = new StringBuilder();
-        int count = 0;
-
-        for (int i = 0; i < trackList.size(); i++) {
-            if (count == 0) {
-                query.append("INSERT IGNORE INTO spotify_streaming (ts, user_id, ms_played, track_name, track_artist, track_album, track_uri) VALUES\n");
-            }
-
-            query.append(trackList.get(i).toValues(userId));
-
-            if (++count == batchSize || i == trackList.size() - 1) {
-                query.append(";\n");
-                DatabaseHandler.runQueryAsync(query.toString());
-                query.setLength(0); // reset
-                count = 0;
-            } else {
-                query.append(",\n");
-            }
-        }
-    }
 }

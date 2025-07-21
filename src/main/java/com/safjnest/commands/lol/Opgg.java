@@ -1,8 +1,6 @@
 package com.safjnest.commands.lol;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -13,18 +11,11 @@ import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.components.buttons.Button;
-import net.dv8tion.jda.api.components.container.Container;
-import net.dv8tion.jda.api.components.container.ContainerChildComponent;
-import net.dv8tion.jda.api.components.section.Section;
-import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
-import java.awt.Color;
-//TODO: try separeted container like, the first user data, then 5 match, then 1 for buttons controller (to be shared with all lol commands)
+
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
@@ -96,9 +87,7 @@ public class Opgg extends SlashCommand {
         // event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
 
 
-
         event.getHook().editOriginalComponents(LeagueMessage.getOpggEmbedV2(s, null, 0)).useComponentsV2().queue();
-        
 	}
     
 }

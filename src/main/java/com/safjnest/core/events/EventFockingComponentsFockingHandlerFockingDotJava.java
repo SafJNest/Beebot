@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-public class EventFockingComponentsFockingHandlerFockingDotJava  extends ListenerAdapter {
+  public class EventFockingComponentsFockingHandlerFockingDotJava extends ListenerAdapter {
 
     @Override
     public void onGenericComponentInteractionCreate(GenericComponentInteractionCreateEvent event) {
@@ -56,8 +56,6 @@ public class EventFockingComponentsFockingHandlerFockingDotJava  extends Listene
       }
 
       
-
-      System.out.println(innerType + " " + currentType + " " + currentIndex);
       switch (innerType) {
         case "left":
           if (currentIndex > 0) 
@@ -73,7 +71,6 @@ public class EventFockingComponentsFockingHandlerFockingDotJava  extends Listene
         default:
           break;
       }
-      System.out.println(innerType + " " + currentType + " " + currentIndex);
       try {
         event.getMessage().editMessageComponents(List.of(SpotifyMessage.getMainContent(currentType, currentIndex), SpotifyMessage.getButtonComponents(currentType, currentIndex))).useComponentsV2(true).queue();
       } catch (IOException e) {
