@@ -39,4 +39,17 @@ public class SpotifyTrackStreaming {
     public void setTrack(SpotifyTrack track) {
         this.track = track;
     }
+
+    public String toValues(String userId) {
+        String safeTs = ts.replace("T", " ").replace("Z", "");
+        String name = track.getName().replace("'", "''");
+        String artist = track.getArtist().replace("'", "''");
+        String album = track.getAlbum().replace("'", "''");
+        String uri = track.getURI().replace("'", "''");
+        String safeUserId = userId.replace("'", "''");
+
+        return String.format("('%s', '%s', %d, '%s', '%s', '%s', '%s')",
+                safeTs, safeUserId, msPlayed, name, artist, album, uri);
+    }
+
 }
