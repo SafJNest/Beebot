@@ -79,15 +79,15 @@ public class Opgg extends SlashCommand {
             return;
         }
 
-        // User theGuy = null;
-        // if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
-        // else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
+        User theGuy = null;
+        if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
+        else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
-        // EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);        
-        // event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
+        EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);        
+        event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
 
 
-        event.getHook().editOriginalComponents(LeagueMessage.getOpggEmbedV2(s, null, 0)).useComponentsV2().queue();
+        //event.getHook().editOriginalComponents(LeagueMessage.getOpggEmbedV2(s, null, 0)).useComponentsV2().queue();
 	}
     
 }

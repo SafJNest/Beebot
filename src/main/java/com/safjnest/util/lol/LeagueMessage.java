@@ -18,7 +18,6 @@ import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.DateHandler;
-import com.safjnest.util.spotify.Spotify;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
@@ -33,7 +32,6 @@ import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.separator.Separator.Spacing;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
-import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
@@ -940,6 +938,8 @@ public class LeagueMessage {
     }
 
 
+    @SuppressWarnings("unused")
+    @Deprecated
     public static List<Container> getOpggEmbedV2(Summoner s, GameQueueType queue, int index) {
         List<Container> containers = new ArrayList<>();
         LeagueShard shard = s.getPlatform();
