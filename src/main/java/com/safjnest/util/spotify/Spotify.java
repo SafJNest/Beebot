@@ -5,14 +5,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,7 +26,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
-import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.SpotifyDBHandler;
 import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyTrack;
@@ -182,9 +180,51 @@ public class Spotify {
         }
         try {
             System.out.println("Saving " + trackList.size() + " tracks to the database...");
-            SpotifyDBHandler.insertBatch(trackList,"335796793331810305");
+            SpotifyDBHandler.insertBatch(trackList,"291624587278417920");
         } catch (NoSuchAlgorithmException | SQLException e) {
             // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return trackList;
+    }
+
+    public static List<SpotifyTrackStreaming> readStreamsInfoFromZip(InputStream zipInputStream, String userId) throws IOException {
+        List<SpotifyTrackStreaming> trackList = new ArrayList<>();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
+
+        JsonFactory factory = new JsonFactory();
+        factory.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
+
+        try (ZipInputStream zis = new ZipInputStream(zipInputStream)) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                if (!entry.isDirectory() && entry.getName().endsWith(".json")) {
+                    try (JsonParser parser = factory.createParser(zis)) {
+                        if (parser.nextToken() == JsonToken.START_ARRAY) {
+                            while (parser.nextToken() == JsonToken.START_OBJECT) {
+                                JsonNode node = mapper.readTree(parser);
+                                if (node.path("master_metadata_track_name").isNull()) {
+                                    continue;
+                                }
+                                SpotifyTrackStreaming track = new SpotifyTrackStreaming(
+                                    node.path("ts").asText(),
+                                    node.path("ms_played").asLong(0),
+                                    node.path("master_metadata_track_name").asText(),
+                                    node.path("master_metadata_album_artist_name").asText(),
+                                    node.path("master_metadata_album_album_name").asText(),
+                                    node.path("spotify_track_uri").asText().substring(14)
+                                );
+                                trackList.add(track);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        try {
+            SpotifyDBHandler.insertBatch(trackList, userId);
+        } catch (NoSuchAlgorithmException | SQLException e) {
             e.printStackTrace();
         }
         return trackList;

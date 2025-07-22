@@ -7,15 +7,16 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.spotify.SpotifyMessage;
+
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 
-public class Tracks extends SlashCommand{
-    public Tracks() {
-        this.name = this.getClass().getSimpleName().toLowerCase();
+public class SpotifyAlbums extends SlashCommand {
 
-        BotCommand commandData = CommandsLoader.getCommand(this.name);
+    public SpotifyAlbums(String father) {
+        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+
+        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
         
-        this.aliases = commandData.getAliases();
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
@@ -30,11 +31,12 @@ public class Tracks extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         try {
             event.deferReply(false).queue();
-            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent("tracks", 0), SpotifyMessage.getButtonComponents("tracks")))
+            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent("albums", 0), SpotifyMessage.getButtonComponents("albums")))
                 .useComponentsV2()
                 .queue();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 }

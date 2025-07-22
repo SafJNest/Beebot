@@ -16,7 +16,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -323,10 +322,9 @@ public class SpotifyDBHandler {
     }
 
     public static void insertBatch(List<SpotifyTrackStreaming> trackList, String userId) throws SQLException, NoSuchAlgorithmException {
-        Connection conn = getConnection(); // tuo metodo per ottenere connessione
+        Connection conn = getConnection();
         conn.setAutoCommit(false);
 
-        // PreparedStatements per batch
         PreparedStatement insertArtist = conn.prepareStatement(
             "INSERT IGNORE INTO artists (artist_id, name) VALUES (?, ?)"
         );
@@ -357,19 +355,16 @@ public class SpotifyDBHandler {
         Set<String> seenTracks = new HashSet<>();
 
         for (SpotifyTrackStreaming t : trackList) {
-            // Genera gli ID deterministici
             String artistId = generateId(t.getArtistName());
             String albumId = generateId(t.getAlbumName() + artistId);
             String trackId = t.getSpotifyTrackUri();
 
-            // Insert artist
             if (seenArtists.add(artistId)) {
                 insertArtist.setString(1, artistId);
                 insertArtist.setString(2, t.getArtistName());
                 insertArtist.addBatch();
             }
 
-            // Insert album
             if (seenAlbums.add(albumId)) {
                 insertAlbum.setString(1, albumId);
                 insertAlbum.setString(2, t.getAlbumName());
@@ -402,6 +397,8 @@ public class SpotifyDBHandler {
             insertStreaming.addBatch();
         }
 
+        System.err.println("Inserted " + trackList.size() + " tracks into the database.");
+
         insertArtist.executeBatch();
         insertAlbum.executeBatch();
         insertAlbumArtist.executeBatch();
@@ -411,7 +408,6 @@ public class SpotifyDBHandler {
 
         conn.commit();
 
-        // Close statements
         insertArtist.close();
         insertAlbum.close();
         insertAlbumArtist.close();
