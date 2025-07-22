@@ -398,11 +398,10 @@ public class SpotifyDBHandler {
             insertStreaming.setString(1, userId);
             insertStreaming.setString(2, trackId);
             insertStreaming.setTimestamp(3, Timestamp.from(Instant.parse(t.getTs())));
-            insertStreaming.setInt(4, (int) 0);
+            insertStreaming.setLong(4, t.getMsPlayed());
             insertStreaming.addBatch();
         }
 
-        // Esecuzione batch
         insertArtist.executeBatch();
         insertAlbum.executeBatch();
         insertAlbumArtist.executeBatch();
