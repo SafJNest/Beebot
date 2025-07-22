@@ -32,7 +32,7 @@ public class SpotifyMessage {
 
 
   public static Container getButtonComponents(String type, int index) throws IOException {
-    List<SpotifyTrackStreaming> streamings = Spotify.readStreamsInfoFromZip("rsc" + File.separator + "my_spotify_data.zip");
+    List<SpotifyTrackStreaming> streamings = SpotifyHandler.readStreamsInfoFromZip("rsc" + File.separator + "my_spotify_data.zip");
     
     Button left = Button.primary("spotify-left", " ")
         .withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
@@ -59,11 +59,11 @@ public class SpotifyMessage {
     switch (type) {
         case "tracks":
             tracksButton = tracksButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
-            size = Spotify.getSortedTracks(streamings).size();
+            size = SpotifyHandler.getSortedTracks(streamings).size();
             break;
         case "albums":
             albumsButton = albumsButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
-            size = Spotify.getSortedAlbums(streamings).size();
+            size = SpotifyHandler.getSortedAlbums(streamings).size();
             break;
         case "authors":
             authorsButton = authorsButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
@@ -89,7 +89,7 @@ public class SpotifyMessage {
 
 
   public static Container getMainContent(String type, int index) throws IOException {
-    List<SpotifyTrackStreaming> streamings = Spotify.readStreamsInfoFromZip("rsc" + File.separator + "my_spotify_data.zip");
+    List<SpotifyTrackStreaming> streamings = SpotifyHandler.readStreamsInfoFromZip("rsc" + File.separator + "my_spotify_data.zip");
 
     switch (type) {
       case "tracks":
@@ -104,7 +104,7 @@ public class SpotifyMessage {
 
 
   private static Container getTopTracks(int index, List<SpotifyTrackStreaming> streamings) {
-    List<Map.Entry<SpotifyTrack, Long>> sortedEntries = Spotify.getSortedTracks(streamings);
+    List<Map.Entry<SpotifyTrack, Long>> sortedEntries = SpotifyHandler.getSortedTracks(streamings);
     List<Map.Entry<SpotifyTrack, Long>> limitedEntries = sortedEntries.stream()
         .skip(index)
         .limit(5)
@@ -128,14 +128,14 @@ public class SpotifyMessage {
         );
 
         return Section.of(
-            Thumbnail.fromUrl(Spotify.getTrackImage(track.getURI())),
+            Thumbnail.fromUrl(SpotifyHandler.getTrackImage(track.getURI())),
             TextDisplay.of(rowDescription)
         );
     }
 
 
     private static Container getTopAlbums(int index, List<SpotifyTrackStreaming> streamings) {
-        List<Map.Entry<SpotifyAlbum, Long>> sortedEntries = Spotify.getSortedAlbums(streamings);
+        List<Map.Entry<SpotifyAlbum, Long>> sortedEntries = SpotifyHandler.getSortedAlbums(streamings);
         List<Map.Entry<SpotifyAlbum, Long>> limitedEntries = sortedEntries.stream()
             .skip(index)
             .limit(5)
@@ -160,7 +160,7 @@ public class SpotifyMessage {
         );
 
         return Section.of(
-            Thumbnail.fromUrl(Spotify.getTrackImage(album.getTracks().get(0).getURI())),
+            Thumbnail.fromUrl(SpotifyHandler.getTrackImage(album.getTracks().get(0).getURI())),
             TextDisplay.of(rowDescription)
         );
     }

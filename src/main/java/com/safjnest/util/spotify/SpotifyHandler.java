@@ -42,7 +42,7 @@ import com.safjnest.model.spotify.SpotifyTrack;
 //"master_metadata_album_album_name": "See You Again (feat. Charlie Puth)"
 //"spotify_track_uri": "spotify:track:7wqSzGeodspE3V6RBD5W8L" | (null if podcast)
 
-public class Spotify {
+public class SpotifyHandler {
     private static final String SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1";
     private static final String spotifyPath = "rsc" + File.separator + "my_spotify_data.zip";
     

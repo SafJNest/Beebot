@@ -45,7 +45,7 @@ public class SpotifyUpload extends SlashCommand {
         event.getOption("zip").getAsAttachment().getProxy().download()
             .thenAccept(data -> {
               try {
-                com.safjnest.util.spotify.Spotify.readStreamsInfoFromZip(data, event.getUser().getId());
+                com.safjnest.util.spotify.SpotifyHandler.readStreamsInfoFromZip(data, event.getUser().getId());
                 event.getHook().editOriginal("done!").queue();
               } catch (IOException e) { }
               
