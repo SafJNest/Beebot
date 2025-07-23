@@ -226,6 +226,7 @@ public class MatchTracker {
                     continue;
                 }
                 try { 
+                    LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, toPush, null);
                     Thread.sleep(500); 
                 }
                 catch (InterruptedException e) {e.printStackTrace();}
