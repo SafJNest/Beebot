@@ -7,12 +7,22 @@ public class SpotifyTrack {
     private String artist;
     private String album;
     private String URI;
+    private int playCount; // Optional field to store play count
 
     public SpotifyTrack(String name, String artist, String album, String URI) {
         this.name = name;
         this.artist = artist;
         this.album = album;
         this.URI = URI;
+        this.playCount = 0;
+    }
+
+    public SpotifyTrack(String name, String artist, String album, String URI, int playCount) {
+        this.name = name;
+        this.artist = artist;
+        this.album = album;
+        this.URI = URI;
+        this.playCount = playCount;
     }
 
     @Override
@@ -50,6 +60,14 @@ public class SpotifyTrack {
 
     public void setURI(String uRI) {
         URI = uRI;
+    }
+
+    public int getPlayCount() {
+        return playCount;
+    }
+
+    public void setPlayCount(int playCount) {
+        this.playCount = playCount;
     }
 
     @Override

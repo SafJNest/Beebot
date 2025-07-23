@@ -188,7 +188,7 @@ public class SpotifyHandler {
         return trackList;
     }
 
-    public static List<SpotifyTrackStreaming> readStreamsInfoFromZip(InputStream zipInputStream, String userId) throws IOException {
+    public static List<SpotifyTrackStreaming> readStreamsInfoFromZip(InputStream zipInputStream) throws IOException {
         List<SpotifyTrackStreaming> trackList = new ArrayList<>();
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
@@ -222,12 +222,26 @@ public class SpotifyHandler {
                 }
             }
         }
-        try {
-            SpotifyDBHandler.insertBatch(trackList, userId);
-        } catch (NoSuchAlgorithmException | SQLException e) {
-            e.printStackTrace();
-        }
+        
         return trackList;
+    }
+
+    public static void uploadStreamingsToDB(List<SpotifyTrackStreaming> streamings, String userId) {
+        try {
+            List<SpotifyTrackStreaming> filteredStreamings = streamings.stream()
+            .filter(streaming -> streaming.getMsPlayed() >= 30000)
+            .collect(Collectors.toList());
+
+            if (filteredStreamings.isEmpty()) {
+                System.out.println("No streamings to upload.");
+                return;
+            }
+
+            System.out.println("Saving " + filteredStreamings.size() + " tracks to the database for user " + userId + "...");
+            SpotifyDBHandler.insertBatch(filteredStreamings, userId);
+        } catch (Exception e) {
+            System.out.println("Error uploading streamings to the database: " + e.getMessage());
+        }
     }
 
 }

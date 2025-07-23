@@ -3,10 +3,14 @@ package com.safjnest.commands.misc.spotify;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
+import com.safjnest.util.spotify.SpotifyHandler;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -45,7 +49,9 @@ public class SpotifyUpload extends SlashCommand {
         event.getOption("zip").getAsAttachment().getProxy().download()
             .thenAccept(data -> {
               try {
-                com.safjnest.util.spotify.SpotifyHandler.readStreamsInfoFromZip(data, event.getUser().getId());
+                List<SpotifyTrackStreaming> streamings = SpotifyHandler.readStreamsInfoFromZip(data);
+                SpotifyHandler.uploadStreamingsToDB(streamings, event.getUser().getId());
+
                 event.getHook().editOriginal("done!").queue();
               } catch (IOException e) { }
               

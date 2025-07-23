@@ -31,7 +31,7 @@ public class SpotifyAlbums extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         try {
             event.deferReply(false).queue();
-            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent("albums", 0), SpotifyMessage.getButtonComponents("albums")))
+            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent(event.getId(), "albums", 0), SpotifyMessage.getButtonComponents("albums")))
                 .useComponentsV2()
                 .queue();
         } catch (IOException e) {

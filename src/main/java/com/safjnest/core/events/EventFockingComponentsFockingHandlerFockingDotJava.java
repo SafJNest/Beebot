@@ -44,7 +44,6 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
         if (component instanceof ActionRow actionRow) {
           for (Component child : actionRow.getComponents()) {
             if (child instanceof Button button) {
-              System.out.println(button.getCustomId());
               if (button.getCustomId().startsWith("spotify-type-") && button.getStyle() == ButtonStyle.SUCCESS) {
                 currentType = button.getCustomId().split("-")[2];
               } else if (button.getCustomId().startsWith("spotify-center-")) {
@@ -72,7 +71,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
           break;
       }
       try {
-        event.getMessage().editMessageComponents(List.of(SpotifyMessage.getMainContent(currentType, currentIndex), SpotifyMessage.getButtonComponents(currentType, currentIndex))).useComponentsV2(true).queue();
+        event.getMessage().editMessageComponents(List.of(SpotifyMessage.getMainContent(event.getUser().getId(), currentType, currentIndex), SpotifyMessage.getButtonComponents(currentType, currentIndex))).useComponentsV2(true).queue();
       } catch (IOException e) {
         e.printStackTrace();
       }

@@ -29,9 +29,12 @@ public class SpotifyTracks extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         try {
             event.deferReply(false).queue();
-            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent("tracks", 0), SpotifyMessage.getButtonComponents("tracks")))
-                .useComponentsV2()
-                .queue();
+            event.getHook()
+                    .editOriginalComponents(
+                            List.of(SpotifyMessage.getMainContent(event.getMember().getId(), "tracks", 0),
+                                    SpotifyMessage.getButtonComponents("tracks")))
+                    .useComponentsV2()
+                    .queue();
         } catch (IOException e) {
             e.printStackTrace();
         }

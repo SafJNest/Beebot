@@ -11,6 +11,7 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
+import com.safjnest.sql.SpotifyDBHandler;
 import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
@@ -31,13 +32,11 @@ public class SpotifyMessage {
   }
 
 
-  public static Container getButtonComponents(String type, int index) throws IOException {
-    List<SpotifyTrackStreaming> streamings = SpotifyHandler.readStreamsInfoFromZip("rsc" + File.separator + "my_spotify_data.zip");
-    
+  public static Container getButtonComponents(String type, int index) throws IOException {    
     Button left = Button.primary("spotify-left", " ")
         .withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
 
-    Button center = Button.primary("spotify-center-" + index, "Page: " + (index + 1))
+    Button center = Button.primary("spotify-center-" + index, "Page " + (index / 5 + 1))
         .withStyle(ButtonStyle.SUCCESS)
         .asDisabled();
 
@@ -59,11 +58,11 @@ public class SpotifyMessage {
     switch (type) {
         case "tracks":
             tracksButton = tracksButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
-            size = SpotifyHandler.getSortedTracks(streamings).size();
+            //size = SpotifyHandler.getSortedTracks(streamings).size();
             break;
         case "albums":
             albumsButton = albumsButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
-            size = SpotifyHandler.getSortedAlbums(streamings).size();
+            //size = SpotifyHandler.getSortedAlbums(streamings).size();
             break;
         case "authors":
             authorsButton = authorsButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
@@ -75,7 +74,7 @@ public class SpotifyMessage {
 
 
     if (index == 0) left = left.asDisabled().withStyle(ButtonStyle.DANGER);
-    if (index >= (size / 5)) right = right.asDisabled().withStyle(ButtonStyle.DANGER);
+    //if (index >= (size / 5)) right = right.asDisabled().withStyle(ButtonStyle.DANGER);
 
     List<ContainerChildComponent> buttons = new ArrayList<>();
     buttons.add(ActionRow.of(left, center, right));
@@ -88,41 +87,35 @@ public class SpotifyMessage {
 
 
 
-  public static Container getMainContent(String type, int index) throws IOException {
-    List<SpotifyTrackStreaming> streamings = SpotifyHandler.readStreamsInfoFromZip("rsc" + File.separator + "my_spotify_data.zip");
-
-    switch (type) {
-      case "tracks":
-        return getTopTracks(index, streamings);
-      case "albums":
-        return getTopAlbums(index, streamings);
-      case "authors":
-      default:
-        return Container.of(TextDisplay.of("This feature is not implemented yet.")).withAccentColor(Bot.getColor());
+    public static Container getMainContent( String userId, String type, int index) throws IOException {
+        System.out.println(type);
+        switch (type) {
+            case "tracks":
+                return getTopTracks(userId, index);
+            case "albums":
+                // return getTopAlbums(index);
+            case "authors":
+            default:
+                return Container.of(TextDisplay.of("This feature is not implemented yet."))
+                    .withAccentColor(Bot.getColor());
+        }
     }
-  }
 
-
-  private static Container getTopTracks(int index, List<SpotifyTrackStreaming> streamings) {
-    List<Map.Entry<SpotifyTrack, Long>> sortedEntries = SpotifyHandler.getSortedTracks(streamings);
-    List<Map.Entry<SpotifyTrack, Long>> limitedEntries = sortedEntries.stream()
-        .skip(index)
-        .limit(5)
-        .toList();
-
+  private static Container getTopTracks(String userId, int index) {
+    List<SpotifyTrack> tracks = SpotifyDBHandler.getTopTracks(userId, 5, index);
     List<ContainerChildComponent> children = new ArrayList<>();
-    for (int i = 0; i < limitedEntries.size(); i++) {
-      children.add(getTrackRow(i, limitedEntries.get(i).getKey(), limitedEntries.get(i).getValue()));
+    for (int i = 0; i < tracks.size(); i++) {
+        children.add(getTrackRow(i + index, tracks.get(i)));
     }
 
     return Container.of(children).withAccentColor(Bot.getColor());
   }
 
-    private static Section getTrackRow(int position, SpotifyTrack track, long playCount) {
+    private static Section getTrackRow(int position, SpotifyTrack track) {
         String rowDescription = String.format(
             "%s - %s\n**%s**\n-# %s",
             SafJNest.intToEmojiDigits(position + 1),
-            playCount > 1 ? "Played " + playCount + " times" : "",
+            track.getPlayCount() > 1 ? "Played " + track.getPlayCount() + " times" : "",
             track.getName(),
             track.getArtist()
         );

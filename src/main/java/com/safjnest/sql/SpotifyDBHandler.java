@@ -19,11 +19,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import org.checkerframework.checker.units.qual.s;
+
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.BotSettings.DatabaseSettings;
+import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -330,11 +333,7 @@ public class SpotifyDBHandler {
         );
 
         PreparedStatement insertAlbum = conn.prepareStatement(
-            "INSERT IGNORE INTO albums (album_id, title) VALUES (?, ?)"
-        );
-
-        PreparedStatement insertAlbumArtist = conn.prepareStatement(
-            "INSERT IGNORE INTO album_artists (album_id, artist_id) VALUES (?, ?)"
+            "INSERT IGNORE INTO albums (album_id, title, artist_id) VALUES (?, ?, ?)"
         );
 
         PreparedStatement insertTrack = conn.prepareStatement(
@@ -354,6 +353,9 @@ public class SpotifyDBHandler {
         Set<String> seenAlbumArtists = new HashSet<>();
         Set<String> seenTracks = new HashSet<>();
 
+        insertUser.setString(1, userId);
+        insertUser.addBatch();
+
         for (SpotifyTrackStreaming t : trackList) {
             String artistId = generateId(t.getArtistName());
             String albumId = generateId(t.getAlbumName() + artistId);
@@ -368,15 +370,8 @@ public class SpotifyDBHandler {
             if (seenAlbums.add(albumId)) {
                 insertAlbum.setString(1, albumId);
                 insertAlbum.setString(2, t.getAlbumName());
+                insertAlbum.setString(3, artistId);
                 insertAlbum.addBatch();
-            }
-
-
-            String albumArtistKey = albumId + "|" + artistId;
-            if (seenAlbumArtists.add(albumArtistKey)) {
-                insertAlbumArtist.setString(1, albumId);
-                insertAlbumArtist.setString(2, artistId);
-                insertAlbumArtist.addBatch();
             }
 
             if (seenTracks.add(trackId)) {
@@ -385,10 +380,6 @@ public class SpotifyDBHandler {
                 insertTrack.setString(3, albumId);
                 insertTrack.addBatch();
             }
-
-            insertUser.setString(1, userId);
-            insertUser.addBatch();
-
 
             insertStreaming.setString(1, userId);
             insertStreaming.setString(2, trackId);
@@ -401,7 +392,6 @@ public class SpotifyDBHandler {
 
         insertArtist.executeBatch();
         insertAlbum.executeBatch();
-        insertAlbumArtist.executeBatch();
         insertTrack.executeBatch();
         insertUser.executeBatch();
         insertStreaming.executeBatch();
@@ -410,16 +400,55 @@ public class SpotifyDBHandler {
 
         insertArtist.close();
         insertAlbum.close();
-        insertAlbumArtist.close();
         insertTrack.close();
         insertUser.close();
         insertStreaming.close();
     }
 
-  public static String generateId(String input) throws NoSuchAlgorithmException {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-      return Base64.getUrlEncoder().withoutPadding().encodeToString(hash).substring(0, 22);
-  }
+    public static String generateId(String input) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(hash).substring(0, 22);
+    }
+
+    public static List<SpotifyTrack> getTopTracks(String userId, int limit, int index) {
+        connectIfNot();
+
+        String query = "SELECT t.track_id, t.title, a.title AS album_title, ar.name AS artist_name, " +
+                "(SELECT COUNT(*) FROM track_streamings ts WHERE ts.track_id = t.track_id) AS play_count " +
+                "FROM tracks t " +
+                "JOIN albums a ON t.album_id = a.album_id " +
+                "JOIN artists ar ON a.artist_id = ar.artist_id " +
+                "JOIN track_streamings s ON s.track_id = t.track_id " +
+                "WHERE s.user_id = ? " +
+                "GROUP BY t.track_id, t.title, a.title, ar.name " +
+                "ORDER BY play_count DESC " +
+                "LIMIT ? " +
+                "OFFSET ?";
+
+        try (Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, userId);
+            stmt.setInt(2, limit);
+            stmt.setInt(3, index);
+            ResultSet rs = stmt.executeQuery();
+
+            List<SpotifyTrack> tracks = new ArrayList<>();
+            while (rs.next()) {
+                SpotifyTrack track = new SpotifyTrack(
+                    rs.getString("title"),
+                    rs.getString("artist_name"),
+                    rs.getString("album_title"),
+                    rs.getString("track_id"),
+                    rs.getInt("play_count")
+                );
+                tracks.add(track);
+            }
+            return tracks;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
 
 }
