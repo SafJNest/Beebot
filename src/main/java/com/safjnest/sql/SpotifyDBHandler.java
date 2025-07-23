@@ -26,6 +26,8 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.BotSettings.DatabaseSettings;
+import com.safjnest.model.spotify.SpotifyAlbum;
+import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.util.SettingsLoader;
@@ -414,17 +416,25 @@ public class SpotifyDBHandler {
     public static List<SpotifyTrack> getTopTracks(String userId, int limit, int index) {
         connectIfNot();
 
-        String query = "SELECT t.track_id, t.title, a.title AS album_title, ar.name AS artist_name, " +
-                "(SELECT COUNT(*) FROM track_streamings ts WHERE ts.track_id = t.track_id) AS play_count " +
-                "FROM tracks t " +
-                "JOIN albums a ON t.album_id = a.album_id " +
-                "JOIN artists ar ON a.artist_id = ar.artist_id " +
-                "JOIN track_streamings s ON s.track_id = t.track_id " +
-                "WHERE s.user_id = ? " +
-                "GROUP BY t.track_id, t.title, a.title, ar.name " +
-                "ORDER BY play_count DESC " +
-                "LIMIT ? " +
-                "OFFSET ?";
+        System.out.println("Fetching top tracks for user: " + userId + " with limit: " + limit + " and index: " + index);
+
+        String query = """
+            SELECT 
+                t.track_id,
+                t.title AS track_title,
+                al.title AS album_title,
+                GROUP_CONCAT(DISTINCT ar.name ORDER BY ar.name SEPARATOR ', ') AS artist_names,
+                COUNT(ts.streaming_id) AS play_count
+            FROM track_streamings ts
+            JOIN users u ON u.discord_user_id = ts.user_id
+            JOIN tracks t ON t.track_id = ts.track_id
+            LEFT JOIN albums al ON al.album_id = t.album_id
+            LEFT JOIN artists ar ON ar.artist_id = al.artist_id
+            WHERE u.discord_user_id = ?
+            GROUP BY t.track_id
+            ORDER BY play_count DESC
+            LIMIT ? OFFSET ?
+        """;
 
         try (Connection conn = getConnection();
             PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -436,8 +446,8 @@ public class SpotifyDBHandler {
             List<SpotifyTrack> tracks = new ArrayList<>();
             while (rs.next()) {
                 SpotifyTrack track = new SpotifyTrack(
-                    rs.getString("title"),
-                    rs.getString("artist_name"),
+                    rs.getString("track_title"),
+                    rs.getString("artist_names"),
                     rs.getString("album_title"),
                     rs.getString("track_id"),
                     rs.getInt("play_count")
@@ -449,6 +459,106 @@ public class SpotifyDBHandler {
             e.printStackTrace();
             return new ArrayList<>();
         }
+    }
+
+    public static List<SpotifyAlbum> getTopAlbums(String userId, int limit, int index) {
+        connectIfNot();
+
+        String query = """
+            SELECT
+                a.album_id,
+                a.title AS album_title,
+                ar.name AS artist_name,
+                COUNT(ts.streaming_id) AS play_count,
+                (
+                    SELECT t_sub.track_id
+                    FROM tracks t_sub
+                    WHERE t_sub.album_id = a.album_id
+                    LIMIT 1
+                ) AS sample_track_uri
+                FROM albums a
+                JOIN artists ar ON a.artist_id = ar.artist_id
+                JOIN tracks t ON t.album_id = a.album_id
+                JOIN track_streamings ts ON ts.track_id = t.track_id
+                WHERE ts.user_id = ?
+                GROUP BY a.album_id, a.title, ar.name
+                ORDER BY play_count DESC
+                LIMIT ? OFFSET ?;
+            """;
+
+        try (Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, userId);
+            stmt.setInt(2, limit);
+            stmt.setInt(3, index);
+            ResultSet rs = stmt.executeQuery();
+
+            List<SpotifyAlbum> albums = new ArrayList<>();
+            while (rs.next()) {
+                SpotifyAlbum album = new SpotifyAlbum(
+                    rs.getString("album_title"),
+                    rs.getString("artist_name"),
+                    new ArrayList<SpotifyTrack>() {{
+                        add(new SpotifyTrack("UNKNOWN", rs.getString("artist_name"), rs.getString("album_title"), rs.getString("sample_track_uri")));
+                    }},
+                    rs.getInt("play_count")
+                );
+                albums.add(album);
+            }
+            return albums;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    public static List<SpotifyArtist> getTopArtists(String userId, int limit, int index) {
+        connectIfNot();
+
+        String query = """
+            SELECT
+            ar.artist_id,
+            ar.name AS artist_name,
+            COUNT(ts.streaming_id) AS play_count,
+            (
+                SELECT t_sub.track_id
+                FROM tracks t_sub
+                JOIN albums a_sub ON t_sub.album_id = a_sub.album_id
+                WHERE a_sub.artist_id = ar.artist_id
+                LIMIT 1
+            ) AS sample_track_uri
+            FROM track_streamings ts
+            JOIN tracks t ON ts.track_id = t.track_id
+            JOIN albums a ON t.album_id = a.album_id
+            JOIN artists ar ON a.artist_id = ar.artist_id
+            WHERE ts.user_id = ?
+            GROUP BY ar.artist_id, ar.name
+            ORDER BY play_count DESC
+            LIMIT ? OFFSET ?;
+            """;
+
+        try (Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, userId);
+            stmt.setInt(2, limit);
+            stmt.setInt(3, index);
+            ResultSet rs = stmt.executeQuery();
+
+            List<SpotifyArtist> albums = new ArrayList<>();
+            while (rs.next()) {
+                SpotifyArtist album = new SpotifyArtist(
+                    rs.getString("artist_name"),
+                    rs.getInt("play_count"),
+                    rs.getString("sample_track_uri")
+                );
+                albums.add(album);
+            }
+            return albums;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+        
     }
 
 }

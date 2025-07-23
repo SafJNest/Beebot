@@ -9,6 +9,7 @@ import java.util.Map;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.spotify.SpotifyAlbum;
+import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.sql.SpotifyDBHandler;
@@ -87,29 +88,30 @@ public class SpotifyMessage {
 
 
 
-    public static Container getMainContent( String userId, String type, int index) throws IOException {
+    public static Container getMainContent(String userId, String type, int index) throws IOException {
         System.out.println(type);
         switch (type) {
             case "tracks":
                 return getTopTracks(userId, index);
             case "albums":
-                // return getTopAlbums(index);
+                return getTopAlbums(userId, index);
             case "authors":
+                return getTopArtists(userId, index);
             default:
                 return Container.of(TextDisplay.of("This feature is not implemented yet."))
                     .withAccentColor(Bot.getColor());
         }
     }
 
-  private static Container getTopTracks(String userId, int index) {
-    List<SpotifyTrack> tracks = SpotifyDBHandler.getTopTracks(userId, 5, index);
-    List<ContainerChildComponent> children = new ArrayList<>();
-    for (int i = 0; i < tracks.size(); i++) {
-        children.add(getTrackRow(i + index, tracks.get(i)));
-    }
+    private static Container getTopTracks(String userId, int index) {
+        List<SpotifyTrack> tracks = SpotifyDBHandler.getTopTracks(userId, 5, index);
+        List<ContainerChildComponent> children = new ArrayList<>();
+        for (int i = 0; i < tracks.size(); i++) {
+            children.add(getTrackRow(i + index, tracks.get(i)));
+        }
 
-    return Container.of(children).withAccentColor(Bot.getColor());
-  }
+        return Container.of(children).withAccentColor(Bot.getColor());
+    }
 
     private static Section getTrackRow(int position, SpotifyTrack track) {
         String rowDescription = String.format(
@@ -127,26 +129,22 @@ public class SpotifyMessage {
     }
 
 
-    private static Container getTopAlbums(int index, List<SpotifyTrackStreaming> streamings) {
-        List<Map.Entry<SpotifyAlbum, Long>> sortedEntries = SpotifyHandler.getSortedAlbums(streamings);
-        List<Map.Entry<SpotifyAlbum, Long>> limitedEntries = sortedEntries.stream()
-            .skip(index)
-            .limit(5)
-            .toList();
+    private static Container getTopAlbums(String userId, int index) {
+        List<SpotifyAlbum> albums = SpotifyDBHandler.getTopAlbums(userId, 5, index);
 
         List<ContainerChildComponent> children = new ArrayList<>();
-        for (int i = 0; i < limitedEntries.size(); i++) {
-            children.add(getAlbumRow(i, limitedEntries.get(i).getKey(), limitedEntries.get(i).getValue()));
+        for (int i = 0; i < albums.size(); i++) {
+            children.add(getAlbumRow(i + index, albums.get(i)));
         }
 
         return Container.of(children).withAccentColor(Bot.getColor());
     }
 
-    private static Section getAlbumRow(int position, SpotifyAlbum album, long playCount) {
+    private static Section getAlbumRow(int position, SpotifyAlbum album) {
         String rowDescription = String.format(
             "%s - %s\n**%s**\n-# %s",
             SafJNest.intToEmojiDigits(position + 1),
-            playCount > 1 ? "Played " + playCount + " times" : "",
+            album.getPlayCount() > 1 ? "Played " + album.getPlayCount() + " times" : "",
             album.getName(),
             album.getArtist()
             
@@ -158,6 +156,30 @@ public class SpotifyMessage {
         );
     }
 
+    private static Container getTopArtists(String userId, int index) {
+        List<SpotifyArtist> artists = SpotifyDBHandler.getTopArtists(userId, 5, index);
 
+        List<ContainerChildComponent> children = new ArrayList<>();
+        for (int i = 0; i < artists.size(); i++) {
+            children.add(getArtistRow(i + index, artists.get(i)));
+        }
 
+        return Container.of(children).withAccentColor(Bot.getColor());
+    }
+
+    private static Section getArtistRow(int position, SpotifyArtist artist) {
+        String rowDescription = String.format(
+            "%s - %s\n**%s**",
+            SafJNest.intToEmojiDigits(position + 1),
+            artist.getPlayCount() > 1 ? "Played " + artist.getPlayCount() + " times" : "",
+            artist.getName()
+        );
+
+        return Section.of(
+            Thumbnail.fromUrl(SpotifyHandler.getArtistImageFromTrack(artist.getRandomTrackUri())),
+            TextDisplay.of(rowDescription)
+        );
+    }
+
+    
 }

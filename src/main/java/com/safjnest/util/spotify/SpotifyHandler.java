@@ -43,6 +43,7 @@ import com.safjnest.model.spotify.SpotifyTrack;
 //"spotify_track_uri": "spotify:track:7wqSzGeodspE3V6RBD5W8L" | (null if podcast)
 
 public class SpotifyHandler {
+    private static final String DEFAULT_IMAGE = "https://i.scdn.co/image/ab67616d0000b2739194a814e095d1347c02fd32";
     private static final String SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1";
     private static final String spotifyPath = "rsc" + File.separator + "my_spotify_data.zip";
     
@@ -93,23 +94,29 @@ public class SpotifyHandler {
             return imageUrl;
         } catch (Exception e) {
             e.printStackTrace();
-            return "https://i.scdn.co/image/ab67616d0000b2739194a814e095d1347c02fd32";
+            return DEFAULT_IMAGE;
         }
     }
 
-    public static String getAlbumImage(String trackId) {
+    public static String getArtistImageFromTrack(String trackId) {
         String urlString = SPOTIFY_API_BASE_URL + "/tracks/" + trackId;
         String response = getJSONFromURL(urlString);
 
         try {
             JSONObject jsonResponse = new JSONObject(response.toString());
-            String imageUrl = jsonResponse.getJSONObject("album").getJSONArray("images")
+            System.out.println(jsonResponse.toString());
+            String artistEndpoint = jsonResponse.getJSONArray("artists").getJSONObject(0).getString("href");
+
+            response = getJSONFromURL(artistEndpoint);
+            jsonResponse = new JSONObject(response.toString());
+
+            String imageUrl = jsonResponse.getJSONArray("images")
                 .getJSONObject(0).getString("url");
 
             return imageUrl;
         } catch (Exception e) {
             e.printStackTrace();
-            return "https://i.scdn.co/image/ab67616d0000b2739194a814e095d1347c02fd32";
+            return DEFAULT_IMAGE;
         }
     }
 
@@ -132,60 +139,6 @@ public class SpotifyHandler {
             e.printStackTrace();
         }
         return result.toString();
-    }
-
-
-    public static List<SpotifyTrackStreaming> readStreamsInfoFromZip(String zipFilePath) throws IOException {
-        File zipFile = new File(spotifyPath);
-
-        List<SpotifyTrackStreaming> trackList = new ArrayList<>();
-        
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
-
-        JsonFactory factory = new JsonFactory();
-        factory.configure(JsonParser.Feature.AUTO_CLOSE_SOURCE, false);
-
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(zipFile), 32 * 1024);
-            ZipInputStream zis = new ZipInputStream(bis)) {
-
-            ZipEntry entry;
-
-            while ((entry = zis.getNextEntry()) != null) {
-                if (!entry.isDirectory() && entry.getName().endsWith(".json")) {
-                    try (JsonParser parser = factory.createParser(zis)) {
-                        if (parser.nextToken() == JsonToken.START_ARRAY) {
-                            while (parser.nextToken() == JsonToken.START_OBJECT) {
-
-                                JsonNode node = mapper.readTree(parser);
-                                
-                                if (node.path("master_metadata_track_name").isNull()) {
-                                    continue;
-                                }
-
-                                SpotifyTrackStreaming track = new SpotifyTrackStreaming(
-                                    node.path("ts").asText(),
-                                    node.path("ms_played").asLong(0),
-                                    node.path("master_metadata_track_name").asText(),
-                                    node.path("master_metadata_album_artist_name").asText(),
-                                    node.path("master_metadata_album_album_name").asText(),
-                                    node.path("spotify_track_uri").asText().substring(14)
-                                );
-                                trackList.add(track);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        try {
-            System.out.println("Saving " + trackList.size() + " tracks to the database...");
-            SpotifyDBHandler.insertBatch(trackList,"291624587278417920");
-        } catch (NoSuchAlgorithmException | SQLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return trackList;
     }
 
     public static List<SpotifyTrackStreaming> readStreamsInfoFromZip(InputStream zipInputStream) throws IOException {
