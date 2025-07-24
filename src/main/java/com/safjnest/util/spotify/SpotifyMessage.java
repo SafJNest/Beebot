@@ -28,16 +28,16 @@ import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 public class SpotifyMessage {
   
 
-  public static Container getButtonComponents(String type) throws IOException {
-    return getButtonComponents(type, 0);
+  public static Container getButtonComponents(String type, String userId) throws IOException {
+    return getButtonComponents(type, userId, 0);
   }
 
 
-  public static Container getButtonComponents(String type, int index) throws IOException {    
+  public static Container getButtonComponents(String type, String userId, int index) throws IOException {    
     Button left = Button.primary("spotify-left", " ")
         .withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
 
-    Button center = Button.primary("spotify-center-" + index, "Page " + (index / 5 + 1))
+    Button center = Button.primary("spotify-center-" + index + "-" + userId, "Page " + (index / 5 + 1))
         .withStyle(ButtonStyle.SUCCESS)
         .asDisabled();
 
@@ -89,7 +89,6 @@ public class SpotifyMessage {
 
 
     public static Container getMainContent(String userId, String type, int index) throws IOException {
-        System.out.println(type);
         switch (type) {
             case "tracks":
                 return getTopTracks(userId, index);

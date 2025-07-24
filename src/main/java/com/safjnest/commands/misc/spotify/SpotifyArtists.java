@@ -32,7 +32,7 @@ public class SpotifyArtists extends SlashCommand {
     protected void execute(SlashCommandEvent event) {
         try {
             event.deferReply(false).queue();
-            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent(event.getUser().getId(), "artists", 0), SpotifyMessage.getButtonComponents("artists")))
+            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent(event.getUser().getId(), "artists", 0), SpotifyMessage.getButtonComponents("artists", event.getUser().getId())))
                 .useComponentsV2()
                 .queue();
         } catch (IOException e) {

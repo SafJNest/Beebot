@@ -45,7 +45,6 @@ import com.safjnest.model.spotify.SpotifyTrack;
 public class SpotifyHandler {
     private static final String DEFAULT_IMAGE = "https://i.scdn.co/image/ab67616d0000b2739194a814e095d1347c02fd32";
     private static final String SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1";
-    private static final String spotifyPath = "rsc" + File.separator + "my_spotify_data.zip";
     
     public static List<Map.Entry<SpotifyTrack, Long>> getTracks(List<SpotifyTrackStreaming> streamings){
         return streamings.stream()
@@ -104,7 +103,6 @@ public class SpotifyHandler {
 
         try {
             JSONObject jsonResponse = new JSONObject(response.toString());
-            System.out.println(jsonResponse.toString());
             String artistEndpoint = jsonResponse.getJSONArray("artists").getJSONObject(0).getString("href");
 
             response = getJSONFromURL(artistEndpoint);

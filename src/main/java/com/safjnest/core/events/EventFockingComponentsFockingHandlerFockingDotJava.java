@@ -37,6 +37,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
     private void spotify(GenericComponentInteractionCreateEvent event, String innerType, String args) {
       String currentType = "";
       int currentIndex = 0;
+      String userId = event.getUser().getId();
 
       Container buttonContainer = event.getMessage().getComponents().get(1).asContainer();
 
@@ -48,6 +49,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
                 currentType = button.getCustomId().split("-")[2];
               } else if (button.getCustomId().startsWith("spotify-center-")) {
                 currentIndex = Integer.parseInt(button.getCustomId().split("-")[2]);
+                userId = button.getCustomId().split("-")[3];
               }
             }
           }
@@ -57,7 +59,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
       
       switch (innerType) {
         case "left":
-          if (currentIndex > 0) 
+          if (currentIndex > 0)
             currentIndex -= 5;
           
           break;
@@ -67,11 +69,14 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
         case "type":
           currentType = args;
+          currentIndex = 0;
+          break;
+          
         default:
           break;
       }
       try {
-        event.getMessage().editMessageComponents(List.of(SpotifyMessage.getMainContent(event.getUser().getId(), currentType, currentIndex), SpotifyMessage.getButtonComponents(currentType, currentIndex))).useComponentsV2(true).queue();
+        event.getMessage().editMessageComponents(List.of(SpotifyMessage.getMainContent(userId, currentType, currentIndex), SpotifyMessage.getButtonComponents(currentType, userId, currentIndex))).useComponentsV2(true).queue();
       } catch (IOException e) {
         e.printStackTrace();
       }

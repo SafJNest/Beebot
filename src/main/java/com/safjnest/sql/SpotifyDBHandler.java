@@ -416,8 +416,6 @@ public class SpotifyDBHandler {
     public static List<SpotifyTrack> getTopTracks(String userId, int limit, int index) {
         connectIfNot();
 
-        System.out.println("Fetching top tracks for user: " + userId + " with limit: " + limit + " and index: " + index);
-
         String query = """
             SELECT 
                 t.track_id,
