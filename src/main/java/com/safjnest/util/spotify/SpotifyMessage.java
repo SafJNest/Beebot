@@ -1,17 +1,14 @@
 package com.safjnest.util.spotify;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
-import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.sql.SpotifyDBHandler;
 import com.safjnest.util.SafJNest;
 
@@ -21,6 +18,8 @@ import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.container.ContainerChildComponent;
 import net.dv8tion.jda.api.components.section.Section;
+import net.dv8tion.jda.api.components.selections.SelectOption;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
@@ -74,10 +73,31 @@ public class SpotifyMessage {
     }
 
 
+    List<SpotifyAlbum> albums = SpotifyDBHandler.getTopAlbums(userId, 5, index);
+    List<SelectOption> options = new ArrayList<>();
+
+    for (SpotifyAlbum album : albums) {
+        String label = album.getName();
+        String description = album.getArtist();
+
+        String id = album.getName() + " - " + album.getArtist();
+        options.add(SelectOption.of(label, id).withDescription(description));
+    }
+
+    StringSelectMenu menu = StringSelectMenu.create("spotify-menu")
+                .setPlaceholder("Select albums")
+                .setMaxValues(5)
+                .addOptions(options)
+                .build();
+
+
+
     if (index == 0) left = left.asDisabled().withStyle(ButtonStyle.DANGER);
     //if (index >= (size / 5)) right = right.asDisabled().withStyle(ButtonStyle.DANGER);
 
     List<ContainerChildComponent> buttons = new ArrayList<>();
+    buttons.add(ActionRow.of(menu));
+    buttons.add(Separator.createDivider(Separator.Spacing.SMALL));
     buttons.add(ActionRow.of(left, center, right));
     buttons.add(Separator.createDivider(Separator.Spacing.SMALL));
     buttons.add(ActionRow.of(albumsButton,tracksButton,authorsButton));
@@ -88,22 +108,52 @@ public class SpotifyMessage {
 
 
 
-    public static Container getMainContent(String userId, String type, int index) throws IOException {
+  public static List<Container> build(String userId, String type, int index) {
+    List<?> values = new ArrayList<>();
+    switch (type) {
+        case "albums":
+            values = SpotifyDBHandler.getTopAlbums(userId, 5, index);
+            break;
+        case "tracks":
+            values = SpotifyDBHandler.getTopTracks(userId, 5, index); 
+            break;
+        case "artists":
+            values = SpotifyDBHandler.getTopArtists(userId, 5, index);
+            break;
+    
+        default:
+            break;
+    }
+    Container body = null, buttons = null;
+    try {
+        body = getMainContent(userId, type, index, values);
+        buttons = getButtonComponents(type, userId, index);
+    } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    }
+
+    return List.of(body, buttons);
+  }
+
+
+
+    @SuppressWarnings("unchecked")
+    public static Container getMainContent(String userId, String type, int index, List<?> values) throws IOException {
         switch (type) {
             case "tracks":
-                return getTopTracks(userId, index);
+                return getTopTracks(userId, index, (List<SpotifyTrack>) values);
             case "albums":
-                return getTopAlbums(userId, index);
+                return getTopAlbums(userId, index, (List<SpotifyAlbum>) values);
             case "authors":
-                return getTopArtists(userId, index);
+                return getTopArtists(userId, index, (List<SpotifyArtist>) values);
             default:
                 return Container.of(TextDisplay.of("This feature is not implemented yet."))
                     .withAccentColor(Bot.getColor());
         }
     }
 
-    private static Container getTopTracks(String userId, int index) {
-        List<SpotifyTrack> tracks = SpotifyDBHandler.getTopTracks(userId, 5, index);
+    private static Container getTopTracks(String userId, int index, List<SpotifyTrack> tracks) {
         List<ContainerChildComponent> children = new ArrayList<>();
         for (int i = 0; i < tracks.size(); i++) {
             children.add(getTrackRow(i + index, tracks.get(i)));
@@ -128,9 +178,7 @@ public class SpotifyMessage {
     }
 
 
-    private static Container getTopAlbums(String userId, int index) {
-        List<SpotifyAlbum> albums = SpotifyDBHandler.getTopAlbums(userId, 5, index);
-
+    private static Container getTopAlbums(String userId, int index, List<SpotifyAlbum> albums) {
         List<ContainerChildComponent> children = new ArrayList<>();
         for (int i = 0; i < albums.size(); i++) {
             children.add(getAlbumRow(i + index, albums.get(i)));
@@ -155,8 +203,7 @@ public class SpotifyMessage {
         );
     }
 
-    private static Container getTopArtists(String userId, int index) {
-        List<SpotifyArtist> artists = SpotifyDBHandler.getTopArtists(userId, 5, index);
+    private static Container getTopArtists(String userId, int index, List<SpotifyArtist> artists) {
 
         List<ContainerChildComponent> children = new ArrayList<>();
         for (int i = 0; i < artists.size(); i++) {

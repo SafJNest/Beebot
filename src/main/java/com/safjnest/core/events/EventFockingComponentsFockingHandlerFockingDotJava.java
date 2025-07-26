@@ -1,10 +1,7 @@
 package com.safjnest.core.events;
 
-import java.io.IOException;
-import java.util.List;
 
 import com.safjnest.util.spotify.SpotifyMessage;
-
 import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -75,10 +72,8 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
         default:
           break;
       }
-      try {
-        event.getMessage().editMessageComponents(List.of(SpotifyMessage.getMainContent(userId, currentType, currentIndex), SpotifyMessage.getButtonComponents(currentType, userId, currentIndex))).useComponentsV2(true).queue();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      event.getMessage().editMessageComponents(SpotifyMessage.build(userId, currentType, currentIndex))
+          .useComponentsV2()
+          .queue();
     }
 }

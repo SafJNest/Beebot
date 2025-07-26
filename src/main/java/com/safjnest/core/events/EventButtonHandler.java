@@ -80,7 +80,7 @@ import com.safjnest.core.cache.managers.GuildCache;
 public class EventButtonHandler extends ListenerAdapter {
 
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public @Unmodifiable List<Button> getButtons(ButtonInteractionEvent event) {
       Stream var10000 = ComponentIterator.createStream(event.getMessage().getComponents());
       Objects.requireNonNull(Button.class);

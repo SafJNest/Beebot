@@ -1,7 +1,5 @@
 package com.safjnest.commands.misc.spotify;
 
-import java.io.IOException;
-import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
@@ -29,14 +27,10 @@ public class SpotifyAlbums extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        try {
-            event.deferReply(false).queue();
-            event.getHook().editOriginalComponents(List.of(SpotifyMessage.getMainContent(event.getUser().getId(), "albums", 0), SpotifyMessage.getButtonComponents("albums", event.getUser().getId())))
-                .useComponentsV2()
-                .queue();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        event.deferReply(false).queue();
+        event.getHook().editOriginalComponents(SpotifyMessage.build(event.getUser().getId(), "albums", 0))
+            .useComponentsV2()
+            .queue();
     }
 
 }
