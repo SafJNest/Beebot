@@ -380,7 +380,7 @@ import com.safjnest.core.cache.managers.UserCache;
 
     private static void loadAguments() {
         try {
-            FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "augments.json");
+            FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "augments.json");
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
             JSONArray augmentsArray = (JSONArray) file.get("augments");
@@ -1027,7 +1027,7 @@ import com.safjnest.core.cache.managers.UserCache;
         long now = System.currentTimeMillis();
 
         try {
-            FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
+            FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "split.json");
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
             JSONArray seasons = (JSONArray) file.get("seasons");
@@ -1065,7 +1065,7 @@ import com.safjnest.core.cache.managers.UserCache;
         long now = System.currentTimeMillis();
     
         try {
-            FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
+            FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "split.json");
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
             JSONArray seasons = (JSONArray) file.get("seasons");
@@ -1119,7 +1119,7 @@ import com.safjnest.core.cache.managers.UserCache;
         long now = System.currentTimeMillis();
 
         try {
-            FileReader reader = new FileReader("rsc" + File.separator + "Testing" + File.separator + "lol_testing" + File.separator + "split.json");
+            FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "split.json");
             JSONParser parser = new JSONParser();
             JSONObject file = (JSONObject) parser.parse(reader);
             JSONArray seasons = (JSONArray) file.get("seasons");
