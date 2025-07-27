@@ -93,7 +93,7 @@ public class SpotifyMessage {
         case "tracks":
             values = SpotifyDBHandler.getTopTracks(userId, 5, index); 
             break;
-        case "artists":
+        case "authors":
             values = SpotifyDBHandler.getTopArtists(userId, 5, index);
             break;
     
