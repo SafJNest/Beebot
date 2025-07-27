@@ -446,4 +446,24 @@ public class SafJNest extends Thread {
         return bd.doubleValue();
     }
     
+    public static String intToEmojiDigits(int number) {
+        String[] digitsToWords = {
+            "zero", "one", "two", "three", "four",
+            "five", "six", "seven", "eight", "nine"
+        };
+
+        StringBuilder result = new StringBuilder();
+        String numStr = String.valueOf(number);
+
+        for (char c : numStr.toCharArray()) {
+            if (Character.isDigit(c)) {
+                int digit = Character.getNumericValue(c);
+                result.append(":").append(digitsToWords[digit]).append(":");
+            } else {
+                throw new IllegalArgumentException("Input must be a non-negative integer");
+            }
+        }
+
+        return result.toString();
+    }
 }

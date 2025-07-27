@@ -30,10 +30,10 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 
 public class QueueHandler {
     private static String formatTrack(int index, AudioTrack track) {
@@ -260,14 +260,14 @@ public class QueueHandler {
         return eb;
     }
 
-    public static List<LayoutComponent> getQueueButtons(Guild guild) {
+    public static List<MessageTopLevelComponent> getQueueButtons(Guild guild) {
         return getQueueButtons(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getIndex());
     }
     
-    public static List<LayoutComponent> getQueueButtons(Guild guild, int startIndex) {
+    public static List<MessageTopLevelComponent> getQueueButtons(Guild guild, int startIndex) {
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
 
-        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
 
         Button repeat = Button.secondary("queue-repeat", " ").withEmoji(CustomEmojiHandler.getRichEmoji("repeat"));
         Button previous = Button.primary("queue-previous" , " ").withEmoji(CustomEmojiHandler.getRichEmoji("previous"));
@@ -307,8 +307,8 @@ public class QueueHandler {
         if(nextIndex > ts.getQueue().size())
             nextPage = nextPage.asDisabled();
 
-        nextPage = nextPage.withId("queue-nextpage-" + nextIndex);
-        previousPage = previousPage.withId("queue-previouspage-" + previousIndex);
+        nextPage = nextPage.withCustomId("queue-nextpage-" + nextIndex);
+        previousPage = previousPage.withCustomId("queue-previouspage-" + previousIndex);
 
         Button playerButton = Button.secondary("queue-player", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list")).withStyle(ButtonStyle.SUCCESS);
 
@@ -323,10 +323,10 @@ public class QueueHandler {
         return buttonRows;
     }
 
-    public static List<LayoutComponent> getPlayerButtons(Guild guild) {
+    public static List<MessageTopLevelComponent> getPlayerButtons(Guild guild) {
         TrackScheduler ts = PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler();
 
-        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
 
         Button repeat = Button.secondary("player-repeat", " ").withEmoji(CustomEmojiHandler.getRichEmoji("repeat"));
         Button previous = Button.primary("player-previous" , " ").withEmoji(CustomEmojiHandler.getRichEmoji("previous"));
@@ -484,7 +484,7 @@ public class QueueHandler {
 
     
 
-    public static List<LayoutComponent> getButtons(Guild guild, EmbedType type) {
+    public static List<MessageTopLevelComponent> getButtons(Guild guild, EmbedType type) {
         switch (type) {
             case PLAYER:
                 return getPlayerButtons(guild); 
@@ -506,7 +506,7 @@ public class QueueHandler {
         }
     }
 
-    public static List<LayoutComponent> getButtons(Guild guild) {
+    public static List<MessageTopLevelComponent> getButtons(Guild guild) {
         return getButtons(guild, PlayerManager.get().getGuildMusicManager(guild).getTrackScheduler().getMessage().getType());
     }
     

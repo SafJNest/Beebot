@@ -1,6 +1,5 @@
 package com.safjnest;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,7 +17,6 @@ import com.safjnest.util.twitch.TwitchClient;
 
 @SpringBootApplication
 public class App {
-    private static final String settingsPath = "rsc" + File.separator + "settings.json";
 
     private static Settings settings;
     private static Bot bot;
@@ -28,12 +26,6 @@ public class App {
         
         new BotLogger("Beebot", null);
 
-        try {
-            SettingsLoader.loadSettings(settingsPath, "config.properties");
-        } catch (IOException e) {
-            BotLogger.error("Error loading settings files");
-            e.printStackTrace();
-        }
         settings = SettingsLoader.getSettings();
 
         if (isTesting()) {

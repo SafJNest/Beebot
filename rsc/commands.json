@@ -1221,6 +1221,47 @@
         "arguments" : "[warn] [@user] (reason)"
     },
 
+    "tracks": {
+        "alias" : [],
+        "help"  : "Top spotify tracks.",
+        "category" : "Miscellaneous",
+        "arguments" : ""
+    },
+
+    "albums": {
+        "alias" : [],
+        "help"  : "Top spotify albums.",
+        "category" : "Miscellaneous",
+        "arguments" : ""
+    },
+
+    "spotify":{
+        "alias" : ["sporpify"],
+        "help"  : "Your Spotify in your favourite bot",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName] ",
+        "children": {
+            "albums": {
+                "alias" : [],
+                "help"  :  "Top Spotify albums.",
+                "longhelp"  : "Top Spotify albums.",
+                "arguments" : "[CommandName]"
+            }, 
+            "tracks": {
+                "alias" : [],
+                "help"  : "Top Spotify tracks.",
+                "longhelp"  : "Top Spotify tracks.",
+                "arguments" : "[CommandName]"
+            },
+            "upload": {
+                "alias" : [],
+                "help"  : "Upload your Spotify history.",
+                "longhelp"  : "Upload your Spotify history.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
 
 
 

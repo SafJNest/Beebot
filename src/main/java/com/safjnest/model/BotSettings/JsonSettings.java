@@ -11,11 +11,13 @@ public class JsonSettings {
     private DatabaseSettings testDatabase;
     private DatabaseSettings testWebsiteDatabase;
     private DatabaseSettings leagueDatabase;
+    private DatabaseSettings spotifyDatabase;
     private OpenAISettings openAI;
     private RiotSettings riot;
     private TwitchSettings twitch;
     private LavalinkSettings lavalink;
     private SpotifySettings spotify;
+    private SpotifyApiSettings spotifyApi;
 
     private String youtubeApiKey;
     private String ttsApiKey;

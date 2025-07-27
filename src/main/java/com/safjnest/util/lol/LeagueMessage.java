@@ -9,8 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-
+import java.awt.Color;
 import java.text.DecimalFormat;
 
 import com.safjnest.core.Bot;
@@ -21,13 +20,19 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.DateHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.container.ContainerChildComponent;
+import net.dv8tion.jda.api.components.section.Section;
+import net.dv8tion.jda.api.components.selections.SelectOption;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.components.separator.Separator;
+import net.dv8tion.jda.api.components.separator.Separator.Spacing;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -53,7 +58,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 public class LeagueMessage {
 
 
-    public static List<LayoutComponent> composeButtons(Summoner s, String user_id, String id) {
+    public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, String id) {
         Button left = Button.primary(id + "-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary(id + "-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
         Button refresh = Button.primary(id + "-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
@@ -298,15 +303,15 @@ public class LeagueMessage {
             + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
     }
 
-    public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id) {
+    public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id) {
         long[] time = LeagueHandler.getCurrentSplitRange();
         return getSummonerButtons(s, user_id, time[0], time[1], GameQueueType.TEAM_BUILDER_RANKED_SOLO);
     }
 
-    public static List<LayoutComponent> getSummonerButtons(Summoner s, String user_id, long start, long end, GameQueueType queue) {
+    public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id, long start, long end, GameQueueType queue) {
         int index = 0;
 
-        List<LayoutComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
+        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
 
         boolean hasTrackedGames = LeagueDBHandler.hasSummonerData(LeagueHandler.updateSummonerDB(s));
 
@@ -371,7 +376,7 @@ public class LeagueMessage {
 //   ▀██████▀   ▄████▀        ████████▀    ████████▀
 //
 
-    public static LayoutComponent getOpggQueueTypeButtons(GameQueueType queue) {
+    public static MessageTopLevelComponent getOpggQueueTypeButtons(GameQueueType queue) {
         GameQueueType currentGameQueueType = GameQueueType.CHERRY;
 
         Button soloQ = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
@@ -932,6 +937,149 @@ public class LeagueMessage {
         return eb;
     }
 
+
+    @SuppressWarnings("unused")
+    @Deprecated
+    public static List<Container> getOpggEmbedV2(Summoner s, GameQueueType queue, int index) {
+        List<Container> containers = new ArrayList<>();
+        LeagueShard shard = s.getPlatform();
+        RegionShard region = shard.toRegionShard();
+
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
+        EmbedBuilder eb = new EmbedBuilder();
+        MatchParticipant me = null;
+        LOLMatch match = null;
+        R4J r4j = LeagueHandler.getRiotApi();
+
+        List<String> gameIds = getMatchIds(s, queue, index);
+
+        QueryCollection result = LeagueDBHandler.getSummonerData(LeagueDBHandler.addLOLAccount(s));
+
+        for(int i = 0; i < 5 && i < gameIds.size(); i++){
+            try {
+
+                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
+                if (MatchTracker.isRemake(match))
+                    continue;
+                MatchTracker.queueMatch(match);
+                if (match.getParticipants().size() == 0)
+                    continue; //riot di merda che quando crasha il game lascia dati sporchi
+
+                LeagueHandler.updateSummonerDB(match);
+                for(MatchParticipant mp : match.getParticipants()){
+                    if(mp.getPuuid().equals(s.getPUUID())){
+                        me = mp;
+                    }
+                }
+                ArrayList<String> blue = new ArrayList<>();
+                ArrayList<String> red = new ArrayList<>();
+                for(MatchParticipant searchMe : match.getParticipants()){
+                    String partecipantString = CustomEmojiHandler.getFormattedEmoji(searchMe.getChampionName())
+                                                + " "
+                                                + searchMe.getKills() + "/" + searchMe.getDeaths() + "/" + searchMe.getAssists();
+
+                    if(searchMe.getTeam() == TeamType.BLUE)
+                        blue.add(partecipantString);
+                    else
+                        red.add(partecipantString);
+                }
+
+                String kda = me.getKills() + "/" + me.getDeaths()+ "/" + me.getAssists();
+                String content = "";
+                Instant instant = Instant.ofEpochMilli(match.getGameCreation() + match.getGameDurationAsDuration().toMillis() + 3600000*2);
+                ZoneOffset offset = ZoneOffset.UTC;
+                OffsetDateTime offsetDateTime = instant.atOffset(offset);
+                String date = DateHandler.formatDate(offsetDateTime);
+                date = "<t:" + ((match.getGameCreation()/1000) + match.getGameDurationAsDuration().getSeconds()) + ":R>";
+                switch (match.getQueue()){
+                    case STRAWBERRY:
+                    content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " Level: " +  me.getChampionLevel() + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.getGoldEarned() +  "\n"
+                    + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
+                    + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
+
+                    String swarmTeam = "";
+                    for(MatchParticipant mt : match.getParticipants())
+                        swarmTeam += CustomEmojiHandler.getFormattedEmoji(mt.getChampionName()) + " Level: " +  mt.getChampionLevel() + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + mt.getGoldEarned() +  "\n";
+
+                    break;
+
+                    case CHERRY:
+
+                        content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda +"\n"
+                        + date + " | **"+ getFormattedDuration((match.getGameDuration()))  + "**\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner1Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment1())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment2())) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment3())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment4())) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5()));
+
+                    break;
+
+                    default:
+                    String matchTitle = LeagueHandler.formatMatchName(match.getQueue()) + ": " + (me.didWin() ? "WIN" : "LOSE");
+                    for (int j = 0; j < result.size(); j ++) {
+                        QueryRecord row = result.get(j);
+                        if (row.getAsLong("game_id") != match.getGameId()) continue;
+
+                        TierDivisionType rank = row.getAsInt("rank") != MatchTracker.UNKNOWN_RANK ? TierDivisionType.values()[row.getAsInt("rank")] : null;
+
+                        String displayRank = getFormatedRank(rank, true);
+
+                        String gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") + " LP" : row.getAsInt("gain") + " LP";
+
+
+                        if (rank == TierDivisionType.UNRANKED) {
+                            matchTitle += "(Placement)";
+                        }
+                        else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
+                            matchTitle = "Promoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
+                        }
+                        else if (j > 0 && row.getAsInt("rank") > result.get(j - 1).getAsInt("rank")) {
+                            matchTitle = "Demoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
+                        }
+                        else if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) {
+                            matchTitle += "-0 LP"; //demotion shield
+                        }
+                        else {
+                            matchTitle += " " + gain;
+                        }
+                    }
+                    content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
+                                + date  + " | ** " + getFormattedDuration((match.getGameDuration())) + "**\n"
+                                + CustomEmojiHandler.getFormattedEmoji( String.valueOf(me.getSummoner1Id()) + "_") + getFormattedRunes(me, 0) + "\n"
+                                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + getFormattedRunes(me, 1) + "\n"
+                                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
+
+                    break;
+
+
+                }
+
+                StringSelectMenu menu = getSelectedMatchMenu(match);
+                Button viewMatch = Button.primary("match-view-" + match.getGameId(), "View");
+
+                Section section = Section.of(
+                    viewMatch,
+                    TextDisplay.of(content)
+                );
+
+
+                
+                List<ContainerChildComponent> buttons = new ArrayList<>();
+                buttons.add(section);
+                buttons.add(Separator.createDivider(Spacing.SMALL));
+                buttons.add(ActionRow.of(menu));
+                
+                containers.add(Container.of(buttons).withAccentColor(me.didWin() ? Color.green : Color.RED));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                continue;
+            }
+        }
+
+        System.out.println(containers);
+        return containers;
+    }
+
     /**
     * Return a string formated as G1, B4, M, GM, C
     *
@@ -954,7 +1102,7 @@ public class LeagueMessage {
 
     }
 
-    public static List<LayoutComponent> getOpggButtons(Summoner s, String user_id, GameQueueType queue, int index) {
+    public static List<MessageTopLevelComponent> getOpggButtons(Summoner s, String user_id, GameQueueType queue, int index) {
         int order = 0;
         Button left = Button.primary("match-matchleft", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         if (index == 0) left = left.asDisabled();
@@ -962,7 +1110,7 @@ public class LeagueMessage {
         Button page = Button.primary("match-index-" + index, "Match " + ((index/5)+1)).asDisabled();
         Button right = Button.primary("match-matchright", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
-        List<LayoutComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "match"));
+        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "match"));
 
         StringSelectMenu menu = LeagueMessage.getOpggMenu(s, queue, index);
         if (menu != null) {
@@ -1002,7 +1150,7 @@ public class LeagueMessage {
             options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getPuuid() + "#" + match.getPlatform().name()).withEmoji(icon));
         }
 
-        return StringSelectMenu.create("rank-select")
+        return StringSelectMenu.create("rank-select"  + "#" + match.getGameId())
                 .setPlaceholder("Select a summoner")
                 .setMaxValues(1)
                 .addOptions(options)
@@ -1116,7 +1264,7 @@ public class LeagueMessage {
                 .build();
     }
 
-    public static List<LayoutComponent> getLivegameButtons(Summoner s, String user_id) {
+    public static List<MessageTopLevelComponent> getLivegameButtons(Summoner s, String user_id) {
         return composeButtons(s, user_id, "rank");
     }
 

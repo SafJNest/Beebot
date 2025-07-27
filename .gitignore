@@ -15,6 +15,7 @@
 *.nar
 *.ear
 *.zip
+!rsc/testing/spotify/*.zip
 *.tar.gz
 *.rar
 

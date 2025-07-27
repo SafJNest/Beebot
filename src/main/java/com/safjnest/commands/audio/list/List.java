@@ -15,8 +15,9 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -85,7 +86,7 @@ public class List extends SlashCommand {
             right = right.asDisabled();
         }
         
-        event.getChannel().sendMessageEmbeds(eb.build()).addActionRow(left, center, right, order).queue();
+        event.getChannel().sendMessageEmbeds(eb.build()).setComponents(ActionRow.of(left, center, right, order)).queue();
     }
 
 }

@@ -32,6 +32,8 @@ import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterfaceManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -39,8 +41,6 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -192,7 +192,7 @@ public class SearchYoutube extends SlashCommand {
         List<AudioTrackInfo> searchResultList = search(query);
         StringSelectMenu.Builder menu = getMenu(event.getMember(), searchResultList);
         
-        MenuListener fileListener = new MenuListener(event, menu.getId());
+        MenuListener fileListener = new MenuListener(event, menu.getCustomId());
         event.getJDA().addEventListener(fileListener);
 
         event.replyEmbeds(getSearchEmbed(event.getMember(), query, searchResultList).build())
