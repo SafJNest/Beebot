@@ -18,8 +18,6 @@ import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.container.ContainerChildComponent;
 import net.dv8tion.jda.api.components.section.Section;
-import net.dv8tion.jda.api.components.selections.SelectOption;
-import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
@@ -72,32 +70,10 @@ public class SpotifyMessage {
             break;
     }
 
-
-    List<SpotifyAlbum> albums = SpotifyDBHandler.getTopAlbums(userId, 5, index);
-    List<SelectOption> options = new ArrayList<>();
-
-    for (SpotifyAlbum album : albums) {
-        String label = album.getName();
-        String description = album.getArtist();
-
-        String id = album.getName() + " - " + album.getArtist();
-        options.add(SelectOption.of(label, id).withDescription(description));
-    }
-
-    StringSelectMenu menu = StringSelectMenu.create("spotify-menu")
-                .setPlaceholder("Select albums")
-                .setMaxValues(5)
-                .addOptions(options)
-                .build();
-
-
-
     if (index == 0) left = left.asDisabled().withStyle(ButtonStyle.DANGER);
     //if (index >= (size / 5)) right = right.asDisabled().withStyle(ButtonStyle.DANGER);
 
     List<ContainerChildComponent> buttons = new ArrayList<>();
-    buttons.add(ActionRow.of(menu));
-    buttons.add(Separator.createDivider(Separator.Spacing.SMALL));
     buttons.add(ActionRow.of(left, center, right));
     buttons.add(Separator.createDivider(Separator.Spacing.SMALL));
     buttons.add(ActionRow.of(albumsButton,tracksButton,authorsButton));
