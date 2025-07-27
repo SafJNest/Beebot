@@ -2,6 +2,8 @@ package com.safjnest.core.events;
 
 
 import com.safjnest.util.spotify.SpotifyMessage;
+import com.safjnest.util.spotify.SpotifyMessageType;
+
 import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -72,7 +74,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
         default:
           break;
       }
-      event.getMessage().editMessageComponents(SpotifyMessage.build(userId, currentType, currentIndex))
+      event.getMessage().editMessageComponents(SpotifyMessage.build(userId, SpotifyMessageType.valueOf(currentType.toUpperCase()), currentIndex))
           .useComponentsV2()
           .queue();
     }

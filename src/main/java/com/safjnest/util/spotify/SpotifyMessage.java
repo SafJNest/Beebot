@@ -25,12 +25,12 @@ import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 public class SpotifyMessage {
   
 
-  public static Container getButtonComponents(String type, String userId) throws IOException {
+  public static Container getButtonComponents(SpotifyMessageType type, String userId) throws IOException {
     return getButtonComponents(type, userId, 0);
   }
 
 
-  public static Container getButtonComponents(String type, String userId, int index) throws IOException {    
+  public static Container getButtonComponents(SpotifyMessageType type, String userId, int index) throws IOException {    
     Button left = Button.primary("spotify-left", " ")
         .withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
 
@@ -43,26 +43,26 @@ public class SpotifyMessage {
 
 
 
-    Button albumsButton = Button.primary("spotify-type-albums", "Albums")
+    Button albumsButton = Button.primary(SpotifyMessageType.ALBUMS.toButtonId(), SpotifyMessageType.ALBUMS.getLabel())
         .withEmoji(CustomEmojiHandler.getRichEmoji("playlist"));
 
-    Button tracksButton = Button.primary("spotify-type-tracks", "Tracks")
+    Button tracksButton = Button.primary(SpotifyMessageType.TRACKS.toButtonId(), SpotifyMessageType.TRACKS.getLabel())
         .withEmoji(CustomEmojiHandler.getRichEmoji("wavesound"));
 
-    Button authorsButton = Button.primary("spotify-type-authors", "Authors")
+    Button authorsButton = Button.primary(SpotifyMessageType.ARTISTS.toButtonId(), SpotifyMessageType.ARTISTS.getLabel())
         .withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
 
     int size = 0;
     switch (type) {
-        case "tracks":
+        case TRACKS:
             tracksButton = tracksButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
             //size = SpotifyHandler.getSortedTracks(streamings).size();
             break;
-        case "albums":
+        case ALBUMS:
             albumsButton = albumsButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
             //size = SpotifyHandler.getSortedAlbums(streamings).size();
             break;
-        case "authors":
+        case ARTISTS:
             authorsButton = authorsButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
             break;
 
@@ -84,16 +84,16 @@ public class SpotifyMessage {
 
 
 
-  public static List<Container> build(String userId, String type, int index) {
+  public static List<Container> build(String userId, SpotifyMessageType type, int index) {
     List<?> values = new ArrayList<>();
     switch (type) {
-        case "albums":
+        case ALBUMS:
             values = SpotifyDBHandler.getTopAlbums(userId, 5, index);
             break;
-        case "tracks":
+        case TRACKS:
             values = SpotifyDBHandler.getTopTracks(userId, 5, index); 
             break;
-        case "authors":
+        case ARTISTS:
             values = SpotifyDBHandler.getTopArtists(userId, 5, index);
             break;
     
@@ -115,13 +115,13 @@ public class SpotifyMessage {
 
 
     @SuppressWarnings("unchecked")
-    public static Container getMainContent(String userId, String type, int index, List<?> values) throws IOException {
+    public static Container getMainContent(String userId, SpotifyMessageType type, int index, List<?> values) throws IOException {
         switch (type) {
-            case "tracks":
+            case TRACKS:
                 return getTopTracks(userId, index, (List<SpotifyTrack>) values);
-            case "albums":
+            case ALBUMS:
                 return getTopAlbums(userId, index, (List<SpotifyAlbum>) values);
-            case "authors":
+            case ARTISTS:
                 return getTopArtists(userId, index, (List<SpotifyArtist>) values);
             default:
                 return Container.of(TextDisplay.of("This feature is not implemented yet."))

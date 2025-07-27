@@ -5,6 +5,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.spotify.SpotifyMessage;
+import com.safjnest.util.spotify.SpotifyMessageType;
+
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 
 public class SpotifyTracks extends SlashCommand{
@@ -26,7 +28,7 @@ public class SpotifyTracks extends SlashCommand{
     @Override
     protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
-        event.getHook().editOriginalComponents(SpotifyMessage.build(event.getUser().getId(), "albums", 0))
+        event.getHook().editOriginalComponents(SpotifyMessage.build(event.getUser().getId(), SpotifyMessageType.TRACKS, 0))
             .useComponentsV2()
             .queue();
     }
