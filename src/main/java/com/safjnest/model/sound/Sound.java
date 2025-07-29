@@ -95,7 +95,7 @@ public class Sound {
     }
 
     public String getPath() {
-        return "rsc" + java.io.File.separator + "SoundBoard" + java.io.File.separator + ID + "." + extension;
+        return "rsc" + java.io.File.separator + "sounds" + java.io.File.separator + ID + "." + extension;
     }
 
     public boolean isOpus() {

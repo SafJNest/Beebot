@@ -1,4 +1,4 @@
-package com.safjnest.springapi.api.controller;
+package com.safjnest.spring.api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,7 +18,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 
 import com.safjnest.model.sound.Sound;
-import com.safjnest.springapi.service.SoundService;
+import com.safjnest.spring.service.SoundService;
 
 @RestController
 @RequestMapping("/api/sound")

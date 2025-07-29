@@ -1,4 +1,4 @@
-package com.safjnest.springapi.api.model;
+package com.safjnest.spring.api.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

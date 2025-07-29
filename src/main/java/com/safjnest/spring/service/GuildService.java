@@ -1,4 +1,4 @@
-package com.safjnest.springapi.service;
+package com.safjnest.spring.service;
 
 import org.springframework.stereotype.Service;
 

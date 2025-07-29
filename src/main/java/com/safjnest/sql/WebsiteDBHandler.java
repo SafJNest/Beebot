@@ -16,7 +16,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.BotSettings.DatabaseSettings;
-import com.safjnest.springapi.api.model.ApiKey;
+import com.safjnest.spring.api.model.ApiKey;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 

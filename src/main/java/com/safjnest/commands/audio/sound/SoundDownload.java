@@ -16,7 +16,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 public class SoundDownload extends SlashCommand{
-    String path = "rsc" + File.separator + "SoundBoard" + File.separator;
+    String path = "rsc" + File.separator + "sounds" + File.separator;
 
     public SoundDownload(String father){
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();

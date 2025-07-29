@@ -1,4 +1,4 @@
-package com.safjnest.springapi.filter;
+package com.safjnest.spring.filter;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;

@@ -1,4 +1,4 @@
-package com.safjnest.springapi.filter;
+package com.safjnest.spring.filter;
 
 import java.io.IOException;
 
@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.safjnest.springapi.service.ApiKeyService;
+import com.safjnest.spring.service.ApiKeyService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

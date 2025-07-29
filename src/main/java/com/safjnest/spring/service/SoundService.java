@@ -1,4 +1,4 @@
-package com.safjnest.springapi.service;
+package com.safjnest.spring.service;
 
 import java.net.MalformedURLException;
 
@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @Service
 public class SoundService {
-    private static final Path SOUND_DIRECTORY = Paths.get("rsc", "SoundBoard").toAbsolutePath().normalize();
+    private static final Path SOUND_DIRECTORY = Paths.get("rsc", "sounds").toAbsolutePath().normalize();
 
     public Optional<Sound> getSoundById(String id) {
         Sound sound = SoundCache.getSoundById(id);

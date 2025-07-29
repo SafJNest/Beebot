@@ -1,10 +1,10 @@
-package com.safjnest.springapi.service;
+package com.safjnest.spring.service;
 
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.apache.commons.codec.digest.DigestUtils;
 
-import com.safjnest.springapi.api.model.ApiKey;
+import com.safjnest.spring.api.model.ApiKey;
 import com.safjnest.sql.WebsiteDBHandler;
 
 import java.util.Base64;

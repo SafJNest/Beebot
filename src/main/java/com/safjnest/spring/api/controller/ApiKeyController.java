@@ -1,11 +1,11 @@
-package com.safjnest.springapi.api.controller;
+package com.safjnest.spring.api.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.safjnest.springapi.service.ApiKeyService;
+import com.safjnest.spring.service.ApiKeyService;
 
 //@RestController
 //@RequestMapping("/api/keys")

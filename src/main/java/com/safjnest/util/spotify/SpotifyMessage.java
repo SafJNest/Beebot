@@ -52,7 +52,6 @@ public class SpotifyMessage {
     Button authorsButton = Button.primary(SpotifyMessageType.ARTISTS.toButtonId(), SpotifyMessageType.ARTISTS.getLabel())
         .withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
 
-    int size = 0;
     switch (type) {
         case TRACKS:
             tracksButton = tracksButton.asDisabled().withStyle(ButtonStyle.SUCCESS);

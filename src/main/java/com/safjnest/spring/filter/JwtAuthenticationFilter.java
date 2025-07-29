@@ -1,4 +1,4 @@
-package com.safjnest.springapi.filter;
+package com.safjnest.spring.filter;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

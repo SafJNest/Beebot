@@ -93,7 +93,7 @@ public class PlaySound extends SlashCommand{
             return;
         }
 
-        File soundBoard = new File("rsc" + File.separator + "SoundBoard");
+        File soundBoard = new File("rsc" + File.separator + "sounds");
 
         if(!soundBoard.exists())
             soundBoard.mkdirs();
@@ -132,7 +132,7 @@ public class PlaySound extends SlashCommand{
             return;
         }
 
-        File soundBoard = new File("rsc" + File.separator + "SoundBoard");
+        File soundBoard = new File("rsc" + File.separator + "sounds");
 
         if(!soundBoard.exists())
             soundBoard.mkdirs();

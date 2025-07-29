@@ -1,4 +1,4 @@
-package com.safjnest.springapi.api.controller;
+package com.safjnest.spring.api.controller;
 
 import net.dv8tion.jda.api.Permission;
 import java.util.ArrayList;
@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.springapi.service.GuildService;
+import com.safjnest.spring.service.GuildService;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryCollection;
 

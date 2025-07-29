@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import org.checkerframework.checker.units.qual.s;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -352,7 +351,6 @@ public class SpotifyDBHandler {
 
         Set<String> seenArtists = new HashSet<>();
         Set<String> seenAlbums = new HashSet<>();
-        Set<String> seenAlbumArtists = new HashSet<>();
         Set<String> seenTracks = new HashSet<>();
 
         insertUser.setString(1, userId);

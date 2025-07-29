@@ -1,4 +1,4 @@
-package com.safjnest.springapi.util;
+package com.safjnest.spring.util;
 
 import java.security.SecureRandom;
 import java.util.Base64;
