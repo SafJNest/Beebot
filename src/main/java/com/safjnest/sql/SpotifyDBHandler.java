@@ -557,4 +557,8 @@ public class SpotifyDBHandler {
         
     }
 
+    public static QueryCollection getYearsPlays(String userId) {
+        return safJQuery("SELECT YEAR(ts.streamed_at) AS year, COUNT(*) AS play_count FROM track_streamings ts WHERE ts.user_id = '" + userId + "' GROUP BY YEAR(ts.streamed_at) ORDER BY year;");
+    }
+
 }

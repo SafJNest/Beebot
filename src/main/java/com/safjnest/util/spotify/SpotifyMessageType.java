@@ -3,7 +3,8 @@ package com.safjnest.util.spotify;
 public enum SpotifyMessageType {
   ALBUMS("Albums"),
   TRACKS("Tracks"),
-  ARTISTS("Artists");
+  ARTISTS("Artists"),
+  FILTERS("Filters");
 
   private String label;
 

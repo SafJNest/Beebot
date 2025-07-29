@@ -9,6 +9,8 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
+import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.SpotifyDBHandler;
 import com.safjnest.util.SafJNest;
 
@@ -18,6 +20,8 @@ import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.container.ContainerChildComponent;
 import net.dv8tion.jda.api.components.section.Section;
+import net.dv8tion.jda.api.components.selections.SelectOption;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
@@ -51,6 +55,9 @@ public class SpotifyMessage {
 
     Button authorsButton = Button.primary(SpotifyMessageType.ARTISTS.toButtonId(), SpotifyMessageType.ARTISTS.getLabel())
         .withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
+    
+    Button filter = Button.primary(SpotifyMessageType.FILTERS.toButtonId(), SpotifyMessageType.FILTERS.getLabel())
+        .withEmoji(CustomEmojiHandler.getRichEmoji("repeat"));
 
     switch (type) {
         case TRACKS:
@@ -75,15 +82,19 @@ public class SpotifyMessage {
     List<ContainerChildComponent> buttons = new ArrayList<>();
     buttons.add(ActionRow.of(left, center, right));
     buttons.add(Separator.createDivider(Separator.Spacing.SMALL));
-    buttons.add(ActionRow.of(albumsButton,tracksButton,authorsButton));
+    buttons.add(ActionRow.of(albumsButton,tracksButton,authorsButton, filter));
 
     return Container.of(buttons)
         .withAccentColor(Bot.getColor());
   }
 
-
-
   public static List<Container> build(String userId, SpotifyMessageType type, int index) {
+    return build(userId, type, null, index);
+  }
+
+
+
+  public static List<Container> build(String userId, SpotifyMessageType type, SpotifyMessageType previousType, int index) {
     List<?> values = new ArrayList<>();
     switch (type) {
         case ALBUMS:
@@ -99,17 +110,80 @@ public class SpotifyMessage {
         default:
             break;
     }
+    if (type == SpotifyMessageType.FILTERS) {
+        return buildFilters(userId, type, previousType, index);
+    }
     Container body = null, buttons = null;
     try {
         body = getMainContent(userId, type, index, values);
         buttons = getButtonComponents(type, userId, index);
     } catch (IOException e) {
-        // TODO Auto-generated catch block
         e.printStackTrace();
     }
 
     return List.of(body, buttons);
   }
+
+  public static List<Container> buildFilters(String userId, SpotifyMessageType type, SpotifyMessageType previousType, int index) {
+    List<Container> containers = new ArrayList<>();
+
+    Button filterMinus = Button.primary("spotify-filter-date-minus", " Date <");
+    Button filterMinusEqual = Button.primary("spotify-filter-date-minusEqual", " Date <=");
+    Button filterequal = Button.success("spotify-filter-date-equal", " Date =");
+    Button filterGreater = Button.primary("spotify-filter-date-greater", " Date >");
+    Button filterGreaterEqual = Button.primary("spotify-filter-date-greaterEqual", " Date >=");
+
+    QueryCollection date = SpotifyDBHandler.getYearsPlays(userId);
+
+    List<SelectOption> options = new ArrayList<>();
+    for (QueryRecord record : date) {
+        String label = record.get("year");
+        String description = record.get("play_count") + " plays";
+        options.add(SelectOption.of(label, label).withDescription(description));
+    }
+
+    StringSelectMenu menu = StringSelectMenu.create("spotify-filter-dates")
+                .setPlaceholder("Filter by date")
+                .setMaxValues(options.size())
+                .addOptions(options)
+                .build();
+
+    List<ContainerChildComponent> content = new ArrayList<>();
+
+
+    content.add(ActionRow.of(filterMinus, filterMinusEqual, filterequal, filterGreater, filterGreaterEqual));
+    content.add(Separator.createDivider(Separator.Spacing.SMALL));
+    content.add(ActionRow.of(menu));
+    
+    content.add(Separator.createDivider(Separator.Spacing.LARGE));
+
+    Button all = Button.primary("spotify-filter-skips-all", "All")
+        .withEmoji(CustomEmojiHandler.getRichEmoji("list2"));
+
+    Button noSkip = Button.primary("spotify-filter-skips-noskip", "No skip")
+        .withEmoji(CustomEmojiHandler.getRichEmoji("play"))
+        .withStyle(ButtonStyle.SUCCESS)
+        .asDisabled();
+
+    Button skip = Button.primary("spotify-filter-skips-skip", "Skip")
+        .withEmoji(CustomEmojiHandler.getRichEmoji("next"));
+
+    content.add(ActionRow.of(all, noSkip, skip));
+
+    content.add(Separator.createDivider(Separator.Spacing.LARGE));
+
+    content.add(ActionRow.of(
+        Button.primary(previousType.toButtonId(), previousType.getLabel())
+            .withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow")),
+        Button.primary("spotify-center-0-" + userId, type.getLabel())
+            .asDisabled()
+    ));
+
+    containers.add(Container.of(content).withAccentColor(Bot.getColor()));
+
+
+    return containers;
+  } 
 
 
 
