@@ -47,7 +47,7 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectIntera
 
     private void spotify(GenericComponentInteractionCreateEvent event, String innerType, String args) {
       String currentType = "", newType = "";
-      String filters = "";
+      String filtersString = "";
       int currentIndex = 0;
       String userId = event.getUser().getId();
 
@@ -72,13 +72,10 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectIntera
           }
         }
       }
-      System.out.println(filterButtons);
-      System.out.println(updateFilterString("", event, filterButtons));
+      newType = currentType;
+      Map<String, List<String>> filters = updateFilterString("", event, filterButtons);
 
 
-
-
-      
       switch (innerType) {
         case "left":
           if (currentIndex > 0)
@@ -93,17 +90,35 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectIntera
           newType = args;
           currentIndex = 0;
           break;
+        case "filter":
+          String filterKey = args.split("-")[0];
+          String filterValue = args.split("-")[1];
+          filterValue = switch (filterValue) {
+                case "minus" -> "<";
+                case "minusEqual" -> "<=";
+                case "equal" -> "=";
+                case "greater" -> ">";
+                case "greaterEqual" -> ">=";
+                default -> filterValue;
+            };
+          filters.put(filterKey, new ArrayList<>(List.of(filterValue)));
+
+        break;
           
         default:
           break;
       }
+      System.out.println(filters);
+      // SpotifyMessageType type = SpotifyMessageType.valueOf(newType.toUpperCase());
+      SpotifyMessageType type = SpotifyMessageType.FILTERS;
+      SpotifyMessageType previousType = !currentType.isBlank() ? SpotifyMessageType.valueOf(currentType.toUpperCase()) : null;
 
-      event.getMessage().editMessageComponents(SpotifyMessage.build(userId, SpotifyMessageType.valueOf(newType.toUpperCase()), !currentType.isBlank() ? SpotifyMessageType.valueOf(currentType.toUpperCase()) : null, currentIndex))
+      event.getMessage().editMessageComponents(SpotifyMessage.build(userId, type, previousType, currentIndex, filters))
           .useComponentsV2()
           .queue();
     }
 
-    private static String updateFilterString(String filtersString, GenericComponentInteractionCreateEvent event, List<Button> activeButtons) {
+    private static Map<String, List<String>> updateFilterString(String filtersString, GenericComponentInteractionCreateEvent event, List<Button> activeButtons) {
         Map<String, List<String>> filters = new HashMap<>();
 
         if (filtersString != null && !filtersString.isEmpty()) {
@@ -152,8 +167,9 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectIntera
             filters.put(filterKey, List.of(mappedValue));
         }
 
-        return filters.entrySet().stream()
-            .map(entry -> entry.getKey() + "=" + String.join(",", entry.getValue()))
-            .collect(Collectors.joining(";"));
+        // return filters.entrySet().stream()
+        //     .map(entry -> entry.getKey() + "=" + String.join(",", entry.getValue()))
+        //     .collect(Collectors.joining(";"));
+        return filters;
     }
 }

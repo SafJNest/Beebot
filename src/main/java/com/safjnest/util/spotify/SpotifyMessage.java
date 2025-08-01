@@ -2,7 +2,9 @@ package com.safjnest.util.spotify;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -89,12 +91,12 @@ public class SpotifyMessage {
   }
 
   public static List<Container> build(String userId, SpotifyMessageType type, int index) {
-    return build(userId, type, null, index);
+    return build(userId, type, null, index,  new HashMap<>());
   }
 
 
 
-  public static List<Container> build(String userId, SpotifyMessageType type, SpotifyMessageType previousType, int index) {
+  public static List<Container> build(String userId, SpotifyMessageType type, SpotifyMessageType previousType, int index, Map<String, List<String>> filters) {
     List<?> values = new ArrayList<>();
     switch (type) {
         case ALBUMS:
@@ -111,7 +113,7 @@ public class SpotifyMessage {
             break;
     }
     if (type == SpotifyMessageType.FILTERS) {
-        return buildFilters(userId, type, previousType, index);
+        return buildFilters(userId, type, previousType, index, filters);
     }
     Container body = null, buttons = null;
     try {
@@ -124,14 +126,35 @@ public class SpotifyMessage {
     return List.of(body, buttons);
   }
 
-  public static List<Container> buildFilters(String userId, SpotifyMessageType type, SpotifyMessageType previousType, int index) {
+  public static List<Container> buildFilters(String userId, SpotifyMessageType type, SpotifyMessageType previousType, int index, Map<String, List<String>> filters) {
     List<Container> containers = new ArrayList<>();
 
     Button filterMinus = Button.primary("spotify-filter-date-minus", " Date <");
     Button filterMinusEqual = Button.primary("spotify-filter-date-minusEqual", " Date <=");
-    Button filterequal = Button.success("spotify-filter-date-equal", " Date =");
+    Button filterequal = Button.primary("spotify-filter-date-equal", " Date =");
     Button filterGreater = Button.primary("spotify-filter-date-greater", " Date >");
     Button filterGreaterEqual = Button.primary("spotify-filter-date-greaterEqual", " Date >=");
+
+    switch (filters.getOrDefault("date", List.of("=")).get(0)) {
+        case "<":
+            filterMinus = filterMinus.asDisabled().withStyle(ButtonStyle.SUCCESS);
+        break;
+        case "<=":
+            filterMinusEqual = filterMinusEqual.asDisabled().withStyle(ButtonStyle.SUCCESS);
+        break;
+        case "=":
+            filterequal = filterequal.asDisabled().withStyle(ButtonStyle.SUCCESS);
+        break;
+        case ">":
+            filterGreater = filterGreater.asDisabled().withStyle(ButtonStyle.SUCCESS);
+        break;
+        case ">=":
+            filterGreaterEqual = filterGreaterEqual.asDisabled().withStyle(ButtonStyle.SUCCESS);
+        break;
+        default:
+            break;
+
+    }
 
     QueryCollection date = SpotifyDBHandler.getYearsPlays(userId);
 
@@ -173,7 +196,7 @@ public class SpotifyMessage {
     content.add(Separator.createDivider(Separator.Spacing.LARGE));
 
     content.add(ActionRow.of(
-        Button.primary(previousType.toButtonId(), previousType.getLabel())
+        Button.success(previousType.toButtonId(), previousType.getLabel())
             .withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow")),
         Button.primary("spotify-center-0-" + userId, type.getLabel())
             .asDisabled()

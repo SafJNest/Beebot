@@ -175,7 +175,6 @@ public class SpotifyHandler {
     public static void uploadStreamingsToDB(List<SpotifyTrackStreaming> streamings, String userId) {
         try {
             List<SpotifyTrackStreaming> filteredStreamings = streamings.stream()
-            .filter(streaming -> streaming.getMsPlayed() >= 30000)
             .collect(Collectors.toList());
 
             if (filteredStreamings.isEmpty()) {
@@ -189,5 +188,4 @@ public class SpotifyHandler {
             System.out.println("Error uploading streamings to the database: " + e.getMessage());
         }
     }
-
 }
