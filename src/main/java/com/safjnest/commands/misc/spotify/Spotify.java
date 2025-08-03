@@ -9,6 +9,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
+import net.dv8tion.jda.api.interactions.InteractionContextType;
+
 public class Spotify extends SlashCommand {
 
     public Spotify(){
@@ -25,6 +27,8 @@ public class Spotify extends SlashCommand {
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
         Collections.addAll(slashCommandsList, new SpotifyAlbums(father), new SpotifyTracks(father), new SpotifyUpload(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
+
+        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
         commandData.setThings(this);
     }
