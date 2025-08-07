@@ -120,7 +120,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
           alertId = button.getCustomId().split("-")[3];
         }
       }
-      
+
       GuildData guild = GuildCache.getGuild(event.getGuild());
       AlertData alert = guild.getAlertByID(alertId);
       AlertType type = alert != null ? alert.getType() : null;
@@ -164,9 +164,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
             AlertData newAlertData = new AlertData(event.getGuild().getId(), "", "", null, AlertSendType.CHANNEL, type);
             guild.getAlerts().put(newAlertData.getKey(), newAlertData);
           }
-
           alert = guild.getAlert(type);
-
           break;
         case "disable":
           event.deferEdit().queue();
@@ -187,6 +185,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
         case "experience":
           event.deferEdit().queue();
           guild.setExpSystem(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER ? true : false);
+          break;
         default:
           break;
       }
