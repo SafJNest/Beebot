@@ -9,10 +9,12 @@ import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
+import com.safjnest.util.AlertMessage;
 import com.safjnest.util.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -40,6 +42,8 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             case "greet":
                 greet(event);
                 break;
+            case "alert":
+                alert(event);
             default:
                 break;
         }
@@ -157,5 +161,20 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         event.getMessage().editMessageEmbeds(TwitchMenu.getTwitchStreamerEmbed(streamerId, event.getGuild().getId()).build())
                 .setComponents(TwitchMenu.getTwitchStreamerButtons(streamerId))
                 .queue();
+    }
+
+    private void alert(ModalInteractionEvent event) {
+        String alertId = event.getModalId().split("-", 2)[1];
+        AlertData alert = GuildCache.getGuild(event.getGuild()).getAlertByID(alertId);
+
+
+        String publicMessage = event.getValue("alert-message-public") != null ? event.getValue("alert-message-public").getAsString() : null;
+        String privateMessage = event.getValue("alert-message-private") != null ? event.getValue("alert-message-private").getAsString() : null;
+
+        if (publicMessage != null) alert.setMessage(publicMessage);
+        if (privateMessage != null) alert.setPrivateMessage(privateMessage);
+
+        event.deferEdit().queue();
+        event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), alert)).useComponentsV2().queue();
     }
 }

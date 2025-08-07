@@ -1,8 +1,12 @@
 package com.safjnest.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import java.awt.Color;
+
+import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
@@ -24,19 +28,17 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 
 public class AlertMessage {
 
-    public static List<Container> build(AlertData alert) {
+    public static List<Container> build(GuildData guild, AlertData alert) {
+      List<Container> containers = new ArrayList<>();
       List<ContainerChildComponent> children = new ArrayList<>();
 
-
-      //TextInput input = TextInput.create("alert-message-" + alert.getID(), "Default Message", TextInputStyle.PARAGRAPH).build();
-
       Section message = Section.of(
-        Button.primary("alert-modal-public", "modify"),
-        TextDisplay.of(alert.getMessage())
+        alert.hasMessage() ? Button.primary("alert-modal-public", "modify") : Button.primary("alert-modal-public", "add") ,
+        alert.hasMessage() ? TextDisplay.of(alert.getMessage()) : TextDisplay.of("No message is set")
       );
 
       Section privateMessage = Section.of(
-        alert.hasPrivateMessage() ? Button.primary("alert-modal-private" + alert.getID(), "modify") : Button.primary("alert-modal-private" + alert.getID(), "add") ,
+        alert.hasPrivateMessage() ? Button.primary("alert-modal-private", "modify") : Button.primary("alert-modal-private", "add") ,
         alert.hasPrivateMessage() ? TextDisplay.of(alert.getPrivateMessage()) : TextDisplay.of("No private message is set")
       );
 
@@ -58,20 +60,62 @@ public class AlertMessage {
           break;
       }
 
-
-
       children.add(message);
       children.add(Separator.createDivider(Spacing.LARGE));
       children.add(privateMessage);
       children.add(Separator.createDivider(Spacing.LARGE));
       children.add(ActionRow.of(sendChannel, sendPrivate, sendBoth));
       children.add(Separator.createDivider(Spacing.LARGE));
-      children.add(ActionRow.of(getRoleMenu(alert)));
+
+      if (alert.getType() != AlertType.LEAVE)
+        children.add(ActionRow.of(getRoleMenu(alert)));
+      
       children.add(ActionRow.of(getChannelMenu(alert)));
 
-      Button welcome = Button.success("alert-type-" + AlertType.WELCOME + "-" + alert.getID(), "Welcome");
 
-      return List.of(Container.of(children), Container.of(ActionRow.of(welcome)));
+      containers.add(Container.of(children));
+      if (!alert.isValid()) {
+        containers.add(getContainerError(alert));
+      }
+
+      containers.add(getAlertTypeContainer(guild, alert));
+      
+      return containers;
+    }
+
+
+    private static Container getContainerError(AlertData alert) {
+      String errors = "";
+
+      if (alert.getChannelId() == null && alert.getType() != AlertType.LEVEL_UP)
+        errors += "Channel is missing\n";
+
+      if (!alert.hasMessage() && !alert.hasPrivateMessage())
+        errors += "A message is missing\n";
+
+      return Container.of(TextDisplay.of(errors)).withAccentColor(Color.RED);
+
+    }
+
+    private static Container getAlertTypeContainer(GuildData guild, AlertData alert) {
+      List<Button> buttons = new ArrayList<>();
+      for (AlertType type : AlertType.values()) {
+        if (type == AlertType.TWITCH || type == AlertType.REWARD) continue;
+
+        AlertData buttonAlert = guild.getAlert(type);
+
+        int id = buttonAlert != null ? buttonAlert.getID() : 0;
+        Button button = Button.primary("alert-type-" + type + "-" + id , type.getDescription());
+        
+        ButtonStyle style = buttonAlert == null ? ButtonStyle.SECONDARY : (alert.getType() == type ? ButtonStyle.SUCCESS : ButtonStyle.PRIMARY);
+        button = button.withStyle(style);
+        if (alert.getType() == type) button = button.asDisabled();
+        buttons.add(button);
+      }
+
+
+      Collections.reverse(buttons);
+      return Container.of((ActionRow.of(buttons)));
     }
 
     private static EntitySelectMenu getRoleMenu(AlertData alert) {

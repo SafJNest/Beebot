@@ -1,6 +1,7 @@
 package com.safjnest.model.guild.alert;
 
 import java.util.HashMap;
+import java.util.List;
 
 import com.safjnest.core.Bot;
 import com.safjnest.sql.DatabaseHandler;
@@ -142,6 +143,12 @@ public class AlertData {
         return this.roles != null;
     }
 
+    public boolean setRoles(List<String> roles) {
+        DatabaseHandler.deleteAlertRoles(String.valueOf(this.ID));
+        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.toArray(new String[0]));
+        return this.roles != null;
+    }
+
 
     /**
      * The method first removes the role from the local roles map, 
@@ -197,6 +204,10 @@ public class AlertData {
 
     public boolean hasPrivateMessage() {
         return this.privateMessage != null && !this.privateMessage.isEmpty();
+    }
+
+    public boolean hasMessage() {
+        return this.message != null && !this.message.isEmpty();
     }
 
     public String getChannelId() {

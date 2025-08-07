@@ -39,7 +39,7 @@ public class WelcomePreview extends SlashCommand{
             return;
         }
 
-        event.deferReply().addComponents(AlertMessage.build(welcome)).useComponentsV2().queue();
+        event.deferReply().addComponents(AlertMessage.build(gs, welcome)).useComponentsV2().queue();
     }
 
 }
