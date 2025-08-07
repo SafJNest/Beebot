@@ -6,6 +6,8 @@ import java.util.List;
 
 import java.awt.Color;
 
+import com.safjnest.core.Bot;
+import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
@@ -60,22 +62,42 @@ public class AlertMessage {
           break;
       }
 
+      List<Button> utilityButtons = new ArrayList<>();
+
+      Button toggle = Button.success("alert-disable", "Enabled");
+      if (!alert.isEnabled())
+        toggle = Button.danger("alert-enable", "Disabled");
+
+      utilityButtons.add(toggle);
+
+      if (alert.getType() == AlertType.LEVEL_UP) {
+        ButtonStyle expStyle = guild.isExperienceEnabled() ? ButtonStyle.SUCCESS : ButtonStyle.DANGER;
+        Button hasExperience = Button.success("alert-experience", "Gain exp").withStyle(expStyle);
+        utilityButtons.add(hasExperience);
+      }
+
+      Button delete = Button.danger("alert-delete", " ").withEmoji(CustomEmojiHandler.getRichEmoji("bin"));
+      utilityButtons.add(delete);
+
       children.add(message);
       children.add(Separator.createDivider(Spacing.LARGE));
       children.add(privateMessage);
       children.add(Separator.createDivider(Spacing.LARGE));
       children.add(ActionRow.of(sendChannel, sendPrivate, sendBoth));
       children.add(Separator.createDivider(Spacing.LARGE));
+      children.add(ActionRow.of(utilityButtons));
+      children.add(Separator.createDivider(Spacing.LARGE));
 
       if (alert.getType() != AlertType.LEAVE)
         children.add(ActionRow.of(getRoleMenu(alert)));
       
-      children.add(ActionRow.of(getChannelMenu(alert)));
+      if (alert.getType() != AlertType.LEVEL_UP)
+        children.add(ActionRow.of(getChannelMenu(alert)));
 
 
-      containers.add(Container.of(children));
-      if (!alert.isValid()) {
-        containers.add(getContainerError(alert));
+      containers.add(Container.of(children).withAccentColor(Bot.getColor()));
+      if (!alert.isValid(guild)) {
+        containers.add(getContainerError(guild, alert));
       }
 
       containers.add(getAlertTypeContainer(guild, alert));
@@ -84,7 +106,7 @@ public class AlertMessage {
     }
 
 
-    private static Container getContainerError(AlertData alert) {
+    private static Container getContainerError(GuildData guild, AlertData alert) {
       String errors = "";
 
       if (alert.getChannelId() == null && alert.getType() != AlertType.LEVEL_UP)
@@ -92,6 +114,12 @@ public class AlertMessage {
 
       if (!alert.hasMessage() && !alert.hasPrivateMessage())
         errors += "A message is missing\n";
+
+      if (!alert.isEnabled())
+        errors += "Alert is disabled\n";
+
+      if (alert.getType() == AlertType.LEVEL_UP && !guild.isExperienceEnabled()) 
+        errors += "The experiece is disabled for this guild";
 
       return Container.of(TextDisplay.of(errors)).withAccentColor(Color.RED);
 
@@ -115,7 +143,7 @@ public class AlertMessage {
 
 
       Collections.reverse(buttons);
-      return Container.of((ActionRow.of(buttons)));
+      return Container.of((ActionRow.of(buttons))).withAccentColor(Bot.getColor());
     }
 
     private static EntitySelectMenu getRoleMenu(AlertData alert) {
@@ -138,5 +166,11 @@ public class AlertMessage {
       if (alert.getChannelId() != null && !alert.getChannelId().isEmpty()) builder.setDefaultValues(DefaultValue.channel(alert.getChannelId()));
 
       return builder.build();
+    }
+
+    public static Container getEmptyAlert(AlertType type) {
+      Button create = Button.success("alert-type-" + type.name() + "-0", "Create");
+      TextDisplay display = TextDisplay.of("This guild does not have a " + type.getDescription().toLowerCase() + ".");
+      return Container.of(Section.of(create, display)).withAccentColor(Color.red);
     }
 }

@@ -1,6 +1,7 @@
 package com.safjnest.core.events;
 
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -10,6 +11,7 @@ import java.util.stream.Stream;
 import org.jetbrains.annotations.Unmodifiable;
 
 import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
@@ -22,6 +24,7 @@ import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.components.utils.ComponentIterator;
@@ -113,14 +116,15 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
       String alertId = "";
 
       for (Button button : getButtons(event)) {
-        if (button.getCustomId().startsWith("alert-type-"))
-          System.out.println(button.getCustomId());
         if (button.getCustomId().startsWith("alert-type-") && button.getStyle() == ButtonStyle.SUCCESS) {
           alertId = button.getCustomId().split("-")[3];
         }
       }
-      AlertData alert = GuildCache.getGuild(event.getGuild()).getAlertByID(alertId);
-      AlertType type = alert.getType();
+      
+      GuildData guild = GuildCache.getGuild(event.getGuild());
+      AlertData alert = guild.getAlertByID(alertId);
+      AlertType type = alert != null ? alert.getType() : null;
+
       EntitySelectInteractionEvent entityEvent;
       switch (innerType) {
         case "send":
@@ -155,24 +159,44 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
         case "type":
           event.deferEdit().queue();
           type = AlertType.valueOf(args.split("-")[0].toUpperCase());
-          alert = GuildCache.getGuild(event.getGuild()).getAlert(type);
+          alert = guild.getAlert(type);
           if (alert == null) {
             AlertData newAlertData = new AlertData(event.getGuild().getId(), "", "", null, AlertSendType.CHANNEL, type);
-            GuildCache.getGuild(event.getGuild()).getAlerts().put(newAlertData.getKey(), newAlertData);
+            guild.getAlerts().put(newAlertData.getKey(), newAlertData);
           }
 
-          alert = GuildCache.getGuild(event.getGuild()).getAlert(type);
+          alert = guild.getAlert(type);
 
-
+          break;
+        case "disable":
+          event.deferEdit().queue();
+          alert.setEnabled(false);
+          break;
+        case "enable":
+          event.deferEdit().queue();
+          alert.setEnabled(true);
+          break;
+        case "delete":
+          event.deferEdit().queue();
+          guild.deleteAlert(alert.getType());
+          Container delete = Container.of(TextDisplay.of("Alert deleted correctly")).withAccentColor(Color.GREEN);
+          event.getMessage().editMessageComponents(delete)
+            .useComponentsV2()
+            .queue();
+          return;
+        case "experience":
+          event.deferEdit().queue();
+          guild.setExpSystem(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER ? true : false);
         default:
           break;
       }
-      event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), alert))
+
+      event.getMessage().editMessageComponents(AlertMessage.build(guild, alert))
           .useComponentsV2()
           .queue();
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     public @Unmodifiable List<Button> getButtons(GenericComponentInteractionCreateEvent event) {
       Stream var10000 = ComponentIterator.createStream(event.getMessage().getComponents());
       Objects.requireNonNull(Button.class);

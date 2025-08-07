@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.core.Bot;
+import com.safjnest.model.guild.GuildData;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
 
@@ -56,6 +57,7 @@ public class AlertData {
         this.enabled = true;
         this.type = type;
         this.sendType = sendType;
+        this.roles = new HashMap<>();
     }
 
     public AlertData(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, String[] roles) {
@@ -84,7 +86,14 @@ public class AlertData {
      * @return true if the alert is valid, false otherwise
      */
     public boolean isValid() {
-        return this.message != null && (this.type == AlertType.LEVEL_UP ||  this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) && this.enabled;
+        return (hasMessage() || hasPrivateMessage()) && (this.type == AlertType.LEVEL_UP ||  this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) && this.enabled;
+    }
+
+    public boolean isValid(GuildData guild) {
+        boolean isValid = isValid();
+        if (this.type == AlertType.LEVEL_UP)
+            isValid = guild.isExperienceEnabled() && isValid;
+        return isValid;
     }
     
     public boolean setMessage(String message) {

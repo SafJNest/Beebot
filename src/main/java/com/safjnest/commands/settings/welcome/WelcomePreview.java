@@ -35,7 +35,7 @@ public class WelcomePreview extends SlashCommand{
 
 
         if(welcome == null) {
-            event.deferReply(true).addContent("This guild doesn't have a welcome message.").queue();
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.WELCOME)).useComponentsV2().queue();
             return;
         }
 

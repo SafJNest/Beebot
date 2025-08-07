@@ -6,6 +6,7 @@ import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -32,10 +33,10 @@ public class BoostPreview extends SlashCommand{
         AlertData boost = gs.getAlert(AlertType.BOOST);
 
         if(boost == null) {
-            event.deferReply(true).addContent("This guild doesn't have a boost message.").queue();
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.BOOST)).useComponentsV2().queue();
             return;
         }
 
-        event.deferReply(false).addEmbeds(boost.getSampleEmbed(event.getGuild()).build()).queue();
+        event.deferReply().addComponents(AlertMessage.build(gs, boost)).useComponentsV2().queue();
     }
 }
