@@ -352,6 +352,10 @@ public class GuildData {
         return getAlerts().get(new AlertKey<>(type));
     }
 
+    public AlertData getAlertByID(String id) {
+        return getAlertByID(Integer.parseInt(id));
+    }
+
     public AlertData getAlertByID(int id) {
         for (AlertData ad : getAlerts().values()) {
             if (ad.getID() == id) {

@@ -39,6 +39,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 break;
             case "greet":
                 greet(event);
+                break;
             default:
                 break;
         }
