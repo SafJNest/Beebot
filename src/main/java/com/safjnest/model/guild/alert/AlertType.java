@@ -1,17 +1,23 @@
 package com.safjnest.model.guild.alert;
 
 public enum AlertType {
-    BOOST("Boost Message"),
-    LEAVE("Leave Message"),
-    LEVEL_UP("Level Up Message"),
-    WELCOME("Welcome Message"),
-    REWARD("Reward"),
-    TWITCH("Twitch");
+    BOOST("Boost", "Boost Message"),
+    LEAVE("Leave", "Leave Message"),
+    LEVEL_UP("Level Up", "Level Up Message"),
+    WELCOME("Welcome", "Welcome Message"),
+    REWARD("Reward", "Reward"),
+    TWITCH("Twitch", "Twitch");
 
     private final String description;
+    private final String name;
 
-    AlertType(String description) {
+    AlertType(String name, String description) {
+        this.name = name;
         this.description = description;
+    }
+
+    public String getName() {
+        return this.name;
     }
 
     public String getDescription() {

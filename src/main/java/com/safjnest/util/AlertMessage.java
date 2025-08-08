@@ -45,7 +45,7 @@ public class AlertMessage {
       );
 
 
-      Button sendChannel = Button.primary("alert-send-" + AlertSendType.CHANNEL, AlertSendType.CHANNEL.name());
+      Button sendChannel = Button.primary("alert-send-" + AlertSendType.CHANNEL.name(), AlertSendType.CHANNEL.name());
       Button sendPrivate = Button.primary("alert-send-" + AlertSendType.PRIVATE.name(), AlertSendType.PRIVATE.name());
       Button sendBoth = Button.primary("alert-send-" + AlertSendType.BOTH.name(), AlertSendType.BOTH.name());
 
@@ -133,7 +133,7 @@ public class AlertMessage {
         AlertData buttonAlert = guild.getAlert(type);
 
         int id = buttonAlert != null ? buttonAlert.getID() : 0;
-        Button button = Button.primary("alert-type-" + type + "-" + id , type.getDescription());
+        Button button = Button.primary("alert-type-" + type + "-" + id , type.getName());
         
         ButtonStyle style = buttonAlert == null ? ButtonStyle.SECONDARY : (alert.getType() == type ? ButtonStyle.SUCCESS : ButtonStyle.PRIMARY);
         button = button.withStyle(style);
