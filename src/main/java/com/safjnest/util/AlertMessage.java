@@ -12,6 +12,7 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.guild.alert.RewardData;
 
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -91,18 +92,35 @@ public class AlertMessage {
       if (alert.getType() != AlertType.LEAVE)
         children.add(ActionRow.of(getRoleMenu(alert)));
       
-      if (alert.getType() != AlertType.LEVEL_UP)
+      if (alert.getType() != AlertType.LEVEL_UP && alert.getType() != AlertType.REWARD)
         children.add(ActionRow.of(getChannelMenu(alert)));
-
 
       containers.add(Container.of(children).withAccentColor(Bot.getColor()));
       if (!alert.isValid(guild)) {
         containers.add(getContainerError(guild, alert));
       }
 
+      if (alert.getType() == AlertType.REWARD)
+        containers.add(getRewardButtons(guild, (RewardData) alert));
+
       containers.add(getAlertTypeContainer(guild, alert));
       
       return containers;
+    }
+
+
+    private static Container getRewardButtons(GuildData guild, RewardData reward) {
+      RewardData previous = guild.getLowerReward(reward.getLevel());
+      RewardData next = guild.getHigherReward(reward.getLevel());
+
+      Button left = Button.primary("alert-lower", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+      Button center = Button.success("alert-reward-" + reward.getLevel(), "Level: " + reward.getLevel()).asDisabled();
+      Button right = Button.primary("alert-higher", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+
+      if (previous == null) left = left.withStyle(ButtonStyle.DANGER).asDisabled();
+      if (next == null) right = right.withStyle(ButtonStyle.DANGER).asDisabled();
+
+      return Container.of(ActionRow.of(left, center, right));
     }
 
 
@@ -128,7 +146,7 @@ public class AlertMessage {
     private static Container getAlertTypeContainer(GuildData guild, AlertData alert) {
       List<Button> buttons = new ArrayList<>();
       for (AlertType type : AlertType.values()) {
-        if (type == AlertType.TWITCH || type == AlertType.REWARD) continue;
+        if (type == AlertType.TWITCH) continue;
 
         AlertData buttonAlert = guild.getAlert(type);
 

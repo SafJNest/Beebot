@@ -395,6 +395,19 @@ public class GuildData {
         return null;
     }
 
+    public List<RewardData> getRewards() {
+        List<RewardData> rewards = new ArrayList<>();
+        RewardData reward = null;
+        int level = 0;
+        do {
+            reward = getHigherReward(level);
+            level = reward.getLevel();
+            rewards.add(reward);
+        } while (reward != null);
+
+        return rewards;
+    }
+
     public AlertData getWelcome() {
         return getAlert(AlertType.WELCOME);
     }
