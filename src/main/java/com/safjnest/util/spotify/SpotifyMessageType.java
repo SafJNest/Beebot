@@ -1,9 +1,9 @@
 package com.safjnest.util.spotify;
 
 public enum SpotifyMessageType {
-  ALBUMS("Albums"),
-  TRACKS("Tracks"),
-  ARTISTS("Artists");
+  ALBUMS("albums"),
+  TRACKS("tracks"),
+  ARTISTS("artists");
 
   private String label;
 

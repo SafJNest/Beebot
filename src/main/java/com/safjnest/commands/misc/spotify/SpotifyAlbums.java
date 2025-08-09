@@ -1,13 +1,18 @@
 package com.safjnest.commands.misc.spotify;
 
+import java.util.List;
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.spotify.SpotifyMessage;
 import com.safjnest.util.spotify.SpotifyMessageType;
+import com.safjnest.util.spotify.SpotifyTimeRange;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class SpotifyAlbums extends SlashCommand {
 
@@ -28,10 +33,11 @@ public class SpotifyAlbums extends SlashCommand {
 
     @Override
     protected void execute(SlashCommandEvent event) {
+        String userId = event.getUser().getId();
+        SpotifyTimeRange timeRange = SpotifyTimeRange.FULL_TERM;
+
         event.deferReply(false).queue();
-        event.getHook().editOriginalComponents(SpotifyMessage.build(event.getUser().getId(), SpotifyMessageType.ALBUMS, 0))
-            .useComponentsV2()
-            .queue();
+        SpotifyMessage.send(event.getHook(), userId, SpotifyMessageType.ALBUMS, 0, timeRange);
     }
 
 }

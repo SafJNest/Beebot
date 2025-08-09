@@ -45,7 +45,7 @@ public class SpotifyTrackStreaming {
         String name = track.getName().replace("'", "''");
         String artist = track.getArtist().replace("'", "''");
         String album = track.getAlbum().replace("'", "''");
-        String uri = track.getURI().replace("'", "''");
+        String uri = track.getId().replace("'", "''");
         String safeUserId = userId.replace("'", "''");
 
         return String.format("('%s', '%s', %d, '%s', '%s', '%s', '%s')",
@@ -61,7 +61,7 @@ public class SpotifyTrackStreaming {
     }
 
     public String getSpotifyTrackUri() {
-        return track.getURI();
+        return track.getId();
     }
 
 }

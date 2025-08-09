@@ -6,10 +6,20 @@ import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.HashMap;
 import java.util.Map;
 
 public class QueryRecord extends HashMap<String, String> {
+    private static final DateTimeFormatter BASE_FORMATTER =
+        new DateTimeFormatterBuilder()
+            .appendPattern("yyyy-MM-dd HH:mm:ss")
+            .optionalStart()
+            .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+            .optionalEnd()
+            .toFormatter();
+
     private ResultSet resultSet;
 
     public QueryRecord(ResultSet resultSet){
@@ -116,12 +126,21 @@ public class QueryRecord extends HashMap<String, String> {
     }
 
 
-    public LocalDateTime getAsLocalDateTime(String string) {
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            return LocalDateTime.parse(get(string), formatter);
-        } catch (Exception e) {
-            return null;
+    public LocalDateTime getAsLocalDateTime(String dateTimeStr) {
+        String cleaned = dateTimeStr.trim();
+
+        if (cleaned.contains(".")) {
+            String[] parts = cleaned.split("\\.", 2);
+            String base = parts[0];
+            String fraction = parts[1].replaceAll("\\D.*", "");
+
+            if (fraction.length() > 9) {
+                fraction = fraction.substring(0, 9);
+            }
+
+            cleaned = fraction.isEmpty() ? base : base + "." + fraction;
         }
+
+        return LocalDateTime.parse(cleaned, BASE_FORMATTER);
     }
 }
