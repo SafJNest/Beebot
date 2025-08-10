@@ -349,7 +349,13 @@ public class GuildData {
     }
 
     public AlertData getAlert(AlertType type) {
+        if (type == AlertType.REWARD)
+            return getHigherReward(0);
         return getAlerts().get(new AlertKey<>(type));
+    }
+
+    public AlertData getAlertByID(String id) {
+        return getAlertByID(Integer.parseInt(id));
     }
 
     public AlertData getAlertByID(int id) {
@@ -389,6 +395,19 @@ public class GuildData {
             }
         }
         return null;
+    }
+
+    public List<RewardData> getRewards() {
+        List<RewardData> rewards = new ArrayList<>();
+        RewardData reward = null;
+        int level = 0;
+        do {
+            reward = getHigherReward(level);
+            level = reward.getLevel();
+            rewards.add(reward);
+        } while (reward != null);
+
+        return rewards;
     }
 
     public AlertData getWelcome() {

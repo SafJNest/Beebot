@@ -107,7 +107,7 @@ public class Functions {
 
 
         RewardData reward = guildData.getAlert(AlertType.REWARD, lvl);
-        if (reward != null && !reward.isValid()) {
+        if (reward != null && reward.isValid()) {
             String message = reward.getMessage();
             String privateMessage = reward.hasPrivateMessage() ? reward.getPrivateMessage() : message;
 

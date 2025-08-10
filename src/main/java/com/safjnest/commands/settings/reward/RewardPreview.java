@@ -4,12 +4,10 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.RewardData;
+import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
-import net.dv8tion.jda.api.components.buttons.Button;
-import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 
 import com.safjnest.core.cache.managers.GuildCache;
 
@@ -35,27 +33,29 @@ public class RewardPreview extends SlashCommand{
         
         RewardData lowerReward = (RewardData) gs.getHigherReward(0);
 
-
-        if(lowerReward == null) {
-            event.deferReply(true).addContent("This Guild has zero reward.").queue();
-            return;
-        }
+        event.deferReply().addComponents(AlertMessage.build(gs, lowerReward)).useComponentsV2().queue();
 
 
-        Button left = Button.danger("reward-left", "<-");
-        left = left.asDisabled();
+        // if(lowerReward == null) {
+        //     event.deferReply(true).addContent("This Guild has zero reward.").queue();
+        //     return;
+        // }
 
-        Button right = Button.primary("reward-right", "->");
 
-        if (gs.getHigherReward(lowerReward.getLevel()) == null) 
-            right = right.asDisabled().withStyle(ButtonStyle.DANGER);
+        // Button left = Button.danger("reward-left", "<-");
+        // left = left.asDisabled();
+
+        // Button right = Button.primary("reward-right", "->");
+
+        // if (gs.getHigherReward(lowerReward.getLevel()) == null) 
+        //     right = right.asDisabled().withStyle(ButtonStyle.DANGER);
         
 
-        Button center = Button.primary("reward-center", "Level: " + lowerReward.getLevel());
-        center = center.withStyle(ButtonStyle.SUCCESS);
-        center = center.asDisabled();
+        // Button center = Button.primary("reward-center", "Level: " + lowerReward.getLevel());
+        // center = center.withStyle(ButtonStyle.SUCCESS);
+        // center = center.asDisabled();
 
-        event.deferReply(false).addEmbeds(lowerReward.getSampleEmbed(event.getGuild()).build()).setComponents(ActionRow.of(left, center, right)).queue();
+        // event.deferReply(false).addEmbeds(lowerReward.getSampleEmbed(event.getGuild()).build()).setComponents(ActionRow.of(left, center, right)).queue();
     }
     
 }
