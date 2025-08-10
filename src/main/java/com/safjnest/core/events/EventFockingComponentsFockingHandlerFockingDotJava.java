@@ -12,7 +12,7 @@ import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteract
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-  public class EventComponentHandler extends ListenerAdapter {
+  public class EventFockingComponentsFockingHandlerFockingDotJava extends ListenerAdapter {
 
     @Override
     public void onGenericComponentInteractionCreate(GenericComponentInteractionCreateEvent event) {

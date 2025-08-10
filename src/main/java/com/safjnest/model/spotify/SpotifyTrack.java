@@ -4,7 +4,6 @@ import java.util.Objects;
 
 import org.json.JSONObject;
 
-import com.safjnest.commands.misc.spotify.Spotify;
 import com.safjnest.util.HttpUtils;
 import com.safjnest.util.spotify.SpotifyHandler;
 import com.safjnest.util.spotify.SpotifyTokenManager;
