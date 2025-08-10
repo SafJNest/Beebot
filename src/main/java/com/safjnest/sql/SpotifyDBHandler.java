@@ -31,6 +31,7 @@ import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.spotify.SpotifyMessageType;
 
 public class SpotifyDBHandler {
     private static String hostName;
@@ -411,6 +412,21 @@ public class SpotifyDBHandler {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(hash).substring(0, 22);
     }
 
+    public static List<?> getTopItems(SpotifyMessageType type, String userId, int limit, int offset) {
+        connectIfNot();
+
+        switch (type) {
+            case TRACKS:
+                return getTopTracks(userId, limit, offset);
+            case ALBUMS:
+                return getTopAlbums(userId, limit, offset);
+            case ARTISTS:
+                return getTopArtists(userId, limit, offset);
+            default:
+                throw new IllegalArgumentException("Unsupported SpotifyMessageType: " + type);
+        }
+    }
+
     public static List<SpotifyTrack> getTopTracks(String userId, int limit, int index) {
         connectIfNot();
 
@@ -446,7 +462,8 @@ public class SpotifyDBHandler {
                     rs.getString("artist_names"),
                     rs.getString("album_title"),
                     rs.getString("track_id"),
-                    rs.getInt("play_count")
+                    rs.getInt("play_count"),
+                    null
                 );
                 tracks.add(track);
             }

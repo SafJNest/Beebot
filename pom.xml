@@ -6,10 +6,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.safjnest</groupId>
-  <artifactId>beebox</artifactId>
-  <version>10.0-SNAPSHOT</version>
+  <artifactId>beebot</artifactId>
+  <version>10.0</version>
 
-  <name>TheBeebox</name>
+  <name>beebot</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

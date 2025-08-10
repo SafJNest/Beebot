@@ -1241,6 +1241,12 @@
         "category" : "Miscellaneous",
         "arguments" : "[CommandName] ",
         "children": {
+            "link": {
+                "alias" : [],
+                "help"  : "Link your Spotify account to the bot.",
+                "longhelp"  : "Link your Spotify account to the bot. You will be able to use the other Spotify commands.",
+                "arguments" : "[CommandName]"
+            },
             "albums": {
                 "alias" : [],
                 "help"  :  "Top Spotify albums.",

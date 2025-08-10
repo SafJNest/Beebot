@@ -1,13 +1,18 @@
 package com.safjnest.commands.misc.spotify;
 
+import java.util.List;
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.spotify.SpotifyMessage;
 import com.safjnest.util.spotify.SpotifyMessageType;
+import com.safjnest.util.spotify.SpotifyTimeRange;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class SpotifyTracks extends SlashCommand{
     public SpotifyTracks(String father) {
@@ -22,14 +27,27 @@ public class SpotifyTracks extends SlashCommand{
 
         this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
+        this.options = List.of(
+            new OptionData(OptionType.STRING, "time_range", "The time range for the tracks", false)
+                .setRequired(false)
+                .addChoice("Short Term", "short_term")
+                .addChoice("Medium Term", "medium_term")
+                .addChoice("Long Term", "long_term")
+                .addChoice("Full Term", "full_term")
+        );
+
         commandData.setThings(this);
     }
 
     @Override
     protected void execute(SlashCommandEvent event) {
+        String userId = event.getUser().getId();
+        SpotifyTimeRange timeRange = event.getOption("time_range") != null 
+            ? SpotifyTimeRange.valueOf(event.getOption("time_range").getAsString().toUpperCase()) 
+            : SpotifyTimeRange.SHORT_TERM;
+
         event.deferReply(false).queue();
-        event.getHook().editOriginalComponents(SpotifyMessage.build(event.getUser().getId(), SpotifyMessageType.TRACKS, 0))
-            .useComponentsV2()
-            .queue();
+        SpotifyMessage.send(event.getHook(), userId, SpotifyMessageType.TRACKS, 0, timeRange);
+        
     }
 }
