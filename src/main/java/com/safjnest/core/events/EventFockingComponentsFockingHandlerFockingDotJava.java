@@ -1,15 +1,15 @@
 package com.safjnest.core.events;
 
 
+
+import java.util.List;
+
 import com.safjnest.util.spotify.SpotifyMessage;
 import com.safjnest.util.spotify.SpotifyMessageType;
+import com.safjnest.util.spotify.SpotifyTimeRange;
 
-import net.dv8tion.jda.api.components.Component;
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
-import net.dv8tion.jda.api.components.buttons.Button;
-import net.dv8tion.jda.api.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
   public class EventFockingComponentsFockingHandlerFockingDotJava extends ListenerAdapter {
@@ -34,25 +34,16 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 
     private void spotify(GenericComponentInteractionCreateEvent event, String innerType, String args) {
-      String currentType = "";
-      int currentIndex = 0;
-      String userId = event.getUser().getId();
+      List<Object> oldTimeMsgInfo = SpotifyMessage.getMsgInfo(event.getMessage());
+      String userId = (String) oldTimeMsgInfo.get(0);
+      SpotifyMessageType currentType = (SpotifyMessageType) oldTimeMsgInfo.get(1);
+      int currentIndex = (int) oldTimeMsgInfo.get(2);
+      SpotifyTimeRange timeRange = (SpotifyTimeRange) oldTimeMsgInfo.get(3);
 
-      Container buttonContainer = event.getMessage().getComponents().get(1).asContainer();
-
-      for (Component component : buttonContainer.getComponents()) {
-        if (component instanceof ActionRow actionRow) {
-          for (Component child : actionRow.getComponents()) {
-            if (child instanceof Button button) {
-              if (button.getCustomId().startsWith("spotify-type-") && button.getStyle() == ButtonStyle.SUCCESS) {
-                currentType = button.getCustomId().split("-")[2];
-              } else if (button.getCustomId().startsWith("spotify-center-")) {
-                currentIndex = Integer.parseInt(button.getCustomId().split("-")[2]);
-                userId = button.getCustomId().split("-")[3];
-              }
-            }
-          }
-        }
+      if (event instanceof StringSelectInteractionEvent selectEvent) {
+        String selectedValue = selectEvent.getValues().get(0);
+        timeRange = SpotifyTimeRange.fromApiLabel(selectedValue);
+        currentIndex = 0;
       }
 
       
@@ -60,22 +51,23 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
         case "left":
           if (currentIndex > 0)
             currentIndex -= 5;
-          
           break;
         case "right":
           currentIndex += 5;
           break;
-
         case "type":
-          currentType = args;
+          currentType = SpotifyMessageType.valueOf(args.toUpperCase());
           currentIndex = 0;
           break;
-          
         default:
           break;
       }
-      event.getMessage().editMessageComponents(SpotifyMessage.build(userId, SpotifyMessageType.valueOf(currentType.toUpperCase()), currentIndex))
-          .useComponentsV2()
-          .queue();
+
+      SpotifyMessage.send(event.getHook(), 
+        userId, 
+        currentType, 
+        currentIndex, 
+        timeRange
+      );
     }
 }

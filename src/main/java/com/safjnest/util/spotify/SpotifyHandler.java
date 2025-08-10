@@ -1,11 +1,7 @@
 package com.safjnest.util.spotify;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +18,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.sql.SpotifyDBHandler;
+import com.safjnest.sql.WebsiteDBHandler;
+import com.safjnest.util.HttpUtils;
 import com.safjnest.model.spotify.SpotifyAlbum;
+import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
 
 //nome
@@ -38,8 +37,8 @@ import com.safjnest.model.spotify.SpotifyTrack;
 //"spotify_track_uri": "spotify:track:7wqSzGeodspE3V6RBD5W8L" | (null if podcast)
 
 public class SpotifyHandler {
-    private static final String DEFAULT_IMAGE = "https://i.scdn.co/image/ab67616d0000b2739194a814e095d1347c02fd32";
-    private static final String SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1";
+    public static final String DEFAULT_IMAGE = "https://i.scdn.co/image/ab67616d0000b2739194a814e095d1347c02fd32";
+    public static final String SPOTIFY_API_BASE_URL = "https://api.spotify.com/v1";
     
     public static List<Map.Entry<SpotifyTrack, Long>> getTracks(List<SpotifyTrackStreaming> streamings){
         return streamings.stream()
@@ -74,64 +73,6 @@ public class SpotifyHandler {
         return albumPlayCounts.entrySet().stream()
             .sorted(Map.Entry.<SpotifyAlbum, Long>comparingByValue().reversed())
             .toList();
-    }
-
-    public static String getTrackImage(String trackId) {
-        String urlString = SPOTIFY_API_BASE_URL + "/tracks/" + trackId;
-        String response = getJSONFromURL(urlString);
-
-        try {
-            JSONObject jsonResponse = new JSONObject(response.toString());
-            String imageUrl = jsonResponse.getJSONObject("album").getJSONArray("images")
-                .getJSONObject(0).getString("url");
-
-            return imageUrl;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return DEFAULT_IMAGE;
-        }
-    }
-
-    public static String getArtistImageFromTrack(String trackId) {
-        String urlString = SPOTIFY_API_BASE_URL + "/tracks/" + trackId;
-        String response = getJSONFromURL(urlString);
-
-        try {
-            JSONObject jsonResponse = new JSONObject(response.toString());
-            String artistEndpoint = jsonResponse.getJSONArray("artists").getJSONObject(0).getString("href");
-
-            response = getJSONFromURL(artistEndpoint);
-            jsonResponse = new JSONObject(response.toString());
-
-            String imageUrl = jsonResponse.getJSONArray("images")
-                .getJSONObject(0).getString("url");
-
-            return imageUrl;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return DEFAULT_IMAGE;
-        }
-    }
-
-    public static String getJSONFromURL(String urlString) {
-        StringBuilder result = new StringBuilder();
-        try {
-            URL url = new URL(urlString);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Authorization", "Bearer " + TokenManager.getAccessToken());
-
-            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String line;
-            while ((line = rd.readLine()) != null) {
-                result.append(line);
-            }
-            rd.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return result.toString();
     }
 
     public static List<SpotifyTrackStreaming> readStreamsInfoFromZip(InputStream zipInputStream) throws IOException {
@@ -190,4 +131,79 @@ public class SpotifyHandler {
         }
     }
 
+    public static List<?> getTopItems(SpotifyMessageType type, String userId, int limit, int offset, SpotifyTimeRange timeRange) {
+        switch (timeRange) {
+            case SHORT_TERM:
+            case MEDIUM_TERM:
+            case LONG_TERM:
+                return getTopItemsFromSpotifyApi(type, timeRange, userId, limit, offset);
+            case FULL_TERM:
+                List<?> items = SpotifyDBHandler.getTopItems(type, userId, limit, offset);
+                if(items == null || items.isEmpty()) {
+                    throw new SpotifyException(SpotifyException.ErrorType.HISTORY_MISSING, 
+                        "No items found in the database for user: " + userId);
+                }
+                return items;
+            default:
+                throw new SpotifyException(SpotifyException.ErrorType.INVALID_TIME_RANGE, 
+                    "Invalid time range: " + timeRange);
+        }
+    }
+
+    public static List<?> getTopItemsFromSpotifyApi(SpotifyMessageType type, SpotifyTimeRange timeRange, String userId, int limit, int offset) {
+        if (type == SpotifyMessageType.ALBUMS) {
+            throw new SpotifyException(SpotifyException.ErrorType.NOT_SUPPORTED, 
+                "Fetching albums directly from Spotify API is not supported.");
+        }
+
+        String token = WebsiteDBHandler.getSpotifyUserToken(userId);
+
+        if (token == null) {
+            throw new SpotifyException(SpotifyException.ErrorType.NOT_LINKED,
+                "Spotify token not found for user: " + userId);
+        }
+
+        String url = SPOTIFY_API_BASE_URL + "/me/top/" + type.getLabel()
+                + "?time_range=" + timeRange.getLabel()
+                + "&limit=" + limit
+                + "&offset=" + offset;
+
+        JSONObject response = HttpUtils.sendGetRequest(url, token);
+        if (response == null) {
+            throw new SpotifyException(SpotifyException.ErrorType.API_ERROR, 
+                "Failed to fetch data from Spotify API");
+        }
+
+        try {
+            List<Object> items = new ArrayList<>();
+            for (Object item : response.getJSONArray("items")) {
+                JSONObject jsonItem = (JSONObject) item;
+                switch (type) {
+                    case TRACKS:
+                        items.add(new SpotifyTrack(
+                                jsonItem.getString("name"),
+                                jsonItem.getJSONArray("artists").getJSONObject(0).getString("name"),
+                                jsonItem.getJSONObject("album").getString("name"),
+                                jsonItem.getString("id"),
+                                0,
+                                jsonItem.getJSONObject("album").getJSONArray("images").getJSONObject(0).getString("url")
+                        ));
+                        break;
+                    case ARTISTS:
+                        items.add(new SpotifyArtist(
+                                jsonItem.getString("name"),
+                                jsonItem.getJSONArray("images").getJSONObject(0).getString("url")
+                        ));
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return items;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new SpotifyException(SpotifyException.ErrorType.ERROR_PARSING, 
+                "Error parsing Spotify response: " + e.getMessage());
+        }
+    }
 }

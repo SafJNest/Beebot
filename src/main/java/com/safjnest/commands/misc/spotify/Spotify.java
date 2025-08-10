@@ -25,7 +25,7 @@ public class Spotify extends SlashCommand {
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new SpotifyAlbums(father), new SpotifyTracks(father), new SpotifyUpload(father));
+        Collections.addAll(slashCommandsList, new SpotifyAlbums(father), new SpotifyTracks(father), new SpotifyUpload(father), new SpotifyLink(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
