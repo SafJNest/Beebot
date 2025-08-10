@@ -32,7 +32,6 @@ import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.spotify.SpotifyMessageType;
-import com.safjnest.util.spotify.SpotifyTimeRange;
 
 public class SpotifyDBHandler {
     private static String hostName;
@@ -416,7 +415,6 @@ public class SpotifyDBHandler {
     public static List<?> getTopItems(SpotifyMessageType type, String userId, int limit, int offset) {
         connectIfNot();
 
-        List<SpotifyTrack> tracks = new ArrayList<>();
         switch (type) {
             case TRACKS:
                 return getTopTracks(userId, limit, offset);

@@ -21,7 +21,6 @@ import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.spring.api.model.ApiKey;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.spotify.SpotifyHandler;
 import com.safjnest.util.spotify.SpotifyTokenManager;
 
 public class WebsiteDBHandler {

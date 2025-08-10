@@ -3,7 +3,6 @@ package com.safjnest.util;
 import java.net.URI;
 import java.net.http.*;
 import java.io.IOException;
-import java.util.Optional;
 import org.json.JSONObject;
 
 public class HttpUtils {

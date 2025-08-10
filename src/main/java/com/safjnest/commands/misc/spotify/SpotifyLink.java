@@ -1,27 +1,12 @@
 package com.safjnest.commands.misc.spotify;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.spotify.SpotifyMessage;
-import com.safjnest.util.spotify.SpotifyMessageType;
 
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
-import net.dv8tion.jda.api.interactions.commands.OptionType;
-import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 public class SpotifyLink extends SlashCommand{
     public SpotifyLink(String father) {

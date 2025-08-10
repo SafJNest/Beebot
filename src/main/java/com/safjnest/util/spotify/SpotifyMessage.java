@@ -10,7 +10,6 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
-import com.safjnest.sql.SpotifyDBHandler;
 import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.components.Component;
@@ -20,14 +19,11 @@ import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.container.ContainerChildComponent;
 import net.dv8tion.jda.api.components.section.Section;
-import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
-import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 
 public class SpotifyMessage {
