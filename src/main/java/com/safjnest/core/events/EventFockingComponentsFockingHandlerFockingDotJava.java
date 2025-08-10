@@ -114,11 +114,12 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
 
     private void alert(GenericComponentInteractionCreateEvent event, String innerType, String args) {
       String alertId = "";
-
+      int rewardLevel = 0;
       for (Button button : getButtons(event)) {
-        if (button.getCustomId().startsWith("alert-type-") && button.getStyle() == ButtonStyle.SUCCESS) {
+        if (button.getCustomId().startsWith("alert-type-") && button.getStyle() == ButtonStyle.SUCCESS) 
           alertId = button.getCustomId().split("-")[3];
-        }
+        if (button.getCustomId().startsWith("alert-reward-")) 
+          rewardLevel = Integer.parseInt(button.getCustomId().split("-")[2]);
       }
 
       GuildData guild = GuildCache.getGuild(event.getGuild());
@@ -126,6 +127,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
       AlertType type = alert != null ? alert.getType() : null;
 
       EntitySelectInteractionEvent entityEvent;
+      Modal modal;
       switch (innerType) {
         case "send":
           event.deferEdit().queue();
@@ -146,16 +148,16 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
           alert.setAlertChannel(entityEvent.getChannelId());
           break;
         case "modal":
-              TextInput streamerInput = TextInput.create("alert-message-" + args, "Alert Message, leave blank to remove", TextInputStyle.PARAGRAPH)
+              TextInput messageInput = TextInput.create("alert-message-" + args, "Alert Message, leave blank to remove", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hi #user, welcome in #server")
                     .setRequired(false)
                     .build();
-                Modal modal = Modal.create("alert-" + alertId, "Modify Alert message")
-                        .addComponents(ActionRow.of(streamerInput))
+                modal = Modal.create("alert-" + alertId, "Modify Alert message")
+                        .addComponents(ActionRow.of(messageInput))
                         .build();
 
                 event.replyModal(modal).queue();
-          break;      
+          return;      
         case "type":
           event.deferEdit().queue();
           type = AlertType.valueOf(args.split("-")[0].toUpperCase());
@@ -185,6 +187,30 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
         case "experience":
           event.deferEdit().queue();
           guild.setExpSystem(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER ? true : false);
+          break;
+        case "lower":
+          event.deferEdit().queue();
+          alert = guild.getLowerReward(rewardLevel);
+          break;
+        case "higher":
+          event.deferEdit().queue();
+          alert = guild.getHigherReward(rewardLevel);
+          break;
+        case "createReward":
+              TextInput rewardInputLevel = TextInput.create("reward-level", "Select a new reward level", TextInputStyle.SHORT)
+                    .setPlaceholder("117")
+                    .setMinLength(1)
+                    .setRequired(true)
+                    .build();
+                modal = Modal.create("reward-" + alertId, "Modify Alert message")
+                        .addComponents(ActionRow.of(rewardInputLevel))
+                        .build();
+
+                event.replyModal(modal).queue();
+          return;
+        case "temporary":
+          event.deferEdit().queue();
+          alert.asReward().setTemporary(((Button) event.getComponent()).getStyle() == ButtonStyle.DANGER ? true : false);
           break;
         default:
           break;

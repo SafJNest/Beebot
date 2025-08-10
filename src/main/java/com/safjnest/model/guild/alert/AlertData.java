@@ -86,7 +86,7 @@ public class AlertData {
      * @return true if the alert is valid, false otherwise
      */
     public boolean isValid() {
-        return (hasMessage() || hasPrivateMessage()) && (this.type == AlertType.LEVEL_UP ||  this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) && this.enabled;
+        return (hasMessage() || hasPrivateMessage()) && (this.type == AlertType.LEVEL_UP || this.type == AlertType.REWARD ||  this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) && this.enabled;
     }
 
     public boolean isValid(GuildData guild) {
@@ -345,6 +345,10 @@ public class AlertData {
     public String toString() {
         return "AlertData [ID=" + ID + ", channelId=" + channelId + ", enabled=" + enabled + ", message=" + message + ", privateMessage=" + privateMessage
                 + ", roles=" + roles + ", type=" + type + "]";
+    }
+
+    public RewardData asReward() {
+        return (RewardData) this;
     }
 
     

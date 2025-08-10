@@ -349,6 +349,8 @@ public class GuildData {
     }
 
     public AlertData getAlert(AlertType type) {
+        if (type == AlertType.REWARD)
+            return getHigherReward(0);
         return getAlerts().get(new AlertKey<>(type));
     }
 

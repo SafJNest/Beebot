@@ -77,6 +77,12 @@ public class AlertMessage {
         utilityButtons.add(hasExperience);
       }
 
+      if (alert.getType() == AlertType.REWARD) {
+        ButtonStyle temporaryStyle = alert.asReward().isTemporary() ? ButtonStyle.SUCCESS : ButtonStyle.DANGER;
+        Button hasExperience = Button.success("alert-temporary", "Temporary").withStyle(temporaryStyle);
+        utilityButtons.add(hasExperience);
+      }
+
       Button delete = Button.danger("alert-delete", " ").withEmoji(CustomEmojiHandler.getRichEmoji("bin"));
       utilityButtons.add(delete);
 
@@ -116,18 +122,19 @@ public class AlertMessage {
       Button left = Button.primary("alert-lower", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
       Button center = Button.success("alert-reward-" + reward.getLevel(), "Level: " + reward.getLevel()).asDisabled();
       Button right = Button.primary("alert-higher", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+      Button create = Button.primary("alert-createReward", "+");
 
       if (previous == null) left = left.withStyle(ButtonStyle.DANGER).asDisabled();
       if (next == null) right = right.withStyle(ButtonStyle.DANGER).asDisabled();
 
-      return Container.of(ActionRow.of(left, center, right));
+      return Container.of(ActionRow.of(left, center, right, create));
     }
 
 
     private static Container getContainerError(GuildData guild, AlertData alert) {
       String errors = "";
 
-      if (alert.getChannelId() == null && alert.getType() != AlertType.LEVEL_UP)
+      if (alert.getChannelId() == null && alert.getType() != AlertType.LEVEL_UP && alert.getType() != AlertType.REWARD)
         errors += "Channel is missing\n";
 
       if (!alert.hasMessage() && !alert.hasPrivateMessage())
@@ -137,7 +144,10 @@ public class AlertMessage {
         errors += "Alert is disabled\n";
 
       if (alert.getType() == AlertType.LEVEL_UP && !guild.isExperienceEnabled()) 
-        errors += "The experiece is disabled for this guild";
+        errors += "The experiece is disabled for this guild\n";
+
+      if (alert.getType() == AlertType.REWARD && alert.getRoles().isEmpty()) 
+        errors += "Select at least one role\n";
 
       return Container.of(TextDisplay.of(errors)).withAccentColor(Color.RED);
 
@@ -151,6 +161,7 @@ public class AlertMessage {
         AlertData buttonAlert = guild.getAlert(type);
 
         int id = buttonAlert != null ? buttonAlert.getID() : 0;
+        if (alert.getType() == AlertType.REWARD) id = alert.getID();
         Button button = Button.primary("alert-type-" + type + "-" + id , type.getName());
         
         ButtonStyle style = buttonAlert == null ? ButtonStyle.SECONDARY : (alert.getType() == type ? ButtonStyle.SUCCESS : ButtonStyle.PRIMARY);

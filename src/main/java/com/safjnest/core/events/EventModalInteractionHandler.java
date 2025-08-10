@@ -11,6 +11,8 @@ import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
+import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
@@ -44,6 +46,10 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 break;
             case "alert":
                 alert(event);
+                break;
+            case "reward":
+                reward(event);
+                break;
             default:
                 break;
         }
@@ -176,5 +182,23 @@ public class EventModalInteractionHandler extends ListenerAdapter {
 
         event.deferEdit().queue();
         event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), alert)).useComponentsV2().queue();
+    }
+
+    private void reward(ModalInteractionEvent event) {
+        String parse = event.getValue("reward-level").getAsString();
+        if (!parse.matches("-?\\d+(\\.\\d+)?")) {
+            event.deferReply(true).setContent("Insert only a number").queue();
+            return;
+        }
+        int level = Integer.parseInt(parse);
+        if(GuildCache.getGuild(event.getGuild().getId()).getAlert(AlertType.REWARD, level) != null) {
+            event.deferReply(true).setContent("A reward with this level already exists.").queue();
+            return; 
+        }
+        RewardData reward = RewardData.createRewardData(event.getGuild().getId(), "", "", AlertSendType.CHANNEL, null, level, false);
+        GuildCache.getGuild(event.getGuild().getId()).getAlerts().put(reward.getKey(), reward);
+        event.deferEdit().queue();
+        event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), reward)).useComponentsV2().queue();
+
     }
 }
