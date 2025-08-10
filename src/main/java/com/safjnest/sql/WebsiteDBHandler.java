@@ -44,7 +44,7 @@ public class WebsiteDBHandler {
     static {
         DatabaseSettings settings = SettingsLoader.getSettings().getConfig().isTesting() 
             ? SettingsLoader.getSettings().getJsonSettings().getTestWebsiteDatabase() 
-            :  SettingsLoader.getSettings().getJsonSettings().getTestDatabase(); //da cambiare con il database di produzione
+            :  SettingsLoader.getSettings().getJsonSettings().getTestWebsiteDatabase(); //da cambiare con il database di produzione
 
         hostName = settings.getHost();
         database = settings.getDatabaseName();
