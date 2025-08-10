@@ -17,15 +17,11 @@ import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.util.AlertMessage;
 
-import java.util.List;
-
 
 import com.safjnest.util.spotify.SpotifyMessage;
 import com.safjnest.util.spotify.SpotifyMessageType;
 import com.safjnest.util.spotify.SpotifyTimeRange;
 
-
-import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
@@ -42,7 +38,7 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 
-  public class EventFockingComponentsFockingHandlerFockingDotJava extends ListenerAdapter {
+  public class EventComponentsHandler extends ListenerAdapter {
 
     @Override
     public void onGenericComponentInteractionCreate(GenericComponentInteractionCreateEvent event) {
