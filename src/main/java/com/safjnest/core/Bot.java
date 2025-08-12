@@ -63,7 +63,9 @@ import com.safjnest.commands.settings.leave.Leave;
 import com.safjnest.commands.settings.levelup.LevelUp;
 import com.safjnest.commands.settings.reward.Reward;
 import com.safjnest.commands.settings.welcome.Welcome;
+import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.events.*;
 import com.safjnest.model.BotSettings.BotSettings;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -219,6 +221,7 @@ public class Bot {
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
         jda.addEventListener(new EventComponentsHandler());
+        SoundEmbed.getSoundboardSounds("10");
     }
 
 
