@@ -127,7 +127,7 @@ public class AlertMessage {
       if (previous == null) left = left.withStyle(ButtonStyle.DANGER).asDisabled();
       if (next == null) right = right.withStyle(ButtonStyle.DANGER).asDisabled();
 
-      return Container.of(ActionRow.of(left, center, right, create));
+      return Container.of(ActionRow.of(left, center, right, create)).withAccentColor(Bot.getColor());
     }
 
 
