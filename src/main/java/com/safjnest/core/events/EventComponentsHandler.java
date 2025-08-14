@@ -147,6 +147,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
               TextInput messageInput = TextInput.create("alert-message-" + args, "Alert Message, leave blank to remove", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hi #user, welcome in #server")
                     .setRequired(false)
+                    .setMaxLength(1500)
                     .build();
                 modal = Modal.create("alert-" + alertId, "Modify Alert message")
                         .addComponents(ActionRow.of(messageInput))
