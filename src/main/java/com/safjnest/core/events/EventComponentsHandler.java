@@ -4,11 +4,6 @@ package com.safjnest.core.events;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.jetbrains.annotations.Unmodifiable;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
@@ -29,7 +24,7 @@ import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
-import net.dv8tion.jda.api.components.utils.ComponentIterator;
+
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
 
@@ -111,7 +106,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
     private void alert(GenericComponentInteractionCreateEvent event, String innerType, String args) {
       String alertId = "";
       int rewardLevel = 0;
-      for (Button button : getButtons(event)) {
+      for (Button button : EventUtils.getButtons(event)) {
         if (button.getCustomId().startsWith("alert-type-") && button.getStyle() == ButtonStyle.SUCCESS) 
           alertId = button.getCustomId().split("-")[3];
         if (button.getCustomId().startsWith("alert-reward-")) 
@@ -217,13 +212,4 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
           .useComponentsV2()
           .queue();
     }
-
-    @SuppressWarnings({ "unchecked" })
-    public @Unmodifiable List<Button> getButtons(GenericComponentInteractionCreateEvent event) {
-      Stream var10000 = ComponentIterator.createStream(event.getMessage().getComponents());
-      Objects.requireNonNull(Button.class);
-      var10000 = var10000.filter(Button.class::isInstance);
-      Objects.requireNonNull(Button.class);
-      return (List)var10000.map(Button.class::cast).collect(Collectors.toList());
-    }  
 }
