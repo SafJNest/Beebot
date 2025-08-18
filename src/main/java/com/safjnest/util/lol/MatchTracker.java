@@ -27,7 +27,6 @@ import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
@@ -279,12 +278,6 @@ public class MatchTracker {
 
     private static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant participant, QueryRecord dataGame, HashMap<String, String> matchData) {
         return () -> {
-            boolean win = participant.didWin();
-            int champion = participant.getChampionId();
-            String kda = participant.getKills() + "/" + participant.getDeaths() + "/" + participant.getAssists();
-            LaneType lane = participant.getChampionSelectLane() != null ? participant.getChampionSelectLane() : participant.getLane();
-            TeamType side = participant.getTeam();
-
             if (match.getGameId() == dataGame.getAsLong("game_id")) return;
 
             List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
@@ -307,10 +300,9 @@ public class MatchTracker {
             } else {
                 gain = lp - dataGame.getAsInt("lp");
             }
-
             int summonerId = LeagueDBHandler.addLOLAccount(summoner);
             LeagueDBHandler.updateSummonerEntries(summonerId, entries);
-            LeagueDBHandler.setSummonerData(summonerId, summonerMatch, win, kda, rank, lp, gain, champion, lane, side, createJSONBuild(matchData));
+            LeagueDBHandler.setSummonerData(summonerId, summonerMatch, participant, rank, lp, gain, createJSONBuild(matchData));
         };
     }
 

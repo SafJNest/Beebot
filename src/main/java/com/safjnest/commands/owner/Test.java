@@ -655,42 +655,55 @@ public class Test extends Command{
                 e.getChannel().sendMessageEmbeds(eb.build()).setComponents(ActionRow.of(streamerButtonLink)).queue();
                 break;
             case "fixlol":
-            query = "SELECT st.id, st.account_id, sm.game_id, sm.league_shard FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id WHERE st.lane = 4 AND NOT JSON_CONTAINS_PATH(st.build, 'one', '$.build.support_item') AND st.id > 11940;";
+            query = "SELECT id, game_id, league_shard from `match` where id > 0 order by id desc";
             
-                res = DatabaseHandler.safJQuery(query);
+                res = LeagueDBHandler.safJQuery(query);
+                System.out.println("total match: " + res.size());
+                int aaa = 0;
                 for(QueryRecord row : res){
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
                     String game_id = region + "_"+row.get("game_id");
-                    String account_id = row.get("account_id");
+                    //String account_id = row.get("account_id");
                     //String summoner_id = row.get("summoner_id");
                     LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                     String puuid = "";
 
                     LaneType lane = null;
                     TeamType team = null;
-                    Summoner su = LeagueHandler.getSummonerByPuuid(account_id, LeagueShard.values()[row.getAsInt("league_shard")]);
-                    for (MatchParticipant partecipant : match.getParticipants()) {
-                        if (partecipant.getSummonerId().equals(su.getSummonerId())) {
-                            lane = partecipant.getChampionSelectLane();
-                            team = partecipant.getTeam();
-                            puuid = partecipant.getPuuid();
-                        }
-                    }
-                    HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(match, match.getParticipants());
-                    if (matchData.get(puuid) == null) continue;
-                    if (matchData.get(puuid).get("items") == null || matchData.get(puuid).get("starter") == null || matchData.get(puuid).get("starter").isBlank()) {
-                        continue;
-                    }
-                    String build = MatchTracker.createJSONBuild(matchData.get(puuid));
+                    //Summoner su = LeagueHandler.getSummonerByPuuid(account_id, LeagueShard.values()[row.getAsInt("league_shard")]);
+                    for (MatchParticipant participant : match.getParticipants()) {
+                        int sumId = LeagueDBHandler.getSummonerIdByPuuid(participant.getPuuid());
+                        if (sumId == 0) continue;
+                        lane = participant.getChampionSelectLane() != null ? participant.getChampionSelectLane() : participant.getLane();
+                        team = participant.getTeam();
+                        String build = "..."; // come la calcoli tu
+                        int totalDamage = participant.getTotalDamageDealtToChampions();
+                        int shield = participant.getTotalHealsOnTeammates() + participant.getTotalDamageShieldedOnTeammates();
+                        int cs = participant.getTotalMinionsKilled() + participant.getNeutralMinionsKilled();
+                        int tower = participant.getDamageDealtToBuildings();
+                        int vision = participant.getVisionScore();
+                        int ward = participant.getWardsPlaced();
 
-                    query = "UPDATE summoner_tracking SET lane = '" + lane.ordinal() + "', side = '" + team.ordinal() + "', build = '" + build + "' WHERE id = " + row.get("id") + ";";
-                    System.out.println(row.get("id"));
-                    DatabaseHandler.runQueryAsync(query);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (Exception e1) {
-
+                        query = "UPDATE participant SET lane='" + lane.ordinal() + "', side='" + team.ordinal() + "', damage='" + totalDamage + "', damage_building='" + tower + "', healing='" + shield + "', vision_score='" + vision + "', cs='" + cs + "', ward='" + ward + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
+                        LeagueDBHandler.runQueryAsync(query);
                     }
+                    System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());
+                    aaa++;
+                    // HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(match, match.getParticipants());
+                    // if (matchData.get(puuid) == null) continue;
+                    // if (matchData.get(puuid).get("items") == null || matchData.get(puuid).get("starter") == null || matchData.get(puuid).get("starter").isBlank()) {
+                    //     continue;
+                    // }
+                    // String build = MatchTracker.createJSONBuild(matchData.get(puuid));
+
+                    // query = "UPDATE summoner_tracking SET lane = '" + lane.ordinal() + "', side = '" + team.ordinal() + "', build = '" + build + "' WHERE id = " + row.get("id") + ";";
+                    // System.out.println(row.get("id"));
+                    // DatabaseHandler.runQueryAsync(query);
+                    // try {
+                    //     Thread.sleep(1000);
+                    // } catch (Exception e1) {
+
+                    // }
                 }
             break;
             case "fixlolna":

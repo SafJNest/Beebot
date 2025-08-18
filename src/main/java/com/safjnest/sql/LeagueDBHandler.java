@@ -584,8 +584,9 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         int tower = participant.getDamageDealtToBuildings();
         int vision = participant.getVisionScore();
         int ward = participant.getWardsPlaced();
-        return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "');");
+        return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build, damage, damage_building, healing, vision_score, cs, ward) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "');");
     }
+
 
     public static QueryCollection getFocusedSummoners(String query, LeagueShard shard) {
         return safJQuery("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
@@ -788,6 +789,14 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public static int getSummonerIdByPuuid(String puuid) {
+        try {
+            return fetchJRow("select id from summoner where puuid = '"+puuid+"'").getAsInt("id");  
+        } catch (Exception e) {
+           return 0;
         }
     }
 
