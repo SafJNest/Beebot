@@ -1,4 +1,4 @@
-package com.safjnest.util.lol.Runes;
+package com.safjnest.util.lol.model.rune;
 
 import java.util.HashMap;
 

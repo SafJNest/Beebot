@@ -37,8 +37,8 @@ import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.CustomBuildData;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.model.build.CustomBuildData;
 
 public class LeagueDBHandler {
     private static String hostName;
@@ -572,7 +572,18 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
 
 
-    public static boolean setSummonerData(int summonerId, int summonerMatchId, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, TeamType side, String build) {
+    public static boolean setSummonerData(int summonerId, int summonerMatchId, MatchParticipant participant, int rank, int lp, int gain, String build) {
+        boolean win = participant.didWin();
+        int champion = participant.getChampionId();
+        String kda = participant.getKills() + "/" + participant.getDeaths() + "/" + participant.getAssists();
+        LaneType lane = participant.getChampionSelectLane() != null ? participant.getChampionSelectLane() : participant.getLane();
+        TeamType side = participant.getTeam();
+        int totalDamage = participant.getTotalDamageDealtToChampions();
+        int shield = participant.getTotalHealsOnTeammates() + participant.getTotalDamageShieldedOnTeammates();
+        int cs = participant.getTotalMinionsKilled() + participant.getNeutralMinionsKilled();
+        int tower = participant.getDamageDealtToBuildings();
+        int vision = participant.getVisionScore();
+        int ward = participant.getWardsPlaced();
         return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "');");
     }
 

@@ -1,4 +1,4 @@
-package com.safjnest.util.lol.Runes;
+package com.safjnest.util.lol.model.rune;
 
 /**
  * This class is used to store the data of a rune and all of its attributes.

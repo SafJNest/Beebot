@@ -11,6 +11,8 @@ import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.spotify.type.SpotifyMessageType;
+import com.safjnest.util.spotify.type.SpotifyTimeRange;
 
 import net.dv8tion.jda.api.components.Component;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
