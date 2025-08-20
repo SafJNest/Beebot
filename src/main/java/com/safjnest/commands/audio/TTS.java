@@ -101,12 +101,8 @@ public class TTS extends SlashCommand{
         File file = new File("rsc" + File.separator + "tts");
         if(!file.exists())
             file.mkdirs();
-
-        TTSHandler.makeSpeech(speech, event.getMember().getEffectiveName(), voice, language);
-        
-        String nameFile = "rsc" + File.separator + "tts" + File.separator + event.getMember().getEffectiveName() + ".mp3";
-        
-        pm.loadItemOrdered(guild, nameFile, new ResultHandler(event, voice, defaultVoice, language));
+ 
+        pm.loadItemOrdered(guild, TTSHandler.makeSpeechBytes(speech, voice, language), new ResultHandler(event, voice, defaultVoice, language));
     }
 
     @Override
@@ -180,11 +176,7 @@ public class TTS extends SlashCommand{
         if(!file.exists())
             file.mkdirs();
 
-        TTSHandler.makeSpeech(speech, event.getAuthor().getName(), voice, language);
-        
-        String ttsFileName = "rsc" + File.separator + "tts" + File.separator + event.getAuthor().getName() + ".mp3";
-
-        pm.loadItemOrdered(guild, ttsFileName, new ResultHandler(event, voice, defaultVoice, language));
+        pm.loadItemOrdered(guild, TTSHandler.makeSpeechBytes(speech, voice, language), new ResultHandler(event, voice, defaultVoice, language));
     }
 
     private class ResultHandler implements AudioLoadResultHandler {

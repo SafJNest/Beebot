@@ -7,22 +7,34 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import com.github.topi314.lavalyrics.LyricsManager;
 import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
 import com.github.topi314.lavasrc.mirror.DefaultMirroringAudioTrackResolver;
 import com.github.topi314.lavasrc.spotify.SpotifySourceManager;
+import com.mpatric.mp3agic.InvalidDataException;
+import com.mpatric.mp3agic.Mp3File;
+import com.mpatric.mp3agic.UnsupportedTagException;
 import com.safjnest.App;
 import com.safjnest.model.BotSettings.LavalinkSettings;
 import com.safjnest.model.BotSettings.PoTokenSettings;
 import com.safjnest.model.BotSettings.SpotifySettings;
 import com.safjnest.util.SettingsLoader;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
+import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3ContainerProbe;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -31,8 +43,9 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageInput;
 import com.sedmelluq.discord.lavaplayer.tools.io.MessageOutput;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import com.sedmelluq.lava.extensions.youtuberotator.YoutubeIpRotatorSetup;
 import com.sedmelluq.lava.extensions.youtuberotator.planner.RotatingNanoIpRoutePlanner;
 import com.sedmelluq.lava.extensions.youtuberotator.tools.ip.IpBlock;
@@ -128,6 +141,52 @@ public class PlayerManager {
     public Future<Void> loadItemOrdered(Guild guild, String trackURL, AudioLoadResultHandler resultHandler) {
         GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
         return audioPlayerManager.loadItemOrdered(guildMusicManager, trackURL, resultHandler);
+    }
+
+    private AudioTrack createTrackFromBytes(byte[] mp3Data, String title) throws IOException {
+        ByteArraySeekableInputStream seekable = new ByteArraySeekableInputStream(mp3Data);
+
+        // Build detection with the default registry (Mp3, OGG, etc.)
+        MediaContainerDetection detection = new MediaContainerDetection(
+            MediaContainerRegistry.DEFAULT_REGISTRY,
+            new AudioReference("in-memory", null), // "virtual identifier"
+            seekable,
+            MediaContainerHints.from(null, null)
+        );
+
+        MediaContainerDetectionResult result = detection.detectContainer();
+
+        if (!result.isContainerDetected()) {
+            throw new IOException("Could not detect media container from provided bytes");
+        }
+
+        AudioTrackInfo info = new AudioTrackInfo(
+            title != null ? title : "Unknown",
+            "TTS",
+            seekable.getContentLength() / 16,
+            "in-memory-" + System.currentTimeMillis(),
+            false,
+            null
+        );
+
+        return result.getContainerDescriptor().createTrack(info, seekable);
+    }
+
+    public Future<Void> loadItemOrdered(Guild guild, byte[] trackData, AudioLoadResultHandler resultHandler) {
+        GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
+
+        try {
+            AudioTrack track = createTrackFromBytes(trackData, "TTS Audio");
+            if (track != null) {
+                resultHandler.trackLoaded(track);
+            } else {
+                resultHandler.noMatches();
+            }
+        } catch (Exception e) {
+            resultHandler.loadFailed(new FriendlyException("Failed to load from byte[]", FriendlyException.Severity.FAULT, e));
+        }
+
+        return CompletableFuture.completedFuture(null);
     }
 
     public AudioTrack createTrack(Guild guild, String uri) {
