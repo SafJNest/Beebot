@@ -10,7 +10,7 @@ import org.voicerss.tts.Voice.VoiceParameters;
 import org.voicerss.tts.Voice.VoiceProvider;
 import org.voicerss.tts.Voice.Voices;
 
-import com.safjnest.App;
+import com.safjnest.util.SettingsLoader;
 
 /**
  * Class that provides to generate {@code .mp3} files using TTS
@@ -25,7 +25,7 @@ public class TTSHandler {
     private static final String path = "rsc" + File.separator + "tts";
 
     static {
-        tts = new VoiceProvider(App.getSettingsLoader().getTTSApiKey());
+        tts = new VoiceProvider(SettingsLoader.getSettings().getJsonSettings().getTtsApiKey());
     }
 
     /**

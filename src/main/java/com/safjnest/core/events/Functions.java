@@ -16,8 +16,14 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.AliasData;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.BlacklistData;
+<<<<<<< HEAD
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.MemberData;
+=======
+import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.guild.alert.RewardData;
+import com.safjnest.model.sound.Sound;
+>>>>>>> main
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
@@ -43,8 +49,9 @@ import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 
 public class Functions {
     
@@ -86,10 +93,10 @@ public class Functions {
         Guild guild = e.getGuild();
         User newGuy = e.getAuthor();
 
-        if (!guildData.canReceiveExperience(newGuy.getIdLong(), channel.getIdLong())) 
+        if (!guildData.canReceiveExperience(newGuy.getIdLong(), channel.getId())) 
             return;
     
-        double modifier = guildData.getExperienceModifier(channel.getIdLong());
+        double modifier = guildData.getExperienceModifier(channel.getId());
         
         MemberData member = guildData.getMemberData(newGuy.getIdLong());
 
@@ -107,7 +114,7 @@ public class Functions {
 
 
         RewardData reward = guildData.getAlert(AlertType.REWARD, lvl);
-        if (reward != null && !reward.isValid()) {
+        if (reward != null && reward.isValid()) {
             String message = reward.getMessage();
             String privateMessage = reward.hasPrivateMessage() ? reward.getPrivateMessage() : message;
 
@@ -308,7 +315,7 @@ public class Functions {
         kick = kick.withStyle(ButtonStyle.PRIMARY);
         ban = ban.withStyle(ButtonStyle.PRIMARY);
         ignore = ignore.withStyle(ButtonStyle.SUCCESS);
-        channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
+        channel.sendMessageEmbeds(eb.build()).setComponents(ActionRow.of(ignore, kick, ban)).queue();
     }
 
     public static void handleBlacklistAlert(User badGuy, Guild guild) {
@@ -347,7 +354,7 @@ public class Functions {
             kick = kick.withStyle(ButtonStyle.PRIMARY);
             ban = ban.withStyle(ButtonStyle.PRIMARY);
             ignore = ignore.withStyle(ButtonStyle.SUCCESS);
-            channel.sendMessageEmbeds(eb.build()).addActionRow(ignore, kick, ban).queue();
+            channel.sendMessageEmbeds(eb.build()).setComponents(ActionRow.of(ignore, kick, ban)).queue();
         }
     }
 
@@ -436,7 +443,11 @@ public class Functions {
         String guildId = event.isFromGuild() ? event.getGuild().getId() : "0";
 
         GuildData guild = GuildCache.getGuildOrPut(guildId);
+<<<<<<< HEAD
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
+=======
+        if(!guild.getCommandStatsRoom(event.getChannel().getId()))
+>>>>>>> main
             return;
                 
         String commandName = event.getName();
@@ -446,7 +457,11 @@ public class Functions {
 
     public static void updateCommandStatitics(CommandEvent event, Command command) {
         GuildData guild = GuildCache.getGuildOrPut(event.getGuild().getId());
+<<<<<<< HEAD
         if(!guild.getCommandStatsRoom(event.getChannel().getIdLong()))
+=======
+        if(!guild.getCommandStatsRoom(event.getChannel().getId()))
+>>>>>>> main
             return;
         
         String commandName = command.getName();
@@ -456,7 +471,11 @@ public class Functions {
 
     public static void handleRoleDeleteAlert(Guild guild, String role_id) {
         GuildData g = GuildCache.getGuildOrPut(guild.getId());
+<<<<<<< HEAD
         g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().contains(role_id)).forEach(alert -> {
+=======
+        g.getAlerts().values().stream().filter(alert -> alert.getRoles() != null && alert.getRoles().containsValue(role_id)).forEach(alert -> {
+>>>>>>> main
             alert.removeRole(role_id);
         });
     }

@@ -101,7 +101,7 @@ public class SoundUpload extends SlashCommand{
         }
         if (tags.size() > 0) SoundCache.getSoundById(id).setTags(tags);
 
-        File saveFile = new File("rsc" + File.separator + "SoundBoard" + File.separator + (id + "." + attachment.getFileExtension()));
+        File saveFile = new File("rsc" + File.separator + "sounds" + File.separator + (id + "." + attachment.getFileExtension()));
 
         attachment.getProxy().downloadToFile(saveFile);
         event.deferReply(false).addContent("Sound uploaded succesfully").queue();

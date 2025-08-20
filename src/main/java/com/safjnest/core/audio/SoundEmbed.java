@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
@@ -21,18 +22,23 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.container.ContainerChildComponent;
+import net.dv8tion.jda.api.components.section.Section;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 public class SoundEmbed {
 
-    public static List<LayoutComponent> getSoundButton(String sound) {
-        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+    public static List<MessageTopLevelComponent> getSoundButton(String sound) {
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
 
         Sound soundData = SoundCache.getSoundById(sound);
 
@@ -81,8 +87,8 @@ public class SoundEmbed {
         return buttonRows;
     }
 
-    public static List<LayoutComponent> getTagButton(String sound, String tag) {
-        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+    public static List<MessageTopLevelComponent> getTagButton(String sound, String tag) {
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
         QueryRecord tagData = DatabaseHandler.getTag(tag);
 
         String name_tag = tagData.get("name") == null ? " " : tagData.get("name");
@@ -161,7 +167,7 @@ public class SoundEmbed {
         return eb;
     }
 
-    public static List<LayoutComponent> getSoundEmbedButtons(Sound sound) {
+    public static List<MessageTopLevelComponent> getSoundEmbedButtons(Sound sound) {
         int[] likes = sound.getLikesDislikes(false);
         Button like = Button.primary("soundplay-like-" + sound.getId(), String.valueOf(likes[0]))
                 .withEmoji(CustomEmojiHandler.getRichEmoji("like"));
@@ -173,7 +179,11 @@ public class SoundEmbed {
         Button stop = Button.danger("soundplay-stop-" + sound.getId(), " ")
         .withEmoji(CustomEmojiHandler.getRichEmoji("stop"));
 
+<<<<<<< HEAD
         java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+=======
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
+>>>>>>> main
         buttonRows.add(ActionRow.of(
                 like,
                 dislike,
@@ -241,13 +251,19 @@ public class SoundEmbed {
         return composeSoundboard(event, name, null, sounds);
     }
 
-    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, InputStream thumbnail,
-            List<Sound> sounds) {
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(event.getUser().getName() + " requested:", "https://github.com/SafJNest",
-                event.getUser().getAvatarUrl());
-        eb.setTitle("**" + name + "**");
+    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, InputStream thumbnail, List<Sound> sounds) {
+        List<Container> containers = new ArrayList<>();
+        List<ContainerChildComponent> children = new ArrayList<>();
+        
+        Thumbnail thumb = thumbnail != null ? Thumbnail.fromFile(FileUpload.fromData(thumbnail, "thumbnail.png")) : Thumbnail.fromUrl(event.getJDA().getSelfUser().getAvatarUrl());
+        children.add(Section.of(
+            thumb, 
+            TextDisplay.of("Press a button to play a sound.\n" + sounds.size() + " / 25 sounds.")
+        ));
+        containers.add(Container.of(children).withAccentColor(Bot.getColor()));
+        children.clear();
 
+<<<<<<< HEAD
         if (thumbnail != null)
             eb.setThumbnail("attachment://thumbnail.png");
         else
@@ -259,19 +275,24 @@ public class SoundEmbed {
 
         List<LayoutComponent> rows = new ArrayList<>();
         List<Button> row = new ArrayList<>();
+=======
+        List<Button> buttons = new ArrayList<>();
+>>>>>>> main
         for (int i = 0; i < sounds.size(); i++) {
-            row.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(),
-                    sounds.get(i).getName()));
-            if (row.size() == 5 || i == sounds.size() - 1) {
-                rows.add(ActionRow.of(row));
-                row = new ArrayList<>();
+            buttons.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(), sounds.get(i).getName()));
+            if (buttons.size() == 5 || i == sounds.size() - 1) {
+                children.add(ActionRow.of(buttons));
+                buttons = new ArrayList<>();
             }
         }
+        containers.add(Container.of(children).withAccentColor(Bot.getColor()));
 
-        if (thumbnail != null)
-            return event.deferReply().addEmbeds(eb.build()).addFiles(FileUpload.fromData(thumbnail, "thumbnail.png"))
-                    .setComponents(rows);
-        return event.deferReply().addEmbeds(eb.build()).setComponents(rows);
+        Button random = Button.primary("soundboard-random", " ")
+                .withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+        Button stop = Button.danger("soundboard-stop", " ")
+                .withEmoji(CustomEmojiHandler.getRichEmoji("stop"));
+        containers.add(Container.of(ActionRow.of(random, stop)).withAccentColor(Bot.getColor()));
+        return event.deferReply().addComponents(containers).useComponentsV2();
     }
 
     public static void composeSoundboard(CommandEvent event, String soundboardID) {
@@ -305,7 +326,7 @@ public class SoundEmbed {
         eb.setColor(Bot.getColor());
         eb.setFooter(sounds.size() + " sounds");
 
-        List<LayoutComponent> rows = new ArrayList<>();
+        List<MessageTopLevelComponent> rows = new ArrayList<>();
         List<Button> row = new ArrayList<>();
         for (int i = 0; i < sounds.size(); i++) {
             row.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(),
@@ -348,8 +369,8 @@ public class SoundEmbed {
         return eb;
     }
 
-    public static List<LayoutComponent> getGreetButton(String userId, String GuildId) {
-        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+    public static List<MessageTopLevelComponent> getGreetButton(String userId, String GuildId) {
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
 
         String globalGreetId = UserCache.getUser(userId).getGlobalGreet();
         String guildGreetId = UserCache.getUser(userId).getGuildGreet(GuildId);
@@ -381,8 +402,8 @@ public class SoundEmbed {
         return buttonRows;
     }
 
-    public static List<LayoutComponent> getGreetSoundButton(String userId, String type, String soundId) {
-        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+    public static List<MessageTopLevelComponent> getGreetSoundButton(String userId, String type, String soundId) {
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
 
         Sound sound = SoundCache.getSoundById(soundId);
 

@@ -48,7 +48,7 @@ public class Msg extends SlashCommand {
         String title = "NEW MESSAGE FROM " + event.getMember().getEffectiveName();
         
         String img = "punto.jpg";
-        File file = new File("rsc" + File.separator + "img" + File.separator + img);
+        File file = new File("rsc" + File.separator + "assets" + File.separator + img);
 
         EmbedBuilder eb = new EmbedBuilder();
         if(event.getOption("anonym") != null && event.getOption("anonym").getAsBoolean()){

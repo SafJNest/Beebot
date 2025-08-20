@@ -38,10 +38,10 @@ public class EventHandlerBeebot extends BeebotListenerAdapter {
         if (guildData.getActions().isEmpty()) return;
 
         for (AutomatedAction action : guildData.getActions()) {
-            if (!action.canExecute(memberData.getID())) continue;
+            if (!action.canExecute(memberData.getId())) continue;
 
             LocalDateTime dateTime = LocalDateTime.now().plusSeconds(action.getActionTime());
-            String automatedActionExpiringId = DatabaseHandler.insertAutomatedActionExpiring(memberData.getID(), action.getId(), dateTime.toEpochSecond(ZoneOffset.UTC) * 1000);
+            String automatedActionExpiringId = DatabaseHandler.insertAutomatedActionExpiring(memberData.getId(), action.getId(), dateTime.toEpochSecond(ZoneOffset.UTC) * 1000);
             
             Runnable onSuccess = () -> {
                 if (action.getActionTime() != 0) {

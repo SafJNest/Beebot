@@ -3,6 +3,7 @@ package com.safjnest.commands.lol;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
@@ -14,12 +15,14 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.MobalyticsHandler;
+import com.safjnest.util.lol.model.build.BuildData;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
 
@@ -62,7 +65,6 @@ public class Champion extends SlashCommand {
         event.deferReply(false).queue();
         
         String champName = event.getOption("champion").getAsString();
-        int championId = 0;
         
         String lane = event.getOption("role").getAsString();
         String laneFormatName =  "";
@@ -95,14 +97,14 @@ public class Champion extends SlashCommand {
             championsName.add(champion);
         }
         champName = SafJNest.findSimilarWord(champName, championsName);
-        championId = LeagueHandler.getChampionByName(champName).getId();
+        StaticChampion champion = LeagueHandler.getChampionByName(champName);
     
         
         EmbedBuilder eb = new EmbedBuilder(); 
         eb = new EmbedBuilder(); 
         eb.setTitle(champName + " " + laneFormatName + " " + CustomEmojiHandler.getFormattedEmoji(laneFormatName)); 
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
-        HashMap<String, String> champInfo = MatchTracker.analyzeChampionData(championId, laneType);
+        HashMap<String, String> champInfo = MatchTracker.analyzeChampionData(champion.getId(), laneType);
         
 
 
@@ -111,34 +113,15 @@ public class Champion extends SlashCommand {
             event.getHook().editOriginal("Could be some problem with our database or lack of data due to new patch. Try again later.").queue();
             return;
         }
-        
-        
-        String[] runes = MobalyticsHandler.getRunes(json);
-        String[] roots = MobalyticsHandler.getRunesRoot(json);
-        String[] skills = MobalyticsHandler.getSkillsOrder(json);
-        String[] spells = MobalyticsHandler.getSummonerSpell(json);
-        String[] starter = MobalyticsHandler.getBuild(json, 0);
-        String[] core = MobalyticsHandler.getBuild(json, 2);
-        String[] fullBuild = MobalyticsHandler.getBuild(json, 3);
-        String[] situational = MobalyticsHandler.getBuild(json, 4);
 
-        String patch = MobalyticsHandler.getPatch(json);
-        String winRate = MobalyticsHandler.getWinRate(json).substring(0, MobalyticsHandler.getWinRate(json).indexOf(".") + 3);
-        String matchCount = MobalyticsHandler.getMatchCount(json);
+        BuildData build = new BuildData(champion, laneType, json);
+                
+        eb.setDescription("Patch **" + build.getPatch() + "** | Win rate **" + build.getWinrate() + "%** based on **" + build.getGames() + "** matches");
+        eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + build.getPatch() + ")**");
         
-        /*
-         * Description
-         */
-        //eb.setDescription("**Highest Win Rate** info for " + RiotHandler.getFormattedEmoji(event.getJDA(), champName) + " " + champName + " " + RiotHandler.getFormattedEmoji(event.getJDA(), laneFormatName) + " **" + laneFormatName + "**");
-        eb.setDescription("Patch **" + patch + "** | Win rate **" + winRate + "%** based on **" + matchCount + "** matches");
-        eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + patch + ")**");
-        
-        /*
-        *  Skill Order
-        */
         String msg = "";
         for(int i = 0; i < 18; i++){
-            switch (skills[i]){
+            switch (build.getSkillOrder().get(i)){
                 case "1":
                 msg +=  CustomEmojiHandler.getFormattedEmoji("q_") + " > ";
                 break;
@@ -156,84 +139,63 @@ public class Champion extends SlashCommand {
         }
         
         eb.addField("**Skill Order**", msg.substring(0, msg.length()-2), false);
-        /*
-        *  Summoner Spells
-        */
-        eb.addField("**Summoner Spells**", CustomEmojiHandler.getFormattedEmoji(spells[0] + "_") + " " + CustomEmojiHandler.getFormattedEmoji(spells[1] + "_") + "\n​\n", false);//DO NOT TOUCH \N\N THERE IS AN INVISIBLEAR CHARFATERT
+        eb.addField("**Summoner Spells**", CustomEmojiHandler.getFormattedEmoji(build.getD() + "_") + " " + CustomEmojiHandler.getFormattedEmoji(build.getF() + "_") + "\n​\n", false);//DO NOT TOUCH \N\N THERE IS AN INVISIBLEAR CHARFATERT
 
-        /*
-        * First Runes Root
-        */
         msg = "";
-        for(int i = 0; i < 4; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(runes[i]) + " " + LeagueHandler.getRunesHandler().get(roots[0]).getRune(runes[i]).getName() + "\n";
+        List<String> runes = build.getPrimaryRunes();
+        for (int i = 1; i < runes.size(); i++) {
+            String rune = runes.get(i);
+            msg += CustomEmojiHandler.getFormattedEmoji(rune) + " " + LeagueHandler.getRunesHandler().get(build.getPrimaryRunesRoot()).getRune(rune).getName() + "\n";
         }
-        String support = LeagueHandler.getRunesHandler().get(roots[0]).getName();
+        String support = LeagueHandler.getRunesHandler().get(build.getPrimaryRunesRoot()).getName();
         eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
 
-        /*
-         * Second Runes Root
-        */
+
         msg = "";
-        for(int i = 4; i < 6; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(runes[i]) + " " + LeagueHandler.getRunesHandler().get(roots[1]).getRune(runes[i]).getName() + "\n";
+        List<String> secondaryRunes = build.getSecondaryRunes();
+        for (int i = 1; i < secondaryRunes.size(); i++) {
+            String rune = secondaryRunes.get(i);
+            msg += CustomEmojiHandler.getFormattedEmoji(rune) + " " + LeagueHandler.getRunesHandler().get(build.getSecondaryRunesRoot()).getRune(rune).getName() + "\n";
         }
-        support = LeagueHandler.getRunesHandler().get(roots[1]).getName();
+        support = LeagueHandler.getRunesHandler().get(build.getSecondaryRunesRoot()).getName();
         eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
 
-        /*
-        * shard
-        */
+
         msg = "";
-        msg += CustomEmojiHandler.getFormattedEmoji(runes[6]) + " Offense\n";
-        msg += CustomEmojiHandler.getFormattedEmoji(runes[7]) + " Flex\n";
-        msg += CustomEmojiHandler.getFormattedEmoji(runes[8]) + " Defense\n";
+        msg += CustomEmojiHandler.getFormattedEmoji(build.getOffense()) + " Offense\n";
+        msg += CustomEmojiHandler.getFormattedEmoji(build.getFlex()) + " Flex\n";
+        msg += CustomEmojiHandler.getFormattedEmoji(build.getDefense()) + " Defense\n";
         eb.addField("**Shard**", msg, true);
 
+        for (String label : build.getBuildMap().keySet()) {
+            List<String> items = build.getBuildMap().get(label); 
+            String title;
+            switch(label) {
+                case "starter": title = "**Starter Items**"; break;
+                case "core": title = "**Core Items**"; break;
+                case "fullbuild": title = "**Full Build Items**"; break;
+                case "boots": title = "**Boots**"; break;
+                case "situational": title = "**Situational Items**"; break;
+                default: title = "**" + label.substring(0, 1).toUpperCase() + label.substring(1) + "**"; break;
+            }
 
-        /*
-        * Starter Items
-        */
-        msg = "";
-        for(int i = 0; i < starter.length; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(starter[i]) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(starter[i])).getName() + "\n";
-        }
-        eb.addField("**Starter Items**", msg, true);
-
-        /*
-        * Core Items
-        */
-        msg = "";
-        for(int i = 0; i < core.length; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(core[i])  + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(core[i])).getName() + "\n";
-        }
-        eb.addField("**Core Items**", msg, true);
-
-        /*
-        * Full Build
-        */
-
-        msg = "";
-        for(int i = 0; i < fullBuild.length; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(fullBuild[i])  + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(fullBuild[i])).getName() + "\n";
-        }
-
-        eb.addField("**Full Build**", msg, true);
-
-        /*
-        * Situational Items
-        */
-        msg = "";
-        for(int i = 0; i < 3; i++){
-            msg += CustomEmojiHandler.getFormattedEmoji(situational[i])  + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
-        }
-        eb.addField("**Situational Items**", msg, true);
-        if(situational.length > 6){
-            msg = "";
-            for(int i = 3; i < 6; i++){
-                msg += CustomEmojiHandler.getFormattedEmoji(situational[i])  + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(situational[i])).getName() + "\n";
-            }   
-            eb.addField(" ", msg, true);
+            if (label.equals("situational") && items.size() > 3) {
+                String msg1 = "", msg2 = "";
+                for (int i = 0; i < 3 && i < items.size(); i++) {
+                    msg1 += CustomEmojiHandler.getFormattedEmoji(items.get(i)) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(items.get(i))).getName() + "\n";
+                }
+                for (int i = 3; i < 6 && i < items.size(); i++) {
+                    msg2 += CustomEmojiHandler.getFormattedEmoji(items.get(i)) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(items.get(i))).getName() + "\n";
+                }
+                eb.addField(title, msg1, true);
+                eb.addField(" ", msg2, true);
+            } else {
+                msg = "";
+                for (String item : items) {
+                    msg += CustomEmojiHandler.getFormattedEmoji(item) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(item)).getName() + "\n";
+                }
+                eb.addField(title, msg, true);
+            }
         }
         
 

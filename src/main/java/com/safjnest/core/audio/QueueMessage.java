@@ -9,7 +9,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.interactions.InteractionHook;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 
 public class QueueMessage {
     private InteractionHook hook;
@@ -55,7 +55,7 @@ public class QueueMessage {
 
     public void update() {
         EmbedBuilder eb = QueueHandler.getEmbed(guild, type);
-        List<LayoutComponent> buttons = QueueHandler.getButtons(guild, type);
+        List<MessageTopLevelComponent> buttons = QueueHandler.getButtons(guild, type);
 
         if (hook != null) {
             hook.editOriginalEmbeds(eb.build()).setComponents(buttons).queue();

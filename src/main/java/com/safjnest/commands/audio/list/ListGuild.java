@@ -11,8 +11,9 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -66,7 +67,7 @@ public class ListGuild extends SlashCommand{
             right = right.asDisabled();
         }
          
-        event.deferReply(false).addEmbeds(eb.build()).addActionRow(left, center, right, order).queue();
+        event.deferReply(false).addEmbeds(eb.build()).addComponents(ActionRow.of(left, center, right, order)).queue();
     }
 
 }

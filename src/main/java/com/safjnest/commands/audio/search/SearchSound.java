@@ -21,6 +21,8 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -28,8 +30,6 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 /**
  * @author <a href="https://github.com/Leon412">Leon412</a>
@@ -109,7 +109,7 @@ public class SearchSound extends SlashCommand {
             mb.addOption(label, sound.getId(), description);
             count++;
         }
-        MenuListener fileListener = new MenuListener(event, mb.getId());
+        MenuListener fileListener = new MenuListener(event, mb.getCustomId());
         event.getJDA().addEventListener(fileListener);
 
         event.replyEmbeds(eb.build())

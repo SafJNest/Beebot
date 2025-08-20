@@ -85,6 +85,9 @@ public class Opgg extends SlashCommand {
         
         EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);        
         event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
+
+
+        //event.getHook().editOriginalComponents(LeagueMessage.getOpggEmbedV2(s, null, 0)).useComponentsV2().queue();
 	}
     
 }

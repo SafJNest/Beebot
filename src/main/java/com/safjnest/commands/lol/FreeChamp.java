@@ -69,7 +69,7 @@ public class FreeChamp extends SlashCommand {
             cont++;
         }
         String img = "iconLol.png";
-        File file = new File("rsc" + File.separator + "img" + File.separator + img);
+        File file = new File("rsc" + File.separator + "assets" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
         event.getChannel().sendMessageEmbeds(eb.build())
             .addFiles(FileUpload.fromData(file))
@@ -99,7 +99,7 @@ public class FreeChamp extends SlashCommand {
         }
         
         String img = "iconLol.png";
-        File file = new File("rsc" + File.separator + "img" + File.separator + img);
+        File file = new File("rsc" + File.separator + "assets" + File.separator + img);
         eb.setThumbnail("attachment://" + img);
         event.deferReply(false).addEmbeds(eb.build()).addFiles(FileUpload.fromData(file)).queue();
 	}

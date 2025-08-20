@@ -1,0 +1,1288 @@
+{
+    "connect":{
+        "alias" : ["join", "comeherebroda"],
+        "help"  : "Connect the bot to your current voice channel.",
+        "longhelp": "Connect the bot to your current voice channel.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
+    "disconnect":{
+        "alias" : ["bye", "fuckoff"],
+        "help"  : "Disconnect the bot from it's current voice channel (or mention user).",
+        "longhelp": "Disconnect the bot from it's current voice channel (or mention user).",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
+    "listuser":{
+        "alias" : ["papyrususer", "paperuser", "listoideuser"],
+        "help"  : "Show all the sounds of a user (or yourself if left blank).",
+        "longhelp"  : "Show all the sounds of a user (or yourself if left blank).",
+        "category" : "Audio",
+        "arguments" : "[CommandName]"
+    },
+
+    "playyoutube":{
+        "alias" : ["y", "py", "yt"],
+        "help"  : "Play a video from youtube.",
+        "longhelp"  : "Play a video from youtube.",
+        "category" : "Audio Queue",
+        "arguments" : "[link/name video]",
+        "cooldown": "2"
+    },
+
+    "playyoutubeforce":{
+        "alias" : ["yf", "pyf", "ytf"],
+        "help"  : "Play a video from youtube ignoring the current queue.",
+        "longhelp"  : "Play a video from youtube.",
+        "category" : "Audio Queue",
+        "arguments" : "[link/name video]",
+        "cooldown": "2"
+    },
+
+    "playsound":{
+        "alias" : ["p", "ps"],
+        "help"  : "Play a custom sound.",
+        "longhelp"  : "Play a custom sound.\nYou can upload a sound using **/upload**",
+        "category" : "Audio",
+        "arguments" : "[CommandName] [soundName]"
+    },
+
+    "tts":{
+        "alias" : ["t"],
+        "help"  : "Text to speech.",
+        "longhelp"  : "Text to speech.",
+        "category" : "Audio",
+        "arguments" : "[CommandName] [text]",
+        "cooldown": "2"
+    },
+
+    "soundboard": {
+        "alias" : ["sb"],
+        "help"  : "Create, select and manage soundboards.",
+        "longhelp"  : "A soundboard is a message with buttons that allows you to play sounds. You can create, select and manage soundboards.",
+        "category" : "Audio",
+        "children": {
+            "create": {
+                "alias" : [],
+                "help"  : "Create a new soundboard.",
+                "longhelp": "You can create a soundboard up to 25 sounds.\nTo save it insert a name, otherwise would be temporary."
+            }, 
+            "play": {
+                "alias" : [],
+                "help"  : "Play an existing soundboard."
+            },
+            "add": {
+                "alias" : [],
+                "help"  : "Add a sound to an existing soundboard."
+            }, 
+            "remove": {
+                "alias" : [],
+                "help"  : "Remove a sound from an existing soundboard."
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete an existing soundboard."
+            },
+            "thumbnail": {
+                "alias" : [],
+                "help"  : "Add a soundboard to an existing soundboard."
+            }
+        }
+    },
+
+    "sound": {
+        "help"  : "Upload, download and manage your sounds.",
+        "longhelp"  : "Upload, download and manage your sounds.",
+        "category" : "Audio",
+        "children": {
+            "upload":{
+                "help"  :"Upload a sound to the soundboard.",
+                "longhelp"  : "Upload a sound to the soundboard.\nThe supported format are .mp3 and .opus, up to 1MB.\nYou can also insert 5 tags for an easier search.",
+                "category" : "Audio"
+            },
+            "download":{
+                "help"  : "Download a sound from the soundboard.",
+                "longhelp"  : "Download a sound from the soundboard.",
+                "category" : "Audio",
+                "arguments" : "[CommandName] [soundName]"
+            },
+            "delete":{
+                "alias" : ["ds", "forget"],
+                "help"  : "Delete a sound from the soundboard.",
+                "longhelp": "Delete a sound from the soundboard.",
+                "category" : "Audio",
+                "arguments" : "[CommandName]"
+            },
+            "customize":{
+                "help"  : "Modify a custom sound",
+                "longhelp": "Allow to modify the name, manage tags and if a sound is public or not.\nN.B. You can only modify your sounds.",
+                "category" : "Audio"
+            }
+        }
+    },
+
+
+    "stop":{
+        "alias" : ["stp", "donteventhinkaboutit"],
+        "help"  : "Stop the bot from playing.",
+        "longhelp"  : "Stop the bot from playing.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]"
+    },
+
+    "pause":{
+        "alias" : [],
+        "help"  : "Pause the playing audio.",
+        "longhelp": "Pause the playing audio.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]"
+    },
+
+    "resume":{
+        "alias" : [],
+        "help"  : "Resume the playing audio.",
+        "longhelp": "Resume the playing audio.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]"
+    },
+
+    "player":{
+        "alias" : ["pl"],
+        "help"  : "Show the current player.",
+        "longhelp": "Show the current player.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]",
+        "cooldown": "2"
+    },
+
+    "queue":{
+        "alias" : ["q"],
+        "help"  : "Show the current queue.",
+        "longhelp": "Show the current queue.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]",
+        "cooldown": "2"
+    },
+
+    "skip":{
+        "alias" : ["s", "skipper"],
+        "help"  : "Skip the current track.",
+        "longhelp": "Skip the current track.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]"
+    },
+
+    "previous":{
+        "alias" : ["prev"],
+        "help"  : "Go back to the previous track.",
+        "longhelp": "Go back to the previous track.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]"
+    },
+
+
+
+    "list": {
+        "alias" : ["papyrus", "paper", "listoide"],
+        "help"  : "Show the sounds uploaded to the soundboard.",
+        "longinfo": "Show the sounds uploaded to the soundboard.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "user": {
+                "alias" : [],
+                "help"  : "Show all the sounds of a user.",
+                "longinfo": "Show all the sounds of a user."
+            }, 
+            "guild": {
+                "alias" : [],
+                "help"  : "Show all the sounds uploaded in this guild.",
+                "longinfo": "Show all the sounds uploaded in this guild."
+            }
+        }
+    },
+
+    "play": {
+        "alias" : ["papyrus", "paper", "listoide"],
+        "help"  : "Play a sound from the soundboard or a video from youtube.",
+        "longhelp"  : "Play a sound from the soundboard or a video from youtube.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]",
+        "children": {
+            "youtube": {
+                "alias" : [],
+                "help"  : "Play a video from youtube.",
+                "longhelp"  : "Play a video from youtube.",
+                "arguments" : "[CommandName]",
+                "cooldown": "2"
+            }, 
+            "sound": {
+                "alias" : [],
+                "help"  : "Play a sound from the soundboard.",
+                "longhelp"  : "Play a sound from the soundboard.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "greet": {
+        "alias" : [],
+        "help"  : "Set/Unset your greet sound.",
+        "longhelp"  : "set or unset your greet sound from the soundboard. You can specify if the greet is going to be guild specific or global\nYou can use your sounds or the public ones.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "set": {
+                "alias" : [],
+                "help"  : "Set your greet sound.",
+                "longhelp"  : "Set your greet sound.",
+                "arguments" : "[CommandName]"
+            }, 
+            "unset": {
+                "alias" : [],
+                "help"  : "Unset your greet sound.",
+                "longhelp"  : "Unset your greet sound.",
+                "arguments" : "[CommandName]"
+            },
+            "view": {
+                "alias" : [],
+                "help"  : "View and manage your greet sounds.",
+                "longhelp"  : "View and manage your greet sounds.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "jumpto": {
+        "alias" : ["jump", "jt", "j"],
+        "help"  : "Jump to a specific track in the queue.",
+        "longhelp"  : "Jump to a specific track in the queue.",
+        "category" : "Audio Queue",
+        "arguments" : "[CommandName]",
+        "cooldown": "2"
+    },
+
+    "searchyoutube": {
+        "alias" : ["search"],
+        "help"  : "Search youtube for videos.",
+        "longhelp"  : "Search youtube for videos.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "cooldown": "2"
+    },
+
+    "search": {
+        "alias" : ["search"],
+        "help"  : "Search youtube for videos.",
+        "longhelp"  : "Currently, you can only search for youtube videos or sounds from the soundboard.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "youtube": {
+                "alias" : [],
+                "help"  : "Search youtube for videos.",
+                "longhelp"  : "Search youtube for videos.",
+                "cooldown": "2"
+            }, 
+            "sound": {
+                "alias" : [],
+                "help"  : "Search a sound from the soundboard.",
+                "longhelp"  : "Search a sound from the soundboard.\nYou can also search for a specific user or using tags."
+            }
+        }
+    },
+
+    "playlist": {
+        "alias" : [],
+        "help"  : "Manage custom playlists.",
+        "longhelp"  : "Manage custom playlists.",
+        "category" : "Audio",
+        "arguments" : "[CommandName]",
+        "children": {
+            "create": {
+                "alias" : [],
+                "help"  : "Create a new custom playlist.",
+                "longhelp"  : "Create a new custom playlist."
+            }, 
+            "addsong": {
+                "alias" : [],
+                "help"  : "Add a song to one of your custom playlists.",
+                "longhelp"  : "Add a song to one of your custom playlists."
+            },
+            "addqueue": {
+                "alias" : [],
+                "help"  : "Add the current queue to one of your custom playlists.",
+                "longhelp"  : "Add the current queue to one of your custom playlists."
+            },
+            "play": {
+                "alias" : [],
+                "help"  : "Add on of your custom playlists to the queue.",
+                "longhelp"  : "Add on of your custom playlists to the queue."
+            },
+            "removesong": {
+                "alias" : [],
+                "help"  : "Remove a song from one of your custom playlists.",
+                "longhelp"  : "Remove a song from one of your custom playlists."
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete one of your custom playlists.",
+                "longhelp"  : "Delete one of your custom playlists."
+            },
+            "list": {
+                "alias" : [],
+                "help"  : "List your custom playlists.",
+                "longhelp"  : "List your custom playlists."
+            },
+            "view": {
+                "alias" : [],
+                "help"  : "View the songs in one of your custom playlists.",
+                "longhelp"  : "View the songs in one of your custom playlists."
+            },
+            "order": {
+                "alias":[],
+                "help": "Modify the order of your songs in one playlist.",
+                "longhelp": "Modify the order of your songs in one playlist."
+            }
+        }
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    "channelinfo":{
+        "alias" : ["infochannel", "ci","ic","channel"],
+        "help"  : "Show information of a channel.",
+        "longhelp"  : "Show information of a channel.",
+        "category" : "Server Management",
+        "arguments" : "[channelinfo] [#channel/channel ID]"
+    },
+
+    "clear":{
+        "alias" : [],
+        "help"  : "Delete messages in a channel (max 99).",
+        "longhelp"  : "Delete messages in a channel (max 99).",
+        "category" : "Server Management",
+        "arguments" : "[clear] [numberMessages]"
+    },
+
+    "emojiinfo":{
+        "alias" : ["em", "eminf"],
+        "help"  : "Show information of an emoji.",
+        "longhelp"  : "Show information of an emoji.",
+        "category" : "Server Management",
+        "arguments" : "[emoji] [emojiName, emoji]"
+    },
+    
+    "serverinfo":{
+        "alias" : ["servinfo", "serinf"],
+        "help"  : "Show information of the server.",
+        "longhelp"  : "Show information of a member.",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
+    },
+
+    "memberinfo":{
+        "alias" : ["usinf", "uinfo", "userinfo", "userstats", "stats"],
+        "help"  : "Show information of a member.",
+        "longhelp"  : "Show information of a member.",
+        "category" : "Server Management",
+        "arguments" : "[userinfo] [@user]"
+    },
+
+    "listroom":{
+        "alias" : ["rooms"],
+        "help"  : "Show the nicknames of the voice channels.",
+        "longhelp"  : "Show the nicknames of the voice channels.",
+        "category" : "Server Management",
+        "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
+    },
+    
+    "leaderboard":{
+        "alias" : [],
+        "help"  : "Show the server's leaderboard.",
+        "longhelp"  : "Show the server's leaderboard.",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
+    },
+
+    "rewards":{
+        "alias" : [],
+        "help"  : "Show the leveling up rewards.",
+        "longhelp"  : "Show the leveling up rewards.",
+        "category" : "Server Management",
+        "arguments" : "[CommandName]"
+    },
+
+    "setroom":{
+        "alias" : ["room"],
+        "help"  : "Set a nickname for a voice channel (to use 'move').",
+        "longhelp"  : "Set a nickname for a voice channel (to use 'move').",
+        "category" : "Settings",
+        "arguments" : "[CommandName] [#canale] || [CommandName] [idCanale] "
+    },
+
+    "voice":{
+        "alias" : ["voice"],
+        "help"  : "Set a default tts voice.",
+        "longhelp"  : "Set a default tts voice.",
+        "category" : "Settings",
+        "arguments" : "[CommandName] [nomeVoce]"
+    },
+
+    "prefix":{
+        "alias" : ["prefix"],
+        "help"  : "Change the prefix",
+        "longhelp"  : "Change the prefix",
+        "category" : "Settings",
+        "arguments" : "[CommandName] [new Prefix]"
+    },
+
+    "setsummoner":{
+        "alias" : ["setsum", "setuser", "ss"],
+        "help"  : "Coonect/Disconnect a riot account ('setsummoner remove:name' to disconnect).",
+        "longhelp"  : "Coonect/Disconnect a riot account ('setsummoner remove:name' to disconnect).",
+        "category" : "Settings",
+        "arguments" : "[CommandName] [summonerName]"
+    },
+
+    "toggleexpsystem":{
+        "alias" : ["delete", "ds", "forget"],
+        "help"  : "Toggle the exp system on and off.",
+        "longhelp"  : "Toggle the exp system on and off.",
+        "category" : "Settings",
+        "arguments" : "[CommandName]"
+    },
+
+    "welcome": {
+        "alias" : ["setwelcome", "welcome"],
+        "help"  : "json",
+        "longhelp"  : "Allow to set a 'welcome message' that would be sent every time a user join the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the role write #role",
+        "category" : "Settings",
+        "children": {
+            "channel": {
+                "alias" : [],
+                "help"  : "Change the welcome channel."
+            }, 
+            "create": {
+                "alias" : [],
+                "help"  : "Create a welcome message for this guild.",
+                "longhelp"  : "Allow to set a 'welcome message' that would be sent every time a user join the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the role write #role"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete the welcome message for this guild."
+            },
+            "preview": {
+                "alias" : [],
+                "help"  : "Preview the welcome message.",
+                "arguments" : "[CommandName]"
+            },
+            "addrole": {
+                "alias" : [],
+                "help"  : "Change the role users will get when they enter this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "removerole": {
+                "alias" : [],
+                "help"  : "Change the role users will get when they enter this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "message": {
+                "alias" : [],
+                "help"  : "Change the welcome message's text.",
+                "longhelp"  : "Change the welcome message's text.\nTo mention the user write #user, the role write #role",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Toggle the welcome message on or off.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "reward": {
+        "alias" : [],
+        "help" : "json",
+        "longhelp"  : "Allow to set a reward for the leveling up system. A message will be sent every time a user reach a certain level and one or more roles will be given.\nThe message will be sent in the current channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the level write #level, the role write #role.",
+        "category" : "Settings",
+        "arguments" : "",
+        "children": {
+            "create": {
+                "alias" : [],
+                "help"  : "Create a reward for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete the reward for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "preview": {
+                "alias" : [],
+                "help"  : "Show all the rewards",
+                "arguments" : "[CommandName]"
+            },
+            "addrole": {
+                "alias" : [],
+                "help"  : "Add a role to a specific reward.",
+                "arguments" : "[CommandName]"
+            },
+            "removerole": {
+                "alias" : [],
+                "help"  : "Remove a role from a specific reward.",
+                "arguments" : "[CommandName]"
+            },
+            "message": {
+                "alias" : [],
+                "help"  : "Change the reward message's text.",
+                "longhelp"  : "Change the reward message's text.\nTo mention the user write #user, the level write ```#level```.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Toggle the reward on or off.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "leave": {
+        "alias" : ["setleave", "leave"],
+        "help" : "json",
+        "longhelp"  : "Allow to set a 'leave message' that would be sent every time a user leaves the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#channel) | [message]",
+        "children": {
+            "channel": {
+                "alias" : [],
+                "help"  : "Change the leave channel.",
+                "arguments" : "[CommandName]"
+            }, 
+            "create": {
+                "alias" : [],
+                "help"  : "Create a leave message for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete the leave message for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "preview": {
+                "alias" : [],
+                "help"  : "Preview the leave message.",
+                "arguments" : "[CommandName]"
+            },
+            "message": {
+                "alias" : [],
+                "help"  : "Change the leave message's text.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Toggle the leave message on or off.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "levelup": {
+        "alias" : ["setlevelup", "setlvl"],
+        "help" : "json",
+        "longhelp"  : "These are the commands to manage the levelup system in your guild.\nYou can set a 'level up message' to be sent every time a user levels up.The message will be sent in the current channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the level write #level`.\n\n[The levelup system is enabled by default]",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#channel) | [messagge]",
+        "children": {
+            "channeltoggle": {
+                "alias" : [],
+                "help"  : "Toggle the exp system on and off for the specified channel.",
+                "arguments" : "[CommandName]"
+            }, 
+            "modifier": {
+                "alias" : [],
+                "help"  : "Change the exp modifier for the specified channel.",
+                "arguments" : "[CommandName]"
+            },
+            "preview": {
+                "alias" : [],
+                "help"  : "Preview the level up message.",
+                "arguments" : "[CommandName]"
+            },
+            "message": {
+                "alias" : [],
+                "help"  : "Change the level up message's text.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Toggle the exp system on and off for the whole guild.",
+                "arguments" : "[CommandName]"
+            },
+            "updatetime": {
+                "alias" : [],
+                "help"  : "Change after how many second you will gain experience (default 60).",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "boost": {
+        "alias" : ["nitro", "setboost", "boosts"],
+        "help" : "json",
+        "longhelp"  : "Allow to set a 'boost server message' to be sent every time a user boost the server.\nIts necessary to set also a channel otherwise will be used the default system channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user",
+        "category" : "Settings",
+        "arguments" : "[CommandName] (#channel) | [messagge]",
+        "children": {
+            "channel": {
+                "alias" : [],
+                "help"  : "Change the boost channel.",
+                "arguments" : "[CommandName]"
+            }, 
+            "create": {
+                "alias" : [],
+                "help"  : "Create a boost message for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "delete": {
+                "alias" : [],
+                "help"  : "Delete the boost message for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "preview": {
+                "alias" : [],
+                "help"  : "Preview the boost message.",
+                "arguments" : "[CommandName]"
+            },
+            "message": {
+                "alias" : [],
+                "help"  : "Change the boost message's text.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Toggle the boost message on or off.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+
+
+
+
+
+
+
+
+
+    "ban":{
+        "alias" : ["sgozz", "destroy", "annihilate", "radiateDeath", "drinkRadithorForAYear", "ohthemisery"],
+        "help"  : "Ban a member.",
+        "category" : "Member Management",
+        "arguments" : "[ban] [@user] (reason)"
+    },
+
+    "image":{
+        "alias" : ["img"],
+        "help"  : "Show the imagine of a user.",
+        "category" : "Member Management",
+        "arguments" : "[image] [@user]"
+    },
+
+    "kick":{
+        "alias" : ["lightdeath", "espulsione", "takethetrashout"],
+        "help"  : "Kick a member.",
+        "category" : "Member Management",
+        "arguments" : "[kick] [@user]"
+    },
+
+    "modifynickname":{
+        "alias" : ["modnick", "nick"],
+        "help"  : "Change the nickname for a member.",
+        "category" : "Member Management",
+        "arguments" : "[CommandName] [member] [new nick]"
+    },
+
+    "mute":{
+        "alias" : ["dontlistentothesound"],
+        "help"  : "Mute a member.",
+        "category" : "Member Management",
+        "arguments" : "[mute] [@user]"
+    },
+
+    "permissions":{
+        "alias" : ["perms", "permission"],
+        "help"  : "Show all permissions of a member.",
+        "category" : "Member Management",
+        "arguments" : "[permissions] [@user]"
+    },
+
+    "unban":{
+        "alias" : ["unsgozz", "undestroy", "unannihilate", "unradiateDeath", "sban", "pardon"],
+        "help"  : "Unban a member.",
+        "category" : "Member Management",
+        "arguments" : "[unbun] [@user]"
+    },
+
+    "unmute":{
+        "alias" : ["listentothesound"],
+        "help"  : "Unmute a member.",
+        "category" : "Member Management",
+        "arguments" : "[unmute] [@user]"
+    },
+
+    "move":{
+        "alias" : ["mv", "throw"],
+        "help"  : "Move a member from a voice channel to another one.\nIts possible to move multiple users at once.",
+        "category" : "Member Management",
+        "arguments" : "[CommandName] (here = all the member in the voice channel will be moved) (channel id) | (me = you) (channel id) | (member) (channel id) | (member) (here = the user will be move where you are) | (member) (afk).",
+        "children": {
+            "user": {
+                "alias" : [],
+                "help"  : "Move a user to another channel/user",
+                "arguments" : "[CommandName]"
+            }, 
+            "channel": {
+                "alias" : [],
+                "help"  : "Move all the users in a voice channel to another channel/user",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "blacklist":{
+        "alias" : ["blackbeard", "list of death"],
+        "help" : "json",
+        "longhelp"  : "The 'Blacklist' feature in Discord enhances server security.\nIt keeps track of banned users across servers. Admins set a minimum ban count, and if it's exceeded, notifications alert the servers with the command enabled.\nThis helps ensure a safer and more secure server environment by identifying problematic users.",
+        "category" : "Member Management",
+        "arguments" : "",
+        "children": {
+            "channel": {
+                "alias" : [],
+                "help"  : "Change the boost channel.",
+                "arguments" : "[CommandName]"
+            }, 
+            "create": {
+                "alias" : [],
+                "help"  : "Create and set the blacklist for this guild.",
+                "arguments" : "[CommandName]"
+            },
+            "threshold": {
+                "alias" : [],
+                "help"  : "Change the threshold.",
+                "arguments" : "[CommandName]"
+            },
+            "toggle": {
+                "alias" : [],
+                "help"  : "Toggle the blacklist on or off.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
+
+    "calculator":{
+        "alias" : ["c", "calc","calculate"],
+        "help"  : "Does several mathematical operation.",
+        "category" : "Math",
+        "arguments" : "[calc] [expression] (+, -, *, /, cos, sin, pi, e, ln)"
+    },
+
+    "dice":{
+        "alias" : ["aleaiactaest", "roll"],
+        "help"  : "Roll one or more dice.",
+        "category" : "Math",
+        "arguments" : "[dice] (number) ([number] (side))"
+    },
+
+    "prime":{
+        "alias" : ["randomprime"],
+        "help"  : "Calculate a prime number using Fermat's little theorem.",
+        "category" : "Math",
+        "cooldown" : "10",
+        "arguments" : "[prime] [nbit]"
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    "alias":{
+        "alias" : ["ilyas"],
+        "help"  : "boh",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName]"
+    },
+
+    "bug":{
+        "alias" : ["baco", "bughi", "report", "rep", "bugs", "reptail96", "reptail", "rep066", "moonny", "moonnypunto", "repthebread", "repologameplay", "repologaming"],
+        "help"  : "Report a bug to the developer.",
+        "category" : "Miscellaneous",
+        "cooldown" : "100",
+        "arguments" : "[bugs] [nome comando] [descrizione]"
+    },
+
+    "help":{
+        "alias" : ["command", "commands", "info"],
+        "help"  : "Show information about commands.",
+        "category" : "Miscellaneous",
+        "arguments" : "[help][nome comando]"
+    },
+
+    "invitebot":{
+        "alias" : ["invite", "inbot"],
+        "help"  : "Get the invite link for the bot.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName]"
+    },
+
+    "anonym":{
+        "alias" : ["staropoli", "an"],
+        "help"  : "Send a private message to a user anonymously.",
+        "category" : "Miscellaneous",
+        "arguments" : "[msg] [@user/id] [messaggio]"
+    },
+
+    "msg":{
+        "alias" : ["message"],
+        "help"  : "Send a private message to a user.",
+        "category" : "Miscellaneous",
+        "arguments" : "[msg] [@user/id] [message]"
+    },
+
+    "weather":{
+        "alias" : [],
+        "help"  : "Get the weather of a location.",
+        "longhelp" : "Get the weather of a location. The results are from weatherApi.com. You can write the location as coordinates, city name, US zip, UK postcode, Canada postal code, metar, iata and Ip address.",
+        "category" : "Miscellaneous",
+        "arguments" : "[weather] [place]"
+    },
+
+    "apod":{
+        "alias" : [],
+        "help"  : "Get the Astronomy Picture of the Day (NASA).",
+        "longhelp" : "Get the Astronomy Picture of the Day (NASA).",
+        "category" : "Miscellaneous",
+        "arguments" : "[apod]"
+    },
+
+    "specialchar":{
+        "alias" : [],
+        "help"  : "Show all special characters.",
+        "longhelp" : "Show all special characters.",
+        "category" : "Miscellaneous",
+        "arguments" : "[specialchar]"
+    },
+
+
+
+
+
+    "printcache":{
+        "alias" : ["cache"],
+        "help"  : "Print cached guild information.",
+        "category" : "Owner",
+        "arguments" : "[prefixlist]"
+    },
+
+    "shutdown":{
+        "alias" : ["kill"],
+        "help"  : "Shutdown a bot.",
+        "category" : "Owner",
+        "arguments" : "[prefixlist]"
+    },
+
+    "restart":{
+        "alias" : ["reboot"],
+        "help"  : "Restart a bot.",
+        "category" : "Owner",
+        "arguments" : "[prefixlist]"
+    },
+
+    "query":{
+        "alias" : ["sql", "queroide", "dib", "esqel"],
+        "help"  : "Run a query to the bot's database",
+        "category" : "Owner",
+        "arguments" : "[prefixlist]"
+    },
+
+    "listguild":{
+        "alias" : ["lg", "guilds"],
+        "help"  : "List the guilds the bot is in.",
+        "category" : "Owner",
+        "arguments" : "[CommandName]"
+    },
+
+    "threadcounter":{
+        "alias" : ["countt", "thread", "dbmr"],
+        "help"  : "Show up how many lavaplayer threads are alive.",
+        "category" : "Owner",
+        "arguments" : "[CommandName]"
+    },
+
+    "ping":{
+        "alias" : ["pingpong", "latency"],
+        "help"  : "Ping the bot.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName]"
+    },
+
+    "ram":{
+        "alias" : ["usage"],
+        "help"  : "Show the ram usage of the bot.",
+        "category" : "Owner",
+        "arguments" : "[CommandName]"
+    },
+
+    "chat":{
+        "alias" : ["chattest"],
+        "help"  : "chat command tests.",
+        "category" : "Owner",
+        "arguments" : "[CommandName]"
+    },
+
+    "twitch":{
+        "alias" : ["twitchoid"],
+        "help"  : "json",
+        "longhelp"  : "The twitch commands help you to keep track of your favorite streamers and to get information about them.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName]",
+        "children": {
+            "link": {
+                "help"  : "Link a streamer",
+                "longhelp": "Link a streamer to this guild. The bot will send a notification when the streamer goes live. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both (in this case must select a role to filter the user).\n\nTo mention the streamer #streamer"
+            },
+            "unlink": {
+                "help"  : "Unlink a streamer",
+                "longhelp": "Unlink a streamer, the alert will be deleted."
+            },
+            "menu": {
+                "help"  : "twitch menu",
+                "longhelp": "The twitch menu is a useful command to help you to manage your (this guild) linked streamers."
+            },
+            "user": {
+                "help"  : "Get information on a streamer"
+            }
+        }
+    },
+
+    "qrcode":{
+        "alias" : ["qr"],
+        "help"  : "Make a qr code with the given text.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName] [text]"
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    "jelly":{
+        "alias" : ["soundfx", "reminderbot", "jude", "jude southworth", "jellywx"],
+        "help"  : "Evoca il dio dei falliti.",
+        "category" : "Owner",
+        "arguments" : "[CommandName]"
+    },
+
+    "vandalizeserver":{
+        "alias" : ["vandalize", "vanda"],
+        "help"  : "Vandalizza un server, usa con cura.",
+        "category" : "Owner",
+        "arguments" : "[CommandName] [server]"
+    },
+
+    "randommove":{
+        "alias" : ["rm", "fakerandom"],
+        "help"  : "Move a member randomly between voice channels.",
+        "category" : "Owner",
+        "arguments" : "[CommandName] [id/@user] [n volte]"
+    },
+
+
+
+
+
+
+
+
+    "champion":{
+        "alias" : ["rune", "runes", "champ", "champion", "champs"],
+        "help"  : "Show the best build and runes for a champion.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName]"
+    },
+
+    "build":{
+        "help"  : "Search for a build made by other user!",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName]"
+    },
+
+    "augment":{
+        "alias" : ["aug"],
+        "help"  : "Show information about an augment.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName]"
+    },
+
+    "item":{
+        "alias" : [],
+        "help"  : "Show information about an item.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [item]"
+    },
+
+    "summoner":{
+        "alias" : ["sum"],
+        "help"  : "Show information about a summoner.",
+        "longhelp"  : "Show information about a summoner.\nYou can also link your account so you don't have to specify it using the other league commands.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [summonerName]",
+        "children": {
+            "profile": {
+                "alias" : [],
+                "help"  : "Show statistics for a summoner.",
+                "arguments" : "[CommandName]"
+            }, 
+            "link": {
+                "alias" : [],
+                "help"  : "Link a summoner to your discord account.",
+                "arguments" : "[CommandName]"
+            },
+            "unlink": {
+                "alias" : [],
+                "help"  : "Unlink a summoner from your discord account.",
+                "arguments" : "[CommandName]"
+            },
+            "track": {
+                "alias" : [],
+                "help"  : "Track a summoner.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "freechamp":{
+        "alias" : ["fc", "rotation"],
+        "help"  : "Show the current free champion rotation.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName]"
+    },
+
+    "livegame":{
+        "alias" : ["live"],
+        "help"  : "Show the summoners in the game of a given summoner and their ranks.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [summonerName]"
+    },
+
+    "lastmatches":{
+        "alias" : ["pw", "match"],
+        "help"  : "Show the people a summoner usually plays with.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [summonerName] (n games to analyze)"
+    },
+
+    "opgg":{
+        "alias" : ["im", "infomatch"],
+        "help"  : "Show information about the last 5 games of a summoner.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [summonerName] (n games to analyze)"
+    },
+
+    "region":{
+        "alias" : ["shard"],
+        "help"  : "Select the default league of legends region.",
+        "longhelp"  : "Select the default league of legends region.\nAll the other league commands will use this region if you don't specify it. (EUW default)",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [region]"
+    },
+
+    "ultimatebravery": {
+        "alias" : ["ub", "bravery"],
+        "help"  : "Show a random build for a champion.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName] [champion]"
+    },
+
+    "graph": {
+        "alias" : [],
+        "help"  : "Set/Unset your greet sound.",
+        "longhelp"  : "set or unset your greet sound from the soundboard. You can specify if the greet is going to be guild specific or global\nYou can use your sounds or the public ones.",
+        "category" : "League Of Legends",
+        "arguments" : "[CommandName]",
+        "children": {
+            "lp": {
+                "alias" : [],
+                "help"  : "Set your greet sound.",
+                "longhelp"  : "Set your greet sound.",
+                "arguments" : "[CommandName]"
+            }, 
+            "mmr": {
+                "alias" : [],
+                "help"  : "Unset your greet sound.",
+                "longhelp"  : "Unset your greet sound.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+
+    "test": {
+        "alias" : ["wip"],
+        "help"  : "Extreme Safj things",
+        "category" : "Owner",
+        "arguments" : "faker"
+    },
+
+    "omegle":{
+        "alias" : ["om", "ommomomavaffanculova"],
+        "help"  : "Talk to strangers like omegle.",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName] ",
+        "children": {
+            "connect": {
+                "alias" : [],
+                "help"  : "Connect to a random stranger.",
+                "longhelp"  : "Connect to a random stranger.",
+                "arguments" : "[CommandName]"
+            }, 
+            "disconnect": {
+                "alias" : [],
+                "help"  : "Disconnect from the conversation.",
+                "longhelp"  : "Disconnect from the conversation.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+    "automatedaction":{
+        "alias" : ["auto", "automated"],
+        "help"  : "Automated actions.",
+        "category" : "Server Management",
+        "arguments" : "[CommandName] [action] [arguments]"
+    },
+
+    "warn":{
+        "alias" : ["avverti", "avv"],
+        "help"  : "Warn a member.",
+        "category" : "Server Management",
+        "arguments" : "[warn] [@user] (reason)"
+    },
+
+    "tracks": {
+        "alias" : [],
+        "help"  : "Top spotify tracks.",
+        "category" : "Miscellaneous",
+        "arguments" : ""
+    },
+
+    "albums": {
+        "alias" : [],
+        "help"  : "Top spotify albums.",
+        "category" : "Miscellaneous",
+        "arguments" : ""
+    },
+
+    "spotify":{
+        "alias" : ["sporpify"],
+        "help"  : "Your Spotify in your favourite bot",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName] ",
+        "children": {
+            "link": {
+                "alias" : [],
+                "help"  : "Link your Spotify account to the bot.",
+                "longhelp"  : "Link your Spotify account to the bot. You will be able to use the other Spotify commands.",
+                "arguments" : "[CommandName]"
+            },
+            "albums": {
+                "alias" : [],
+                "help"  :  "Top Spotify albums.",
+                "longhelp"  : "Top Spotify albums.",
+                "arguments" : "[CommandName]"
+            }, 
+            "tracks": {
+                "alias" : [],
+                "help"  : "Top Spotify tracks.",
+                "longhelp"  : "Top Spotify tracks.",
+                "arguments" : "[CommandName]"
+            },
+            "upload": {
+                "alias" : [],
+                "help"  : "Upload your Spotify history.",
+                "longhelp"  : "Upload your Spotify history.",
+                "arguments" : "[CommandName]"
+            }
+        }
+    },
+
+
+
+
+
+
+
+
+
+
+
+
+    "talk":{
+        "alias" : ["stranger"],
+        "help"  : "Talk to a stranger on omegle (type quit to quit. Use partymode to let everyone write).",
+        "category" : "Miscellaneous",
+        "arguments" : "[CommandName] (language) (interests) (party mode)"
+    }
+}

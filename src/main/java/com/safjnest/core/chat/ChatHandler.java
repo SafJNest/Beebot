@@ -21,9 +21,9 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildMessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.buttons.Button;
 import rx.internal.util.SynchronizedQueue;
 
 import com.safjnest.core.cache.managers.GuildCache;
@@ -42,8 +42,8 @@ public class ChatHandler {
     private static final Map<String, ScheduledFuture<?>> connectTimers = new HashMap<>();
     private static final Map<String, ScheduledFuture<?>> disconnectTimers = new HashMap<>();
     
-    public static List<LayoutComponent> getRequesstButtons(String channelID) {
-        List<LayoutComponent> buttons = new ArrayList<>();
+    public static List<MessageTopLevelComponent> getRequesstButtons(String channelID) {
+        List<MessageTopLevelComponent> buttons = new ArrayList<>();
         buttons.add(ActionRow.of(
             Button.danger("chat-refuse-" + channelID, "refuse"),
             Button.success("chat-accept-" + channelID, "accept")

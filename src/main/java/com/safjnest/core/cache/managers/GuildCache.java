@@ -64,7 +64,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
         DatabaseHandler.insertGuild(guildId, Bot.getPrefix());
         BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
 
-        GuildData guild = new GuildData(Long.parseLong(guildId));
+        GuildData guild = new GuildData(guildId);
         instance.put(guild);
         return guild;
     }
@@ -103,7 +103,11 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
 
     private void put(GuildData guild) {
+<<<<<<< HEAD
         super.put(guild.getIdString(), guild);
+=======
+        super.put(guild.getId(), guild);
+>>>>>>> main
     }
 
     public ConcurrentMap<String, GuildData> getGuilds() {

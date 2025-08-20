@@ -17,8 +17,8 @@ import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
-import com.safjnest.App;
 import com.safjnest.core.cache.managers.GenericCache;
+import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 
 public class TwitchClient {
@@ -35,8 +35,9 @@ public class TwitchClient {
     private static String twitchIconUrl = "https://static-00.iconduck.com/assets.00/twitch-icon-512x512-ws2eyit3.png";
 
     static {
-        TwitchClient.clientId = App.getSettingsLoader().getTwitchClientId();
-        TwitchClient.clientSecret = App.getSettingsLoader().getTwitchClientSecret();
+        
+        TwitchClient.clientId = SettingsLoader.getSettings().getJsonSettings().getTwitch().getClientId();
+        TwitchClient.clientSecret = SettingsLoader.getSettings().getJsonSettings().getTwitch().getClientSecret();
 
         streamersCache = new GenericCache<String, User>(100, 1, TimeUnit.MINUTES, String.class, User.class);
     }

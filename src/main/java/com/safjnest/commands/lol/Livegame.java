@@ -14,13 +14,13 @@ import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
 /**
@@ -73,7 +73,7 @@ public class Livegame extends SlashCommand {
 
         StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
         EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
-        List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null));
+        List<MessageTopLevelComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null));
 
         if (menu != null) {
             row.add(0, ActionRow.of(menu));
@@ -102,7 +102,7 @@ public class Livegame extends SlashCommand {
 
         StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
         EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
-        List<LayoutComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null));
+        List<MessageTopLevelComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null));
 
         if (menu != null) {
             row.add(0, ActionRow.of(menu));

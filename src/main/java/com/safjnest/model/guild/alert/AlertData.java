@@ -1,10 +1,16 @@
 package com.safjnest.model.guild.alert;
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+=======
+import java.util.HashMap;
+import java.util.List;
+>>>>>>> main
 
 import com.safjnest.core.Bot;
+import com.safjnest.model.guild.GuildData;
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
@@ -32,7 +38,11 @@ public class AlertData {
         this.enabled = data.getAsBoolean("enabled");
         this.type = AlertType.getFromOrdinal(data.getAsInt("type"));
         if(roles == null) {
+<<<<<<< HEAD
             this.roles = new ArrayList<String>();
+=======
+            this.roles = new HashMap<Integer, String>();
+>>>>>>> main
         }
         else {
             this.roles = roles;
@@ -59,6 +69,7 @@ public class AlertData {
         this.enabled = true;
         this.type = type;
         this.sendType = sendType;
+        this.roles = new HashMap<>();
     }
 
     public AlertData(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, List<String> roles) {
@@ -223,10 +234,21 @@ public class AlertData {
      * @return true if the alert is valid, false otherwise
      */
     public boolean isValid() {
+<<<<<<< HEAD
         return isMessageConsistent(this) 
             && (this.type == AlertType.LEVEL_UP || this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) 
             && this.enabled;
         //the level up check should probably be made in an override method in a subclass
+=======
+        return (hasMessage() || hasPrivateMessage()) && (this.type == AlertType.LEVEL_UP || this.type == AlertType.REWARD ||  this.channelId != null || (this.sendType == AlertSendType.PRIVATE)) && this.enabled;
+    }
+
+    public boolean isValid(GuildData guild) {
+        boolean isValid = isValid();
+        if (this.type == AlertType.LEVEL_UP)
+            isValid = guild.isExperienceEnabled() && isValid;
+        return isValid;
+>>>>>>> main
     }
     
     public boolean setMessage(String message) {
@@ -315,6 +337,16 @@ public class AlertData {
         return DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
     }
 
+<<<<<<< HEAD
+=======
+    public boolean setRoles(List<String> roles) {
+        DatabaseHandler.deleteAlertRoles(String.valueOf(this.ID));
+        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.toArray(new String[0]));
+        return this.roles != null;
+    }
+
+
+>>>>>>> main
     /**
      * The method first removes the role from the local roles map, 
      * using the provided role ID.
@@ -366,6 +398,10 @@ public class AlertData {
 
     public boolean hasPrivateMessage() {
         return this.privateMessage != null && !this.privateMessage.isEmpty();
+    }
+
+    public boolean hasMessage() {
+        return this.message != null && !this.message.isEmpty();
     }
 
     public String getChannelId() {
@@ -490,6 +526,10 @@ public class AlertData {
     public String toString() {
         return "AlertData [ID=" + ID + ", channelId=" + channelId + ", enabled=" + enabled + ", message=" + message + ", privateMessage=" + privateMessage
                 + ", roles=" + roles + ", type=" + type + "]";
+    }
+
+    public RewardData asReward() {
+        return (RewardData) this;
     }
 
     

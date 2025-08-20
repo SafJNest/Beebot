@@ -1,4 +1,4 @@
-<img src="/rsc/img/logo_cropped.png" alt="safjnest_logo" width="200"/>
+<img src="/rsc/assets/logo_cropped.png" alt="safjnest_logo" width="200"/>
 
 # ***BEEBOT***
 This Discord bot is designed to enhance your server experience by providing a range of features, including music playback, custom sound uploading, server management commands, server stats tracking, and commands for the popular game League of Legends. ;D.

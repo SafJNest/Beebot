@@ -17,10 +17,9 @@ import com.safjnest.util.CommandsLoader;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
 /**
  * This commands once is called sends a message with a full list of all commands, grouped by category.
  * <p>The user can then use the command to get more information about a specific command.</p>
@@ -108,10 +107,10 @@ public class Help extends SlashCommand {
         return eb;
     }
 
-    public static List<LayoutComponent> getChildrenButton(BotCommand command) {
+    public static List<MessageTopLevelComponent> getChildrenButton(BotCommand command) {
         if (command.getChildren().isEmpty()) return null;
         
-        List<LayoutComponent> rows = new ArrayList<>();
+        List<MessageTopLevelComponent> rows = new ArrayList<>();
         List<Button> row = new ArrayList<>();
 
         int i = 0;
@@ -127,10 +126,10 @@ public class Help extends SlashCommand {
         return rows;
     }
 
-    public static List<LayoutComponent> getChildButton(BotCommand command) {
+    public static List<MessageTopLevelComponent> getChildButton(BotCommand command) {
         if (command.getChildren().isEmpty()) return null;
         
-        List<LayoutComponent> rows = new ArrayList<>();
+        List<MessageTopLevelComponent> rows = new ArrayList<>();
 
         Button back = Button.primary("help-" + command.getName(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         rows.add(ActionRow.of(back));
@@ -138,7 +137,7 @@ public class Help extends SlashCommand {
         return rows;
     }
 
-    public static List<LayoutComponent> getCommandButton(BotCommand command) {
+    public static List<MessageTopLevelComponent> getCommandButton(BotCommand command) {
         if (command.getFather() == null && command.getChildren().isEmpty()) return null;
         if (command.getFather() != null) return getChildButton(command.getFather());
         
@@ -250,7 +249,7 @@ public class Help extends SlashCommand {
         String inputCommand = event.getArgs();
        
         EmbedBuilder eb = new EmbedBuilder();
-        List<LayoutComponent> rows = null;
+        List<MessageTopLevelComponent> rows = null;
         if(inputCommand.equals("")) {
             eb = getGenericHelp(event.getGuild().getId(), event.getMember().getId());  
         } 
@@ -276,7 +275,7 @@ public class Help extends SlashCommand {
         String inputCommand = (event.getOption("command") == null) ? "" : event.getOption("command").getAsString();
 
         EmbedBuilder eb = new EmbedBuilder();
-        List<LayoutComponent> rows = null;
+        List<MessageTopLevelComponent> rows = null;
 
         if(inputCommand.equals("")) 
             eb = Help.getGenericHelp(event.getGuild().getId(), event.getMember().getUser().getId());  

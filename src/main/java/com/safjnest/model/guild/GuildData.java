@@ -43,7 +43,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
  */
 public class GuildData {
 
-    private final Long ID;
+    private final String ID;
 
     private String prefix;
 
@@ -60,7 +60,7 @@ public class GuildData {
 
     private HashMap<AlertKey<?>, AlertData> alerts;
 
-    private HashMap<Long, ChannelData> channels;
+    private HashMap<String, ChannelData> channels;
     private HashMap<String, MemberData> members;
     private List<AutomatedAction> actions;
 
@@ -69,7 +69,7 @@ public class GuildData {
 
     private LoggerIDpair loggerIDpair;
 
-    public GuildData(Long id) {
+    public GuildData(String id) {
         this.ID = id;
         this.prefix = Bot.getPrefix();
         this.experience = true;
@@ -89,7 +89,7 @@ public class GuildData {
     }
 
     public GuildData(QueryRecord data) {
-        this.ID = data.getAsLong("guild_id");
+        this.ID = data.get("guild_id");
         this.prefix = data.get("prefix");
         this.experience = data.getAsBoolean("exp_enabled");
 
@@ -124,14 +124,17 @@ public class GuildData {
 //    ████████▀  ████████▀  █▀   █████▄▄██ ████████▀
 //                               ▀
 
-    public Long getId() {
+    public String getId() {
         return ID;
     }
 
+<<<<<<< HEAD
     public String getIdString() {
         return String.valueOf(ID);
     }
 
+=======
+>>>>>>> main
     public String getPrefix() {
         return prefix;
     }
@@ -161,7 +164,7 @@ public class GuildData {
         return this.leagueShard;
     }
 
-    public LeagueShard getLeagueShard(long channelId) {
+    public LeagueShard getLeagueShard(String channelId) {
         LeagueShard shard = getChannelData(channelId).getLeagueShard();
         if (shard != null) return shard;
         return this.leagueShard;
@@ -236,6 +239,7 @@ public class GuildData {
         return mutedRoleId != null && !mutedRoleId.isEmpty();
     }
 
+<<<<<<< HEAD
     public Map<String, Object> getSettings(List<String> settings) {
         Map<String, Object> result = new HashMap<>();
     
@@ -257,11 +261,35 @@ public class GuildData {
                 case "twitch" -> result.put("twitch", getTwitchDatas().entrySet().stream()
                     .collect(Collectors.toMap(e -> e.getKey().getKey(), Map.Entry::getValue)));
                 default -> throw new IllegalArgumentException("Unknown setting: " + setting);
+=======
+    public Map<String, String> getSettings(List<String> settings) {
+        Map<String, String> result = new HashMap<>();
+
+        for (String setting : settings) {
+            switch (setting) {
+                case "prefix":
+                    result.put("prefix", getPrefix());
+                    break;
+                case "expSystem":
+                    result.put("expSystem", String.valueOf(isExperienceEnabled()));
+                    break;
+                case "voice":
+                    result.put("voice", getVoice());
+                    result.put("language", getLanguage());
+                    break;
+                case "leagueShard":
+                    result.put("leagueShard", String.valueOf(getLeagueShard().ordinal())); //.getRealmValue().toUpperCase()
+                    break;
+                default:
+                    System.out.println("Unknown setting: " + setting);
+                    break;
+>>>>>>> main
             }
         }
         return result;
     }
 
+<<<<<<< HEAD
     public void setSettings(Map<String, Object> settings) {
         if (settings == null || settings.isEmpty()) {
             throw new IllegalArgumentException("Settings cannot be null or empty");
@@ -318,6 +346,34 @@ public class GuildData {
         for (String newKey : subs.keySet()) {
             // TODO add new twitch alerts
         }
+=======
+    public boolean setSettings(Map<String, String> settings) {
+        if (settings == null || settings.isEmpty()) {
+            return false;
+        }
+
+        for (String key : settings.keySet()) {
+            switch (key) {
+                case "prefix":
+                    setPrefix(settings.get(key));
+                    break;
+                case "expSystem":
+                    setExpSystem(Boolean.parseBoolean(settings.get(key)));
+                    break;
+                case "voice":
+                    setVoice(settings.get(key));
+                    break;
+                case "leagueShard":
+                    LeagueShard shard = LeagueShard.values()[Integer.parseInt(settings.get(key))];
+                    setLeagueShard(shard);
+                    break;
+                default:
+                    System.out.println("Unknown setting: " + key);
+                    break;
+            }
+        }
+        return true;
+>>>>>>> main
     }
 
     public String toString(){
@@ -383,7 +439,13 @@ public class GuildData {
     }
 
     public AlertData getAlert(AlertType type) {
+        if (type == AlertType.REWARD)
+            return getHigherReward(0);
         return getAlerts().get(new AlertKey<>(type));
+    }
+
+    public AlertData getAlertByID(String id) {
+        return getAlertByID(Integer.parseInt(id));
     }
 
     public AlertData getAlertByID(int id) {
@@ -430,6 +492,19 @@ public class GuildData {
             }
         }
         return null;
+    }
+
+    public List<RewardData> getRewards() {
+        List<RewardData> rewards = new ArrayList<>();
+        RewardData reward = null;
+        int level = 0;
+        do {
+            reward = getHigherReward(level);
+            level = reward.getLevel();
+            rewards.add(reward);
+        } while (reward != null);
+
+        return rewards;
     }
 
     public AlertData getWelcome() {
@@ -539,33 +614,33 @@ public class GuildData {
         BotLogger.debug("Retriving ChannelData from database => {0}", loggerIDpair);
         for(QueryRecord row : result){
             this.channels.put(
-                row.getAsLong("channel_id"),
+                row.get("channel_id"),
                 new ChannelData(row)
             );
         }
 
     }
 
-    public HashMap<Long, ChannelData> getChannels() {
+    public HashMap<String, ChannelData> getChannels() {
         return this.channels;
     }
 
-    public ChannelData getChannelData(long channel_id) {
+    public ChannelData getChannelData(String channel_id) {
         ChannelData cd = this.channels.get(channel_id);
         if (cd == null) {
+<<<<<<< HEAD
             cd = new ChannelData(channel_id, this.getIdString());
+=======
+            cd = new ChannelData(channel_id, this.getId());
+>>>>>>> main
             BotLogger.debug("Caching local ChannelData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(channel_id), LoggerIDpair.IDType.CHANNEL));
             this.channels.put(channel_id, cd);
         }
         return cd;
     }
 
-    public ChannelData getChannelData(String channel_id) {
-        return getChannelData(Long.parseLong(channel_id));
-    }
-
     public boolean deleteChannelData(String channel_id) {
-        ChannelData toDelete = this.channels.remove(Long.parseLong(channel_id));
+        ChannelData toDelete = this.channels.remove(channel_id);
         if (toDelete == null) {
             return true;
         }
@@ -573,15 +648,15 @@ public class GuildData {
     }
 
 
-    public Boolean getExpSystemRoom(Long id){
+    public Boolean getExpSystemRoom(String id){
         return getChannelData(id).isExpSystemEnabled();
     }
 
-    public Boolean getCommandStatsRoom(Long id){
+    public Boolean getCommandStatsRoom(String id){
         return getChannelData(id).getCommand();
     }
 
-    public double getExperienceModifier(Long id){
+    public double getExperienceModifier(String id){
         return getChannelData(id).getExperienceModifier();
     }
 
@@ -616,7 +691,11 @@ public class GuildData {
         }
         member = retriveMemberData(userId);
         if (member == null) {
+<<<<<<< HEAD
             member = new MemberData(userId, this.getIdString());
+=======
+            member = new MemberData(userId, this.getId());
+>>>>>>> main
             BotLogger.debug("Caching local MemberData => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
         }
         this.members.put(userId, member);
@@ -627,7 +706,7 @@ public class GuildData {
         return this.members;
     }
 
-    public boolean canReceiveExperience(long userId, long channelId) {
+    public boolean canReceiveExperience(long userId, String channelId) {
         return this.isExperienceEnabled() && this.getExpSystemRoom(channelId) && getMemberData(userId).canReceiveExperience();
     }
 

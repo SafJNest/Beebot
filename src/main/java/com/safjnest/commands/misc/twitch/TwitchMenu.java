@@ -7,9 +7,9 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.twitch.*;
 
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.interactions.components.ActionRow;
-import net.dv8tion.jda.api.interactions.components.LayoutComponent;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
 
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.GuildCache;
@@ -23,8 +23,8 @@ import java.util.Comparator;
 
 public class TwitchMenu extends SlashCommand{
 
-    public static List<LayoutComponent> getTwitchButtons(String guildId) {
-        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+    public static List<MessageTopLevelComponent> getTwitchButtons(String guildId) {
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
         List<Button> buttons = new ArrayList<>();
 
         List<String> subs = new ArrayList<>();
@@ -55,8 +55,8 @@ public class TwitchMenu extends SlashCommand{
         return buttonRows;
     }
 
-    public static List<LayoutComponent> getTwitchStreamerButtons(String streamedId) {
-        java.util.List<LayoutComponent> buttonRows = new ArrayList<>();
+    public static List<MessageTopLevelComponent> getTwitchStreamerButtons(String streamedId) {
+        java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
 
         Button goBack = Button.primary("twitch-back-" + streamedId, " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button changeMessage = Button.primary("twitch-changeMessage-" + streamedId, "message").withEmoji(CustomEmojiHandler.getRichEmoji("message"));

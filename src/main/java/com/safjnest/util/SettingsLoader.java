@@ -1,236 +1,72 @@
 package com.safjnest.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safjnest.model.BotSettings.AppConfig;
+import com.safjnest.model.BotSettings.BotSettings;
+import com.safjnest.model.BotSettings.JsonSettings;
+
 import java.io.File;
-import java.io.FileReader;
-import java.io.Reader;
-import java.awt.Color;
-import java.text.MessageFormat;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-
-import net.dv8tion.jda.api.entities.Activity;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 
 public class SettingsLoader {
-    private static final String path = "rsc" + File.separator + "settings.json";
-    private static final String databaseName = "Database";
-    private static final String testDatabaseName = "TestDatabase";
+    private static final String settingsPath = "rsc" + File.separator + "settings.json";
+    private static final String configPath = "config.properties";
 
-    private final String bot;
-    private final String database;
+    private static com.safjnest.model.BotSettings.Settings settings;
 
-    private final JSONObject settings;
+    public static AppConfig loadConfig(String filePath) throws IOException {
+        Properties properties = new Properties();
+        properties.load(new FileInputStream(filePath));
 
-    public SettingsLoader(String bot, boolean testDatabase) {
-        this.bot = bot;
-        this.database = testDatabase ? testDatabaseName : databaseName;
+        AppConfig loadedConfig = new AppConfig();
+        loadedConfig.setTesting(Boolean.parseBoolean(properties.getProperty("testing")));
+        loadedConfig.setBot(properties.getProperty("bot"));
+        loadedConfig.setHost(properties.getProperty("host"));
 
-        JSONObject settings = null;
-
-        JSONParser parser = new JSONParser();
-        try (Reader reader = new FileReader(path)) {
-            settings = (JSONObject) parser.parse(reader);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            this.settings = settings;
-        }
+        return loadedConfig;
     }
 
-    public SettingsLoader(String bot) {
-        this.bot = bot;
-        this.database = null;
-
-        JSONObject settings = null;
-
-        JSONParser parser = new JSONParser();
-        try (Reader reader = new FileReader(path)) {
-            settings = (JSONObject) parser.parse(reader);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            this.settings = settings;
-        }
-    }
-
-
-
-    private static String[] toStringArray(JSONArray array) {
-        if(array==null)
-            return new String[0];
+    public static JsonSettings loadJsonSettings(String filePath) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode rootNode = mapper.readTree(new File(filePath));
         
-        String[] arr = new String[array.size()];
-        for(int i = 0; i < arr.length; i++)
-            arr[i] = (String) array.get(i);
-        return arr;
+        JsonNode settingsNode = rootNode.get("settings");
+        if (settingsNode == null) {
+            throw new IllegalStateException("Missing 'settings' object in settings file");
+        }
+        return mapper.treeToValue(settingsNode, JsonSettings.class);
     }
 
-    private JSONObject getDiscordSettings() {
-        return (JSONObject) settings.get(bot);
+    public static BotSettings loadBotSettings(String filePath, String botName) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode rootNode = mapper.readTree(new File(filePath));
+        
+        JsonNode botsNode = rootNode.get("bots");
+        if (botsNode == null) {
+            throw new IllegalStateException("Missing 'bots' object in settings file");
+        }
+        JsonNode botNode = botsNode.get(botName);
+        return mapper.treeToValue(botNode, BotSettings.class);
     }
 
-    private JSONObject getBotSettings() {
-        return (JSONObject) settings.get("settings"); 
+    public static void loadSettings(String settingsPath, String configPath) throws IOException {
+        AppConfig config = loadConfig(configPath);
+        JsonSettings jsonSettings = loadJsonSettings(settingsPath);
+        BotSettings botSettings = loadBotSettings(settingsPath, config.getBot());
+        settings = new com.safjnest.model.BotSettings.Settings(config, jsonSettings, botSettings);
     }
 
-    private JSONObject getDatabaseSettings() {
-        return (JSONObject) getBotSettings().get(database);
-    }
-
-    private JSONObject getTwitchSettings() {
-        return (JSONObject) getBotSettings().get("Twitch");
-    }
-
-    private JSONObject getRiotSettings() {
-        return (JSONObject) getBotSettings().get("Riot");
-    }
-
-    private JSONObject getLavalinkSettings() {
-        return (JSONObject) getBotSettings().get("Lavalink");
-    }
-
-    private JSONObject getSpotifySettings() {
-        return (JSONObject) getBotSettings().get("Spotify");
-    }
-
-    public String getPrefix() {
-        return getDiscordSettings().get("prefix").toString();
-    }
-
-    public Activity getActivity() {
-        return Activity.listening(MessageFormat.format(getDiscordSettings().get("activity").toString().replace("{0}", getPrefix()), getPrefix()));
-    }
-
-    public String getDiscordToken() {
-        return getDiscordSettings().get("discordToken").toString();
-    }
-
-    public Color getEmbedColor() {
-        return Color.decode(getDiscordSettings().get("embedColor").toString());
-    }
-
-    public String getOwnerID() {
-        return getDiscordSettings().get("ownerID").toString();
-    }
-
-    public String[] getCoOwnerIDs() {
-        return toStringArray((JSONArray) getDiscordSettings().get("coOwnersIDs"));
-    }
-
-    public String getHelpWord() {
-        return getDiscordSettings().get("helpWord").toString();
-    }
-
-    public Integer getMaxPrime() {
-        return Integer.valueOf(getDiscordSettings().get("maxPrime").toString());
-    }
-
-    public String getWeatherAPIKey() {
-        return getBotSettings().get("weatherApiKey").toString();
-    }
-
-    public String getNasaApiKey() {
-        return getBotSettings().get("nasaApiKey").toString();
-    }
-
-    public Integer getMaxFreePlaylists() {
-        return Integer.valueOf(getDiscordSettings().get("maxFreePlaylists").toString());
-    }
-
-    public Integer getMaxFreePlaylistSize() {
-        return Integer.valueOf(getDiscordSettings().get("maxFreePlaylistSize").toString());
-    }
-
-    public Integer getMaxPremiumPlaylists() {
-        return Integer.valueOf(getDiscordSettings().get("maxPremiumPlaylists").toString());
-    }
-
-    public Integer getMaxPremiumPlaylistSize() {
-        return Integer.valueOf(getDiscordSettings().get("maxPremiumPlaylistSize").toString());
-    }
-
-    public String getInfo() {
-        return getDiscordSettings().get("info").toString();
-    }
-
-    public String getTTSApiKey() {
-        return getBotSettings().get("ttsApiKey").toString();
-    }
-
-    public String getDBHostname() {
-        return getDatabaseSettings().get("HostName").toString();
-    }
-
-    public String getDBName() {
-        return getDatabaseSettings().get("database").toString();
-    }
-
-    public String getDBUser() {
-        return getDatabaseSettings().get("user").toString();
-    }
-
-    public String getDBPassword() {
-        return getDatabaseSettings().get("password").toString();
-    }
-
-    public String getTwitchClientId() {
-        return getTwitchSettings().get("clientId").toString();
-    }
-
-    public String getTwitchClientSecret() {
-        return getTwitchSettings().get("clientSecret").toString();
-    }
-
-    public String getRiotKey() {
-        return getRiotSettings().get("riotKey").toString();
-    }
-
-    public String getLOLVersion() {
-        return getRiotSettings().get("lolVersion").toString();
-    }
-
-    public String getLavalinkHost() {
-        return getLavalinkSettings().get("host").toString();
-    }
-
-    public String getPoToken() {
-        return getLavalinkSettings().get("potoken").toString();
-    }
-
-    public boolean isPoTokenEnabled() {
-        return getLavalinkSettings().get("potokenEnabled").toString().equals("1");
-    }
-
-    public boolean isRotorEnabled() {
-        return getLavalinkSettings().get("rotorEnabled").toString().equals("1");
-    }
-
-    public String getVisitorData() {
-        return getLavalinkSettings().get("visitordata").toString();
-    }
-
-    public String getIpv6Block() {
-        return getLavalinkSettings().get("ipv6block").toString();
-    }
-
-    public String getLavalinkPassword() {
-        return getLavalinkSettings().get("password").toString();
-    }
-
-    public String getSpotifyClientID() {
-        return getSpotifySettings().get("clientid").toString();
-    }
-
-    public String getSpotifyClientSecret() {
-        return getSpotifySettings().get("clientsecret").toString();
-    }
-
-    public String getSpotifySPDC() {
-        return getSpotifySettings().get("spdc").toString();
-    }
-
-    public String getSpotifyCountryCode() {
-        return getSpotifySettings().get("countrycode").toString();
+    public static com.safjnest.model.BotSettings.Settings getSettings() {
+        if (settings == null) {
+            try {
+                loadSettings(settingsPath, configPath);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to load settings", e);
+            }
+        }
+        return settings;
     }
 }

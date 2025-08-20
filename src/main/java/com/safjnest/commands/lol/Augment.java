@@ -8,8 +8,12 @@ import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
+<<<<<<< HEAD
 import com.safjnest.util.lol.AugmentData;
+=======
+>>>>>>> main
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.model.AugmentData;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;

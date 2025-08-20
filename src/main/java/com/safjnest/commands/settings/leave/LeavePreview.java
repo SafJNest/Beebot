@@ -5,6 +5,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -33,10 +34,10 @@ public class LeavePreview extends SlashCommand{
         AlertData leave = gs.getAlert(AlertType.LEAVE);
 
         if(leave == null) {
-            event.deferReply(true).addContent("This guild doesn't have a leave message.").queue();
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.LEAVE)).useComponentsV2().queue();
             return;
         }
 
-        event.deferReply(false).addEmbeds(leave.getSampleEmbed(event.getGuild()).build()).queue();
+        event.deferReply().addComponents(AlertMessage.build(gs, leave)).useComponentsV2().queue();
     }
 }

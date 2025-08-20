@@ -15,11 +15,12 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonStyle;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -99,7 +100,7 @@ public class ListUser extends SlashCommand{
             right = right.asDisabled();
         }
 
-        event.deferReply(false).addEmbeds(eb.build()).addActionRow(left, center, right, order).queue();
+        event.deferReply(false).addEmbeds(eb.build()).addComponents(ActionRow.of(left, center, right, order)).queue();
     }    
 
     @Override
@@ -147,6 +148,6 @@ public class ListUser extends SlashCommand{
             right = right.asDisabled();
         }
 
-        event.getChannel().sendMessageEmbeds(eb.build()).addActionRow(left, center, right, order).queue();
+        event.getChannel().sendMessageEmbeds(eb.build()).setComponents(ActionRow.of(left, center, right, order)).queue();
     }
 }

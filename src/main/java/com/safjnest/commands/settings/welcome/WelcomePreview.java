@@ -5,6 +5,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -34,11 +35,11 @@ public class WelcomePreview extends SlashCommand{
 
 
         if(welcome == null) {
-            event.deferReply(true).addContent("This guild doesn't have a welcome message.").queue();
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.WELCOME)).useComponentsV2().queue();
             return;
         }
 
-        event.deferReply(false).addEmbeds(welcome.getSampleEmbed(event.getGuild()).build()).queue();
+        event.deferReply().addComponents(AlertMessage.build(gs, welcome)).useComponentsV2().queue();
     }
 
 }

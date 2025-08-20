@@ -1,0 +1,119 @@
+:root {
+  --discord: rgb(28, 27, 32);
+  --beebot: #ffc823;
+  --washedBeebot: #ffe391;
+}
+
+.bg-primary {
+  background-color: var(--discord) !important;
+}
+
+@media (min-width: 992px) {
+  #mainNav .navbar-brand {
+    font-size: 3em;
+    transition: font-size 0.3s;
+    color: var(--discord);
+  }
+}
+
+@media (min-width: 992px) {
+  .navbar-expand-lg .navbar-collapse {
+    display: flex !important;
+    flex-basis: auto;
+    font-size: 1.5em;
+    height: 100% !important;
+  }
+}
+
+@media (min-width: 992px) {
+  #mainNav .navbar-nav li.nav-item a.nav-link {
+    color: var(--discord) !important;
+  }
+}
+
+@media (min-width: 992px) {
+  #mainNav .navbar-nav li.nav-item a.nav-link:hover {
+    color: rgb(255, 255, 255) !important;
+  }
+}
+
+@media (min-width: 992px) {
+  #mainNav {
+    background-color: var(--beebot) !important;
+    color: var(--discord) !important;
+  }
+}
+
+.info {
+  background-color: var(--washedBeebot)!important;
+}
+
+.info-bot {
+  font-size: 1.117em;
+  font-family: "Montserrat";
+  font-weight: bold;
+}
+
+.info-bot span {
+  background-color: rgba(0, 0, 0, 0) !important;
+  color: var(--discord) !important;
+}
+
+.text-secondary {
+  color: var(--discord) !important;
+}
+
+.bg-secondary {
+  background-color: var(--beebot) !important;
+}
+
+.table-div {
+  padding-left: 9%;
+  padding-right: 9%;
+  padding-top: 1.117%;
+}
+
+tr, th, td {
+  border: none !important;
+}
+
+table {
+  border: 5px solid var(--beebot) !important;
+}
+
+.top-table {
+  background-color: var(--beebot) !important;
+}
+
+.table {
+  text-align: center;
+  background-color: white !important;
+  font-family: "Montserrat";
+  font-weight: bold;
+}
+
+.copyright {
+  font-family: "Montserrat";
+  background-color: var(--discord) !important;
+}
+
+@media (min-width: 992px) {
+  #mainNav .navbar-nav > li.nav-item > a.nav-link.active:active, #mainNav .navbar-nav > li.nav-item > a.nav-link.active:focus, #mainNav .navbar-nav > li.nav-item > a.nav-link.active:hover {
+    color: black !important;
+    background: var(--washedBeebot);
+  }
+}
+
+@media (min-width: 992px) {
+  #mainNav .navbar-nav > li.nav-item > a.nav-link.active {
+    background: var(--washedBeebot);
+  }
+}
+
+@media (min-width: 992px) {
+  .mx-lg-1 {
+    margin-right: 0 !important;
+    margin-left: .25rem !important;
+  }
+}
+

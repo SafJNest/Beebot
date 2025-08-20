@@ -2,9 +2,12 @@ package com.safjnest.model.sound;
 
 import java.sql.Timestamp;
 import java.util.List;
+<<<<<<< HEAD
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+=======
+>>>>>>> main
 
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.sql.DatabaseHandler;
@@ -101,7 +104,7 @@ public class Sound {
 
     @JsonIgnore
     public String getPath() {
-        return "rsc" + java.io.File.separator + "SoundBoard" + java.io.File.separator + ID + "." + extension;
+        return "rsc" + java.io.File.separator + "sounds" + java.io.File.separator + ID + "." + extension;
     }
 
     @JsonIgnore

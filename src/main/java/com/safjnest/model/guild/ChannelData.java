@@ -19,8 +19,8 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
  */
 public class ChannelData {
 
-    private int ID;
-    private final long CHANNEL_ID;
+    private String ID;
+    private final String CHANNEL_ID;
     private final String GUILD_ID;
         
     private boolean expEnabled;
@@ -30,8 +30,8 @@ public class ChannelData {
 
     private LeagueShard leagueShard;
 
-    public ChannelData(long CHANNEL_ID, String GUILD_ID) {
-        this.ID = 0;
+    public ChannelData(String CHANNEL_ID, String GUILD_ID) {
+        this.ID = "0";
         this.CHANNEL_ID = CHANNEL_ID;
         this.GUILD_ID = GUILD_ID;
 
@@ -44,8 +44,8 @@ public class ChannelData {
     }
     
     public ChannelData(QueryRecord data) {
-        this.ID = data.getAsInt("id");
-        this.CHANNEL_ID = data.getAsLong("channel_id");
+        this.ID = data.get("id");
+        this.CHANNEL_ID = data.get("channel_id");
         this.GUILD_ID = data.get("guild_id");
 
         this.expEnabled = data.getAsBoolean("exp_enabled");
@@ -57,11 +57,11 @@ public class ChannelData {
 
     }
 
-    public int getId() {
+    public String getId() {
         return this.ID;
     }
 
-    public long getRoomId() {
+    public String getRoomId() {
         return this.CHANNEL_ID;
     }
 
@@ -123,16 +123,16 @@ public class ChannelData {
     }
 
     public boolean terminator5LaRivolta() {
-        if (this.ID == 0) {
+        if (this.ID.equals("0")) {
             return true;
         }
         return DatabaseHandler.deleteChannelData(this.ID);
     }
 
     private void handleEmptyID() {
-        if (this.ID == 0) {
+        if (this.ID.equals("0")) {
             BotLogger.debug("Pushing local ChannelData into Database => {0}", new LoggerIDpair(String.valueOf(this.CHANNEL_ID), LoggerIDpair.IDType.CHANNEL));
-            this.ID = DatabaseHandler.insertChannelData(Long.valueOf(this.GUILD_ID), this.CHANNEL_ID);
+            this.ID = DatabaseHandler.insertChannelData(this.GUILD_ID, this.CHANNEL_ID);
         }
     }
 

@@ -88,9 +88,9 @@ public class PrintCache extends Command {
                 event.reply("Sound size set to " + args[1]);
                 break;
             case "clear":
-                // Bot.getGuildSettings().clear();
-                // Bot.getUsers().clear();
-                //SoundHandler.getSoundCache().clear();
+                GuildCache.getInstance().clear();
+                UserCache.getInstance().clear();
+                SoundCache.getInstance().clear();
                 event.reply("Cache cleared");
                 break;
             default:
@@ -138,7 +138,11 @@ public class PrintCache extends Command {
         for(GuildData gd : gs.values()){
             try {
                 if(!forbidden.contains(String.valueOf(gd.getId()))) {
+<<<<<<< HEAD
                     long time = gs.expiresAfter(gd.getIdString());
+=======
+                    long time = gs.expiresAfter(gd.getId());
+>>>>>>> main
                     totalUsers += gd.getMembers().size();
                     totalChannels += gd.getChannels().size();
                     totalAlerts += gd.isAlertsCached() ? 1 : 0;
@@ -193,7 +197,7 @@ public class PrintCache extends Command {
             }
             else {
                 for(String account : lolAccounts.keySet()) {
-                    Summoner s = LeagueHandler.getSummonerByAccountId(account, LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))]);
+                    Summoner s = LeagueHandler.getSummonerByPuuid(account, LeagueShard.values()[Integer.valueOf(lolAccounts.get(account))]);
                     RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(s);
                     lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
                 }

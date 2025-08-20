@@ -1,0 +1,15 @@
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playsound 1v9 song', 2, 'draven', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playsound 1v9 song', 3, 'draven', '440489230968553472');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playyoutube kassadin 30-0', 4, 'kassadin', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('randommove 440489230968553472 10', 5, 'pantalone', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('test 13', 6, 'cache2', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('test', 7, 'teteste', '440489230968553472');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('comando', 8, 'nomeAlias', '440489230968553472');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('randommove 440489230968553472 10', 9, 'pantalone', '707479292644163604');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playyoutube https://www.youtube.com/watch?v=UT5F9AXjwhg&ab_channel=PanlasangBikoL', 10, '10', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playyoutube https://www.youtube.com/watch?v=FAyKDaXEAgc&ab_channel=DanielThrasher', 11, '10j', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('test 20', 12, 'coda', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playyoutube https://www.youtube.com/watch?v=p1LchwNFSVE&list=PLNl9OQRKASG8E4EjhuLumfQ1TV7ZeHTJJ&ab_channel=SuperKek', 13, 'freddy', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playsound https://www.youtube.com/watch?v=-mjycHrfp4c&list=PL7SE7Mmvc4VU8sxVjjB3CHG_YFdQ9gQnn&ab_channel=AmmiraglioEpereia', 14, 'pantalonesong', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playyoutube https://www.youtube.com/watch?v=-mjycHrfp4c&list=PL7SE7Mmvc4VU8sxVjjB3CHG_YFdQ9gQnn&ab_channel=AmmiraglioEpereia', 15, 'pantalonesong', '383358222972616705');
+insert into `alias` (`command`, `id`, `name`, `user_id`) values ('playyoutube https://www.youtube.com/watch?v=-7UPWxGIW_4&list=PLO2J-X1ZFuLlnnR-sJUyhjnW_imk8sPFi&ab_channel=Yurkyu', 16, '1v9', '383358222972616705');

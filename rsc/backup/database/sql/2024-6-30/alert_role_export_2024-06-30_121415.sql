@@ -1,0 +1,17 @@
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (30, 43, '1214540000826368013');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (14, 44, '1199657596836134942');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (48, 60, '1199657596836134942');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (49, 61, '1119582247763329095');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (50, 62, '1119582321947971656');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (51, 63, '691701297195253811');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (52, 64, '735852621147144223');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (53, 65, '1119912139843452968');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (54, 66, '732671412870971422');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (55, 77, '911000079027019806');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (56, 78, '1199657596836134942');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (57, 79, '1217769692203061368');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (59, 80, '1191835670445035571');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (63, 84, '1171481659057655932');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (60, 85, '691701297195253811');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (60, 86, '691012864609222667');
+insert into `alert_role` (`alert_id`, `id`, `role_id`) values (67, 87, '1225355690596368387');

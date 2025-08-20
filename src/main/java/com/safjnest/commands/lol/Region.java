@@ -48,7 +48,7 @@ public class Region extends SlashCommand {
         TextChannel channel = event.getOption("channel") != null ? event.getOption("channel").getAsChannel().asTextChannel() : null;
 
         if (channel != null) {
-            if (!gs.getChannelData(channel.getIdLong()).setLeagueShard(shard)) {
+            if (!gs.getChannelData(channel.getId()).setLeagueShard(shard)) {
                 event.getHook().sendMessage("Something went wrong.").queue();
                 return;
             }

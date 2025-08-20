@@ -29,7 +29,11 @@ public class RewardData extends AlertData{
 
     public static RewardData createRewardData(String guild_id, String message, String privateMessage, AlertSendType sendType, List<String> roles, int level, boolean temporary) {
         int id = DatabaseHandler.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.REWARD);
+<<<<<<< HEAD
         DatabaseHandler.createRolesAlert(String.valueOf(id), roles);
+=======
+        HashMap<Integer, String> rolesMap = roles != null ? DatabaseHandler.createRolesAlert(String.valueOf(id), roles) : new HashMap<>();
+>>>>>>> main
         DatabaseHandler.createRewardData(String.valueOf(id), level, temporary);
         return new RewardData(id, message, privateMessage, true, sendType, roles, level, temporary);
     }
