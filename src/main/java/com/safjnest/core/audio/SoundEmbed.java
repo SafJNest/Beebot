@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
@@ -24,6 +25,11 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.container.ContainerChildComponent;
+import net.dv8tion.jda.api.components.section.Section;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+import net.dv8tion.jda.api.components.thumbnail.Thumbnail;
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.requests.restaction.interactions.ReplyCallbackAction;
@@ -241,37 +247,32 @@ public class SoundEmbed {
         return composeSoundboard(event, name, null, sounds);
     }
 
-    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, InputStream thumbnail,
-            List<Sound> sounds) {
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(event.getUser().getName() + " requested:", "https://github.com/SafJNest",
-                event.getUser().getAvatarUrl());
-        eb.setTitle("**" + name + "**");
+    public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, InputStream thumbnail, List<Sound> sounds) {
+        List<Container> containers = new ArrayList<>();
+        List<ContainerChildComponent> children = new ArrayList<>();
+        children.add(Section.of(
+            Thumbnail.fromFile(FileUpload.fromData(thumbnail, "thumbnail.png")), 
+            TextDisplay.of("Press a button to play a sound.\n" + sounds.size() + " / 25 sounds.")
+        ));
+        containers.add(Container.of(children).withAccentColor(Bot.getColor()));
+        children.clear();
 
-        if (thumbnail != null)
-            eb.setThumbnail("attachment://thumbnail.png");
-        else
-            eb.setThumbnail(Bot.getJDA().getSelfUser().getAvatarUrl());
-
-        eb.setDescription("Press a button to play a sound");
-        eb.setColor(Bot.getColor());
-        eb.setFooter(sounds.size() + " / 25 sounds");
-
-        List<MessageTopLevelComponent> rows = new ArrayList<>();
-        List<Button> row = new ArrayList<>();
+        List<Button> buttons = new ArrayList<>();
         for (int i = 0; i < sounds.size(); i++) {
-            row.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(),
-                    sounds.get(i).getName()));
-            if (row.size() == 5 || i == sounds.size() - 1) {
-                rows.add(ActionRow.of(row));
-                row = new ArrayList<>();
+            buttons.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(), sounds.get(i).getName()));
+            if (buttons.size() == 5 || i == sounds.size() - 1) {
+                children.add(ActionRow.of(buttons));
+                buttons = new ArrayList<>();
             }
         }
+        containers.add(Container.of(children).withAccentColor(Bot.getColor()));
 
-        if (thumbnail != null)
-            return event.deferReply().addEmbeds(eb.build()).addFiles(FileUpload.fromData(thumbnail, "thumbnail.png"))
-                    .setComponents(rows);
-        return event.deferReply().addEmbeds(eb.build()).setComponents(rows);
+        Button random = Button.primary("soundboard-random", " ")
+                .withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+        Button stop = Button.danger("soundboard-stop", " ")
+                .withEmoji(CustomEmojiHandler.getRichEmoji("stop"));
+        containers.add(Container.of(ActionRow.of(random, stop)).withAccentColor(Bot.getColor()));
+        return event.deferReply().addComponents(containers).useComponentsV2();
     }
 
     public static void composeSoundboard(CommandEvent event, String soundboardID) {
