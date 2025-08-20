@@ -250,8 +250,10 @@ public class SoundEmbed {
     public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String name, InputStream thumbnail, List<Sound> sounds) {
         List<Container> containers = new ArrayList<>();
         List<ContainerChildComponent> children = new ArrayList<>();
+        
+        Thumbnail thumb = thumbnail != null ? Thumbnail.fromFile(FileUpload.fromData(thumbnail, "thumbnail.png")) : Thumbnail.fromUrl(event.getJDA().getSelfUser().getAvatarUrl());
         children.add(Section.of(
-            Thumbnail.fromFile(FileUpload.fromData(thumbnail, "thumbnail.png")), 
+            thumb, 
             TextDisplay.of("Press a button to play a sound.\n" + sounds.size() + " / 25 sounds.")
         ));
         containers.add(Container.of(children).withAccentColor(Bot.getColor()));
