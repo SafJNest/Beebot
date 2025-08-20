@@ -10,27 +10,42 @@ import java.util.stream.Stream;
 
 import org.jetbrains.annotations.Unmodifiable;
 
+import com.safjnest.core.audio.PlayerManager;
+import com.safjnest.core.audio.TrackData;
+import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.sound.Sound;
 import com.safjnest.util.AlertMessage;
 
 
 import com.safjnest.util.spotify.SpotifyMessage;
 import com.safjnest.util.spotify.SpotifyMessageType;
 import com.safjnest.util.spotify.SpotifyTimeRange;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
+import net.dv8tion.jda.api.components.tree.MessageComponentTree;
 import net.dv8tion.jda.api.components.utils.ComponentIterator;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.IMentionable;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionEvent;
 
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
@@ -63,6 +78,8 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
         case "spotify":
           spotify(event, innerType, args);
           break;
+        case "soundboard":
+          soundboard(event, innerType, args);
         default:
           break;
       }
@@ -225,4 +242,71 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
       Objects.requireNonNull(Button.class);
       return (List)var10000.map(Button.class::cast).collect(Collectors.toList());
     }  
+
+      private void soundboard(GenericComponentInteractionCreateEvent event, String innerType, String args) {
+        Guild guild = event.getGuild();
+        System.out.println(args);
+        String sound_id = innerType.split("\\.")[0];
+
+        List<Button> buttons = getButtons(event).stream()
+          .filter(b -> b.getCustomId().startsWith("soundboard-") && !b.getCustomId().endsWith("-stop") && !b.getCustomId().endsWith("-random"))
+          .collect(Collectors.toList());
+        
+        PlayerManager pm = PlayerManager.get();
+        switch (innerType) {
+            case "stop":
+                pm.getGuildMusicManager(guild).getTrackScheduler().stop();
+                return;
+            case "random":
+                int randomIndex = (int) (Math.random() * buttons.size());
+                sound_id = buttons.get(randomIndex).getCustomId().split("-")[1].split("\\.")[0];
+                break;
+            default: 
+                break;
+        }
+
+        final String id = sound_id;
+
+        MessageComponentTree tree = event.getMessage().getComponentTree();
+        for (Button button : buttons) {
+          button = button.withStyle(ButtonStyle.PRIMARY);
+          if (button.getCustomId().startsWith("soundboard-" + id + "."))
+            button = button.withStyle(ButtonStyle.SUCCESS);
+          tree = tree.replace(ComponentReplacer.byUniqueId(button.getUniqueId(), button));
+        }
+
+        TextChannel textChannel = event.getChannel().asTextChannel();
+        AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
+
+        Sound sound = SoundCache.getSoundById(id);
+        String path = sound.getPath();
+
+        final MessageComponentTree finalTree = tree;
+
+        pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(audioChannel);
+
+                sound.increaseUserPlays(event.getMember().getId(), AudioType.SOUNDBOARD);
+                track.setUserData(new TrackData(AudioType.SOUNDBOARD));
+                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUNDBOARD);
+                event.getHook().editOriginalComponents(finalTree).useComponentsV2().queue();
+            }
+
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {}
+
+            @Override
+            public void noMatches() {
+                textChannel.sendMessage("File not found").queue();
+            }
+
+            @Override
+            public void loadFailed(FriendlyException throwable) {
+                System.out.println("error: " + throwable.getMessage());
+            }
+        });
+
+    }
 }

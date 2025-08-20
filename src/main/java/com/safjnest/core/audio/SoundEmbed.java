@@ -257,24 +257,27 @@ public class SoundEmbed {
         List<Container> containers = new ArrayList<>();
         List<ContainerChildComponent> children = new ArrayList<>();
         children.add(Section.of(
-                Thumbnail.fromFile(FileUpload.fromData(thumbnail, "thumbnail.png")), 
-                TextDisplay.of("Press a button to play a sound.\n" + sounds.size() + " / 25 sounds.")
-            ));
+            Thumbnail.fromFile(FileUpload.fromData(thumbnail, "thumbnail.png")), 
+            TextDisplay.of("Press a button to play a sound.\n" + sounds.size() + " / 25 sounds.")
+        ));
         containers.add(Container.of(children).withAccentColor(Bot.getColor()));
         children.clear();
 
         List<Button> buttons = new ArrayList<>();
         for (int i = 0; i < sounds.size(); i++) {
-            buttons.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(),
-                    sounds.get(i).getName()));
+            buttons.add(Button.primary("soundboard-" + sounds.get(i).getId() + "." + sounds.get(i).getExtension(), sounds.get(i).getName()));
             if (buttons.size() == 5 || i == sounds.size() - 1) {
-                containers.add(Container.of(ActionRow.of(buttons)).withAccentColor(Bot.getColor()));
+                children.add(ActionRow.of(buttons));
                 buttons = new ArrayList<>();
             }
         }
-   
+        containers.add(Container.of(children).withAccentColor(Bot.getColor()));
 
-
+        Button random = Button.primary("soundboard-random", " ")
+                .withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+        Button stop = Button.danger("soundboard-stop", " ")
+                .withEmoji(CustomEmojiHandler.getRichEmoji("stop"));
+        containers.add(Container.of(ActionRow.of(random, stop)).withAccentColor(Bot.getColor()));
         return event.deferReply().addComponents(containers).useComponentsV2();
     }
 

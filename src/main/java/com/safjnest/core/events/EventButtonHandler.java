@@ -97,7 +97,6 @@ public class EventButtonHandler extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
-        if (event.getMessage().isUsingComponentsV2()) return;
         String buttonId = event.getButton().getCustomId();
 
         if (buttonId.startsWith("sound-")) {
@@ -160,9 +159,6 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if(buttonId.startsWith("unban-"))
             pardonUserEvent(event);
-
-        else if(buttonId.startsWith("soundboard-"))
-            soundboardEvent(event);
 
         else if(buttonId.startsWith("queue-"))
             queue(event);
@@ -1564,44 +1560,4 @@ public class EventButtonHandler extends ListenerAdapter {
                 (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
         );
     }
-
-
-    private void soundboardEvent(ButtonInteractionEvent event){
-        Guild guild = event.getGuild();
-        String args = event.getButton().getCustomId().substring(event.getButton().getCustomId().indexOf("-") + 1);
-
-        TextChannel textChannel = event.getChannel().asTextChannel();
-        AudioChannel audioChannel = event.getMember().getVoiceState().getChannel();
-
-        String sound_id = args.split("\\.")[0];
-        Sound sound = SoundCache.getSoundById(sound_id);
-        String path = sound.getPath();
-
-        PlayerManager pm = PlayerManager.get();
-        pm.loadItemOrdered(guild, path, new AudioLoadResultHandler() {
-            @Override
-            public void trackLoaded(AudioTrack track) {
-                if (!guild.getAudioManager().isConnected()) guild.getAudioManager().openAudioConnection(audioChannel);
-
-                sound.increaseUserPlays(event.getMember().getId(), AudioType.SOUNDBOARD);
-                track.setUserData(new TrackData(AudioType.SOUNDBOARD));
-                pm.getGuildMusicManager(guild).getTrackScheduler().play(track, AudioType.SOUNDBOARD);
-            }
-
-            @Override
-            public void playlistLoaded(AudioPlaylist playlist) {}
-
-            @Override
-            public void noMatches() {
-                textChannel.sendMessage("File not found").queue();
-            }
-
-            @Override
-            public void loadFailed(FriendlyException throwable) {
-                System.out.println("error: " + throwable.getMessage());
-            }
-        });
-
-    }
-
 }
