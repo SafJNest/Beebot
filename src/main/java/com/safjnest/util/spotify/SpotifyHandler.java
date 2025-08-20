@@ -20,6 +20,8 @@ import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.sql.SpotifyDBHandler;
 import com.safjnest.sql.WebsiteDBHandler;
 import com.safjnest.util.HttpUtils;
+import com.safjnest.util.spotify.type.SpotifyMessageType;
+import com.safjnest.util.spotify.type.SpotifyTimeRange;
 import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;

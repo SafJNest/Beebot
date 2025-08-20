@@ -5,12 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.jetbrains.annotations.Unmodifiable;
 
 import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.LeagueDBHandler;
@@ -64,7 +59,6 @@ import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
-import net.dv8tion.jda.api.components.utils.ComponentIterator;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
@@ -78,22 +72,6 @@ import com.safjnest.core.cache.managers.GuildCache;
 
 
 public class EventButtonHandler extends ListenerAdapter {
-
-
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public @Unmodifiable List<Button> getButtons(ButtonInteractionEvent event) {
-      Stream var10000 = ComponentIterator.createStream(event.getMessage().getComponents());
-      Objects.requireNonNull(Button.class);
-      var10000 = var10000.filter(Button.class::isInstance);
-      Objects.requireNonNull(Button.class);
-      return (List)var10000.map(Button.class::cast).collect(Collectors.toList());
-   }
-
-    public Button getButtonById(ButtonInteractionEvent event, String id) {
-      return (Button)getButtons(event).stream().filter((it) -> {
-         return id.equals(it.getCustomId());
-      }).findFirst().orElse((Button)null);
-   }
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
@@ -198,7 +176,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String type = "";
         String userId = "";
 
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("greet-user-") || b.getCustomId().startsWith("greet-back-"))
                 userId = b.getCustomId().split("-")[2];
         }
@@ -257,7 +235,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         int page = 0;
         int playlistId = 0;
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("playlist-center")) {
                 playlistId = Integer.parseInt(b.getCustomId().split("-")[2]);
                 page = Integer.parseInt(b.getLabel().split(" ")[1].trim()) - 1;
@@ -522,7 +500,7 @@ public class EventButtonHandler extends ListenerAdapter {
     public void sound(ButtonInteractionEvent event) {
         String args = event.getButton().getCustomId().split("-", 3)[1];
         String soundId = "";
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getLabel().startsWith("ID"))
                 soundId = b.getLabel().substring(b.getLabel().indexOf(":") + 2);
         }
@@ -590,7 +568,7 @@ public class EventButtonHandler extends ListenerAdapter {
         Button center = null;
 
         String level = "";
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getLabel().startsWith("Level")) {
                 level = b.getLabel().substring(b.getLabel().indexOf(":") + 2);
             }
@@ -812,7 +790,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         int index = 0;
 
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("lol-center-")) {
                 puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
                 region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
@@ -862,7 +840,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
                 break;
             case "refresh":
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getCustomId().startsWith("lol-center")) {
                         parts = b.getCustomId().split("-", 3);
 
@@ -872,7 +850,7 @@ public class EventButtonHandler extends ListenerAdapter {
                     }
                 }
 
-                if (getButtonById(event, "lol-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
 
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
                 LeagueHandler.clearSummonerCache(s);
@@ -880,13 +858,13 @@ public class EventButtonHandler extends ListenerAdapter {
             case "match":
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-                if (getButtonById(event, "lol-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
                 event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, null, 0)).queue();
                 return;
             case "rank":
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-                if (getButtonById(event, "lol-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
 
                 List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
 
@@ -907,7 +885,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 puuid = parts[2].substring(0, parts[2].indexOf("#"));
                 platform = parts[2].substring(parts[2].indexOf("#") + 1);
 
-                if (getButtonById(event, "lol-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
             break;
             case "queue":
@@ -915,7 +893,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 queueString = parts[2];
                 queue = queueString.equals("all") ? null : GameQueueType.valueOf(queueString);
 
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getCustomId().startsWith("lol-season") && b.getStyle() == ButtonStyle.SUCCESS) {
                         parts = b.getCustomId().split("-", 3);
 
@@ -933,7 +911,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         break;
                     }
                 }
-                if (getButtonById(event, "lol-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
             case "season":
@@ -950,7 +928,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         break;
                 }
 
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getCustomId().startsWith("lol-queue") && b.getStyle() == ButtonStyle.SUCCESS) {
                         parts = b.getCustomId().split("-", 3);
                         queueString = parts[2];
@@ -958,7 +936,7 @@ public class EventButtonHandler extends ListenerAdapter {
                         break;
                     }
                 }
-                if (getButtonById(event, "lol-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
         }
@@ -979,7 +957,7 @@ public class EventButtonHandler extends ListenerAdapter {
         GameQueueType queue = null;
         int page = 0;
 
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("match-center-")) {
                 puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
                 region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
@@ -1030,7 +1008,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 break;
             case "refresh":
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getCustomId().startsWith("match-center-")) {
                         String[] parts = b.getCustomId().split("-", 3);
 
@@ -1042,7 +1020,7 @@ public class EventButtonHandler extends ListenerAdapter {
                     }
                 }
 
-                if (getButtonById(event, "match-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
 
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
                 LOLMatch lastMatch = queue != null ? s.getLeagueGames().withCount(1).withQueue(queue).getMatchIterator().iterator().next() : s.getLeagueGames().withCount(1).getMatchIterator().iterator().next();
@@ -1051,7 +1029,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 LeagueHandler.clearSummonerCache(s);
                 break;
             case "queue":
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getCustomId().startsWith("match-center-")) {
                         String[] parts = b.getCustomId().split("-", 3);
 
@@ -1061,7 +1039,7 @@ public class EventButtonHandler extends ListenerAdapter {
                     }
                 }
 
-                if (getButtonById(event, "match-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
 
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
 
@@ -1070,14 +1048,14 @@ public class EventButtonHandler extends ListenerAdapter {
             case "lol":
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-                if (getButtonById(event, "match-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
 
                 event.getMessage().editMessageEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(LeagueMessage.getSummonerButtons(s, user_id)).queue();
                 return;
             case "rank":
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-                if (getButtonById(event, "match-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
 
                 List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
 
@@ -1094,19 +1072,19 @@ public class EventButtonHandler extends ListenerAdapter {
                 return;
             case "match":
                 page = 0;
-                if (getButtonById(event, "match-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
             case "matchleft":
                 page = page - 5;
                 if (page < 0) page = 0;
-                if (getButtonById(event, "match-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
             case "matchright":
                 page = page + 5;
 
-                if (getButtonById(event, "match-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
         }
@@ -1123,7 +1101,7 @@ public class EventButtonHandler extends ListenerAdapter {
         String region = "";
         int index = 0;
 
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("rank-center-")) {
                 puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
                 region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
@@ -1181,7 +1159,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "refresh":
                 String platform = "";
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (!b.getCustomId().equals("rank-left") && !b.getCustomId().equals("rank-right") && !b.getCustomId().equals("rank-refresh")) {
                         String[] parts = b.getCustomId().split("-", 3);
                         puuid = parts[2].substring(0, parts[2].indexOf("#"));
@@ -1190,7 +1168,7 @@ public class EventButtonHandler extends ListenerAdapter {
                     }
                 }
 
-                if (getButtonById(event, "rank-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "rank-left") == null) user_id = "";
 
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
 
@@ -1203,14 +1181,14 @@ public class EventButtonHandler extends ListenerAdapter {
             case "lol":
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-                if (getButtonById(event, "rank-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "rank-left") == null) user_id = "";
 
                 event.getMessage().editMessageEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(LeagueMessage.getSummonerButtons(s, user_id)).queue();
                 return;
             case "match":
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-                if (getButtonById(event, "rank-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "rank-left") == null) user_id = "";
 
                 event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, null, 0)).queue();
 
@@ -1243,7 +1221,7 @@ public class EventButtonHandler extends ListenerAdapter {
         Button center = null;
 
         boolean timeOrder = false;
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("list-order"))
                 timeOrder = b.getStyle() == ButtonStyle.SUCCESS;
         }
@@ -1262,7 +1240,7 @@ public class EventButtonHandler extends ListenerAdapter {
         switch (args) {
 
             case "right":
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getLabel().startsWith("Page"))
                         page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
                 }
@@ -1285,7 +1263,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
             case "left":
 
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getLabel().startsWith("Page"))
                         page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
                 }
@@ -1313,7 +1291,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
                 sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
 
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getLabel().startsWith("Page"))
                         page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
                 }
@@ -1358,13 +1336,13 @@ public class EventButtonHandler extends ListenerAdapter {
         Button center = null;
 
         boolean timeOrder = false;
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("listuser-order"))
                 timeOrder = b.getStyle() == ButtonStyle.SUCCESS;
         }
         order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
 
-        for (Button b : getButtons(event)) {
+        for (Button b : EventUtils.getButtons(event)) {
             if (b.getLabel().startsWith("Page")) {
                 page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
                 userId = b.getCustomId().split("-")[2];
@@ -1441,7 +1419,7 @@ public class EventButtonHandler extends ListenerAdapter {
                                        : DatabaseHandler.getlistUserSoundsTime(userId, event.getGuild().getId());
                 }
 
-                for (Button b : getButtons(event)) {
+                for (Button b : EventUtils.getButtons(event)) {
                     if (b.getLabel().startsWith("Page"))
                         page = Integer.valueOf(String.valueOf(b.getLabel().charAt(b.getLabel().indexOf(":") + 2)));
                 }

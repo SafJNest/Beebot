@@ -10,8 +10,8 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.lol.CustomBuildData;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.model.build.CustomBuildData;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;

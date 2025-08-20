@@ -35,8 +35,9 @@ import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.Runes.PageRunes;
-import com.safjnest.util.lol.Runes.Rune;
+import com.safjnest.util.lol.model.AugmentData;
+import com.safjnest.util.lol.model.rune.PageRunes;
+import com.safjnest.util.lol.model.rune.Rune;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;

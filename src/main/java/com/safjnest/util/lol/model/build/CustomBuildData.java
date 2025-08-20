@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.util.lol.model.build;
 
 import com.safjnest.sql.QueryRecord;
 

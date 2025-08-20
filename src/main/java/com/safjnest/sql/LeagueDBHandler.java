@@ -37,8 +37,8 @@ import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.CustomBuildData;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.model.build.CustomBuildData;
 
 public class LeagueDBHandler {
     private static String hostName;
@@ -572,9 +572,42 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
 
 
-    public static boolean setSummonerData(int summonerId, int summonerMatchId, boolean win, String kda, int rank, int lp, int gain, int champion, LaneType lane, TeamType side, String build) {
-        return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "');");
+    public static boolean setSummonerData(int summonerId, int summonerMatchId, MatchParticipant participant, int rank, int lp, int gain, String build) {
+        boolean win = participant.didWin();
+        int champion = participant.getChampionId();
+        String kda = participant.getKills() + "/" + participant.getDeaths() + "/" + participant.getAssists();
+        LaneType lane = participant.getChampionSelectLane() != null ? participant.getChampionSelectLane() : participant.getLane();
+        TeamType side = participant.getTeam();
+        int totalDamage = participant.getTotalDamageDealtToChampions();
+        int shield = participant.getTotalHealsOnTeammates() + participant.getTotalDamageShieldedOnTeammates();
+        int cs = participant.getTotalMinionsKilled() + participant.getNeutralMinionsKilled();
+        int tower = participant.getDamageDealtToBuildings();
+        int vision = participant.getVisionScore();
+        int ward = participant.getWardsPlaced();
+        participant.getGoldEarned();
+        participant.getWardsKilled();
+        
+        HashMap<String, Integer> pings = new HashMap<>();        
+        pings.put("push", participant.getPushPings());
+        pings.put("bait", participant.getBaitPings());
+        pings.put("danger", participant.getDangerPings());
+        pings.put("hold", participant.getHoldPings());
+        pings.put("all_in", participant.getAllInPings());
+        pings.put("basic", participant.getBasicPings());
+        pings.put("command", participant.getCommandPings());
+        pings.put("get_back", participant.getGetBackPings());
+        pings.put("on_my_way", participant.getOnMyWayPings());
+        pings.put("assist_me", participant.getAssistMePings());
+        pings.put("need_vision", participant.getNeedVisionPings());
+        pings.put("enemy_vision", participant.getEnemyVisionPings());
+        pings.put("enemy_missing", participant.getEnemyMissingPings());
+        pings.put("vision_cleared", participant.getVisionClearedPings());
+
+
+
+        return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + JSONObject.toJSONString(pings) + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "');");
     }
+
 
     public static QueryCollection getFocusedSummoners(String query, LeagueShard shard) {
         return safJQuery("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
@@ -777,6 +810,14 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public static int getSummonerIdByPuuid(String puuid) {
+        try {
+            return fetchJRow("select id from summoner where puuid = '"+puuid+"'").getAsInt("id");  
+        } catch (Exception e) {
+           return 0;
         }
     }
 

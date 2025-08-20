@@ -1,4 +1,4 @@
-package com.safjnest.util.spotify;
+package com.safjnest.util.spotify.type;
 
 import net.dv8tion.jda.api.components.selections.SelectOption;
 

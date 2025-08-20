@@ -4,11 +4,6 @@ package com.safjnest.core.events;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import org.jetbrains.annotations.Unmodifiable;
 
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.TrackData;
@@ -24,24 +19,7 @@ import com.safjnest.util.AlertMessage;
 
 
 import com.safjnest.util.spotify.SpotifyMessage;
-import com.safjnest.util.spotify.SpotifyMessageType;
-import com.safjnest.util.spotify.SpotifyTimeRange;
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
-import net.dv8tion.jda.api.components.buttons.Button;
-import net.dv8tion.jda.api.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.components.container.Container;
-import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
-import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
-import net.dv8tion.jda.api.components.textinput.TextInput;
-import net.dv8tion.jda.api.components.textinput.TextInputStyle;
-import net.dv8tion.jda.api.components.tree.MessageComponentTree;
-import net.dv8tion.jda.api.components.utils.ComponentIterator;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
@@ -128,7 +106,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
     private void alert(GenericComponentInteractionCreateEvent event, String innerType, String args) {
       String alertId = "";
       int rewardLevel = 0;
-      for (Button button : getButtons(event)) {
+      for (Button button : EventUtils.getButtons(event)) {
         if (button.getCustomId().startsWith("alert-type-") && button.getStyle() == ButtonStyle.SUCCESS) 
           alertId = button.getCustomId().split("-")[3];
         if (button.getCustomId().startsWith("alert-reward-")) 
@@ -164,6 +142,7 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
               TextInput messageInput = TextInput.create("alert-message-" + args, "Alert Message, leave blank to remove", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hi #user, welcome in #server")
                     .setRequired(false)
+                    .setMaxLength(1500)
                     .build();
                 modal = Modal.create("alert-" + alertId, "Modify Alert message")
                         .addComponents(ActionRow.of(messageInput))
@@ -234,15 +213,6 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
           .queue();
     }
 
-    @SuppressWarnings({ "unchecked" })
-    public @Unmodifiable List<Button> getButtons(GenericComponentInteractionCreateEvent event) {
-      Stream var10000 = ComponentIterator.createStream(event.getMessage().getComponents());
-      Objects.requireNonNull(Button.class);
-      var10000 = var10000.filter(Button.class::isInstance);
-      Objects.requireNonNull(Button.class);
-      return (List)var10000.map(Button.class::cast).collect(Collectors.toList());
-    }  
-
       private void soundboard(GenericComponentInteractionCreateEvent event, String innerType, String args) {
         Guild guild = event.getGuild();
         System.out.println(args);
@@ -309,4 +279,5 @@ import net.dv8tion.jda.api.interactions.modals.Modal;
         });
 
     }
+
 }

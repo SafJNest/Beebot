@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.util.lol.model;
 
 import java.util.HashMap;
 

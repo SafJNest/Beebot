@@ -31,7 +31,7 @@ import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.spotify.SpotifyMessageType;
+import com.safjnest.util.spotify.type.SpotifyMessageType;
 
 public class SpotifyDBHandler {
     private static String hostName;

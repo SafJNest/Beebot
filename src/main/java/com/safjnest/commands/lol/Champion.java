@@ -12,10 +12,10 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.SafJNest;
-import com.safjnest.util.lol.BuildData;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.MobalyticsHandler;
+import com.safjnest.util.lol.model.build.BuildData;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
