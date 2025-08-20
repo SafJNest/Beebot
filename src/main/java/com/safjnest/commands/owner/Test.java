@@ -684,8 +684,27 @@ public class Test extends Command{
                         int vision = participant.getVisionScore();
                         int ward = participant.getWardsPlaced();
 
-                        query = "UPDATE participant SET lane='" + lane.ordinal() + "', side='" + team.ordinal() + "', damage='" + totalDamage + "', damage_building='" + tower + "', healing='" + shield + "', vision_score='" + vision + "', cs='" + cs + "', ward='" + ward + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
-                        LeagueDBHandler.runQueryAsync(query);
+                                participant.getGoldEarned();
+                                participant.getWardsKilled();
+        
+                        HashMap<String, Integer> pings = new HashMap<>();        
+                        pings.put("push", participant.getPushPings());
+                        pings.put("bait", participant.getBaitPings());
+                        pings.put("danger", participant.getDangerPings());
+                        pings.put("hold", participant.getHoldPings());
+                        pings.put("all_in", participant.getAllInPings());
+                        pings.put("basic", participant.getBasicPings());
+                        pings.put("command", participant.getCommandPings());
+                        pings.put("get_back", participant.getGetBackPings());
+                        pings.put("on_my_way", participant.getOnMyWayPings());
+                        pings.put("assist_me", participant.getAssistMePings());
+                        pings.put("need_vision", participant.getNeedVisionPings());
+                        pings.put("enemy_vision", participant.getEnemyVisionPings());
+                        pings.put("enemy_missing", participant.getEnemyMissingPings());
+                        pings.put("vision_cleared", participant.getVisionClearedPings());
+
+                        query = "UPDATE participant SET lane='" + lane.ordinal() + "', side='" + team.ordinal() + "', damage='" + totalDamage + "', damage_building='" + tower + "', healing='" + shield + "', vision_score='" + vision + "', cs='" + cs + "', ward='" + ward + "', pings='" + JSONObject.toJSONString(pings) + "', ward_killed='" + participant.getWardsKilled()+ "', gold_earned='" + participant.getGoldEarned() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
+                        LeagueDBHandler.runQuery(query);
                     }
                     System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());
                     aaa++;
