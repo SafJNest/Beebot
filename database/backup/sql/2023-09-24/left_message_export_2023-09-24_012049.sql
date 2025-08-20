@@ -1,4 +1,0 @@
-insert into `left_message` (`bot_id`, `channel_id`, `guild_id`, `message_text`) values ('938487470339801169', '1132694833912356946', '1132694832305934439', 'Ci vediamo tra 5 min chiaretta');
-insert into `left_message` (`bot_id`, `channel_id`, `guild_id`, `message_text`) values ('1098906798016184422', '691005390074150993', '474935164451946506', 'This piece of shit #user left the best server in the world');
-insert into `left_message` (`bot_id`, `channel_id`, `guild_id`, `message_text`) values ('938487470339801169', '1152150402863743036', '474935164451946506', 'this dogshit random #user left the best server in the world');
-insert into `left_message` (`bot_id`, `channel_id`, `guild_id`, `message_text`) values ('938487470339801169', '1094186395716817107', '608967318789160970', 'guma and keria');

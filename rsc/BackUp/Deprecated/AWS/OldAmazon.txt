@@ -1,5 +1,0 @@
-"AmazonAWS":{
-    "AWSAccesKey": "***REMOVED***",
-    "AWSSecretKey": "***REMOVED***",
-    "AWSbucketName": "thebeebot"
-}
