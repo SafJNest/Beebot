@@ -9,9 +9,9 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -72,7 +72,7 @@ public class SoundUpload extends SlashCommand{
             return;
         }
 
-        QueryCollection sounds = BotDB.getDuplicateSoundsByName(soundName, event.getGuild().getId(), event.getMember().getId());
+        QueryResult sounds = BotDB.getDuplicateSoundsByName(soundName, event.getGuild().getId(), event.getMember().getId());
 
         if(!sounds.isEmpty()) {
             for(QueryRecord sound : sounds) {

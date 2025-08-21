@@ -16,9 +16,9 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -208,7 +208,7 @@ public class SoundEmbed {
     // ███ ███
 
     public static List<Sound> getSoundboardSounds(String soundboardID) {
-        QueryCollection sounds = BotDB.getSoundsFromSoundBoard(soundboardID);
+        QueryResult sounds = BotDB.getSoundsFromSoundBoard(soundboardID);
         return SoundCache.getSoundsByIds(sounds.arrayColumn("sound_id").toArray(new String[0]));
     }
 

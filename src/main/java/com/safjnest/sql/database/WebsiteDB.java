@@ -1,4 +1,4 @@
-package com.safjnest.sql;
+package com.safjnest.sql.database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -6,10 +6,12 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Optional;
 import com.safjnest.spring.api.model.ApiKey;
+import com.safjnest.sql.AbstractDB;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.spotify.SpotifyTokenManager;
 
-public class WebsiteDBHandler extends AbstractDB {
+public class WebsiteDB extends AbstractDB {
 
     private static BotDB instance;
     static {

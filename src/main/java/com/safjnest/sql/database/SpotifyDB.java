@@ -1,4 +1,4 @@
-package com.safjnest.sql;
+package com.safjnest.sql.database;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -19,10 +19,11 @@ import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
+import com.safjnest.sql.AbstractDB;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.spotify.type.SpotifyMessageType;
 
-public class SpotifyDBHandler extends AbstractDB {
+public class SpotifyDB extends AbstractDB {
 
     private static BotDB instance;
     static {

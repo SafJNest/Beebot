@@ -1,6 +1,5 @@
 package com.safjnest.core.events;
 
-import com.safjnest.sql.BotDB;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 
@@ -14,6 +13,7 @@ import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.sql.database.BotDB;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;

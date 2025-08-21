@@ -1,7 +1,7 @@
 package com.safjnest.model.guild;
 
-import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 

@@ -18,9 +18,9 @@ import com.mpatric.mp3agic.Mp3File;
 import com.safjnest.core.cache.CacheAdapter;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
@@ -54,7 +54,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
     }
 
     public static Sound getSoundByString(String regex, Guild guild, User user) {
-        QueryCollection sounds = regex.matches("[0123456789]*") 
+        QueryResult sounds = regex.matches("[0123456789]*") 
             ? BotDB.getSoundsById(regex, guild.getId(), user.getId()) 
             : BotDB.getSoundsByName(regex, guild.getId(), user.getId());
     
@@ -88,8 +88,8 @@ public class SoundCache extends CacheAdapter<String, Sound> {
 
         List<String> notCached = List.of(sound_ids).stream().filter(id -> !instance.keySet().contains(id)).toList();
 
-        QueryCollection soundsResult = BotDB.getSoundsById(notCached.toArray(new String[0]));
-        QueryCollection tags = BotDB.getSoundsTags(notCached.toArray(new String[0]));
+        QueryResult soundsResult = BotDB.getSoundsById(notCached.toArray(new String[0]));
+        QueryResult tags = BotDB.getSoundsTags(notCached.toArray(new String[0]));
 
         for (QueryRecord soundData : soundsResult) {
             List<Tag> tagList = new ArrayList<>();
@@ -124,7 +124,7 @@ public class SoundCache extends CacheAdapter<String, Sound> {
 
     
     public static List<Sound> searchSound(String regex, String author) {
-        QueryCollection result = author == null ? BotDB.extremeSoundResearch(regex) : BotDB.extremeSoundResearch(regex, author);
+        QueryResult result = author == null ? BotDB.extremeSoundResearch(regex) : BotDB.extremeSoundResearch(regex, author);
         List<Sound> sounds = getSoundsByIds(result.arrayColumn("id").toArray(new String[0]));
     
         final Pattern pattern = Pattern.compile(regex);

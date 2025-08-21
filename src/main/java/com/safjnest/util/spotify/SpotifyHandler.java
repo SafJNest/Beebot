@@ -17,8 +17,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
-import com.safjnest.sql.SpotifyDBHandler;
-import com.safjnest.sql.WebsiteDBHandler;
+import com.safjnest.sql.database.SpotifyDB;
+import com.safjnest.sql.database.WebsiteDB;
 import com.safjnest.util.HttpUtils;
 import com.safjnest.util.spotify.type.SpotifyMessageType;
 import com.safjnest.util.spotify.type.SpotifyTimeRange;
@@ -127,7 +127,7 @@ public class SpotifyHandler {
             }
 
             System.out.println("Saving " + filteredStreamings.size() + " tracks to the database for user " + userId + "...");
-            SpotifyDBHandler.insertBatch(filteredStreamings, userId);
+            SpotifyDB.insertBatch(filteredStreamings, userId);
         } catch (Exception e) {
             System.out.println("Error uploading streamings to the database: " + e.getMessage());
         }
@@ -140,7 +140,7 @@ public class SpotifyHandler {
             case LONG_TERM:
                 return getTopItemsFromSpotifyApi(type, timeRange, userId, limit, offset);
             case FULL_TERM:
-                List<?> items = SpotifyDBHandler.getTopItems(type, userId, limit, offset);
+                List<?> items = SpotifyDB.getTopItems(type, userId, limit, offset);
                 if(items == null || items.isEmpty()) {
                     throw new SpotifyException(SpotifyException.ErrorType.HISTORY_MISSING, 
                         "No items found in the database for user: " + userId);
@@ -158,7 +158,7 @@ public class SpotifyHandler {
                 "Fetching albums directly from Spotify API is not supported.");
         }
 
-        String token = WebsiteDBHandler.getSpotifyUserToken(userId);
+        String token = WebsiteDB.getSpotifyUserToken(userId);
 
         if (token == null) {
             throw new SpotifyException(SpotifyException.ErrorType.NOT_LINKED,

@@ -5,9 +5,9 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -39,7 +39,7 @@ public class SoundDownload extends SlashCommand{
         String fileName = event.getOption("sound").getAsString();
         String message = null;
 
-        QueryCollection sounds = fileName.matches("\\d+") 
+        QueryResult sounds = fileName.matches("\\d+") 
                            ? BotDB.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
                            : BotDB.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
 

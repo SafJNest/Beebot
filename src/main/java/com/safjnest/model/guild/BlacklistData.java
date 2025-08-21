@@ -2,7 +2,7 @@ package com.safjnest.model.guild;
 
 
 
-import com.safjnest.sql.BotDB;
+import com.safjnest.sql.database.BotDB;
 
 public class BlacklistData {
     

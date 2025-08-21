@@ -25,8 +25,8 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.spring.service.GuildService;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.database.BotDB;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -118,7 +118,7 @@ public class GuildController {
 
     @GetMapping("/{id}/leaderboard")
     public ResponseEntity<List<Map<String, String>>> getLeaderboard(@PathVariable String id) {
-        QueryCollection leaderboard = BotDB.getUsersByExp(id, 0);
+        QueryResult leaderboard = BotDB.getUsersByExp(id, 0);
         if(leaderboard.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No results");
         }

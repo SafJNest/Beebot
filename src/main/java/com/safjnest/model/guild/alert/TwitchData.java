@@ -1,8 +1,9 @@
 package com.safjnest.model.guild.alert;
 
 import java.util.HashMap;
-import com.safjnest.sql.BotDB;
+
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 
 public class TwitchData extends AlertData {
 

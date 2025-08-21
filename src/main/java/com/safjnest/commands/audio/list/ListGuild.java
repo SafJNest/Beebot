@@ -4,9 +4,9 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -52,7 +52,7 @@ public class ListGuild extends SlashCommand{
         eb.setTitle("List of " + event.getGuild().getName());
         eb.setColor(Bot.getColor());
 
-        QueryCollection sounds = BotDB.getlistGuildSounds(event.getGuild().getId());
+        QueryResult sounds = BotDB.getlistGuildSounds(event.getGuild().getId());
 
         eb.setDescription("Total Sound: " + sounds.size());
         

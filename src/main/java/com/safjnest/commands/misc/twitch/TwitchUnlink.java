@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.sql.BotDB;
+import com.safjnest.sql.database.BotDB;
 
 public class TwitchUnlink extends SlashCommand{
 

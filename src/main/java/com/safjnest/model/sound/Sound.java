@@ -4,8 +4,8 @@ import java.sql.Timestamp;
 import java.util.List;
 
 import com.safjnest.core.audio.types.AudioType;
-import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 public class Sound {

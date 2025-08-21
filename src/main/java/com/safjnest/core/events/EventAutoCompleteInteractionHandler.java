@@ -8,10 +8,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.lol.LeagueHandler;
@@ -200,7 +200,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryCollection sounds = null;
+        QueryResult sounds = null;
         if (isFocused) sounds = BotDB.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), value);
         else sounds = BotDB.getUserGuildSounds(e.getUser().getId(), e.getGuild().getId()).shuffle().limit(MAX_CHOICES);
 
@@ -217,7 +217,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> userSound(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryCollection sounds = null;
+        QueryResult sounds = null;
         
         if (isFocused) sounds = BotDB.getFocusedUserSound(e.getUser().getId(), value);
         else sounds = BotDB.getUserSound(e.getUser().getId()).shuffle().limit(MAX_CHOICES);
@@ -306,7 +306,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> soundboard(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         
-        QueryCollection soundboards = null;
+        QueryResult soundboards = null;
         if (!isFocused) soundboards = BotDB.getRandomSoundboard(e.getGuild().getId(), e.getUser().getId());
         else soundboards = BotDB.getFocusedSoundboard(e.getGuild().getId(), e.getUser().getId(), value);
 
@@ -328,7 +328,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         String soundboardId = e.getOption("name").getAsString();
 
-        QueryCollection sounds = null;
+        QueryResult sounds = null;
 
         if (isFocused) sounds = BotDB.getFocusedSoundFromSounboard(soundboardId, value);
         else sounds = BotDB.getSoundsFromSoundBoard(soundboardId);
@@ -347,7 +347,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
 
-        QueryCollection sounds = null;
+        QueryResult sounds = null;
         if (isFocused) sounds = BotDB.getFocusedListUserSounds(e.getUser().getId(), e.getGuild().getId(), e.getFocusedOption().getValue());
         else sounds = BotDB.getlistGuildSounds(e.getGuild().getId(), 25);
 
@@ -533,7 +533,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> summoner(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryCollection summoners = new QueryCollection();
+        QueryResult summoners = new QueryResult();
         LeagueShard defaultShard = e.isFromGuild() ? GuildCache.getGuildOrPut(e.getGuild().getId()).getLeagueShard(e.getChannelId()) : LeagueShard.EUW1;
         LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : defaultShard;
         
@@ -557,7 +557,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             return choices;
         }
         
-        summoners = LeagueDBHandler.getFocusedSummoners(value, shard);
+        summoners = LeagueDB.getFocusedSummoners(value, shard);
         
 
         for (QueryRecord summoner : summoners) {
@@ -628,7 +628,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         private ArrayList<Choice> playlist(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryCollection playlists = BotDB.getPlaylistsWithSize(e.getUser().getId());
+        QueryResult playlists = BotDB.getPlaylistsWithSize(e.getUser().getId());
         
 
         if (isFocused) {
@@ -664,7 +664,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         int playlistId = e.getOption("playlist-name").getAsInt();
 
-        QueryCollection songs = BotDB.getPlaylistTracks(playlistId, null, null);
+        QueryResult songs = BotDB.getPlaylistTracks(playlistId, null, null);
         List<AudioTrack> queue = new ArrayList<>();
         for (QueryRecord song : songs) {
             AudioTrack track = PlayerManager.get().decodeTrack(song.get("encoded_track"));
@@ -705,9 +705,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
 
-        QueryCollection builds = null;
-        if (isFocused) builds = LeagueDBHandler.getFocusedCustomBuild(e.getFocusedOption().getValue());
-        else builds = LeagueDBHandler.getCustomBuildByUser(e.getUser().getId());
+        QueryResult builds = null;
+        if (isFocused) builds = LeagueDB.getFocusedCustomBuild(e.getFocusedOption().getValue());
+        else builds = LeagueDB.getCustomBuildByUser(e.getUser().getId());
 
         for (QueryRecord build : builds) {
             choices.add(new Choice(build.get("name"), build.get("id")));

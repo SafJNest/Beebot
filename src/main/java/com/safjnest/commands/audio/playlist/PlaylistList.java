@@ -3,8 +3,8 @@ package com.safjnest.commands.audio.playlist;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -29,7 +29,7 @@ public class PlaylistList extends SlashCommand{
     protected void execute(SlashCommandEvent event) {
         Member member = event.getMember();
 
-        QueryCollection playlists = BotDB.getPlaylists(member.getId());
+        QueryResult playlists = BotDB.getPlaylists(member.getId());
 
         EmbedBuilder eb = new EmbedBuilder();
 

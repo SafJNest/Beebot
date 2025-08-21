@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.safjnest.core.Bot;
-import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;

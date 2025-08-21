@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 import com.safjnest.core.Bot;
@@ -312,8 +312,8 @@ public class GuildData {
         if (this.alerts == null) {
             BotLogger.debug("Retriving AlertData from database => {0}", loggerIDpair);
             this.alerts = new HashMap<>();
-            QueryCollection alertResult = BotDB.getAlerts(String.valueOf(ID));
-            QueryCollection roleResult = BotDB.getAlertsRoles(String.valueOf(ID));
+            QueryResult alertResult = BotDB.getAlerts(String.valueOf(ID));
+            QueryResult roleResult = BotDB.getAlertsRoles(String.valueOf(ID));
 
             HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
             for (QueryRecord row : roleResult) {
@@ -511,7 +511,7 @@ public class GuildData {
 
     public void retriveChannels() {
         this.channels = new HashMap<>();
-        QueryCollection result = BotDB.getChannelData(String.valueOf(ID));
+        QueryResult result = BotDB.getChannelData(String.valueOf(ID));
         if (result == null) { return; }
 
         BotLogger.debug("Retriving ChannelData from database => {0}", loggerIDpair);
@@ -617,7 +617,7 @@ public class GuildData {
 
     private void retriveActions() {
         actions = new ArrayList<>();
-        QueryCollection result = BotDB.getWarnings(String.valueOf(ID));
+        QueryResult result = BotDB.getWarnings(String.valueOf(ID));
         if (result == null) { return; }
 
         for (QueryRecord row : result) {

@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import com.safjnest.core.Bot;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -66,7 +66,7 @@ public class UserData {
     private void retriveAlies() {
         this.aliases = new HashMap<>();
         
-        QueryCollection result = BotDB.getAliases(USER_ID);
+        QueryResult result = BotDB.getAliases(USER_ID);
         if (result == null) { return; }
 
         for(QueryRecord row: result){
@@ -185,7 +185,7 @@ public class UserData {
 //  ▀                                                                        
 
     private void retriveRiotAccounts() {
-        QueryCollection result = LeagueDBHandler.getLOLAccountsByUserId(USER_ID);
+        QueryResult result = LeagueDB.getLOLAccountsByUserId(USER_ID);
         if (result == null) { return; }
 
         this.riotAccounts = new LinkedHashMap<>();
@@ -206,7 +206,7 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = LeagueDBHandler.addLOLAccount(USER_ID, s) > 0;
+        boolean result = LeagueDB.addLOLAccount(USER_ID, s) > 0;
         if (result) riotAccounts.put(s.getPUUID(), String.valueOf(s.getPlatform().ordinal()));
         
         return result;
@@ -214,7 +214,7 @@ public class UserData {
 
     public boolean deleteRiotAccount(String puuid) {
         checkRiotAccounts();
-        boolean result = LeagueDBHandler.deleteLOLaccount(USER_ID, puuid);
+        boolean result = LeagueDB.deleteLOLaccount(USER_ID, puuid);
         if (result) riotAccounts.remove(puuid);
         
         return result;

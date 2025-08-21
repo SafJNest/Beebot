@@ -14,9 +14,9 @@ import java.text.DecimalFormat;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.DateHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -116,9 +116,9 @@ public class LeagueMessage {
         builder.setColor(Bot.getColor());
         builder.setThumbnail(LeagueHandler.getSummonerProfilePic(s));
         
-        String userId = LeagueDBHandler.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform());
+        String userId = LeagueDB.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform());
         if(userId != null){
-            QueryRecord data = LeagueDBHandler.getSummonerData(userId, s.getAccountId());
+            QueryRecord data = LeagueDB.getSummonerData(userId, s.getAccountId());
             if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
             else builder.setFooter("LPs tracking disabled for the current summoner");
         }
@@ -129,8 +129,8 @@ public class LeagueMessage {
         builder.addField("Solo/duo", LeagueHandler.getSoloQStats(s), true);
         builder.addField("Flex", LeagueHandler.getFlexStats(s), true);
 
-        LeagueDBHandler.updateSummonerMasteries(summonerId, s.getChampionMasteries());
-        LeagueDBHandler.updateSummonerEntries(summonerId, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
+        LeagueDB.updateSummonerMasteries(summonerId, s.getChampionMasteries());
+        LeagueDB.updateSummonerEntries(summonerId, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
 
         String masteryString = "";
         for(int i = 1; i < 4; i++)
@@ -139,7 +139,7 @@ public class LeagueMessage {
         builder.addField("Highest Masteries", masteryString, false);
 
 
-        QueryCollection advanceData = LeagueDBHandler.getAdvancedLOLData(summonerId, time_start, time_end, queue);
+        QueryResult advanceData = LeagueDB.getAdvancedLOLData(summonerId, time_start, time_end, queue);
 
         if (!advanceData.isEmpty()) {
             LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
@@ -188,7 +188,7 @@ public class LeagueMessage {
             }
 
             if (queue == null) {
-                QueryCollection gameData = LeagueDBHandler.getAllGamesForAccount(summonerId, time_start, time_end);
+                QueryResult gameData = LeagueDB.getAllGamesForAccount(summonerId, time_start, time_end);
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
                     GameQueueType type = GameQueueType.values()[row.getAsInt("game_type")];
@@ -313,7 +313,7 @@ public class LeagueMessage {
 
         List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
 
-        boolean hasTrackedGames = LeagueDBHandler.hasSummonerData(LeagueHandler.updateSummonerDB(s));
+        boolean hasTrackedGames = LeagueDB.hasSummonerData(LeagueHandler.updateSummonerDB(s));
 
         if (hasTrackedGames) {
             long[] time = LeagueHandler.getCurrentSplitRange();
@@ -573,7 +573,7 @@ public class LeagueMessage {
                 String redSide = "";
 
                 String lpLabel = "";
-                QueryCollection result = LeagueDBHandler.getSummonerData(LeagueDBHandler.addLOLAccount(s));
+                QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
                 for (int j = 0; j < result.size(); j ++) {
                     QueryRecord row = result.get(j);
                     QueryRecord previosRow = j > 0 ? result.get(j - 1) : null;
@@ -752,7 +752,7 @@ public class LeagueMessage {
 
         List<String> gameIds = getMatchIds(s, queue, index);
 
-        QueryCollection result = LeagueDBHandler.getSummonerData(LeagueDBHandler.addLOLAccount(s));
+        QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
 
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
@@ -953,7 +953,7 @@ public class LeagueMessage {
 
         List<String> gameIds = getMatchIds(s, queue, index);
 
-        QueryCollection result = LeagueDBHandler.getSummonerData(LeagueDBHandler.addLOLAccount(s));
+        QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
 
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {

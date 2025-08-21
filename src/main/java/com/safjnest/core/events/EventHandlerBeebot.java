@@ -10,7 +10,7 @@ import com.safjnest.core.events.types.WarningEvent;
 import com.safjnest.model.guild.AutomatedAction;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.MemberData;
-import com.safjnest.sql.BotDB;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.AutomatedActionTimer;
 
 import net.dv8tion.jda.api.EmbedBuilder;

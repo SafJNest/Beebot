@@ -5,9 +5,9 @@ import java.util.HashMap;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.ExperienceSystem;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
@@ -324,7 +324,7 @@ public class Functions {
         int times = 0;
         times = times + BotDB.getBannedTimes(badGuy.getId());
 
-        QueryCollection guilds = BotDB.getGuildByThreshold(times, guild.getId());
+        QueryResult guilds = BotDB.getGuildByThreshold(times, guild.getId());
         if(guilds == null)
             return;
         

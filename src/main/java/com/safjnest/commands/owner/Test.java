@@ -34,10 +34,10 @@ import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.sql.BotDB;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
@@ -124,7 +124,7 @@ public class Test extends Command{
     @Override
     protected void execute(CommandEvent e) {
         String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
-        QueryCollection res;
+        QueryResult res;
         String query = "";
 
         String args[] = e.getArgs().split(" ", 2);
@@ -494,7 +494,7 @@ public class Test extends Command{
                 }
             case "soundsgozzing":
                 query = "SELECT id from sound";
-                QueryCollection res1 = BotDB.get().query(query);;
+                QueryResult res1 = BotDB.get().query(query);;
                 System.out.println(res1.size());
                 for (Guild g : e.getJDA().getGuilds()) {
                     System.out.println(g.getName());
@@ -651,7 +651,7 @@ public class Test extends Command{
             case "fixlol":
             query = "SELECT id, game_id, league_shard from `match` where id > 0 order by id desc";
             
-                res = LeagueDBHandler.get().query(query);
+                res = LeagueDB.get().query(query);
                 System.out.println("total match: " + res.size());
                 int aaa = 0;
                 for(QueryRecord row : res){
@@ -666,7 +666,7 @@ public class Test extends Command{
                     TeamType team = null;
                     //Summoner su = LeagueHandler.getSummonerByPuuid(account_id, LeagueShard.values()[row.getAsInt("league_shard")]);
                     for (MatchParticipant participant : match.getParticipants()) {
-                        int sumId = LeagueDBHandler.getSummonerIdByPuuid(participant.getPuuid());
+                        int sumId = LeagueDB.getSummonerIdByPuuid(participant.getPuuid());
                         if (sumId == 0) continue;
                         lane = participant.getChampionSelectLane() != null ? participant.getChampionSelectLane() : participant.getLane();
                         team = participant.getTeam();
@@ -698,7 +698,7 @@ public class Test extends Command{
                         pings.put("vision_cleared", participant.getVisionClearedPings());
 
                         query = "UPDATE participant SET lane='" + lane.ordinal() + "', side='" + team.ordinal() + "', damage='" + totalDamage + "', damage_building='" + tower + "', healing='" + shield + "', vision_score='" + vision + "', cs='" + cs + "', ward='" + ward + "', pings='" + JSONObject.toJSONString(pings) + "', ward_killed='" + participant.getWardsKilled()+ "', gold_earned='" + participant.getGoldEarned() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
-                        LeagueDBHandler.get().defaultQuery(query);
+                        LeagueDB.get().defaultQuery(query);
                     }
                     System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());
                     aaa++;
@@ -807,7 +807,7 @@ public class Test extends Command{
             break;
             case "playplaylist":
                 int playlistId = Integer.valueOf(args[1]);
-                QueryCollection tracks = BotDB.getPlaylistTracks(playlistId, null, null);
+                QueryResult tracks = BotDB.getPlaylistTracks(playlistId, null, null);
 
                 List<String> URIs = new ArrayList<String>();
                 for(QueryRecord track : tracks) {
@@ -826,7 +826,7 @@ public class Test extends Command{
             break;
             case "loadtracksfromdb":
                 List<AudioTrack> tracksFinal = new ArrayList<>();
-                QueryCollection tracksToLoad = BotDB.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
+                QueryResult tracksToLoad = BotDB.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
                 for(QueryRecord trackToLoad : tracksToLoad) {
                     tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
                 }
@@ -1013,7 +1013,7 @@ public class Test extends Command{
                         System.out.println("Match not found");
                         continue;
                     }
-                    System.out.println(LeagueDBHandler.setMatchData(m));
+                    System.out.println(LeagueDB.setMatchData(m));
                 }
                 break;
             case "pushbuild":
@@ -1030,7 +1030,7 @@ public class Test extends Command{
                         System.out.println("Match not found");
                         continue;
                     }
-                    System.out.println(LeagueDBHandler.setMatchData(m));
+                    System.out.println(LeagueDB.setMatchData(m));
                 }
                 break;
             case "trackoldgames":
@@ -1051,7 +1051,7 @@ public class Test extends Command{
                     String summoner_id = row.get("summoner_id");
                     LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                     String puuid = "";
-                    int summoner_match_id = LeagueDBHandler.setMatchData(m);
+                    int summoner_match_id = LeagueDB.setMatchData(m);
 
                     HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(m, m.getParticipants());
 
@@ -1111,14 +1111,14 @@ public class Test extends Command{
                 break;
                 case "fixaccountid":
                     query = "SELECT id, puuid, league_shard FROM summoner WHERE account_id IS NULL ORDER BY id DESC";
-                    res = LeagueDBHandler.get().query(query);
+                    res = LeagueDB.get().query(query);
                     ChronoTask fixaccountTask = () -> {
                         int n = 0;
                         for (QueryRecord sum : res) {
                             try {
                                 Summoner sssss = LeagueHandler.getSummonerByPuuid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
                                 String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
-                                LeagueDBHandler.get().defaultQuery(fixQuery);
+                                LeagueDB.get().defaultQuery(fixQuery);
                                 try {
                                     Thread.sleep(500);
                                 } catch (Exception ee) {
@@ -1135,7 +1135,7 @@ public class Test extends Command{
                 break;
                 case "insertbullshit":
                     query = "SELECT s.id, s.puuid, s.league_shard FROM summoner s LEFT JOIN rank r ON s.id = r.summoner_id LEFT JOIN masteries m ON s.id = m.summoner_id WHERE r.summoner_id IS NULL AND m.summoner_id IS NULL ORDER BY s.id DESC;";
-                    res = LeagueDBHandler.get().query(query);
+                    res = LeagueDB.get().query(query);
                     ChronoTask bullshit = () -> {
                         int n = 0;
                         for (QueryRecord sum : res) {
@@ -1147,8 +1147,8 @@ public class Test extends Command{
                                 } catch (Exception ee) {
                                 ee.printStackTrace();
                                 }
-                                LeagueDBHandler.updateSummonerMasteries(summonerId, sssss.getChampionMasteries());
-                                LeagueDBHandler.updateSummonerEntries(summonerId, sssss.getLeagueEntry());
+                                LeagueDB.updateSummonerMasteries(summonerId, sssss.getChampionMasteries());
+                                LeagueDB.updateSummonerEntries(summonerId, sssss.getLeagueEntry());
                             } catch (Exception eeee) {
                                 eeee.printStackTrace();
                             }
@@ -1167,7 +1167,7 @@ public class Test extends Command{
                 break;
                 case "setmatchevent":
                     query = "SELECT id, game_id, league_shard FROM `match` WHERE events = '{}' ORDER BY id DESC";
-                    res = LeagueDBHandler.get().query(query);
+                    res = LeagueDB.get().query(query);
                     ChronoTask setMatchEvent = () -> {
                         int n = 0;
                         for (QueryRecord row : res) {
@@ -1176,7 +1176,7 @@ public class Test extends Command{
                                 String game_id = region + "_"+row.get("game_id");
                                 LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                                 if (m == null) continue;
-                                LeagueDBHandler.setMatchEvent(row.getAsInt("id"), MatchTracker.createJSONEvents(MatchTracker.analyzeMatchBuild(m, m.getParticipants()).get("match")));
+                                LeagueDB.setMatchEvent(row.getAsInt("id"), MatchTracker.createJSONEvents(MatchTracker.analyzeMatchBuild(m, m.getParticipants()).get("match")));
                                 try {
                                     Thread.sleep(400);
                                 } catch (Exception ee) {
@@ -1231,7 +1231,7 @@ public class Test extends Command{
     private static DefaultCategoryDataset createDataset() {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         String query = "select time, count(name) as count from command_analytic where MONTH(time) = 8 group by DAY(time);";
-        QueryCollection res = BotDB.get().query(query);;
+        QueryResult res = BotDB.get().query(query);;
         
         for(QueryRecord row : res){
             System.out.println(row.get("time") + " " + row.get("count"));

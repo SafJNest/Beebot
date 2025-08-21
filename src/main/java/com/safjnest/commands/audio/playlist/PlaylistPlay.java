@@ -12,6 +12,7 @@ import com.safjnest.util.CommandsLoader;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 
 import com.safjnest.sql.*;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.core.audio.*;
 import com.safjnest.core.audio.types.*;
 
@@ -70,7 +71,7 @@ public class PlaylistPlay extends SlashCommand {
 
         
         QueryRecord playlist = BotDB.getPlaylist(event.getUser().getId(), playlistId);
-        QueryCollection playlistTracks = BotDB.getPlaylistTracks(playlistId, null, null);
+        QueryResult playlistTracks = BotDB.getPlaylistTracks(playlistId, null, null);
 
         if (playlistTracks.isEmpty()) {
             event.getHook().editOriginal("Playlist is empty.").queue();
