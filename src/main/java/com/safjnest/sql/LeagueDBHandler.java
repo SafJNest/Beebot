@@ -28,6 +28,7 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.model.build.CustomBuildData;
 
@@ -40,7 +41,7 @@ public class LeagueDBHandler extends AbstractDB {
 
     @Override
 	protected String getDatabase() {
-        return "league_of_legends";
+        return SettingsLoader.getSettings().getJsonSettings().getLeagueDatabase().getDatabaseName();
 	}
 
     public static LeagueDBHandler get() {

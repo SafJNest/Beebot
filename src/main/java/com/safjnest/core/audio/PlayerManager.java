@@ -13,28 +13,21 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 import com.github.topi314.lavalyrics.LyricsManager;
 import com.github.topi314.lavalyrics.lyrics.AudioLyrics;
 import com.github.topi314.lavasrc.mirror.DefaultMirroringAudioTrackResolver;
 import com.github.topi314.lavasrc.spotify.SpotifySourceManager;
-import com.mpatric.mp3agic.InvalidDataException;
-import com.mpatric.mp3agic.Mp3File;
-import com.mpatric.mp3agic.UnsupportedTagException;
 import com.safjnest.App;
 import com.safjnest.model.BotSettings.LavalinkSettings;
 import com.safjnest.model.BotSettings.PoTokenSettings;
 import com.safjnest.model.BotSettings.SpotifySettings;
 import com.safjnest.util.SettingsLoader;
-import com.sedmelluq.discord.lavaplayer.container.MediaContainerDescriptor;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
-import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3ContainerProbe;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -173,8 +166,6 @@ public class PlayerManager {
     }
 
     public Future<Void> loadItemOrdered(Guild guild, byte[] trackData, AudioLoadResultHandler resultHandler) {
-        GuildMusicManager guildMusicManager = getGuildMusicManager(guild);
-
         try {
             AudioTrack track = createTrackFromBytes(trackData, "TTS Audio");
             if (track != null) {

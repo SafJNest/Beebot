@@ -4,7 +4,6 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -16,20 +15,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 
-import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -38,20 +32,23 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
  * of the biggest caterpies ever made
  */
 public class BotDB extends AbstractDB {
-
     private static BotDB instance;
+
     static {
         instance = new BotDB();
     }
 
     @Override
 	protected String getDatabase() {
-        return "berbit";
+        return SettingsLoader.getSettings().getConfig().isTesting() 
+            ? SettingsLoader.getSettings().getJsonSettings().getTestDatabase().getDatabaseName()
+            :  SettingsLoader.getSettings().getJsonSettings().getDatabase().getDatabaseName();
 	}
 
     public static BotDB get() {
         return instance;
     }
+
     public static QueryCollection getGuildsData(String filter){
         String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild WHERE " + filter + ";";
         return instance.query(query);
@@ -170,7 +167,7 @@ public class BotDB extends AbstractDB {
     }
 
     public static String insertSound(String name, String guild_id, String user_id, String extension, boolean isPublic) {
-        Connection c = instance.instance.getConnection();
+        Connection c = instance.getConnection();
         if(c == null) return null;
 
         String soundId = null;
@@ -952,7 +949,7 @@ public class BotDB extends AbstractDB {
     public static int insertTag(String tag) {
         int id = 0;
 
-        Connection c = instance.instance.getConnection();
+        Connection c = instance.getConnection();
         if(c == null) return id;
 
         try (Statement stmt = c.createStatement()) {
