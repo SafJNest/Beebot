@@ -13,6 +13,7 @@ import java.awt.Color;
 import java.text.DecimalFormat;
 
 import com.safjnest.core.Bot;
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -129,8 +130,11 @@ public class LeagueMessage {
         builder.addField("Solo/duo", LeagueHandler.getSoloQStats(s), true);
         builder.addField("Flex", LeagueHandler.getFlexStats(s), true);
 
-        LeagueDB.updateSummonerMasteries(summonerId, s.getChampionMasteries());
-        LeagueDB.updateSummonerEntries(summonerId, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
+        ((ChronoTask) () -> {
+            LeagueDB.updateSummonerMasteries(summonerId, s.getChampionMasteries());
+            LeagueDB.updateSummonerEntries(summonerId, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
+        }).queue();
+
 
         String masteryString = "";
         for(int i = 1; i < 4; i++)
