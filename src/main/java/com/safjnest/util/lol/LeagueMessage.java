@@ -118,7 +118,7 @@ public class LeagueMessage {
         
         String userId = LeagueDB.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform());
         if(userId != null){
-            QueryRecord data = LeagueDB.getSummonerData(userId, s.getAccountId());
+            QueryRecord data = LeagueDB.getSummonerData(userId, s.getPUUID());
             if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
             else builder.setFooter("LPs tracking disabled for the current summoner");
         }
