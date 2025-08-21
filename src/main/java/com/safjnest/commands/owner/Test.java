@@ -37,7 +37,7 @@ import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
@@ -261,18 +261,18 @@ public class Test extends Command{
                 //     String extension = file.getName().split("\\.")[1];
 
                 //     String query = "SELECT * FROM sound WHERE id = " + name + ";";
-                //     ResultRow res = DatabaseHandler.fetchJRow(query);
+                //     ResultRow res = BotDB.lineQuery(query);
                 //     String newName = res.get("new_id");
                 //     file.renameTo(new File(soundBoard + File.separator + newName + "." + extension));
 
                 // }
             break;
             case "closedatabase":
-                try {
-                    DatabaseHandler.getConnection().close();
-                } catch (SQLException e1) {
-                    e1.printStackTrace();
-                }
+                // try {
+                //     BotDB.get().getConnection().close();
+                // } catch (SQLException e1) {
+                //     e1.printStackTrace();
+                // }
             break;
             case "getBlacklist":
                 System.out.println(GuildCache.getGuildOrPut(e.getGuild().getId()).getBlacklistData().toString());
@@ -309,34 +309,34 @@ public class Test extends Command{
                 break;
             case "stats":
                 query = "SELECT guild_id, room_id FROM room WHERE has_command_stats = 0";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);
                 for(QueryRecord row : res){
                     for (String bot : bots) {
                         query = "INSERT INTO channel(guild_id, channel_id, bot_id, stats_enabled) VALUES (" + row.get("guild_id") + ", "+ row.get("room_id") +", " + bot + ", 0)";
-                        DatabaseHandler.safJQuery(query);
+                        BotDB.get().query(query);
                     }
                 }
                 e.reply("Done");
                 break;
             case "insertepriainblacklist":
                 query = "SELECT id FROM guilds";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 for(QueryRecord row : res){
                     query = "INSERT INTO blacklist(guild_id, user_id) VALUES (" + row.get("id") + "," + PermissionHandler.getEpria() + ")";
-                    DatabaseHandler.safJQuery(query);
+                    BotDB.get().query(query);;
                 }
                 break;
             case "insertalert":
                 query = "SELECT guild_id, role_id, level, message_text FROM reward";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 for(QueryRecord row : res){
                     int id = 0;
-                    java.sql.Connection c = DatabaseHandler.getConnection();
+                    java.sql.Connection c = BotDB.get().getConnection();
                     try (Statement stmt = c.createStatement()) {
-                        DatabaseHandler.runQuery(stmt, "INSERT INTO alert(guild_id, bot_id, message, channel, enabled, type) VALUES('" + row.get("guild_id") + "','" + "938487470339801169" + "','" + row.get("message_text") + "','" + null + "', 1, '" + AlertType.REWARD.ordinal() + "');");
-                        id = DatabaseHandler.fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
-                        DatabaseHandler.runQuery(stmt, "INSERT INTO alert_reward(alert_id, level, temporary) VALUES(" + id + "," + row.get("level") + "," + 0 + ");");
-                        DatabaseHandler.runQuery(stmt, "INSERT INTO alert_role(alert_id, role_id) VALUES(" + id + "," + row.get("role_id") + ");");
+                        BotDB.get().query(stmt, "INSERT INTO alert(guild_id, bot_id, message, channel, enabled, type) VALUES('" + row.get("guild_id") + "','" + "938487470339801169" + "','" + row.get("message_text") + "','" + null + "', 1, '" + AlertType.REWARD.ordinal() + "');");
+                        id = BotDB.get().lineQuery(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+                        BotDB.get().query(stmt, "INSERT INTO alert_reward(alert_id, level, temporary) VALUES(" + id + "," + row.get("level") + "," + 0 + ");");
+                        BotDB.get().query(stmt, "INSERT INTO alert_role(alert_id, role_id) VALUES(" + id + "," + row.get("role_id") + ");");
                         c.commit();
                     } catch (SQLException ex) {
                         try {
@@ -348,11 +348,11 @@ public class Test extends Command{
                 break;
             case "insertuser":
             query = "SELECT user_id, guild_id, exp, level, messages FROM experience";
-            res = DatabaseHandler.safJQuery(query);
+            res = BotDB.get().query(query);;
             for(QueryRecord row : res){
                 for (String bot : bots) {
                     query = "INSERT INTO user(user_id, guild_id, experience, level, messages, bot_id) VALUES (" + row.get("user_id") + ", " + row.get("guild_id") + ", " + row.get("exp") + ", " + row.get("level") + ", " + row.get("messages") + ", " + bot + ")";
-                    DatabaseHandler.safJQuery(query);
+                    BotDB.get().query(query);;
                 }
             }
             e.reply("Done");
@@ -437,7 +437,7 @@ public class Test extends Command{
                     reader = new CSVReader(new FileReader(csvFile));
                     String[] line;
                     int cont = 0;
-                    java.sql.Connection c = DatabaseHandler.getConnection();
+                    java.sql.Connection c = BotDB.get().getConnection();
                     while ((line = reader.readNext()) != null) {
                         String nome_song = line[2];
                         Timestamp time = getRandomTimestamp();
@@ -481,7 +481,7 @@ public class Test extends Command{
                     String word;
                     while ((word = br.readLine()) != null) {
                         String query1 = "INSERT INTO tag(name) VALUES ('" + word + "');";
-                        DatabaseHandler.runQuery(query1);
+                        BotDB.get().defaultQuery(query1);
                     }
                 } catch (IOException ee) {}
                 
@@ -494,13 +494,13 @@ public class Test extends Command{
                     for (int j = 0; j < 5; j++) {
                         int tag_id = (int) (Math.random() * max_tag) + 1;
                         String query1 = "INSERT INTO tag_sounds(sound_id, tag_id) VALUES (" + i + ", " + tag_id + ");";
-                        DatabaseHandler.runQuery(query1);
+                        BotDB.get().defaultQuery(query1);
                     }
                     System.out.println(i);
                 }
             case "soundsgozzing":
                 query = "SELECT id from sound";
-                QueryCollection res1 = DatabaseHandler.safJQuery(query);
+                QueryCollection res1 = BotDB.get().query(query);;
                 System.out.println(res1.size());
                 for (Guild g : e.getJDA().getGuilds()) {
                     System.out.println(g.getName());
@@ -520,10 +520,10 @@ public class Test extends Command{
                                        + " ON DUPLICATE KEY UPDATE times = times + 1;";
                         // Execute the query for the current batch
                         System.out.println(i);
-                        DatabaseHandler.runQuery(query); // Uncomment this line to execute the query
+                        BotDB.get().defaultQuery(query); // Uncomment this line to execute the query
                     }
                     break;
-                    //DatabaseHandler.safJQuery(query1);
+                    //BotDB.query(query1);
                 }
                 break;
             case "dbsgozz":
@@ -539,79 +539,79 @@ public class Test extends Command{
 
                 break;
             case "sql":                
-                HashMap<Long, List<String>> map = DatabaseHandler.getQueryAnalytics();      
-                HashMap<Long, Integer> queriesPerHour = new HashMap<>();
+                // HashMap<Long, List<String>> map = BotDB.getQueryAnalytics();      
+                // HashMap<Long, Integer> queriesPerHour = new HashMap<>();
                 
-                for (Map.Entry<Long, List<String>> entry : map.entrySet()) {
-                    long hours = TimeUnit.MILLISECONDS.toHours(entry.getKey());
-                    int queriesCount = entry.getValue().size();
-                    queriesPerHour.put(hours, queriesPerHour.getOrDefault(hours, 0) + queriesCount);
-                }
-                Map<Long, Integer> sortedQueriesPerHour = queriesPerHour.entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey, 
-                        Map.Entry::getValue, 
-                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
-                String[][] data = new String[sortedQueriesPerHour.size()][2];
-                int i = 0;
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-M-Y H:m:s");
-                for (Map.Entry<Long, Integer> entry : sortedQueriesPerHour.entrySet()) {
-                    System.out.println(TimeUnit.HOURS.toMillis(entry.getKey()));
-                    LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.HOURS.toMillis(entry.getKey())), ZoneId.systemDefault());
-                    String formattedDate = dateTime.format(formatter);
-                    data[i][0] = formattedDate;
-                    data[i][1] = entry.getValue().toString();
-                    i++;
-                }    
-                String[] headers = new String[] {"Time", "Query"};
-                String table = TableHandler.constructTable(data, headers);
+                // for (Map.Entry<Long, List<String>> entry : map.entrySet()) {
+                //     long hours = TimeUnit.MILLISECONDS.toHours(entry.getKey());
+                //     int queriesCount = entry.getValue().size();
+                //     queriesPerHour.put(hours, queriesPerHour.getOrDefault(hours, 0) + queriesCount);
+                // }
+                // Map<Long, Integer> sortedQueriesPerHour = queriesPerHour.entrySet().stream()
+                //     .sorted(Map.Entry.comparingByKey())
+                //     .collect(Collectors.toMap(
+                //         Map.Entry::getKey, 
+                //         Map.Entry::getValue, 
+                //         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                // String[][] data = new String[sortedQueriesPerHour.size()][2];
+                // int i = 0;
+                // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d-M-Y H:m:s");
+                // for (Map.Entry<Long, Integer> entry : sortedQueriesPerHour.entrySet()) {
+                //     System.out.println(TimeUnit.HOURS.toMillis(entry.getKey()));
+                //     LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.HOURS.toMillis(entry.getKey())), ZoneId.systemDefault());
+                //     String formattedDate = dateTime.format(formatter);
+                //     data[i][0] = formattedDate;
+                //     data[i][1] = entry.getValue().toString();
+                //     i++;
+                // }    
+                // String[] headers = new String[] {"Time", "Query"};
+                // String table = TableHandler.constructTable(data, headers);
                 
-                e.getChannel().sendFiles(FileUpload.fromData(
-                    table.getBytes(StandardCharsets.UTF_8),
-                    "table.txt"
-                )).queue();
+                // e.getChannel().sendFiles(FileUpload.fromData(
+                //     table.getBytes(StandardCharsets.UTF_8),
+                //     "table.txt"
+                // )).queue();
             
                 break;
             case "sqlday":                
-                HashMap<Long, List<String>> map2 = DatabaseHandler.getQueryAnalytics();
-                HashMap<Long, Integer> queriesPerDay = new HashMap<>();
+                // HashMap<Long, List<String>> map2 = BotDB.getQueryAnalytics();
+                // HashMap<Long, Integer> queriesPerDay = new HashMap<>();
 
-                for (Map.Entry<Long, List<String>> entry : map2.entrySet()) {
-                    // Convert milliseconds to days
-                    long days = TimeUnit.MILLISECONDS.toDays(entry.getKey());
-                    int queriesCount = entry.getValue().size();
-                    queriesPerDay.put(days, queriesPerDay.getOrDefault(days, 0) + queriesCount);
-                }
+                // for (Map.Entry<Long, List<String>> entry : map2.entrySet()) {
+                //     // Convert milliseconds to days
+                //     long days = TimeUnit.MILLISECONDS.toDays(entry.getKey());
+                //     int queriesCount = entry.getValue().size();
+                //     queriesPerDay.put(days, queriesPerDay.getOrDefault(days, 0) + queriesCount);
+                // }
 
-                Map<Long, Integer> sortedQueriesPerDay = queriesPerDay.entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .collect(Collectors.toMap(
-                        Map.Entry::getKey, 
-                        Map.Entry::getValue, 
-                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+                // Map<Long, Integer> sortedQueriesPerDay = queriesPerDay.entrySet().stream()
+                //     .sorted(Map.Entry.comparingByKey())
+                //     .collect(Collectors.toMap(
+                //         Map.Entry::getKey, 
+                //         Map.Entry::getValue, 
+                //         (oldValue, newValue) -> oldValue, LinkedHashMap::new));
 
-                String[][] data2 = new String[sortedQueriesPerDay.size()][2];
-                int j = 0;
-                DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("d-M-Y");
+                // String[][] data2 = new String[sortedQueriesPerDay.size()][2];
+                // int j = 0;
+                // DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("d-M-Y");
 
-                for (Map.Entry<Long, Integer> entry : sortedQueriesPerDay.entrySet()) {
-                    // Convert days back to milliseconds for the start of each day
-                    long millisForDay = TimeUnit.DAYS.toMillis(entry.getKey());
-                    LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(millisForDay), ZoneId.systemDefault());
-                    String formattedDate = dateTime.format(formatter2);
-                    data2[j][0] = formattedDate;
-                    data2[j][1] = entry.getValue().toString();
-                    j++;
-                }
+                // for (Map.Entry<Long, Integer> entry : sortedQueriesPerDay.entrySet()) {
+                //     // Convert days back to milliseconds for the start of each day
+                //     long millisForDay = TimeUnit.DAYS.toMillis(entry.getKey());
+                //     LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(millisForDay), ZoneId.systemDefault());
+                //     String formattedDate = dateTime.format(formatter2);
+                //     data2[j][0] = formattedDate;
+                //     data2[j][1] = entry.getValue().toString();
+                //     j++;
+                // }
 
-                String[] headers2 = new String[] {"Time", "Query"};
-                String table2 = TableHandler.constructTable(data2, headers2);
+                // String[] headers2 = new String[] {"Time", "Query"};
+                // String table2 = TableHandler.constructTable(data2, headers2);
 
-                e.getChannel().sendFiles(FileUpload.fromData(
-                    table2.getBytes(StandardCharsets.UTF_8),
-                    "table.txt"
-                )).queue();
+                // e.getChannel().sendFiles(FileUpload.fromData(
+                //     table2.getBytes(StandardCharsets.UTF_8),
+                //     "table.txt"
+                // )).queue();
             
                 break;
             case "twitchuser":
@@ -657,7 +657,7 @@ public class Test extends Command{
             case "fixlol":
             query = "SELECT id, game_id, league_shard from `match` where id > 0 order by id desc";
             
-                res = LeagueDBHandler.safJQuery(query);
+                res = LeagueDBHandler.get().query(query);
                 System.out.println("total match: " + res.size());
                 int aaa = 0;
                 for(QueryRecord row : res){
@@ -704,7 +704,7 @@ public class Test extends Command{
                         pings.put("vision_cleared", participant.getVisionClearedPings());
 
                         query = "UPDATE participant SET lane='" + lane.ordinal() + "', side='" + team.ordinal() + "', damage='" + totalDamage + "', damage_building='" + tower + "', healing='" + shield + "', vision_score='" + vision + "', cs='" + cs + "', ward='" + ward + "', pings='" + JSONObject.toJSONString(pings) + "', ward_killed='" + participant.getWardsKilled()+ "', gold_earned='" + participant.getGoldEarned() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
-                        LeagueDBHandler.runQuery(query);
+                        LeagueDBHandler.get().defaultQuery(query);
                     }
                     System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());
                     aaa++;
@@ -717,7 +717,7 @@ public class Test extends Command{
 
                     // query = "UPDATE summoner_tracking SET lane = '" + lane.ordinal() + "', side = '" + team.ordinal() + "', build = '" + build + "' WHERE id = " + row.get("id") + ";";
                     // System.out.println(row.get("id"));
-                    // DatabaseHandler.runQueryAsync(query);
+                    // BotDB.get().defaultQueryAsync(query);
                     // try {
                     //     Thread.sleep(1000);
                     // } catch (Exception e1) {
@@ -727,7 +727,7 @@ public class Test extends Command{
             break;
             case "fixlolna":
                 query = "SELECT game_id, account_id from summoner_tracking where league_shard = 8";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 for(QueryRecord row : res){
                     String game_id = "NA1_"+row.get("game_id");
                     String account_id = row.get("account_id");
@@ -746,12 +746,12 @@ public class Test extends Command{
 
                     query = "UPDATE summoner_tracking SET league_shard = " + match.getPlatform().ordinal() + ",time_start = '" + new Timestamp(time_start) + "', time_end = '" + new Timestamp(time_end) + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
                     System.out.println(query);
-                    DatabaseHandler.runQuery(query);
+                    BotDB.get().defaultQuery(query);
                 }
             break;
             case "summoners":
                 query = "SELECT account_id, league_shard from summoner";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 String ssss = "";
                 for(QueryRecord row : res){
                     String account_id = row.get("account_id");
@@ -787,7 +787,7 @@ public class Test extends Command{
             break;
             case "fixlolsum":
                 query = "SELECT game_id, account_id from summoner_tracking where league_shard = 3 AND account_id = '" + args[1] + "'";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 System.out.println(res.size());
                 for(QueryRecord row : res){
                     String game_id = "EUW1_"+row.get("game_id");
@@ -808,12 +808,12 @@ public class Test extends Command{
                     
                     query = "UPDATE summoner_tracking SET league_shard = " + match1.getPlatform().ordinal() + ", time_start = '" + new Timestamp(time_start) + "', time_end = '" + new Timestamp(time_end) + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
                     System.out.println(query);
-                    DatabaseHandler.runQuery(query);
+                    BotDB.get().defaultQuery(query);
                 }
             break;
             case "playplaylist":
                 int playlistId = Integer.valueOf(args[1]);
-                QueryCollection tracks = DatabaseHandler.getPlaylistTracks(playlistId, null, null);
+                QueryCollection tracks = BotDB.getPlaylistTracks(playlistId, null, null);
 
                 List<String> URIs = new ArrayList<String>();
                 for(QueryRecord track : tracks) {
@@ -828,11 +828,11 @@ public class Test extends Command{
             case "addtrackplaylist":
                 AudioTrack track = PlayerManager.get().createTrack(e.getGuild(), args[1]);
                 PlayerManager.get().encodeTrack(track);
-                DatabaseHandler.addTrackToPlaylist(2, track.getInfo().uri, PlayerManager.get().encodeTrack(track), null);
+                BotDB.addTrackToPlaylist(2, track.getInfo().uri, PlayerManager.get().encodeTrack(track), null);
             break;
             case "loadtracksfromdb":
                 List<AudioTrack> tracksFinal = new ArrayList<>();
-                QueryCollection tracksToLoad = DatabaseHandler.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
+                QueryCollection tracksToLoad = BotDB.getPlaylistTracks(Integer.parseInt(args[1]), null, null);
                 for(QueryRecord trackToLoad : tracksToLoad) {
                     tracksFinal.add(PlayerManager.get().decodeTrack(trackToLoad.get("encoded_track")));
                 }
@@ -840,11 +840,11 @@ public class Test extends Command{
                 (new ResultHandler(e, false, PlayTiming.LAST)).playlistLoaded(playlist);
             break;
             case "loadqueuedb":
-                DatabaseHandler.addTrackToPlaylist(Integer.valueOf(args[1]), (List<AudioTrack>) PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue(), null);
+                BotDB.addTrackToPlaylist(Integer.valueOf(args[1]), (List<AudioTrack>) PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue(), null);
             break;
             case "fixloldb":
                 query = "SELECT id, summoner_id, league_shard from summoner";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 for (QueryRecord acc : res) {
                     String summoner_id = acc.get("summoner_id");
                     int league_shard = acc.getAsInt("league_shard");
@@ -856,7 +856,7 @@ public class Test extends Command{
                     RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
                     String query1 = "UPDATE summoner SET riot_id = '" + (account.getName() + "#" + account.getTag()) + "', account_id = '" + summoner.getAccountId() + "', puuid = '" + summoner.getPUUID() + "' WHERE id = " + acc.get("id");
                     System.out.println(query1);
-                    DatabaseHandler.runQuery(query1);
+                    BotDB.get().defaultQuery(query1);
                     try {
                         Thread.sleep(350);
                     } catch (InterruptedException e1) {
@@ -877,12 +877,12 @@ public class Test extends Command{
             break;
             case "splitsoundplays":
                 query = "select * from sound_interactions";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 query = "";
                 for (QueryRecord row : res) {
                     int times = row.getAsInt("times");
                     System.out.println(row.get("sound_id") + " " + row.get("user_id") + " " + times );
-                    for (i = 0; i < times; i++) {
+                    for (int i = 0; i < times; i++) {
                         query += "(" + row.get("user_id") + ", " + row.get("sound_id") + "),";
                     }
                     //remove ,
@@ -891,11 +891,11 @@ public class Test extends Command{
                 }
                 query = query.substring(0, query.length() - 1);
                 query = "INSERT INTO sound_interactions2(user_id, sound_id) VALUES " + query;
-                DatabaseHandler.runQuery(query);
+                BotDB.get().defaultQuery(query);
             break;
             case "splitlike":
                 query = "select * from sound_interactions";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 query = "";
                 for (QueryRecord row : res) {
                     int likevalue = row.getAsInt("like") == 1 ? 1 : 0;
@@ -905,11 +905,11 @@ public class Test extends Command{
                 }
                 query = query.substring(0, query.length() - 1);
                 query = "INSERT INTO sound_interactions3(user_id, sound_id, value) VALUES " + query;
-                DatabaseHandler.runQuery(query);
+                BotDB.get().defaultQuery(query);
             break;
             case "testblob":
                 query = "SELECT * FROM soundboard WHERE id = 23";
-                QueryRecord row1 = DatabaseHandler.fetchJRow(query);
+                QueryRecord row1 = BotDB.get().lineQuery(query);
                 String blobString = row1.get("thumbnail");
                 if (blobString != null) {
                     try {
@@ -933,11 +933,11 @@ public class Test extends Command{
                 break;
             case "converttwitchalert":
                 query = "select * from twitch_subscription";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
 
                 for (QueryRecord r : res) {
                     int id = 0;
-                    Connection c = DatabaseHandler.getConnection();
+                    Connection c = BotDB.get().getConnection();
                     query = "INSERT INTO alert(guild_id, message, channel, enabled, type, send_type) VALUES(?, ?, ?, 1, ?, ?);";
                     try (PreparedStatement pstmt = c.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
                         pstmt.setString(1, r.get("guild_id"));
@@ -985,7 +985,7 @@ public class Test extends Command{
             break;
             case "updateconduit":
             query = "SELECT streamer_id from twitch_subscription";
-            res = DatabaseHandler.safJQuery(query);
+            res = BotDB.get().query(query);;
             for (QueryRecord r : res) {
                 TwitchClient.registerSubEvent(r.get("streamer_id"));
             }
@@ -1007,7 +1007,7 @@ public class Test extends Command{
             break;
             case "movematch":
                 query = "SELECT game_id, league_shard, id from summoner_tracking where game_id in(select game_id from summoner_tracking where game_id not in (select game_id from summoner_match))";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 System.out.println(res.size());
                 for (QueryRecord r : res) {
                     System.out.println(r.get("id") + " - " + r.get("game_id"));
@@ -1024,7 +1024,7 @@ public class Test extends Command{
                 break;
             case "pushbuild":
                 query = "SELECT st.id, sm.game_id, sm.league_shard, st.account_id, s.summoner_id FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id JOIN summoner s ON st.account_id = s.account_id AND st.league_shard = s.league_shard ORDER BY st.id;";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 System.out.println(res.size());
                 for (QueryRecord r : res) {
                     System.out.println(r.get("id") + " - " + r.get("game_id"));
@@ -1048,7 +1048,7 @@ public class Test extends Command{
             case "mergelol":
             query = "SELECT st.id, sm.game_id, sm.league_shard, st.account_id, s.summoner_id FROM summoner_tracking st JOIN summoner_match sm ON st.summoner_match_id = sm.id JOIN summoner s ON st.account_id = s.account_id WHERE st.id > 294 ORDER BY st.id;";
             
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 System.out.println(res.size());
                 for(QueryRecord row : res){
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
@@ -1075,7 +1075,7 @@ public class Test extends Command{
 
             case "fixmatch":
                 query = "select id, game_id, league_shard from summoner_match where bans = '{}' order by id";
-                res = DatabaseHandler.safJQuery(query);
+                res = BotDB.get().query(query);;
                 for (QueryRecord row : res) {
                     String region = LeagueShard.values()[row.getAsInt("league_shard")].name();
                     String game_id = region + "_"+row.get("game_id");
@@ -1091,7 +1091,7 @@ public class Test extends Command{
                         bans.put(teamID, list);
                     }
                     query = "UPDATE summoner_match SET bans = '" + bans.toString() + "' WHERE id = " + row.get("id");
-                    DatabaseHandler.runQuery(query);
+                    BotDB.get().defaultQuery(query);
                     System.out.println(row.get("id"));
                     try {
                         Thread.sleep(1500);
@@ -1117,14 +1117,14 @@ public class Test extends Command{
                 break;
                 case "fixaccountid":
                     query = "SELECT id, puuid, league_shard FROM summoner WHERE account_id IS NULL ORDER BY id DESC";
-                    res = LeagueDBHandler.safJQuery(query);
+                    res = LeagueDBHandler.get().query(query);
                     ChronoTask fixaccountTask = () -> {
                         int n = 0;
                         for (QueryRecord sum : res) {
                             try {
                                 Summoner sssss = LeagueHandler.getSummonerByPuuid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
                                 String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
-                                LeagueDBHandler.runQuery(fixQuery);
+                                LeagueDBHandler.get().defaultQuery(fixQuery);
                                 try {
                                     Thread.sleep(500);
                                 } catch (Exception ee) {
@@ -1141,7 +1141,7 @@ public class Test extends Command{
                 break;
                 case "insertbullshit":
                     query = "SELECT s.id, s.puuid, s.league_shard FROM summoner s LEFT JOIN rank r ON s.id = r.summoner_id LEFT JOIN masteries m ON s.id = m.summoner_id WHERE r.summoner_id IS NULL AND m.summoner_id IS NULL ORDER BY s.id DESC;";
-                    res = LeagueDBHandler.safJQuery(query);
+                    res = LeagueDBHandler.get().query(query);
                     ChronoTask bullshit = () -> {
                         int n = 0;
                         for (QueryRecord sum : res) {
@@ -1173,7 +1173,7 @@ public class Test extends Command{
                 break;
                 case "setmatchevent":
                     query = "SELECT id, game_id, league_shard FROM `match` WHERE events = '{}' ORDER BY id DESC";
-                    res = LeagueDBHandler.safJQuery(query);
+                    res = LeagueDBHandler.get().query(query);
                     ChronoTask setMatchEvent = () -> {
                         int n = 0;
                         for (QueryRecord row : res) {
@@ -1237,7 +1237,7 @@ public class Test extends Command{
     private static DefaultCategoryDataset createDataset() {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         String query = "select time, count(name) as count from command_analytic where MONTH(time) = 8 group by DAY(time);";
-        QueryCollection res = DatabaseHandler.safJQuery(query);
+        QueryCollection res = BotDB.get().query(query);;
         
         for(QueryRecord row : res){
             System.out.println(row.get("time") + " " + row.get("count"));

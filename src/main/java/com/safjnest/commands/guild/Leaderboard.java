@@ -1,6 +1,6 @@
 package com.safjnest.commands.guild;
 
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -46,7 +46,7 @@ public class Leaderboard extends SlashCommand {
     protected void execute(CommandEvent event) {
         int limit = (SafJNest.intIsParsable(event.getArgs())) ? Integer.parseInt(event.getArgs()) : 10;
 
-        QueryCollection users = DatabaseHandler.getUsersByExp(event.getGuild().getId(), limit);
+        QueryCollection users = BotDB.getUsersByExp(event.getGuild().getId(), limit);
 
         if(users.isEmpty()) {
             event.reply("```No Results```");
@@ -89,7 +89,7 @@ public class Leaderboard extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         int limit = (event.getOption("limit") != null) ? event.getOption("limit").getAsInt() : 10;
 
-        QueryCollection users = DatabaseHandler.getUsersByExp(event.getGuild().getId(), limit);
+        QueryCollection users = BotDB.getUsersByExp(event.getGuild().getId(), limit);
         
         if(users.isEmpty()) {
             event.reply("```No Results```");

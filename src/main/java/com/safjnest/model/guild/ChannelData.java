@@ -1,6 +1,6 @@
 package com.safjnest.model.guild;
 
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
@@ -76,7 +76,7 @@ public class ChannelData {
     public boolean setCommand(boolean enabled) {
         handleEmptyID();
         
-        boolean result = DatabaseHandler.setChannelCommandEnabled(this.ID, enabled);
+        boolean result = BotDB.setChannelCommandEnabled(this.ID, enabled);
         if (result) {
             this.statisticsEnabled = enabled;
         }
@@ -91,7 +91,7 @@ public class ChannelData {
     public boolean enableExperience(boolean exp) {
         handleEmptyID();
 
-        boolean result = DatabaseHandler.setChannelExpEnabled(this.ID, exp);
+        boolean result = BotDB.setChannelExpEnabled(this.ID, exp);
         if (result) {
             this.expEnabled = exp;
         }
@@ -101,7 +101,7 @@ public class ChannelData {
     public boolean setExperienceModifier(double value) {
         handleEmptyID();
 
-        boolean result = DatabaseHandler.setChannelExpModifier(this.ID, value);
+        boolean result = BotDB.setChannelExpModifier(this.ID, value);
         if (result) {
             this.experienceModifier = value;
         }
@@ -111,7 +111,7 @@ public class ChannelData {
     public boolean setLeagueShard(LeagueShard shard) {
         handleEmptyID();
 
-        boolean result = DatabaseHandler.updateShardChannel(ID, shard);
+        boolean result = BotDB.updateShardChannel(ID, shard);
         if (result) {
             this.leagueShard = shard;
         }
@@ -126,13 +126,13 @@ public class ChannelData {
         if (this.ID.equals("0")) {
             return true;
         }
-        return DatabaseHandler.deleteChannelData(this.ID);
+        return BotDB.deleteChannelData(this.ID);
     }
 
     private void handleEmptyID() {
         if (this.ID.equals("0")) {
             BotLogger.debug("Pushing local ChannelData into Database => {0}", new LoggerIDpair(String.valueOf(this.CHANNEL_ID), LoggerIDpair.IDType.CHANNEL));
-            this.ID = DatabaseHandler.insertChannelData(this.GUILD_ID, this.CHANNEL_ID);
+            this.ID = BotDB.insertChannelData(this.GUILD_ID, this.CHANNEL_ID);
         }
     }
 

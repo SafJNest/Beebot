@@ -3,7 +3,6 @@ package com.safjnest.sql;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -11,12 +10,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import org.json.simple.JSONObject;
-
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -33,10 +28,6 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
-import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.model.BotSettings.DatabaseSettings;
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.model.build.CustomBuildData;
 
@@ -47,17 +38,26 @@ public class LeagueDBHandler extends AbstractDB {
         instance = new LeagueDBHandler();
     }
 
+    @Override
+	protected String getDatabase() {
+        return "league_of_legends";
+	}
+
+    public static LeagueDBHandler get() {
+        return instance;
+    }
+
     public static QueryCollection getLOLAccountsByUserId(String user_id){
         String query = "SELECT puuid, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
-        return instance.safJQuery(query);
+        return instance.query(query);
     }
 
     public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
-        return instance.fetchJRow("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
+        return instance.lineQuery("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
     }
 
     public static QueryCollection getAdvancedLOLData(String summonerId) {
-        return instance.safJQuery("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `participant` WHERE `summoner_id` = '" + summonerId + "' GROUP BY `champion` ORDER BY `games` DESC;");
+        return instance.query("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `participant` WHERE `summoner_id` = '" + summonerId + "' GROUP BY `champion` ORDER BY `games` DESC;");
     }
 
     public static QueryCollection getAllGamesForAccount(int summonerId, long time_start, long time_end) {
@@ -66,7 +66,7 @@ public class LeagueDBHandler extends AbstractDB {
             timeFilter = "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
                         "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' ";
         }
-        return instance.safJQuery("SELECT sm.game_id, sm.game_type, st.win " +
+        return instance.query("SELECT sm.game_id, sm.game_type, st.win " +
                          "FROM participant st " +
                          "INNER JOIN `match` sm ON st.match_id = sm.id " +
                          "WHERE st.summoner_id = '" + summonerId + "' " + timeFilter);
@@ -135,7 +135,7 @@ public class LeagueDBHandler extends AbstractDB {
             "GROUP BY overall.`champion` " +
             "ORDER BY `games` DESC;";
 
-        return instance.safJQuery(combinedQuery);
+        return instance.query(combinedQuery);
     }
 
     public static int addLOLAccount(Summoner summoner) {
@@ -240,11 +240,11 @@ public class LeagueDBHandler extends AbstractDB {
 
     public static boolean deleteLOLaccount(String user_id, String puuid){
         String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';";
-        return instance.runQuery(query);
+        return instance.defaultQuery(query);
     }
 
      public static QueryCollection getRegistredLolAccount(long time_start) {
-        return instance.safJQuery(
+        return instance.query(
             "SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
             + "FROM summoner s "
             + "LEFT JOIN ("
@@ -268,7 +268,7 @@ public class LeagueDBHandler extends AbstractDB {
 
 
     public static QueryRecord getRegistredLolAccount(int summonerId, long time_start) {
-        return instance.fetchJRow("SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
+        return instance.lineQuery("SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
                 + "FROM summoner s "
                 + "LEFT JOIN (SELECT t.summoner_id, t.game_id, t.rank, t.lp, t.time_start "
                 + "           FROM (SELECT st.summoner_id, sm.game_id, st.rank, st.lp, sm.time_start, "
@@ -319,25 +319,25 @@ public class LeagueDBHandler extends AbstractDB {
 
 
 
-        return instance.runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + JSONObject.toJSONString(pings) + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "');");
+        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + JSONObject.toJSONString(pings) + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "');");
     }
 
 
     public static QueryCollection getFocusedSummoners(String query, LeagueShard shard) {
-        return instance.safJQuery("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
+        return instance.query("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
     }
 
 
     public static QueryCollection getSummonerData(int summoner_id, long game_id) {
-        return instance.safJQuery("SELECT summoner_id, game_id, rank, lp, gain, win time_start, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND game_id = '" + game_id + "';");
+        return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win time_start, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND game_id = '" + game_id + "';");
     }
 
     public static QueryCollection getSummonerData(int summoner_id, LeagueShard shard, long time_start, long time_end) {
-        return instance.safJQuery("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
+        return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
     public static QueryCollection getSummonerData(int summoner_id) {
-        return instance.safJQuery(
+        return instance.query(
             "SELECT st.summoner_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
             "FROM participant st " +
             "JOIN `match` sm ON st.match_id = sm.id " +
@@ -347,19 +347,19 @@ public class LeagueDBHandler extends AbstractDB {
     }
 
     public static boolean hasSummonerData(int sumonerId) {
-        return !instance.fetchJRow("SELECT 1 from participant where summoner_id = '" + sumonerId + "';").isEmpty();
+        return !instance.lineQuery("SELECT 1 from participant where summoner_id = '" + sumonerId + "';").isEmpty();
     }
 
     public static boolean trackSummoner(String user_id, String account_id, boolean track) {
-        return instance.runQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
+        return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
     }
 
     public static QueryRecord getSummonerData(String user_id, String account_id) {
-        return instance.fetchJRow("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
+        return instance.lineQuery("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
     }
 
     public static QueryCollection getSummonersBuPuuid(String puuid) {
-        return instance.safJQuery("SELECT account_id, league_shard FROM summoner WHERE puuid = '" + puuid + "';");
+        return instance.query("SELECT account_id, league_shard FROM summoner WHERE puuid = '" + puuid + "';");
     }
 
     public static boolean setChampionData(LOLMatch match, HashMap<String, HashMap<String, String>> matchData) {
@@ -401,7 +401,7 @@ public class LeagueDBHandler extends AbstractDB {
     }
 
     public static boolean setMatchEvent(int matchId, String json) {
-        return instance.runQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
+        return instance.defaultQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
     }
 
     @SuppressWarnings("unchecked")
@@ -440,7 +440,7 @@ public class LeagueDBHandler extends AbstractDB {
                 ps.setString(7, match.getGameVersion());
 
                 ps.executeUpdate();
-                id = instance.fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+                id = instance.lineQuery(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
                 c.commit();
             }
         } catch (SQLException ex) {
@@ -465,7 +465,7 @@ public class LeagueDBHandler extends AbstractDB {
     }
 
     public static QueryCollection getMatchData() {
-        return instance.safJQuery("SELECT sm.id, sm.game_id, sm.league_shard, sm.game_type, sm.bans, sm.time_start, sm.time_end, sm.patch, st.account_id, st.win, st.kda, st.rank, st.lp, st.gain, st.champion, st.lane, st.side, st.build FROM participant st JOIN `match` sm ON st.match_id = sm.id where sm.id > 10353;");
+        return instance.query("SELECT sm.id, sm.game_id, sm.league_shard, sm.game_type, sm.bans, sm.time_start, sm.time_end, sm.patch, st.account_id, st.win, st.kda, st.rank, st.lp, st.gain, st.champion, st.lane, st.side, st.build FROM participant st JOIN `match` sm ON st.match_id = sm.id where sm.id > 10353;");
     }
 
     public static String normalize(String string) {
@@ -490,15 +490,15 @@ public class LeagueDBHandler extends AbstractDB {
     }
 
     public static QueryCollection getFocusedCustomBuild(String name){
-        return instance.safJQuery("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
+        return instance.query("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
     }
 
     public static CustomBuildData getCustomBuild(String id){
-        return new CustomBuildData(instance.fetchJRow("SELECT id, name, skin, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
+        return new CustomBuildData(instance.lineQuery("SELECT id, name, skin, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
     }
 
     public static QueryCollection getCustomBuildByUser(String user_id){
-        return instance.safJQuery("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
+        return instance.query("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
     }
 
     public static boolean updateSummonerMasteries(int summonerId, List<ChampionMastery> masteries) {
@@ -529,7 +529,7 @@ public class LeagueDBHandler extends AbstractDB {
 
     public static int getSummonerIdByPuuid(String puuid) {
         try {
-            return instance.fetchJRow("select id from summoner where puuid = '"+puuid+"'").getAsInt("id");  
+            return instance.lineQuery("select id from summoner where puuid = '"+puuid+"'").getAsInt("id");  
         } catch (Exception e) {
            return 0;
         }
@@ -582,9 +582,4 @@ public class LeagueDBHandler extends AbstractDB {
             }
         }
     }
-
-	@Override
-	protected String getDatabase() {
-        return "league_of_legends";
-	}
 }

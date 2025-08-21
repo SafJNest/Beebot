@@ -8,7 +8,7 @@ import com.github.twitch4j.helix.domain.User;
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.TwitchData;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.PermissionHandler;
@@ -30,7 +30,7 @@ class TwitchEventsHandler {
     public static void onStreamOnlineEvent(StreamOnlineEvent event) {
         BotLogger.trace("[TWITCH] " + event.getBroadcasterUserName() + " is now live on Twitch!");
         
-        QueryCollection result = DatabaseHandler.getTwitchSubscriptions(event.getBroadcasterUserId());
+        QueryCollection result = BotDB.getTwitchSubscriptions(event.getBroadcasterUserId());
         
         User streamer = TwitchClient.getStreamerByName(event.getBroadcasterUserLogin());
 

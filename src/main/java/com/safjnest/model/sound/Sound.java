@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 import java.util.List;
 
 import com.safjnest.core.audio.types.AudioType;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryRecord;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -103,7 +103,7 @@ public class Sound {
     }
 
     public boolean setName(String name) {
-        boolean result = DatabaseHandler.updateSound(this.ID, name);
+        boolean result = BotDB.updateSound(this.ID, name);
         if (result) {
             this.name = name;
         }
@@ -111,7 +111,7 @@ public class Sound {
     }
 
     public boolean setPublic(boolean isPublic) {
-        boolean result = DatabaseHandler.updateSound(this.ID, isPublic);
+        boolean result = BotDB.updateSound(this.ID, isPublic);
         if (result) {
             this.isPublic = isPublic;
         }
@@ -119,7 +119,7 @@ public class Sound {
     }
 
     public boolean setTags(List<Tag> tags) {
-        boolean result = DatabaseHandler.setSoundTags(this.ID, tags);
+        boolean result = BotDB.setSoundTags(this.ID, tags);
         if (result) {
             this.tags = tags;
         }
@@ -131,7 +131,7 @@ public class Sound {
     }
 
     public boolean increaseUserPlays(String userId, AudioType source) {
-        boolean result = DatabaseHandler.updateUserPlays(this.ID, userId, source.ordinal());
+        boolean result = BotDB.updateUserPlays(this.ID, userId, source.ordinal());
         if (result) plays++;
         return result;
     }
@@ -154,7 +154,7 @@ public class Sound {
      * @return
      */
     public int[] getPlays(String userId) {
-        QueryRecord plays = DatabaseHandler.getPlays(this.ID, userId);
+        QueryRecord plays = BotDB.getPlays(this.ID, userId);
         if (plays.emptyValues()) return new int[] {this.plays, 0};
 
         return new int[] {this.plays, plays.getAsInt("times")};
@@ -165,7 +165,7 @@ public class Sound {
     }
 
     public int retriveGlobalPlays() {
-        QueryRecord plays = DatabaseHandler.getGlobalPlays(this.ID);
+        QueryRecord plays = BotDB.getGlobalPlays(this.ID);
         if (plays.emptyValues()) return 0;
         this.plays = plays.getAsInt("times");
 
@@ -177,7 +177,7 @@ public class Sound {
     }
 
     private int[] retriveLikeDislike() {
-        QueryRecord likes = DatabaseHandler.getLikeDislike(this.ID);
+        QueryRecord likes = BotDB.getLikeDislike(this.ID);
         if (likes.emptyValues()) return new int[] {0, 0};
 
         return new int[] {likes.getAsInt("likes"), likes.getAsInt("dislikes")};
@@ -208,7 +208,7 @@ public class Sound {
 
 
     public boolean like(String userId, boolean like) {
-        boolean result = DatabaseHandler.setLikeDislike(this.ID, userId, (like ? 1 : 0));
+        boolean result = BotDB.setLikeDislike(this.ID, userId, (like ? 1 : 0));
         if (result) {
             updateLikeDislike();
         }
@@ -216,7 +216,7 @@ public class Sound {
     }
 
     public boolean dislike(String userId, boolean dislike) {
-        boolean result = DatabaseHandler.setLikeDislike(this.ID, userId, (dislike ? -1 : 0));
+        boolean result = BotDB.setLikeDislike(this.ID, userId, (dislike ? -1 : 0));
         if (result) {
             updateLikeDislike();
         }
@@ -224,11 +224,11 @@ public class Sound {
     }
 
     public boolean hasLiked(String userId) {
-        return DatabaseHandler.hasInterectedSound(this.ID, userId).getAsBoolean("like");
+        return BotDB.hasInterectedSound(this.ID, userId).getAsBoolean("like");
     }
 
     public boolean hasDisliked(String userId) {
-        return DatabaseHandler.hasInterectedSound(this.ID, userId).getAsBoolean("dislike");
+        return BotDB.hasInterectedSound(this.ID, userId).getAsBoolean("dislike");
     }
 
 

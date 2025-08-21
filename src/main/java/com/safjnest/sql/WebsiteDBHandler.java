@@ -97,7 +97,7 @@ public class WebsiteDBHandler {
         queryAnalytics.put(System.currentTimeMillis(), queries);
     }
 
-    public static QueryCollection safJQuery(String query) {
+    public static QueryCollection query(String query) {
         connectIfNot();
 
         Connection c = getConnection();
@@ -149,7 +149,7 @@ public class WebsiteDBHandler {
      * @param query
      * @throws SQLException
      */
-    public static QueryCollection safJQuery(Statement stmt, String query) throws SQLException {
+    public static QueryCollection query(Statement stmt, String query) throws SQLException {
         connectIfNot();
 
         QueryCollection result = new QueryCollection();
@@ -178,7 +178,7 @@ public class WebsiteDBHandler {
      * @param query
      * @throws SQLException
      */
-    public static QueryRecord fetchJRow(String query) {
+    public static QueryRecord lineQuery(String query) {
         connectIfNot();
 
         Connection c = getConnection();
@@ -226,7 +226,7 @@ public class WebsiteDBHandler {
      * @param query
      * @throws SQLException
      */
-    public static QueryRecord fetchJRow(Statement stmt, String query) throws SQLException {
+    public static QueryRecord lineQuery(Statement stmt, String query) throws SQLException {
         connectIfNot();
 
 
@@ -317,7 +317,7 @@ public class WebsiteDBHandler {
     }
 
     public static Optional<ApiKey> getApiBySha256Hash(String sha256) {
-        QueryRecord res = fetchJRow("SELECT * FROM ApiKeys WHERE sha256_hash = " + sha256 + ";");
+        QueryRecord res = lineQuery("SELECT * FROM ApiKeys WHERE sha256_hash = " + sha256 + ";");
 
         if (res == null || res.emptyValues()) 
             return Optional.empty();
@@ -341,7 +341,7 @@ public class WebsiteDBHandler {
     }
 
     public static String getSpotifyUserToken(String userId) {
-        QueryRecord res = fetchJRow("SELECT * FROM SpotifyToken WHERE discordId = '" + userId + "';");
+        QueryRecord res = lineQuery("SELECT * FROM SpotifyToken WHERE discordId = '" + userId + "';");
 
         if (res == null || res.emptyValues()) 
             return null;

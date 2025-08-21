@@ -107,7 +107,7 @@ public class SpotifyDBHandler {
         queryAnalytics.put(System.currentTimeMillis(), queries);
     }
 
-    public static QueryCollection safJQuery(String query) {
+    public static QueryCollection query(String query) {
         connectIfNot();
 
         Connection c = getConnection();
@@ -159,7 +159,7 @@ public class SpotifyDBHandler {
      * @param query
      * @throws SQLException
      */
-    public static QueryCollection safJQuery(Statement stmt, String query) throws SQLException {
+    public static QueryCollection query(Statement stmt, String query) throws SQLException {
         connectIfNot();
 
         QueryCollection result = new QueryCollection();
@@ -188,7 +188,7 @@ public class SpotifyDBHandler {
      * @param query
      * @throws SQLException
      */
-    public static QueryRecord fetchJRow(String query) {
+    public static QueryRecord lineQuery(String query) {
         connectIfNot();
 
         Connection c = getConnection();
@@ -236,7 +236,7 @@ public class SpotifyDBHandler {
      * @param query
      * @throws SQLException
      */
-    public static QueryRecord fetchJRow(Statement stmt, String query) throws SQLException {
+    public static QueryRecord lineQuery(Statement stmt, String query) throws SQLException {
         connectIfNot();
 
 

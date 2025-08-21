@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.SoundEmbed;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -41,7 +41,7 @@ public class SoundboardThumbnail extends SlashCommand{
 	protected void execute(SlashCommandEvent event) {
         String soundboardName = event.getOption("soundboard_name").getAsString();
 
-        if(!DatabaseHandler.soundboardExists(soundboardName, event.getGuild().getId(), event.getUser().getId())) {
+        if(!BotDB.soundboardExists(soundboardName, event.getGuild().getId(), event.getUser().getId())) {
             event.deferReply(true).addContent("Soundboard does not exist or you dont have permission to play the selected one.").queue();
             return;
         }
@@ -52,7 +52,7 @@ public class SoundboardThumbnail extends SlashCommand{
             event.deferReply(true).addContent("Invalid thumbnail.").queue();
             return;
         }
-        if (!DatabaseHandler.updateSoundboardThumbnail(soundboardID, thumbnail)) {
+        if (!BotDB.updateSoundboardThumbnail(soundboardID, thumbnail)) {
             event.deferReply(true).addContent("Error updating thumbnail.").queue();
             return;
         }

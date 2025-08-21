@@ -8,7 +8,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
@@ -70,7 +70,7 @@ public class List extends SlashCommand {
         eb.setTitle("List of " + event.getGuild().getName());
         eb.setColor(Bot.getColor());
 
-        QueryCollection sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId());
+        QueryCollection sounds = BotDB.getlistGuildSounds(event.getGuild().getId());
 
         eb.setDescription("Total Sound: " + sounds.size());
         

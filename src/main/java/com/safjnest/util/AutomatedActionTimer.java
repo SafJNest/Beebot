@@ -15,7 +15,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.guild.AutomatedAction;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
@@ -86,7 +86,7 @@ public class AutomatedActionTimer {
         return () -> {
             try {
                 nextReschedule = LocalDateTime.now().plusNanos(rescheduleTiming * 1000 * 1000);
-                QueryCollection tasks = DatabaseHandler.getAutomatedActionsExpiring();
+                QueryCollection tasks = BotDB.getAutomatedActionsExpiring();
                 BotLogger.info("[AutomatedActionTimer] Rescheduling tasks: " + tasks.size());
                 for (QueryRecord task : tasks) {
                     LocalDateTime dateTime = task.getAsLocalDateTime("time");

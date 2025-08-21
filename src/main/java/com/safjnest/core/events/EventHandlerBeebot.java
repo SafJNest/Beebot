@@ -10,7 +10,7 @@ import com.safjnest.core.events.types.WarningEvent;
 import com.safjnest.model.guild.AutomatedAction;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.MemberData;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.util.AutomatedActionTimer;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -41,7 +41,7 @@ public class EventHandlerBeebot extends BeebotListenerAdapter {
             if (!action.canExecute(memberData.getId())) continue;
 
             LocalDateTime dateTime = LocalDateTime.now().plusSeconds(action.getActionTime());
-            String automatedActionExpiringId = DatabaseHandler.insertAutomatedActionExpiring(memberData.getId(), action.getId(), dateTime.toEpochSecond(ZoneOffset.UTC) * 1000);
+            String automatedActionExpiringId = BotDB.insertAutomatedActionExpiring(memberData.getId(), action.getId(), dateTime.toEpochSecond(ZoneOffset.UTC) * 1000);
             
             Runnable onSuccess = () -> {
                 if (action.getActionTime() != 0) {

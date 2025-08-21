@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.SoundEmbed;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -45,8 +45,8 @@ public class Soundboard extends SlashCommand{
 
     @Override
     public void execute(CommandEvent event) {
-        String soundboardID = DatabaseHandler.searchSoundboard(event.getArgs(), event.getGuild().getId(), event.getAuthor().getId()).get("id");
-        if(soundboardID == null || soundboardID.isEmpty() || !DatabaseHandler.soundboardExists(soundboardID, event.getGuild().getId(), event.getAuthor().getId())) {
+        String soundboardID = BotDB.searchSoundboard(event.getArgs(), event.getGuild().getId(), event.getAuthor().getId()).get("id");
+        if(soundboardID == null || soundboardID.isEmpty() || !BotDB.soundboardExists(soundboardID, event.getGuild().getId(), event.getAuthor().getId())) {
             event.reply("Soundboard does not exist or you dont have permission to play the selected one.");
             return;
         }

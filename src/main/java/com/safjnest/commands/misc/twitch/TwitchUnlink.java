@@ -13,7 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 
 public class TwitchUnlink extends SlashCommand{
 
@@ -46,7 +46,7 @@ public class TwitchUnlink extends SlashCommand{
 
         GuildCache.getGuildOrPut(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
-        if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
+        if (BotDB.getTwitchSubscriptions(streamerId).size() == 0)
             TwitchClient.unregisterSubEvent(streamerId);
 
         event.reply("Twitch subscription registered").queue();

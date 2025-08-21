@@ -5,7 +5,7 @@ import java.util.HashMap;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandClient;
 import com.jagrosh.jdautilities.command.CommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.ExperienceSystem;
@@ -287,7 +287,7 @@ public class Functions {
         if(threshold == 0)
             return;
         
-        int times = DatabaseHandler.getBlacklistBan(badGuy.getId());
+        int times = BotDB.getBlacklistBan(badGuy.getId());
 
         if(!guildData.blacklistEnabled() || guildData.getThreshold() == 0 || guildData.getThreshold() > times)
             return;
@@ -319,12 +319,12 @@ public class Functions {
         if(threshold == 0)
             return;
         
-        DatabaseHandler.insertUserBlacklist(badGuy.getId(), guild.getId());
+        BotDB.insertUserBlacklist(badGuy.getId(), guild.getId());
 
         int times = 0;
-        times = times + DatabaseHandler.getBannedTimes(badGuy.getId());
+        times = times + BotDB.getBannedTimes(badGuy.getId());
 
-        QueryCollection guilds = DatabaseHandler.getGuildByThreshold(times, guild.getId());
+        QueryCollection guilds = BotDB.getGuildByThreshold(times, guild.getId());
         if(guilds == null)
             return;
         
@@ -442,7 +442,7 @@ public class Functions {
                 
         String commandName = event.getName();
         String args = event.getOptions().toString();
-        DatabaseHandler.insertCommand(guildId, event.getUser().getId(), commandName, args);
+        BotDB.insertCommand(guildId, event.getUser().getId(), commandName, args);
     }
 
     public static void updateCommandStatitics(CommandEvent event, Command command) {
@@ -452,7 +452,7 @@ public class Functions {
         
         String commandName = command.getName();
         String args = event.getArgs();
-        DatabaseHandler.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
+        BotDB.insertCommand(event.getGuild().getId(), event.getMember().getId(), commandName, args);
     }
 
     public static void handleRoleDeleteAlert(Guild guild, String role_id) {

@@ -1,50 +1,27 @@
 package com.safjnest.sql;
 
-import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
-import java.sql.Types;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-
-import net.dv8tion.jda.api.entities.Message.Attachment;
-
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.model.BotSettings.DatabaseSettings;
-import com.safjnest.model.guild.alert.AlertSendType;
-import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.model.sound.Sound;
-import com.safjnest.model.sound.Tag;
-import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 public abstract class AbstractDB {
     protected abstract String getDatabase();
 
-    protected Connection getConnection() {
-        try { return Databaseplusmathpowhandler2.getConnection(getDatabase());} 
+    public Connection getConnection() {
+        try { return DatabaseHandler.getConnection(getDatabase());} 
         catch (SQLException e) { return null; }
     }
 
-    protected QueryCollection safJQuery(String query) {
+    public QueryCollection query(String query) {
         Connection c = null;
         try {
-            c = Databaseplusmathpowhandler2.getConnection(getDatabase());
+            c = DatabaseHandler.getConnection(getDatabase());
         } catch (SQLException e) { }
 
         if (c == null) {
@@ -96,7 +73,7 @@ public abstract class AbstractDB {
      * @param query
      * @throws SQLException
      */
-    public QueryCollection safJQuery(Statement stmt, String query) throws SQLException {
+    public QueryCollection query(Statement stmt, String query) throws SQLException {
 
         QueryCollection result = new QueryCollection();
 
@@ -123,11 +100,11 @@ public abstract class AbstractDB {
      * @param query
      * @throws SQLException
      */
-    public QueryRecord fetchJRow(String query) {
+    public QueryRecord lineQuery(String query) {
 
         Connection c = null;
         try {
-            c = Databaseplusmathpowhandler2.getConnection(getDatabase());
+            c = DatabaseHandler.getConnection(getDatabase());
         } catch (SQLException e) { }
 
         if (c == null) {
@@ -176,7 +153,7 @@ public abstract class AbstractDB {
      * @param query
      * @throws SQLException
      */
-    public QueryRecord fetchJRow(Statement stmt, String query) throws SQLException {
+    public QueryRecord lineQuery(Statement stmt, String query) throws SQLException {
 
 
         ResultSet rs = stmt.executeQuery(query);
@@ -200,11 +177,11 @@ public abstract class AbstractDB {
      * Run one or more queries using the default statement
      * @param queries
      */
-    public boolean runQuery(String... queries) {
+    public boolean defaultQuery(String... queries) {
 
         Connection c = null;
         try {
-            c = Databaseplusmathpowhandler2.getConnection(getDatabase());
+            c = DatabaseHandler.getConnection(getDatabase());
         } catch (SQLException e) { }
 
         if (c == null) {
@@ -242,7 +219,7 @@ public abstract class AbstractDB {
         return new ChronoTask() {
             @Override
             public void run() {
-                runQuery(queries);
+                defaultQuery(queries);
             }
         }.queueFuture();
     }
@@ -256,7 +233,7 @@ public abstract class AbstractDB {
      * @param queries
      * @throws SQLException
      */
-    public void runQuery(Statement stmt, String... queries) throws SQLException {
+    public void query(Statement stmt, String... queries) throws SQLException {
 
         for (String query : queries)
             stmt.execute(query);

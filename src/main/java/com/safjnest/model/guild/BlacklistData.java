@@ -2,7 +2,7 @@ package com.safjnest.model.guild;
 
 
 
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 
 public class BlacklistData {
     
@@ -42,7 +42,7 @@ public class BlacklistData {
     }
 
     public synchronized boolean setThreshold(int threshold) {
-        boolean result = DatabaseHandler.setBlacklistThreshold(String.valueOf(threshold), String.valueOf(guildData.getId()));
+        boolean result = BotDB.setBlacklistThreshold(String.valueOf(threshold), String.valueOf(guildData.getId()));
         if (result) {
             this.threshold = threshold;
         }
@@ -50,7 +50,7 @@ public class BlacklistData {
     }
 
     public synchronized boolean setBlackChannelId(String blackChannelId) {
-        boolean result = DatabaseHandler.setBlacklistChannel(blackChannelId, String.valueOf(guildData.getId()));
+        boolean result = BotDB.setBlacklistChannel(blackChannelId, String.valueOf(guildData.getId()));
         if (result) {
             this.blackChannelId = blackChannelId;
         }
@@ -58,7 +58,7 @@ public class BlacklistData {
     }
 
     public synchronized boolean setBlacklistEnabled(boolean toggle) {
-        boolean result = DatabaseHandler.toggleBlacklist(String.valueOf(guildData.getId()), toggle);
+        boolean result = BotDB.toggleBlacklist(String.valueOf(guildData.getId()), toggle);
         if (result) {
             this.blacklist_enabled = toggle;
         }
@@ -66,7 +66,7 @@ public class BlacklistData {
     }
 
     public boolean update() {
-        return DatabaseHandler.enableBlacklist(String.valueOf(guildData.getId()), String.valueOf(threshold), blackChannelId);
+        return BotDB.enableBlacklist(String.valueOf(guildData.getId()), String.valueOf(threshold), blackChannelId);
     }
 
     @Override

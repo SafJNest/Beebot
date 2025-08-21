@@ -7,7 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
 
@@ -37,7 +37,7 @@ public class SoundAnalytics extends Thread {
                            "WHERE last_updated < DATE_SUB(NOW(), INTERVAL 1 HOUR) " +
                            "LIMIT " + BATCH_SIZE;
 
-            List<String> soundIds = DatabaseHandler.safJQuery(query).arrayColumn("sound_id");
+            List<String> soundIds = BotDB.get().query(query).arrayColumn("sound_id");
 
             if (soundIds.isEmpty()) {
                 BotLogger.trace("[SOUND ANALYTICS] Everything is up to date");
@@ -85,7 +85,7 @@ public class SoundAnalytics extends Thread {
                            "GROUP BY p.sound_id " +
                            "ON DUPLICATE KEY UPDATE plays = VALUES(plays), likes = VALUES(likes), dislikes = VALUES(dislikes), last_updated = VALUES(last_updated)";
 
-            DatabaseHandler.safJQuery(query);
+            BotDB.get().query(query);
             BotLogger.trace("[SOUND ANALYTICS - " + ID + "] updated sounds");
         }
     }

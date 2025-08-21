@@ -17,7 +17,7 @@ import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -58,7 +58,7 @@ public class ServerInfo extends SlashCommand {
         AlertData leave = alerts.get(new AlertKey<>(AlertType.LEAVE));
         AlertData lvlup = alerts.get(new AlertKey<>(AlertType.LEVEL_UP));
 
-        QueryRecord settings = DatabaseHandler.getGuildData(guild.getId());
+        QueryRecord settings = BotDB.getGuildData(guild.getId());
         
         String welcomeMessageString = null;
         if(welcome != null) {
@@ -80,7 +80,7 @@ public class ServerInfo extends SlashCommand {
 
         String blacklistString = null;
         if(settings.get("blacklist_channel") != null) {
-            blacklistString = "A total of " + DatabaseHandler.getBannedTimesInGuild(guild.getId()) + " users have been banned from this guild"
+            blacklistString = "A total of " + BotDB.getBannedTimesInGuild(guild.getId()) + " users have been banned from this guild"
                 + " [" + Bot.getJDA().getChannelById(TextChannel.class, settings.get("blacklist_channel")).getName() + "]"
                 + " [" + (settings.getAsBoolean("blacklist_enabled") ? "on" : "off") + "]"
             + "\n\n";

@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -35,7 +35,7 @@ public class PlaylistDelete extends SlashCommand {
 
         int playlistId = event.getOption("name").getAsInt();//ti da direttamente l'id della playlist uwu gna gna
 
-        DatabaseHandler.deletePlaylist(playlistId, event.getUser().getId());
+        BotDB.deletePlaylist(playlistId, event.getUser().getId());
 
         event.getHook().editOriginal("Playlist deleted successfully.").queue();
     }

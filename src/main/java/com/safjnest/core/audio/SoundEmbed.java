@@ -16,7 +16,7 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SafJNest;
@@ -89,7 +89,7 @@ public class SoundEmbed {
 
     public static List<MessageTopLevelComponent> getTagButton(String sound, String tag) {
         java.util.List<MessageTopLevelComponent> buttonRows = new ArrayList<>();
-        QueryRecord tagData = DatabaseHandler.getTag(tag);
+        QueryRecord tagData = BotDB.getTag(tag);
 
         String name_tag = tagData.get("name") == null ? " " : tagData.get("name");
 
@@ -208,7 +208,7 @@ public class SoundEmbed {
     // ███ ███
 
     public static List<Sound> getSoundboardSounds(String soundboardID) {
-        QueryCollection sounds = DatabaseHandler.getSoundsFromSoundBoard(soundboardID);
+        QueryCollection sounds = BotDB.getSoundsFromSoundBoard(soundboardID);
         return SoundCache.getSoundsByIds(sounds.arrayColumn("sound_id").toArray(new String[0]));
     }
 
@@ -223,7 +223,7 @@ public class SoundEmbed {
     }
 
     public static ReplyCallbackAction composeSoundboard(SlashCommandEvent event, String soundboardID) {
-        QueryRecord data = DatabaseHandler.getSoundboardByID(soundboardID);
+        QueryRecord data = BotDB.getSoundboardByID(soundboardID);
         if (data.emptyValues())
             return event.deferReply().setContent("Soundboard not found").setEphemeral(true);
 
@@ -278,7 +278,7 @@ public class SoundEmbed {
     }
 
     public static void composeSoundboard(CommandEvent event, String soundboardID) {
-        QueryRecord data = DatabaseHandler.getSoundboardByID(soundboardID);
+        QueryRecord data = BotDB.getSoundboardByID(soundboardID);
 
         String name = data.get("name");
         Blob thumbnailBlob = data.getAsBlob("thumbnail");

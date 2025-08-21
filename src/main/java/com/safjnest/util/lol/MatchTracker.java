@@ -598,8 +598,8 @@ public class MatchTracker {
      * @param lane
      */
     public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        QueryCollection matchDatas = LeagueDBHandler.safJQuery("SELECT * FROM `match`");
-        QueryCollection championDatas = LeagueDBHandler.safJQuery("SELECT * FROM participant WHERE champion = " + champion + " AND lane = " + lane.ordinal());
+        QueryCollection matchDatas = LeagueDBHandler.get().query("SELECT * FROM `match`");
+        QueryCollection championDatas = LeagueDBHandler.get().query("SELECT * FROM participant WHERE champion = " + champion + " AND lane = " + lane.ordinal());
 
         HashMap<String, String> result = new HashMap<>();
 

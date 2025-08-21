@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
@@ -84,8 +84,8 @@ public class ListUser extends SlashCommand{
         eb.setColor(Bot.getColor());
 
         QueryCollection sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
-                           ? DatabaseHandler.getlistUserSounds(mentionedUser.getId()) 
-                           : DatabaseHandler.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
+                           ? BotDB.getlistUserSounds(mentionedUser.getId()) 
+                           : BotDB.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
 
         eb.setDescription("Total Sound: " + sounds.size());
 
@@ -132,8 +132,8 @@ public class ListUser extends SlashCommand{
         eb.setColor(Bot.getColor());
 
         QueryCollection sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
-                           ? DatabaseHandler.getlistUserSounds(mentionedUser.getId()) 
-                           : DatabaseHandler.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
+                           ? BotDB.getlistUserSounds(mentionedUser.getId()) 
+                           : BotDB.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
 
         eb.setDescription("Total Sound: " + sounds.size());
 

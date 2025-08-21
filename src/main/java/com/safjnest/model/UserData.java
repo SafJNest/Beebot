@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import com.safjnest.core.Bot;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
@@ -66,7 +66,7 @@ public class UserData {
     private void retriveAlies() {
         this.aliases = new HashMap<>();
         
-        QueryCollection result = DatabaseHandler.getAliases(USER_ID);
+        QueryCollection result = BotDB.getAliases(USER_ID);
         if (result == null) { return; }
 
         for(QueryRecord row: result){
@@ -77,7 +77,7 @@ public class UserData {
     }
 
     public boolean addAlias(String name, String command) {
-        int id = DatabaseHandler.createAlias(USER_ID, name, command);
+        int id = BotDB.createAlias(USER_ID, name, command);
         if (id == 0) {
             return false;
         }
@@ -92,7 +92,7 @@ public class UserData {
 
     public boolean deleteAlias(String toDelete) {
         getAliases().remove(toDelete);
-        return DatabaseHandler.deleteAlias(toDelete);
+        return BotDB.deleteAlias(toDelete);
     }
 
 
@@ -110,7 +110,7 @@ public class UserData {
         if (guildGreetIds.containsKey(guildId)) {
             return guildGreetIds.get(guildId).isEmpty() ? getGlobalGreet() : guildGreetIds.get(guildId);
         }
-        QueryRecord possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
+        QueryRecord possibleGreet = BotDB.getSpecificGuildGreet(USER_ID, guildId);
 
         if (possibleGreet.emptyValues()) {
             guildGreetIds.put(guildId, "");
@@ -127,7 +127,7 @@ public class UserData {
         if (guildGreetIds.containsKey(guildId)) 
             return guildGreetIds.get(guildId);
         
-        QueryRecord possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
+        QueryRecord possibleGreet = BotDB.getSpecificGuildGreet(USER_ID, guildId);
         if (possibleGreet.emptyValues()) {
             guildGreetIds.put(guildId, "");
             return null;
@@ -142,7 +142,7 @@ public class UserData {
 
     public String getGlobalGreet() {
         if (globalGreetId == null) {
-            QueryRecord possibleGreet = DatabaseHandler.getGlobalGreet(USER_ID);
+            QueryRecord possibleGreet = BotDB.getGlobalGreet(USER_ID);
             if (possibleGreet.emptyValues()) {
                 this.globalGreetId = "";
                 return null;
@@ -157,7 +157,7 @@ public class UserData {
     public boolean setGreet(String guildId, String soundId) {
         if (guildId.equals("0")) globalGreetId = soundId;
         else guildGreetIds.put(guildId, soundId);
-        return DatabaseHandler.setGreet(this.USER_ID, guildId, soundId);
+        return BotDB.setGreet(this.USER_ID, guildId, soundId);
     }
 
     public boolean unsetGreet(String guildId) {
@@ -166,7 +166,7 @@ public class UserData {
         } else {
             guildGreetIds.remove(guildId);
         }
-        return DatabaseHandler.deleteGreet(this.USER_ID, guildId);
+        return BotDB.deleteGreet(this.USER_ID, guildId);
     }
 
     public HashMap<String, String> getGreets() {

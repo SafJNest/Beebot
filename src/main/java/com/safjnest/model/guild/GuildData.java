@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.log.BotLogger;
@@ -136,7 +136,7 @@ public class GuildData {
 
 
     public synchronized boolean setPrefix(String prefix) {
-        boolean result = DatabaseHandler.updatePrefix(String.valueOf(ID), prefix);
+        boolean result = BotDB.updatePrefix(String.valueOf(ID), prefix);
         if (result) {
             this.prefix = prefix;
         }
@@ -144,7 +144,7 @@ public class GuildData {
     }
 
     public synchronized boolean setExpSystem(boolean expSystem) {
-        boolean result = DatabaseHandler.toggleLevelUp(String.valueOf(this.ID), expSystem);
+        boolean result = BotDB.toggleLevelUp(String.valueOf(this.ID), expSystem);
         if (result) {
             this.experience = expSystem;
         }
@@ -166,7 +166,7 @@ public class GuildData {
     }
 
     public synchronized boolean setLeagueShard(LeagueShard shard) {
-        boolean result = DatabaseHandler.updateShard(String.valueOf(ID), shard);
+        boolean result = BotDB.updateShard(String.valueOf(ID), shard);
         if (result) {
             this.leagueShard = shard;
             setRegionShard(shard.toRegionShard());
@@ -192,7 +192,7 @@ public class GuildData {
             return false;
         }
 
-        boolean result = DatabaseHandler.updateVoiceGuild(String.valueOf(ID), language, voice);
+        boolean result = BotDB.updateVoiceGuild(String.valueOf(ID), language, voice);
         if (result) {
             this.voice = voice;
             this.language = language;
@@ -205,7 +205,7 @@ public class GuildData {
         if (mutedRoleId != null && !mutedRoleId.isEmpty())
             return mutedRoleId;
 
-        mutedRoleId = DatabaseHandler.getMutedRole(String.valueOf(ID));
+        mutedRoleId = BotDB.getMutedRole(String.valueOf(ID));
         if (mutedRoleId == null) mutedRoleId = "";
 
         if (mutedRoleId.isEmpty()) {
@@ -225,7 +225,7 @@ public class GuildData {
 
     public boolean hasMutedRole() {
         if (mutedRoleId == null) {
-            mutedRoleId = DatabaseHandler.getMutedRole(String.valueOf(ID));
+            mutedRoleId = BotDB.getMutedRole(String.valueOf(ID));
         }
         return mutedRoleId != null && !mutedRoleId.isEmpty();
     }
@@ -312,8 +312,8 @@ public class GuildData {
         if (this.alerts == null) {
             BotLogger.debug("Retriving AlertData from database => {0}", loggerIDpair);
             this.alerts = new HashMap<>();
-            QueryCollection alertResult = DatabaseHandler.getAlerts(String.valueOf(ID));
-            QueryCollection roleResult = DatabaseHandler.getAlertsRoles(String.valueOf(ID));
+            QueryCollection alertResult = BotDB.getAlerts(String.valueOf(ID));
+            QueryCollection roleResult = BotDB.getAlertsRoles(String.valueOf(ID));
 
             HashMap<Integer, HashMap<Integer, String>> roles = new HashMap<>();
             for (QueryRecord row : roleResult) {
@@ -511,7 +511,7 @@ public class GuildData {
 
     public void retriveChannels() {
         this.channels = new HashMap<>();
-        QueryCollection result = DatabaseHandler.getChannelData(String.valueOf(ID));
+        QueryCollection result = BotDB.getChannelData(String.valueOf(ID));
         if (result == null) { return; }
 
         BotLogger.debug("Retriving ChannelData from database => {0}", loggerIDpair);
@@ -571,7 +571,7 @@ public class GuildData {
 
     private MemberData retriveMemberData(String userId) {
         MemberData member = null;
-        QueryRecord result = DatabaseHandler.getUserData(String.valueOf(ID), userId);
+        QueryRecord result = BotDB.getUserData(String.valueOf(ID), userId);
         if (result.emptyValues()) { return null; }
 
         BotLogger.debug("Retriving MemberData from database => {0} | {1}", loggerIDpair, new LoggerIDpair(String.valueOf(userId), LoggerIDpair.IDType.USER));
@@ -617,7 +617,7 @@ public class GuildData {
 
     private void retriveActions() {
         actions = new ArrayList<>();
-        QueryCollection result = DatabaseHandler.getWarnings(String.valueOf(ID));
+        QueryCollection result = BotDB.getWarnings(String.valueOf(ID));
         if (result == null) { return; }
 
         for (QueryRecord row : result) {

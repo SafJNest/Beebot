@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
@@ -50,7 +50,7 @@ public class PlaylistOrder extends SlashCommand {
         int place = event.getOption("playlist-order").getAsInt();
         String order = event.getOption("order").getAsString();
 
-        QueryCollection playlist = DatabaseHandler.getPlaylistTracks(playlistId, null, null);
+        QueryCollection playlist = BotDB.getPlaylistTracks(playlistId, null, null);
         
         HashMap<Integer, Integer> song = new HashMap<>();
         for (QueryRecord row : playlist) 
@@ -80,7 +80,7 @@ public class PlaylistOrder extends SlashCommand {
                 break;
         }
 
-        int result = DatabaseHandler.updatePlaylistOrder(playlistId, event.getUser().getId(), tracks);
+        int result = BotDB.updatePlaylistOrder(playlistId, event.getUser().getId(), tracks);
 
         if(result == 0) event.getHook().editOriginal("Playlist not found.").queue();
         else if(result == -1) event.getHook().editOriginal("You are not the creator of this playlist.").queue();

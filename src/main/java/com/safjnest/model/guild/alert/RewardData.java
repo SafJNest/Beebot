@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.safjnest.core.Bot;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryRecord;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -29,9 +29,9 @@ public class RewardData extends AlertData{
 
 
     public static RewardData createRewardData(String guild_id, String message, String privateMessage, AlertSendType sendType, String[] roles, int level, boolean temporary) {
-        int id = DatabaseHandler.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.REWARD);
-        HashMap<Integer, String> rolesMap = roles != null ? DatabaseHandler.createRolesAlert(String.valueOf(id), roles) : new HashMap<>();
-        DatabaseHandler.createRewardData(String.valueOf(id), level, temporary);
+        int id = BotDB.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.REWARD);
+        HashMap<Integer, String> rolesMap = roles != null ? BotDB.createRolesAlert(String.valueOf(id), roles) : new HashMap<>();
+        BotDB.createRewardData(String.valueOf(id), level, temporary);
         return new RewardData(id, message, privateMessage, true, sendType, rolesMap, level, temporary);
     }
 

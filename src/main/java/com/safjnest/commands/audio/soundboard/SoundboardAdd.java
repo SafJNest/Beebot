@@ -6,7 +6,7 @@ import java.util.Set;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -54,13 +54,13 @@ public class SoundboardAdd extends SlashCommand{
         }
 
         String soundboardName = event.getOption("soundboard_name").getAsString();
-        if(!DatabaseHandler.soundboardExists(soundboardName, event.getGuild().getId(), event.getUser().getId())) {
+        if(!BotDB.soundboardExists(soundboardName, event.getGuild().getId(), event.getUser().getId())) {
             event.deferReply(true).addContent("A soundboard with that name does not exist in this guild.").queue();
             return;
         }
 
         String soundboardID = event.getOption("soundboard_name").getAsString();
-        int soundCount = DatabaseHandler.getSoundInSoundboardCount(soundboardID);
+        int soundCount = BotDB.getSoundInSoundboardCount(soundboardID);
 
         if(soundCount >= maxSounds) {
             event.deferReply(true).addContent("The soundboard is already full.").queue();
@@ -72,7 +72,7 @@ public class SoundboardAdd extends SlashCommand{
             return;
         }
 
-        DatabaseHandler.insertSoundsInSoundBoard(soundboardID, soundIDs.toArray(new String[0]));
+        BotDB.insertSoundsInSoundBoard(soundboardID, soundIDs.toArray(new String[0]));
 
         event.deferReply(false).addContent("Sound added correctly").queue();
     }    

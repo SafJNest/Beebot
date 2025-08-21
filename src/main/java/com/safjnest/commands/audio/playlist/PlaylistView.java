@@ -8,7 +8,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.BotCommand;
@@ -42,7 +42,7 @@ public class PlaylistView extends SlashCommand{
     }
 
     public static EmbedBuilder getTracksEmbed(QueryRecord playlist, Member member, int page) {
-        QueryCollection tracks = DatabaseHandler.getPlaylistTracks(playlist.getAsInt("id"), pageSize, page);
+        QueryCollection tracks = BotDB.getPlaylistTracks(playlist.getAsInt("id"), pageSize, page);
         List<AudioTrack> decodedTracks = PlayerManager.get().decodeTracks(tracks.arrayColumn("encoded_track"));
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -91,7 +91,7 @@ public class PlaylistView extends SlashCommand{
 
         Member member = event.getMember();
 
-        QueryRecord playlist = DatabaseHandler.getPlaylistByIdWithSize(playlistId);
+        QueryRecord playlist = BotDB.getPlaylistByIdWithSize(playlistId);
 
         if(playlist.isEmpty() || (!playlist.get("user_id").equals(member.getId()) && !PermissionHandler.isUntouchable(member.getId())) ) {
             event.getHook().editOriginal("Playlist not found.").queue();

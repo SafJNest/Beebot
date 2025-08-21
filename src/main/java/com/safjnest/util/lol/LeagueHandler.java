@@ -433,7 +433,7 @@ import com.safjnest.core.cache.managers.UserCache;
      */
     public static Summoner getSummonerFromDB(String discordId){
         // try {
-        //     ResultRow account = DatabaseHandler.getLOLAccountIdByUserId(discordId);
+        //     ResultRow account = BotDB.getLOLAccountIdByUserId(discordId);
         //     LeagueShard shard = LeagueShard.values()[Integer.valueOf(account.get("league_shard"))];
 
         //     return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));

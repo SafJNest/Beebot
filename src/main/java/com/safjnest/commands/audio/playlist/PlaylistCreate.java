@@ -6,7 +6,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.BotDB;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -52,7 +52,7 @@ public class PlaylistCreate extends SlashCommand{
                 ? (!PermissionHandler.isPremium(userId) ? SettingsLoader.getSettings().getBotSettings().getMaxFreePlaylistSize() : SettingsLoader.getSettings().getBotSettings().getMaxPremiumPlaylistSize())
                 : Integer.valueOf(Integer.MAX_VALUE);
 
-        QueryCollection userPlaylists = DatabaseHandler.getPlaylists(userId);
+        QueryCollection userPlaylists = BotDB.getPlaylists(userId);
 
         if(userPlaylists.size() >= maxPlaylists && !PermissionHandler.isPremium(userId)) {
             event.getHook().editOriginal("You have already created the maximum amount of free playlists (for more playlists wait for future paid tiers [pagaaaah, sgancia, spilla, sborsa proprio maonna ragazih]).").queue();
@@ -69,7 +69,7 @@ public class PlaylistCreate extends SlashCommand{
             return;
         }
 
-        int playlistId = DatabaseHandler.createPlaylist(playlistName, userId);
+        int playlistId = BotDB.createPlaylist(playlistName, userId);
 
         if (!loadQueue) {
             event.getHook().editOriginal("Playlist created successfully.").queue();
@@ -83,12 +83,12 @@ public class PlaylistCreate extends SlashCommand{
         }
 
         if(queue.size() > maxPlaylistSize) {
-            DatabaseHandler.addTrackToPlaylist(playlistId, queue.subList(0, maxPlaylistSize - 1), null);
+            BotDB.addTrackToPlaylist(playlistId, queue.subList(0, maxPlaylistSize - 1), null);
             event.getHook().editOriginal("Playlist created successfully, the queue was too big to fit in the playlist (max " + maxPlaylistSize + ") so only the first " + maxPlaylistSize + "tracks were put in.").queue();
             return;
         }
 
-        DatabaseHandler.addTrackToPlaylist(playlistId, queue, null);
+        BotDB.addTrackToPlaylist(playlistId, queue, null);
 
         event.getHook().editOriginal("Playlist created successfully.").queue();
     }
