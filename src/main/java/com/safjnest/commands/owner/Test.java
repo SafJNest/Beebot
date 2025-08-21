@@ -475,7 +475,7 @@ public class Test extends Command{
                     String word;
                     while ((word = br.readLine()) != null) {
                         String query1 = "INSERT INTO tag(name) VALUES ('" + word + "');";
-                        BotDB.get().defaultQuery(query1);
+                        BotDB.get().query(query1);
                     }
                 } catch (IOException ee) {}
                 
@@ -488,7 +488,7 @@ public class Test extends Command{
                     for (int j = 0; j < 5; j++) {
                         int tag_id = (int) (Math.random() * max_tag) + 1;
                         String query1 = "INSERT INTO tag_sounds(sound_id, tag_id) VALUES (" + i + ", " + tag_id + ");";
-                        BotDB.get().defaultQuery(query1);
+                        BotDB.get().query(query1);
                     }
                     System.out.println(i);
                 }
@@ -514,7 +514,7 @@ public class Test extends Command{
                                        + " ON DUPLICATE KEY UPDATE times = times + 1;";
                         // Execute the query for the current batch
                         System.out.println(i);
-                        BotDB.get().defaultQuery(query); // Uncomment this line to execute the query
+                        BotDB.get().query(query); // Uncomment this line to execute the query
                     }
                     break;
                     //BotDB.query(query1);
@@ -698,7 +698,7 @@ public class Test extends Command{
                         pings.put("vision_cleared", participant.getVisionClearedPings());
 
                         query = "UPDATE participant SET lane='" + lane.ordinal() + "', side='" + team.ordinal() + "', damage='" + totalDamage + "', damage_building='" + tower + "', healing='" + shield + "', vision_score='" + vision + "', cs='" + cs + "', ward='" + ward + "', pings='" + JSONObject.toJSONString(pings) + "', ward_killed='" + participant.getWardsKilled()+ "', gold_earned='" + participant.getGoldEarned() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
-                        LeagueDB.get().defaultQuery(query);
+                        LeagueDB.get().query(query);
                     }
                     System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());
                     aaa++;
@@ -711,7 +711,7 @@ public class Test extends Command{
 
                     // query = "UPDATE summoner_tracking SET lane = '" + lane.ordinal() + "', side = '" + team.ordinal() + "', build = '" + build + "' WHERE id = " + row.get("id") + ";";
                     // System.out.println(row.get("id"));
-                    // BotDB.get().defaultQueryAsync(query);
+                    // BotDB.get().queryAsync(query);
                     // try {
                     //     Thread.sleep(1000);
                     // } catch (Exception e1) {
@@ -740,7 +740,7 @@ public class Test extends Command{
 
                     query = "UPDATE summoner_tracking SET league_shard = " + match.getPlatform().ordinal() + ",time_start = '" + new Timestamp(time_start) + "', time_end = '" + new Timestamp(time_end) + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
                     System.out.println(query);
-                    BotDB.get().defaultQuery(query);
+                    BotDB.get().query(query);
                 }
             break;
             case "summoners":
@@ -802,7 +802,7 @@ public class Test extends Command{
                     
                     query = "UPDATE summoner_tracking SET league_shard = " + match1.getPlatform().ordinal() + ", time_start = '" + new Timestamp(time_start) + "', time_end = '" + new Timestamp(time_end) + "' WHERE game_id = '" + row.get("game_id") + "' AND account_id = '" + account_id + "';";
                     System.out.println(query);
-                    BotDB.get().defaultQuery(query);
+                    BotDB.get().query(query);
                 }
             break;
             case "playplaylist":
@@ -850,7 +850,7 @@ public class Test extends Command{
                     RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
                     String query1 = "UPDATE summoner SET riot_id = '" + (account.getName() + "#" + account.getTag()) + "', account_id = '" + summoner.getAccountId() + "', puuid = '" + summoner.getPUUID() + "' WHERE id = " + acc.get("id");
                     System.out.println(query1);
-                    BotDB.get().defaultQuery(query1);
+                    BotDB.get().query(query1);
                     try {
                         Thread.sleep(350);
                     } catch (InterruptedException e1) {
@@ -885,7 +885,7 @@ public class Test extends Command{
                 }
                 query = query.substring(0, query.length() - 1);
                 query = "INSERT INTO sound_interactions2(user_id, sound_id) VALUES " + query;
-                BotDB.get().defaultQuery(query);
+                BotDB.get().query(query);
             break;
             case "splitlike":
                 query = "select * from sound_interactions";
@@ -899,7 +899,7 @@ public class Test extends Command{
                 }
                 query = query.substring(0, query.length() - 1);
                 query = "INSERT INTO sound_interactions3(user_id, sound_id, value) VALUES " + query;
-                BotDB.get().defaultQuery(query);
+                BotDB.get().query(query);
             break;
             case "testblob":
                 query = "SELECT * FROM soundboard WHERE id = 23";
@@ -1085,7 +1085,7 @@ public class Test extends Command{
                         bans.put(teamID, list);
                     }
                     query = "UPDATE summoner_match SET bans = '" + bans.toString() + "' WHERE id = " + row.get("id");
-                    BotDB.get().defaultQuery(query);
+                    BotDB.get().query(query);
                     System.out.println(row.get("id"));
                     try {
                         Thread.sleep(1500);
@@ -1118,7 +1118,7 @@ public class Test extends Command{
                             try {
                                 Summoner sssss = LeagueHandler.getSummonerByPuuid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
                                 String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
-                                LeagueDB.get().defaultQuery(fixQuery);
+                                LeagueDB.get().query(fixQuery);
                                 try {
                                     Thread.sleep(500);
                                 } catch (Exception ee) {

@@ -103,49 +103,8 @@ public abstract class AbstractDB {
      * @throws SQLException
      */
     public QueryRecord lineQuery(String query) {
-
-        Connection c = null;
-        try {
-            c = DatabaseHandler.getConnection(getDatabase());
-        } catch (SQLException e) { }
-
-        if (c == null) {
-            BotLogger.error("[SQL] Connection to the database failed!");
-        }
-        QueryRecord beeRow = new QueryRecord(null);
-        try (Statement stmt = c.createStatement();
-            ResultSet rs = stmt.executeQuery(query)) {
-            beeRow.setResultSet(rs);
-            ResultSetMetaData rsmd = rs.getMetaData();
-            if (rs.next()) {
-                for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                    String columnName = rsmd.getColumnName(i);
-                    String columnValue = rs.getString(i);
-                    beeRow.put(columnName, columnValue);
-                }
-            }
-            //insertAnalytics(query);
-            c.commit();
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
-                }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
-        }
-
-        return beeRow;
+        try { return query(query).get(0); } 
+        catch (Exception e) { return null;}
     }
 
 
@@ -156,22 +115,8 @@ public abstract class AbstractDB {
      * @throws SQLException
      */
     public QueryRecord lineQuery(Statement stmt, String query) throws SQLException {
-
-
-        ResultSet rs = stmt.executeQuery(query);
-        QueryRecord beeRow = new QueryRecord(rs);
-
-        ResultSetMetaData rsmd = rs.getMetaData();
-
-        if (rs.next()) {
-            for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                String columnName = rsmd.getColumnName(i);
-                String columnValue = rs.getString(i);
-                beeRow.put(columnName, columnValue);
-            }
-        }
-        //insertAnalytics(query);
-        return beeRow;
+        try { return query(stmt, query).get(0); } 
+        catch (Exception e) { return null;}
     }
 
 
@@ -180,41 +125,11 @@ public abstract class AbstractDB {
      * @param queries
      */
     public boolean defaultQuery(String... queries) {
-
-        Connection c = null;
-        try {
-            c = DatabaseHandler.getConnection(getDatabase());
-        } catch (SQLException e) { }
-
-        if (c == null) {
-            BotLogger.error("[SQL] Connection to the database failed!");
+        List<QueryResult> results = new ArrayList<>();
+        for (String query : queries) {
+            results.add(query(query));
         }
-
-        try (Statement stmt = c.createStatement()) {
-            for (String query : queries)
-                stmt.execute(query);
-            //insertAnalytics(queries.toString());
-            c.commit();
-            return true;
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
-                }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
-        }
-        return false;
+        return !results.isEmpty() && results.stream().allMatch(QueryResult::isSuccess);
     }
 
     public CompletableFuture<Void> runQueryAsync(String... queries) {
@@ -236,12 +151,8 @@ public abstract class AbstractDB {
      * @throws SQLException
      */
     public void query(Statement stmt, String... queries) throws SQLException {
-
-        for (String query : queries)
-            stmt.execute(query);
-
-        //insertAnalytics(queries.toString());
-
+        for (String query : queries) 
+            query(stmt, query);
     }
 
     public QueryResult insert(String table, LinkedHashMap<String, Object> values) {
