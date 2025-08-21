@@ -71,6 +71,7 @@ public abstract class AbstractDB {
      */
     public QueryResult query(Statement stmt, String query) throws SQLException {
         insertAnalytics(query);
+        BotLogger.trace(query);
         QueryResult result = new QueryResult();
         boolean hasResult = (stmt instanceof PreparedStatement pstmt)
                 ? pstmt.execute()
@@ -87,7 +88,7 @@ public abstract class AbstractDB {
         while (set.next()) {
             QueryRecord row = new QueryRecord(set);
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                String key = rsmd.getColumnLabel(i);
+                String key = rsmd.getColumnLabel(i).toLowerCase();
                 String valye = set.getString(i);
                 row.put(key, valye);
             }

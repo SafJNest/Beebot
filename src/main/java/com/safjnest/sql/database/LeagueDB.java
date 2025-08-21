@@ -359,7 +359,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static QueryRecord getSummonerData(String user_id, String account_id) {
-        return instance.lineQuery("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
+        return instance.lineQuery("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
     }
 
     public static QueryResult getSummonersBuPuuid(String puuid) {
