@@ -1,15 +1,17 @@
 package com.safjnest.commands.settings.reward;
 
+
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.model.guild.GuildData;
-import com.safjnest.model.guild.alert.AlertData;
-import com.safjnest.model.guild.alert.AlertSendType;
-import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.core.cache.managers.GuildCache;
+
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.container.Container;
+import net.dv8tion.jda.api.components.section.Section;
+import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+
+import com.safjnest.core.Bot;
 
 public class RewardCreate extends SlashCommand{
 
@@ -27,13 +29,10 @@ public class RewardCreate extends SlashCommand{
 
     @Override
     protected void execute(SlashCommandEvent event) {
-        String guildId = event.getGuild().getId();
-        GuildData gs = GuildCache.getGuildOrPut(guildId);
-        AlertData alert = gs.getAlert(AlertType.LEVEL_UP);
-        if(alert == null) {
-            alert =  new AlertData(guildId, "", "", null, AlertSendType.CHANNEL, AlertType.LEVEL_UP);
-            gs.getAlerts().put(alert.getKey(), alert);
-        }
-        event.deferReply().addComponents(AlertMessage.build(gs, alert)).useComponentsV2().queue();
+        Container container = Container.of(Section.of(
+            Button.primary("alert-createReward", "Create"),
+            TextDisplay.of("In order to create a new reward, insert the level required to redeem it.")
+        ));
+        event.deferReply().addComponents(container.withAccentColor(Bot.getColor())).useComponentsV2().queue();
     }
 }
