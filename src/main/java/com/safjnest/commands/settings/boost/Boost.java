@@ -23,7 +23,7 @@ public class Boost extends SlashCommand {
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new BoostChannel(father), new BoostCreate(father), new BoostDelete(father), new BoostPreview(father), new BoostMessage(father), new BoostToggle(father));
+        Collections.addAll(slashCommandsList, new BoostCreate(father), new BoostDelete(father), new BoostPreview(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);                          

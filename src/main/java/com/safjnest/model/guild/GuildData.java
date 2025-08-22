@@ -355,7 +355,7 @@ public class GuildData {
     }
 
     public AlertData getAlertByID(String id) {
-        return getAlertByID(Integer.parseInt(id));
+        return id == null || id.isEmpty() ? null : getAlertByID(Integer.parseInt(id));
     }
 
     public AlertData getAlertByID(int id) {

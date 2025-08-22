@@ -22,7 +22,7 @@ public class LevelUp extends SlashCommand {
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new LevelUpPreview(father), new LevelUpMessage(father), new LevelUpToggle(father), new LevelUpChannelToggle(father), new LevelUpModifier(father), new LevelUpUpdateTime(father));
+        Collections.addAll(slashCommandsList, new LevelUpPreview(father), new LevelUpChannelToggle(father), new LevelUpModifier(father), new LevelUpUpdateTime(father), new LevelUpMessage(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);                               

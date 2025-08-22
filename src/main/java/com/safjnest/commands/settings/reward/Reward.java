@@ -22,7 +22,7 @@ public class Reward extends SlashCommand {
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new RewardCreate(father), new RewardMessage(father), new RewardAddRole(father), new RewardRemoveRole(father), new RewardDelete(father), new RewardPreview(father));
+        Collections.addAll(slashCommandsList, new RewardCreate(father), new RewardDelete(father), new RewardPreview(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);                            

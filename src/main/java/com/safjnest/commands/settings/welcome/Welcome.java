@@ -22,7 +22,7 @@ public class Welcome extends SlashCommand{
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new WelcomeChannel(father), new WelcomeCreate(father), new WelcomeDelete(father), new WelcomePreview(father), new WelcomeMessage(father), new WelcomeToggle(father), new WelcomeAddRole(father), new WelcomeRemoveRole(father));
+        Collections.addAll(slashCommandsList, new WelcomeCreate(father), new WelcomeDelete(father), new WelcomePreview(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);                               

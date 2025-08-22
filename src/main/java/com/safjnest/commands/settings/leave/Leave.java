@@ -23,7 +23,7 @@ public class Leave extends SlashCommand {
         String father = this.getClass().getSimpleName().replace("Slash", "");
         
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new LeaveChannel(father), new LeaveCreate(father), new LeaveDelete(father), new LeavePreview(father), new LeaveMessage(father), new LeaveToggle(father));
+        Collections.addAll(slashCommandsList, new LeaveCreate(father), new LeaveDelete(father), new LeavePreview(father));
         this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
 
         commandData.setThings(this);

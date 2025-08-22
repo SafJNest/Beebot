@@ -1,15 +1,9 @@
 package com.safjnest.core.audio.tts;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-
-import org.voicerss.tts.Languages;
 import org.voicerss.tts.Audio.AudioCodec;
 import org.voicerss.tts.Audio.AudioFormat;
 import org.voicerss.tts.Voice.VoiceParameters;
 import org.voicerss.tts.Voice.VoiceProvider;
-import org.voicerss.tts.Voice.Voices;
 
 import com.safjnest.util.SettingsLoader;
 
