@@ -97,6 +97,48 @@ public abstract class AbstractDB {
         return result;
     }
 
+    public List<QueryResult> queries(String... queries) {
+        List<QueryResult> results = new ArrayList<>();
+        Connection c = null;
+        Statement stmt = null;
+
+        try {
+            c = DatabaseHandler.getConnection(getDatabase());
+            if (c == null) throw new SQLException("Connection to the database failed!");
+            c.setAutoCommit(false);
+
+            stmt = c.createStatement();
+
+            for (String q : queries) {
+                insertAnalytics(q);
+                QueryResult result = query(stmt, q);
+                results.add(result);
+            }
+
+            c.commit();
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    if (stmt != null) stmt.close();
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    if (stmt != null) stmt.close();
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+        return results;
+    }
+
     /**
      * Method used for returning a single {@link com.safjnest.sql.QueryRecord row} from a query using default statement
      * @param stmt
