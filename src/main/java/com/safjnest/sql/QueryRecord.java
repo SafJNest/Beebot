@@ -11,6 +11,10 @@ import java.time.temporal.ChronoField;
 import java.util.HashMap;
 import java.util.Map;
 
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+
 public class QueryRecord extends HashMap<String, String> {
     private static final DateTimeFormatter BASE_FORMATTER =
         new DateTimeFormatterBuilder()
@@ -142,5 +146,29 @@ public class QueryRecord extends HashMap<String, String> {
         }
 
         return LocalDateTime.parse(cleaned, BASE_FORMATTER);
+    }
+
+    public LaneType getAsLaneType(String columnName) {
+        try {
+            return LaneType.values()[getAsInt(columnName)];
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public GameQueueType getAsGameQueueType(String columnName) {
+        try {
+            return GameQueueType.values()[getAsInt(columnName)];
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public TeamType getAsTeamType(String columnName) {
+        try {
+            return TeamType.values()[getAsInt(columnName)];
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

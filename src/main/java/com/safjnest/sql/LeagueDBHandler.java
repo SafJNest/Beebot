@@ -10,10 +10,12 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import org.json.simple.JSONObject;
+import org.json.JSONObject;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -21,7 +23,9 @@ import com.zaxxer.hikari.HikariDataSource;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.RoleType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
@@ -38,6 +42,8 @@ import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.model.MatchData;
+import com.safjnest.util.lol.model.ParticipantData;
 import com.safjnest.util.lol.model.build.CustomBuildData;
 
 public class LeagueDBHandler {
@@ -369,7 +375,6 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             queueFilter = "AND sm.game_type = " + queue.ordinal() + " ";
         }
 
-
         String overallQuery =
             "SELECT " +
             "  t.`champion`, " +
@@ -605,7 +610,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
 
 
-        return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + JSONObject.toJSONString(pings) + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "');");
+        return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "');");
     }
 
 
@@ -868,6 +873,119 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             }
         }
     }
+
+
+    public static List<MatchData> getMatchHistory(
+            int summonerId, int champion, long timeStart, long timeEnd,
+            GameQueueType queue, LaneType lane) throws SQLException {
+
+        List<MatchData> result = new ArrayList<>();
+        Map<Integer, MatchData> matchMap = new LinkedHashMap<>(); // matchId -> MatchData
+
+        String timeFilter = timeStart != 0
+                ? "AND sm.`time_start` >= '" + new Timestamp(timeStart) + "' AND sm.`time_end` <= '" + new Timestamp(timeEnd) + "' "
+                : "";
+        String queueFilter = queue != null ? "AND sm.game_type = " + queue.ordinal() + " " : "";
+        String championFilter = champion != 0 ? "AND st.champion = " + champion + " " : "";
+        String laneFilter = lane != null ? "AND st.lane = " + lane.ordinal() + " " : "";
+
+        try (Connection c = getConnection()) {
+            if (c == null) return result;
+            c.setAutoCommit(false);
+
+            // 1) recupero match filtrati
+            String q1 = "SELECT sm.* " +
+                        "FROM `match` sm " +
+                        "JOIN participant st ON st.match_id = sm.id " +
+                        "WHERE st.summoner_id = " + summonerId + " " +
+                        timeFilter + queueFilter + championFilter + laneFilter +
+                        "GROUP BY sm.id " +
+                        "ORDER BY sm.game_id DESC;";
+
+            List<Integer> matchIds = new ArrayList<>();
+            try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q1)) {
+                while (rs.next()) {
+                    MatchData match = new MatchData();
+                    match.id = rs.getInt("id");
+                    match.gameId = rs.getString("game_id");
+                    match.leagueShard = rs.getInt("league_shard");
+                    match.gameType = GameQueueType.values()[rs.getInt("game_type")];
+                    match.timeStart = rs.getTimestamp("time_start").getTime();
+                    match.timeEnd = rs.getTimestamp("time_end").getTime();
+                    match.patch = rs.getString("patch");
+
+                    match.bans = new HashMap<>();
+                    JSONObject bansJson = new JSONObject(rs.getString("bans"));
+                    for(String key : bansJson.keySet()) {
+                        TeamType team = TeamType.values()[Integer.parseInt(key)];
+                        match.bans.put(team, bansJson.getJSONArray(key).getInt(0));
+                    }
+                    
+                    match.events = new JSONObject(rs.getString("events"));
+                    match.participants = new ArrayList<>();
+
+                    matchMap.put(match.id, match);
+                    matchIds.add(match.id);
+                }
+            }
+
+            if (matchIds.isEmpty()) {
+                c.commit();
+                return result;
+            }
+
+            String inClause = matchIds.toString().replace("[","(").replace("]",")");
+            String q2 = "SELECT st.*, sm.id AS match_id " +
+                        "FROM participant st " +
+                        "JOIN `match` sm ON st.match_id = sm.id " +
+                        "WHERE st.match_id IN " + inClause + " " +
+                        "ORDER BY sm.game_id DESC, st.side, st.champion;";
+
+            try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q2)) {
+                while (rs.next()) {
+                    ParticipantData p = new ParticipantData();
+                    p.id = rs.getInt("id");
+                    p.summonerId = rs.getInt("summoner_id");
+                    p.matchId = rs.getInt("match_id");
+                    p.win = rs.getBoolean("win");
+                    p.kda = rs.getString("kda");
+                    p.champion = rs.getInt("champion");
+                    p.lane = LaneType.values()[rs.getInt("lane")];
+                    p.side = TeamType.values()[rs.getInt("side")];
+                    p.rank = TierDivisionType.values()[rs.getInt("rank")];
+                    p.gain = rs.getInt("gain");
+                    p.damage = rs.getInt("damage");
+                    p.damageBuilding = rs.getInt("damage_building");
+                    p.healing = rs.getInt("healing");
+                    p.cs = rs.getInt("cs");
+                    p.goldEarned = rs.getInt("gold_earned");
+                    p.ward = rs.getInt("ward");
+                    p.wardKilled = rs.getInt("ward_killed");
+                    p.visionScore = rs.getInt("vision_score");
+
+                    try {
+                        JSONObject pingsJson = new JSONObject(rs.getString("pings"));
+                        p.pings = new HashMap<>();
+                        for(String key : pingsJson.keySet()) {
+                            p.pings.put(key, pingsJson.getInt(key));
+                        }   
+                    } catch (Exception e) {}
+ 
+
+                    p.build = new JSONObject(rs.getString("build"));
+
+                    MatchData match = matchMap.get(p.matchId);
+                    if (match != null) {
+                        match.participants.add(p);
+                    }
+                }
+            }
+            c.commit();
+            result.addAll(matchMap.values());
+        }
+        return result;
+    }
+
 
 
 }

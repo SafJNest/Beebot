@@ -1109,6 +1109,11 @@
                 "alias" : [],
                 "help"  : "Track a summoner.",
                 "arguments" : "[CommandName]"
+            },
+            "champion": {
+                "alias" : [],
+                "help"  : "See advanced statistics for a champion.",
+                "arguments" : "[CommandName] [champion]"
             }
         }
     },
