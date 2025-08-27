@@ -112,7 +112,7 @@ public class UserData {
         }
         QueryRecord possibleGreet = BotDB.getSpecificGuildGreet(USER_ID, guildId);
 
-        if (possibleGreet.emptyValues()) {
+        if (possibleGreet == null || possibleGreet.emptyValues()) {
             guildGreetIds.put(guildId, "");
             return getGlobalGreet();
         }

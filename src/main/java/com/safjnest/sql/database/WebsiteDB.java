@@ -13,9 +13,9 @@ import com.safjnest.util.spotify.SpotifyTokenManager;
 
 public class WebsiteDB extends AbstractDB {
 
-    private static BotDB instance;
+    private static WebsiteDB instance;
     static {
-        instance = new BotDB();
+        instance = new WebsiteDB();
     }
 
     @Override
@@ -23,7 +23,7 @@ public class WebsiteDB extends AbstractDB {
         return SettingsLoader.getSettings().getJsonSettings().getTestWebsiteDatabase().getDatabaseName();
 	}
 
-    public static BotDB get() {
+    public static WebsiteDB get() {
         return instance;
     }
 

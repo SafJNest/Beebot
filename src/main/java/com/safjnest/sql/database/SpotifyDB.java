@@ -25,9 +25,9 @@ import com.safjnest.util.spotify.type.SpotifyMessageType;
 
 public class SpotifyDB extends AbstractDB {
 
-    private static BotDB instance;
+    private static SpotifyDB instance;
     static {
-        instance = new BotDB();
+        instance = new SpotifyDB();
     }
 
     @Override
@@ -35,7 +35,7 @@ public class SpotifyDB extends AbstractDB {
         return SettingsLoader.getSettings().getJsonSettings().getSpotifyDatabase().getDatabaseName();
 	}
 
-    public static BotDB get() {
+    public static SpotifyDB get() {
         return instance;
     }
 

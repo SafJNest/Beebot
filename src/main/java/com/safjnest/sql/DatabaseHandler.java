@@ -22,6 +22,12 @@ public class DatabaseHandler {
 
     static {
 
+        try {
+            Class.forName("org.mariadb.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
         DatabaseSettings settings = SettingsLoader.getSettings().getJsonSettings().getDatabase();
 
         HikariConfig config = new HikariConfig();

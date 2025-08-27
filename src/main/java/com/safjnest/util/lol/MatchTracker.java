@@ -278,7 +278,7 @@ public class MatchTracker {
 
     private static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant participant, QueryRecord dataGame, HashMap<String, String> matchData) {
         return () -> {
-            if (match.getGameId() == dataGame.getAsLong("game_id")) return;
+            if (dataGame == null || match.getGameId() == dataGame.getAsLong("game_id")) return;
 
             List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
             LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
@@ -452,84 +452,89 @@ public class MatchTracker {
                 String participantId = String.valueOf(event.getParticipantId());
                 String itemType = i == 1 ? "starter" : "items";
 
-                switch (event.getType()) {
-                    case ITEM_PURCHASED:
-                        item = items.get(event.getItemId());
-                        if (item == null) continue;
+                try {
+                    switch (event.getType()) {
+                        case ITEM_PURCHASED:
+                            item = items.get(event.getItemId());
+                            if (item == null) continue;
 
-                        if (item.getFrom() != null && item.getFrom().contains("1001")) {
-                            matchData.get(participantId).put("boots", item.getId() + "");
-                            continue;
-                        }
-
-                        if (i != 1 && item.getDepth() != 3) continue;
-
-                        String itemList = matchData.get(participantId).getOrDefault(itemType, "");
-                        if (itemList.isEmpty()) itemList = item.getId() + "";
-                        else itemList += "," + item.getId();
-                        matchData.get(participantId).put(itemType, itemList);
-                        break;
-                    case ITEM_UNDO:
-                    case ITEM_SOLD:
-                        item = items.get(event.getBeforeId());
-                        if (item == null) continue;
-                        if (i != 1 && item.getDepth() != 3) continue;
-
-                        String[] itemsList = matchData.get(participantId).get(itemType).split(",");
-                        String undoList = "";
-                        for (String itemStr : itemsList) {
-                            if (!itemStr.equals(item.getId() + "")) {
-                                if (!undoList.isEmpty()) undoList += ",";
-                                undoList += itemStr;
+                            if (item.getFrom() != null && item.getFrom().contains("1001")) {
+                                matchData.get(participantId).put("boots", item.getId() + "");
+                                continue;
                             }
-                        }
-                        matchData.get(participantId).put(itemType, undoList);
-                        break;
-                    case SKILL_LEVEL_UP:
-                        String skillList = matchData.get(participantId).getOrDefault("skill_order", "");
-                        if (skillList.isEmpty()) skillList = event.getSkillSlot() + "";
-                        else skillList += "," + event.getSkillSlot();
-                        matchData.get(participantId).put("skill_order", skillList);
-                        break;
-                    case ELITE_MONSTER_KILL:    
-                        if (event.getMonsterType() == null) continue;
-                        String monsterEvents = matchData.get("match").getOrDefault("monster_events", "");
 
-                        String monster = event.getMonsterType().name();
-                        String subType = event.getMonsterSubType() != null ? event.getMonsterSubType().name() : "";
-                        int killerId = event.getKillerId();
-                        List<Integer> assistIds = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+                            if (i != 1 && item.getDepth() != 3) continue;
 
-                        String eventJson = "{\"monster\":\"" + monster + "\",\"subtype\":\"" + subType + "\",\"killer\":" + killerId + ",\"assists\":[";
-                        for (int assistId : assistIds) {
-                            if (assistId == 0) continue;
-                            if (eventJson.endsWith("[")) eventJson += assistId;
-                            else eventJson += "," + assistId;
-                        }
-                        eventJson += "]}";
-                        if (monsterEvents.isEmpty()) monsterEvents = eventJson;
-                        else monsterEvents += "," + eventJson;
-                        matchData.get("match").put("monster_events", monsterEvents);
-                        break;
-                    case BUILDING_KILL:
-                        String buildingEvents = matchData.get("match").getOrDefault("building_events", "");
-                        String building = event.getBuildingType() != null ? event.getBuildingType().name() : "";
-                        int killerIdBuilding = event.getKillerId();
-                        List<Integer> assistIdsBuilding = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
-                        String eventJsonBuilding = "{\"building\":\"" + building + "\",\"killer\":" + killerIdBuilding + ",\"assists\":[";
-                        for (int assistId : assistIdsBuilding) {
-                            if (assistId == 0) continue;
-                            if (eventJsonBuilding.endsWith("[")) eventJsonBuilding += assistId;
-                            else eventJsonBuilding += "," + assistId;
-                        }
-                        eventJsonBuilding += "]}";
-                        if (buildingEvents.isEmpty()) buildingEvents = eventJsonBuilding;
-                        else buildingEvents += "," + eventJsonBuilding;
-                        matchData.get("match").put("building_events", buildingEvents);
-                        break;
-                    default:
-                        break;
+                            String itemList = matchData.get(participantId).getOrDefault(itemType, "");
+                            if (itemList.isEmpty()) itemList = item.getId() + "";
+                            else itemList += "," + item.getId();
+                            matchData.get(participantId).put(itemType, itemList);
+                            break;
+                        case ITEM_UNDO:
+                        case ITEM_SOLD:
+                            item = items.get(event.getBeforeId());
+                            if (item == null) continue;
+                            if (i != 1 && item.getDepth() != 3) continue;
+
+                            String[] itemsList = matchData.get(participantId).get(itemType).split(",");
+                            String undoList = "";
+                            for (String itemStr : itemsList) {
+                                if (!itemStr.equals(item.getId() + "")) {
+                                    if (!undoList.isEmpty()) undoList += ",";
+                                    undoList += itemStr;
+                                }
+                            }
+                            matchData.get(participantId).put(itemType, undoList);
+                            break;
+                        case SKILL_LEVEL_UP:
+                            String skillList = matchData.get(participantId).getOrDefault("skill_order", "");
+                            if (skillList.isEmpty()) skillList = event.getSkillSlot() + "";
+                            else skillList += "," + event.getSkillSlot();
+                            matchData.get(participantId).put("skill_order", skillList);
+                            break;
+                        case ELITE_MONSTER_KILL:    
+                            if (event.getMonsterType() == null) continue;
+                            String monsterEvents = matchData.get("match").getOrDefault("monster_events", "");
+
+                            String monster = event.getMonsterType().name();
+                            String subType = event.getMonsterSubType() != null ? event.getMonsterSubType().name() : "";
+                            int killerId = event.getKillerId();
+                            List<Integer> assistIds = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+
+                            String eventJson = "{\"monster\":\"" + monster + "\",\"subtype\":\"" + subType + "\",\"killer\":" + killerId + ",\"assists\":[";
+                            for (int assistId : assistIds) {
+                                if (assistId == 0) continue;
+                                if (eventJson.endsWith("[")) eventJson += assistId;
+                                else eventJson += "," + assistId;
+                            }
+                            eventJson += "]}";
+                            if (monsterEvents.isEmpty()) monsterEvents = eventJson;
+                            else monsterEvents += "," + eventJson;
+                            matchData.get("match").put("monster_events", monsterEvents);
+                            break;
+                        case BUILDING_KILL:
+                            String buildingEvents = matchData.get("match").getOrDefault("building_events", "");
+                            String building = event.getBuildingType() != null ? event.getBuildingType().name() : "";
+                            int killerIdBuilding = event.getKillerId();
+                            List<Integer> assistIdsBuilding = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+                            String eventJsonBuilding = "{\"building\":\"" + building + "\",\"killer\":" + killerIdBuilding + ",\"assists\":[";
+                            for (int assistId : assistIdsBuilding) {
+                                if (assistId == 0) continue;
+                                if (eventJsonBuilding.endsWith("[")) eventJsonBuilding += assistId;
+                                else eventJsonBuilding += "," + assistId;
+                            }
+                            eventJsonBuilding += "]}";
+                            if (buildingEvents.isEmpty()) buildingEvents = eventJsonBuilding;
+                            else buildingEvents += "," + eventJsonBuilding;
+                            matchData.get("match").put("building_events", buildingEvents);
+                            break;
+                        default:
+                            break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+                
             }
         }
 
