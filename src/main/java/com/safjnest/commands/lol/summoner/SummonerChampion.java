@@ -35,6 +35,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -59,13 +60,86 @@ public class SummonerChampion extends SlashCommand {
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", true).setAutoComplete(true),
             new OptionData(OptionType.STRING, "champion", "Champion Name", true).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "role", "Champion Role", true)
+                .addChoice("Top", "TOP")
+                .addChoice("Jungle", "JUNGLE")
+                .addChoice("Mid", "MID")
+                .addChoice("ADC", "ADC")
+                .addChoice("Support", "SUPPORT"),
             LeagueHandler.getLeagueShardOptions()
         );
         commandData.setThings(this);
     }
 
-    @Override
-    protected void execute(CommandEvent event) {
+
+    private EmbedBuilder getMatchups(String prefix, EmbedBuilder eb, HashMap<Integer, int[]> data) {  
+        List<Map.Entry<Integer, int[]>> worstMatchups = data.entrySet().stream()
+            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
+            .sorted((a, b) -> {
+                double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
+                double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                int cmp = Double.compare(winrateA, winrateB);
+                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
+            })
+            .collect(Collectors.toList());
+        
+        List<Map.Entry<Integer, int[]>> bestMatchups = data.entrySet().stream()
+            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
+            .sorted((a, b) -> {
+                double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
+                double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                int cmp = Double.compare(winrateB, winrateA);
+                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
+            })
+            .collect(Collectors.toList());
+        
+        List<Map.Entry<Integer, int[]>> popularMatchups = data.entrySet().stream()
+            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
+            .sorted((a, b) -> {
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                if (gamesA == gamesB) {
+                    double winrateA = (double) a.getValue()[0] / (gamesA);
+                    double winrateB = (double) b.getValue()[0] / (gamesB);
+                    return Double.compare(winrateB, winrateA);
+                }
+                return Integer.compare(gamesB, gamesA);
+            })
+            .collect(Collectors.toList());
+        
+        eb.addField("Worst " + prefix, getWinrateLabel(worstMatchups), true);
+        eb.addField("Best " + prefix, getWinrateLabel(bestMatchups), true);
+        eb.addField("Popular " + prefix, getWinrateLabel(popularMatchups), true);
+        return eb;
+    }
+
+    private String getWinrateLabel(List<Entry<Integer, int[]>> data) {
+        String label = "";
+        int limit = 4;
+        for (Map.Entry<Integer, int[]> entry : data) {
+            if (limit-- == 0) break;
+            StaticChampion champ = LeagueHandler.getChampionById(entry.getKey());
+            if (champ == null) continue;
+            int[] val = entry.getValue();
+            int totalGames = val[0] + val[1];
+            double winrate = (double) val[0] / totalGames * 100.0;
+            label += CustomEmojiHandler.getFormattedEmoji(champ.getName()) + " " + champ.getName() + "\n`" + val[0] + "W/" + val[1] + "L (" + String.format("%.1f%%", winrate) + ")`\n";
+        }
+
+        return label;
+    }
+
+
+  /**
+  * This method is called every time a member executes the command.
+  */
+  @Override
+	protected void execute(SlashCommandEvent event) {
+        event.deferReply().queue();
         //22 iodid
         //50 sunyx
         //150067 uglydemon
@@ -74,17 +148,49 @@ public class SummonerChampion extends SlashCommand {
         //80 pantheon
         //412 thresh
         //555 pyke
-        int summonerId = 50;
-        int champion = 555;
+
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
+        int summonerId = LeagueDBHandler.getSummonerIdByPuuid(summoner.getPUUID());
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+
+        String championName = event.getOption("champion").getAsString();
+        StaticChampion champion = LeagueHandler.getChampionByName(championName);
 
         long timeStart = 1736420400000l;
         long timeEnd = System.currentTimeMillis();
 
         GameQueueType queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
-        LaneType role = LaneType.UTILITY;
+
+        String laneString = event.getOption("role").getAsString();
+        String laneFormatName =  "";
+        LaneType laneType = null;
+        switch(laneString){
+            case "TOP":
+                laneFormatName = "Top Lane";
+                laneType = LaneType.TOP;
+                break;
+            case "JUNGLE":
+                laneFormatName = "Jungle";
+                laneType = LaneType.JUNGLE;
+                break;
+            case "MID":
+                laneFormatName = "Mid Lane";
+                laneType = LaneType.MID;
+                break;
+            case "ADC":
+                laneFormatName = "ADC";
+                laneType = LaneType.BOT;
+                break;
+            case "SUPPORT":
+                laneFormatName = "Support";
+                laneType = LaneType.UTILITY;
+                break;
+        }
+
+
         List<MatchData> matches = null;
         try {
-            matches = LeagueDBHandler.getMatchHistory(summonerId, champion, timeStart, timeEnd, queue, role);
+            matches = LeagueDBHandler.getMatchHistory(summonerId, champion.getId(), timeStart, timeEnd, queue, laneType);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -193,11 +299,13 @@ public class SummonerChampion extends SlashCommand {
 
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle("Stats for champion " + champion);
+        eb.setTitle(champion.getName());
+        eb.setThumbnail(LeagueHandler.getChampionProfilePic(champion.getName()));
+        eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         eb.setDescription("Total games: " + matches.size());
         eb.setColor(Bot.getColor());
 
-        String laneString = "";
+        laneString = "";
         for (LaneType lane : laneStats.keySet()) {
             String wins = laneStats.get(lane).split("-")[0];
             String losses = laneStats.get(lane).split("-")[1];
@@ -264,111 +372,10 @@ public class SummonerChampion extends SlashCommand {
 
         eb = getMatchups("matchups", eb, laneVsWinrate);
 
-        if (role == LaneType.BOT || role == LaneType.UTILITY) 
+        if (laneType == LaneType.BOT || laneType == LaneType.UTILITY) 
             eb = getMatchups("duo bot", eb, duoWinrate);
 
-
-        event.reply(eb.build());
-
-
-    }
-
-
-    private EmbedBuilder getMatchups(String prefix, EmbedBuilder eb, HashMap<Integer, int[]> data) {  
-        List<Map.Entry<Integer, int[]>> worstMatchups = data.entrySet().stream()
-            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
-            .sorted((a, b) -> {
-                double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
-                double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
-                int cmp = Double.compare(winrateA, winrateB);
-                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
-            })
-            .collect(Collectors.toList());
-        
-        List<Map.Entry<Integer, int[]>> bestMatchups = data.entrySet().stream()
-            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
-            .sorted((a, b) -> {
-                double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
-                double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
-                int cmp = Double.compare(winrateB, winrateA);
-                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
-            })
-            .collect(Collectors.toList());
-        
-        List<Map.Entry<Integer, int[]>> popularMatchups = data.entrySet().stream()
-            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
-            .sorted((a, b) -> {
-                int gamesA = a.getValue()[0] + a.getValue()[1];
-                int gamesB = b.getValue()[0] + b.getValue()[1];
-                if (gamesA == gamesB) {
-                    double winrateA = (double) a.getValue()[0] / (gamesA);
-                    double winrateB = (double) b.getValue()[0] / (gamesB);
-                    return Double.compare(winrateB, winrateA);
-                }
-                return Integer.compare(gamesB, gamesA);
-            })
-            .collect(Collectors.toList());
-        
-        eb.addField("Worst " + prefix, getWinrateLabel(worstMatchups), true);
-        eb.addField("Best " + prefix, getWinrateLabel(bestMatchups), true);
-        eb.addField("Popular " + prefix, getWinrateLabel(popularMatchups), true);
-        return eb;
-    }
-
-    private String getWinrateLabel(List<Entry<Integer, int[]>> data) {
-        String label = "";
-        int limit = 4;
-        for (Map.Entry<Integer, int[]> entry : data) {
-            if (limit-- == 0) break;
-            StaticChampion champ = LeagueHandler.getChampionById(entry.getKey());
-            if (champ == null) continue;
-            int[] val = entry.getValue();
-            int totalGames = val[0] + val[1];
-            double winrate = (double) val[0] / totalGames * 100.0;
-            label += CustomEmojiHandler.getFormattedEmoji(champ.getName()) + " " + champ.getName() + "\n`" + val[0] + "W/" + val[1] + "L (" + String.format("%.1f%%", winrate) + ")`\n";
-        }
-
-        return label;
-    }
-
-
-  /**
-  * This method is called every time a member executes the command.
-  */
-  @Override
-	protected void execute(SlashCommandEvent event) {
-        event.deferReply(false).queue();
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByArgs(event);
-        if(s == null){
-            event.getHook().editOriginal("Couldn't find the specified summoner. Remember to specify the tag").queue();
-            return;
-        }
-
-        String name = event.getOption("summoner").getAsString();
-
-        UserData data = UserCache.getUser(event.getMember().getId());
-        if(data.getRiotAccounts().containsKey(s.getPUUID())){
-            event.getHook().editOriginal("This account is already connected to your profile.").queue();
-            return;
-        }
-
-        if (LeagueDBHandler.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform()) != null) {
-            event.getHook().editOriginal("This account is already connected to another profile.\nIf you think someone has linked your account please write to our discord server support or use /bug").queue();
-            return;
-        }
-
-       
-
-        if (!data.addRiotAccount(s)) {
-            event.getHook().editOriginal("Something went wrong while connecting your account.").queue();
-            return;
-        }
-
-        event.getHook().editOriginal("Connected " + name + " to your profile.").queue();
+        event.getHook().sendMessageEmbeds(eb.build()).queue();
 
 	}
 
