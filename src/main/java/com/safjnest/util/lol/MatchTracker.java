@@ -278,7 +278,8 @@ public class MatchTracker {
 
     private static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant participant, QueryRecord dataGame, HashMap<String, String> matchData) {
         return () -> {
-            if (dataGame == null || match.getGameId() == dataGame.getAsLong("game_id")) return;
+            if (match.getGameId() == dataGame.getAsLong("game_id")) return;
+            if (participant.getPuuid().equals("BOT")) return;
 
             List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
             LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
@@ -532,7 +533,7 @@ public class MatchTracker {
                             break;
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    
                 }
                 
             }

@@ -225,6 +225,9 @@ import com.safjnest.core.cache.managers.UserCache;
             case ALL_RANDOM_URF:
                 name = "URF";
                 break;
+            case DOOMBOTS_V2:
+                name = "DoomBots";
+                break;
             default:
                 break;
         }
@@ -282,6 +285,7 @@ import com.safjnest.core.cache.managers.UserCache;
             case URF:
             case ALL_RANDOM_URF:
             case ONEFORALL_5X5:
+            case DOOMBOTS_V2:
                 emoji = CustomEmojiHandler.getFormattedEmoji("special_mode");
                 break;
             case ARAM:

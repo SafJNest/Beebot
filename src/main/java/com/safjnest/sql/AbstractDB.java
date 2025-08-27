@@ -146,7 +146,7 @@ public abstract class AbstractDB {
      */
     public QueryRecord lineQuery(String query) {
         try { return query(query).get(0); } 
-        catch (Exception e) { return null;}
+        catch (Exception e) { return new QueryRecord(null); }
     }
 
 
