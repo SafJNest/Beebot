@@ -649,7 +649,7 @@ public class Test extends Command{
                 e.getChannel().sendMessageEmbeds(eb.build()).setComponents(ActionRow.of(streamerButtonLink)).queue();
                 break;
             case "fixlol":
-            query = "SELECT id, game_id, league_shard from `match` where id > 0 order by id desc";
+            query = "SELECT id, game_id, league_shard from `match` where game_type = 96 order by id desc";
             
                 res = LeagueDB.get().query(query);
                 System.out.println("total match: " + res.size());
@@ -697,7 +697,7 @@ public class Test extends Command{
                         pings.put("enemy_missing", participant.getEnemyMissingPings());
                         pings.put("vision_cleared", participant.getVisionClearedPings());
 
-                        query = "UPDATE participant SET lane='" + lane.ordinal() + "', side='" + team.ordinal() + "', damage='" + totalDamage + "', damage_building='" + tower + "', healing='" + shield + "', vision_score='" + vision + "', cs='" + cs + "', ward='" + ward + "', pings='" + JSONObject.toJSONString(pings) + "', ward_killed='" + participant.getWardsKilled()+ "', gold_earned='" + participant.getGoldEarned() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
+                        query = "UPDATE participant SET subteam='" + participant.getPlayerSubteamId() + "', subteam_placement='" + participant.getSubteamPlacement() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
                         LeagueDB.get().query(query);
                     }
                     System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());
