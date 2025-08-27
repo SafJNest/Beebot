@@ -5,7 +5,7 @@ import org.springframework.web.client.RestTemplate;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.safjnest.sql.WebsiteDBHandler;
+import com.safjnest.sql.database.WebsiteDB;
 import com.safjnest.util.SettingsLoader;
 
 import org.springframework.http.*;
@@ -85,7 +85,7 @@ public class SpotifyTokenManager {
 
         if (response.getStatusCode() == HttpStatus.OK) {
             JSONObject responseBody = new JSONObject(response.getBody());
-            WebsiteDBHandler.updateSpotifyUserToken(
+            WebsiteDB.updateSpotifyUserToken(
                 userId,
                 responseBody.getString("access_token"),
                 responseBody.has("refresh_token") ? responseBody.getString("refresh_token") : refreshToken,
@@ -98,7 +98,7 @@ public class SpotifyTokenManager {
                 String errorDescription = errorJson.optString("error_description", "").toLowerCase();
 
                 if (errorDescription.contains("refresh token revoked")) {
-                    WebsiteDBHandler.deleteSpotifyRefreshToken(userId);
+                    WebsiteDB.deleteSpotifyRefreshToken(userId);
                     throw new SpotifyException(SpotifyException.ErrorType.NO_AUTH,
                         "Spotify authorization revoked for user " + userId);
                 }

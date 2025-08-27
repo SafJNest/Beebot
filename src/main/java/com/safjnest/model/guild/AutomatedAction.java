@@ -1,7 +1,7 @@
 package com.safjnest.model.guild;
 
-import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 
 public class AutomatedAction {
 
@@ -35,7 +35,7 @@ public class AutomatedAction {
     }
 
     public static AutomatedAction create(String guildId, int action, String roleId, int actionTime, int infractions, int infractionsTime) {
-        int id = DatabaseHandler.createAutomatedAction(guildId, action, roleId, actionTime, infractions, infractionsTime);
+        int id = BotDB.createAutomatedAction(guildId, action, roleId, actionTime, infractions, infractionsTime);
         return new AutomatedAction(id, action, roleId, actionTime, infractions, infractionsTime);
     }
 
@@ -85,8 +85,8 @@ public class AutomatedAction {
 
     public boolean canExecute(String memberId) {
         int memberInfractions = 0;
-        if (infractionsTime == 0)  memberInfractions = DatabaseHandler.getMemberWarnings(memberId);
-        else memberInfractions = DatabaseHandler.getMemberWarnings(memberId, infractionsTime);
+        if (infractionsTime == 0)  memberInfractions = BotDB.getMemberWarnings(memberId);
+        else memberInfractions = BotDB.getMemberWarnings(memberId, infractionsTime);
         
         return memberInfractions >= infractions;
     }

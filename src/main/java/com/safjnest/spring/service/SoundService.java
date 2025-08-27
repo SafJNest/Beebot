@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.database.BotDB;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,7 +28,7 @@ public class SoundService {
     }
 
     public List<Sound> getSounds(String userId, int page, int limit) {
-        return DatabaseHandler.getSounds(userId, page, limit);
+        return BotDB.getSounds(userId, page, limit);
     }
 
     public Optional<Resource> getSoundFile(Sound sound) {

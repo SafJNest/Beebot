@@ -4,9 +4,9 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -43,9 +43,9 @@ public class SoundDelete extends SlashCommand{
 	protected void execute(SlashCommandEvent event) {
         String fileName = event.getOption("user_sound").getAsString();
 
-        QueryCollection sounds = fileName.matches("[0123456789]*") 
-                           ? DatabaseHandler.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
-                           : DatabaseHandler.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
+        QueryResult sounds = fileName.matches("[0123456789]*") 
+                           ? BotDB.getSoundsById(fileName, event.getGuild().getId(), event.getMember().getId()) 
+                           : BotDB.getSoundsByName(fileName, event.getGuild().getId(), event.getMember().getId());
 
         if(sounds.isEmpty()) {
             event.reply("Couldn't find a sound with that name/id.");
@@ -67,7 +67,7 @@ public class SoundDelete extends SlashCommand{
             return;
         }
 
-        DatabaseHandler.deleteSound(toDelete.get("id"));
+        BotDB.deleteSound(toDelete.get("id"));
 
         event.deferReply(false).addContent(name + " (ID: " + toDelete.get("id") +  ") has been deleted.").queue();
 	}

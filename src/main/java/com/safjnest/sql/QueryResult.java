@@ -5,10 +5,29 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class QueryCollection extends ArrayList<QueryRecord> {
+public class QueryResult extends ArrayList<QueryRecord> {
 
-    public QueryCollection(){
+    private boolean success = false;
+    private int affectedRows = 0;
+
+    public QueryResult(){
         super();
+    }
+
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
+    public int getAffectedRows() {
+        return affectedRows;
+    }
+    
+    public void setAffectedRows(int affectedRows) {
+        this.affectedRows = affectedRows;
     }
 
     public List<Map<String, String>> toList(){
@@ -52,13 +71,13 @@ public class QueryCollection extends ArrayList<QueryRecord> {
     }
 
 
-    public QueryCollection shuffle(){
+    public QueryResult shuffle(){
         java.util.Collections.shuffle(this);
         return this;
     }
 
-    public QueryCollection limit(int limit){
-        QueryCollection result = new QueryCollection();
+    public QueryResult limit(int limit){
+        QueryResult result = new QueryResult();
         for(int i = 0; i < limit; i++){
             result.add(this.get(i));
         }
@@ -69,7 +88,7 @@ public class QueryCollection extends ArrayList<QueryRecord> {
         return groupByRecursive(this, 0, keys);
     }
 
-    private Map<String, Object> groupByRecursive(QueryCollection collection, int keyIndex, String... keys) {
+    private Map<String, Object> groupByRecursive(QueryResult collection, int keyIndex, String... keys) {
         if (keyIndex >= keys.length) {
             return null;
         }
@@ -79,13 +98,13 @@ public class QueryCollection extends ArrayList<QueryRecord> {
 
         for (QueryRecord record : collection) {
             String keyValue = record.get(currentKey);
-            grouped.computeIfAbsent(keyValue, k -> new QueryCollection());
-            ((QueryCollection) grouped.get(keyValue)).add(record);
+            grouped.computeIfAbsent(keyValue, k -> new QueryResult());
+            ((QueryResult) grouped.get(keyValue)).add(record);
         }
 
         if (keyIndex < keys.length - 1) {
             for (Map.Entry<String, Object> entry : grouped.entrySet()) {
-                entry.setValue(groupByRecursive((QueryCollection) entry.getValue(), keyIndex + 1, keys));
+                entry.setValue(groupByRecursive((QueryResult) entry.getValue(), keyIndex + 1, keys));
             }
         }
 

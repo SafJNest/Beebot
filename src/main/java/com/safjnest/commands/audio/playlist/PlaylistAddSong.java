@@ -6,7 +6,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
@@ -54,13 +54,13 @@ public class PlaylistAddSong extends SlashCommand{
             return;
         }
         
-        int playlistSize = DatabaseHandler.getPlaylistTracks(playlistId, null, null).size();
+        int playlistSize = BotDB.getPlaylistTracks(playlistId, null, null).size();
         if(playlistSize >= maxPlaylistSize) {
             event.getHook().editOriginal("You already reached the maximum number f tracks (" + maxPlaylistSize + ") in a playlist.").queue();
             return;
         }
 
-        DatabaseHandler.addTrackToPlaylist(playlistId, List.of(track), null);
+        BotDB.addTrackToPlaylist(playlistId, List.of(track), null);
 
         event.getHook().editOriginal("Track added to the playlist successfully.").queue();
     }

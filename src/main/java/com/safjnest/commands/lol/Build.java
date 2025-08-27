@@ -7,7 +7,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.LeagueDBHandler;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
@@ -52,7 +52,7 @@ public class Build extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
         event.deferReply(false).queue();
 
-        CustomBuildData build = LeagueDBHandler.getCustomBuild(event.getOption("custom-build").getAsString());
+        CustomBuildData build = LeagueDB.getCustomBuild(event.getOption("custom-build").getAsString());
         
         String champName = build.getChampion().getName();
         

@@ -7,10 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.MatchTracker;
@@ -244,7 +244,7 @@ public class EventButtonHandler extends ListenerAdapter {
             }
         }
 
-        QueryRecord playlist = DatabaseHandler.getPlaylistByIdWithSize(playlistId);
+        QueryRecord playlist = BotDB.getPlaylistByIdWithSize(playlistId);
         switch (args) {
             case "left":
                 page -= 1;
@@ -381,7 +381,7 @@ public class EventButtonHandler extends ListenerAdapter {
             case "delete":
                 GuildCache.getGuildOrPut(event.getGuild().getId()).deleteAlert(AlertType.TWITCH, streamerId);
 
-                if (DatabaseHandler.getTwitchSubscriptions(streamerId).size() == 0)
+                if (BotDB.getTwitchSubscriptions(streamerId).size() == 0)
                     TwitchClient.unregisterSubEvent(streamerId);
 
                 event.deferEdit().queue();
@@ -799,7 +799,7 @@ public class EventButtonHandler extends ListenerAdapter {
             }
         }
 
-        String user_id = LeagueDBHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
@@ -970,7 +970,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 page = Integer.parseInt(b.getCustomId().split("-")[2]);
         }
 
-        String user_id = LeagueDBHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
@@ -1109,7 +1109,7 @@ public class EventButtonHandler extends ListenerAdapter {
             }
         }
 
-        String user_id = LeagueDBHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
@@ -1228,7 +1228,7 @@ public class EventButtonHandler extends ListenerAdapter {
         }
         order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
 
-        QueryCollection sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
+        QueryResult sounds = BotDB.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(event.getUser().getName(), "https://github.com/SafJNest",
@@ -1290,7 +1290,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 timeOrder = !timeOrder;
 
                 order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
-                sounds = DatabaseHandler.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
+                sounds = BotDB.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
 
                 for (Button b : EventUtils.getButtons(event)) {
                     if (b.getLabel().startsWith("Page"))
@@ -1349,15 +1349,15 @@ public class EventButtonHandler extends ListenerAdapter {
                 userId = b.getCustomId().split("-")[2];
             }
         }
-        QueryCollection sounds = null;
+        QueryResult sounds = null;
         if (!timeOrder) {
             sounds = (userId.equals(event.getMember().getId()))
-                               ? DatabaseHandler.getlistUserSounds(userId)
-                               : DatabaseHandler.getlistUserSounds(userId, event.getGuild().getId());
+                               ? BotDB.getlistUserSounds(userId)
+                               : BotDB.getlistUserSounds(userId, event.getGuild().getId());
         } else {
             sounds = (userId.equals(event.getMember().getId()))
-                               ? DatabaseHandler.getlistUserSoundsTime(userId)
-                               : DatabaseHandler.getlistUserSoundsTime(userId, event.getGuild().getId());
+                               ? BotDB.getlistUserSoundsTime(userId)
+                               : BotDB.getlistUserSoundsTime(userId, event.getGuild().getId());
         }
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -1412,12 +1412,12 @@ public class EventButtonHandler extends ListenerAdapter {
                 order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
                 if (!timeOrder) {
                     sounds = (userId.equals(event.getMember().getId()))
-                                       ? DatabaseHandler.getlistUserSounds(userId)
-                                       : DatabaseHandler.getlistUserSounds(userId, event.getGuild().getId());
+                                       ? BotDB.getlistUserSounds(userId)
+                                       : BotDB.getlistUserSounds(userId, event.getGuild().getId());
                 } else {
                     sounds = (userId.equals(event.getMember().getId()))
-                                       ? DatabaseHandler.getlistUserSoundsTime(userId)
-                                       : DatabaseHandler.getlistUserSoundsTime(userId, event.getGuild().getId());
+                                       ? BotDB.getlistUserSoundsTime(userId)
+                                       : BotDB.getlistUserSoundsTime(userId, event.getGuild().getId());
                 }
 
                 for (Button b : EventUtils.getButtons(event)) {

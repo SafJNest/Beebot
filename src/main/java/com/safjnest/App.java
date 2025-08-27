@@ -10,6 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.BotSettings.Settings;
+import com.safjnest.sql.database.BotDB;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -36,7 +38,6 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-                        
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }

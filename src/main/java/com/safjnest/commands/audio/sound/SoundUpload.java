@@ -9,9 +9,9 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -72,7 +72,7 @@ public class SoundUpload extends SlashCommand{
             return;
         }
 
-        QueryCollection sounds = DatabaseHandler.getDuplicateSoundsByName(soundName, event.getGuild().getId(), event.getMember().getId());
+        QueryResult sounds = BotDB.getDuplicateSoundsByName(soundName, event.getGuild().getId(), event.getMember().getId());
 
         if(!sounds.isEmpty()) {
             for(QueryRecord sound : sounds) {
@@ -84,7 +84,7 @@ public class SoundUpload extends SlashCommand{
             return;
         }
 
-        String id = DatabaseHandler.insertSound(soundName, event.getGuild().getId(), event.getMember().getId(), attachment.getFileExtension(), isPublic);
+        String id = BotDB.insertSound(soundName, event.getGuild().getId(), event.getMember().getId(), attachment.getFileExtension(), isPublic);
 
         if(id == null){
             event.deferReply(true).addContent("Something went wrong.").queue();
@@ -96,7 +96,7 @@ public class SoundUpload extends SlashCommand{
             if(event.getOption("tag-" + i) != null){
                 String tagName = event.getOption("tag-" + i) != null ? event.getOption("tag-" + i).getAsString() : "";
                 if(tagName.length() > 0){
-                    int tagId = DatabaseHandler.insertTag(tagName);
+                    int tagId = BotDB.insertTag(tagName);
                     tags.add(new Tag(tagId, tagName));
                 }
             }

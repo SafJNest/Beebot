@@ -16,9 +16,9 @@ import org.json.JSONObject;
 import com.safjnest.App;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
@@ -63,7 +63,7 @@ public class MatchTracker {
 
     private static void retriveSummoners() {
         try {
-            QueryCollection result = LeagueDBHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
+            QueryResult result = LeagueDB.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
             for (QueryRecord account : result) {
                 Summoner summoner = null;
@@ -176,7 +176,7 @@ public class MatchTracker {
     public static ChronoTask analyzeMatchHistory(GameQueueType queue, Summoner summoner) {
         if (toTrack.indexOf(queue) == -1) return Chronos.NULL;
 
-        QueryRecord row = LeagueDBHandler.getRegistredLolAccount(LeagueDBHandler.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
+        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
         //if (row.emptyValues() && queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return Chronos.NULL;
 
         try { Thread.sleep(350); }
@@ -205,11 +205,11 @@ public class MatchTracker {
         ChronoTask task = () -> {
             if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp()) && match.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return;
 
-            int summoner_match_id = LeagueDBHandler.setMatchData(match);
+            int summoner_match_id = LeagueDB.setMatchData(match);
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
-            LeagueDBHandler.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
+            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
 
 
             for (MatchParticipant partecipant : match.getParticipants()) {
@@ -238,7 +238,7 @@ public class MatchTracker {
 
     public static ChronoTask analyzeMatchHistory(LOLMatch match) {
         return () -> {
-            int summoner_match_id = LeagueDBHandler.setMatchData(match, true);
+            int summoner_match_id = LeagueDB.setMatchData(match, true);
             if (summoner_match_id == 0) {
                 BotLogger.info("[LPTracker] Match " + match.getGameId() + " already tracked");
                 return;
@@ -247,7 +247,7 @@ public class MatchTracker {
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
 
-            LeagueDBHandler.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
+            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
 
             for (MatchParticipant partecipant : match.getParticipants()) {
                 try { Thread.sleep(2000); }
@@ -272,7 +272,7 @@ public class MatchTracker {
 //
 
     public static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant partecipant, HashMap<String, String> matchData) {
-        QueryRecord row = LeagueDBHandler.getRegistredLolAccount(LeagueDBHandler.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
+        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
         return pushSummoner(match, summonerMatch, summoner, partecipant, row, matchData);
     }
 
@@ -300,9 +300,9 @@ public class MatchTracker {
             } else {
                 gain = lp - dataGame.getAsInt("lp");
             }
-            int summonerId = LeagueDBHandler.addLOLAccount(summoner);
-            LeagueDBHandler.updateSummonerEntries(summonerId, entries);
-            LeagueDBHandler.setSummonerData(summonerId, summonerMatch, participant, rank, lp, gain, createJSONBuild(matchData));
+            int summonerId = LeagueDB.addLOLAccount(summoner);
+            LeagueDB.updateSummonerEntries(summonerId, entries);
+            LeagueDB.setSummonerData(summonerId, summonerMatch, participant, rank, lp, gain, createJSONBuild(matchData));
         };
     }
 
@@ -598,8 +598,8 @@ public class MatchTracker {
      * @param lane
      */
     public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        QueryCollection matchDatas = LeagueDBHandler.safJQuery("SELECT * FROM `match`");
-        QueryCollection championDatas = LeagueDBHandler.safJQuery("SELECT * FROM participant WHERE champion = " + champion + " AND lane = " + lane.ordinal());
+        QueryResult matchDatas = LeagueDB.get().query("SELECT * FROM `match`");
+        QueryResult championDatas = LeagueDB.get().query("SELECT * FROM participant WHERE champion = " + champion + " AND lane = " + lane.ordinal());
 
         HashMap<String, String> result = new HashMap<>();
 

@@ -6,7 +6,7 @@ import java.util.List;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.PlayerManager;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
@@ -50,15 +50,15 @@ public class PlaylistAddQueue extends SlashCommand {
             return;
         }
 
-        int playlistSize = DatabaseHandler.getPlaylistTracks(playlistId, null, null).size();
+        int playlistSize = BotDB.getPlaylistTracks(playlistId, null, null).size();
 
         if(queue.size() + playlistSize >= maxPlaylistSize) {
-            DatabaseHandler.addTrackToPlaylist(playlistId, queue.subList(0, maxPlaylistSize - playlistSize - 1), null);
+            BotDB.addTrackToPlaylist(playlistId, queue.subList(0, maxPlaylistSize - playlistSize - 1), null);
             event.getHook().editOriginal("The queue was too big to fit in the playlist (max " + maxPlaylistSize + ") so only the first " + (maxPlaylistSize - playlistSize - 1) + "tracks were put in.").queue();
             return;
         }
 
-        DatabaseHandler.addTrackToPlaylist(playlistId, queue, null);
+        BotDB.addTrackToPlaylist(playlistId, queue, null);
 
         event.getHook().editOriginal("Queue added to the playlist successfully.").queue();
     }

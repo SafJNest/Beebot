@@ -31,7 +31,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.sql.LeagueDBHandler;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -433,7 +433,7 @@ import com.safjnest.core.cache.managers.UserCache;
      */
     public static Summoner getSummonerFromDB(String discordId){
         // try {
-        //     ResultRow account = DatabaseHandler.getLOLAccountIdByUserId(discordId);
+        //     ResultRow account = BotDB.getLOLAccountIdByUserId(discordId);
         //     LeagueShard shard = LeagueShard.values()[Integer.valueOf(account.get("league_shard"))];
 
         //     return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
@@ -533,15 +533,15 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static int updateSummonerDB(Summoner summoner) {
-        return LeagueDBHandler.addLOLAccount(summoner);
+        return LeagueDB.addLOLAccount(summoner);
     }
 
     public static void updateSummonerDB(SpectatorGameInfo game) {
-        LeagueDBHandler.addLOLAccount(game);
+        LeagueDB.addLOLAccount(game);
     }
 
     public static void updateSummonerDB(LOLMatch match) {
-        LeagueDBHandler.addLOLAccountFromMatch(match);
+        LeagueDB.addLOLAccountFromMatch(match);
     }
 
 //     ▄███████▄  ▄█   ▄████████

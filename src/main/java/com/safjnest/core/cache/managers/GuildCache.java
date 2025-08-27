@@ -6,9 +6,9 @@ import java.util.concurrent.TimeUnit;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.CacheAdapter;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -61,7 +61,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
 
     public static GuildData putGuild(String guildId) {
-        DatabaseHandler.insertGuild(guildId, Bot.getPrefix());
+        BotDB.insertGuild(guildId, Bot.getPrefix());
         BotLogger.error("Missing guild in database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
 
         GuildData guild = new GuildData(guildId);
@@ -82,7 +82,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
 
     private GuildData retriveGuild(String guildId) {
         BotLogger.info("Retriving guild from database => {0}", new LoggerIDpair(guildId, LoggerIDpair.IDType.GUILD));
-        QueryRecord guildData = DatabaseHandler.getGuildData(guildId);
+        QueryRecord guildData = BotDB.getGuildData(guildId);
         
         if(guildData.emptyValues()) {
             return null;
@@ -94,7 +94,7 @@ public class GuildCache extends CacheAdapter<String, GuildData> {
     }
 
     public void retrieveAllGuilds() {
-        QueryCollection guilds = DatabaseHandler.getGuildData();
+        QueryResult guilds = BotDB.getGuildData();
         
         for(QueryRecord guildData : guilds){        
             GuildData guild = new GuildData(guildData);

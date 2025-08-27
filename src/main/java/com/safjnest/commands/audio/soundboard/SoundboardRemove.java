@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -40,17 +40,17 @@ public class SoundboardRemove extends SlashCommand{
         String soundID = event.getOption("sound_remove").getAsString();
         String soundboardID = event.getOption("name").getAsString();
 
-        if(!DatabaseHandler.soundboardExists(soundboardID, event.getGuild().getId(), event.getUser().getId())) {
+        if(!BotDB.soundboardExists(soundboardID, event.getGuild().getId(), event.getUser().getId())) {
             event.deferReply(true).addContent("Soundboard does not exist or you dont have permission to play the selected one.").queue();
             return;
         }
 
-        if(!DatabaseHandler.deleteSoundFromSoundboard(soundboardID, soundID)){
+        if(!BotDB.deleteSoundFromSoundboard(soundboardID, soundID)){
             event.deferReply(false).addContent("Error deleting sound.").queue();
             return;
         }
-        if(DatabaseHandler.getSoundInSoundboardCount(soundboardID) == 1){
-            DatabaseHandler.deleteSoundboard(soundboardID);
+        if(BotDB.getSoundInSoundboardCount(soundboardID) == 1){
+            BotDB.deleteSoundboard(soundboardID);
             event.deferReply(false).addContent("The soundboard has been deleted because it was empty.").queue();
             return;
         }

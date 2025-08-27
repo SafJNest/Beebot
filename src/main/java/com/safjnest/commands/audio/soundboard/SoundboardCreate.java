@@ -10,7 +10,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
-import com.safjnest.sql.DatabaseHandler;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -64,12 +64,12 @@ public class SoundboardCreate extends SlashCommand{
         String soundboardName = "temporary";
         if(event.getOption("name") != null) {
             soundboardName = event.getOption("name").getAsString();
-            if(DatabaseHandler.soundboardExists(soundboardName, event.getGuild().getId())) {
+            if(BotDB.soundboardExists(soundboardName, event.getGuild().getId())) {
                 event.deferReply(true).addContent("A soundboard with that name in this guild already exists.").queue();
                 return;
             }
             Attachment attachment = event.getOption("thumbnail") != null ? event.getOption("thumbnail").getAsAttachment() : null;
-            DatabaseHandler.insertSoundBoard(soundboardName, attachment, event.getGuild().getId(), event.getUser().getId(), soundIDs.toArray(new String[0]));
+            BotDB.insertSoundBoard(soundboardName, attachment, event.getGuild().getId(), event.getUser().getId(), soundIDs.toArray(new String[0]));
         }
 
         List<Sound> sounds = SoundCache.getSoundsByIds(soundIDs.toArray(new String[0]));

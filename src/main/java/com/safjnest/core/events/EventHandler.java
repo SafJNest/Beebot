@@ -1,6 +1,5 @@
 package com.safjnest.core.events;
 
-import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 
@@ -14,6 +13,7 @@ import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.sql.database.BotDB;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
@@ -139,7 +139,7 @@ public class EventHandler extends ListenerAdapter {
     @Override
     public void onGuildUnban(GuildUnbanEvent event) {
         User theGuy = event.getUser();
-        DatabaseHandler.deleteBlacklist(event.getGuild().getId(), theGuy.getId());
+        BotDB.deleteBlacklist(event.getGuild().getId(), theGuy.getId());
     }
 
     @Override

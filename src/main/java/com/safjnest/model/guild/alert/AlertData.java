@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;
@@ -50,7 +50,7 @@ public class AlertData {
     }
 
     public AlertData(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, AlertType type) {
-        this.ID = DatabaseHandler.createAlert(guild_id, message, privateMessage, channelId, sendType, type);
+        this.ID = BotDB.createAlert(guild_id, message, privateMessage, channelId, sendType, type);
         this.message = message;
         this.privateMessage = privateMessage;
         this.channelId = channelId;
@@ -61,18 +61,18 @@ public class AlertData {
     }
 
     public AlertData(String guild_id, String message, String privateMessage, String channelId, AlertSendType sendType, String[] roles) {
-        this.ID = DatabaseHandler.createAlert(guild_id, message, privateMessage, channelId, sendType, AlertType.WELCOME);
+        this.ID = BotDB.createAlert(guild_id, message, privateMessage, channelId, sendType, AlertType.WELCOME);
         this.message = message;
         this.privateMessage = privateMessage;
         this.channelId = channelId;
         this.enabled = true;
         this.type = AlertType.WELCOME;
         this.sendType = sendType;
-        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles);
+        this.roles = BotDB.createRolesAlert(String.valueOf(this.ID), roles);
     }
 
     public AlertData(String guild_id, String message, String privateMessage, AlertSendType sendType) {
-        this.ID = DatabaseHandler.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.LEVEL_UP);
+        this.ID = BotDB.createAlert(guild_id, message, privateMessage, null, sendType, AlertType.LEVEL_UP);
         this.message = message;
         this.privateMessage = privateMessage;
         this.channelId = null;
@@ -97,7 +97,7 @@ public class AlertData {
     }
     
     public boolean setMessage(String message) {
-        boolean result = DatabaseHandler.setAlertMessage(String.valueOf(this.ID), message);
+        boolean result = BotDB.setAlertMessage(String.valueOf(this.ID), message);
         if (result) {
             this.message = message;
         }
@@ -105,7 +105,7 @@ public class AlertData {
     }
 
     public boolean setPrivateMessage(String privateMessage) {
-        boolean result = DatabaseHandler.setAlertPrivateMessage(String.valueOf(this.ID), privateMessage);
+        boolean result = BotDB.setAlertPrivateMessage(String.valueOf(this.ID), privateMessage);
         if (result) {
             this.privateMessage = privateMessage;
         }
@@ -113,7 +113,7 @@ public class AlertData {
     }
 
     public boolean setAlertChannel(String channelId) {
-        boolean result = DatabaseHandler.setAlertChannel(String.valueOf(this.ID), channelId);
+        boolean result = BotDB.setAlertChannel(String.valueOf(this.ID), channelId);
         if (result) {
             this.channelId = channelId;
         }
@@ -121,7 +121,7 @@ public class AlertData {
     }
 
     public boolean setEnabled(boolean enabled) {
-        boolean result = DatabaseHandler.setAlertEnabled(String.valueOf(this.ID), enabled);
+        boolean result = BotDB.setAlertEnabled(String.valueOf(this.ID), enabled);
         if (result) {
             this.enabled = enabled;
         }
@@ -148,13 +148,13 @@ public class AlertData {
             roles = new HashMap<>();
         }
         roles.put(0, roleId);
-        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
+        this.roles = BotDB.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
         return this.roles != null;
     }
 
     public boolean setRoles(List<String> roles) {
-        DatabaseHandler.deleteAlertRoles(String.valueOf(this.ID));
-        this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.toArray(new String[0]));
+        BotDB.deleteAlertRoles(String.valueOf(this.ID));
+        this.roles = BotDB.createRolesAlert(String.valueOf(this.ID), roles.toArray(new String[0]));
         return this.roles != null;
     }
 
@@ -182,11 +182,11 @@ public class AlertData {
         roles.values().removeIf(role -> role.equals(roleId));
         boolean result = false;
         if (roles.isEmpty()) {
-            result = DatabaseHandler.deleteAlertRoles(String.valueOf(this.ID));
+            result = BotDB.deleteAlertRoles(String.valueOf(this.ID));
             this.roles = null;
         }
         else {
-            this.roles = DatabaseHandler.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
+            this.roles = BotDB.createRolesAlert(String.valueOf(this.ID), roles.values().toArray(new String[0]));
             result = this.roles != null;
         }
         
@@ -194,7 +194,7 @@ public class AlertData {
     }
 
     public boolean terminator4LaRinascita() {
-        return DatabaseHandler.deleteAlert(String.valueOf(this.ID));
+        return BotDB.deleteAlert(String.valueOf(this.ID));
     }
 
 
@@ -244,7 +244,7 @@ public class AlertData {
     }
 
     public boolean setSendType(AlertSendType sendType) {
-        boolean result = DatabaseHandler.alertUpdateSendType(String.valueOf(this.ID), sendType);
+        boolean result = BotDB.alertUpdateSendType(String.valueOf(this.ID), sendType);
         if (result) {
             this.sendType = sendType;
         }
