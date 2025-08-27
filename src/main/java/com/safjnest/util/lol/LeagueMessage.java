@@ -15,6 +15,7 @@ import java.awt.Color;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 
+import com.github.twitch4j.graphql.internal.FetchUserQuery.Game;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -1393,7 +1394,7 @@ public class LeagueMessage {
         else if (timeStart == previousTime[0] && timeEnd == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-        if (queue != GameQueueType.CHERRY) rows.add(getLaneComponents("champion", lane));
+        if (queue != GameQueueType.CHERRY && lane != null) rows.add(getLaneComponents("champion", lane));
 
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
         rows.add(getOpggQueueTypeButtons("champion", queue));
@@ -1412,6 +1413,8 @@ public class LeagueMessage {
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
 
+        boolean isDuo = laneType == LaneType.BOT || laneType == LaneType.UTILITY || queue == GameQueueType.CHERRY;
+
         for (MatchData match : matches) {
             for (ParticipantData participant : match.participants) {
                 if (participant.summonerId != summonerId) {
@@ -1423,7 +1426,7 @@ public class LeagueMessage {
 
                 boolean win = participant.win;
 
-                boolean isDuo = lane == LaneType.BOT || lane == LaneType.UTILITY;
+
 
                 List<Integer> enemyChamps = match.participants.stream()
                     .filter(p -> p.side != side)
@@ -1443,7 +1446,7 @@ public class LeagueMessage {
                     List<Integer> allyChamps = match.participants.stream()
                         .filter(p -> p.side == side)
                         .filter(p -> p.id != participant.id)
-                        .filter(p -> p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
+                        .filter(p -> (queue == GameQueueType.CHERRY && p.subTeam == participant.subTeam) || p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
                         .map(p -> p.champion)
                         .collect(Collectors.toList());
                     
@@ -1456,7 +1459,7 @@ public class LeagueMessage {
         }
 
         eb = buildMatchups("matchups", eb, laneVsWinrate);
-        if (laneType == LaneType.BOT || laneType == LaneType.UTILITY)
+        if (isDuo)
             eb = buildMatchups("duo", eb, duoWinrate);
 
         return eb;

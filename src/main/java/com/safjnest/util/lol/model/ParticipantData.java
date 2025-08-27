@@ -29,4 +29,6 @@ public class ParticipantData {
     public int visionScore;
     public HashMap<String, Integer> pings;
     public JSONObject build;
+    public int subTeam;
+    public int subTeamPlacement;
 }
