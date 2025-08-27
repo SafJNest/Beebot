@@ -1,43 +1,20 @@
 package com.safjnest.commands.lol.summoner;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
-import com.github.twitch4j.helix.domain.Team;
-import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.core.Bot;
-import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.model.UserData;
-import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
-import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.util.lol.LeagueMessageType;
-import com.safjnest.util.lol.model.MatchData;
-import com.safjnest.util.lol.model.ParticipantData;
-
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -90,7 +67,7 @@ public class SummonerChampion extends SlashCommand {
         //555 pyke
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-        int summonerId = LeagueDBHandler.getSummonerIdByPuuid(summoner.getPUUID());
+        int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID());
 
         String championName = event.getOption("champion").getAsString();
         StaticChampion champion = LeagueHandler.getChampionByName(championName);

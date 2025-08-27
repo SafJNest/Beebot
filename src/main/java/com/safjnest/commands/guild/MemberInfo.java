@@ -10,8 +10,8 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.ExperienceSystem;
@@ -76,7 +76,7 @@ public class MemberInfo extends SlashCommand {
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);
         }
 
-        QueryRecord userExp = DatabaseHandler.getUserExp(mentionedMember.getId(), guild.getId());
+        QueryRecord userExp = BotDB.getUserExp(mentionedMember.getId(), guild.getId());
         int exp = 0, lvl = 0, msg = 0;
         if(userExp != null) {
             exp = userExp.getAsInt("experience");
@@ -148,15 +148,15 @@ public class MemberInfo extends SlashCommand {
         +"```", true);
         
         eb.addField("Total Sounds Uploaded", "```" 
-            + DatabaseHandler.getSoundsUploadedByUserCount(mentionedMember.getId())
+            + BotDB.getSoundsUploadedByUserCount(mentionedMember.getId())
         + "```", true);
 
         eb.addField("Sounds Uploaded in this server", "```" 
-            + DatabaseHandler.getSoundsUploadedByUserCount(mentionedMember.getId(), guild.getId())
+            + BotDB.getSoundsUploadedByUserCount(mentionedMember.getId(), guild.getId())
         + "```", true);
         
         eb.addField("Total Sound played (global)", "```"
-            + DatabaseHandler.getTotalPlays(mentionedMember.getId())
+            + BotDB.getTotalPlays(mentionedMember.getId())
         + "```", true);
 
         eb.addField("Member joined", 

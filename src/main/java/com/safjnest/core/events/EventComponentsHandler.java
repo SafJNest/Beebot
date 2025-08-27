@@ -45,7 +45,7 @@ import net.dv8tion.jda.api.events.interaction.component.EntitySelectInteractionE
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.modals.Modal;
 
   public class EventComponentsHandler extends ListenerAdapter {
 

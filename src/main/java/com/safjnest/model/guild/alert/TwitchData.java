@@ -1,8 +1,9 @@
 package com.safjnest.model.guild.alert;
 
 import java.util.HashMap;
-import com.safjnest.sql.DatabaseHandler;
+
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 
 public class TwitchData extends AlertData {
 
@@ -24,8 +25,8 @@ public class TwitchData extends AlertData {
 
 
     public static TwitchData createTwitchData(String guild_id, String streamerId, String message, String privateMessage, String channel, AlertSendType sendType, String roleId) {
-        int id = DatabaseHandler.createAlert(guild_id, message, privateMessage, channel, sendType, AlertType.TWITCH);
-        DatabaseHandler.createTwitchData(String.valueOf(id), streamerId, roleId);
+        int id = BotDB.createAlert(guild_id, message, privateMessage, channel, sendType, AlertType.TWITCH);
+        BotDB.createTwitchData(String.valueOf(id), streamerId, roleId);
         return new TwitchData(id, message, privateMessage, channel, true, sendType, streamerId, roleId);
     }
 
@@ -38,7 +39,7 @@ public class TwitchData extends AlertData {
     }
 
     public boolean setStreamerRole(String roleId) {
-        boolean result = DatabaseHandler.updateTwitchRole(this.getID(), roleId);
+        boolean result = BotDB.updateTwitchRole(this.getID(), roleId);
         if (result) {
             this.roleId = roleId;
         }

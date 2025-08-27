@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import com.safjnest.spring.api.model.ApiKey;
-import com.safjnest.sql.WebsiteDBHandler;
+import com.safjnest.sql.database.WebsiteDB;
 
 import java.util.Base64;
 import java.util.Optional;
@@ -18,7 +18,7 @@ public class ApiKeyService {
 
         String sha256 = sha256Hash(rawKey);
 
-        Optional<ApiKey> existing = WebsiteDBHandler.getApiBySha256Hash(sha256);
+        Optional<ApiKey> existing = WebsiteDB.getApiBySha256Hash(sha256);
         if (existing.isPresent()) {
             throw new RuntimeException("Duplicate API key detected! Try again.");
         }
@@ -30,14 +30,14 @@ public class ApiKeyService {
         apiKey.setSha256Hash(sha256);
         apiKey.setOwner(owner);
 
-        WebsiteDBHandler.insertApiKey(apiKey);
+        WebsiteDB.insertApiKey(apiKey);
 
         return rawKey;
     }
 
     public boolean isValidApiKey(String rawKey) {
         String sha256 = sha256Hash(rawKey);
-        Optional<ApiKey> possible = WebsiteDBHandler.getApiBySha256Hash(sha256);
+        Optional<ApiKey> possible = WebsiteDB.getApiBySha256Hash(sha256);
 
         return possible.filter(k -> k.isActive() && BCrypt.checkpw(rawKey, k.getHashedKey())).isPresent();
     }

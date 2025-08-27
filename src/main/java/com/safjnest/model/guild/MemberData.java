@@ -2,8 +2,8 @@ package com.safjnest.model.guild;
 
 import java.time.LocalDateTime;
 
-import com.safjnest.sql.DatabaseHandler;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -45,7 +45,7 @@ public class MemberData {
     private void handleEmptyID() {
         if (this.ID.equals("0")) {
             BotLogger.info("Pushing local UserData into Database => {0}", new LoggerIDpair(String.valueOf(this.USER_ID), LoggerIDpair.IDType.USER));
-            this.ID = DatabaseHandler.insertUserData(this.GUILD_ID, this.USER_ID);
+            this.ID = BotDB.insertUserData(this.GUILD_ID, this.USER_ID);
         }
     }
 
@@ -89,7 +89,7 @@ public class MemberData {
     public boolean setExpData(int experience, int level) {
         handleEmptyID();
         this.messages++;
-        boolean result = DatabaseHandler.updateUserDataExperience(this.ID, experience, level, this.messages);
+        boolean result = BotDB.updateUserDataExperience(this.ID, experience, level, this.messages);
 
         if (result) {
             this.experience = experience;
@@ -104,7 +104,7 @@ public class MemberData {
 
     public boolean setUpdateTime(int updateTime) {
         handleEmptyID();
-        boolean result = DatabaseHandler.updateUserDataUpdateTime(this.ID, updateTime);
+        boolean result = BotDB.updateUserDataUpdateTime(this.ID, updateTime);
         if (result) {
             this.updateTime = updateTime;
         }
@@ -113,7 +113,7 @@ public class MemberData {
 
     public int warn(String reason) {
         handleEmptyID();
-        return DatabaseHandler.insertWarn(this.ID, reason);
+        return BotDB.insertWarn(this.ID, reason);
     }
 
 

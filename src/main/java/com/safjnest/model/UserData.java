@@ -4,10 +4,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import com.safjnest.core.Bot;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -66,7 +66,7 @@ public class UserData {
     private void retriveAlies() {
         this.aliases = new HashMap<>();
         
-        QueryCollection result = DatabaseHandler.getAliases(USER_ID);
+        QueryResult result = BotDB.getAliases(USER_ID);
         if (result == null) { return; }
 
         for(QueryRecord row: result){
@@ -77,7 +77,7 @@ public class UserData {
     }
 
     public boolean addAlias(String name, String command) {
-        int id = DatabaseHandler.createAlias(USER_ID, name, command);
+        int id = BotDB.createAlias(USER_ID, name, command);
         if (id == 0) {
             return false;
         }
@@ -92,7 +92,7 @@ public class UserData {
 
     public boolean deleteAlias(String toDelete) {
         getAliases().remove(toDelete);
-        return DatabaseHandler.deleteAlias(toDelete);
+        return BotDB.deleteAlias(toDelete);
     }
 
 
@@ -110,9 +110,9 @@ public class UserData {
         if (guildGreetIds.containsKey(guildId)) {
             return guildGreetIds.get(guildId).isEmpty() ? getGlobalGreet() : guildGreetIds.get(guildId);
         }
-        QueryRecord possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
+        QueryRecord possibleGreet = BotDB.getSpecificGuildGreet(USER_ID, guildId);
 
-        if (possibleGreet.emptyValues()) {
+        if (possibleGreet == null || possibleGreet.emptyValues()) {
             guildGreetIds.put(guildId, "");
             return getGlobalGreet();
         }
@@ -127,7 +127,7 @@ public class UserData {
         if (guildGreetIds.containsKey(guildId)) 
             return guildGreetIds.get(guildId);
         
-        QueryRecord possibleGreet = DatabaseHandler.getSpecificGuildGreet(USER_ID, guildId);
+        QueryRecord possibleGreet = BotDB.getSpecificGuildGreet(USER_ID, guildId);
         if (possibleGreet.emptyValues()) {
             guildGreetIds.put(guildId, "");
             return null;
@@ -142,7 +142,7 @@ public class UserData {
 
     public String getGlobalGreet() {
         if (globalGreetId == null) {
-            QueryRecord possibleGreet = DatabaseHandler.getGlobalGreet(USER_ID);
+            QueryRecord possibleGreet = BotDB.getGlobalGreet(USER_ID);
             if (possibleGreet.emptyValues()) {
                 this.globalGreetId = "";
                 return null;
@@ -157,7 +157,7 @@ public class UserData {
     public boolean setGreet(String guildId, String soundId) {
         if (guildId.equals("0")) globalGreetId = soundId;
         else guildGreetIds.put(guildId, soundId);
-        return DatabaseHandler.setGreet(this.USER_ID, guildId, soundId);
+        return BotDB.setGreet(this.USER_ID, guildId, soundId);
     }
 
     public boolean unsetGreet(String guildId) {
@@ -166,7 +166,7 @@ public class UserData {
         } else {
             guildGreetIds.remove(guildId);
         }
-        return DatabaseHandler.deleteGreet(this.USER_ID, guildId);
+        return BotDB.deleteGreet(this.USER_ID, guildId);
     }
 
     public HashMap<String, String> getGreets() {
@@ -185,7 +185,7 @@ public class UserData {
 //  ▀                                                                        
 
     private void retriveRiotAccounts() {
-        QueryCollection result = LeagueDBHandler.getLOLAccountsByUserId(USER_ID);
+        QueryResult result = LeagueDB.getLOLAccountsByUserId(USER_ID);
         if (result == null) { return; }
 
         this.riotAccounts = new LinkedHashMap<>();
@@ -206,7 +206,7 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = LeagueDBHandler.addLOLAccount(USER_ID, s) > 0;
+        boolean result = LeagueDB.addLOLAccount(USER_ID, s) > 0;
         if (result) riotAccounts.put(s.getPUUID(), String.valueOf(s.getPlatform().ordinal()));
         
         return result;
@@ -214,7 +214,7 @@ public class UserData {
 
     public boolean deleteRiotAccount(String puuid) {
         checkRiotAccounts();
-        boolean result = LeagueDBHandler.deleteLOLaccount(USER_ID, puuid);
+        boolean result = LeagueDB.deleteLOLaccount(USER_ID, puuid);
         if (result) riotAccounts.remove(puuid);
         
         return result;

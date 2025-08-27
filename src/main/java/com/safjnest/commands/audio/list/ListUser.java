@@ -7,9 +7,9 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.sql.DatabaseHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
@@ -83,9 +83,9 @@ public class ListUser extends SlashCommand{
         eb.setTitle("List of " + mentionedUser.getName());
         eb.setColor(Bot.getColor());
 
-        QueryCollection sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
-                           ? DatabaseHandler.getlistUserSounds(mentionedUser.getId()) 
-                           : DatabaseHandler.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
+        QueryResult sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
+                           ? BotDB.getlistUserSounds(mentionedUser.getId()) 
+                           : BotDB.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
 
         eb.setDescription("Total Sound: " + sounds.size());
 
@@ -131,9 +131,9 @@ public class ListUser extends SlashCommand{
         eb.setTitle("List of " + mentionedUser.getName());
         eb.setColor(Bot.getColor());
 
-        QueryCollection sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
-                           ? DatabaseHandler.getlistUserSounds(mentionedUser.getId()) 
-                           : DatabaseHandler.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
+        QueryResult sounds = (mentionedUser.getId().equals(event.getMember().getId())) 
+                           ? BotDB.getlistUserSounds(mentionedUser.getId()) 
+                           : BotDB.getlistUserSounds(mentionedUser.getId(), event.getGuild().getId());
 
         eb.setDescription("Total Sound: " + sounds.size());
 

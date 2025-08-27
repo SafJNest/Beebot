@@ -70,7 +70,6 @@ public class Summoner extends SlashCommand {
         List<MessageTopLevelComponent> buttons = LeagueMessage.getSummonerButtons(s, theGuy != null ? theGuy.getId() : null);
 
         event.getChannel().sendMessageEmbeds(builder.build()).setComponents(buttons).queue();
-
     }
 
 }

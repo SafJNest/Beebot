@@ -16,9 +16,9 @@ import org.json.JSONObject;
 import com.safjnest.App;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.sql.LeagueDBHandler;
-import com.safjnest.sql.QueryCollection;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
@@ -63,7 +63,7 @@ public class MatchTracker {
 
     private static void retriveSummoners() {
         try {
-            QueryCollection result = LeagueDBHandler.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
+            QueryResult result = LeagueDB.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
             for (QueryRecord account : result) {
                 Summoner summoner = null;
@@ -176,7 +176,7 @@ public class MatchTracker {
     public static ChronoTask analyzeMatchHistory(GameQueueType queue, Summoner summoner) {
         if (toTrack.indexOf(queue) == -1) return Chronos.NULL;
 
-        QueryRecord row = LeagueDBHandler.getRegistredLolAccount(LeagueDBHandler.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
+        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
         //if (row.emptyValues() && queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return Chronos.NULL;
 
         try { Thread.sleep(350); }
@@ -205,11 +205,11 @@ public class MatchTracker {
         ChronoTask task = () -> {
             if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp()) && match.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return;
 
-            int summoner_match_id = LeagueDBHandler.setMatchData(match);
+            int summoner_match_id = LeagueDB.setMatchData(match);
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
-            LeagueDBHandler.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
+            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
 
 
             for (MatchParticipant partecipant : match.getParticipants()) {
@@ -238,7 +238,7 @@ public class MatchTracker {
 
     public static ChronoTask analyzeMatchHistory(LOLMatch match) {
         return () -> {
-            int summoner_match_id = LeagueDBHandler.setMatchData(match, true);
+            int summoner_match_id = LeagueDB.setMatchData(match, true);
             if (summoner_match_id == 0) {
                 BotLogger.info("[LPTracker] Match " + match.getGameId() + " already tracked");
                 return;
@@ -247,7 +247,7 @@ public class MatchTracker {
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
 
-            LeagueDBHandler.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
+            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
 
             for (MatchParticipant partecipant : match.getParticipants()) {
                 try { Thread.sleep(2000); }
@@ -272,13 +272,14 @@ public class MatchTracker {
 //
 
     public static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant partecipant, HashMap<String, String> matchData) {
-        QueryRecord row = LeagueDBHandler.getRegistredLolAccount(LeagueDBHandler.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
+        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
         return pushSummoner(match, summonerMatch, summoner, partecipant, row, matchData);
     }
 
     private static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant participant, QueryRecord dataGame, HashMap<String, String> matchData) {
         return () -> {
             if (match.getGameId() == dataGame.getAsLong("game_id")) return;
+            if (participant.getPuuid().equals("BOT")) return;
 
             List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
             LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
@@ -300,9 +301,9 @@ public class MatchTracker {
             } else {
                 gain = lp - dataGame.getAsInt("lp");
             }
-            int summonerId = LeagueDBHandler.addLOLAccount(summoner);
-            LeagueDBHandler.updateSummonerEntries(summonerId, entries);
-            LeagueDBHandler.setSummonerData(summonerId, summonerMatch, participant, rank, lp, gain, createJSONBuild(matchData));
+            int summonerId = LeagueDB.addLOLAccount(summoner);
+            LeagueDB.updateSummonerEntries(summonerId, entries);
+            LeagueDB.setSummonerData(summonerId, summonerMatch, participant, rank, lp, gain, createJSONBuild(matchData));
         };
     }
 
@@ -452,84 +453,89 @@ public class MatchTracker {
                 String participantId = String.valueOf(event.getParticipantId());
                 String itemType = i == 1 ? "starter" : "items";
 
-                switch (event.getType()) {
-                    case ITEM_PURCHASED:
-                        item = items.get(event.getItemId());
-                        if (item == null) continue;
+                try {
+                    switch (event.getType()) {
+                        case ITEM_PURCHASED:
+                            item = items.get(event.getItemId());
+                            if (item == null) continue;
 
-                        if (item.getFrom() != null && item.getFrom().contains("1001")) {
-                            matchData.get(participantId).put("boots", item.getId() + "");
-                            continue;
-                        }
-
-                        if (i != 1 && item.getDepth() != 3) continue;
-
-                        String itemList = matchData.get(participantId).getOrDefault(itemType, "");
-                        if (itemList.isEmpty()) itemList = item.getId() + "";
-                        else itemList += "," + item.getId();
-                        matchData.get(participantId).put(itemType, itemList);
-                        break;
-                    case ITEM_UNDO:
-                    case ITEM_SOLD:
-                        item = items.get(event.getBeforeId());
-                        if (item == null) continue;
-                        if (i != 1 && item.getDepth() != 3) continue;
-
-                        String[] itemsList = matchData.get(participantId).get(itemType).split(",");
-                        String undoList = "";
-                        for (String itemStr : itemsList) {
-                            if (!itemStr.equals(item.getId() + "")) {
-                                if (!undoList.isEmpty()) undoList += ",";
-                                undoList += itemStr;
+                            if (item.getFrom() != null && item.getFrom().contains("1001")) {
+                                matchData.get(participantId).put("boots", item.getId() + "");
+                                continue;
                             }
-                        }
-                        matchData.get(participantId).put(itemType, undoList);
-                        break;
-                    case SKILL_LEVEL_UP:
-                        String skillList = matchData.get(participantId).getOrDefault("skill_order", "");
-                        if (skillList.isEmpty()) skillList = event.getSkillSlot() + "";
-                        else skillList += "," + event.getSkillSlot();
-                        matchData.get(participantId).put("skill_order", skillList);
-                        break;
-                    case ELITE_MONSTER_KILL:    
-                        if (event.getMonsterType() == null) continue;
-                        String monsterEvents = matchData.get("match").getOrDefault("monster_events", "");
 
-                        String monster = event.getMonsterType().name();
-                        String subType = event.getMonsterSubType() != null ? event.getMonsterSubType().name() : "";
-                        int killerId = event.getKillerId();
-                        List<Integer> assistIds = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+                            if (i != 1 && item.getDepth() != 3) continue;
 
-                        String eventJson = "{\"monster\":\"" + monster + "\",\"subtype\":\"" + subType + "\",\"killer\":" + killerId + ",\"assists\":[";
-                        for (int assistId : assistIds) {
-                            if (assistId == 0) continue;
-                            if (eventJson.endsWith("[")) eventJson += assistId;
-                            else eventJson += "," + assistId;
-                        }
-                        eventJson += "]}";
-                        if (monsterEvents.isEmpty()) monsterEvents = eventJson;
-                        else monsterEvents += "," + eventJson;
-                        matchData.get("match").put("monster_events", monsterEvents);
-                        break;
-                    case BUILDING_KILL:
-                        String buildingEvents = matchData.get("match").getOrDefault("building_events", "");
-                        String building = event.getBuildingType() != null ? event.getBuildingType().name() : "";
-                        int killerIdBuilding = event.getKillerId();
-                        List<Integer> assistIdsBuilding = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
-                        String eventJsonBuilding = "{\"building\":\"" + building + "\",\"killer\":" + killerIdBuilding + ",\"assists\":[";
-                        for (int assistId : assistIdsBuilding) {
-                            if (assistId == 0) continue;
-                            if (eventJsonBuilding.endsWith("[")) eventJsonBuilding += assistId;
-                            else eventJsonBuilding += "," + assistId;
-                        }
-                        eventJsonBuilding += "]}";
-                        if (buildingEvents.isEmpty()) buildingEvents = eventJsonBuilding;
-                        else buildingEvents += "," + eventJsonBuilding;
-                        matchData.get("match").put("building_events", buildingEvents);
-                        break;
-                    default:
-                        break;
+                            String itemList = matchData.get(participantId).getOrDefault(itemType, "");
+                            if (itemList.isEmpty()) itemList = item.getId() + "";
+                            else itemList += "," + item.getId();
+                            matchData.get(participantId).put(itemType, itemList);
+                            break;
+                        case ITEM_UNDO:
+                        case ITEM_SOLD:
+                            item = items.get(event.getBeforeId());
+                            if (item == null) continue;
+                            if (i != 1 && item.getDepth() != 3) continue;
+
+                            String[] itemsList = matchData.get(participantId).get(itemType).split(",");
+                            String undoList = "";
+                            for (String itemStr : itemsList) {
+                                if (!itemStr.equals(item.getId() + "")) {
+                                    if (!undoList.isEmpty()) undoList += ",";
+                                    undoList += itemStr;
+                                }
+                            }
+                            matchData.get(participantId).put(itemType, undoList);
+                            break;
+                        case SKILL_LEVEL_UP:
+                            String skillList = matchData.get(participantId).getOrDefault("skill_order", "");
+                            if (skillList.isEmpty()) skillList = event.getSkillSlot() + "";
+                            else skillList += "," + event.getSkillSlot();
+                            matchData.get(participantId).put("skill_order", skillList);
+                            break;
+                        case ELITE_MONSTER_KILL:    
+                            if (event.getMonsterType() == null) continue;
+                            String monsterEvents = matchData.get("match").getOrDefault("monster_events", "");
+
+                            String monster = event.getMonsterType().name();
+                            String subType = event.getMonsterSubType() != null ? event.getMonsterSubType().name() : "";
+                            int killerId = event.getKillerId();
+                            List<Integer> assistIds = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+
+                            String eventJson = "{\"monster\":\"" + monster + "\",\"subtype\":\"" + subType + "\",\"killer\":" + killerId + ",\"assists\":[";
+                            for (int assistId : assistIds) {
+                                if (assistId == 0) continue;
+                                if (eventJson.endsWith("[")) eventJson += assistId;
+                                else eventJson += "," + assistId;
+                            }
+                            eventJson += "]}";
+                            if (monsterEvents.isEmpty()) monsterEvents = eventJson;
+                            else monsterEvents += "," + eventJson;
+                            matchData.get("match").put("monster_events", monsterEvents);
+                            break;
+                        case BUILDING_KILL:
+                            String buildingEvents = matchData.get("match").getOrDefault("building_events", "");
+                            String building = event.getBuildingType() != null ? event.getBuildingType().name() : "";
+                            int killerIdBuilding = event.getKillerId();
+                            List<Integer> assistIdsBuilding = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+                            String eventJsonBuilding = "{\"building\":\"" + building + "\",\"killer\":" + killerIdBuilding + ",\"assists\":[";
+                            for (int assistId : assistIdsBuilding) {
+                                if (assistId == 0) continue;
+                                if (eventJsonBuilding.endsWith("[")) eventJsonBuilding += assistId;
+                                else eventJsonBuilding += "," + assistId;
+                            }
+                            eventJsonBuilding += "]}";
+                            if (buildingEvents.isEmpty()) buildingEvents = eventJsonBuilding;
+                            else buildingEvents += "," + eventJsonBuilding;
+                            matchData.get("match").put("building_events", buildingEvents);
+                            break;
+                        default:
+                            break;
+                    }
+                } catch (Exception e) {
+                    
                 }
+                
             }
         }
 
@@ -598,8 +604,8 @@ public class MatchTracker {
      * @param lane
      */
     public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        QueryCollection matchDatas = LeagueDBHandler.safJQuery("SELECT * FROM `match`");
-        QueryCollection championDatas = LeagueDBHandler.safJQuery("SELECT * FROM participant WHERE champion = " + champion + " AND lane = " + lane.ordinal());
+        QueryResult matchDatas = LeagueDB.get().query("SELECT * FROM `match`");
+        QueryResult championDatas = LeagueDB.get().query("SELECT * FROM participant WHERE champion = " + champion + " AND lane = " + lane.ordinal());
 
         HashMap<String, String> result = new HashMap<>();
 

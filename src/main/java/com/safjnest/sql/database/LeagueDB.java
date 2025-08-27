@@ -1,9 +1,8 @@
-package com.safjnest.sql;
+package com.safjnest.sql.database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -13,17 +12,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import org.json.JSONObject;
-
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.RoleType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
@@ -37,334 +31,57 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
-import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.model.BotSettings.DatabaseSettings;
+import com.safjnest.sql.AbstractDB;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.model.MatchData;
 import com.safjnest.util.lol.model.ParticipantData;
 import com.safjnest.util.lol.model.build.CustomBuildData;
 
-public class LeagueDBHandler {
-    private static String hostName;
-    private static String database;
-    private static String user;
-    private static String password;
+public class LeagueDB extends AbstractDB {
 
-    private static HikariDataSource dataSource;
-
-    private static HashMap<Long, List<String>> queryAnalytics = new HashMap<>();
-
+    private static LeagueDB instance;
     static {
-        try {
-            Class.forName("org.mariadb.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        instance = new LeagueDB();
     }
 
-    static {
-        DatabaseSettings settings = SettingsLoader.getSettings().getConfig().isTesting() 
-            ? SettingsLoader.getSettings().getJsonSettings().getLeagueDatabase() 
-            :  SettingsLoader.getSettings().getJsonSettings().getLeagueDatabase();
+    @Override
+	protected String getDatabase() {
+        return SettingsLoader.getSettings().getJsonSettings().getLeagueDatabase().getDatabaseName();
+	}
 
-        hostName = settings.getHost();
-        database = settings.getDatabaseName();
-        user = settings.getUsername();
-        password = settings.getPassword();
-
-        connectIfNot();
+    public static LeagueDB get() {
+        return instance;
     }
 
-    private static void connectIfNot() {
-        if (dataSource != null) return;
-
-        initializeConnectionPool();
-        if(!dataSource.isRunning())
-            BotLogger.error("[SQL] Connection to the extreme db failed!");
-
-        BotLogger.info("[SQL] Connection to the extreme db successful!");
-    }
-
-    public static void initializeConnectionPool() {
-        HikariConfig config = new HikariConfig();
-
-        config.setJdbcUrl("jdbc:mariadb://" + hostName + "/" + database + "?autoReconnect=true");
-        config.setUsername(user);
-        config.setPassword(password);
-        config.setAutoCommit(false);
-
-        config.setMaximumPoolSize(5);
-        config.setMinimumIdle(2);
-        config.setIdleTimeout(30000);
-        config.setConnectionTimeout(10000);
-        config.setMaxLifetime(1800000);
-
-        dataSource = new HikariDataSource(config);
-    }
-
-    public static Connection getConnection() {
-        connectIfNot();
-        try {
-            return dataSource.getConnection();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private static void insertAnalytics(String query) {
-        List<String> queries = queryAnalytics.getOrDefault(System.currentTimeMillis(), new ArrayList<>());
-        queries.add(query);
-        queryAnalytics.put(System.currentTimeMillis(), queries);
-    }
-
-    public static QueryCollection safJQuery(String query) {
-        connectIfNot();
-
-        Connection c = getConnection();
-        if(c == null) return null;
-
-        QueryCollection result = new QueryCollection();
-
-        try (Statement stmt = c.createStatement();
-            ResultSet rs = stmt.executeQuery(query)) {
-
-            ResultSetMetaData rsmd = rs.getMetaData();
-            while (rs.next()) {
-                QueryRecord beeRow = new QueryRecord(rs);
-                for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                    String columnName = rsmd.getColumnLabel(i);
-                    String columnValue = rs.getString(i);
-                    beeRow.put(columnName, columnValue);
-                }
-                result.add(beeRow);
-            }
-            insertAnalytics(query);
-            c.commit();
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
-                }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
-        }
-
-        return result;
-    }
-
-
-    /**
-     * Method used for returning a {@link com.safjnest.sql.QueryCollection result} from a query using default statement
-     * @param stmt
-     * @param query
-     * @throws SQLException
-     */
-    public static QueryCollection safJQuery(Statement stmt, String query) throws SQLException {
-        connectIfNot();
-
-        QueryCollection result = new QueryCollection();
-
-        ResultSet rs = stmt.executeQuery(query);
-        ResultSetMetaData rsmd = rs.getMetaData();
-
-        while (rs.next()) {
-            QueryRecord beeRow = new QueryRecord(rs);
-            for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                String columnName = rsmd.getColumnName(i);
-                String columnValue = rs.getString(i);
-                beeRow.put(columnName, columnValue);
-            }
-            result.add(beeRow);
-        }
-        insertAnalytics(query);
-
-        return result;
-    }
-
-
-    /**
-     * Method used for returning a single {@link com.safjnest.sql.QueryRecord row} from a query using default statement
-     * @param stmt
-     * @param query
-     * @throws SQLException
-     */
-    public static QueryRecord fetchJRow(String query) {
-        connectIfNot();
-
-        Connection c = getConnection();
-        if(c == null) return null;
-        QueryRecord beeRow = new QueryRecord(null);
-        try (Statement stmt = c.createStatement();
-            ResultSet rs = stmt.executeQuery(query)) {
-            beeRow.setResultSet(rs);
-            ResultSetMetaData rsmd = rs.getMetaData();
-            if (rs.next()) {
-                for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                    String columnName = rsmd.getColumnName(i);
-                    String columnValue = rs.getString(i);
-                    beeRow.put(columnName, columnValue);
-                }
-            }
-            insertAnalytics(query);
-            c.commit();
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
-                }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
-        }
-
-        return beeRow;
-    }
-
-
-    /**
-     * Method used for returning a single {@link com.safjnest.sql.QueryRecord row} from a query.
-     * @param stmt
-     * @param query
-     * @throws SQLException
-     */
-    public static QueryRecord fetchJRow(Statement stmt, String query) throws SQLException {
-        connectIfNot();
-
-
-        ResultSet rs = stmt.executeQuery(query);
-        QueryRecord beeRow = new QueryRecord(rs);
-
-        ResultSetMetaData rsmd = rs.getMetaData();
-
-        if (rs.next()) {
-            for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                String columnName = rsmd.getColumnName(i);
-                String columnValue = rs.getString(i);
-                beeRow.put(columnName, columnValue);
-            }
-        }
-        insertAnalytics(query);
-        return beeRow;
-    }
-
-
-    /**
-     * Run one or more queries using the default statement
-     * @param queries
-     */
-    public static boolean runQuery(String... queries) {
-        connectIfNot();
-
-        Connection c = getConnection();
-        if(c == null) return false;
-
-        try (Statement stmt = c.createStatement()) {
-            for (String query : queries)
-                stmt.execute(query);
-            insertAnalytics(queries.toString());
-            c.commit();
-            return true;
-        } catch (SQLException ex) {
-            if (c != null) {
-                try {
-                    c.rollback();
-                } catch (SQLException rollbackEx) {
-                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
-                }
-            }
-            System.out.println("Query execution failed: " + ex.getMessage());
-        } finally {
-            if (c != null) {
-                try {
-                    c.close();
-                } catch (SQLException closeEx) {
-                    System.out.println("Failed to close connection: " + closeEx.getMessage());
-                }
-            }
-        }
-        return false;
-    }
-
-    public static CompletableFuture<Void> runQueryAsync(String... queries) {
-        return new ChronoTask() {
-            @Override
-            public void run() {
-                runQuery(queries);
-            }
-        }.queueFuture();
-    }
-
-
-    /**
-     * Run one or more queries with a specific statement
-     * <p>
-     * Only for insert, update and delete
-     * @param stmt
-     * @param queries
-     * @throws SQLException
-     */
-    public static void runQuery(Statement stmt, String... queries) throws SQLException {
-        connectIfNot();
-
-        for (String query : queries)
-            stmt.execute(query);
-
-        insertAnalytics(queries.toString());
-
-    }
-
-    public static HashMap<Long, List<String>> getQueryAnalytics() {
-        return queryAnalytics;
-    }
-
-public static QueryCollection getLOLAccountsByUserId(String user_id){
+    public static QueryResult getLOLAccountsByUserId(String user_id){
         String query = "SELECT puuid, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
-        return safJQuery(query);
+        return instance.query(query);
     }
 
     public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
-        return fetchJRow("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
+        return instance.lineQuery("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
     }
 
-    public static QueryCollection getAdvancedLOLData(String summonerId) {
-        return safJQuery("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `participant` WHERE `summoner_id` = '" + summonerId + "' GROUP BY `champion` ORDER BY `games` DESC;");
+    public static QueryResult getAdvancedLOLData(String summonerId) {
+        return instance.query("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `participant` WHERE `summoner_id` = '" + summonerId + "' GROUP BY `champion` ORDER BY `games` DESC;");
     }
 
-    public static QueryCollection getAllGamesForAccount(int summonerId, long time_start, long time_end) {
+    public static QueryResult getAllGamesForAccount(int summonerId, long time_start, long time_end) {
         String timeFilter = "";
         if (time_start != 0) {
             timeFilter = "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
                         "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' ";
         }
-        return safJQuery("SELECT sm.game_id, sm.game_type, st.win " +
+        return instance.query("SELECT sm.game_id, sm.game_type, st.win " +
                          "FROM participant st " +
                          "INNER JOIN `match` sm ON st.match_id = sm.id " +
                          "WHERE st.summoner_id = '" + summonerId + "' " + timeFilter);
     }
     
-    public static QueryCollection getAdvancedLOLData(int summonerId, long time_start, long time_end, GameQueueType queue) {
+    public static QueryResult getAdvancedLOLData(int summonerId, long time_start, long time_end, GameQueueType queue) {
         String timeFilter = "";
         String queueFilter = "";
         if (time_start != 0) {
@@ -374,6 +91,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         if (queue != null) {
             queueFilter = "AND sm.game_type = " + queue.ordinal() + " ";
         }
+
 
         String overallQuery =
             "SELECT " +
@@ -426,7 +144,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             "GROUP BY overall.`champion` " +
             "ORDER BY `games` DESC;";
 
-        return safJQuery(combinedQuery);
+        return instance.query(combinedQuery);
     }
 
     public static int addLOLAccount(Summoner summoner) {
@@ -446,7 +164,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
                 "riot_id = VALUES(riot_id), " +
                 "league_shard = VALUES(league_shard);";
 
-        try (Connection conn = getConnection();
+        try (Connection conn = instance.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             if (user_id != null) {
                 pstmt.setString(1, user_id);
@@ -484,7 +202,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
                        "riot_id = VALUES(riot_id), " +
                        "league_shard = VALUES(league_shard);";
 
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
             for (SpectatorParticipant summoner : info.getParticipants()) {
                 pstmt.setString(1, summoner.getSummonerId());
                 pstmt.setString(2, summoner.getPuuid());
@@ -511,7 +229,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
                        "riot_id = VALUES(riot_id), " +
                        "league_shard = VALUES(league_shard);";
 
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
             for (MatchParticipant summoner : match.getParticipants()) {
                 pstmt.setString(1, summoner.getSummonerId());
                 pstmt.setString(2, summoner.getPuuid());
@@ -531,11 +249,11 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
     public static boolean deleteLOLaccount(String user_id, String puuid){
         String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';";
-        return runQuery(query);
+        return instance.defaultQuery(query);
     }
 
-     public static QueryCollection getRegistredLolAccount(long time_start) {
-        return safJQuery(
+     public static QueryResult getRegistredLolAccount(long time_start) {
+        return instance.query(
             "SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
             + "FROM summoner s "
             + "LEFT JOIN ("
@@ -559,7 +277,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
 
     public static QueryRecord getRegistredLolAccount(int summonerId, long time_start) {
-        return fetchJRow("SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
+        return instance.lineQuery("SELECT s.puuid, s.league_shard, st.game_id, st.rank, st.lp, st.time_start "
                 + "FROM summoner s "
                 + "LEFT JOIN (SELECT t.summoner_id, t.game_id, t.rank, t.lp, t.time_start "
                 + "           FROM (SELECT st.summoner_id, sm.game_id, st.rank, st.lp, sm.time_start, "
@@ -610,25 +328,25 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
 
 
-        return runQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "');");
+        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, side, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "');");
     }
 
 
-    public static QueryCollection getFocusedSummoners(String query, LeagueShard shard) {
-        return safJQuery("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
+    public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
+        return instance.query("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
     }
 
 
-    public static QueryCollection getSummonerData(int summoner_id, long game_id) {
-        return safJQuery("SELECT summoner_id, game_id, rank, lp, gain, win time_start, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND game_id = '" + game_id + "';");
+    public static QueryResult getSummonerData(int summoner_id, long game_id) {
+        return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win time_start, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND game_id = '" + game_id + "';");
     }
 
-    public static QueryCollection getSummonerData(int summoner_id, LeagueShard shard, long time_start, long time_end) {
-        return safJQuery("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
+    public static QueryResult getSummonerData(int summoner_id, LeagueShard shard, long time_start, long time_end) {
+        return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
-    public static QueryCollection getSummonerData(int summoner_id) {
-        return safJQuery(
+    public static QueryResult getSummonerData(int summoner_id) {
+        return instance.query(
             "SELECT st.summoner_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
             "FROM participant st " +
             "JOIN `match` sm ON st.match_id = sm.id " +
@@ -638,24 +356,24 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
     }
 
     public static boolean hasSummonerData(int sumonerId) {
-        return !fetchJRow("SELECT 1 from participant where summoner_id = '" + sumonerId + "';").isEmpty();
+        return !instance.lineQuery("SELECT 1 from participant where summoner_id = '" + sumonerId + "';").isEmpty();
     }
 
     public static boolean trackSummoner(String user_id, String account_id, boolean track) {
-        return runQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
+        return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
     }
 
     public static QueryRecord getSummonerData(String user_id, String account_id) {
-        return fetchJRow("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND account_id = '" + account_id + "';");
+        return instance.lineQuery("SELECT account_id, summoner_id, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
     }
 
-    public static QueryCollection getSummonersBuPuuid(String puuid) {
-        return safJQuery("SELECT account_id, league_shard FROM summoner WHERE puuid = '" + puuid + "';");
+    public static QueryResult getSummonersBuPuuid(String puuid) {
+        return instance.query("SELECT account_id, league_shard FROM summoner WHERE puuid = '" + puuid + "';");
     }
 
     public static boolean setChampionData(LOLMatch match, HashMap<String, HashMap<String, String>> matchData) {
        String query = "INSERT INTO summoner_build(game_id, shard, game_type, champion, win, lane, starter, build, first_root, second_root, shard_root, summoner_spells, skill_order, patch, boots) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
             for (String account_id : matchData.keySet()) {
                 HashMap<String, String> data = matchData.get(account_id);
                 if (data.get("items") == null || data.get("starter") == null || data.get("starter").isBlank()) {
@@ -692,14 +410,13 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
     }
 
     public static boolean setMatchEvent(int matchId, String json) {
-        return runQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
+        return instance.defaultQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
     }
 
-    @SuppressWarnings("unchecked")
     public static int setMatchData(LOLMatch match, boolean emptyIfExist) {
         int id = 0;
 
-        Connection c = getConnection();
+        Connection c = instance.getConnection();
         if(c == null) return id;
 
         try (Statement stmt = c.createStatement()) {
@@ -731,7 +448,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
                 ps.setString(7, match.getGameVersion());
 
                 ps.executeUpdate();
-                id = fetchJRow(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
+                id = instance.lineQuery(stmt, "SELECT LAST_INSERT_ID() AS id; ").getAsInt("id");
                 c.commit();
             }
         } catch (SQLException ex) {
@@ -755,8 +472,8 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         return id;
     }
 
-    public static QueryCollection getMatchData() {
-        return safJQuery("SELECT sm.id, sm.game_id, sm.league_shard, sm.game_type, sm.bans, sm.time_start, sm.time_end, sm.patch, st.account_id, st.win, st.kda, st.rank, st.lp, st.gain, st.champion, st.lane, st.side, st.build FROM participant st JOIN `match` sm ON st.match_id = sm.id where sm.id > 10353;");
+    public static QueryResult getMatchData() {
+        return instance.query("SELECT sm.id, sm.game_id, sm.league_shard, sm.game_type, sm.bans, sm.time_start, sm.time_end, sm.patch, st.account_id, st.win, st.kda, st.rank, st.lp, st.gain, st.champion, st.lane, st.side, st.build FROM participant st JOIN `match` sm ON st.match_id = sm.id where sm.id > 10353;");
     }
 
     public static String normalize(String string) {
@@ -780,16 +497,16 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         return sortedString.toString();
     }
 
-    public static QueryCollection getFocusedCustomBuild(String name){
-        return safJQuery("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
+    public static QueryResult getFocusedCustomBuild(String name){
+        return instance.query("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
     }
 
     public static CustomBuildData getCustomBuild(String id){
-        return new CustomBuildData(fetchJRow("SELECT id, name, skin, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
+        return new CustomBuildData(instance.lineQuery("SELECT id, name, skin, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
     }
 
-    public static QueryCollection getCustomBuildByUser(String user_id){
-        return safJQuery("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
+    public static QueryResult getCustomBuildByUser(String user_id){
+        return instance.query("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
     }
 
     public static boolean updateSummonerMasteries(int summonerId, List<ChampionMastery> masteries) {
@@ -800,7 +517,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
                        "champion_points = VALUES(champion_points), " +
                        "last_play_time = VALUES(last_play_time);";
 
-        try (Connection conn = getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
             for (ChampionMastery mastery : masteries) {
                 pstmt.setInt(1, summonerId);
                 pstmt.setLong(2, mastery.getChampionId());
@@ -820,7 +537,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
 
     public static int getSummonerIdByPuuid(String puuid) {
         try {
-            return fetchJRow("select id from summoner where puuid = '"+puuid+"'").getAsInt("id");  
+            return instance.lineQuery("select id from summoner where puuid = '"+puuid+"'").getAsInt("id");  
         } catch (Exception e) {
            return 0;
         }
@@ -836,8 +553,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
                        "losses = VALUES(losses);";
         Connection conn = null;
         try {
-            conn = getConnection();
-            conn.setAutoCommit(false);
+            conn = instance.getConnection();
             try (PreparedStatement pstmt = conn.prepareStatement(query)) {
                 for (LeagueEntry entry : entries) {
                     pstmt.setInt(1, summonerId);
@@ -865,7 +581,6 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         } finally {
             if (conn != null) {
                 try {
-                    conn.setAutoCommit(true);
                     conn.close();
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -880,7 +595,7 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             GameQueueType queue, LaneType lane) throws SQLException {
 
         List<MatchData> result = new ArrayList<>();
-        Map<Integer, MatchData> matchMap = new LinkedHashMap<>(); // matchId -> MatchData
+        Map<Integer, MatchData> matchMap = new LinkedHashMap<>();
 
         String timeFilter = timeStart != 0
                 ? "AND sm.`time_start` >= '" + new Timestamp(timeStart) + "' AND sm.`time_end` <= '" + new Timestamp(timeEnd) + "' "
@@ -889,9 +604,8 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
         String championFilter = champion != 0 ? "AND st.champion = " + champion + " " : "";
         String laneFilter = lane != null ? "AND st.lane = " + lane.ordinal() + " " : "";
 
-        try (Connection c = getConnection()) {
+        try (Connection c = instance.getConnection()) {
             if (c == null) return result;
-            c.setAutoCommit(false);
 
             String q1 = "SELECT sm.* " +
                         "FROM `match` sm " +

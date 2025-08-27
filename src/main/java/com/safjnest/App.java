@@ -36,7 +36,6 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-                        
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }
