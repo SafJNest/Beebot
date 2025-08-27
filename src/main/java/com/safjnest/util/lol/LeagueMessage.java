@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -398,7 +399,7 @@ public class LeagueMessage {
         Button flex = Button.primary(prefix + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
         Button draft = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
         Button aram = Button.primary(prefix + "-queue-" + GameQueueType.ARAM, "ARAM");
-        Button curretModeButton = Button.primary("-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType));
+        Button curretModeButton = Button.primary(prefix + "-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType));
 
         if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
 
@@ -1307,8 +1308,10 @@ public class LeagueMessage {
                 eb = getGenericStats(eb, matches, summonerId, laneType);                
                 break;
             case CHAMPION_MATCHUP:
-                eb = getMatchups(eb, matches, summonerId, laneType);
+                eb = getMatchups(eb, matches, summonerId, laneType, queue);
                 break;
+            case CHAMPION_PING:
+                eb = getPings(eb, matches, summonerId);
             default:
                 break;
         }
@@ -1390,7 +1393,8 @@ public class LeagueMessage {
         else if (timeStart == previousTime[0] && timeEnd == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-        rows.add(getLaneComponents("champion", lane));
+        if (queue != GameQueueType.CHERRY) rows.add(getLaneComponents("champion", lane));
+
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
         rows.add(getOpggQueueTypeButtons("champion", queue));
         rows.add(ActionRow.of(generic, matchups, pings));
@@ -1404,7 +1408,7 @@ public class LeagueMessage {
     }
 
 
-    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<MatchData> matches, int summonerId, LaneType laneType) {
+    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<MatchData> matches, int summonerId, LaneType laneType, GameQueueType queue) {
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
 
@@ -1519,6 +1523,47 @@ public class LeagueMessage {
         return label;
     }
 
+    private static EmbedBuilder getPings(EmbedBuilder eb, List<MatchData> matches, int summonerId) {
+        HashMap<String, Integer> pings = new HashMap<>();
+
+        for (MatchData match : matches) {
+            for (ParticipantData participant : match.participants) {
+                if (participant.summonerId != summonerId) continue;
+                for (String ping : participant.pings.keySet()) 
+                    pings.put(ping, pings.getOrDefault(ping, 0) + participant.pings.get(ping));
+            }
+        }
+
+        List<Map.Entry<String, Integer>> sortedPings = pings.entrySet()
+            .stream()
+            .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
+            .collect(Collectors.toList());
+
+        String pingString = "";
+        for (Map.Entry<String, Integer> entry : sortedPings) {
+            if (entry.getKey().equals("basic")) continue;
+
+            String pingName = "";
+            switch (entry.getKey()) {
+                case "command":
+                    pingName = "Generic Ping";
+                    break;
+                default:
+                    pingName = entry.getKey();
+                    pingName = Arrays.stream(pingName.replace("_", " ").split(" "))
+                        .map(word -> word.isEmpty() ? "" : Character.toUpperCase(word.charAt(0)) + word.substring(1).toLowerCase())
+                        .collect(Collectors.joining(" "));
+                    break;
+            }
+            pingString += CustomEmojiHandler.getFormattedEmoji(entry.getKey() + "_ping") + " " + pingName + "\n`" +
+                entry.getValue() + " total (" + String.format("%.2f", (double)entry.getValue() / matches.size()) + " avg)`\n";
+        }
+
+        eb.addField("Pings Usage", pingString, false);
+
+        return eb;
+    }
+
 
     private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<MatchData> matches, int summonerId, LaneType laneType) {
 
@@ -1528,6 +1573,11 @@ public class LeagueMessage {
             void add(int value) { sum += value; count++; }
             double avg() { return count == 0 ? 0 : (double) sum / count; }
             public String toString() { return "sum: " + sum + ", count: " + count + ", avg: " + avg(); }
+        }
+
+        if (matches.size() == 0) {
+            eb.setDescription("Not enough games");
+            return eb;
         }
 
 
@@ -1540,9 +1590,8 @@ public class LeagueMessage {
 
         for (MatchData match : matches) {
             for (ParticipantData participant : match.participants) {
-                if (participant.summonerId != summonerId) {
-                    continue;
-                }
+                if (participant.summonerId != summonerId) continue;
+                
 
                 LaneType lane = participant.lane;
                 TeamType side = participant.side;

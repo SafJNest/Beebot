@@ -597,6 +597,9 @@ public class LeagueDB extends AbstractDB {
         List<MatchData> result = new ArrayList<>();
         Map<Integer, MatchData> matchMap = new LinkedHashMap<>();
 
+        if (queue == GameQueueType.CHERRY)
+                lane = null;
+
         String timeFilter = timeStart != 0
                 ? "AND sm.`time_start` >= '" + new Timestamp(timeStart) + "' AND sm.`time_end` <= '" + new Timestamp(timeEnd) + "' "
                 : "";
