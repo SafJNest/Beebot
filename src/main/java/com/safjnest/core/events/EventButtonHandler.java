@@ -16,6 +16,7 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
+import com.safjnest.util.lol.LeagueMessageType;
 import com.safjnest.util.twitch.TwitchClient;
 import com.safjnest.commands.audio.playlist.PlaylistView;
 import com.safjnest.commands.audio.sound.SoundCustomize;
@@ -64,8 +65,10 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuildCache;
@@ -159,7 +162,9 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if (buttonId.startsWith("chat-"))
             chat(event);
-
+        
+        else if (buttonId.startsWith("champion-"))
+            champion(event);
     }
 
     private void greet(ButtonInteractionEvent event) {
@@ -1538,5 +1543,117 @@ public class EventButtonHandler extends ListenerAdapter {
                 ErrorResponse.MISSING_PERMISSIONS,
                 (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
         );
+    }
+
+
+    private void champion(ButtonInteractionEvent event) {
+        String args = event.getButton().getCustomId().split("-", 3)[1];
+
+        String puuid = "";
+        String region = "";
+        int index = 0;
+
+        GameQueueType queue = null;
+        LeagueMessageType type = null;
+        LaneType lane = null;
+        StaticChampion champion = null;
+
+        long[] time = LeagueHandler.getCurrentSplitRange();
+        String timeString = "current";
+
+        for (Button b : EventUtils.getButtons(event)) {
+            if (b.getCustomId().startsWith("champion-center-")) {
+                puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
+                region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
+            }
+            if (b.getCustomId().startsWith("champion-queue-") && b.getStyle() == ButtonStyle.SUCCESS) {
+                queue = GameQueueType.valueOf(b.getCustomId().split("-")[2]);
+            }
+            if (b.getCustomId().startsWith("champion-type-") && b.getStyle() == ButtonStyle.SUCCESS)
+                type = LeagueMessageType.valueOf(b.getCustomId().split("-")[2]);
+
+            if (b.getCustomId().startsWith("champion-lane-") && b.getStyle() == ButtonStyle.SUCCESS)
+                lane = LaneType.valueOf(b.getCustomId().split("-")[2]);
+
+            if (b.getCustomId().startsWith("champion-champion-"))
+                champion = LeagueHandler.getChampionById(Integer.parseInt(b.getCustomId().split("-")[2]));
+            
+            if (b.getCustomId().startsWith("champion-season-") && b.getStyle() == ButtonStyle.SUCCESS)
+                timeString = b.getCustomId().split("-")[2];
+        }
+
+        String user_id = LeagueDBHandler.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+
+        if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
+        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
+
+        int i = 0;
+        for (String k : accounts.keySet()) {
+            if (LeagueHandler.getSummonerByPuuid(k, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getPUUID().equals(puuid)) {
+                puuid = k;
+                index = i;
+                break;
+            }
+            i++;
+        }
+
+        String platform = "";
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
+        switch (args) {
+
+            case "right":
+                if ((index + 1) == accounts.size()) index = 0;
+                else index += 1;
+
+                puuid = (String) accounts.keySet().toArray()[index];
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
+
+                break;
+
+            case "left":
+                if (index == 0) index = accounts.size() - 1;
+                else index -= 1;
+
+                puuid = (String) accounts.keySet().toArray()[index];
+                region = LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))).getValue();
+                break;
+            case "queue":
+                for (Button b : EventUtils.getButtons(event)) {
+                    if (b.getCustomId().startsWith("champion-center-")) {
+                        String[] parts = b.getCustomId().split("-", 3);
+
+                        puuid = parts[2].substring(0, parts[2].indexOf("#"));
+                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
+                        break;
+                    }
+                }
+                queue = event.getButton().getStyle() != ButtonStyle.SUCCESS ? GameQueueType.valueOf(event.getButton().getCustomId().split("-")[2]) : null;
+            break;
+            case "lane":
+                break;
+            case "type":
+                type = LeagueMessageType.valueOf(event.getButton().getCustomId().split("-")[2]);
+                break;
+            case "season":
+                timeString = event.getButton().getCustomId().split("-", 3)[2];
+                break;
+
+        }
+
+        if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
+        s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+        switch (timeString) {
+            case "all":
+                time = new long[] {0, 0};
+                break;
+            case "current":
+                time = LeagueHandler.getCurrentSplitRange();
+                break;
+            case "previous":
+                time = LeagueHandler.getPreviousSplitRange();
+                break;
+        }
+        int summonerId = LeagueDBHandler.getSummonerIdByPuuid(s.getPUUID());
+        LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, champion, time[0], time[1], queue, lane); 
     }
 }

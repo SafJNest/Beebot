@@ -8,8 +8,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.awt.Color;
+import java.awt.Desktop.Action;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 
 import com.safjnest.core.Bot;
@@ -18,6 +21,8 @@ import com.safjnest.sql.LeagueDBHandler;
 import com.safjnest.sql.QueryCollection;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.DateHandler;
+import com.safjnest.util.lol.model.MatchData;
+import com.safjnest.util.lol.model.ParticipantData;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
@@ -33,6 +38,7 @@ import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.separator.Separator.Spacing;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -376,14 +382,20 @@ public class LeagueMessage {
 //   ▀██████▀   ▄████▀        ████████▀    ████████▀
 //
 
+
     public static MessageTopLevelComponent getOpggQueueTypeButtons(GameQueueType queue) {
+        return getOpggQueueTypeButtons("match", queue);
+    }
+
+
+    public static MessageTopLevelComponent getOpggQueueTypeButtons(String prefix, GameQueueType queue) {
         GameQueueType currentGameQueueType = GameQueueType.CHERRY;
 
-        Button soloQ = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
-        Button flex = Button.primary("match-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
-        Button draft = Button.primary("match-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
-        Button aram = Button.primary("match-queue-" + GameQueueType.ARAM, "ARAM");
-        Button curretModeButton = Button.primary("match-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType));
+        Button soloQ = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
+        Button flex = Button.primary(prefix + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
+        Button draft = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
+        Button aram = Button.primary(prefix + "-queue-" + GameQueueType.ARAM, "ARAM");
+        Button curretModeButton = Button.primary("-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType));
 
         if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
 
@@ -1267,5 +1279,416 @@ public class LeagueMessage {
     public static List<MessageTopLevelComponent> getLivegameButtons(Summoner s, String user_id) {
         return composeButtons(s, user_id, "rank");
     }
+
+
+    public static void sendChampionMessage(InteractionHook hook, String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType) {
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+        
+        List<MatchData> matches = null;
+        try {
+            matches = LeagueDBHandler.getMatchHistory(summonerId, champion.getId(), timeStart, timeEnd, queue, laneType);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle(champion.getName());
+        eb.setThumbnail(LeagueHandler.getChampionProfilePic(champion.getName()));
+        eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
+        eb.setDescription("Total games: " + matches.size());
+        eb.setColor(Bot.getColor());
+
+
+        switch (messageType) {
+            case CHAMPION_GENERIC:
+                eb = getGenericStats(eb, matches, summonerId, laneType);                
+                break;
+            case CHAMPION_MATCHUP:
+                eb = getMatchups(eb, matches, summonerId, laneType);
+                break;
+            default:
+                break;
+        }
+
+        hook.editOriginalEmbeds(eb.build()).setComponents(getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType)).queue();
+    }
+
+
+    private static ActionRow getLaneComponents(String prefix, LaneType lane) {
+        Button top = Button.primary(prefix + "-lane-" + LaneType.TOP, "Top").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.TOP));
+        Button jungle = Button.primary(prefix + "-lane-" + LaneType.JUNGLE, "Jungle").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.JUNGLE));
+        Button mid = Button.primary(prefix + "-lane-" + LaneType.MID, "Mid").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.MID));
+        Button adc = Button.primary(prefix + "-lane-" + LaneType.BOT, "ADC").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.BOT));
+        Button support = Button.primary(prefix + "-lane-" + LaneType.UTILITY, "Support").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.UTILITY));
+
+        switch (lane) {
+            case TOP:
+                top = top.asDisabled().withStyle(ButtonStyle.SUCCESS);
+                break;
+            case JUNGLE:
+                jungle = jungle.asDisabled().withStyle(ButtonStyle.SUCCESS);
+                break;
+            case MID:
+                mid = mid.asDisabled().withStyle(ButtonStyle.SUCCESS);
+                break;
+            case BOT:
+                adc = adc.asDisabled().withStyle(ButtonStyle.SUCCESS);
+                break;
+            case UTILITY:
+                support = support.asDisabled().withStyle(ButtonStyle.SUCCESS);
+                break;
+            default:
+                break;
+        }
+
+        return ActionRow.of(top, jungle, mid, adc, support);
+    }
+
+    private static List<MessageTopLevelComponent> getChampionButtons(LeagueMessageType messageType, StaticChampion champion, String userId, Summoner summoner, int summonerId, GameQueueType queue, long timeStart, long timeEnd, LaneType lane) {
+        Button left = Button.primary("champion-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("champion-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+        Button center = Button.primary("champion-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
+        center = center.asDisabled();
+
+        Button championButton = Button.primary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName())).asDisabled();
+
+
+        Button generic = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_GENERIC, "Generic");
+        Button matchups = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_MATCHUP, "Matchups");
+        Button pings = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_PING, "Pings");
+
+
+        switch (messageType) {
+            case CHAMPION_GENERIC:
+                generic = generic.withStyle(ButtonStyle.SUCCESS).asDisabled();
+                break;
+            case CHAMPION_MATCHUP:
+                matchups = matchups.withStyle(ButtonStyle.SUCCESS).asDisabled();
+                break;
+            case CHAMPION_PING:
+                pings = pings.withStyle(ButtonStyle.SUCCESS).asDisabled();
+                break;
+            default:
+                break;
+        }
+
+
+        Button allSeason = Button.primary("champion-season-all", "General");
+        Button currentSplit = Button.primary("champion-season-current", "Current Split");
+        Button previousSplit = Button.primary("champion-season-previous", "Previous Split");
+
+        long[] time = LeagueHandler.getCurrentSplitRange();
+        long[] previousTime = LeagueHandler.getPreviousSplitRange();
+
+        if (timeStart == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
+        else if (timeStart == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
+        else if (timeStart == previousTime[0] && timeEnd == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
+
+        List<MessageTopLevelComponent> rows = new ArrayList<>();
+        rows.add(getLaneComponents("champion", lane));
+        rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
+        rows.add(getOpggQueueTypeButtons("champion", queue));
+        rows.add(ActionRow.of(generic, matchups, pings));
+
+        if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
+            rows.add(ActionRow.of(left, center, championButton, right));
+        else 
+            rows.add(ActionRow.of(center, championButton));
+
+        return rows;
+    }
+
+
+    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<MatchData> matches, int summonerId, LaneType laneType) {
+        HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
+        HashMap<Integer, int[]> duoWinrate = new HashMap<>();
+
+        for (MatchData match : matches) {
+            for (ParticipantData participant : match.participants) {
+                if (participant.summonerId != summonerId) {
+                    continue;
+                }
+
+                LaneType lane = participant.lane;
+                TeamType side = participant.side;
+
+                boolean win = participant.win;
+
+                boolean isDuo = lane == LaneType.BOT || lane == LaneType.UTILITY;
+
+                List<Integer> enemyChamps = match.participants.stream()
+                    .filter(p -> p.side != side)
+                    .filter(p -> {
+                        return p.lane == lane;
+                    })
+                    .map(p -> p.champion)
+                    .collect(Collectors.toList());
+
+                for (int c : enemyChamps) {
+                    laneVsWinrate.computeIfAbsent(c, k -> new int[2]);
+                    laneVsWinrate.get(c)[(win ? 0 : 1)]++;   
+                }
+                             
+
+                if (isDuo) {
+                    List<Integer> allyChamps = match.participants.stream()
+                        .filter(p -> p.side == side)
+                        .filter(p -> p.id != participant.id)
+                        .filter(p -> p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
+                        .map(p -> p.champion)
+                        .collect(Collectors.toList());
+                    
+                    for (int c : allyChamps) {
+                        duoWinrate.computeIfAbsent(c, k -> new int[2]);
+                        duoWinrate.get(c)[(win ? 0 : 1)]++;   
+                    }
+                }
+            }
+        }
+
+        eb = buildMatchups("matchups", eb, laneVsWinrate);
+        if (laneType == LaneType.BOT || laneType == LaneType.UTILITY)
+            eb = buildMatchups("duo", eb, duoWinrate);
+
+        return eb;
+    }
+
+    private static EmbedBuilder buildMatchups(String prefix, EmbedBuilder eb, HashMap<Integer, int[]> data) {  
+        List<Map.Entry<Integer, int[]>> worstMatchups = data.entrySet().stream()
+            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
+            .sorted((a, b) -> {
+                double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
+                double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                int cmp = Double.compare(winrateA, winrateB);
+                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
+            })
+            .collect(Collectors.toList());
+        
+        List<Map.Entry<Integer, int[]>> bestMatchups = data.entrySet().stream()
+            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
+            .sorted((a, b) -> {
+                double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
+                double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                int cmp = Double.compare(winrateB, winrateA);
+                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
+            })
+            .collect(Collectors.toList());
+        
+        List<Map.Entry<Integer, int[]>> popularMatchups = data.entrySet().stream()
+            .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
+            .sorted((a, b) -> {
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                if (gamesA == gamesB) {
+                    double winrateA = (double) a.getValue()[0] / (gamesA);
+                    double winrateB = (double) b.getValue()[0] / (gamesB);
+                    return Double.compare(winrateB, winrateA);
+                }
+                return Integer.compare(gamesB, gamesA);
+            })
+            .collect(Collectors.toList());
+        
+        eb.addField("Worst " + prefix, getWinrateLabel(worstMatchups), true);
+        eb.addField("Best " + prefix, getWinrateLabel(bestMatchups), true);
+        eb.addField("Popular " + prefix, getWinrateLabel(popularMatchups), true);
+        return eb;
+    }
+
+    private static String getWinrateLabel(List<Entry<Integer, int[]>> data) {
+        String label = "";
+        int limit = 10;
+        for (Map.Entry<Integer, int[]> entry : data) {
+            if (limit-- == 0) break;
+            StaticChampion champ = LeagueHandler.getChampionById(entry.getKey());
+            if (champ == null) continue;
+            int[] val = entry.getValue();
+            int totalGames = val[0] + val[1];
+            double winrate = (double) val[0] / totalGames * 100.0;
+            label += CustomEmojiHandler.getFormattedEmoji(champ.getName()) + " " + champ.getName() + "\n`" + val[0] + "W/" + val[1] + "L (" + String.format("%.1f%%", winrate) + ")`\n";
+        }
+
+        return label;
+    }
+
+
+    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<MatchData> matches, int summonerId, LaneType laneType) {
+
+        class StatAccumulator {
+            int sum = 0;
+            int count = 0;
+            void add(int value) { sum += value; count++; }
+            double avg() { return count == 0 ? 0 : (double) sum / count; }
+            public String toString() { return "sum: " + sum + ", count: " + count + ", avg: " + avg(); }
+        }
+
+
+        LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
+        LinkedHashMap<GameQueueType, String> queueStats = new LinkedHashMap<>();
+        HashMap<String, StatAccumulator> overallStats = new HashMap<>();
+
+        HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
+        HashMap<Integer, int[]> duoWinrate = new HashMap<>();
+
+        for (MatchData match : matches) {
+            for (ParticipantData participant : match.participants) {
+                if (participant.summonerId != summonerId) {
+                    continue;
+                }
+
+                LaneType lane = participant.lane;
+                TeamType side = participant.side;
+                GameQueueType gameQueue = match.gameType;
+                boolean win = participant.win;
+    
+                String kda = participant.kda;
+                int kills = Integer.parseInt(kda.split("/")[0]);
+                int deaths = Integer.parseInt(kda.split("/")[1]);
+                int assists = Integer.parseInt(kda.split("/")[2]);
+        
+                laneStats.merge(lane, (win ? "1-0" : "0-1"), (oldValue, newValue) -> {
+                    String[] oldStats = oldValue.split("-");
+                    String[] newStats = newValue.split("-");
+                    int totalWins = Integer.parseInt(oldStats[0]) + Integer.parseInt(newStats[0]);
+                    int totalLosses = Integer.parseInt(oldStats[1]) + Integer.parseInt(newStats[1]);
+                    return totalWins + "-" + totalLosses;
+                });
+    
+                queueStats.merge(gameQueue, (win ? "1-0" : "0-1"), (oldValue, newValue) -> {
+                    String[] oldStats = oldValue.split("-");
+                    String[] newStats = newValue.split("-");
+                    int totalWins = Integer.parseInt(oldStats[0]) + Integer.parseInt(newStats[0]);
+                    int totalLosses = Integer.parseInt(oldStats[1]) + Integer.parseInt(newStats[1]);
+                    return totalWins + "-" + totalLosses;
+                });
+
+                double csPerMin = participant.cs / (match.getDuration() / 1000 / 60);
+    
+                overallStats.computeIfAbsent("damage", k -> new StatAccumulator()).add(participant.damage);
+                overallStats.computeIfAbsent("damage_building", k -> new StatAccumulator()).add(participant.damageBuilding);
+                overallStats.computeIfAbsent("cs", k -> new StatAccumulator()).add(participant.cs);
+                overallStats.computeIfAbsent("vision_score", k -> new StatAccumulator()).add(participant.visionScore);
+                overallStats.computeIfAbsent("ward", k -> new StatAccumulator()).add(participant.ward);
+                overallStats.computeIfAbsent("ward_killed", k -> new StatAccumulator()).add(participant.wardKilled);
+                overallStats.computeIfAbsent("gold_earned", k -> new StatAccumulator()).add(participant.goldEarned);
+                overallStats.computeIfAbsent("kills", k -> new StatAccumulator()).add(kills);
+                overallStats.computeIfAbsent("deaths", k -> new StatAccumulator()).add(deaths);
+                overallStats.computeIfAbsent("assists", k -> new StatAccumulator()).add(assists);
+                overallStats.computeIfAbsent("cs_min", k -> new StatAccumulator()).add((int) csPerMin);
+
+                int teamKills = match.participants.stream()
+                    .filter(p -> p.side == side)
+                    .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
+                    .sum();
+                
+                double killParticipation = teamKills == 0 ? 0 : (double) (kills + assists) / teamKills;
+                overallStats.computeIfAbsent("kill_participation", k -> new StatAccumulator()).add((int)(killParticipation * 100));
+
+                boolean isDuo = lane == LaneType.BOT || lane == LaneType.UTILITY;
+
+                List<Integer> enemyChamps = match.participants.stream()
+                    .filter(p -> p.side != side)
+                    .filter(p -> {
+                        return p.lane == lane;
+                    })
+                    .map(p -> p.champion)
+                    .collect(Collectors.toList());
+                    
+                for (int c : enemyChamps) {
+                    laneVsWinrate.computeIfAbsent(c, k -> new int[2]);
+                    laneVsWinrate.get(c)[(win ? 0 : 1)]++;   
+                }
+         
+
+                if (isDuo) {
+                    List<Integer> allyChamps = match.participants.stream()
+                        .filter(p -> p.side == side)
+                        .filter(p -> p.id != participant.id)
+                        .filter(p -> p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
+                        .map(p -> p.champion)
+                        .collect(Collectors.toList());
+                    
+                    for (int c : allyChamps) {
+                        duoWinrate.computeIfAbsent(c, k -> new int[2]);
+                        duoWinrate.get(c)[(win ? 0 : 1)]++;   
+                    }
+                }
+            }
+        }
+
+        String laneString = "";
+        for (LaneType lane : laneStats.keySet()) {
+            String wins = laneStats.get(lane).split("-")[0];
+            String losses = laneStats.get(lane).split("-")[1];
+            int games = Integer.valueOf(wins) + Integer.valueOf(losses);
+
+            if (lane == LaneType.NONE) 
+                continue;
+
+            String percent = String.format("%.2f", Double.parseDouble(wins) * 100 / (Double.parseDouble(wins) + Double.parseDouble(losses)));
+            laneString += LeagueHandler.getLaneTypeEmoji(lane) + " " + LeagueHandler.getPrettyName(lane) + " " + games + " games\n`(" +  wins + "W/" + losses + "L) - " + percent +"% WR`\n";
+        }
+
+        String gameString = "";
+        int count = 0;
+        int otherWins = 0;
+        int otherLosses = 0;         
+        for (GameQueueType game : queueStats.keySet()) {
+            String wins = queueStats.get(game).split("-")[0];
+            String losses = queueStats.get(game).split("-")[1];
+            int games = Integer.valueOf(wins) + Integer.valueOf(losses);
+        
+            String percent = String.format("%.2f", Double.parseDouble(wins) * 100 / (Double.parseDouble(wins) + Double.parseDouble(losses)));
+        
+            if (count < 4) {
+                gameString += LeagueHandler.getMapEmoji(game) + " " + LeagueHandler.formatMatchName(game) + " " + games + " games\n`(" + wins + "W/" + losses + "L) - " + percent + "% WR`\n";
+            } else {
+                otherWins += Integer.valueOf(wins);
+                otherLosses += Integer.valueOf(losses);
+            }
+            count++;
+        }
+        
+        if (otherWins > 0 || otherLosses > 0) {
+            int otherGames = otherWins + otherLosses;
+            String otherPercent = String.format("%.2f", (double) otherWins * 100 / otherGames);
+            gameString += CustomEmojiHandler.getFormattedEmoji("special_mode") + "Others " + otherGames + " games\n`(" + otherWins + "W/" + otherLosses + "L) - " + otherPercent + "% WR`\n";
+        }
+
+
+        String kda = String.format("%.2f", overallStats.get("kills").avg()) + "/" + String.format("%.2f", overallStats.get("deaths").avg()) + "/" + String.format("%.2f", overallStats.get("assists").avg());
+        String visionScore = String.format("%.2f", overallStats.get("vision_score").avg()) + " VS (" + 
+                String.format("%.2f", overallStats.get("ward").avg()) + " placed / " +
+                String.format("%.2f", overallStats.get("ward_killed").avg()) + " destroyed)";
+
+        String cs =  String.format("%.2f", overallStats.get("cs").avg()) + " (" +
+             String.format("%.2f", overallStats.get("cs_min").avg()) + " / min)";
+
+        String damaString = String.format("%.2f", overallStats.get("damage").avg()) + " to champ / " +
+            String.format("%.2f", overallStats.get("damage_building").avg()) + " to buildings";
+        
+        String performace = 
+            "**KDA**\n`" + kda + " (" + String.format("%.2f", overallStats.get("kill_participation").avg()) + "% kp)`\n" +
+            "**Vision Score**\n`" + visionScore + "`\n" +
+            "**CS**\n`" + cs + "`\n" +
+            "**Damage**\n`" + damaString + "`\n" +
+            "**Gold Earned**\n`" + String.format("%.2f", overallStats.get("gold_earned").avg()) + "`\n";
+
+            
+        
+        eb.addField("Games", gameString, true);
+        eb.addField("Roles", laneString , true);
+
+        eb.addField("Avarage Performace", performace, false);
+
+        return eb;
+
+    }
+
 
 }

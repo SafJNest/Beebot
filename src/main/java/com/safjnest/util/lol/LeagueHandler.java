@@ -41,6 +41,7 @@ import com.safjnest.util.lol.model.rune.Rune;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -260,6 +261,26 @@ import com.safjnest.core.cache.managers.UserCache;
                 break;
         }
         return emoji;
+    }
+
+    public static RichCustomEmoji getLaneTypeRichEmoji(LaneType type) {
+        switch (type) {
+            case TOP:
+                return CustomEmojiHandler.getRichEmoji("TopLane");
+            case JUNGLE:
+                return CustomEmojiHandler.getRichEmoji("Jungle");
+            case MID:
+                return CustomEmojiHandler.getRichEmoji("MidLane");
+            case BOT:
+                return CustomEmojiHandler.getRichEmoji("ADC");
+            case UTILITY:
+                return CustomEmojiHandler.getRichEmoji("Support");
+            case NONE:
+                return CustomEmojiHandler.getRichEmoji("autofill");
+            default:
+                break;
+        }
+        return null;
     }
 
     public static String getMapEmoji(GameQueueType type) {
