@@ -550,7 +550,6 @@ public class LeagueDB extends AbstractDB {
         Connection conn = null;
         try {
             conn = instance.getConnection();
-            conn.setAutoCommit(false);
             try (PreparedStatement pstmt = conn.prepareStatement(query)) {
                 for (LeagueEntry entry : entries) {
                     pstmt.setInt(1, summonerId);
@@ -578,7 +577,6 @@ public class LeagueDB extends AbstractDB {
         } finally {
             if (conn != null) {
                 try {
-                    conn.setAutoCommit(true);
                     conn.close();
                 } catch (SQLException e) {
                     e.printStackTrace();

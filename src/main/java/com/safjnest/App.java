@@ -38,10 +38,8 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-        System.out.println(BotDB.test());     
-        System.out.println(LeagueDB.getAdvancedLOLData("50"));    
-        //bot = new Bot();
-        //bot.il_risveglio_della_bestia();
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {

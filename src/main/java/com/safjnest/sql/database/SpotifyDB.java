@@ -41,7 +41,6 @@ public class SpotifyDB extends AbstractDB {
 
     public static void insertBatch(List<SpotifyTrackStreaming> trackList, String userId) throws SQLException, NoSuchAlgorithmException {
         Connection conn = instance.getConnection();
-        conn.setAutoCommit(false);
 
         PreparedStatement insertArtist = conn.prepareStatement(
             "INSERT IGNORE INTO artists (artist_id, name) VALUES (?, ?)"
@@ -102,7 +101,7 @@ public class SpotifyDB extends AbstractDB {
             insertStreaming.addBatch();
         }
 
-        System.err.println("Inserted " + trackList.size() + " tracks into the database.");
+        System.out.println("Inserted " + trackList.size() + " tracks into the database.");
 
         insertArtist.executeBatch();
         insertAlbum.executeBatch();

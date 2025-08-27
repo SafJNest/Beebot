@@ -22,7 +22,6 @@ public class SpotifyUpload extends SlashCommand {
         this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
-        System.out.println(commandData.getHelp());
 
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();

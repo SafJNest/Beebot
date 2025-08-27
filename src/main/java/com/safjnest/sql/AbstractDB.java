@@ -105,7 +105,6 @@ public abstract class AbstractDB {
         try {
             c = DatabaseHandler.getConnection(getDatabase());
             if (c == null) throw new SQLException("Connection to the database failed!");
-            c.setAutoCommit(false);
 
             stmt = c.createStatement();
 
