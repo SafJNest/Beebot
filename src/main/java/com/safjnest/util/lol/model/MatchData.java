@@ -19,4 +19,12 @@ public class MatchData {
     public long timeEnd;
     public String patch;
     public List<ParticipantData> participants;
+
+    /**
+     * milliseconds
+     * @return
+     */
+    public long getDuration() {
+        return timeEnd - timeStart;
+    }
 }

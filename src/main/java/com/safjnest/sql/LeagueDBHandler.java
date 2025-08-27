@@ -893,7 +893,6 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
             if (c == null) return result;
             c.setAutoCommit(false);
 
-            // 1) recupero match filtrati
             String q1 = "SELECT sm.* " +
                         "FROM `match` sm " +
                         "JOIN participant st ON st.match_id = sm.id " +
@@ -918,7 +917,12 @@ public static QueryCollection getLOLAccountsByUserId(String user_id){
                     JSONObject bansJson = new JSONObject(rs.getString("bans"));
                     for(String key : bansJson.keySet()) {
                         TeamType team = TeamType.values()[Integer.parseInt(key)];
-                        match.bans.put(team, bansJson.getJSONArray(key).getInt(0));
+                        try {
+                            match.bans.put(team, bansJson.getJSONArray(key).getInt(0));    
+                        } catch (Exception e) {
+                            match.bans.put(team, null);
+                        }
+                        
                     }
                     
                     match.events = new JSONObject(rs.getString("events"));

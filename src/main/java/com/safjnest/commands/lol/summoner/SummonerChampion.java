@@ -14,6 +14,7 @@ import com.github.twitch4j.helix.domain.Team;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -72,14 +73,15 @@ public class SummonerChampion extends SlashCommand {
 
         //80 pantheon
         //412 thresh
-        int summonerId = 22;
-        int champion = 412;
+        //555 pyke
+        int summonerId = 50;
+        int champion = 555;
 
         long timeStart = 1736420400000l;
         long timeEnd = System.currentTimeMillis();
 
         GameQueueType queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
-        LaneType role = null;
+        LaneType role = LaneType.UTILITY;
         List<MatchData> matches = null;
         try {
             matches = LeagueDBHandler.getMatchHistory(summonerId, champion, timeStart, timeEnd, queue, role);
@@ -134,6 +136,8 @@ public class SummonerChampion extends SlashCommand {
                     int totalLosses = Integer.parseInt(oldStats[1]) + Integer.parseInt(newStats[1]);
                     return totalWins + "-" + totalLosses;
                 });
+
+                double csPerMin = participant.cs / (match.getDuration() / 1000 / 60);
     
                 overallStats.computeIfAbsent("damage", k -> new StatAccumulator()).add(participant.damage);
                 overallStats.computeIfAbsent("damage_building", k -> new StatAccumulator()).add(participant.damageBuilding);
@@ -145,6 +149,15 @@ public class SummonerChampion extends SlashCommand {
                 overallStats.computeIfAbsent("kills", k -> new StatAccumulator()).add(kills);
                 overallStats.computeIfAbsent("deaths", k -> new StatAccumulator()).add(deaths);
                 overallStats.computeIfAbsent("assists", k -> new StatAccumulator()).add(assists);
+                overallStats.computeIfAbsent("cs_min", k -> new StatAccumulator()).add((int) csPerMin);
+
+                int teamKills = match.participants.stream()
+                    .filter(p -> p.side == side)
+                    .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
+                    .sum();
+                
+                double killParticipation = teamKills == 0 ? 0 : (double) (kills + assists) / teamKills;
+                overallStats.computeIfAbsent("kill_participation", k -> new StatAccumulator()).add((int)(killParticipation * 100));
 
                 boolean isDuo = lane == LaneType.BOT || lane == LaneType.UTILITY;
 
@@ -182,6 +195,7 @@ public class SummonerChampion extends SlashCommand {
         EmbedBuilder eb = new EmbedBuilder();
         eb.setTitle("Stats for champion " + champion);
         eb.setDescription("Total games: " + matches.size());
+        eb.setColor(Bot.getColor());
 
         String laneString = "";
         for (LaneType lane : laneStats.keySet()) {
@@ -224,26 +238,34 @@ public class SummonerChampion extends SlashCommand {
 
 
         String kda = String.format("%.2f", overallStats.get("kills").avg()) + "/" + String.format("%.2f", overallStats.get("deaths").avg()) + "/" + String.format("%.2f", overallStats.get("assists").avg());
+        String visionScore = String.format("%.2f", overallStats.get("vision_score").avg()) + " VS (" + 
+                String.format("%.2f", overallStats.get("ward").avg()) + " placed / " +
+                String.format("%.2f", overallStats.get("ward_killed").avg()) + " destroyed)";
+
+        String cs =  String.format("%.2f", overallStats.get("cs").avg()) + " (" +
+             String.format("%.2f", overallStats.get("cs_min").avg()) + " / min)";
+
+        String damaString = String.format("%.2f", overallStats.get("damage").avg()) + " to champ / " +
+            String.format("%.2f", overallStats.get("damage_building").avg()) + " to buildings";
+        
         String performace = 
-            "**Kills**\n`" + overallStats.get("kills").sum + " (" + String.format("%.2f", overallStats.get("kills").avg()) + " avg)`\n" +
-            "**Deaths**\n`" + overallStats.get("deaths").sum + " (" + String.format("%.2f", overallStats.get("deaths").avg()) + " avg)`\n" +
-            "**Assists**\n`" + overallStats.get("assists").sum + " (" + String.format("%.2f", overallStats.get("assists").avg()) + " avg)`\n" +
-            "**KDA**\n`" + kda + "`\n";
+            "**KDA**\n`" + kda + " (" + String.format("%.2f", overallStats.get("kill_participation").avg()) + "% kp)`\n" +
+            "**Vision Score**\n`" + visionScore + "`\n" +
+            "**CS**\n`" + cs + "`\n" +
+            "**Damage**\n`" + damaString + "`\n" +
+            "**Gold Earned**\n`" + String.format("%.2f", overallStats.get("gold_earned").avg()) + "`\n";
 
             
         
         eb.addField("Games", gameString, true);
         eb.addField("Roles", laneString , true);
 
-
-
-
-
-        eb.addField("Performace", performace, false);
+        eb.addField("Avarage Performace", performace, false);
 
         eb = getMatchups("matchups", eb, laneVsWinrate);
-        //eb = getMatchups("duo bot", eb, duoWinrate);
 
+        if (role == LaneType.BOT || role == LaneType.UTILITY) 
+            eb = getMatchups("duo bot", eb, duoWinrate);
 
 
         event.reply(eb.build());
@@ -258,7 +280,10 @@ public class SummonerChampion extends SlashCommand {
             .sorted((a, b) -> {
                 double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
                 double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
-                return Double.compare(winrateA, winrateB);
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                int cmp = Double.compare(winrateA, winrateB);
+                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
             })
             .collect(Collectors.toList());
         
@@ -267,13 +292,25 @@ public class SummonerChampion extends SlashCommand {
             .sorted((a, b) -> {
                 double winrateA = (double) a.getValue()[0] / (a.getValue()[0] + a.getValue()[1]);
                 double winrateB = (double) b.getValue()[0] / (b.getValue()[0] + b.getValue()[1]);
-                return Double.compare(winrateB, winrateA);
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                int cmp = Double.compare(winrateB, winrateA);
+                return cmp == 0 ? Integer.compare(gamesB, gamesA) : cmp;
             })
             .collect(Collectors.toList());
         
         List<Map.Entry<Integer, int[]>> popularMatchups = data.entrySet().stream()
             .filter(entry -> (entry.getValue()[0] + entry.getValue()[1]) >= 2)
-            .sorted((a, b) -> Integer.compare(b.getValue()[0] + b.getValue()[1], a.getValue()[0] + a.getValue()[1]))
+            .sorted((a, b) -> {
+                int gamesA = a.getValue()[0] + a.getValue()[1];
+                int gamesB = b.getValue()[0] + b.getValue()[1];
+                if (gamesA == gamesB) {
+                    double winrateA = (double) a.getValue()[0] / (gamesA);
+                    double winrateB = (double) b.getValue()[0] / (gamesB);
+                    return Double.compare(winrateB, winrateA);
+                }
+                return Integer.compare(gamesB, gamesA);
+            })
             .collect(Collectors.toList());
         
         eb.addField("Worst " + prefix, getWinrateLabel(worstMatchups), true);
@@ -284,7 +321,7 @@ public class SummonerChampion extends SlashCommand {
 
     private String getWinrateLabel(List<Entry<Integer, int[]>> data) {
         String label = "";
-        int limit = 3;
+        int limit = 4;
         for (Map.Entry<Integer, int[]> entry : data) {
             if (limit-- == 0) break;
             StaticChampion champ = LeagueHandler.getChampionById(entry.getKey());
@@ -292,7 +329,7 @@ public class SummonerChampion extends SlashCommand {
             int[] val = entry.getValue();
             int totalGames = val[0] + val[1];
             double winrate = (double) val[0] / totalGames * 100.0;
-            label += CustomEmojiHandler.getFormattedEmoji(champ.getName()) + " " + champ.getName() + "\n`" + val[0] + "/" + val[1] + " (" + String.format("%.1f%%", winrate) + ")`\n";
+            label += CustomEmojiHandler.getFormattedEmoji(champ.getName()) + " " + champ.getName() + "\n`" + val[0] + "W/" + val[1] + "L (" + String.format("%.1f%%", winrate) + ")`\n";
         }
 
         return label;
