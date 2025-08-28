@@ -1252,6 +1252,8 @@ public class LeagueMessage {
         Button center = Button.primary("champion-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
+        Button settings = Button.primary("champion-change", " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+
         Button championButton = Button.secondary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
         if (showChampion)
             championButton = championButton.withStyle(ButtonStyle.SUCCESS);
@@ -1296,9 +1298,9 @@ public class LeagueMessage {
         rows.add(ActionRow.of(generic, matchups, pings));
 
         if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
-            rows.add(ActionRow.of(left, center, championButton, right));
+            rows.add(ActionRow.of(left, center, championButton, settings, right));
         else 
-            rows.add(ActionRow.of(center, championButton));
+            rows.add(ActionRow.of(center, championButton, settings));
 
         return rows;
     }

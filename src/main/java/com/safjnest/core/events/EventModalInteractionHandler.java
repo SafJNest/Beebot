@@ -1,7 +1,13 @@
 package com.safjnest.core.events;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.safjnest.commands.audio.sound.SoundCustomize;
@@ -16,10 +22,17 @@ import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.AlertMessage;
+import com.safjnest.util.SafJNest;
+import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.LeagueMessage;
+import com.safjnest.util.lol.LeagueMessageType;
 import com.safjnest.util.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -49,6 +62,9 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 break;
             case "reward":
                 reward(event);
+                break;
+            case "champion":
+                champion(event);
                 break;
             default:
                 break;
@@ -200,5 +216,76 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         event.deferEdit().queue();
         event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), reward)).useComponentsV2().queue();
 
+    }
+
+
+
+    private void champion(ModalInteractionEvent event) {
+        String champoString = event.getValue("champion-change").getAsString();
+
+        ArrayList<String> championsName = new ArrayList<>();
+        for (String champion : LeagueHandler.getChampions()) {
+            championsName.add(champion);
+        }
+        champoString = SafJNest.findSimilarWord(champoString, championsName);
+        StaticChampion newChampion = LeagueHandler.getChampionByName(champoString);
+
+
+        if (newChampion == null) {
+            event.deferReply().setEphemeral(true).addContent("Cannot find the champion you are looking for").queue();
+            return;
+        }
+
+
+        GameQueueType queue = null;
+        LeagueMessageType type = null;
+        LaneType lane = null;
+
+        boolean showChampion = true;
+
+        long[] time = LeagueHandler.getCurrentSplitRange();
+        String timeString = "current";
+
+        String puuid = "";
+        String region = "";
+
+
+        for (Button b : EventUtils.getButtons(event.getMessage().getComponents())) {
+            if (b.getCustomId().startsWith("champion-center-")) {
+                puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
+                region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
+            }
+            if (b.getCustomId().startsWith("champion-queue-") && b.getStyle() == ButtonStyle.SUCCESS) {
+                queue = GameQueueType.valueOf(b.getCustomId().split("-")[2]);
+            }
+            if (b.getCustomId().startsWith("champion-type-") && b.getStyle() == ButtonStyle.SUCCESS)
+                type = LeagueMessageType.valueOf(b.getCustomId().split("-")[2]);
+
+            if (b.getCustomId().startsWith("champion-lane-") && b.getStyle() == ButtonStyle.SUCCESS)
+                lane = LaneType.valueOf(b.getCustomId().split("-")[2]);
+            
+            if (b.getCustomId().startsWith("champion-season-") && b.getStyle() == ButtonStyle.SUCCESS)
+                timeString = b.getCustomId().split("-")[2];
+
+        }
+        
+        
+        event.deferEdit().queue();
+        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        if (EventUtils.getButtonById(event.getMessage().getComponents(), "champion-left") == null) user_id = "";
+        Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+        switch (timeString) {
+            case "all":
+                time = new long[] {0, 0};
+                break;
+            case "current":
+                time = LeagueHandler.getCurrentSplitRange();
+                break;
+            case "previous":
+                time = LeagueHandler.getPreviousSplitRange();
+                break;
+        }
+        int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID());
+        LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, newChampion, time[0], time[1], queue, lane, showChampion); 
     }
 }

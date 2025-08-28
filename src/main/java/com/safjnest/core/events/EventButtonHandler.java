@@ -101,6 +101,11 @@ public class EventButtonHandler extends ListenerAdapter {
             return;
         }
 
+        else if (buttonId.startsWith("champion-")) {
+            champion(event);
+            return;
+        }
+
 
         event.deferEdit().queue();
 
@@ -162,9 +167,6 @@ public class EventButtonHandler extends ListenerAdapter {
 
         else if (buttonId.startsWith("chat-"))
             chat(event);
-        
-        else if (buttonId.startsWith("champion-"))
-            champion(event);
     }
 
     private void greet(ButtonInteractionEvent event) {
@@ -1645,10 +1647,22 @@ public class EventButtonHandler extends ListenerAdapter {
             case "champion":
                 showChampion = event.getButton().getStyle() != ButtonStyle.SUCCESS;
                 break;
+            case "change":
+                TextInput subject = TextInput.create("champion-change", "Select a champion", TextInputStyle.SHORT)
+                    .setPlaceholder("Champion name")
+                    .setMaxLength(100)
+                    .build();
 
+                Modal modal = Modal.create("champion-change", "Select a champion")
+                        .addComponents(ActionRow.of(subject))
+                        .build();
+
+                event.replyModal(modal).queue();
+                return;
         }
 
-        if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
+        event.deferEdit().queue();
+        if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
         s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
         switch (timeString) {
             case "all":

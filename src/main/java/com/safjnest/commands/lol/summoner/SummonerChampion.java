@@ -3,6 +3,7 @@ package com.safjnest.commands.lol.summoner;
 import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -37,15 +38,15 @@ public class SummonerChampion extends SlashCommand {
         this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", true).setAutoComplete(true),
             new OptionData(OptionType.STRING, "champion", "Champion Name", true).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "role", "Champion Role", true)
+            LeagueHandler.getLeagueShardOptions(),
+            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", true).setAutoComplete(false),
+            new OptionData(OptionType.STRING, "role", "Champion Role", false)
                 .addChoice("Top", "TOP")
                 .addChoice("Jungle", "JUNGLE")
                 .addChoice("Mid", "MID")
                 .addChoice("ADC", "ADC")
-                .addChoice("Support", "SUPPORT"),
-            LeagueHandler.getLeagueShardOptions()
+                .addChoice("Support", "SUPPORT")
         );
         commandData.setThings(this);
     }
@@ -78,7 +79,7 @@ public class SummonerChampion extends SlashCommand {
 
         GameQueueType queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
 
-        String laneString = event.getOption("role").getAsString();
+        String laneString = event.getOption("role") != null ? event.getOption("role").getAsString() : null;
         LaneType laneType = null;
         switch(laneString){
             case "TOP":
@@ -98,7 +99,8 @@ public class SummonerChampion extends SlashCommand {
                 break;
         }
 
-        LeagueMessage.sendChampionMessage(event.getHook(), event.getUser().getId(), LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType, true);
+        String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
+        LeagueMessage.sendChampionMessage(event.getHook(), userId, LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType, true);
 	}
 
 }
