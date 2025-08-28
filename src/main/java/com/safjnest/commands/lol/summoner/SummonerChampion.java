@@ -68,7 +68,7 @@ public class SummonerChampion extends SlashCommand {
         //555 pyke
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-        int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID());
+        int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
         String championName = event.getOption("champion").getAsString();
         StaticChampion champion = LeagueHandler.getChampionByName(championName);

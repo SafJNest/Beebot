@@ -1675,7 +1675,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 time = LeagueHandler.getPreviousSplitRange();
                 break;
         }
-        int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID());
+        int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
         LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, champion, time[0], time[1], queue, lane, showChampion); 
     }
 }
