@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
 
+import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.util.log.BotLogger;
 
@@ -71,7 +72,7 @@ public abstract class AbstractDB {
      */
     public QueryResult query(Statement stmt, String query) throws SQLException {
         insertAnalytics(query);
-        BotLogger.trace(query);
+        if (App.isTesting()) BotLogger.trace(query);
         QueryResult result = new QueryResult();
         boolean hasResult = (stmt instanceof PreparedStatement pstmt)
                 ? pstmt.execute()
