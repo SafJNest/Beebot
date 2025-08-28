@@ -612,9 +612,7 @@ public class LeagueDB extends AbstractDB {
                         "FROM `match` sm " +
                         "JOIN participant st ON st.match_id = sm.id " +
                         "WHERE st.summoner_id = " + summonerId + " " +
-                        timeFilter + queueFilter + championFilter + laneFilter +
-                        "GROUP BY sm.id " +
-                        "ORDER BY sm.game_id DESC;";
+                        timeFilter + queueFilter + championFilter + laneFilter + ";";
 
             List<Integer> matchIds = new ArrayList<>();
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q1)) {
@@ -657,8 +655,7 @@ public class LeagueDB extends AbstractDB {
             String q2 = "SELECT st.*, sm.id AS match_id " +
                         "FROM participant st " +
                         "JOIN `match` sm ON st.match_id = sm.id " +
-                        "WHERE st.match_id IN " + inClause + " " +
-                        "ORDER BY sm.game_id DESC, st.team, st.champion;";
+                        "WHERE st.match_id IN " + inClause + ";";
 
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q2)) {
                 while (rs.next()) {
