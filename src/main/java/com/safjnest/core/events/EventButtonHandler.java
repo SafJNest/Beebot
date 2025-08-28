@@ -1558,6 +1558,8 @@ public class EventButtonHandler extends ListenerAdapter {
         LaneType lane = null;
         StaticChampion champion = null;
 
+        boolean showChampion = true;
+
         long[] time = LeagueHandler.getCurrentSplitRange();
         String timeString = "current";
 
@@ -1575,11 +1577,14 @@ public class EventButtonHandler extends ListenerAdapter {
             if (b.getCustomId().startsWith("champion-lane-") && b.getStyle() == ButtonStyle.SUCCESS)
                 lane = LaneType.valueOf(b.getCustomId().split("-")[2]);
 
-            if (b.getCustomId().startsWith("champion-champion-"))
+            if (b.getCustomId().startsWith("champion-champion-")) {
                 champion = LeagueHandler.getChampionById(Integer.parseInt(b.getCustomId().split("-")[2]));
+                showChampion = b.getStyle() == ButtonStyle.SUCCESS;
+            }
             
             if (b.getCustomId().startsWith("champion-season-") && b.getStyle() == ButtonStyle.SUCCESS)
                 timeString = b.getCustomId().split("-")[2];
+
         }
 
         String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
@@ -1629,12 +1634,16 @@ public class EventButtonHandler extends ListenerAdapter {
                 queue = event.getButton().getStyle() != ButtonStyle.SUCCESS ? GameQueueType.valueOf(event.getButton().getCustomId().split("-")[2]) : null;
             break;
             case "lane":
+                lane = event.getButton().getStyle() != ButtonStyle.SUCCESS ? LaneType.valueOf(event.getButton().getCustomId().split("-")[2]) : null;
                 break;
             case "type":
                 type = LeagueMessageType.valueOf(event.getButton().getCustomId().split("-")[2]);
                 break;
             case "season":
                 timeString = event.getButton().getCustomId().split("-", 3)[2];
+                break;
+            case "champion":
+                showChampion = event.getButton().getStyle() != ButtonStyle.SUCCESS;
                 break;
 
         }
@@ -1653,6 +1662,6 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
         }
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID());
-        LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, champion, time[0], time[1], queue, lane); 
+        LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, champion, time[0], time[1], queue, lane, showChampion); 
     }
 }

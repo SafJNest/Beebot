@@ -6,10 +6,12 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.awt.Color;
 import java.sql.SQLException;
@@ -23,6 +25,7 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.DateHandler;
+import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.model.MatchData;
 import com.safjnest.util.lol.model.ParticipantData;
 
@@ -310,7 +313,7 @@ public class LeagueMessage {
     private static String formatAdvancedData(QueryRecord data, ChampionMastery mastery) {
         StaticChampion champion = LeagueHandler.getChampionById(data.getAsInt("champion"));
         int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
-        return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + level+ "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
+        return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + mastery.getChampionLevel()+ "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
             + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
     }
 
@@ -389,18 +392,18 @@ public class LeagueMessage {
 
 
     public static MessageTopLevelComponent getOpggQueueTypeButtons(GameQueueType queue) {
-        return getOpggQueueTypeButtons("match", queue);
+        return getOpggQueueTypeButtons("match", ButtonStyle.PRIMARY, queue);
     }
 
 
-    public static MessageTopLevelComponent getOpggQueueTypeButtons(String prefix, GameQueueType queue) {
+    public static MessageTopLevelComponent getOpggQueueTypeButtons(String prefix, ButtonStyle defaultStyle, GameQueueType queue) {
         GameQueueType currentGameQueueType = GameQueueType.CHERRY;
 
-        Button soloQ = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
-        Button flex = Button.primary(prefix + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
-        Button draft = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
-        Button aram = Button.primary(prefix + "-queue-" + GameQueueType.ARAM, "ARAM");
-        Button curretModeButton = Button.primary(prefix + "-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType));
+        Button soloQ = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo").withStyle(defaultStyle);
+        Button flex = Button.primary(prefix + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex").withStyle(defaultStyle);
+        Button draft = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft").withStyle(defaultStyle);
+        Button aram = Button.primary(prefix + "-queue-" + GameQueueType.ARAM, "ARAM").withStyle(defaultStyle);
+        Button curretModeButton = Button.primary(prefix + "-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType)).withStyle(defaultStyle);
 
         if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
 
@@ -1286,27 +1289,28 @@ public class LeagueMessage {
     }
 
 
-    public static void sendChampionMessage(InteractionHook hook, String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType) {
+    public static void sendChampionMessage(InteractionHook hook, String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType, boolean showChampion) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         
         List<MatchData> matches = null;
         try {
-            matches = LeagueDB.getMatchHistory(summonerId, champion.getId(), timeStart, timeEnd, queue, laneType);
+            int champId = showChampion ? champion.getId() : 0;
+            matches = LeagueDB.getMatchHistory(summonerId, champId, timeStart, timeEnd, queue, laneType);
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle(champion.getName());
-        eb.setThumbnail(LeagueHandler.getChampionProfilePic(champion.getName()));
-        eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
-        eb.setDescription("Total games: " + matches.size());
-        eb.setColor(Bot.getColor());
+        
+        if (showChampion) eb.setThumbnail(LeagueHandler.getChampionProfilePic(champion.getName()));
+        else eb.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 
+        eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
+        eb.setColor(Bot.getColor());
 
         switch (messageType) {
             case CHAMPION_GENERIC:
-                eb = getGenericStats(eb, matches, summonerId, laneType);                
+                eb = getGenericStats(eb, matches, summoner, summonerId, timeStart, timeEnd, laneType, queue, showChampion);                
                 break;
             case CHAMPION_MATCHUP:
                 eb = getMatchups(eb, matches, summonerId, laneType, queue);
@@ -1317,41 +1321,43 @@ public class LeagueMessage {
                 break;
         }
 
-        hook.editOriginalEmbeds(eb.build()).setComponents(getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType)).queue();
+        hook.editOriginalEmbeds(eb.build()).setComponents(getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType, showChampion)).queue();
     }
 
 
     private static ActionRow getLaneComponents(String prefix, LaneType lane) {
-        Button top = Button.primary(prefix + "-lane-" + LaneType.TOP, "Top").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.TOP));
-        Button jungle = Button.primary(prefix + "-lane-" + LaneType.JUNGLE, "Jungle").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.JUNGLE));
-        Button mid = Button.primary(prefix + "-lane-" + LaneType.MID, "Mid").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.MID));
-        Button adc = Button.primary(prefix + "-lane-" + LaneType.BOT, "ADC").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.BOT));
-        Button support = Button.primary(prefix + "-lane-" + LaneType.UTILITY, "Support").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.UTILITY));
+        Button top = Button.secondary(prefix + "-lane-" + LaneType.TOP, "Top").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.TOP));
+        Button jungle = Button.secondary(prefix + "-lane-" + LaneType.JUNGLE, "Jungle").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.JUNGLE));
+        Button mid = Button.secondary(prefix + "-lane-" + LaneType.MID, "Mid").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.MID));
+        Button adc = Button.secondary(prefix + "-lane-" + LaneType.BOT, "ADC").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.BOT));
+        Button support = Button.secondary(prefix + "-lane-" + LaneType.UTILITY, "Support").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.UTILITY));
 
-        switch (lane) {
-            case TOP:
-                top = top.asDisabled().withStyle(ButtonStyle.SUCCESS);
-                break;
-            case JUNGLE:
-                jungle = jungle.asDisabled().withStyle(ButtonStyle.SUCCESS);
-                break;
-            case MID:
-                mid = mid.asDisabled().withStyle(ButtonStyle.SUCCESS);
-                break;
-            case BOT:
-                adc = adc.asDisabled().withStyle(ButtonStyle.SUCCESS);
-                break;
-            case UTILITY:
-                support = support.asDisabled().withStyle(ButtonStyle.SUCCESS);
-                break;
-            default:
-                break;
+        if (lane != null) {
+            switch (lane) {
+                case TOP:
+                    top = top.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case JUNGLE:
+                    jungle = jungle.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case MID:
+                    mid = mid.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case BOT:
+                    adc = adc.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case UTILITY:
+                    support = support.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                default:
+                    break;
+            }
         }
 
         return ActionRow.of(top, jungle, mid, adc, support);
     }
 
-    private static List<MessageTopLevelComponent> getChampionButtons(LeagueMessageType messageType, StaticChampion champion, String userId, Summoner summoner, int summonerId, GameQueueType queue, long timeStart, long timeEnd, LaneType lane) {
+    private static List<MessageTopLevelComponent> getChampionButtons(LeagueMessageType messageType, StaticChampion champion, String userId, Summoner summoner, int summonerId, GameQueueType queue, long timeStart, long timeEnd, LaneType lane, boolean showChampion) {
         Button left = Button.primary("champion-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary("champion-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
@@ -1359,7 +1365,9 @@ public class LeagueMessage {
         Button center = Button.primary("champion-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
-        Button championButton = Button.primary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName())).asDisabled();
+        Button championButton = Button.secondary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
+        if (showChampion)
+            championButton = championButton.withStyle(ButtonStyle.SUCCESS);
 
 
         Button generic = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_GENERIC, "Generic");
@@ -1382,9 +1390,9 @@ public class LeagueMessage {
         }
 
 
-        Button allSeason = Button.primary("champion-season-all", "General");
-        Button currentSplit = Button.primary("champion-season-current", "Current Split");
-        Button previousSplit = Button.primary("champion-season-previous", "Previous Split");
+        Button allSeason = Button.secondary("champion-season-all", "General");
+        Button currentSplit = Button.secondary("champion-season-current", "Current Split");
+        Button previousSplit = Button.secondary("champion-season-previous", "Previous Split");
 
         long[] time = LeagueHandler.getCurrentSplitRange();
         long[] previousTime = LeagueHandler.getPreviousSplitRange();
@@ -1394,10 +1402,10 @@ public class LeagueMessage {
         else if (timeStart == previousTime[0] && timeEnd == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-        if (queue != GameQueueType.CHERRY && lane != null) rows.add(getLaneComponents("champion", lane));
+        if (queue != GameQueueType.CHERRY) rows.add(getLaneComponents("champion", lane));
 
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
-        rows.add(getOpggQueueTypeButtons("champion", queue));
+        rows.add(getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, queue));
         rows.add(ActionRow.of(generic, matchups, pings));
 
         if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
@@ -1422,14 +1430,14 @@ public class LeagueMessage {
                 }
 
                 LaneType lane = participant.lane;
-                TeamType side = participant.side;
+                TeamType team = participant.team;
 
                 boolean win = participant.win;
 
 
 
                 List<Integer> enemyChamps = match.participants.stream()
-                    .filter(p -> p.side != side)
+                    .filter(p -> p.team != team)
                     .filter(p -> {
                         return p.lane == lane;
                     })
@@ -1444,7 +1452,7 @@ public class LeagueMessage {
 
                 if (isDuo) {
                     List<Integer> allyChamps = match.participants.stream()
-                        .filter(p -> p.side == side)
+                        .filter(p -> p.team == team)
                         .filter(p -> p.id != participant.id)
                         .filter(p -> (queue == GameQueueType.CHERRY && p.subTeam == participant.subTeam) || p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
                         .map(p -> p.champion)
@@ -1568,7 +1576,7 @@ public class LeagueMessage {
     }
 
 
-    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<MatchData> matches, int summonerId, LaneType laneType) {
+    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId, long timeStart, long timeEnd, LaneType laneType, GameQueueType queueType, boolean showChampion) {
 
         class StatAccumulator {
             int sum = 0;
@@ -1591,13 +1599,29 @@ public class LeagueMessage {
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
 
+        HashMap<String, Set<Integer>> unique = new HashMap<>();
+
+        long timePlayed = 0;
+        long oldest = Long.MAX_VALUE;
+        long newest = Long.MIN_VALUE;
+
+        unique.put("champion", new HashSet<>());
+        unique.put("lane", new HashSet<>());
+        unique.put("queue", new HashSet<>());
         for (MatchData match : matches) {
+            timePlayed += match.getDuration();
+            if (oldest > match.timeStart) oldest = match.timeStart;
+            if (newest < match.timeStart) newest = match.timeStart;
+
             for (ParticipantData participant : match.participants) {
                 if (participant.summonerId != summonerId) continue;
-                
+
+                unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
+                unique.getOrDefault("lane", new HashSet<>()).add(participant.lane.ordinal());
+                unique.getOrDefault("queue", new HashSet<>()).add(match.gameType.ordinal());
 
                 LaneType lane = participant.lane;
-                TeamType side = participant.side;
+                TeamType team = participant.team;
                 GameQueueType gameQueue = match.gameType;
                 boolean win = participant.win;
     
@@ -1636,8 +1660,17 @@ public class LeagueMessage {
                 overallStats.computeIfAbsent("assists", k -> new StatAccumulator()).add(assists);
                 overallStats.computeIfAbsent("cs_min", k -> new StatAccumulator()).add((int) csPerMin);
 
+                if (queueType == GameQueueType.CHERRY) {
+                    int placement = participant.subTeamPlacement;
+                    System.out.println(placement);
+                    if (placement == 1) overallStats.computeIfAbsent("arena_first", k -> new StatAccumulator()).add(1);
+                    else if (placement == 2) overallStats.computeIfAbsent("arena_second", k -> new StatAccumulator()).add(1);
+                    else if (placement == 3) overallStats.computeIfAbsent("arena_third", k -> new StatAccumulator()).add(1);
+                    overallStats.computeIfAbsent("arena_placement", k -> new StatAccumulator()).add(placement);
+                }
+
                 int teamKills = match.participants.stream()
-                    .filter(p -> p.side == side)
+                    .filter(p -> p.team == team)
                     .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
                     .sum();
                 
@@ -1647,7 +1680,7 @@ public class LeagueMessage {
                 boolean isDuo = lane == LaneType.BOT || lane == LaneType.UTILITY;
 
                 List<Integer> enemyChamps = match.participants.stream()
-                    .filter(p -> p.side != side)
+                    .filter(p -> p.team != team)
                     .filter(p -> {
                         return p.lane == lane;
                     })
@@ -1662,7 +1695,7 @@ public class LeagueMessage {
 
                 if (isDuo) {
                     List<Integer> allyChamps = match.participants.stream()
-                        .filter(p -> p.side == side)
+                        .filter(p -> p.team == team)
                         .filter(p -> p.id != participant.id)
                         .filter(p -> p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
                         .map(p -> p.champion)
@@ -1675,6 +1708,38 @@ public class LeagueMessage {
                 }
             }
         }
+
+        laneStats = laneStats.entrySet()
+            .stream()
+            .sorted((entry1, entry2) -> {
+                String[] stats1 = entry1.getValue().split("-");
+                String[] stats2 = entry2.getValue().split("-");
+                int totalGames1 = Integer.parseInt(stats1[0]) + Integer.parseInt(stats1[1]);
+                int totalGames2 = Integer.parseInt(stats2[0]) + Integer.parseInt(stats2[1]);
+                return Integer.compare(totalGames2, totalGames1);
+            })
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (e1, e2) -> e1,
+                LinkedHashMap::new
+            ));
+
+        queueStats = queueStats.entrySet()
+            .stream()
+            .sorted((entry1, entry2) -> {
+                String[] stats1 = entry1.getValue().split("-");
+                String[] stats2 = entry2.getValue().split("-");
+                int totalGames1 = Integer.parseInt(stats1[0]) + Integer.parseInt(stats1[1]);
+                int totalGames2 = Integer.parseInt(stats2[0]) + Integer.parseInt(stats2[1]);
+                return Integer.compare(totalGames2, totalGames1);
+            })
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (e1, e2) -> e1,
+                LinkedHashMap::new
+            ));
 
         String laneString = "";
         for (LaneType lane : laneStats.keySet()) {
@@ -1726,18 +1791,55 @@ public class LeagueMessage {
 
         String damaString = String.format("%.2f", overallStats.get("damage").avg()) + " to champ / " +
             String.format("%.2f", overallStats.get("damage_building").avg()) + " to buildings";
+    
+        String arenaPlacement = "";
+        if (queueType == GameQueueType.CHERRY) {
+            arenaPlacement = "1. " + overallStats.getOrDefault("arena_first", new StatAccumulator()).count + " times\n" +
+                "2. " + overallStats.getOrDefault("arena_second", new StatAccumulator()).count + " times\n" +
+                "3. " + overallStats.getOrDefault("arena_third", new StatAccumulator()).count + " times\n" +
+                "avg. " + String.format("%.2f", overallStats.get("arena_placement").avg()) + " placement";
+        }
+
         
         String performace = 
+            (!arenaPlacement.equals("") ? "**Arena**\n`" + arenaPlacement + "`\n" : "") +
             "**KDA**\n`" + kda + " (" + String.format("%.2f", overallStats.get("kill_participation").avg()) + "% kp)`\n" +
             "**Vision Score**\n`" + visionScore + "`\n" +
             "**CS**\n`" + cs + "`\n" +
             "**Damage**\n`" + damaString + "`\n" +
             "**Gold Earned**\n`" + String.format("%.2f", overallStats.get("gold_earned").avg()) + "`\n";
 
-            
+        String championString = "";
+        if (!showChampion) 
+            championString = " with " + unique.get("champion").size() + " different champions";
+        else {
+            int champId = (int) unique.get("champion").toArray()[0];
+            championString = " with " + CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(champId).getName()) + " " + LeagueHandler.getChampionById(champId).getName();
+        }
+
+        eb.setDescription(
+            "Summoner has played **" + matches.size() + "** games " + championString +
+            "\nA total of **" +  SafJNest.getFormattedDurationWithUnits(timePlayed) + "**\n" +
+            "Oldest game: <t:" + (oldest / 1000) + ":R>\n" +
+            "Newest game: <t:" + (newest / 1000) + ":R>"
+        );
         
         eb.addField("Games", gameString, true);
-        eb.addField("Roles", laneString , true);
+
+        if (queueType != GameQueueType.CHERRY)
+            eb.addField("Roles", laneString , true);
+
+        if (!showChampion) {
+            QueryResult advanceData = LeagueDB.getAdvancedLOLData(summonerId, timeStart, timeEnd, queueType);
+            HashMap<Integer, ChampionMastery> masteries = LeagueHandler.getMastery(summoner);
+            String champStats = "";
+            for (int i = 0; i < 6 && i < advanceData.size(); i++) {
+                QueryRecord row = advanceData.get(i);
+                ChampionMastery mastery = masteries.get(row.getAsInt("champion"));
+                champStats += formatAdvancedData(row, mastery);
+            }
+            eb.addField("Champions", champStats, false);
+        }
 
         eb.addField("Avarage Performace", performace, false);
 

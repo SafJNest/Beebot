@@ -98,7 +98,7 @@ public class SummonerChampion extends SlashCommand {
                 break;
         }
 
-        LeagueMessage.sendChampionMessage(event.getHook(), event.getUser().getId(), LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType);
+        LeagueMessage.sendChampionMessage(event.getHook(), event.getUser().getId(), LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType, true);
 	}
 
 }

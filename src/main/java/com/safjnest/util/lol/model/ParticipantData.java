@@ -16,7 +16,7 @@ public class ParticipantData {
     public String kda;
     public int champion;
     public LaneType lane;
-    public TeamType side;
+    public TeamType team;
     public TierDivisionType rank;
     public int gain;
     public int damage;

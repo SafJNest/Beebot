@@ -660,7 +660,7 @@ public class LeagueDB extends AbstractDB {
                         "FROM participant st " +
                         "JOIN `match` sm ON st.match_id = sm.id " +
                         "WHERE st.match_id IN " + inClause + " " +
-                        "ORDER BY sm.game_id DESC, st.side, st.champion;";
+                        "ORDER BY sm.game_id DESC, st.team, st.champion;";
 
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q2)) {
                 while (rs.next()) {
@@ -672,7 +672,7 @@ public class LeagueDB extends AbstractDB {
                     p.kda = rs.getString("kda");
                     p.champion = rs.getInt("champion");
                     p.lane = LaneType.values()[rs.getInt("lane")];
-                    p.side = TeamType.values()[rs.getInt("side")];
+                    p.team = TeamType.values()[rs.getInt("team")];
                     p.rank = TierDivisionType.values()[rs.getInt("rank")];
                     p.gain = rs.getInt("gain");
                     p.damage = rs.getInt("damage");
