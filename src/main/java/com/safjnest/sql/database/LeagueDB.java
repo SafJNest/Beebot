@@ -531,9 +531,9 @@ public class LeagueDB extends AbstractDB {
         }
     }
 
-    public static int getSummonerIdByPuuid(String puuid) {
+    public static int getSummonerIdByPuuid(String puuid, LeagueShard shard) {
         try {
-            return instance.lineQuery("select id from summoner where puuid = '"+puuid+"'").getAsInt("id");  
+            return instance.lineQuery("select id from summoner where puuid = '"+puuid+"' and league_shard = " + shard.ordinal() + "").getAsInt("id");  
         } catch (Exception e) {
            return 0;
         }
