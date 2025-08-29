@@ -1656,14 +1656,17 @@ public class LeagueMessage {
             eb.addField("Roles", laneString , true);
 
         if (!showChampion) {
-            QueryResult advanceData = LeagueDB.getAdvancedLOLData(summonerId, timeStart, timeEnd, queueType);
-            HashMap<Integer, ChampionMastery> masteries = LeagueHandler.getMastery(summoner);
-            String champStats = "";
-            for (int i = 0; i < 6 && i < advanceData.size(); i++) {
-                QueryRecord row = advanceData.get(i);
-                ChampionMastery mastery = masteries.get(row.getAsInt("champion"));
-                champStats += LeagueMessageUtils.formatAdvancedData(row, mastery);
-            }
+            System.out.println(championStats.size());
+            String champStats = championStats.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue().getGames(), a.getValue().getGames()))
+                .limit(10)
+                .map(entry -> {
+                    ParticipantChampionStat stat = entry.getValue();
+                    ChampionMastery mastery = masteries.get(stat.getChampion());
+                    return LeagueMessageUtils.formatAdvancedData(stat, mastery);
+                })
+                .collect(Collectors.joining("\n"));
+
             eb.addField("Champions", champStats, false);
         }
 

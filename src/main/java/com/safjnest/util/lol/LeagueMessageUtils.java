@@ -24,6 +24,14 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class LeagueMessageUtils {
 
+
+    public static String formatAdvancedData(ParticipantChampionStat championStats, ChampionMastery mastery) {
+      StaticChampion champion = LeagueHandler.getChampionById(championStats.getChampion());
+      int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
+      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + mastery.getChampionLevel()+ "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLossess()) + " games (" + championStats.getWins() + "W/" + championStats.getLossess() + "L) | " + championStats.getLp() + "LP\n"
+          + "`Avg. KDA " + String.format("%.2f", championStats.avgKills()) + "/" + String.format("%.2f", championStats.avgDeaths()) + "/" + String.format("%.2f", championStats.avgAssist()) + "`";
+    }
+
     public static String formatAdvancedData(QueryRecord data, ChampionMastery mastery) {
       StaticChampion champion = LeagueHandler.getChampionById(data.getAsInt("champion"));
       int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
