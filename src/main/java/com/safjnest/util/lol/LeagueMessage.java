@@ -1847,7 +1847,7 @@ private static String capitalizeFirstLetter(String text) {
             System.out.println(championStats.size());
             String champStats = championStats.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue().getGames(), a.getValue().getGames()))
-                .limit(10)
+                .limit(6)
                 .map(entry -> {
                     ParticipantChampionStat stat = entry.getValue();
                     ChampionMastery mastery = masteries.get(stat.getChampion());
