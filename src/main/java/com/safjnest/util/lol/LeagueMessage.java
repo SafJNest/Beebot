@@ -12,6 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.awt.Color;
 import java.sql.SQLException;
 
@@ -1237,6 +1241,10 @@ public class LeagueMessage {
                 break;
             case CHAMPION_PING:
                 eb = getPings(eb, matches, summonerId);
+                break;
+            case CHAMPION_OBJECTIVES:
+                eb = getObjectives(eb, matches, summoner, summonerId);
+                break;
             default:
                 break;
         }
@@ -1244,6 +1252,186 @@ public class LeagueMessage {
         hook.editOriginalEmbeds(eb.build()).setComponents(getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType, showChampion)).queue();
     }
 
+    private static EmbedBuilder getObjectives(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId) {        
+        HashMap<String, Integer> monsterKills = new HashMap<>();
+        HashMap<String, Integer> monsterParticipation = new HashMap<>();
+        HashMap<String, Integer> totalMonstersPerType = new HashMap<>();
+        
+        HashMap<String, Integer> buildingKills = new HashMap<>();
+        HashMap<String, Integer> buildingParticipation = new HashMap<>();
+        HashMap<String, Integer> totalBuildingsPerType = new HashMap<>();
+        
+        int totalGames = 0;
+        
+        for (MatchData match : matches) {
+            ParticipantData participant = match.participants.stream()
+                    .filter(p -> p.summonerId == summonerId)
+                    .findFirst()
+                    .orElse(null);
+            
+            if (participant == null) continue;
+            
+            String puuid = participant.puuid;
+            
+            if (!match.events.has("participants") || (!match.events.has("monster_events") && !match.events.has("building_events"))) {
+                continue;
+            }
+            
+            JSONObject participantsMap = match.events.getJSONObject("participants");
+            Integer participantId = null;
+            
+            for (String key : participantsMap.keySet()) {
+                if (participantsMap.getString(key).equals(puuid)) {
+                    participantId = Integer.parseInt(key);
+                    break;
+                }
+            }
+            
+            if (participantId == null) continue;
+            totalGames++;
+            
+            if (match.events.has("monster_events")) {
+                JSONArray monsters = match.events.getJSONArray("monster_events");
+                for (Object objEvent : monsters) {
+                    JSONObject event = (JSONObject) objEvent;
+                    String monster = event.getString("monster");
+                    String subtype = event.optString("subtype", "");
+                    
+                    String monsterKey;
+                    if (!subtype.isEmpty()) {
+                        monsterKey = subtype.toLowerCase().replace("_", " ");
+                    } else {
+                        monsterKey = monster.toLowerCase().replace("_", " ");
+                    }
+                    
+                    totalMonstersPerType.put(monsterKey, totalMonstersPerType.getOrDefault(monsterKey, 0) + 1);
+                    
+                    int killer = event.getInt("killer");
+                    JSONArray assists = event.getJSONArray("assists");
+                    
+                    boolean playerKilled = (killer == participantId);
+                    boolean playerAssisted = false;
+                    
+                    for (Object assistObj : assists) {
+                        if (assistObj instanceof Integer && (Integer) assistObj == participantId) {
+                            playerAssisted = true;
+                            break;
+                        }
+                    }
+                    
+                    if (playerKilled) {
+                        monsterKills.put(monsterKey, monsterKills.getOrDefault(monsterKey, 0) + 1);
+                    }
+                    
+                    if (playerKilled || playerAssisted) {
+                        monsterParticipation.put(monsterKey, monsterParticipation.getOrDefault(monsterKey, 0) + 1);
+                    }
+                }
+            
+                if (match.events.has("building_events")) {
+                    JSONArray buildings = match.events.getJSONArray("building_events");
+                    for (Object objEvent : buildings) {
+                        JSONObject event = (JSONObject) objEvent;
+                        String building = event.getString("building");
+                        
+                        String buildingKey = building.toLowerCase().replace("_", " ");
+                        
+                        totalBuildingsPerType.put(buildingKey, totalBuildingsPerType.getOrDefault(buildingKey, 0) + 1);
+                        
+                        int killer = event.getInt("killer");
+                        JSONArray assists = event.getJSONArray("assists");
+                        
+                        boolean playerKilled = (killer == participantId);
+                        boolean playerAssisted = false;
+                        
+                        for (Object assistObj : assists) {
+                            if (assistObj instanceof Integer && (Integer) assistObj == participantId) {
+                                playerAssisted = true;
+                                break;
+                            }
+                        }
+                        
+                        if (playerKilled) {
+                            buildingKills.put(buildingKey, buildingKills.getOrDefault(buildingKey, 0) + 1);
+                        }
+                        
+                        if (playerKilled || playerAssisted) {
+                            buildingParticipation.put(buildingKey, buildingParticipation.getOrDefault(buildingKey, 0) + 1);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!totalMonstersPerType.isEmpty()) {
+            StringBuilder monsterStats = new StringBuilder();
+            for (String monsterType : totalMonstersPerType.keySet()) {
+                int total = totalMonstersPerType.get(monsterType);
+                int kills = monsterKills.getOrDefault(monsterType, 0);
+                int participation = monsterParticipation.getOrDefault(monsterType, 0);
+                double avgPerGame = totalGames > 0 ? (double) total / totalGames : 0;
+                
+                if (participation > 0) {
+                    String displayName = capitalizeFirstLetter(monsterType);
+                    monsterStats.append(String.format("**%s**: %dK %dP (%.1f avg)\n", 
+                        displayName, kills, participation, avgPerGame));
+                }
+            }
+            
+            if (monsterStats.length() > 0) {
+                String statsText = monsterStats.toString();
+                if (statsText.length() > 1000) {
+                    statsText = statsText.substring(0, 997) + "...";
+                }
+                eb.addField("🐉 Monsters", statsText, false);
+            }
+        }
+        
+        if (!totalBuildingsPerType.isEmpty()) {
+            StringBuilder buildingStats = new StringBuilder();
+            for (String buildingType : totalBuildingsPerType.keySet()) {
+                int total = totalBuildingsPerType.get(buildingType);
+                int kills = buildingKills.getOrDefault(buildingType, 0);
+                int participation = buildingParticipation.getOrDefault(buildingType, 0);
+                double avgPerGame = totalGames > 0 ? (double) total / totalGames : 0;
+                
+                // Solo se ha partecipato almeno una volta
+                if (participation > 0) {
+                    String displayName = capitalizeFirstLetter(buildingType);
+                    buildingStats.append(String.format("**%s**: %dK %dP (%.1f avg)\n", 
+                        displayName, kills, participation, avgPerGame));
+                }
+            }
+            
+            if (buildingStats.length() > 0) {
+                // Limita la lunghezza se troppo lunga
+                String statsText = buildingStats.toString();
+                if (statsText.length() > 1000) {
+                    statsText = statsText.substring(0, 997) + "...";
+                }
+                eb.addField("🏰 Buildings", statsText, false);
+            }
+        }
+        
+        return eb;
+    }
+
+private static String capitalizeFirstLetter(String text) {
+    if (text == null || text.isEmpty()) return text;
+    
+    String[] words = text.split(" ");
+    StringBuilder result = new StringBuilder();
+    
+    for (String word : words) {
+        if (!word.isEmpty()) {
+            result.append(Character.toUpperCase(word.charAt(0)))
+                  .append(word.substring(1).toLowerCase())
+                  .append(" ");
+        }
+    }
+    
+    return result.toString().trim();
+}
     private static List<MessageTopLevelComponent> getChampionButtons(LeagueMessageType messageType, StaticChampion champion, String userId, Summoner summoner, int summonerId, GameQueueType queue, long timeStart, long timeEnd, LaneType lane, boolean showChampion) {
         Button left = Button.primary("champion-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary("champion-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
@@ -1262,6 +1450,7 @@ public class LeagueMessage {
         Button generic = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_GENERIC, "Generic");
         Button matchups = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_MATCHUP, "Matchups");
         Button pings = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_PING, "Pings");
+        Button objectives = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OBJECTIVES, "Drake");
 
 
         switch (messageType) {
@@ -1274,6 +1463,8 @@ public class LeagueMessage {
             case CHAMPION_PING:
                 pings = pings.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
+            case CHAMPION_OBJECTIVES:
+                objectives = objectives.withStyle(ButtonStyle.SUCCESS).asDisabled();
             default:
                 break;
         }
@@ -1295,7 +1486,7 @@ public class LeagueMessage {
 
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
         rows.add(getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, queue));
-        rows.add(ActionRow.of(generic, matchups, pings));
+        rows.add(ActionRow.of(generic, objectives, matchups, pings));
 
         if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
             rows.add(ActionRow.of(left, center, championButton, settings, right));
@@ -1404,14 +1595,6 @@ public class LeagueMessage {
 
     private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId, long timeStart, long timeEnd, LaneType laneType, GameQueueType queueType, boolean showChampion) {
 
-        class StatAccumulator {
-            int sum = 0;
-            int count = 0;
-            void add(int value) { sum += value; count++; }
-            double avg() { return count == 0 ? 0 : (double) sum / count; }
-            public String toString() { return "sum: " + sum + ", count: " + count + ", avg: " + avg(); }
-        }
-
         if (matches.size() == 0) {
             eb.setDescription("Not enough games");
             return eb;
@@ -1420,12 +1603,15 @@ public class LeagueMessage {
 
         LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
         LinkedHashMap<GameQueueType, String> queueStats = new LinkedHashMap<>();
-        HashMap<String, StatAccumulator> overallStats = new HashMap<>();
+        HashMap<String, Accumulator> overallStats = new HashMap<>();
 
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
 
         HashMap<String, Set<Integer>> unique = new HashMap<>();
+
+        HashMap<Integer, ParticipantChampionStat> championStats = new HashMap<>();
+        HashMap<Integer, ChampionMastery> masteries = LeagueHandler.getMastery(summoner);
 
         long timePlayed = 0;
         long oldest = Long.MAX_VALUE;
@@ -1474,25 +1660,27 @@ public class LeagueMessage {
 
                 double csPerMin = participant.cs / (match.getDuration() / 1000 / 60);
     
-                overallStats.computeIfAbsent("damage", k -> new StatAccumulator()).add(participant.damage);
-                overallStats.computeIfAbsent("damage_building", k -> new StatAccumulator()).add(participant.damageBuilding);
-                overallStats.computeIfAbsent("cs", k -> new StatAccumulator()).add(participant.cs);
-                overallStats.computeIfAbsent("vision_score", k -> new StatAccumulator()).add(participant.visionScore);
-                overallStats.computeIfAbsent("ward", k -> new StatAccumulator()).add(participant.ward);
-                overallStats.computeIfAbsent("ward_killed", k -> new StatAccumulator()).add(participant.wardKilled);
-                overallStats.computeIfAbsent("gold_earned", k -> new StatAccumulator()).add(participant.goldEarned);
-                overallStats.computeIfAbsent("kills", k -> new StatAccumulator()).add(kills);
-                overallStats.computeIfAbsent("deaths", k -> new StatAccumulator()).add(deaths);
-                overallStats.computeIfAbsent("assists", k -> new StatAccumulator()).add(assists);
-                overallStats.computeIfAbsent("cs_min", k -> new StatAccumulator()).add((int) csPerMin);
+                overallStats.computeIfAbsent("damage", k -> new Accumulator()).add(participant.damage);
+                overallStats.computeIfAbsent("damage_building", k -> new Accumulator()).add(participant.damageBuilding);
+                overallStats.computeIfAbsent("cs", k -> new Accumulator()).add(participant.cs);
+                overallStats.computeIfAbsent("vision_score", k -> new Accumulator()).add(participant.visionScore);
+                overallStats.computeIfAbsent("ward", k -> new Accumulator()).add(participant.ward);
+                overallStats.computeIfAbsent("ward_killed", k -> new Accumulator()).add(participant.wardKilled);
+                overallStats.computeIfAbsent("gold_earned", k -> new Accumulator()).add(participant.goldEarned);
+                overallStats.computeIfAbsent("kills", k -> new Accumulator()).add(kills);
+                overallStats.computeIfAbsent("deaths", k -> new Accumulator()).add(deaths);
+                overallStats.computeIfAbsent("assists", k -> new Accumulator()).add(assists);
+                overallStats.computeIfAbsent("cs_min", k -> new Accumulator()).add((int) csPerMin);
+
+                championStats.computeIfAbsent(participant.champion, p -> new ParticipantChampionStat(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
 
                 if (queueType == GameQueueType.CHERRY) {
                     int placement = participant.subTeamPlacement;
                     System.out.println(placement);
-                    if (placement == 1) overallStats.computeIfAbsent("arena_first", k -> new StatAccumulator()).add(1);
-                    else if (placement == 2) overallStats.computeIfAbsent("arena_second", k -> new StatAccumulator()).add(1);
-                    else if (placement == 3) overallStats.computeIfAbsent("arena_third", k -> new StatAccumulator()).add(1);
-                    overallStats.computeIfAbsent("arena_placement", k -> new StatAccumulator()).add(placement);
+                    if (placement == 1) overallStats.computeIfAbsent("arena_first", k -> new Accumulator()).add(1);
+                    else if (placement == 2) overallStats.computeIfAbsent("arena_second", k -> new Accumulator()).add(1);
+                    else if (placement == 3) overallStats.computeIfAbsent("arena_third", k -> new Accumulator()).add(1);
+                    overallStats.computeIfAbsent("arena_placement", k -> new Accumulator()).add(placement);
                 }
 
                 int teamKills = match.participants.stream()
@@ -1501,7 +1689,7 @@ public class LeagueMessage {
                     .sum();
                 
                 double killParticipation = teamKills == 0 ? 0 : (double) (kills + assists) / teamKills;
-                overallStats.computeIfAbsent("kill_participation", k -> new StatAccumulator()).add((int)(killParticipation * 100));
+                overallStats.computeIfAbsent("kill_participation", k -> new Accumulator()).add((int)(killParticipation * 100));
 
                 boolean isDuo = lane == LaneType.BOT || lane == LaneType.UTILITY;
 
@@ -1620,9 +1808,9 @@ public class LeagueMessage {
     
         String arenaPlacement = "";
         if (queueType == GameQueueType.CHERRY) {
-            arenaPlacement = "1. " + overallStats.getOrDefault("arena_first", new StatAccumulator()).count + " times\n" +
-                "2. " + overallStats.getOrDefault("arena_second", new StatAccumulator()).count + " times\n" +
-                "3. " + overallStats.getOrDefault("arena_third", new StatAccumulator()).count + " times\n" +
+            arenaPlacement = "1. " + overallStats.getOrDefault("arena_first", new Accumulator()).count + " times\n" +
+                "2. " + overallStats.getOrDefault("arena_second", new Accumulator()).count + " times\n" +
+                "3. " + overallStats.getOrDefault("arena_third", new Accumulator()).count + " times\n" +
                 "avg. " + String.format("%.2f", overallStats.get("arena_placement").avg()) + " placement";
         }
 

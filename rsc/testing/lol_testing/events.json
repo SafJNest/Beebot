@@ -1,0 +1,96 @@
+{
+  "monster_events": [
+    {
+      "subtype": "FIRE_DRAGON",
+      "assists": [2, 3, 8, 10],
+      "killer": 9,
+      "monster": "DRAGON"
+    },
+    { "subtype": "", "assists": [7, 8], "killer": 6, "monster": "HORDE" },
+    { "subtype": "", "assists": [7, 8], "killer": 6, "monster": "HORDE" },
+    { "subtype": "", "assists": [6, 8], "killer": 7, "monster": "HORDE" },
+    {
+      "subtype": "HEXTECH_DRAGON",
+      "assists": [8],
+      "killer": 7,
+      "monster": "DRAGON"
+    },
+    { "subtype": "", "assists": [], "killer": 2, "monster": "RIFTHERALD" },
+    {
+      "subtype": "WATER_DRAGON",
+      "assists": [5, 9],
+      "killer": 7,
+      "monster": "DRAGON"
+    },
+    {
+      "subtype": "",
+      "assists": [1, 2, 3, 5, 7],
+      "killer": 10,
+      "monster": "ATAKHAN"
+    },
+    {
+      "subtype": "WATER_DRAGON",
+      "assists": [2, 5],
+      "killer": 4,
+      "monster": "DRAGON"
+    },
+    {
+      "subtype": "",
+      "assists": [2, 4, 5],
+      "killer": 1,
+      "monster": "BARON_NASHOR"
+    },
+    {
+      "subtype": "WATER_DRAGON",
+      "assists": [2, 5, 7, 9, 10],
+      "killer": 1,
+      "monster": "DRAGON"
+    },
+    {
+      "subtype": "",
+      "assists": [1, 4, 5],
+      "killer": 2,
+      "monster": "BARON_NASHOR"
+    },
+    {
+      "subtype": "WATER_DRAGON",
+      "assists": [3, 8],
+      "killer": 7,
+      "monster": "DRAGON"
+    }
+  ],
+  "building_events": [
+    { "assists": [], "killer": 8, "building": "TOWER_BUILDING" },
+    { "assists": [10], "killer": 9, "building": "TOWER_BUILDING" },
+    { "assists": [3], "killer": 1, "building": "TOWER_BUILDING" },
+    { "assists": [], "killer": 6, "building": "TOWER_BUILDING" },
+    { "assists": [], "killer": 6, "building": "TOWER_BUILDING" },
+    { "assists": [], "killer": 8, "building": "TOWER_BUILDING" },
+    { "assists": [8], "killer": 9, "building": "TOWER_BUILDING" },
+    { "assists": [], "killer": 6, "building": "TOWER_BUILDING" },
+    { "assists": [], "killer": 9, "building": "INHIBITOR_BUILDING" },
+    { "assists": [], "killer": 1, "building": "TOWER_BUILDING" },
+    { "assists": [], "killer": 3, "building": "TOWER_BUILDING" },
+    { "assists": [1, 4, 5], "killer": 2, "building": "TOWER_BUILDING" },
+    { "assists": [1, 4, 5], "killer": 2, "building": "TOWER_BUILDING" },
+    { "assists": [4, 5], "killer": 2, "building": "INHIBITOR_BUILDING" },
+    { "assists": [4], "killer": 2, "building": "TOWER_BUILDING" },
+    { "assists": [], "killer": 0, "building": "TOWER_BUILDING" },
+    { "assists": [2, 4], "killer": 5, "building": "TOWER_BUILDING" },
+    { "assists": [2, 5], "killer": 3, "building": "INHIBITOR_BUILDING" },
+    { "assists": [1, 3, 5], "killer": 2, "building": "TOWER_BUILDING" },
+    { "assists": [1, 2, 5], "killer": 3, "building": "TOWER_BUILDING" }
+  ],
+  "participants": {
+    "1": "hUMqoyfVhD96J9MR7mZZ0BntPoibuCmBVTC88wuMmanMVDTSVTtPdXVzvqInY6g7wcBDFCylDj97cw",
+    "2": "gk1Fy2k5oPDryMhWh14BUqnWdq3xdOrE-8cOLuRsEYmtGld7yqSqNguECMcgvLkCXh3zUFXaePos7A",
+    "3": "t5Cf8zUS3uCylghJBIX5Tkp5c5HxbxoNcmjpECdWpY7ymUr3T7KgBid-WHHYVAXb2ukwXw-41XspZA",
+    "4": "MzQUOqpPHVxLOC0NHcfXMoHvZTfjSh9GAzkfU1c93S7uPNFx4ZsWtreSTOhQF3POZ6c6rKZZBZiheQ",
+    "5": "biCKZDQyItSeVHEhO5eNMA2PCUgW2KT4VtWyXPikTc1bEVUmzMae9JXLJQIKhF5qXKvNhviVdsdMPA",
+    "6": "_QhCC6n4YU3CCJiyPxUg82kFdm14jZlOsWzyybHd4mFoh5kClzjcUo0Yw6ktjGDact9WW2NUv0qYeg",
+    "7": "LGMJzPN9gOmokRpn5GPVhwnvhVEv27l1QcxNS6TmNnpRVuWMfuNnNgk4b1PaagOCtXP56zN-ngShAg",
+    "8": "bgh_KEX9qZo2BOZC_3IxvcNiiWBbqpRBkAlK_5s5NredRHES9hpcyhGR3BvajserMbvhjX0xYULgOw",
+    "9": "b2qcIRhlpI81E_HRb4X0eOOOGW2OfKFyyzC8tUL07RIQ1SAuXuglAbxjOAgX5gRU9KtMlSm5XoM0Mg",
+    "10": "qRXO7OPjCI45hCqMzOW_kim0ZeBfrypp9cL5BlrohEj_zLh8h9RFNLC2OV8fCrP5eer8B61gYEiZWA"
+  }
+}

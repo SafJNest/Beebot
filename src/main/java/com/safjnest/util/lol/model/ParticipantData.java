@@ -31,4 +31,5 @@ public class ParticipantData {
     public JSONObject build;
     public int subTeam;
     public int subTeamPlacement;
+    public String puuid;
 }

@@ -652,11 +652,12 @@ public class LeagueDB extends AbstractDB {
             }
 
             String inClause = matchIds.toString().replace("[","(").replace("]",")");
-            String q2 = "SELECT st.*, sm.id AS match_id " +
+            String q2 = "SELECT st.*, sm.id AS match_id, su.puuid as puuid " +
                         "FROM participant st " +
                         "JOIN `match` sm ON st.match_id = sm.id " +
+                        "LEFT JOIN summoner su on su.id = st.summoner_id " +
                         "WHERE st.match_id IN " + inClause + ";";
-
+            System.out.println(q2);
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q2)) {
                 while (rs.next()) {
                     ParticipantData p = new ParticipantData();
@@ -680,6 +681,7 @@ public class LeagueDB extends AbstractDB {
                     p.visionScore = rs.getInt("vision_score");
                     p.subTeam = rs.getInt("subteam");
                     p.subTeamPlacement = rs.getInt("subteam_placement");
+                    p.puuid = rs.getString("puuid");
 
                     try {
                         JSONObject pingsJson = new JSONObject(rs.getString("pings"));
