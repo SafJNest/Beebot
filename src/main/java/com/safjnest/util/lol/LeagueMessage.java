@@ -1463,8 +1463,8 @@ private static String capitalizeFirstLetter(String text) {
             case CHAMPION_PING:
                 pings = pings.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_OBJECTIVES:
-                objectives = objectives.withStyle(ButtonStyle.SUCCESS).asDisabled();
+            // case CHAMPION_OBJECTIVES:
+            //     objectives = objectives.withStyle(ButtonStyle.SUCCESS).asDisabled();
             default:
                 break;
         }
