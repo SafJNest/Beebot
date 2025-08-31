@@ -798,11 +798,20 @@ public class EventButtonHandler extends ListenerAdapter {
 
         int index = 0;
 
+        String[] parts;
+        String queueString = "";
+
+        GameQueueType queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
+
         for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("lol-center-")) {
                 puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
                 region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
-                break;
+            }
+            else if (b.getCustomId().startsWith("lol-queue") && b.getStyle() == ButtonStyle.SUCCESS) {
+                parts = b.getCustomId().split("-", 3);
+                queueString = parts[2];
+                queue = queueString.equals("all") ? null : GameQueueType.valueOf(queueString);
             }
         }
 
@@ -824,11 +833,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         String platform = "";
 
-        String[] parts;
-        String queueString = "";
-
         long[] time = LeagueHandler.getCurrentSplitRange();
-        GameQueueType queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
 
         switch (args) {
 
@@ -947,6 +952,12 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
+            case "champion":
+                if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+                int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
+                LeagueMessage.sendChampionMessage(event.getHook(), user_id, LeagueMessageType.CHAMPION_GENERIC, s, summonerId, null, time[0], time[1], queue, null, false); 
+            return;
         }
 
         EmbedBuilder eb = LeagueMessage.getSummonerEmbed(s, time[0], time[1], queue);

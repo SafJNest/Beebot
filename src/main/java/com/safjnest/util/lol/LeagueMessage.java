@@ -76,6 +76,7 @@ public class LeagueMessage {
         Button profile = Button.primary(id + "-lol", " ").withEmoji(CustomEmojiHandler.getRichEmoji("user"));
         Button opgg = Button.primary(id + "-match", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list2"));
         Button livegame = Button.primary(id + "-rank", " ").withEmoji(CustomEmojiHandler.getRichEmoji("game"));
+        Button champ = Button.primary(id + "-champion", " ").withEmoji(CustomEmojiHandler.getRichEmoji("graph"));
 
         switch (id) {
             case "lol":
@@ -87,6 +88,9 @@ public class LeagueMessage {
             case "rank":
                 livegame = livegame.asDisabled().withStyle(ButtonStyle.SUCCESS);
                 break;
+            case "champion":
+                champ = champ.asDisabled().withStyle(ButtonStyle.SUCCESS);
+                break;
         }
 
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
@@ -94,11 +98,11 @@ public class LeagueMessage {
         center = center.asDisabled();
 
         if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) {
-            return List.of(ActionRow.of(left, center, right), ActionRow.of(profile, opgg, livegame, refresh));
+            return List.of(ActionRow.of(left, center, right), ActionRow.of(profile, opgg, livegame, champ, refresh));
 
         }
 
-        return List.of(ActionRow.of(center, profile, opgg, livegame, refresh));
+        return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(center, refresh));
     }
 
 //     ▄████████ ███    █▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄    ▄██████▄  ███▄▄▄▄      ▄████████    ▄████████
@@ -1059,8 +1063,6 @@ public class LeagueMessage {
                 continue;
             }
         }
-
-        System.out.println(containers);
         return containers;
     }
 
@@ -1442,9 +1444,12 @@ private static String capitalizeFirstLetter(String text) {
 
         Button settings = Button.primary("champion-change", " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
 
-        Button championButton = Button.secondary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
-        if (showChampion)
-            championButton = championButton.withStyle(ButtonStyle.SUCCESS);
+
+        Button championButton = Button.secondary("champion-champion-0", " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")).asDisabled();
+        if (champion != null) {
+            championButton = Button.secondary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
+            championButton = showChampion ? championButton.withStyle(ButtonStyle.SUCCESS) : championButton;
+        }
 
 
         Button generic = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_GENERIC, "Generic");
@@ -1676,7 +1681,6 @@ private static String capitalizeFirstLetter(String text) {
 
                 if (queueType == GameQueueType.CHERRY) {
                     int placement = participant.subTeamPlacement;
-                    System.out.println(placement);
                     if (placement == 1) overallStats.computeIfAbsent("arena_first", k -> new Accumulator()).add(1);
                     else if (placement == 2) overallStats.computeIfAbsent("arena_second", k -> new Accumulator()).add(1);
                     else if (placement == 3) overallStats.computeIfAbsent("arena_third", k -> new Accumulator()).add(1);
@@ -1844,7 +1848,6 @@ private static String capitalizeFirstLetter(String text) {
             eb.addField("Roles", laneString , true);
 
         if (!showChampion) {
-            System.out.println(championStats.size());
             String champStats = championStats.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue().getGames(), a.getValue().getGames()))
                 .limit(6)
