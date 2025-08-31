@@ -716,7 +716,7 @@ import com.safjnest.core.cache.managers.UserCache;
     public static String getActivity(Summoner s){
         try {
             for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
-                if(partecipant.getSummonerId().equals(s.getSummonerId())) {
+                if(partecipant.getPuuid().equals(s.getPUUID())) {
                     String gameName = LeagueHandler.formatMatchName(s.getCurrentGame().getGameQueueConfig());
                     return "Playing a " + gameName + " as " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName();
                 }
