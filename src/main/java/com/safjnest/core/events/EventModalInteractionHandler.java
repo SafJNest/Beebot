@@ -286,6 +286,6 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 break;
         }
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-        LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, newChampion, time[0], time[1], queue, lane, showChampion); 
+        LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, newChampion, time[0], time[1], queue, lane, showChampion, 0); 
     }
 }

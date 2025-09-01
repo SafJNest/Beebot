@@ -27,8 +27,9 @@ public class LeagueMessageUtils {
 
     public static String formatAdvancedData(ParticipantChampionStat championStats, ChampionMastery mastery) {
       StaticChampion champion = LeagueHandler.getChampionById(championStats.getChampion());
+      if (champion == null) return championStats.getChampion() + "\n";
       int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
-      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + mastery.getChampionLevel()+ "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLossess()) + " games (" + championStats.getWins() + "W/" + championStats.getLossess() + "L) | " + championStats.getLp() + "LP\n"
+      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLossess()) + " games (" + championStats.getWins() + "W/" + championStats.getLossess() + "L) | " + championStats.getLp() + "LP\n"
           + "`Avg. KDA " + String.format("%.2f", championStats.avgKills()) + "/" + String.format("%.2f", championStats.avgDeaths()) + "/" + String.format("%.2f", championStats.avgAssist()) + "`";
     }
 

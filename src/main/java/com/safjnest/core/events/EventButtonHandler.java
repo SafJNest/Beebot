@@ -23,6 +23,7 @@ import com.safjnest.commands.audio.sound.SoundCustomize;
 import com.safjnest.commands.misc.Help;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.Bot;
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
 import com.safjnest.core.audio.SoundEmbed;
@@ -956,7 +957,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
                 int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-                LeagueMessage.sendChampionMessage(event.getHook(), user_id, LeagueMessageType.CHAMPION_GENERIC, s, summonerId, null, time[0], time[1], queue, null, false); 
+                LeagueMessage.sendChampionMessage(event.getHook(), user_id, LeagueMessageType.CHAMPION_GENERIC, s, summonerId, null, time[0], time[1], queue, null, false, 0); 
             return;
         }
 
@@ -1576,6 +1577,8 @@ public class EventButtonHandler extends ListenerAdapter {
         long[] time = LeagueHandler.getCurrentSplitRange();
         String timeString = "current";
 
+        int offset = 0;
+
         for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("champion-center-")) {
                 puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
@@ -1598,6 +1601,10 @@ public class EventButtonHandler extends ListenerAdapter {
             if (b.getCustomId().startsWith("champion-season-") && b.getStyle() == ButtonStyle.SUCCESS)
                 timeString = b.getCustomId().split("-")[2];
 
+            if (b.getCustomId().startsWith("champion-leftpage")) {
+                offset = Integer.parseInt(b.getCustomId().split("-")[2]);
+            }
+
         }
 
         String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
@@ -1615,6 +1622,7 @@ public class EventButtonHandler extends ListenerAdapter {
             i++;
         }
 
+        offset = offset < 0 ? 0 : offset;
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         switch (args) {
 
@@ -1651,6 +1659,12 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "type":
                 type = LeagueMessageType.valueOf(event.getButton().getCustomId().split("-")[2]);
+                switch (type) {
+                    case CHAMPION_CHAMPIONS:
+                        showChampion = false;
+                    default:
+                        break;
+                }
                 break;
             case "season":
                 timeString = event.getButton().getCustomId().split("-", 3)[2];
@@ -1670,6 +1684,14 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 event.replyModal(modal).queue();
                 return;
+            case "leftpage":
+                offset = offset - 20;
+                break;
+            case "rightpage":
+                System.err.println("efwefewf");
+                offset = offset + 20;//dwedw
+                System.out.println(offset);
+                break;
         }
 
         event.deferEdit().queue();
@@ -1686,7 +1708,11 @@ public class EventButtonHandler extends ListenerAdapter {
                 time = LeagueHandler.getPreviousSplitRange();
                 break;
         }
+        System.out.println("wwfvsf" + offset);
+        offset = offset < 0 ? 0 : offset;
+        showChampion = champion == null ? false : showChampion;
+        System.out.println(offset);
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-        LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, champion, time[0], time[1], queue, lane, showChampion); 
+        LeagueMessage.sendChampionMessage(event.getHook(), user_id, type, s, summonerId, champion, time[0], time[1], queue, lane, showChampion, offset); 
     }
 }
