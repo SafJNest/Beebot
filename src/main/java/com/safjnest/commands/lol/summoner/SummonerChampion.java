@@ -37,7 +37,7 @@ public class SummonerChampion extends SlashCommand {
         this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", false).setAutoComplete(false),
+            new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", false).setAutoComplete(true),
             LeagueHandler.getLeagueShardOptions()
         );
         commandData.setThings(this);
