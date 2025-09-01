@@ -54,6 +54,8 @@ public class LeagueMessageParameter {
     this.period = LeagueHandler.getCurrentSplitRange();
     String timeString = "current";
 
+    int fallbackChampion = 0;
+
     for (Button b : buttons) {
       boolean isActive = b.getStyle() == ButtonStyle.SUCCESS;
       String buttonValue = b.getCustomId().split("-").length == 2 ? b.getCustomId().split("-")[1] : b.getCustomId().split("-")[2];
@@ -77,7 +79,16 @@ public class LeagueMessageParameter {
 
       if (b.getCustomId().startsWith(prefix + "-leftpage")) 
           this.offset = Integer.parseInt(buttonValue);
+
+      if (b.getCustomId().startsWith(prefix + "-change")) {
+        fallbackChampion = Integer.parseInt(buttonValue);
+        System.out.println(fallbackChampion);
+      }
     }
+
+    if (this.champion == null && fallbackChampion > 0) 
+      this.champion = LeagueHandler.getChampionById(fallbackChampion);
+    
     
     switch (timeString) {
         case "all":
@@ -149,7 +160,7 @@ public class LeagueMessageParameter {
   }
 
   public int getChampionId() {
-    return showChampion && champion != null ? champion.getId() : 0;
+    return champion != null ? champion.getId() : 0;
   }
 
   public boolean isDuo() {

@@ -21,12 +21,9 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * @since 1.3
  */
-public class SummonerChampion extends SlashCommand {
-    
-    /**
-     * Constructor
-     */
-    public SummonerChampion(String father){
+public class SummonerOverview extends SlashCommand {
+
+    public SummonerOverview(String father){
       this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
       BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
@@ -44,6 +41,7 @@ public class SummonerChampion extends SlashCommand {
       commandData.setThings(this);
     }
 
+
   @Override
 	protected void execute(SlashCommandEvent event) {
     event.deferReply().queue();
@@ -51,7 +49,7 @@ public class SummonerChampion extends SlashCommand {
     int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
     String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
-    LeagueMessage.sendChampionMessage(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_CHAMPIONS));
+    LeagueMessage.sendChampionMessage(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_OVERVIEW));
 	}
 
   @Override
@@ -60,7 +58,9 @@ public class SummonerChampion extends SlashCommand {
     int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
     String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
-    LeagueMessage.sendChampionMessage(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_CHAMPIONS));
+    LeagueMessage.sendChampionMessage(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_OVERVIEW));
 	}
+
+
 
 }

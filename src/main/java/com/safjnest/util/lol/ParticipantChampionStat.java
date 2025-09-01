@@ -55,10 +55,6 @@ public class ParticipantChampionStat {
     return g == 0 ? 0.0 : (double) assist / g;
   }
 
-  /**
-   * KDA calcolata come (kills + assist) / max(1, deaths)
-   * (evita divisione per zero; se vuoi la media per partita cambia la formula)
-   */
   public double avgKDA() {
     int g = getGames();
     if (g == 0) return 0.0;
@@ -67,7 +63,6 @@ public class ParticipantChampionStat {
     return (double) (kills + assist) / denom;
   }
 
-  /** Percentuale di vittorie (0..100) */
   public double winrate() {
     int g = getGames();
     return g == 0 ? 0.0 : (double) wins * 100.0 / g;

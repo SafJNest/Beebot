@@ -1112,8 +1112,13 @@
             },
             "champion": {
                 "alias" : [],
-                "help"  : "See advanced statistics for a champion.",
+                "help"  : "See a summoner's champion pool.",
                 "arguments" : "[CommandName] [champion]"
+            },
+            "overview": {
+                "alias" : ["sm"],
+                "help"  : "See an overview for a summoner",
+                "arguments" : "[CommandName]"
             }
         }
     },

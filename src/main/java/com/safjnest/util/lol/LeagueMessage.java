@@ -1246,7 +1246,7 @@ public class LeagueMessage {
         eb.setColor(Bot.getColor());
 
         switch (parameter.getMessageType()) {
-            case CHAMPION_GENERIC:
+            case CHAMPION_OVERVIEW:
                 eb = getGenericStats(eb, matches, summoner, summonerId, parameter);                
                 break;
             case CHAMPION_MATCHUP:
@@ -1457,7 +1457,7 @@ private static String capitalizeFirstLetter(String text) {
         Button center = Button.primary("champion-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
-        Button settings = Button.primary("champion-change", " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+        Button settings = Button.primary("champion-change-" + parameter.getChampionId(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
 
 
         Button championButton = Button.secondary("champion-champion-0", " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")).asDisabled();
@@ -1467,7 +1467,7 @@ private static String capitalizeFirstLetter(String text) {
         }
 
 
-        Button generic = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_GENERIC, "Generic");
+        Button generic = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OVERVIEW, "Overview");
         Button matchups = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_MATCHUP, "Matchups");
         Button pings = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_PING, "Pings");
         Button objectives = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OBJECTIVES, "Objectives");
@@ -1475,7 +1475,7 @@ private static String capitalizeFirstLetter(String text) {
 
 
         switch (parameter.getMessageType()) {
-            case CHAMPION_GENERIC:
+            case CHAMPION_OVERVIEW:
                 generic = generic.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
             case CHAMPION_MATCHUP:
@@ -1514,8 +1514,8 @@ private static String capitalizeFirstLetter(String text) {
 
 
         if (parameter.getMessageType() == LeagueMessageType.CHAMPION_CHAMPIONS) {
-            Button leftPage = Button.primary("champion-leftpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("previous"));
-            Button rightPage = Button.primary("champion-rightpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("next"));
+            Button leftPage = Button.secondary("champion-leftpage-" + parameter.getOffset(), "Previous Page");
+            Button rightPage = Button.secondary("champion-rightpage-" + parameter.getOffset(), "Next Page");
             if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
                 rows.add(ActionRow.of(left, leftPage, center, rightPage, right));
             else 
@@ -1925,7 +1925,7 @@ private static String capitalizeFirstLetter(String text) {
         String champStats = championStats.entrySet().stream()
             .sorted((a, b) -> Integer.compare(b.getValue().getGames(), a.getValue().getGames()))
             .skip(parameter.getOffset())
-            .limit(20)
+            .limit(10)
             .map(entry -> {
                 ParticipantChampionStat stat = entry.getValue();
                 ChampionMastery mastery = masteries.get(stat.getChampion());

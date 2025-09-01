@@ -956,7 +956,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
                 int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_GENERIC)); 
+                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_OVERVIEW)); 
             return;
         }
 
@@ -1664,10 +1664,10 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 return;
             case "leftpage":
-                parameter.setOffset(parameter.getOffset() - 20);
+                parameter.setOffset(parameter.getOffset() - 10);
                 break;
             case "rightpage":
-                parameter.setOffset(parameter.getOffset() + 20);
+                parameter.setOffset(parameter.getOffset() + 10);
                 break;
         }
 
