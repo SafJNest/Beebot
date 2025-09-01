@@ -1,6 +1,8 @@
 package com.safjnest.commands.lol.summoner;
 
 import java.util.Arrays;
+
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
@@ -13,9 +15,6 @@ import com.safjnest.util.lol.LeagueMessageType;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -38,24 +37,17 @@ public class SummonerChampion extends SlashCommand {
         this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
 
         this.options = Arrays.asList(
-            new OptionData(OptionType.STRING, "champion", "Champion Name", true).setAutoComplete(true),
-            LeagueHandler.getLeagueShardOptions(),
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", false).setAutoComplete(false),
-            new OptionData(OptionType.STRING, "role", "Champion Role", false)
-                .addChoice("Top", "TOP")
-                .addChoice("Jungle", "JUNGLE")
-                .addChoice("Mid", "MID")
-                .addChoice("ADC", "ADC")
-                .addChoice("Support", "SUPPORT")
+            LeagueHandler.getLeagueShardOptions()
         );
         commandData.setThings(this);
     }
 
 
-  /**
-  * This method is called every time a member executes the command.
-  */
-  @Override
+    /**
+     * This method is called every time a member executes the command.
+    */
+    @Override
 	protected void execute(SlashCommandEvent event) {
         event.deferReply().queue();
         //22 iodid
@@ -70,37 +62,36 @@ public class SummonerChampion extends SlashCommand {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
         int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
-        String championName = event.getOption("champion").getAsString();
-        StaticChampion champion = LeagueHandler.getChampionByName(championName);
+        long[] split = LeagueHandler.getCurrentSplitRange();
+        long timeStart = split[0];
+        long timeEnd = split[1];
+
+        String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
+        LeagueMessage.sendChampionMessage(event.getHook(), userId, LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, null, timeStart, timeEnd, null, null, false, 0);
+	}
+
+    @Override
+	protected void execute(CommandEvent event) {
+        //22 iodid
+        //50 sunyx
+        //150067 uglydemon
+        //5 primeegis
+
+        //80 pantheon
+        //412 thresh
+        //555 pyke
+
+        no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
+        int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
         long[] split = LeagueHandler.getCurrentSplitRange();
         long timeStart = split[0];
         long timeEnd = split[1];
 
-        GameQueueType queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
-
-        String laneString = event.getOption("role") != null ? event.getOption("role").getAsString() : null;
-        LaneType laneType = null;
-        switch(laneString){
-            case "TOP":
-                laneType = LaneType.TOP;
-                break;
-            case "JUNGLE":
-                laneType = LaneType.JUNGLE;
-                break;
-            case "MID":
-                laneType = LaneType.MID;
-                break;
-            case "ADC":
-                laneType = LaneType.BOT;
-                break;
-            case "SUPPORT":
-                laneType = LaneType.UTILITY;
-                break;
-        }
-
-        String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
-        LeagueMessage.sendChampionMessage(event.getHook(), userId, LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType, true, 0);
+        String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
+        LeagueMessage.sendChampionMessage(event, userId, LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, null, timeStart, timeEnd, null, null, false, 0);
 	}
+
+
 
 }

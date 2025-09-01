@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import java.awt.Color;
 import java.sql.SQLException;
 
+import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -43,6 +44,7 @@ import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.separator.Separator.Spacing;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -1216,8 +1218,19 @@ public class LeagueMessage {
 
 
     public static void sendChampionMessage(InteractionHook hook, String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType, boolean showChampion, int offset) {
+        MessageEmbed embed = buildEmbedChampion(userId, messageType, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType, showChampion, offset);
+        List<MessageTopLevelComponent> components = getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType, showChampion, offset);
+        hook.editOriginalEmbeds(embed).setComponents(components).queue();
+    }
+
+    public static void sendChampionMessage(CommandEvent event, String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType, boolean showChampion, int offset) {
+        MessageEmbed embed = buildEmbedChampion(userId, messageType, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType, showChampion, offset);
+        List<MessageTopLevelComponent> components = getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType, showChampion, offset);
+        event.getChannel().sendMessageEmbeds(embed).addComponents(components).queue();
+    }
+
+    private static MessageEmbed buildEmbedChampion(String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType, boolean showChampion, int offset) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
-        
         List<MatchData> matches = null;
         try {
             int champId = showChampion && champion != null ? champion.getId() : 0;
@@ -1225,7 +1238,7 @@ public class LeagueMessage {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
+        
         EmbedBuilder eb = new EmbedBuilder();
 
         if (showChampion) eb.setThumbnail(LeagueHandler.getChampionProfilePic(champion.getName()));
@@ -1253,8 +1266,7 @@ public class LeagueMessage {
             default:
                 break;
         }
-
-        hook.editOriginalEmbeds(eb.build()).setComponents(getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType, showChampion, offset)).queue();
+        return eb.build();
     }
 
     private static EmbedBuilder getObjectives(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId) {        
