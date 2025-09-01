@@ -1216,43 +1216,41 @@ public class LeagueMessage {
         return composeButtons(s, user_id, "rank");
     }
 
-
-    public static void sendChampionMessage(InteractionHook hook, String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType, boolean showChampion, int offset) {
-        MessageEmbed embed = buildEmbedChampion(userId, messageType, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType, showChampion, offset);
-        List<MessageTopLevelComponent> components = getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType, showChampion, offset);
+    public static void sendChampionMessage(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        MessageEmbed embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
+        List<MessageTopLevelComponent> components = getChampionButtons(userId, summoner, summonerId, parameter);
         hook.editOriginalEmbeds(embed).setComponents(components).queue();
     }
 
-    public static void sendChampionMessage(CommandEvent event, String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType, boolean showChampion, int offset) {
-        MessageEmbed embed = buildEmbedChampion(userId, messageType, summoner, summonerId, champion, timeStart, timeEnd, queue, laneType, showChampion, offset);
-        List<MessageTopLevelComponent> components = getChampionButtons(messageType, champion, userId, summoner, summonerId, queue, timeStart, timeEnd, laneType, showChampion, offset);
+    public static void sendChampionMessage(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        MessageEmbed embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
+        List<MessageTopLevelComponent> components = getChampionButtons(userId, summoner, summonerId, parameter);
         event.getChannel().sendMessageEmbeds(embed).addComponents(components).queue();
     }
 
-    private static MessageEmbed buildEmbedChampion(String userId, LeagueMessageType messageType, Summoner summoner, int summonerId, StaticChampion champion, long timeStart, long timeEnd, GameQueueType queue, LaneType laneType, boolean showChampion, int offset) {
+    private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         List<MatchData> matches = null;
         try {
-            int champId = showChampion && champion != null ? champion.getId() : 0;
-            matches = LeagueDB.getMatchHistory(summonerId, champId, timeStart, timeEnd, queue, laneType);
+            matches = LeagueDB.getMatchHistory(summonerId, parameter.getChampionId(), parameter.getPeriod()[0], parameter.getPeriod()[1], parameter.getQueueType(), parameter.getLaneType());
         } catch (SQLException e) {
             e.printStackTrace();
         }
         
         EmbedBuilder eb = new EmbedBuilder();
 
-        if (showChampion) eb.setThumbnail(LeagueHandler.getChampionProfilePic(champion.getName()));
+        if (parameter.isShowChampion()) eb.setThumbnail(LeagueHandler.getChampionProfilePic(parameter.getChampion().getName()));
         else eb.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 
         eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         eb.setColor(Bot.getColor());
 
-        switch (messageType) {
+        switch (parameter.getMessageType()) {
             case CHAMPION_GENERIC:
-                eb = getGenericStats(eb, matches, summoner, summonerId, timeStart, timeEnd, laneType, queue, showChampion);                
+                eb = getGenericStats(eb, matches, summoner, summonerId, parameter);                
                 break;
             case CHAMPION_MATCHUP:
-                eb = getMatchups(eb, matches, summonerId, laneType, queue);
+                eb = getMatchups(eb, matches, summonerId, parameter);
                 break;
             case CHAMPION_PING:
                 eb = getPings(eb, matches, summonerId);
@@ -1261,7 +1259,7 @@ public class LeagueMessage {
                 eb = getObjectives(eb, matches, summoner, summonerId);
                 break;
             case CHAMPION_CHAMPIONS:
-                eb = getAllChampions(eb, matches, summoner, summonerId, offset);
+                eb = getAllChampions(eb, matches, summoner, summonerId, parameter);
                 break;
             default:
                 break;
@@ -1449,7 +1447,9 @@ private static String capitalizeFirstLetter(String text) {
     
     return result.toString().trim();
 }
-    private static List<MessageTopLevelComponent> getChampionButtons(LeagueMessageType messageType, StaticChampion champion, String userId, Summoner summoner, int summonerId, GameQueueType queue, long timeStart, long timeEnd, LaneType lane, boolean showChampion, int offset) {
+    private static List<MessageTopLevelComponent> getChampionButtons(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        StaticChampion champion = parameter.getChampion();
+        
         Button left = Button.primary("champion-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary("champion-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
@@ -1463,7 +1463,7 @@ private static String capitalizeFirstLetter(String text) {
         Button championButton = Button.secondary("champion-champion-0", " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")).asDisabled();
         if (champion != null) {
             championButton = Button.secondary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
-            championButton = showChampion ? championButton.withStyle(ButtonStyle.SUCCESS) : championButton;
+            championButton = parameter.isShowChampion() ? championButton.withStyle(ButtonStyle.SUCCESS) : championButton;
         }
 
 
@@ -1474,7 +1474,7 @@ private static String capitalizeFirstLetter(String text) {
         Button champions = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_CHAMPIONS, "Champions");
 
 
-        switch (messageType) {
+        switch (parameter.getMessageType()) {
             case CHAMPION_GENERIC:
                 generic = generic.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
@@ -1501,21 +1501,21 @@ private static String capitalizeFirstLetter(String text) {
         long[] time = LeagueHandler.getCurrentSplitRange();
         long[] previousTime = LeagueHandler.getPreviousSplitRange();
 
-        if (timeStart == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
-        else if (timeStart == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
-        else if (timeStart == previousTime[0] && timeEnd == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
+        if (parameter.getTimeStart() == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
+        else if (parameter.getTimeStart() == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
+        else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-        if (queue != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("champion", lane));
+        if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("champion", parameter.getLaneType()));
 
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
-        rows.add(getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, queue));
+        rows.add(getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, parameter.getQueueType()));
         rows.add(ActionRow.of(generic, champions, matchups, pings));
 
 
-        if (messageType == LeagueMessageType.CHAMPION_CHAMPIONS) {
-            Button leftPage = Button.primary("champion-leftpage-" + offset, " ").withEmoji(CustomEmojiHandler.getRichEmoji("previous"));
-            Button rightPage = Button.primary("champion-rightpage-" + offset, " ").withEmoji(CustomEmojiHandler.getRichEmoji("next"));
+        if (parameter.getMessageType() == LeagueMessageType.CHAMPION_CHAMPIONS) {
+            Button leftPage = Button.primary("champion-leftpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("previous"));
+            Button rightPage = Button.primary("champion-rightpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("next"));
             if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
                 rows.add(ActionRow.of(left, leftPage, center, rightPage, right));
             else 
@@ -1572,11 +1572,9 @@ private static String capitalizeFirstLetter(String text) {
         return eb;
     }
 
-    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<MatchData> matches, int summonerId, LaneType laneType, GameQueueType queue) {
+    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<MatchData> matches, int summonerId, LeagueMessageParameter parameter) {
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
-
-        boolean isDuo = laneType == LaneType.BOT || laneType == LaneType.UTILITY || queue == GameQueueType.CHERRY;
 
         for (MatchData match : matches) {
             for (ParticipantData participant : match.participants) {
@@ -1605,11 +1603,11 @@ private static String capitalizeFirstLetter(String text) {
                 }
                              
 
-                if (isDuo) {
+                if (parameter.isDuo()) {
                     List<Integer> allyChamps = match.participants.stream()
                         .filter(p -> p.team == team)
                         .filter(p -> p.id != participant.id)
-                        .filter(p -> (queue == GameQueueType.CHERRY && p.subTeam == participant.subTeam) || p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
+                        .filter(p -> (parameter.getQueueType() == GameQueueType.CHERRY && p.subTeam == participant.subTeam) || p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
                         .map(p -> p.champion)
                         .collect(Collectors.toList());
                     
@@ -1622,13 +1620,13 @@ private static String capitalizeFirstLetter(String text) {
         }
 
         eb = LeagueMessageUtils.buildMatchups("matchups", eb, laneVsWinrate);
-        if (isDuo)
+        if (parameter.isDuo())
             eb = LeagueMessageUtils.buildMatchups("duo", eb, duoWinrate);
 
         return eb;
     }
 
-    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId, long timeStart, long timeEnd, LaneType laneType, GameQueueType queueType, boolean showChampion) {
+    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
 
         if (matches.size() == 0) {
             eb.setDescription("Not enough games");
@@ -1709,7 +1707,7 @@ private static String capitalizeFirstLetter(String text) {
 
                 championStats.computeIfAbsent(participant.champion, p -> new ParticipantChampionStat(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
 
-                if (queueType == GameQueueType.CHERRY) {
+                if (parameter.getQueueType() == GameQueueType.CHERRY) {
                     int placement = participant.subTeamPlacement;
                     if (placement == 1) overallStats.computeIfAbsent("arena_first", k -> new Accumulator()).add(1);
                     else if (placement == 2) overallStats.computeIfAbsent("arena_second", k -> new Accumulator()).add(1);
@@ -1841,7 +1839,7 @@ private static String capitalizeFirstLetter(String text) {
             String.format("%.2f", overallStats.get("damage_building").avg()) + " to buildings";
     
         String arenaPlacement = "";
-        if (queueType == GameQueueType.CHERRY) {
+        if (parameter.getQueueType() == GameQueueType.CHERRY) {
             arenaPlacement = "1. " + overallStats.getOrDefault("arena_first", new Accumulator()).count + " times\n" +
                 "2. " + overallStats.getOrDefault("arena_second", new Accumulator()).count + " times\n" +
                 "3. " + overallStats.getOrDefault("arena_third", new Accumulator()).count + " times\n" +
@@ -1858,7 +1856,7 @@ private static String capitalizeFirstLetter(String text) {
             "**Gold Earned**\n`" + String.format("%.2f", overallStats.get("gold_earned").avg()) + "`\n";
 
         String championString = "";
-        if (!showChampion) 
+        if (!parameter.isShowChampion()) 
             championString = " with " + unique.get("champion").size() + " different champions";
         else {
             int champId = (int) unique.get("champion").toArray()[0];
@@ -1874,10 +1872,10 @@ private static String capitalizeFirstLetter(String text) {
         
         eb.addField("Games", gameString, true);
 
-        if (queueType != GameQueueType.CHERRY)
+        if (parameter.getQueueType() != GameQueueType.CHERRY)
             eb.addField("Roles", laneString , true);
 
-        if (!showChampion) {
+        if (!parameter.isShowChampion()) {
             String champStats = championStats.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue().getGames(), a.getValue().getGames()))
                 .limit(6)
@@ -1897,7 +1895,7 @@ private static String capitalizeFirstLetter(String text) {
 
     }
 
-    private static EmbedBuilder getAllChampions(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId, int offset) {
+    private static EmbedBuilder getAllChampions(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
 
         if (matches.size() == 0) {
             eb.setDescription("Not enough games");
@@ -1926,7 +1924,7 @@ private static String capitalizeFirstLetter(String text) {
         }
         String champStats = championStats.entrySet().stream()
             .sorted((a, b) -> Integer.compare(b.getValue().getGames(), a.getValue().getGames()))
-            .skip(offset)
+            .skip(parameter.getOffset())
             .limit(20)
             .map(entry -> {
                 ParticipantChampionStat stat = entry.getValue();
@@ -1943,7 +1941,7 @@ private static String capitalizeFirstLetter(String text) {
         );
 
         int pages = (int) Math.ceil((double) champs / 20);
-        int currentPage = (offset / 20) + 1;
+        int currentPage = (parameter.getOffset() / 20) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);
         return eb;
 

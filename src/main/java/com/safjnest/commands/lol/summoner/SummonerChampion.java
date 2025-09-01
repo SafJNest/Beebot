@@ -11,6 +11,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
+import com.safjnest.util.lol.LeagueMessageParameter;
 import com.safjnest.util.lol.LeagueMessageType;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -62,12 +63,8 @@ public class SummonerChampion extends SlashCommand {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
         int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
-        long[] split = LeagueHandler.getCurrentSplitRange();
-        long timeStart = split[0];
-        long timeEnd = split[1];
-
         String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
-        LeagueMessage.sendChampionMessage(event.getHook(), userId, LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, null, timeStart, timeEnd, null, null, false, 0);
+        LeagueMessage.sendChampionMessage(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_GENERIC));
 	}
 
     @Override
@@ -84,12 +81,8 @@ public class SummonerChampion extends SlashCommand {
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
         int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
-        long[] split = LeagueHandler.getCurrentSplitRange();
-        long timeStart = split[0];
-        long timeEnd = split[1];
-
         String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
-        LeagueMessage.sendChampionMessage(event, userId, LeagueMessageType.CHAMPION_GENERIC, summoner, summonerId, null, timeStart, timeEnd, null, null, false, 0);
+        LeagueMessage.sendChampionMessage(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_GENERIC));
 	}
 
 
