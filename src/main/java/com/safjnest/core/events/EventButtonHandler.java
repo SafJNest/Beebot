@@ -956,7 +956,9 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
                 int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_OVERVIEW)); 
+                LeagueMessageParameter parameter = new LeagueMessageParameter("lol", EventUtils.getButtons(event));
+                parameter.setMessageType(LeagueMessageType.CHAMPION_OVERVIEW);
+                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, parameter); 
             return;
         }
 
@@ -1106,6 +1108,14 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
+            case "champion":
+                if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+                int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
+                LeagueMessageParameter parameter = new LeagueMessageParameter("match", EventUtils.getButtons(event));
+                parameter.setMessageType(LeagueMessageType.CHAMPION_OVERVIEW);
+                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, parameter); 
+            return;
         }
 
         EmbedBuilder eb = LeagueMessage.getOpggEmbed(s, queue, page);
@@ -1212,6 +1222,12 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, null, 0)).queue();
 
                 return;
+            case "champion":
+                if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+                int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
+                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_OVERVIEW)); 
+            return;
         }
 
         users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;

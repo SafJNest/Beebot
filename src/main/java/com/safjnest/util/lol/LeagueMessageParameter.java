@@ -163,6 +163,10 @@ public class LeagueMessageParameter {
     return champion != null ? champion.getId() : 0;
   }
 
+  public int getShowingChampion() {
+    return this.showChampion ? getChampionId() : 0;
+  }
+
   public boolean isDuo() {
     return laneType == LaneType.BOT || laneType == LaneType.UTILITY || queueType == GameQueueType.CHERRY;
   }

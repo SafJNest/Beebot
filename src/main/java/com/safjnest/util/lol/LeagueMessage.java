@@ -388,48 +388,6 @@ public class LeagueMessage {
 //   ▀██████▀   ▄████▀        ████████▀    ████████▀
 //
 
-
-    public static MessageTopLevelComponent getOpggQueueTypeButtons(GameQueueType queue) {
-        return getOpggQueueTypeButtons("match", ButtonStyle.PRIMARY, queue);
-    }
-
-
-    public static MessageTopLevelComponent getOpggQueueTypeButtons(String prefix, ButtonStyle defaultStyle, GameQueueType queue) {
-        GameQueueType currentGameQueueType = GameQueueType.CHERRY;
-
-        Button soloQ = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo").withStyle(defaultStyle);
-        Button flex = Button.primary(prefix + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex").withStyle(defaultStyle);
-        Button draft = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft").withStyle(defaultStyle);
-        Button aram = Button.primary(prefix + "-queue-" + GameQueueType.ARAM, "ARAM").withStyle(defaultStyle);
-        Button curretModeButton = Button.primary(prefix + "-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType)).withStyle(defaultStyle);
-
-        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
-
-        switch (queue) {
-            case TEAM_BUILDER_RANKED_SOLO:
-                soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
-                break;
-            case RANKED_FLEX_SR:
-                flex = flex.withStyle(ButtonStyle.SUCCESS);
-                break;
-            case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
-                draft = draft.withStyle(ButtonStyle.SUCCESS);
-                break;
-            case ARAM:
-                aram = aram.withStyle(ButtonStyle.SUCCESS);
-                break;
-            case CHERRY:
-            case ULTBOOK:
-            case SWIFTPLAY:
-                curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
-                break;
-            default:
-                break;
-        }
-
-        return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
-    }
-
     public static StringSelectMenu getOpggMenu(Summoner summoner) {
         return getOpggMenu(summoner, null, 0);
     }
@@ -1084,7 +1042,7 @@ public class LeagueMessage {
             order++;
         }
 
-        buttons.add(order, LeagueMessage.getOpggQueueTypeButtons(queue));
+        buttons.add(order, LeagueMessageUtils.getOpggQueueTypeButtons(queue));
         order++;
         buttons.add(order, ActionRow.of(left, page, right));
 
@@ -1232,7 +1190,7 @@ public class LeagueMessage {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         List<MatchData> matches = null;
         try {
-            matches = LeagueDB.getMatchHistory(summonerId, parameter.getChampionId(), parameter.getPeriod()[0], parameter.getPeriod()[1], parameter.getQueueType(), parameter.getLaneType());
+            matches = LeagueDB.getMatchHistory(summonerId, parameter.getShowingChampion(), parameter.getPeriod()[0], parameter.getPeriod()[1], parameter.getQueueType(), parameter.getLaneType());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1509,7 +1467,7 @@ private static String capitalizeFirstLetter(String text) {
         if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("champion", parameter.getLaneType()));
 
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
-        rows.add(getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, parameter.getQueueType()));
+        rows.add(LeagueMessageUtils.getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, parameter.getQueueType()));
         rows.add(ActionRow.of(generic, champions, matchups, pings));
 
 
@@ -1517,14 +1475,14 @@ private static String capitalizeFirstLetter(String text) {
             Button leftPage = Button.secondary("champion-leftpage-" + parameter.getOffset(), "Previous Page");
             Button rightPage = Button.secondary("champion-rightpage-" + parameter.getOffset(), "Next Page");
             if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
-                rows.add(ActionRow.of(left, leftPage, center, rightPage, right));
+                rows.add(ActionRow.of(left, center, right,leftPage, rightPage));
             else 
-                rows.add(ActionRow.of(leftPage, center, rightPage));
+                rows.add(ActionRow.of(center, leftPage, rightPage));
             return rows;
         }
 
         if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
-            rows.add(ActionRow.of(left, center, championButton, settings, right));
+            rows.add(ActionRow.of(left, center, right, championButton, settings));
         else 
             rows.add(ActionRow.of(center, championButton, settings));
 
@@ -1940,8 +1898,8 @@ private static String capitalizeFirstLetter(String text) {
             champStats
         );
 
-        int pages = (int) Math.ceil((double) champs / 20);
-        int currentPage = (parameter.getOffset() / 20) + 1;
+        int pages = (int) Math.ceil((double) champs / 10);
+        int currentPage = (parameter.getOffset() / 10) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);
         return eb;
 

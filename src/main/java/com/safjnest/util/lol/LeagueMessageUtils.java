@@ -11,9 +11,11 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryRecord;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
@@ -196,6 +198,47 @@ public class LeagueMessageUtils {
         }
 
         return label;
+    }
+
+    public static MessageTopLevelComponent getOpggQueueTypeButtons(GameQueueType queue) {
+        return getOpggQueueTypeButtons("match", ButtonStyle.SECONDARY, queue);
+    }
+
+
+    public static MessageTopLevelComponent getOpggQueueTypeButtons(String prefix, ButtonStyle defaultStyle, GameQueueType queue) {
+        GameQueueType currentGameQueueType = GameQueueType.CHERRY;
+
+        Button soloQ = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo").withStyle(defaultStyle);
+        Button flex = Button.primary(prefix + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex").withStyle(defaultStyle);
+        Button draft = Button.primary(prefix + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft").withStyle(defaultStyle);
+        Button aram = Button.primary(prefix + "-queue-" + GameQueueType.ARAM, "ARAM").withStyle(defaultStyle);
+        Button curretModeButton = Button.primary(prefix + "-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType)).withStyle(defaultStyle);
+
+        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+
+        switch (queue) {
+            case TEAM_BUILDER_RANKED_SOLO:
+                soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
+                break;
+            case RANKED_FLEX_SR:
+                flex = flex.withStyle(ButtonStyle.SUCCESS);
+                break;
+            case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
+                draft = draft.withStyle(ButtonStyle.SUCCESS);
+                break;
+            case ARAM:
+                aram = aram.withStyle(ButtonStyle.SUCCESS);
+                break;
+            case CHERRY:
+            case ULTBOOK:
+            case SWIFTPLAY:
+                curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
+                break;
+            default:
+                break;
+        }
+
+        return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
     }
 
 }
