@@ -684,36 +684,9 @@ public class LeagueMessage {
         return gameIds;
     }
 
-    public static EmbedBuilder getOpggEmbed(Summoner s, GameQueueType queue, int index) {
-        LeagueShard shard = s.getPlatform();
-        RegionShard region = shard.toRegionShard();
-
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        EmbedBuilder eb = new EmbedBuilder();
+    private static EmbedBuilder getOpggEmbedMatch(EmbedBuilder eb, LOLMatch match, Summoner s, QueryResult result) {
         MatchParticipant me = null;
-        LOLMatch match = null;
-        R4J r4j = LeagueHandler.getRiotApi();
-
-        eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
-        eb.setColor(Bot.getColor());
-        eb.setTitle("Showing matches from " + LeagueHandler.getShardFlag(shard) + " " + shard.getRealmValue());
-
-        List<String> gameIds = getMatchIds(s, queue, index);
-
-        QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
-
-        for(int i = 0; i < 5 && i < gameIds.size(); i++){
-            try {
-
-                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
-                if (MatchTracker.isRemake(match))
-                    continue;
-                MatchTracker.queueMatch(match);
-                if (match.getParticipants().size() == 0)
-                    continue; //riot di merda che quando crasha il game lascia dati sporchi
-
-                LeagueHandler.updateSummonerDB(match);
-                for(MatchParticipant mp : match.getParticipants()){
+        for(MatchParticipant mp : match.getParticipants()){
                     if(mp.getPuuid().equals(s.getPUUID())){
                         me = mp;
                     }
@@ -872,7 +845,39 @@ public class LeagueMessage {
 
 
                 }
+                return eb;
+    }
 
+    public static EmbedBuilder getOpggEmbed(Summoner s, GameQueueType queue, int index) {
+        LeagueShard shard = s.getPlatform();
+        RegionShard region = shard.toRegionShard();
+
+        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
+        EmbedBuilder eb = new EmbedBuilder();
+        MatchParticipant me = null;
+        LOLMatch match = null;
+        R4J r4j = LeagueHandler.getRiotApi();
+
+        eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
+        eb.setColor(Bot.getColor());
+        eb.setTitle("Showing matches from " + LeagueHandler.getShardFlag(shard) + " " + shard.getRealmValue());
+
+        List<String> gameIds = getMatchIds(s, queue, index);
+
+        QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
+
+        for(int i = 0; i < 5 && i < gameIds.size(); i++){
+            try {
+
+                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
+                if (MatchTracker.isRemake(match))
+                    continue;
+                MatchTracker.queueMatch(match);
+                if (match.getParticipants().size() == 0)
+                    continue; //riot di merda che quando crasha il game lascia dati sporchi
+
+                LeagueHandler.updateSummonerDB(match);
+                eb = getOpggEmbedMatch(eb, match, s, result);
             } catch (Exception e) {
                 e.printStackTrace();
                 continue;
@@ -1211,7 +1216,7 @@ public class LeagueMessage {
                 eb = getMatchups(eb, matches, summonerId, parameter);
                 break;
             case CHAMPION_PING:
-                eb = getPings(eb, matches, summonerId);
+                eb = getChampionOPGG(eb, matches, summoner);
                 break;
             case CHAMPION_OBJECTIVES:
                 eb = getObjectives(eb, matches, summoner, summonerId);
@@ -1219,10 +1224,41 @@ public class LeagueMessage {
             case CHAMPION_CHAMPIONS:
                 eb = getAllChampions(eb, matches, summoner, summonerId, parameter);
                 break;
+            case CHAMPION_OPGG:
+                eb = getChampionOPGG(eb, matches, summoner);
+                break;
             default:
                 break;
         }
         return eb.build();
+    }
+
+
+    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<MatchData> matches, Summoner s) {
+        QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
+        int limit = 4; 
+        for (MatchData matchData : matches) {
+            try {
+                LeagueShard lShard = LeagueShard.values()[matchData.leagueShard];
+                RegionShard shard = lShard.toRegionShard();
+                System.out.println(lShard.getValue() + "_" + matchData.gameId);
+                LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard, lShard.getValue() + "_" + matchData.gameId);
+                if (MatchTracker.isRemake(match))
+                    continue;
+                MatchTracker.queueMatch(match);
+                if (match.getParticipants().size() == 0)
+                    continue; //riot di merda che quando crasha il game lascia dati sporchi
+
+                LeagueHandler.updateSummonerDB(match);
+                eb = getOpggEmbedMatch(eb, match, s, result);  
+            } catch (Exception e) {
+            }
+            if (limit == 0) break;
+            limit--;
+        }
+
+
+        return eb;
     }
 
     private static EmbedBuilder getObjectives(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId) {        
