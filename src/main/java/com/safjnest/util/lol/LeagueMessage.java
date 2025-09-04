@@ -556,8 +556,8 @@ public class LeagueMessage {
 
                     if (row.getAsLong("game_id") != match.getGameId()) continue;
 
-                    TierDivisionType rank = row.getAsInt("rank") != MatchTracker.UNKNOWN_RANK ? TierDivisionType.values()[row.getAsInt("rank")] : null;
-                    TierDivisionType prevRank = previosRow != null && previosRow.getAsInt("rank") != MatchTracker.UNKNOWN_RANK ? TierDivisionType.values()[previosRow.getAsInt("rank")] : null;
+                    TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
+                    TierDivisionType prevRank = previosRow != null ? TierDivisionType.values()[row.getAsInt("rank")] : null;
 
                     String displayRank = LeagueMessageUtils.getFormatedRank(rank, true);
 
@@ -803,7 +803,7 @@ public class LeagueMessage {
                         QueryRecord row = result.get(j);
                         if (row.getAsLong("game_id") != match.getGameId()) continue;
 
-                        TierDivisionType rank = row.getAsInt("rank") != MatchTracker.UNKNOWN_RANK ? TierDivisionType.values()[row.getAsInt("rank")] : null;
+                        TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
 
                         String displayRank = LeagueMessageUtils.getFormatedRank(rank, true);
 
@@ -972,7 +972,7 @@ public class LeagueMessage {
                         QueryRecord row = result.get(j);
                         if (row.getAsLong("game_id") != match.getGameId()) continue;
 
-                        TierDivisionType rank = row.getAsInt("rank") != MatchTracker.UNKNOWN_RANK ? TierDivisionType.values()[row.getAsInt("rank")] : null;
+                        TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
 
                         String displayRank = LeagueMessageUtils.getFormatedRank(rank, true);
 
