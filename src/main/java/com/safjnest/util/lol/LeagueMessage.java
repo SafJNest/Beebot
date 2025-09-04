@@ -1214,7 +1214,7 @@ public class LeagueMessage {
                 eb = getMatchups(eb, matches, summonerId, parameter);
                 break;
             case CHAMPION_PING:
-                eb = getChampionOPGG(eb, matches, summoner);
+                eb = getPings(eb, matches, summonerId);
                 break;
             case CHAMPION_OBJECTIVES:
                 eb = getObjectives(eb, matches, summoner, summonerId);
@@ -1223,7 +1223,7 @@ public class LeagueMessage {
                 eb = getAllChampions(eb, matches, summoner, summonerId, parameter);
                 break;
             case CHAMPION_OPGG:
-                eb = getChampionOPGG(eb, matches, summoner);
+                eb = getChampionOPGG(eb, matches, summoner, parameter);
                 break;
             default:
                 break;
@@ -1232,30 +1232,31 @@ public class LeagueMessage {
     }
 
 
-    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<MatchData> matches, Summoner s) {
+    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<MatchData> matches, Summoner s, LeagueMessageParameter parameter) {
         QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
-        int limit = 4; 
-        for (MatchData matchData : matches) {
-            try {
-                LeagueShard lShard = LeagueShard.values()[matchData.leagueShard];
-                RegionShard shard = lShard.toRegionShard();
-                System.out.println(lShard.getValue() + "_" + matchData.gameId);
-                LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard, lShard.getValue() + "_" + matchData.gameId);
-                if (MatchTracker.isRemake(match))
-                    continue;
-                MatchTracker.queueMatch(match);
-                if (match.getParticipants().size() == 0)
-                    continue; //riot di merda che quando crasha il game lascia dati sporchi
+        EmbedBuilder[] ebHolder = new EmbedBuilder[] { eb };
 
-                LeagueHandler.updateSummonerDB(match);
-                eb = getOpggEmbedMatch(eb, match, s, result);  
-            } catch (Exception e) {
-            }
-            if (limit == 0) break;
-            limit--;
-        }
-
-
+        matches.stream()
+            .skip(parameter.getOffset())
+            .limit(LeagueMessageType.CHAMPION_OPGG.getPageItem())
+            .forEach(matchData -> {
+                try {
+                    LeagueShard lShard = LeagueShard.values()[matchData.leagueShard];
+                    RegionShard shard = lShard.toRegionShard();
+                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard, lShard.getValue() + "_" + matchData.gameId);
+                    if (MatchTracker.isRemake(match))
+                        return;
+                    if (match.getParticipants().size() == 0)
+                        return;
+                    ebHolder[0] = getOpggEmbedMatch(ebHolder[0], match, s, result);
+                } catch (Exception e) {
+                    // Optionally log or handle exception
+                }
+            });
+        eb = ebHolder[0];
+        int pages = (int) Math.ceil((double) matches.size() / 5);
+        int currentPage = (parameter.getOffset() / 5) + 1;
+        eb.setFooter("Page " + currentPage + " / " + pages);
         return eb;
     }
 
@@ -1464,6 +1465,7 @@ private static String capitalizeFirstLetter(String text) {
         Button pings = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_PING, "Pings");
         Button objectives = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OBJECTIVES, "Objectives");
         Button champions = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_CHAMPIONS, "Champions");
+        Button opgg = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OPGG, "Opgg");
 
 
         switch (parameter.getMessageType()) {
@@ -1481,6 +1483,8 @@ private static String capitalizeFirstLetter(String text) {
                 break;
             case CHAMPION_CHAMPIONS:
                 champions = champions.withStyle(ButtonStyle.SUCCESS).asDisabled();
+            case CHAMPION_OPGG:
+                opgg = opgg.withStyle(ButtonStyle.SUCCESS).asDisabled();
             default:
                 break;
         }
@@ -1502,10 +1506,10 @@ private static String capitalizeFirstLetter(String text) {
 
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
         rows.add(LeagueMessageUtils.getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, parameter.getQueueType()));
-        rows.add(ActionRow.of(generic, champions, matchups, pings));
+        rows.add(ActionRow.of(generic, opgg, champions, matchups, pings));
 
 
-        if (parameter.getMessageType() == LeagueMessageType.CHAMPION_CHAMPIONS) {
+        if (parameter.getMessageType().hasPageButtons()) {
             Button leftPage = Button.secondary("champion-leftpage-" + parameter.getOffset(), "Previous Page");
             Button rightPage = Button.secondary("champion-rightpage-" + parameter.getOffset(), "Next Page");
             if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)

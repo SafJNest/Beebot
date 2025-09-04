@@ -1680,10 +1680,10 @@ public class EventButtonHandler extends ListenerAdapter {
                 event.replyModal(modal).queue();
                 return;
             case "leftpage":
-                parameter.setOffset(parameter.getOffset() - 10);
+                parameter.setOffset(parameter.getOffset() - (parameter.getMessageType().getPageItem()));
                 break;
             case "rightpage":
-                parameter.setOffset(parameter.getOffset() + 10);
+                parameter.setOffset(parameter.getOffset() + (parameter.getMessageType().getPageItem()));
                 break;
         }
 
