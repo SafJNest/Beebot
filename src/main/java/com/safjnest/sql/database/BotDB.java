@@ -16,6 +16,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 
@@ -24,6 +26,10 @@ import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
+import com.safjnest.spring.entity.GuildEntity;
+import com.safjnest.spring.entity.MemberEntity;
+import com.safjnest.spring.service.GuildService;
+import com.safjnest.spring.service.MemberService;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -32,11 +38,18 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 /**
- * Useless (now usefull) class but {@link <a href="https://github.com/Leon412">Leon412</a>} is one
- * of the biggest caterpies ever made
+ * Modernized BotDB that uses Spring Services underneath while maintaining compatibility
+ * @deprecated Use Spring Services directly instead
  */
+@Component
 public class BotDB extends AbstractDB {
     private static BotDB instance;
+    
+    @Autowired
+    private GuildService guildService;
+    
+    @Autowired
+    private MemberService memberService;
 
     static {
         instance = new BotDB();
@@ -52,6 +65,267 @@ public class BotDB extends AbstractDB {
     public static BotDB get() {
         return instance;
     }
+    
+    // Spring-backed implementations of key methods
+    public static QueryRecord getGuildData(String guild_id) {
+        if (instance.guildService != null) {
+            GuildEntity guild = instance.guildService.getGuild(guild_id);
+            if (guild == null) {
+                return new QueryRecord(null);
+            }
+            
+            QueryRecord record = new QueryRecord(null);
+            record.put("guild_id", guild.getGuildId());
+            record.put("prefix", guild.getPrefix());
+            record.put("exp_enabled", guild.getExpEnabled() ? "1" : "0");
+            record.put("threshold", String.valueOf(guild.getThreshold()));
+            record.put("blacklist_channel", guild.getBlacklistChannel());
+            record.put("blacklist_enabled", guild.getBlacklistEnabled() ? "1" : "0");
+            record.put("name_tts", guild.getNameTts());
+            record.put("language_tts", guild.getLanguageTts());
+            record.put("league_shard", String.valueOf(guild.getLeagueShard()));
+            
+            return record;
+        }
+        
+        // Fallback to old implementation
+        String query = "SELECT guild_id, PREFIX, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
+        return instance.lineQuery(query);
+    }
+
+    public static boolean insertGuild(String guild_id, String prefix) {
+        if (instance.guildService != null) {
+            try {
+                instance.guildService.getGuildOrCreate(guild_id);
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        
+        // Fallback to old implementation
+        String query = "INSERT INTO guild (guild_id, PREFIX, exp_enabled, threshold, blacklist_channel) VALUES ('" + guild_id + "', '" + prefix + "', '1', '0', null) ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';";
+        return instance.defaultQuery(query);
+    }
+
+    public static QueryResult getUsersByExp(String guild_id, int limit) {
+        if (instance.memberService != null) {
+            List<MemberEntity> members = instance.memberService.getUsersByExp(guild_id, limit);
+            
+            QueryResult result = new QueryResult();
+            for (MemberEntity member : members) {
+                QueryRecord record = new QueryRecord(null);
+                record.put("user_id", member.getUserId());
+                record.put("messages", String.valueOf(member.getMessages()));
+                record.put("level", String.valueOf(member.getLevel()));
+                record.put("experience", String.valueOf(member.getExperience()));
+                result.add(record);
+            }
+            
+            return result;
+        }
+        
+        // Fallback to old implementation
+        if (limit == 0) {
+            return instance.query("SELECT user_id, messages, level, experience as exp from member WHERE guild_id = '" + guild_id + "' order by experience DESC;");
+        }
+        return instance.query("SELECT user_id, messages, level, experience as exp from member WHERE guild_id = '" + guild_id + "' order by experience DESC limit " + limit + ";");
+    }
+
+    public static boolean toggleLevelUp(String guild_id, boolean toggle) {
+        if (instance.guildService != null) {
+            return instance.guildService.updateExpEnabled(guild_id, toggle);
+        }
+        
+        // Fallback to old implementation
+        return instance.defaultQuery("INSERT INTO guild(guild_id, exp_enabled) VALUES ('" + guild_id + "', '" + (toggle ? "1" : "0") + "') ON DUPLICATE KEY UPDATE exp_enabled = '" + (toggle ? "1" : "0") + "';");
+    }
+
+    public static boolean updateVoiceGuild(String guild_id, String language, String voice) {
+        if (instance.guildService != null) {
+            return instance.guildService.updateVoiceSettings(guild_id, language, voice);
+        }
+        
+        // Fallback to old implementation
+        String query = "INSERT INTO guild (guild_id, language_tts, name_tts) VALUES ('" + guild_id + "', '" + language + "', '" + voice + "') ON DUPLICATE KEY UPDATE language_tts = '" + language + "', name_tts = '" + voice + "'";
+        return instance.defaultQuery(query);
+    }
+
+    // Keep all the other existing methods for compatibility, but mark as deprecated
+
+    public static QueryResult getGuildsData(String filter){
+        String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild WHERE " + filter + ";";
+        return instance.query(query);
+    }
+
+    public static List<Sound> getSounds(String user_id, int page, int limit) {
+        QueryResult res = instance.query("SELECT id, name, guild_id, user_id, extension, public, time FROM sound WHERE user_id = '" + user_id + "' OR public = '1' ORDER BY id ASC LIMIT " + (page-1)*limit + ", " + limit);
+        QueryResult tags = BotDB.getSoundsTags(res.arrayColumn("id").toArray(new String[0]));
+        
+        List<Sound> sounds = new ArrayList<>();
+        for(QueryRecord qr : res) {
+            List<Tag> tagList = new ArrayList<>();
+            for (QueryRecord tag : tags) {
+                if (tag.get("sound_id").equals(qr.get("id"))) {
+                    tagList.add(new Tag(tag.getAsInt("tag_id"), tag.get("name")));
+                }
+            }
+
+            if (tagList.size() != Tag.MAX_TAG_SOUND) {
+                for (int i = tagList.size(); i < Tag.MAX_TAG_SOUND; i++) {
+                    tagList.add(new Tag());
+                }
+            }
+            sounds.add(new Sound(qr, tagList));
+        }
+
+        return sounds;
+    }
+
+    public static QueryResult getlistGuildSounds(String guild_id) {
+        return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC");
+    }
+
+    public static QueryResult getlistGuildSounds(String guild_id, int limit) {
+        return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY name ASC LIMIT " + limit);
+    }
+
+    public static QueryResult getlistGuildSounds(String guild_id, String orderBy) {
+        return instance.query("SELECT id, name, guild_id, user_id, extension, public FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY " + orderBy +" ASC ");
+    }
+
+    public static QueryResult getGuildRandomSound(String guild_id){
+        return instance.query("SELECT name, id FROM sound WHERE guild_id = '" + guild_id + "' ORDER BY RAND() LIMIT 25;");
+    }
+
+    public static QueryRecord getUserExp(String id, String id2) {
+        return instance.lineQuery("SELECT experience, level, messages FROM member WHERE user_id = '" + id + "' AND guild_id = '" + id2 + "'");
+    }
+
+    // Member-related methods with Spring backing where possible
+    public static QueryRecord getUserData(String guild_id, String user_id) {
+        if (instance.memberService != null) {
+            MemberEntity member = instance.memberService.getMember(guild_id, user_id);
+            if (member == null) {
+                return new QueryRecord(null);
+            }
+            
+            QueryRecord record = new QueryRecord(null);
+            record.put("id", String.valueOf(member.getId()));
+            record.put("user_id", member.getUserId());
+            record.put("guild_id", member.getGuildId());
+            record.put("experience", String.valueOf(member.getExperience()));
+            record.put("level", String.valueOf(member.getLevel()));
+            record.put("messages", String.valueOf(member.getMessages()));
+            record.put("update_time", String.valueOf(member.getUpdateTime()));
+            
+            return record;
+        }
+        
+        // Fallback to old implementation
+        return instance.lineQuery("SELECT id, user_id, guild_id, experience, level, messages, update_time FROM member WHERE user_id = '"+ user_id +"' AND guild_id = '" + guild_id + "';");
+    }
+
+    public static String insertUserData(String guild_id, String user_id) {
+        if (instance.memberService != null) {
+            MemberEntity member = instance.memberService.getMemberOrCreate(guild_id, user_id);
+            return String.valueOf(member.getId());
+        }
+        
+        // Fallback to old implementation
+        String id = "0";
+
+        Connection c = instance.getConnection();
+        if(c == null) return id;
+
+        try (Statement stmt = c.createStatement()) {
+            instance.query(stmt, "INSERT INTO member(guild_id, user_id) VALUES('" + guild_id + "','" + user_id + "');");
+            id = instance.lineQuery(stmt, "SELECT LAST_INSERT_ID() AS id; ").get("id");
+            c.commit();
+        } catch (SQLException ex) {
+            if (c != null) {
+                try {
+                    c.rollback();
+                } catch (SQLException rollbackEx) {
+                    System.out.println("Rollback failed: " + rollbackEx.getMessage());
+                }
+            }
+            System.out.println("Query execution failed: " + ex.getMessage());
+        } finally {
+            if (c != null) {
+                try {
+                    c.close();
+                } catch (SQLException closeEx) {
+                    System.out.println("Failed to close connection: " + closeEx.getMessage());
+                }
+            }
+        }
+        return id;
+    }
+
+    public static boolean updateUserDataExperience(String ID, int experience, int level, int messages) {
+        return instance.defaultQuery("UPDATE member SET experience = '" + experience + "', level = '" + level + "', messages = '" + messages + "' WHERE id = '" + ID + "';");
+    }
+
+    public static boolean updateUserDataUpdateTime(String ID, int updateTime) {
+        return instance.defaultQuery("UPDATE member SET update_time = '" + updateTime + "' WHERE id = '" + ID + "';");
+    }
+
+    // Add more essential methods with @deprecated annotations to encourage migration to services
+    @Deprecated
+    public static boolean setPrefix(String guild_id, String prefix) {
+        return instance.defaultQuery("INSERT INTO guild(guild_id, prefix)" + "VALUES('" + guild_id + "','" + prefix +"') ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';");
+    }
+
+    @Deprecated 
+    public static boolean updatePrefix(String guild_id, String prefix) {
+        return instance.defaultQuery("UPDATE guild SET prefix = '" + prefix + "' WHERE guild_id = '" + guild_id + "';");
+    }
+
+    // Placeholder for all the other existing methods - they remain unchanged for now
+    // This allows the application to continue working while we gradually migrate
+    
+    /**
+     * @deprecated Use Spring Services instead
+     */
+    public static String fixSQL(String s){
+        s = s.replace("\"", "\\\"");
+        s = s.replace("\'", "\\\'");
+        return s;
+    }
+
+    public static String normalize(String string) {
+        String[] parts = string.split(",");
+
+        List<Integer> list = new ArrayList<>();
+        for (String part : parts) {
+            list.add(Integer.parseInt(part.trim()));
+        }
+
+        Collections.sort(list);
+
+        StringBuilder sortedString = new StringBuilder();
+        for (int i = 0; i < list.size(); i++) {
+            sortedString.append(list.get(i));
+            if (i < list.size() - 1) {
+                sortedString.append(",");
+            }
+        }
+
+        return sortedString.toString();
+    }
+
+    // Add stubs for remaining methods to maintain compatibility
+    public static QueryResult getSoundsTags(String ...sound_id) {
+        StringBuilder sb = new StringBuilder();
+        for(String sound : sound_id) {
+            sb.append("'" + sound + "', ");
+        }
+        sb.setLength(sb.length() - 2);
+        return instance.query("SELECT ts.sound_id as sound_id, ts.tag_id as tag_id, t.name as name FROM tag_sounds ts JOIN tag t ON ts.tag_id = t.id WHERE ts.sound_id IN (" + sb.toString() + ");");
+    }
+
+}
 
     public static QueryResult getGuildsData(String filter){
         String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel FROM guild WHERE " + filter + ";";

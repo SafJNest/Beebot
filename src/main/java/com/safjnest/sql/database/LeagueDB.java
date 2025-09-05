@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.json.simple.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -28,6 +30,8 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.spring.entity.SummonerEntity;
+import com.safjnest.spring.service.LeagueService;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -35,9 +39,18 @@ import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.model.build.CustomBuildData;
 
+/**
+ * Modernized LeagueDB that uses Spring Services underneath while maintaining compatibility
+ * @deprecated Use Spring Services directly instead
+ */
+@Component  
 public class LeagueDB extends AbstractDB {
 
     private static LeagueDB instance;
+    
+    @Autowired
+    private LeagueService leagueService;
+    
     static {
         instance = new LeagueDB();
     }
@@ -50,6 +63,195 @@ public class LeagueDB extends AbstractDB {
     public static LeagueDB get() {
         return instance;
     }
+
+    // Spring-backed implementations of key methods
+    public static QueryResult getLOLAccountsByUserId(String user_id){
+        if (instance.leagueService != null) {
+            List<SummonerEntity> summoners = instance.leagueService.getSummonersByUser(user_id);
+            
+            QueryResult result = new QueryResult();
+            for (SummonerEntity summoner : summoners) {
+                QueryRecord record = new QueryRecord(null);
+                record.put("puuid", summoner.getPuuid());
+                record.put("league_shard", String.valueOf(summoner.getLeagueShard()));
+                record.put("tracking", summoner.getTracking() ? "1" : "0");
+                result.add(record);
+            }
+            
+            return result;
+        }
+        
+        // Fallback to old implementation
+        String query = "SELECT puuid, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
+        return instance.query(query);
+    }
+
+    public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
+        if (instance.leagueService != null) {
+            SummonerEntity summoner = instance.leagueService.getSummoner(puuid, shard);
+            return summoner != null ? summoner.getUserId() : null;
+        }
+        
+        // Fallback to old implementation
+        return instance.lineQuery("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND league_shard = '" + shard.ordinal() + "';").get("user_id");
+    }
+
+    public static boolean trackSummoner(String user_id, String puuid, boolean track) {
+        if (instance.leagueService != null) {
+            // We need to find the summoner first to get the shard, this is a limitation of the current API
+            // For now, fall back to old implementation
+        }
+        
+        // Fallback to old implementation
+        return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';");
+    }
+
+    public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
+        if (instance.leagueService != null) {
+            List<SummonerEntity> summoners = instance.leagueService.searchSummoners(query, shard);
+            
+            QueryResult result = new QueryResult();
+            for (SummonerEntity summoner : summoners) {
+                QueryRecord record = new QueryRecord(null);
+                record.put("riot_id", summoner.getRiotId());
+                result.add(record);
+            }
+            
+            return result;
+        }
+        
+        // Fallback to old implementation
+        return instance.query("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
+    }
+
+    // Keep all other existing methods for compatibility - these are not migrated yet but preserved
+    public static QueryResult getAdvancedLOLData(String summonerId) {
+        return instance.query("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `participant` WHERE `summoner_id` = '" + summonerId + "' GROUP BY `champion` ORDER BY `games` DESC;");
+    }
+
+    public static QueryResult getAllGamesForAccount(int summonerId, long time_start, long time_end) {
+        String timeFilter = "";
+        if (time_start != 0) {
+            timeFilter = "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
+                        "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' ";
+        }
+        return instance.query("SELECT sm.game_id, sm.game_type, st.win " +
+                         "FROM participant st " +
+                         "INNER JOIN `match` sm ON st.match_id = sm.id " +
+                         "WHERE st.summoner_id = '" + summonerId + "' " + timeFilter);
+    }
+
+    public static QueryResult getAdvancedLOLData(int summonerId, long time_start, long time_end, GameQueueType queue) {
+        String timeFilter = "";
+        String queueFilter = "";
+        if (time_start != 0) {
+            timeFilter = "AND sm.`time_start` >= '" + new Timestamp(time_start) + "' " +
+                        "AND sm.`time_end` <= '" + new Timestamp(time_end) + "' ";
+        }
+        if (queue != null) {
+            queueFilter = "AND sm.game_type = " + queue.ordinal() + " ";
+        }
+
+        String overallQuery =
+            "SELECT " +
+            "  t.`champion`, " +
+            "  COUNT(*) AS `games`, " +
+            "  SUM(t.`win`) AS `wins`, " +
+            "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `losses`, " +
+            "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, " +
+            "  AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, " +
+            "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, " +
+            "  SUM(t.`gain`) AS total_lp_gain " +
+            "FROM `participant` t " +
+            "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+            "WHERE t.`summoner_id` = '" + summonerId + "' " +
+            timeFilter + 
+            queueFilter +
+            "GROUP BY t.`champion`";
+
+        String laneQuery =
+            "SELECT " +
+            "  t.`champion`, " +
+            "  t.`lane`, " +
+            "  COUNT(*) AS `lane_games`, " +
+            "  SUM(t.`win`) AS `lane_wins`, " +
+            "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS `lane_losses` " +
+            "FROM `participant` t " +
+            "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+            "WHERE t.`summoner_id` = '" + summonerId + "' " +
+            timeFilter + 
+            queueFilter +
+            "GROUP BY t.`champion`, t.`lane`";
+
+        String combinedQuery =
+            "SELECT " +
+            "  overall.`champion`, " +
+            "  overall.`games`, " +
+            "  overall.`wins`, " +
+            "  overall.`losses`, " +
+            "  overall.`avg_kills`, " +
+            "  overall.`avg_deaths`, " +
+            "  overall.`avg_assists`, " +
+            "  overall.`total_lp_gain`, " +
+            "  GROUP_CONCAT( " +
+            "    CONCAT(lane.`lane`, '-', lane.`lane_wins`, '-', lane.`lane_losses`) " +
+            "    ORDER BY lane.`lane` SEPARATOR ', ' " +
+            "  ) AS lanes_played " +
+            "FROM (" + overallQuery + ") AS overall " +
+            "LEFT JOIN (" + laneQuery + ") AS lane " +
+            "ON overall.`champion` = lane.`champion` " +
+            "GROUP BY overall.`champion` " +
+            "ORDER BY `games` DESC;";
+
+        return instance.query(combinedQuery);
+    }
+
+    // Add remaining methods as placeholders to maintain compatibility
+    // These would be migrated in future phases
+
+    public static String normalize(String string) {
+        String[] parts = string.split(",");
+
+        List<Integer> list = new ArrayList<>();
+        for (String part : parts) {
+            list.add(Integer.parseInt(part.trim()));
+        }
+
+        Collections.sort(list);
+
+        StringBuilder sortedString = new StringBuilder();
+        for (int i = 0; i < list.size(); i++) {
+            sortedString.append(list.get(i));
+            if (i < list.size() - 1) {
+                sortedString.append(",");
+            }
+        }
+
+        return sortedString.toString();
+    }
+
+    public static CustomBuildData getCustomBuild(String id){
+        return new CustomBuildData(instance.lineQuery("SELECT id, name, skin, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
+    }
+
+    public static QueryResult getCustomBuildByUser(String user_id){
+        return instance.query("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
+    }
+
+    public static QueryResult getFocusedCustomBuild(String name){
+        return instance.query("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
+    }
+
+    public static int getSummonerIdByPuuid(String puuid, LeagueShard shard) {
+        try {
+            return instance.lineQuery("select id from summoner where puuid = '"+puuid+"' and league_shard = " + shard.ordinal() + "").getAsInt("id");  
+        } catch (Exception e) {
+           return 0;
+        }
+    }
+
+    // Add more placeholder methods as needed to maintain compatibility during migration
+}
 
     public static QueryResult getLOLAccountsByUserId(String user_id){
         String query = "SELECT puuid, league_shard, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";

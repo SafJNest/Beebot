@@ -64,4 +64,9 @@ public class MemberService {
         }
         return memberRepository.findTopByExperience(guildId, limit);
     }
+    
+    // Method to get users by experience (compatible with BotDB.getUsersByExp)
+    public List<MemberEntity> getUsersByExp(String guildId, int limit) {
+        return getTopMembersByExperience(guildId, limit);
+    }
 }
