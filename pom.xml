@@ -350,6 +350,7 @@
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/com.zaxxer/HikariCP -->
+    <!-- Keep for fallback mode - Spring Boot also uses HikariCP internally -->
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>

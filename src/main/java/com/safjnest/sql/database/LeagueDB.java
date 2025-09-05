@@ -51,8 +51,14 @@ public class LeagueDB extends AbstractDB {
     @Autowired
     private LeagueService leagueService;
     
-    static {
-        instance = new LeagueDB();
+    // Constructor injection for proper Spring initialization
+    public LeagueDB() {
+        // Let Spring handle the initialization
+    }
+
+    @Autowired
+    public void setInstance(LeagueDB leagueDB) {
+        instance = leagueDB;
     }
 
     @Override

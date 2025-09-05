@@ -9,45 +9,45 @@ import com.zaxxer.hikari.HikariDataSource;
 import com.safjnest.model.BotSettings.DatabaseSettings;
 import com.safjnest.util.SettingsLoader;
 
-
-// TheAllHandler che gestisce connessioni e quuery a livello query e cose varie
-
-// abstract class DBHandler che ha il nome del database a cui si deve connettere
-
-// N classi che estendono DBHandler e implementano i metodi per le query
-
-
+/**
+ * @deprecated This class is deprecated and will be removed.
+ * Use Spring Boot's DataSource configuration instead.
+ * 
+ * Legacy database handler for fallback purposes only.
+ */
+@Deprecated
 public class DatabaseHandler {
     private static HikariDataSource dataSource; // shared pool
 
     static {
-
+        // Only initialize if Spring is not available (fallback mode)
         try {
             Class.forName("org.mariadb.jdbc.Driver");
+            
+            DatabaseSettings settings = SettingsLoader.getSettings().getJsonSettings().getDatabase();
+
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl("jdbc:mariadb://" + settings.getHost() + "/?autoReconnect=true");
+            config.setUsername(settings.getUsername());
+            config.setPassword(settings.getPassword());
+            config.setAutoCommit(false);
+
+            config.setMaximumPoolSize(117);
+            config.setMinimumIdle(2);
+            config.setIdleTimeout(30000);
+            config.setConnectionTimeout(10000);
+            config.setMaxLifetime(1800000);
+
+            dataSource = new HikariDataSource(config);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-
-        DatabaseSettings settings = SettingsLoader.getSettings().getJsonSettings().getDatabase();
-
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:mariadb://" + settings.getHost() + "/?autoReconnect=true");
-        config.setUsername(settings.getUsername());
-        config.setPassword(settings.getPassword());
-        config.setAutoCommit(false);
-
-        config.setMaximumPoolSize(117);
-        config.setMinimumIdle(2);
-        config.setIdleTimeout(30000);
-        config.setConnectionTimeout(10000);
-        config.setMaxLifetime(1800000);
-
-        dataSource = new HikariDataSource(config);
     }
 
+    @Deprecated
     protected static Connection getConnection(String db) throws SQLException {
         if (dataSource == null) {
-            throw new IllegalStateException("Call initialize() first!");
+            throw new IllegalStateException("DatabaseHandler is deprecated. Use Spring DataSource instead!");
         }
         Connection conn = dataSource.getConnection();
 

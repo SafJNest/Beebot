@@ -51,8 +51,14 @@ public class BotDB extends AbstractDB {
     @Autowired
     private MemberService memberService;
 
-    static {
-        instance = new BotDB();
+    // Constructor injection for proper Spring initialization
+    public BotDB() {
+        // Let Spring handle the initialization
+    }
+
+    @Autowired
+    public void setInstance(BotDB botDB) {
+        instance = botDB;
     }
 
     @Override
