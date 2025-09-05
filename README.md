@@ -27,7 +27,12 @@ The bot also provides several server stats tracking features, such as server sta
 Finally, the bot includes several commands related to the popular game League of Legends. You can use these commands to get information about summoner stats, match history, item builds, and more.
 
 ## ***Build with***
-- Java version 17
+- Kotlin 2.1.0 (converted from Java 17)
+- Spring Boot 3.3.4
+- JDA 5.2.1 (Discord API)
+- Maven build system
+
+> **🎉 This bot has been successfully converted from Java to Kotlin!** See [KOTLIN_CONVERSION.md](KOTLIN_CONVERSION.md) for details.
 
 ## ***Contacts***
 ### Lorenzo Sanseverino 

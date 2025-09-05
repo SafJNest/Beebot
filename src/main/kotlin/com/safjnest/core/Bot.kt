@@ -5,11 +5,14 @@ import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.events.session.ReadyEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
+import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.requests.GatewayIntent
 import net.dv8tion.jda.api.utils.ChunkingFilter
 import net.dv8tion.jda.api.utils.MemberCachePolicy
 import net.dv8tion.jda.api.utils.cache.CacheFlag
 import com.safjnest.model.BotSettings.BotSettings
+import com.safjnest.commands.misc.PingCommand
+import com.safjnest.commands.misc.InfoCommand
 import java.awt.Color
 
 /**
@@ -81,8 +84,18 @@ class Bot {
             jda.addEventListener(object : ListenerAdapter() {
                 override fun onReady(event: ReadyEvent) {
                     println("Bot ready! Logged in as: ${event.jda.selfUser.name}")
+                    
+                    // Register slash commands
+                    event.jda.updateCommands().addCommands(
+                        Commands.slash("ping", "Check the bot's latency"),
+                        Commands.slash("info", "Show information about the bot")
+                    ).queue()
                 }
             })
+
+            // Add command listeners
+            jda.addEventListener(PingCommand())
+            jda.addEventListener(InfoCommand())
 
             println("Bot initialization completed successfully!")
 
