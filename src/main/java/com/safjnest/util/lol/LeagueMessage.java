@@ -849,7 +849,6 @@ public class LeagueMessage {
     }
 
     private static EmbedBuilder getOpggEmbedMatchData(EmbedBuilder eb, MatchData matchData, Summoner s, int summonerId) {
-        // Find the participant for this summoner
         ParticipantData me = null;
         for (ParticipantData p : matchData.participants) {
             if (p.summonerId == summonerId) {
@@ -860,7 +859,6 @@ public class LeagueMessage {
         
         if (me == null) return eb;
         
-        // Get other participants for team display
         ArrayList<String> blue = new ArrayList<>();
         ArrayList<String> red = new ArrayList<>();
         for (ParticipantData participant : matchData.participants) {
@@ -881,11 +879,9 @@ public class LeagueMessage {
         
         switch (matchData.gameType) {
             case STRAWBERRY:
-                // For swarm mode, show simplified info
                 content = CustomEmojiHandler.getFormattedEmoji(championName) + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.goldEarned + "\n"
                         + date + " | **" + LeagueMessageUtils.getFormattedDuration(matchData.getDuration()) + "**\n";
                 
-                // Add build items if available
                 if (me.build != null && me.build.has("items")) {
                     String items = "";
                     for (int i = 0; i < 7; i++) {
@@ -898,7 +894,6 @@ public class LeagueMessage {
                 
                 eb.addField("Swarm: " + (me.win ? "WIN" : "LOSE"), content, true);
                 
-                // Show team info
                 String swarmTeam = "";
                 for (ParticipantData participant : matchData.participants) {
                     String pChampName = LeagueHandler.getChampionById(participant.champion).getName();
@@ -912,7 +907,6 @@ public class LeagueMessage {
                 content = CustomEmojiHandler.getFormattedEmoji(championName) + kda + "\n"
                         + date + " | **" + LeagueMessageUtils.getFormattedDuration(matchData.getDuration()) + "**\n";
                 
-                // Add summoner spells and augments if available
                 if (me.build != null) {
                     if (me.build.has("summoner_spells")) {
                         content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("summoner_spells").getInt(0)) + "_");
@@ -928,8 +922,7 @@ public class LeagueMessage {
                                     + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.build.getJSONArray("augments").getInt(3))) + "\n";
                         }
                     }
-                    
-                    // Add items
+
                     if (me.build.has("items")) {
                         for (int i = 0; i < Math.min(6, me.build.getJSONArray("items").length()); i++) {
                             content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("items").getInt(i))) + " ";
@@ -939,7 +932,6 @@ public class LeagueMessage {
                 
                 eb.addField("ARENA: " + (me.win ? "WIN" : "LOSE"), content, true);
                 
-                // Handle Arena team display logic here (simplified)
                 String arenaTeams = "";
                 for (ParticipantData participant : matchData.participants) {
                     String pChampName = LeagueHandler.getChampionById(participant.champion).getName();
@@ -949,10 +941,8 @@ public class LeagueMessage {
                 break;
                 
             default:
-                // Standard game modes
                 String matchTitle = LeagueHandler.formatMatchName(matchData.gameType) + ": " + (me.win ? "WIN" : "LOSE");
                 
-                // Add LP gain/loss info
                 String gain = me.gain > 0 ? "+" + me.gain + " LP" : me.gain + " LP";
                 if (me.rank == TierDivisionType.UNRANKED) {
                     matchTitle += " (Placement)";
@@ -965,8 +955,8 @@ public class LeagueMessage {
                 content = CustomEmojiHandler.getFormattedEmoji(championName) + kda + " | " + "**Vision: **" + me.visionScore + "\n"
                         + date + " | **" + LeagueMessageUtils.getFormattedDuration(matchData.getDuration()) + "**\n";
                 
-                // Add summoner spells and runes if available
                 if (me.build != null) {
+                    JSONObject build = me.build.getJSONObject("build");
                     if (me.build.has("summoner_spells")) {
                         content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("summoner_spells").getInt(0)) + "_");
                         if (me.build.has("runes") && me.build.getJSONArray("runes").length() > 0) {
@@ -980,7 +970,6 @@ public class LeagueMessage {
                         }
                     }
                     
-                    // Add items
                     if (me.build.has("items")) {
                         for (int i = 0; i < Math.min(7, me.build.getJSONArray("items").length()); i++) {
                             content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("items").getInt(i))) + " ";
@@ -990,7 +979,6 @@ public class LeagueMessage {
                 
                 eb.addField(matchTitle, content, true);
                 
-                // Add team information
                 String blueS = "";
                 String redS = "";
                 for (int j = 0; j < Math.min(5, blue.size()); j++) {

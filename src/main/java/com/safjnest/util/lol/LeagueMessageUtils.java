@@ -95,6 +95,13 @@ public class LeagueMessageUtils {
         return M + "m: " + S + "s";
     }
 
+    public static String getFormattedDuration(long milliseconds) {
+        int S = (int) (milliseconds / 1000) % 60;
+        int H = (int) (milliseconds / 1000) / 60;
+        int M = H % 60;
+        return M + "m: " + S + "s";
+    }
+
     public static String getFormattedRunes(MatchParticipant me, int row) {
         String prova = "";
         PerkStyle perkS = me.getPerks().getPerkStyles().get(row);
