@@ -47,3 +47,5 @@ config.properties
  
  
 spring.properties
+# User-specific spring properties
+spring.properties.local
