@@ -30,11 +30,11 @@ public class App {
 
         if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
-            //runSpring();
+            runSpring();
         }
         else {
             TwitchClient.init();
-            //runSpring();
+            runSpring();
         }
         bot = new Bot();
         bot.il_risveglio_della_bestia();
@@ -47,9 +47,9 @@ public class App {
         try {
             springProperties.load(new FileReader("spring.properties"));
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            BotLogger.warn("spring.properties file not found, using default properties");
         } catch (IOException e) {
-            e.printStackTrace();
+            BotLogger.error("Error reading spring.properties: " + e.getMessage());
         }
 
         springApplication.setDefaultProperties(springProperties);

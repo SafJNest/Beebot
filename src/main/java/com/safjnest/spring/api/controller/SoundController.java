@@ -17,7 +17,7 @@ import java.util.Optional;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 
-import com.safjnest.model.sound.Sound;
+import com.safjnest.spring.entity.Sound;
 import com.safjnest.spring.service.SoundService;
 
 @RestController
