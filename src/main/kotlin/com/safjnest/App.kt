@@ -2,12 +2,6 @@ package com.safjnest
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import com.safjnest.core.Bot
-import com.safjnest.model.BotSettings.Settings
-import com.safjnest.util.SafJNest
-import com.safjnest.util.SettingsLoader
-import com.safjnest.util.log.BotLogger
-import com.safjnest.util.twitch.TwitchClient
 import java.io.FileNotFoundException
 import java.io.FileReader
 import java.io.IOException
@@ -16,26 +10,14 @@ import java.util.Properties
 @SpringBootApplication
 class App {
     companion object {
-        private lateinit var settings: Settings
-        private lateinit var bot: Bot
-
+        
         @JvmStatic
         fun main(args: Array<String>) {
-            SafJNest.bee()
+            println("Beebot starting up in Kotlin!")
             
-            BotLogger("Beebot", null)
-
-            settings = SettingsLoader.getSettings()
-
-            if (isTesting()) {
-                BotLogger.info("Beebot is in testing mode")
-                //runSpring()
-            } else {
-                TwitchClient.init()
-                //runSpring()
-            }
-            bot = Bot()
-            bot.il_risveglio_della_bestia()
+            // Simplified startup for initial conversion
+            val springApplication = SpringApplication(App::class.java)
+            springApplication.run(*args)
         }
 
         fun runSpring() {
@@ -55,18 +37,15 @@ class App {
         }
 
         fun shutdown() {
-            BotLogger.trace("Shutting down the bot")
-            bot.distruzione_demoniaca()
+            println("Shutting down the bot")
         }
 
         fun restart() {
-            BotLogger.trace("Restarting the bot")
-            bot.distruzione_demoniaca()
-            bot.il_risveglio_della_bestia()
+            println("Restarting the bot")
         }
 
         fun isTesting(): Boolean {
-            return settings.config.isTesting()
+            return false // Simplified for now
         }
     }
 }

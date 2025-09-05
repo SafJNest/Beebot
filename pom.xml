@@ -22,6 +22,7 @@
 
 
   <repositories>
+    <!-- Comment out unavailable repositories
     <repository>
       <id>chew</id>
       <name>m2-chew</name>
@@ -46,6 +47,7 @@
       <name>Topis Maven Repo</name>
       <url>https://maven.topi.wtf/releases</url>
     </repository>
+    -->
   </repositories>
 
 
@@ -200,20 +202,19 @@
     </dependency>
     -->
 
-    <!-- https://mvnrepository.com/artifact/net.dv8tion/JDA 
+    <!-- https://mvnrepository.com/artifact/net.dv8tion/JDA -->
+    <!-- Temporarily removing jda-utilities due to repo availability issues
     <dependency>
-      <groupId>pw.chew</groupId>
-      <artifactId>jda-chewtils</artifactId>
-      <version>2.1</version>
-      <scope>compile</scope>
-      <type>pom</type>
+      <groupId>com.jagrosh</groupId>
+      <artifactId>jda-utilities</artifactId>
+      <version>3.0.5</version>
     </dependency>
     -->
 
     <dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
-      <version>6.0.0-rc.3</version>
+      <version>5.2.1</version>
     </dependency>
     <!--
     <dependency>
