@@ -36,6 +36,8 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.LeagueMessageParameter;
+import com.safjnest.util.lol.LeagueMessageType;
 import com.safjnest.util.lol.model.MatchData;
 import com.safjnest.util.lol.model.ParticipantData;
 import com.safjnest.util.lol.model.build.CustomBuildData;
@@ -587,13 +589,19 @@ public class LeagueDB extends AbstractDB {
         }
     }
 
+    public static String buildMatchHistoryQuery(int summonerId, LeagueMessageParameter parameter) {
+        long timeStart = parameter.getTimeStart();
+        long timeEnd = parameter.getTimeEnd();
+        int champion = parameter.getShowingChampion();
+        GameQueueType queue = parameter.getQueueType();
+        LaneType lane = parameter.getLaneType();
 
-    public static List<MatchData> getMatchHistory(
-            int summonerId, int champion, long timeStart, long timeEnd,
-            GameQueueType queue, LaneType lane) throws SQLException {
+        int offset = parameter.getOffset();
+        int limit = parameter.getMessageType().getPageItem();
 
-        List<MatchData> result = new ArrayList<>();
-        Map<Integer, MatchData> matchMap = new LinkedHashMap<>();
+        String offsetFilter = parameter.getMessageType() == LeagueMessageType.CHAMPION_OPGG
+            ? "LIMIT " + limit + " OFFSET " + offset
+            : "";
 
         if (queue == GameQueueType.CHERRY)
                 lane = null;
@@ -605,14 +613,52 @@ public class LeagueDB extends AbstractDB {
         String championFilter = champion != 0 ? "AND st.champion = " + champion + " " : "";
         String laneFilter = lane != null ? "AND st.lane = " + lane.ordinal() + " " : "";
 
+        return
+            "SELECT sm.* " +
+            "FROM `match` sm " +
+            "JOIN participant st ON st.match_id = sm.id " +
+            "WHERE st.summoner_id = " + summonerId + " " +
+            timeFilter + queueFilter + championFilter + laneFilter + " ORDER BY sm.id DESC " +
+            offsetFilter + ";";
+    }
+
+
+    public static int countMatchHistory(int summonerId, LeagueMessageParameter parameter) {
+        long timeStart = parameter.getTimeStart();
+        long timeEnd = parameter.getTimeEnd();
+        int champion = parameter.getShowingChampion();
+        GameQueueType queue = parameter.getQueueType();
+        LaneType lane = parameter.getLaneType();
+
+        if (queue == GameQueueType.CHERRY)
+                lane = null;
+
+        String timeFilter = timeStart != 0
+                ? "AND sm.`time_start` >= '" + new Timestamp(timeStart) + "' AND sm.`time_end` <= '" + new Timestamp(timeEnd) + "' "
+                : "";
+        String queueFilter = queue != null ? "AND sm.game_type = " + queue.ordinal() + " " : "";
+        String championFilter = champion != 0 ? "AND st.champion = " + champion + " " : "";
+        String laneFilter = lane != null ? "AND st.lane = " + lane.ordinal() + " " : "";
+
+        String q = 
+            "SELECT sm.id " +
+            "FROM `match` sm " +
+            "JOIN participant st ON st.match_id = sm.id " +
+            "WHERE st.summoner_id = " + summonerId + " " +
+            timeFilter + queueFilter + championFilter + laneFilter + " ORDER BY sm.id DESC;";
+
+        return instance.query(q).size();
+    }
+
+
+    public static List<MatchData> getMatchHistory(int summonerId, LeagueMessageParameter parameter) throws SQLException {
+        List<MatchData> result = new ArrayList<>();
+        Map<Integer, MatchData> matchMap = new LinkedHashMap<>();
+
         try (Connection c = instance.getConnection()) {
             if (c == null) return result;
 
-            String q1 = "SELECT sm.* " +
-                        "FROM `match` sm " +
-                        "JOIN participant st ON st.match_id = sm.id " +
-                        "WHERE st.summoner_id = " + summonerId + " " +
-                        timeFilter + queueFilter + championFilter + laneFilter + " ORDER BY sm.id DESC;";
+            String q1 = buildMatchHistoryQuery(summonerId, parameter);
 
             List<Integer> matchIds = new ArrayList<>();
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q1)) {
@@ -692,7 +738,7 @@ public class LeagueDB extends AbstractDB {
                     } catch (Exception e) {}
  
 
-                    p.build = new JSONObject(rs.getString("build"));
+                    p.setBuild(rs.getString("build"));
 
                     MatchData match = matchMap.get(p.matchId);
                     if (match != null) {

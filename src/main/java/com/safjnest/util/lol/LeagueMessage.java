@@ -848,151 +848,189 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getOpggEmbedMatchData(EmbedBuilder eb, MatchData matchData, Summoner s, int summonerId) {
+    private static EmbedBuilder getOpggEmbedMatchData(EmbedBuilder eb, MatchData match, Summoner summoner) {
         ParticipantData me = null;
-        for (ParticipantData p : matchData.participants) {
-            if (p.summonerId == summonerId) {
-                me = p;
+        for(ParticipantData mp : match.participants){
+            if(mp.puuid.equals(summoner.getPUUID())){
+                me = mp;
                 break;
             }
         }
-        
-        if (me == null) return eb;
-        
+
         ArrayList<String> blue = new ArrayList<>();
         ArrayList<String> red = new ArrayList<>();
-        for (ParticipantData participant : matchData.participants) {
-            String championName = LeagueHandler.getChampionById(participant.champion).getName();
-            String partecipantString = CustomEmojiHandler.getFormattedEmoji(championName) + " " + participant.kda;
-            
-            if (participant.team == TeamType.BLUE) {
-                blue.add(partecipantString);
-            } else {
-                red.add(partecipantString);
-            }
+        for(ParticipantData searchMe : match.participants) {
+            String participantString = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(searchMe.champion).getName())
+                                        + " "
+                                        + searchMe.kda;
+
+            if(searchMe.team == TeamType.BLUE)
+                blue.add(participantString);
+            else
+                red.add(participantString);
         }
-        
+
+
         String kda = me.kda;
         String content = "";
-        String date = "<t:" + (matchData.timeStart / 1000) + ":R>";
-        String championName = LeagueHandler.getChampionById(me.champion).getName();
-        
-        switch (matchData.gameType) {
+        Instant instant = Instant.ofEpochMilli(match.timeStart + match.getDuration() + 3600000*2);
+        ZoneOffset offset = ZoneOffset.UTC;
+        OffsetDateTime offsetDateTime = instant.atOffset(offset);
+        String date = DateHandler.formatDate(offsetDateTime);
+        date = "<t:" + ((match.timeStart/1000) + (match.getDuration()/1000)) + ":R>";
+        switch (match.gameType){
             case STRAWBERRY:
-                content = CustomEmojiHandler.getFormattedEmoji(championName) + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.goldEarned + "\n"
-                        + date + " | **" + LeagueMessageUtils.getFormattedDuration(matchData.getDuration()) + "**\n";
+                content = CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.champion)) + " Level: " + 
+                        (me.skillOrder.size() > 0 ? me.skillOrder.size() : 1) + 
+                        " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.goldEarned + "\n"
+                        + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item0)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item1)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item2)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item3)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item4)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item5)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item6));
                 
-                if (me.build != null && me.build.has("items")) {
-                    String items = "";
-                    for (int i = 0; i < 7; i++) {
-                        if (me.build.getJSONArray("items").length() > i) {
-                            items += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("items").getInt(i))) + " ";
-                        }
-                    }
-                    content += items;
-                }
-                
-                eb.addField("Swarm: " + (me.win ? "WIN" : "LOSE"), content, true);
-                
+                eb.addField("Swarm" + ": " + (me.win ? "WIN" : "LOSE"), content, true);
+
                 String swarmTeam = "";
-                for (ParticipantData participant : matchData.participants) {
-                    String pChampName = LeagueHandler.getChampionById(participant.champion).getName();
-                    swarmTeam += CustomEmojiHandler.getFormattedEmoji(pChampName) + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + participant.goldEarned + "\n";
-                }
+                for(ParticipantData mt : match.participants)
+                    swarmTeam += CustomEmojiHandler.getFormattedEmoji(String.valueOf(mt.champion)) + " Level: " +  
+                            (mt.skillOrder.size() > 0 ? mt.skillOrder.size() : 1) + 
+                            " | " + CustomEmojiHandler.getFormattedEmoji("golds") + mt.goldEarned + "\n";
+
                 eb.addField("Swarm Team", swarmTeam, true);
                 eb.addBlankField(true);
                 break;
-                
-            case CHERRY:
-                content = CustomEmojiHandler.getFormattedEmoji(championName) + kda + "\n"
-                        + date + " | **" + LeagueMessageUtils.getFormattedDuration(matchData.getDuration()) + "**\n";
-                
-                if (me.build != null) {
-                    if (me.build.has("summoner_spells")) {
-                        content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("summoner_spells").getInt(0)) + "_");
-                        if (me.build.has("augments") && me.build.getJSONArray("augments").length() >= 2) {
-                            content += CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.build.getJSONArray("augments").getInt(0))) + " " 
-                                    + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.build.getJSONArray("augments").getInt(1))) + "\n";
-                        }
-                        if (me.build.getJSONArray("summoner_spells").length() > 1) {
-                            content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("summoner_spells").getInt(1)) + "_");
-                        }
-                        if (me.build.has("augments") && me.build.getJSONArray("augments").length() >= 4) {
-                            content += CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.build.getJSONArray("augments").getInt(2))) + " " 
-                                    + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.build.getJSONArray("augments").getInt(3))) + "\n";
-                        }
-                    }
 
-                    if (me.build.has("items")) {
-                        for (int i = 0; i < Math.min(6, me.build.getJSONArray("items").length()); i++) {
-                            content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("items").getInt(i))) + " ";
-                        }
-                    }
-                }
-                
+            case CHERRY:
+                content = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(me.champion).getName()) + kda + "\n"
+                        + date + " | **" + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
+                        + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_")
+                        + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 0 ? me.augments.get(0) : "0")) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 1 ? me.augments.get(1) : "0")) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell2 + "_")
+                        + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 2 ? me.augments.get(2) : "0")) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 3 ? me.augments.get(3) : "0")) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item0)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item1)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item2)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item3)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item4)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item5));
+
                 eb.addField("ARENA: " + (me.win ? "WIN" : "LOSE"), content, true);
-                
-                String arenaTeams = "";
-                for (ParticipantData participant : matchData.participants) {
-                    String pChampName = LeagueHandler.getChampionById(participant.champion).getName();
-                    arenaTeams += CustomEmojiHandler.getFormattedEmoji(pChampName) + " ";
+
+                HashMap<String, ArrayList<String>> prova = new HashMap<>();
+                prova.put("teamscuttles", new ArrayList<>());
+                prova.put("teamporos", new ArrayList<>());
+                prova.put("teamkrugs", new ArrayList<>());
+                prova.put("teamminions", new ArrayList<>());
+                prova.put("teamsentinels", new ArrayList<>());
+                prova.put("teamgromps", new ArrayList<>());
+                prova.put("teamraptors", new ArrayList<>());
+                prova.put("teamwolves", new ArrayList<>());
+
+                HashMap<Integer, String> positions = new HashMap<>();
+
+                for(ParticipantData mt : match.participants){
+                    String name = "";
+                    String team = "";
+                    switch (mt.subTeam) {
+                        case 1:
+                            team = "teamporos";
+                        break;
+                        case 2:
+                            team = "teamminions";
+                        break;
+                        case 3:
+                            team = "teamscuttles";
+                        break;
+                        case 4:
+                            team = "teamkrugs";
+                        break;
+                        case 5:
+                            team = "teamraptors";
+                        break;
+                        case 6:
+                            team = "teamsentinels";
+                        break;
+                        case 7:
+                            team = "teamwolves";
+                        break;
+                        case 8:
+                            team = "teamgromps";
+                        break;
+                    }
+                    prova.get(team).add(CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(mt.champion).getName()) + name);
+                    positions.put(mt.subTeamPlacement, team);
                 }
-                eb.addField("Arena Teams", arenaTeams, true);
+                
+                String blueTeam = "";
+                String redTeam = "";
+                for (int j = 1; j <= 8; j++) {
+                    String team = positions.get(j);
+                    if (team != null && prova.get(team) != null && prova.get(team).size() >= 2) {
+                        String space = j % 2 == 0 ? "\n\n" : "\n";
+                        if (j <= 4)
+                            blueTeam += CustomEmojiHandler.getFormattedEmoji(team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
+                        else
+                            redTeam += CustomEmojiHandler.getFormattedEmoji(team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
+                    }
+                }
+                eb.addField("Top 4", blueTeam, true);
+                eb.addField("Others", redTeam, true);
                 break;
-                
+
             default:
-                String matchTitle = LeagueHandler.formatMatchName(matchData.gameType) + ": " + (me.win ? "WIN" : "LOSE");
-                
-                String gain = me.gain > 0 ? "+" + me.gain + " LP" : me.gain + " LP";
-                if (me.rank == TierDivisionType.UNRANKED) {
-                    matchTitle += " (Placement)";
-                } else if (me.gain == 0 && !me.win) {
-                    matchTitle += " -0 LP"; // demotion shield
-                } else {
-                    matchTitle += " " + gain;
-                }
-                
-                content = CustomEmojiHandler.getFormattedEmoji(championName) + kda + " | " + "**Vision: **" + me.visionScore + "\n"
-                        + date + " | **" + LeagueMessageUtils.getFormattedDuration(matchData.getDuration()) + "**\n";
-                
-                if (me.build != null) {
-                    JSONObject build = me.build.getJSONObject("build");
-                    if (me.build.has("summoner_spells")) {
-                        content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("summoner_spells").getInt(0)) + "_");
-                        if (me.build.has("runes") && me.build.getJSONArray("runes").length() > 0) {
-                            content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("runes").getInt(0))) + "\n";
-                        }
-                        if (me.build.getJSONArray("summoner_spells").length() > 1) {
-                            content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("summoner_spells").getInt(1)) + "_");
-                        }
-                        if (me.build.has("runes") && me.build.getJSONArray("runes").length() > 1) {
-                            content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("runes").getInt(1))) + "\n";
-                        }
-                    }
-                    
-                    if (me.build.has("items")) {
-                        for (int i = 0; i < Math.min(7, me.build.getJSONArray("items").length()); i++) {
-                            content += CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.build.getJSONArray("items").getInt(i))) + " ";
-                        }
-                    }
-                }
+                String matchTitle = LeagueHandler.formatMatchName(match.gameType) + ": " + (me.win ? "WIN" : "LOSE");
+                content = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(me.champion).getName()) + kda + " | " + "**Vision: **" + me.visionScore + "\n"
+                        + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
+                        + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_") 
+                        + getFormattedPrimaryRunes(me) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell2 + "_") 
+                        + getFormattedSecondaryRunes(me) + "\n"
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item0)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item1)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item2)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item3)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item4)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item5)) + " " 
+                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.item6));
                 
                 eb.addField(matchTitle, content, true);
-                
                 String blueS = "";
                 String redS = "";
-                for (int j = 0; j < Math.min(5, blue.size()); j++) {
+                for(int j = 0; j < 5 && j < blue.size(); j++)
                     blueS += blue.get(j) + "\n";
-                }
-                for (int j = 0; j < Math.min(5, red.size()); j++) {
+                for(int j = 0; j < 5 && j < red.size(); j++)
                     redS += red.get(j) + "\n";
-                }
                 eb.addField("Blue Side", blueS, true);
                 eb.addField("Red Side", redS, true);
                 break;
         }
-        
         return eb;
+    }
+
+    private static String getFormattedPrimaryRunes(ParticipantData p) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getFatherRuneById(p.primaryRunes.get(0))));
+        for (int i = 1; i < p.primaryRunes.size(); i++) {
+            sb.append(CustomEmojiHandler.getFormattedEmoji(String.valueOf(p.primaryRunes.get(i))));
+            if (i < 1) sb.append(" ");
+        }
+        return sb.toString();
+    }
+
+    private static String getFormattedSecondaryRunes(ParticipantData p) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getFatherRuneById(p.secondaryRunes.get(0))));
+        for (int i = 1; i < p.secondaryRunes.size(); i++) {
+            sb.append(CustomEmojiHandler.getFormattedEmoji(String.valueOf(p.secondaryRunes.get(i))));
+            if (i < 1) sb.append(" ");
+        }
+        return sb.toString();
     }
 
     public static EmbedBuilder getOpggEmbed(Summoner s, GameQueueType queue, int index) {
@@ -1340,7 +1378,7 @@ public class LeagueMessage {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         List<MatchData> matches = null;
         try {
-            matches = LeagueDB.getMatchHistory(summonerId, parameter.getShowingChampion(), parameter.getPeriod()[0], parameter.getPeriod()[1], parameter.getQueueType(), parameter.getLaneType());
+            matches = LeagueDB.getMatchHistory(summonerId, parameter);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1352,7 +1390,6 @@ public class LeagueMessage {
 
         eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         eb.setColor(Bot.getColor());
-
         switch (parameter.getMessageType()) {
             case CHAMPION_OVERVIEW:
                 eb = getGenericStats(eb, matches, summoner, summonerId, parameter);                
@@ -1370,7 +1407,7 @@ public class LeagueMessage {
                 eb = getAllChampions(eb, matches, summoner, summonerId, parameter);
                 break;
             case CHAMPION_OPGG:
-                eb = getChampionOPGG(eb, matches, summoner, parameter);
+                eb = getChampionOPGG(eb, matches, summoner, summonerId, parameter);
                 break;
             default:
                 break;
@@ -1379,22 +1416,12 @@ public class LeagueMessage {
     }
 
 
-    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<MatchData> matches, Summoner s, LeagueMessageParameter parameter) {
-        int summonerId = LeagueHandler.updateSummonerDB(s);
-        EmbedBuilder[] ebHolder = new EmbedBuilder[] { eb };
-
-        matches.stream()
-            .skip(parameter.getOffset())
-            .limit(LeagueMessageType.CHAMPION_OPGG.getPageItem())
-            .forEach(matchData -> {
-                try {
-                    ebHolder[0] = getOpggEmbedMatchData(ebHolder[0], matchData, s, summonerId);
-                } catch (Exception e) {
-                    // Optionally log or handle exception
-                }
-            });
-        eb = ebHolder[0];
-        int pages = (int) Math.ceil((double) matches.size() / 5);
+    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<MatchData> matches, Summoner s, int summonerId, LeagueMessageParameter parameter) {
+        for (MatchData match : matches) 
+            eb = getOpggEmbedMatchData(eb, match, s);
+        
+        int totalPages = LeagueDB.countMatchHistory(summonerId, parameter);
+        int pages = (int) Math.ceil((double) totalPages / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);
         return eb;
@@ -1656,10 +1683,9 @@ private static String capitalizeFirstLetter(String text) {
             Button rightPage = Button.secondary("champion-rightpage-" + parameter.getOffset(), "Next Page");
             
             if (parameter.getMessageType() == LeagueMessageType.CHAMPION_OPGG) {
-                // For CHAMPION_OPGG: center-champ-change, prevpage, nextpage (no account arrows)
                 rows.add(ActionRow.of(center, championButton, settings, leftPage, rightPage));
             } else {
-                // For other page button types: keep existing behavior
+
                 if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
                     rows.add(ActionRow.of(left, center, right, leftPage, rightPage));
                 else 
