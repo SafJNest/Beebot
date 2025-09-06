@@ -78,7 +78,6 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.category.DefaultCategoryDataset;
-import org.json.simple.JSONObject;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -92,6 +91,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import org.json.JSONObject;
+
 
 import java.util.*;
 
@@ -120,7 +122,7 @@ public class Test extends Command{
         commandData.setThings(this);
     }
 
-    @SuppressWarnings({ "unchecked", "unused" })
+    @SuppressWarnings({ "unused" })
     @Override
     protected void execute(CommandEvent e) {
         String[] bots = {"938487470339801169", "983315338886279229", "939876818465488926", "1098906798016184422", "1074276395640954942"};
@@ -273,15 +275,15 @@ public class Test extends Command{
                 break;
             case "13":
                 HashMap<AlertKey<?>, AlertData> prova = GuildCache.getGuildOrPut(e.getGuild().getId()).getAlerts();
-                String s = new JSONObject(prova).toJSONString();
+                String s = new JSONObject(prova).toString();
                 e.reply("```json\n" + GuildCache.getGuildOrPut(e.getGuild().getId()).toString() + "```");
                 e.reply("```json\n" + s + "```");
                 BlacklistData bd = GuildCache.getGuildOrPut(e.getGuild().getId()).getBlacklistData();
                 e.reply("```json\n" + bd.toString()+ "```");
                 HashMap<String, ChannelData> channels = GuildCache.getGuildOrPut(e.getGuild().getId()).getChannels();
-                e.reply("```json\n" + new JSONObject(channels).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getMembers()).toJSONString() + "```");
-                e.reply("```json\n" + new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getActionsWithId()).toJSONString() + "```");
+                e.reply("```json\n" + new JSONObject(channels).toString() + "```");
+                e.reply("```json\n" + new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getMembers()).toString() + "```");
+                e.reply("```json\n" + new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getActionsWithId()).toString() + "```");
                 break;
             case "14":
                 for(Guild g : e.getJDA().getGuilds()) {
@@ -298,7 +300,7 @@ public class Test extends Command{
                 e.reply("Done");
                 break;
             case "getServer":
-                String sss = new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getChannels()).toJSONString();
+                String sss = new JSONObject(GuildCache.getGuildOrPut(e.getGuild().getId()).getChannels()).toString();
                 e.reply("```json\n" + sss + "```");
                 break;
             case "stats":
@@ -666,38 +668,22 @@ public class Test extends Command{
                     TeamType team = null;
                     //Summoner su = LeagueHandler.getSummonerByPuuid(account_id, LeagueShard.values()[row.getAsInt("league_shard")]);
                     for (MatchParticipant participant : match.getParticipants()) {
-                        int sumId = LeagueDB.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
+                        QueryRecord record = LeagueDB.get().lineQuery("select s.id, p.build from summoner s left join participant p on s.id = p.summoner_id and p.match_id = " + row.get("id") + " where s.puuid = '" + participant.getPuuid() + "' and s.league_shard = " + row.getAsInt("league_shard") + ";"); 
+                        int sumId = record != null ? record.getAsInt("id") : 0;
                         if (sumId == 0) continue;
-                        lane = participant.getChampionSelectLane() != null ? participant.getChampionSelectLane() : participant.getLane();
-                        team = participant.getTeam();
-                        String build = "..."; // come la calcoli tu
-                        int totalDamage = participant.getTotalDamageDealtToChampions();
-                        int shield = participant.getTotalHealsOnTeammates() + participant.getTotalDamageShieldedOnTeammates();
-                        int cs = participant.getTotalMinionsKilled() + participant.getNeutralMinionsKilled();
-                        int tower = participant.getDamageDealtToBuildings();
-                        int vision = participant.getVisionScore();
-                        int ward = participant.getWardsPlaced();
 
-                                participant.getGoldEarned();
-                                participant.getWardsKilled();
-        
-                        HashMap<String, Integer> pings = new HashMap<>();        
-                        pings.put("push", participant.getPushPings());
-                        pings.put("bait", participant.getBaitPings());
-                        pings.put("danger", participant.getDangerPings());
-                        pings.put("hold", participant.getHoldPings());
-                        pings.put("all_in", participant.getAllInPings());
-                        pings.put("basic", participant.getBasicPings());
-                        pings.put("command", participant.getCommandPings());
-                        pings.put("get_back", participant.getGetBackPings());
-                        pings.put("on_my_way", participant.getOnMyWayPings());
-                        pings.put("assist_me", participant.getAssistMePings());
-                        pings.put("need_vision", participant.getNeedVisionPings());
-                        pings.put("enemy_vision", participant.getEnemyVisionPings());
-                        pings.put("enemy_missing", participant.getEnemyMissingPings());
-                        pings.put("vision_cleared", participant.getVisionClearedPings());
+                        JSONObject build = new JSONObject(record.get("build") != null && !record.get("build").isEmpty() ? record.get("build") : "{}");
+                        HashMap<Integer, Integer> items = new HashMap<Integer, Integer>();
+                        items.put(0, participant.getItem0());
+                        items.put(1, participant.getItem1());
+                        items.put(2, participant.getItem2());
+                        items.put(3, participant.getItem3());
+                        items.put(4, participant.getItem4());
+                        items.put(5, participant.getItem5());
+                        items.put(6, participant.getItem6());
+                        build.put("items", items);
 
-                        query = "UPDATE participant SET damage='" + totalDamage + "', damage_building='" + tower + "', healing='" + shield + "', vision_score='" + vision + "', cs='" + cs + "', ward='" + ward + "', pings='" + JSONObject.toJSONString(pings) + "', ward_killed='" + participant.getWardsKilled()+ "', gold_earned='" + participant.getGoldEarned() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
+                        query = "UPDATE participant SET build='" + build.toString() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
                         LeagueDB.get().query(query);
                     }
                     System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());

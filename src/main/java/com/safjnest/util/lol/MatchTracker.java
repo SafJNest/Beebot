@@ -346,6 +346,14 @@ public class MatchTracker {
         json.put("runes", runes);
         json.put("summoner_spells", matchData.get("summoner_spells").split(","));
 
+        String[] itemsArr = matchData.get("items").split(",");
+        JSONObject itemsObj = new JSONObject();
+        for (int i = 0; i < itemsArr.length; i++) {
+            int itemId = itemsArr[i].isEmpty() ? 0 : Integer.parseInt(itemsArr[i]);
+            itemsObj.put(String.valueOf(i), itemId);
+        }
+        json.put("items", itemsObj);
+
         if (matchData.containsKey("augments"))
             json.put("augments", matchData.get("augments").split(","));
 
@@ -403,6 +411,7 @@ public class MatchTracker {
                 matchData.get(partecipant.getPuuid()).put("perks-" + i, partecipant.getPerks().getPerkStyles().get(i).getStyle() + "," + matchData.get(partecipant.getPuuid()).get("perks-" + i));
             }
             matchData.get(partecipant.getPuuid()).put("summoner_spells", partecipant.getSummoner1Id() + "," + partecipant.getSummoner2Id());
+            matchData.get(partecipant.getPuuid()).put("items", partecipant.getItem0() + "," + partecipant.getItem1() + "," + partecipant.getItem2() + "," + partecipant.getItem3() + "," + partecipant.getItem4() + "," + partecipant.getItem5() + "," + partecipant.getItem6());
 
             if (match.getQueue() == GameQueueType.CHERRY) {
                 String augmentList = "";
