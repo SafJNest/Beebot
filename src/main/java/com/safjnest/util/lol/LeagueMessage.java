@@ -1424,6 +1424,7 @@ public class LeagueMessage {
         int pages = (int) Math.ceil((double) totalPages / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);
+        eb.setThumbnail(null);
         return eb;
     }
 
@@ -1547,7 +1548,7 @@ public class LeagueMessage {
                 double avgPerGame = totalGames > 0 ? (double) total / totalGames : 0;
                 
                 if (participation > 0) {
-                    String displayName = capitalizeFirstLetter(monsterType);
+                    String displayName = LeagueMessageUtils.capitalizeFirstLetter(monsterType);
                     monsterStats.append(String.format("**%s**: %dK %dP (%.1f avg)\n", 
                         displayName, kills, participation, avgPerGame));
                 }
@@ -1570,16 +1571,14 @@ public class LeagueMessage {
                 int participation = buildingParticipation.getOrDefault(buildingType, 0);
                 double avgPerGame = totalGames > 0 ? (double) total / totalGames : 0;
                 
-                // Solo se ha partecipato almeno una volta
                 if (participation > 0) {
-                    String displayName = capitalizeFirstLetter(buildingType);
+                    String displayName = LeagueMessageUtils.capitalizeFirstLetter(buildingType);
                     buildingStats.append(String.format("**%s**: %dK %dP (%.1f avg)\n", 
                         displayName, kills, participation, avgPerGame));
                 }
             }
             
             if (buildingStats.length() > 0) {
-                // Limita la lunghezza se troppo lunga
                 String statsText = buildingStats.toString();
                 if (statsText.length() > 1000) {
                     statsText = statsText.substring(0, 997) + "...";
@@ -1591,22 +1590,6 @@ public class LeagueMessage {
         return eb;
     }
 
-private static String capitalizeFirstLetter(String text) {
-    if (text == null || text.isEmpty()) return text;
-    
-    String[] words = text.split(" ");
-    StringBuilder result = new StringBuilder();
-    
-    for (String word : words) {
-        if (!word.isEmpty()) {
-            result.append(Character.toUpperCase(word.charAt(0)))
-                  .append(word.substring(1).toLowerCase())
-                  .append(" ");
-        }
-    }
-    
-    return result.toString().trim();
-}
     private static List<MessageTopLevelComponent> getChampionButtons(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         StaticChampion champion = parameter.getChampion();
         
@@ -1747,6 +1730,9 @@ private static String capitalizeFirstLetter(String text) {
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
 
+        HashMap<String, Set<Integer>> unique = new HashMap<>();
+        unique.put("champion", new HashSet<>());
+
         for (MatchData match : matches) {
             for (ParticipantData participant : match.participants) {
                 if (participant.summonerId != summonerId) {
@@ -1789,6 +1775,12 @@ private static String capitalizeFirstLetter(String text) {
                 }
             }
         }
+
+
+        int champs = unique.get("champion").size();
+        eb.setDescription(
+            "Summoner has played **" + matches.size() + "** games with " + champs + " different champions"
+        );
 
         eb = LeagueMessageUtils.buildMatchups("matchups", eb, laneVsWinrate);
         if (parameter.isDuo())

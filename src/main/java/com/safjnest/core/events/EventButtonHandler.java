@@ -1635,9 +1635,11 @@ public class EventButtonHandler extends ListenerAdapter {
                     }
                 }
                 parameter.setQueueType(event.getButton().getStyle() != ButtonStyle.SUCCESS ? GameQueueType.valueOf(event.getButton().getCustomId().split("-")[2]) : null);
+                parameter.setOffset(0);
             break;
             case "lane":
                 parameter.setLaneType(event.getButton().getStyle() != ButtonStyle.SUCCESS ? LaneType.valueOf(event.getButton().getCustomId().split("-")[2]) : null);
+                parameter.setOffset(0);
                 break;
             case "type":
                 parameter.setMessageType(LeagueMessageType.valueOf(event.getButton().getCustomId().split("-")[2]));
@@ -1663,9 +1665,11 @@ public class EventButtonHandler extends ListenerAdapter {
                         break;
                 }
                 parameter.setPeriod(time);
+                parameter.setOffset(0);
                 break;
             case "champion":
                  parameter.setShowChampion(event.getButton().getStyle() != ButtonStyle.SUCCESS);
+                 parameter.setOffset(0);
                 break;
             case "change":
                 TextInput subject = TextInput.create("champion-change", "Select a champion", TextInputStyle.SHORT)
