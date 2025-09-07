@@ -953,7 +953,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
             case "champion":
-                if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
                 int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
                 LeagueMessageParameter parameter = new LeagueMessageParameter("lol", EventUtils.getButtons(event));
@@ -1109,7 +1109,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
             break;
             case "champion":
-                if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
                 int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
                 LeagueMessageParameter parameter = new LeagueMessageParameter("match", EventUtils.getButtons(event));
@@ -1223,7 +1223,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
                 return;
             case "champion":
-                if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
+                if (EventUtils.getButtonById(event, "rank-left") == null) user_id = "";
                 s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
                 int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
                 LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, new LeagueMessageParameter(LeagueMessageType.CHAMPION_OVERVIEW)); 
