@@ -1,49 +1,95 @@
-# Compiled class file
-*.class
+# Beebot C Project .gitignore
 
-# Log file
+# Build outputs
+beebot
+build/
+*.o
+*.a
+*.so
+*.dylib
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile.cmake
+install_manifest.txt
+
+# Debug files
+*.dSYM/
+core
+vgcore.*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.fleet/
+.settings/
+
+# Configuration files with sensitive data
+config.json
+*.env
+rsc/settings.json
+config.properties
+spring.properties
+
+# Log files
 *.log
+logs/
+l4j8cache/
 
-# BlueJ files
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+*.tmp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+
+# Package files
+*.tar.gz
+*.zip
+*.deb
+*.rpm
+
+# Legacy Java build artifacts (keeping some for reference)
+*.class
 *.ctxt
-
-# Mobile Tools for Java (J2ME)
 .mtj.tmp/
-
-# Package Files #
 *.war
 *.nar
 *.ear
-*.zip
 !rsc/testing/spotify/*.zip
-*.tar.gz
 *.rar
-
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
-
 target/
-.vscode/
 index/
 node_modules/
 
+# Upload directories
 rsc/Upload/*
 rsc/tts/*
-.fleet/
-.idea/
-.settings/
-l4j8cache/
 
+# Project files
 .project
 .classpath
 
-.DS_Store
-
-rsc/settings.json
-
-config.properties
-
-/TODO
- 
- 
-spring.properties
+# TODO files
+./TODO

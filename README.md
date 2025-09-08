@@ -1,44 +1,119 @@
-<img src="/rsc/assets/logo_cropped.png" alt="safjnest_logo" width="200"/>
+# Beebot - Discord Bot in C
 
-# ***BEEBOT***
-This Discord bot is designed to enhance your server experience by providing a range of features, including music playback, custom sound uploading, server management commands, server stats tracking, and commands for the popular game League of Legends. ;D.
+![Beebot Logo](rsc/assets/logo_cropped.png)
 
-## *Invite and Information*
+A complete rewrite of the Java JDA Discord bot in pure C, maintaining all original functionality while using native C libraries and manual memory management.
 
-- link:  https://discord.com/oauth2/authorize?client_id=938487470339801169&scope=bot
+## Overview
 
-- Prefix: *!*
+This project is a comprehensive conversion of a feature-rich Discord bot from Java (using JDA - Java Discord API) to pure C. The bot maintains the same behavior and functionality as the original while utilizing C libraries and proper memory management practices.
 
-## ***Functionality***
+### Original Java Bot Features Converted
 
-### **Music Playback**
-The bot comes with a built-in music player that allows you to play songs directly in your voice channel. You can use commands to search for songs on YouTube or SoundCloud, skip tracks, and more. You can even queue up multiple playlists for uninterrupted listening sessions.
+- **151+ Commands** across 9 categories
+- **Audio System** - Music playback, custom sounds, TTS
+- **Moderation Tools** - Ban, kick, mute, message clearing
+- **Server Management** - Channel info, member management, permissions
+- **Gaming Integration** - League of Legends stats and data
+- **Utility Commands** - Calculator, dice, weather, QR codes
+- **Custom Features** - Soundboards, playlists, user tracking
 
-### **Custom Sound Uploading**
-In addition to the built-in music player, the bot also lets you upload your own custom sounds to use in your server. You can use this feature to add unique sound effects, music clips, or voice lines that are specific to your server or community.
+## Key Conversion Differences
 
-### **Server Management Commands**
-The bot includes several server management commands that allow you to manage your server more easily. You can use commands to ban or kick users, clear channels, and more.
+| Java (Original) | C (Converted) |
+|----------------|---------------|
+| Garbage Collection | Manual Memory Management |
+| JDA Library | Direct HTTP/WebSocket + Discord C Libraries |
+| Object-Oriented Commands | Function Pointer Callbacks |
+| Exception Handling | Explicit Error Codes |
+| Spring Boot Configuration | JSON Configuration Files |
+| Maven Build System | CMake Build System |
 
-### **Server Stats Tracking**
-The bot also provides several server stats tracking features, such as server stats, member stats, user stats and more.
+## Building and Installation
 
-### **League of Legends Commands**
-Finally, the bot includes several commands related to the popular game League of Legends. You can use these commands to get information about summoner stats, match history, item builds, and more.
+### Prerequisites
 
-## ***Build with***
-- Java version 17
+- GCC or Clang compiler with C11 support
+- CMake 3.16 or later
+- libcurl (for HTTP requests)
+- pthread library
 
-## ***Contacts***
-### Lorenzo Sanseverino 
-- Founder and CEO of SafJNest
-- Developer and designer
-- lorenzosanseverino2003@gmail.com
-- Git: <a href="https://github.com/NeutronSun">NeutronSun</a> 
-- Discord: sunyx117
-### Leonardo Panichi
-- Co-Founder, COO, CFO, CMO, CTO, CIO, CSO and CCO of SafJNest
-- Developer and analyst
-- leonardopanichi4@gmail.com
-- Git: <a href="https://github.com/Leon412">Leon412</a> 
-- Discord: leon4_
+### Ubuntu/Debian
+```bash
+sudo apt-get update
+sudo apt-get install build-essential cmake libcurl4-openssl-dev
+```
+
+### Building
+
+```bash
+# Create build directory
+mkdir build && cd build
+
+# Configure with CMake
+cmake ..
+
+# Build the project
+make
+
+# Run the bot
+./beebot
+```
+
+## Configuration
+
+Create a `config.json` file with your bot settings:
+
+```json
+{
+    "token": "YOUR_DISCORD_BOT_TOKEN_HERE",
+    "prefix": "!",
+    "owner_id": "YOUR_DISCORD_USER_ID",
+    "debug_mode": 1
+}
+```
+
+## Usage
+
+```bash
+# Basic usage
+./beebot
+
+# With custom config file
+./beebot -c /path/to/config.json
+
+# With debug mode
+./beebot --debug
+```
+
+### Available Commands
+
+#### Core Commands
+- `!ping` - Check bot latency
+- `!help` - Show available commands
+- `!shutdown` - Stop the bot (owner only)
+
+#### Audio Commands
+- `!connect` - Join voice channel
+- `!play <url/search>` - Play music from YouTube
+- `!stop` - Stop playback and clear queue
+
+#### Moderation Commands
+- `!ban <@user> [reason]` - Ban a user
+- `!kick <@user> [reason]` - Kick a user
+- `!clear <amount>` - Clear messages
+
+## Architecture
+
+The C version implements proper memory management and uses function pointers for the command system, maintaining the same functionality as the original Java bot while offering improved performance.
+
+## Credits
+
+### Original Java Bot Authors
+- **NeutronSun** - [GitHub](https://github.com/NeutronSun)
+- **Leon412** - [GitHub](https://github.com/Leon412)
+
+### C Conversion
+- Maintains original functionality and behavior
+- Converted from Java JDA to pure C implementation
+- Optimized for performance and memory efficiency
