@@ -1384,7 +1384,6 @@ public class LeagueMessage {
         }
         
         EmbedBuilder eb = new EmbedBuilder();
-
         if (parameter.isShowChampion()) eb.setThumbnail(LeagueHandler.getChampionProfilePic(parameter.getChampion().getName()));
         else eb.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 

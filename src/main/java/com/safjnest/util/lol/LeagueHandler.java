@@ -590,7 +590,7 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static String getChampionProfilePic(String champ){
-        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/champion/"+champ+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/champion/"+ LeagueHandler.transposeChampionNameForDataDragon(champ) +".png";
     }
 
     public static String getChampionProfilePic(int champ, String skin){
