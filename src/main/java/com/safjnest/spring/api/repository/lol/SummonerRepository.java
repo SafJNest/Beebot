@@ -18,7 +18,7 @@ public interface SummonerRepository extends JpaRepository<Summoner, Integer> {
     
     List<Summoner> findByPuuid(String puuid);
     
-    @Query("SELECT s FROM Summoner s WHERE MATCH(s.riotId) AGAINST(CONCAT('+', :query, '*') IN BOOLEAN MODE) AND s.leagueShard = :leagueShard")
+    @Query(value = "SELECT * FROM summoner s WHERE MATCH(s.riot_id) AGAINST(CONCAT('+', :query, '*') IN BOOLEAN MODE) AND s.league_shard = :leagueShard LIMIT 25", nativeQuery = true)
     List<Summoner> findFocusedSummoners(@Param("query") String query, @Param("leagueShard") Integer leagueShard);
 
     @Query("SELECT s FROM Summoner s WHERE s.tracking = 1")
