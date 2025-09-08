@@ -7,6 +7,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
 import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.spring.api.service.lol.LeagueService;
+import com.safjnest.spring.util.SpringContextHolder;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -58,7 +60,13 @@ public class SummonerTrack extends SlashCommand {
             return;
         }
 
-        LeagueDB.trackSummoner(event.getMember().getId(), account_id, track);
+        try {
+            LeagueService leagueService = SpringContextHolder.getBean(LeagueService.class);
+            leagueService.trackSummoner(event.getMember().getId(), account_id, track);
+        } catch (Exception e) {
+            // Fallback to old implementation
+            LeagueDB.trackSummoner(event.getMember().getId(), account_id, track);
+        }
         
         String response = track ? "Tracking enabled" : "Tracking disabled";
         event.deferReply(false).addContent(response).queue();

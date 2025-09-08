@@ -32,6 +32,8 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.spring.api.service.lol.LeagueService;
+import com.safjnest.spring.util.SpringContextHolder;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -536,16 +538,67 @@ import com.safjnest.core.cache.managers.UserCache;
         return account.getName() + "#" + account.getTag();
     }
 
+    private static LeagueService getLeagueService() {
+        try {
+            return SpringContextHolder.getBean(LeagueService.class);
+        } catch (Exception e) {
+            // Fallback to LeagueDB if Spring context is not available
+            return null;
+        }
+    }
+
     public static int updateSummonerDB(Summoner summoner) {
-        return LeagueDB.addLOLAccount(summoner);
+        LeagueService leagueService = getLeagueService();
+        if (leagueService != null) {
+            // Convert Riot API Summoner to our format and use Spring service
+            return leagueService.addLOLAccount(
+                null, // userId - will be null for this case
+                null, // riotId - would need to fetch from RiotAccount
+                summoner.getSummonerId(),
+                summoner.getAccountId(),
+                summoner.getPUUID(),
+                summoner.getPlatform().getValue()
+            );
+        } else {
+            // Fallback to old implementation
+            return LeagueDB.addLOLAccount(summoner);
+        }
     }
 
     public static void updateSummonerDB(SpectatorGameInfo game) {
-        LeagueDB.addLOLAccount(game);
+        LeagueService leagueService = getLeagueService();
+        if (leagueService != null) {
+            // Extract data from SpectatorGameInfo and use Spring service
+            for (var participant : game.getParticipants()) {
+                leagueService.addLOLAccountFromSpectator(
+                    null, // riotId - would need to fetch
+                    participant.getSummonerId(),
+                    participant.getPuuid(),
+                    game.getPlatformId().getValue()
+                );
+            }
+        } else {
+            // Fallback to old implementation
+            LeagueDB.addLOLAccount(game);
+        }
     }
 
     public static void updateSummonerDB(LOLMatch match) {
-        LeagueDB.addLOLAccountFromMatch(match);
+        LeagueService leagueService = getLeagueService();
+        if (leagueService != null) {
+            // Extract data from LOLMatch and use Spring service
+            for (var participant : match.getParticipants()) {
+                leagueService.addLOLAccountFromSpectator(
+                    null, // riotId - would need to fetch
+                    participant.getSummonerId(),
+                    participant.getPuuid(),
+                    match.getPlatform().getValue()
+                );
+            }
+        } else {
+            // Fallback to old implementation
+            LeagueDB.addLOLAccountFromMatch(match);
+        }
     }
 
 //     ▄███████▄  ▄█   ▄████████

@@ -7,6 +7,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
 import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.spring.api.service.lol.LeagueService;
+import com.safjnest.spring.util.SpringContextHolder;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
@@ -62,7 +64,16 @@ public class SummonerLink extends SlashCommand {
             return;
         }
 
-        if (LeagueDB.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform()) != null) {
+        String userId = null;
+        try {
+            LeagueService leagueService = SpringContextHolder.getBean(LeagueService.class);
+            userId = leagueService.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform().getValue()).orElse(null);
+        } catch (Exception e) {
+            // Fallback to old implementation
+            userId = LeagueDB.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform());
+        }
+        
+        if (userId != null) {
             event.getHook().editOriginal("This account is already connected to another profile.\nIf you think someone has linked your account please write to our discord server support or use /bug").queue();
             return;
         }
