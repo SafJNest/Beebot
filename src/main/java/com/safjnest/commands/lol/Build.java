@@ -8,6 +8,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.database.LeagueDB;
+// TODO: Custom build functionality can be migrated to Spring JPA when schema is available
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;

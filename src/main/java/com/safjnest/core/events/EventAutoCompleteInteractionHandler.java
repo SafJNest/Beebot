@@ -12,6 +12,8 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.spring.api.service.lol.LeagueService;
+import com.safjnest.spring.util.SpringContextHolder;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.lol.LeagueHandler;
@@ -557,11 +559,20 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             return choices;
         }
         
-        summoners = LeagueDB.getFocusedSummoners(value, shard);
-        
-
-        for (QueryRecord summoner : summoners) {
-            choices.add(new Choice(summoner.get("riot_id"), summoner.get("riot_id")));
+        QueryResult summoners = null;
+        try {
+            LeagueService leagueService = SpringContextHolder.getBean(LeagueService.class);
+            var summonerList = leagueService.getFocusedSummoners(value, shard.getValue());
+            
+            for (var summoner : summonerList) {
+                choices.add(new Choice(summoner.getRiotId(), summoner.getRiotId()));
+            }
+        } catch (Exception e) {
+            // Fallback to old implementation
+            summoners = LeagueDB.getFocusedSummoners(value, shard);
+            for (QueryRecord summoner : summoners) {
+                choices.add(new Choice(summoner.get("riot_id"), summoner.get("riot_id")));
+            }
         }
 
         return choices;
@@ -705,6 +716,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
 
+        // TODO: Convert custom build queries to Spring JPA when schema is available
         QueryResult builds = null;
         if (isFocused) builds = LeagueDB.getFocusedCustomBuild(e.getFocusedOption().getValue());
         else builds = LeagueDB.getCustomBuildByUser(e.getUser().getId());

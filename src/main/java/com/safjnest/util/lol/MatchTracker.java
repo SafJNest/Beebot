@@ -19,6 +19,8 @@ import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.spring.api.service.lol.LeagueService;
+import com.safjnest.spring.util.SpringContextHolder;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
@@ -59,6 +61,14 @@ public class MatchTracker {
             trackSampleGames.scheduleAtFixedTime(2, 0, 0);
         }
 	}
+
+    private static LeagueService getLeagueService() {
+        try {
+            return SpringContextHolder.getBean(LeagueService.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
 
     private static void retriveSummoners() {

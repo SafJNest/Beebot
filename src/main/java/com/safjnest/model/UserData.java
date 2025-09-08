@@ -8,6 +8,8 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.spring.api.service.lol.LeagueService;
+import com.safjnest.spring.util.SpringContextHolder;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
 
@@ -185,12 +187,23 @@ public class UserData {
 //  ▀                                                                        
 
     private void retriveRiotAccounts() {
-        QueryResult result = LeagueDB.getLOLAccountsByUserId(USER_ID);
-        if (result == null) { return; }
+        try {
+            LeagueService leagueService = SpringContextHolder.getBean(LeagueService.class);
+            var summoners = leagueService.getLOLAccountsByUserId(USER_ID);
+            
+            this.riotAccounts = new LinkedHashMap<>();
+            for(var summoner : summoners) {
+                riotAccounts.put(summoner.getPuuid(), String.valueOf(summoner.getLeagueShard()));
+            }
+        } catch (Exception e) {
+            // Fallback to old implementation
+            QueryResult result = LeagueDB.getLOLAccountsByUserId(USER_ID);
+            if (result == null) { return; }
 
-        this.riotAccounts = new LinkedHashMap<>();
-        for(QueryRecord row: result){
-            riotAccounts.put(row.get("puuid"), row.get("league_shard"));
+            this.riotAccounts = new LinkedHashMap<>();
+            for(QueryRecord row: result){
+                riotAccounts.put(row.get("puuid"), row.get("league_shard"));
+            }
         }
     }
 
@@ -206,7 +219,15 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = LeagueDB.addLOLAccount(USER_ID, s) > 0;
+        boolean result = false;
+        try {
+            LeagueService leagueService = SpringContextHolder.getBean(LeagueService.class);
+            Integer id = leagueService.addLOLAccount(USER_ID, null, s.getSummonerId(), s.getAccountId(), s.getPUUID(), s.getPlatform().getValue());
+            result = id > 0;
+        } catch (Exception e) {
+            // Fallback to old implementation
+            result = LeagueDB.addLOLAccount(USER_ID, s) > 0;
+        }
         if (result) riotAccounts.put(s.getPUUID(), String.valueOf(s.getPlatform().ordinal()));
         
         return result;
@@ -214,7 +235,14 @@ public class UserData {
 
     public boolean deleteRiotAccount(String puuid) {
         checkRiotAccounts();
-        boolean result = LeagueDB.deleteLOLaccount(USER_ID, puuid);
+        boolean result = false;
+        try {
+            LeagueService leagueService = SpringContextHolder.getBean(LeagueService.class);
+            result = leagueService.deleteLOLAccount(USER_ID, puuid);
+        } catch (Exception e) {
+            // Fallback to old implementation
+            result = LeagueDB.deleteLOLaccount(USER_ID, puuid);
+        }
         if (result) riotAccounts.remove(puuid);
         
         return result;
