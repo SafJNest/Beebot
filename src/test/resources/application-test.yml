@@ -1,6 +1,4 @@
 spring:
-  mvc:
-    dispatch-options-request: true
   datasource:
     url: jdbc:h2:mem:testdb
     driverClassName: org.h2.Driver
@@ -10,10 +8,15 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
   h2:
     console:
-      enabled: true
+      enabled: false
+logging:
+  level:
+    org.hibernate: ERROR
+    org.springframework: ERROR
+    ROOT: ERROR

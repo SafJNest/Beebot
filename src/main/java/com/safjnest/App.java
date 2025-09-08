@@ -7,6 +7,7 @@ import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.BotSettings.Settings;
@@ -16,6 +17,7 @@ import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
 
 @SpringBootApplication
+@EnableJpaRepositories(basePackages = "com.safjnest.spring.repository")
 public class App {
 
     private static Settings settings;
