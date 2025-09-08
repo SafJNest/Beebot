@@ -664,10 +664,10 @@ public class MatchTracker {
         return result;
     }
 
-    public static void retriveMatchHistory(Summoner summoner, GameQueueType type) {
+    public static void retriveMatchHistory(Summoner summoner) {
         try {
             List<String> matchIds = new ArrayList<>();
-            List<String> retrivedMatchIds = summoner.getLeagueGames().withQueue(type).withCount(100).get();
+            List<String> retrivedMatchIds = summoner.getLeagueGames().withCount(100).get();
             do {
                 matchIds.addAll(retrivedMatchIds);
 
@@ -685,7 +685,7 @@ public class MatchTracker {
                     catch (InterruptedException e) {e.printStackTrace();}
                 }
 
-                retrivedMatchIds = summoner.getLeagueGames().withQueue(type).withCount(100).withBeginIndex(matchIds.size()).get();
+                retrivedMatchIds = summoner.getLeagueGames().withCount(100).withBeginIndex(matchIds.size()).get();
             } while (retrivedMatchIds.size() > 0);
 
         } catch (Exception e) {
