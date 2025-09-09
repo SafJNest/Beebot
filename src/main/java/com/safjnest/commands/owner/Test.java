@@ -1147,7 +1147,7 @@ public class Test extends Command{
                 case "retriveallgames":
                     ChronoTask retriveAllGames = () -> {
                         System.out.println(args[1]);
-                        MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], LeagueShard.EUW1), GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+                        MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], LeagueShard.EUW1));
                     };
                     retriveAllGames.queue();
                 break;
