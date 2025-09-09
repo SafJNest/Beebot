@@ -45,8 +45,6 @@ public class MatchTracker {
     private static List<GameQueueType> toTrack = List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.CHERRY);
     private static Set<LOLMatch> matchQueue = ConcurrentHashMap.newKeySet();
 
-    public static int UNKNOWN_RANK = TierDivisionType.UNRANKED.ordinal() + 1; //TODO: to deprecate in a nanosecond
-
 	static {
         if(!App.isTesting()) {
             ChronoTask track = () -> retriveSummoners();
@@ -284,7 +282,7 @@ public class MatchTracker {
             List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
             LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
 
-            TierDivisionType oldDivision = dataGame.getAsInt("rank") != UNKNOWN_RANK ? TierDivisionType.values()[dataGame.getAsInt("rank")] : null;
+            TierDivisionType oldDivision = TierDivisionType.values()[dataGame.getAsInt("rank")];
             TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
 
             int rank = division.ordinal();

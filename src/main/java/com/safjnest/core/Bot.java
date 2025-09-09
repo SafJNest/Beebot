@@ -157,16 +157,14 @@ public class Bot {
         }
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix());
+        Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix(), new Shutdown(), new Restart(), new Query());
 
         Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
-            new Opgg(), new Calculator(), new Dice(), 
-            new VandalizeServer(), new Jelly(), new Shutdown(), new Restart(), new Query(), new Alias(), new UltimateBravery());
-  
-        
+            new Opgg(), new UltimateBravery());
+
         Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
             new InviteBot(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
-            new Permissions(), new ModifyNickname(), new RandomMove());
+            new Permissions(), new ModifyNickname(), new RandomMove(), new Calculator(), new Dice(), new VandalizeServer(), new Jelly(), new Alias());
 
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
@@ -175,26 +173,27 @@ public class Bot {
         );
         
         Collections.addAll(commandsList, new Leaderboard(), new Test(), new ListGuild());
+        
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
         Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix());
 
-        
+
         Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
             new Livegame(),
-            new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), new Champion(), new Opgg(), 
-            new Weather(), new APOD(), new SpecialChar(), new Spotify(),
-            new Region(), new UltimateBravery(), new Item(), new QRCode()
+            new Champion(), new Opgg(),
+            new Region(), new UltimateBravery(), new Item()
         );
-        
-        
+    
+
         Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
             new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
             new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
             new Permissions(), new ModifyNickname(), new Welcome(), new Leave(), new Boost(), 
-            new Blacklist(), new Twitch(), new Omegle()
+            new Blacklist(), new Twitch(), new Omegle(),new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), 
+            new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode()
         );
 
         
@@ -205,6 +204,8 @@ public class Bot {
         );
 
         Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());
+        
+
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
         

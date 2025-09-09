@@ -1109,6 +1109,16 @@
                 "alias" : [],
                 "help"  : "Track a summoner.",
                 "arguments" : "[CommandName]"
+            },
+            "champion": {
+                "alias" : [],
+                "help"  : "See a summoner's champion pool.",
+                "arguments" : "[CommandName] [champion]"
+            },
+            "overview": {
+                "alias" : ["sm"],
+                "help"  : "See an overview for a summoner",
+                "arguments" : "[CommandName]"
             }
         }
     },

@@ -273,6 +273,23 @@ public class SafJNest extends Thread {
         return formattedTime;
     }
 
+    public static String getFormattedDurationWithUnits(long millis) {
+        Duration duration = Duration.ofMillis(millis);
+
+        long days = duration.toDays();
+        long hours = duration.toHoursPart();
+        long minutes = duration.toMinutesPart();
+        long seconds = duration.toSecondsPart();
+
+        StringBuilder sb = new StringBuilder();
+        if (days > 0) sb.append(days).append("d ");
+        if (hours > 0) sb.append(hours).append("h ");
+        if (minutes > 0) sb.append(minutes).append("m ");
+        if (seconds > 0 || sb.length() == 0) sb.append(seconds).append("s");
+
+        return sb.toString().trim();
+    }
+
     public static String formatDuration(long milliseconds) {
         Duration duration = Duration.ofMillis(milliseconds);
 

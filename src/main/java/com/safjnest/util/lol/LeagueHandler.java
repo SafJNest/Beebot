@@ -41,6 +41,7 @@ import com.safjnest.util.lol.model.rune.Rune;
 
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
@@ -83,6 +84,7 @@ import com.safjnest.core.cache.managers.UserCache;
 
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
     private static ArrayList<AugmentData> augments = new ArrayList<>();
+    private static Map<Integer, StaticChampion> championsMap = new HashMap<>();
 
     static {
         try {
@@ -95,6 +97,7 @@ import com.safjnest.core.cache.managers.UserCache;
         LeagueHandler.version = getVersion();
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
 
+        championsMap = riotApi.getDDragonAPI().getChampions();
         loadChampions();
         loadRunes();
         loadAguments();
@@ -263,6 +266,26 @@ import com.safjnest.core.cache.managers.UserCache;
                 break;
         }
         return emoji;
+    }
+
+    public static RichCustomEmoji getLaneTypeRichEmoji(LaneType type) {
+        switch (type) {
+            case TOP:
+                return CustomEmojiHandler.getRichEmoji("TopLane");
+            case JUNGLE:
+                return CustomEmojiHandler.getRichEmoji("Jungle");
+            case MID:
+                return CustomEmojiHandler.getRichEmoji("MidLane");
+            case BOT:
+                return CustomEmojiHandler.getRichEmoji("ADC");
+            case UTILITY:
+                return CustomEmojiHandler.getRichEmoji("Support");
+            case NONE:
+                return CustomEmojiHandler.getRichEmoji("autofill");
+            default:
+                break;
+        }
+        return null;
     }
 
     public static String getMapEmoji(GameQueueType type) {
@@ -567,7 +590,7 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static String getChampionProfilePic(String champ){
-        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/champion/"+champ+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/champion/"+ LeagueHandler.transposeChampionNameForDataDragon(champ) +".png";
     }
 
     public static String getChampionProfilePic(int champ, String skin){
@@ -757,6 +780,10 @@ import com.safjnest.core.cache.managers.UserCache;
         return null;
     }
 
+    public static String getFatherRuneById(int son){
+        return runesHandler.get(String.valueOf(son)).getName();
+    }
+
     public static String convertRuneRootToId(String name) {
         name = name.toLowerCase();
         String id = "";
@@ -884,7 +911,7 @@ import com.safjnest.core.cache.managers.UserCache;
     public static String getBraveryBuildJSON() {
         int lvl = 20;
         String[] roles = {"0", "1", "2", "3", "4"};
-        String[] champs = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> String.valueOf(champ.getId())).toArray(String[]::new);
+        String[] champs = championsMap.values().stream().map(champ -> String.valueOf(champ.getId())).toArray(String[]::new);
         return getBraveryBuildJSON(lvl, roles, champs);
     }
 
@@ -899,7 +926,7 @@ import com.safjnest.core.cache.managers.UserCache;
 //
 
     private static void loadChampions(){
-        champions = riotApi.getDDragonAPI().getChampions().values().stream().map(champ -> champ.getName()).toArray(String[]::new);
+        champions = championsMap.values().stream().map(champ -> champ.getName()).toArray(String[]::new);
     }
 
     public static String[] getChampions(){
@@ -926,7 +953,7 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static StaticChampion getChampionByName(String name) {
         StaticChampion champ = null;
-        for (StaticChampion c : riotApi.getDDragonAPI().getChampions().values()) {
+        for (StaticChampion c : championsMap.values()) {
             if (c.getName().equalsIgnoreCase(name)) {
                 champ = c;
                 break;
@@ -937,14 +964,7 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static StaticChampion getChampionById(int id) {
-        StaticChampion champ = null;
-        for (StaticChampion c : riotApi.getDDragonAPI().getChampions().values()) {
-            if (c.getId() == id) {
-                champ = c;
-                break;
-            }
-        }
-        return champ;
+        return championsMap.get(id);
     }
 
     public static Emoji getEmojiByChampion(int champId) {

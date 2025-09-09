@@ -1,7 +1,11 @@
 package com.safjnest.core.events;
 
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.safjnest.commands.audio.sound.SoundCustomize;
@@ -16,10 +20,16 @@ import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.AlertMessage;
+import com.safjnest.util.SafJNest;
+import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.LeagueMessage;
+import com.safjnest.util.lol.LeagueMessageParameter;
 import com.safjnest.util.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -49,6 +59,9 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 break;
             case "reward":
                 reward(event);
+                break;
+            case "champion":
+                champion(event);
                 break;
             default:
                 break;
@@ -200,5 +213,48 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         event.deferEdit().queue();
         event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), reward)).useComponentsV2().queue();
 
+    }
+
+
+
+    private void champion(ModalInteractionEvent event) {
+        String champoString = event.getValue("champion-change").getAsString();
+
+        ArrayList<String> championsName = new ArrayList<>();
+        for (String champion : LeagueHandler.getChampions()) {
+            championsName.add(champion);
+        }
+        champoString = SafJNest.findSimilarWord(champoString, championsName);
+        StaticChampion newChampion = LeagueHandler.getChampionByName(champoString);
+
+
+        if (newChampion == null) {
+            event.deferReply().setEphemeral(true).addContent("Cannot find the champion you are looking for").queue();
+            return;
+        }
+
+        String puuid = "";
+        String region = "";
+
+
+        for (Button b : EventUtils.getButtons(event.getMessage().getComponents())) {
+            if (b.getCustomId().startsWith("champion-center-")) {
+                puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
+                region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
+            }
+        }
+
+        LeagueMessageParameter parameter = new LeagueMessageParameter("champion", EventUtils.getButtons(event.getMessage().getComponents()));
+        parameter.setChampion(newChampion);
+        parameter.setShowChampion(true);
+        
+        
+        event.deferEdit().queue();
+        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        if (EventUtils.getButtonById(event.getMessage().getComponents(), "champion-left") == null) user_id = "";
+        Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+
+        int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
+        LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, parameter); 
     }
 }
