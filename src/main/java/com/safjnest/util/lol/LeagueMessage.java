@@ -1489,8 +1489,11 @@ public class LeagueMessage {
             if (parameter.getOffset() == 0) 
                 leftPage = leftPage.asDisabled();
             
-            if (parameter.getMessageType() == LeagueMessageType.CHAMPION_OPGG) 
+            if (parameter.getMessageType() == LeagueMessageType.CHAMPION_OPGG) {
+                if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
+                    center = center.withStyle(ButtonStyle.SUCCESS).asEnabled();
                 rows.add(ActionRow.of(center, championButton, settings, leftPage, rightPage));
+            }
             else {
                 if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
                     rows.add(ActionRow.of(left, center, right, leftPage, rightPage));

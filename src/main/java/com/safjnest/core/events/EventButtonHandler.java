@@ -1582,10 +1582,14 @@ public class EventButtonHandler extends ListenerAdapter {
         String region = "";
         int index = 0;
 
+
+        boolean userIdFallback = false;
+
         for (Button b : EventUtils.getButtons(event)) {
             if (b.getCustomId().startsWith("champion-center-")) {
                 puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
                 region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
+                if (b.getStyle() == ButtonStyle.SUCCESS) userIdFallback = true;
             }
         }
 
@@ -1608,6 +1612,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
         switch (args) {
+            case "center":
             case "right":
                 if ((index + 1) == accounts.size()) index = 0;
                 else index += 1;
@@ -1692,7 +1697,7 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         event.deferEdit().queue();
-        if (EventUtils.getButtonById(event, "champion-left") == null) user_id = "";
+        if (EventUtils.getButtonById(event, "champion-left") == null && !userIdFallback) user_id = "";
         s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
