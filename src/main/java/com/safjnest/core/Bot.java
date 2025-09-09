@@ -159,54 +159,52 @@ public class Bot {
         ArrayList<Command> commandsList = new ArrayList<Command>();
         Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix(), new Shutdown(), new Restart(), new Query());
 
-        if(SettingsLoader.getSettings().getConfig().getBot().equals("beebot 117")) {
-            Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
-                new Opgg(), new UltimateBravery());
-        }
-        else {
-            Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
-                new InviteBot(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
-                new Permissions(), new ModifyNickname(), new RandomMove(), new Calculator(), new Dice(), new VandalizeServer(), new Jelly(), new Alias());
+        Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
+            new Opgg(), new UltimateBravery());
 
-            
-            Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
-                new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
-                new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard(), new Warn()
-            );
-            
-            Collections.addAll(commandsList, new Leaderboard(), new Test(), new ListGuild());
-        }
+        Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
+            new InviteBot(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
+            new Permissions(), new ModifyNickname(), new RandomMove(), new Calculator(), new Dice(), new VandalizeServer(), new Jelly(), new Alias());
+
+        
+        Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
+            new PlayYoutube(), new PlaySound(), new TTS(), new Stop(), new Pause(), new Resume(), new Player(), new Queue(), 
+            new Skip(), new Previous(), new PlayYoutubeForce(), new JumpTo(), new QRCode(), new Chat(), new Omegle(), new Soundboard(), new Warn()
+        );
+        
+        Collections.addAll(commandsList, new Leaderboard(), new Test(), new ListGuild());
+        
     
         builder.addCommands(commandsList.toArray(new Command[commandsList.size()]));
 
         ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
         Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix());
 
-        if(SettingsLoader.getSettings().getConfig().getBot().equals("beebot 117")) {
-            Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
-                new Livegame(),
-                new Champion(), new Opgg(),
-                new Region(), new UltimateBravery(), new Item()
-            );
-        }
-        else {
-            Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
-                new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
-                new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
-                new Permissions(), new ModifyNickname(), new Welcome(), new Leave(), new Boost(), 
-                new Blacklist(), new Twitch(), new Omegle(),new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), 
-                new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode()
-            );
 
-            
-            Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), 
-                new List(), new Play(), new Playlist(), new TTS(), new Stop(), new Sound(),
-                new Voice(), new Soundboard(), new Greet(), new Pause(), new Resume(),
-                new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn(), new Build()
-            );
+        Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
+            new Livegame(),
+            new Champion(), new Opgg(),
+            new Region(), new UltimateBravery(), new Item()
+        );
+    
 
-            Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());
-        }
+        Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
+            new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
+            new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
+            new Permissions(), new ModifyNickname(), new Welcome(), new Leave(), new Boost(), 
+            new Blacklist(), new Twitch(), new Omegle(),new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), 
+            new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode()
+        );
+
+        
+        Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), 
+            new List(), new Play(), new Playlist(), new TTS(), new Stop(), new Sound(),
+            new Voice(), new Soundboard(), new Greet(), new Pause(), new Resume(),
+            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn(), new Build()
+        );
+
+        Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());
+        
 
 
         builder.addSlashCommands(slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]));
