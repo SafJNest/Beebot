@@ -29,16 +29,18 @@ public class SpotifyLink extends SlashCommand{
         String clientId = SettingsLoader.getSettings().getJsonSettings().getSpotifyApi().getClientId();
         //String redirectUri = "http://127.0.0.1:3001/spotify/callback";
         String redirectUri = "https://safjnest.com/spotify/callback";
-        String scope = "user-top-read";
+        String[] scopes = {"user-top-read", "user-read-recently-played"};
 
         String userId = event.getUser().getId();
         String randomString = String.valueOf(System.currentTimeMillis());
         String state = userId + ":" + randomString;
 
-        String link = "https://accounts.spotify.com/authorize?client_id=" + clientId + 
-                        "&response_type=code&redirect_uri=" + redirectUri + 
-                        "&scope=" + scope + 
-                        "&state=" + state;
+        String link = "https://accounts.spotify.com/authorize" + 
+                        "?client_id=" + clientId + 
+                        "&response_type=code" + 
+                        "&redirect_uri=" + redirectUri + 
+                        "&scope=" + String.join("+", scopes) + 
+                        "&state=" + state; 
 
         event.deferReply(false).setEphemeral(true).setContent("To link your Spotify account, please visit [this link](" + link + ").")
             .queue();

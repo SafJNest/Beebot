@@ -88,7 +88,7 @@ public abstract class AbstractDB {
         while (set.next()) {
             QueryRecord row = new QueryRecord(set);
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                String key = rsmd.getColumnLabel(i).toLowerCase();
+                String key = rsmd.getColumnLabel(i);
                 String valye = set.getString(i);
                 row.put(key, valye);
             }

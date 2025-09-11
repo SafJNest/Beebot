@@ -129,7 +129,7 @@ public class Bot {
         //builder.setScheduleExecutor(null);
         //builder.forceGuildOnly("876606568412639272"); //server di leon
         //builder.forceGuildOnly("1150154886005133492"); //guitarrin
-        //builder.forceGuildOnly("474935164451946506"); //safj
+        builder.forceGuildOnly("474935164451946506"); //safj
         
         jda.addEventListener(new ListenerAdapter() {
             @Override
