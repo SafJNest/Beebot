@@ -209,7 +209,6 @@ public class EventButtonHandler extends ListenerAdapter {
                 soundSwitch = false;
                 break;
             case "set":
-                System.out.println(clicked.getCustomId().split("-")[2]);
                 type = clicked.getCustomId().split("-")[2];
                 TextInput subject = TextInput.create("greet-set", "Select your " + type +" greet!", TextInputStyle.SHORT)
                     .setPlaceholder("Name or id of the sound")

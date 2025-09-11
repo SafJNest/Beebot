@@ -1643,6 +1643,7 @@ public class LeagueMessage {
         unique.put("lane", new HashSet<>());
         unique.put("queue", new HashSet<>());
         for (MatchData match : matches) {
+            if (match.getDuration() <= 330) continue;
             timePlayed += match.getDuration();
             if (oldest > match.timeStart) oldest = match.timeStart;
             if (newest < match.timeStart) newest = match.timeStart;
@@ -1680,7 +1681,8 @@ public class LeagueMessage {
                     return totalWins + "-" + totalLosses;
                 });
 
-                double csPerMin = participant.cs / (match.getDuration() / 1000 / 60);
+                double min = match.getDuration() / 1000.0 / 60.0;
+                double csPerMin = participant.cs / (min == 0 ? 1 : min);
     
                 overallStats.computeIfAbsent("damage", k -> new Accumulator()).add(participant.damage);
                 overallStats.computeIfAbsent("damage_building", k -> new Accumulator()).add(participant.damageBuilding);
@@ -1704,13 +1706,20 @@ public class LeagueMessage {
                     overallStats.computeIfAbsent("arena_placement", k -> new Accumulator()).add(placement);
                 }
 
-                int teamKills = match.participants.stream()
-                    .filter(p -> p.team == team)
-                    .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
-                    .sum();
-                
-                double killParticipation = teamKills == 0 ? 0 : (double) (kills + assists) / teamKills;
-                overallStats.computeIfAbsent("kill_participation", k -> new Accumulator()).add((int)(killParticipation * 100));
+                //when beebot started to track games it used to track only one participant who asked to be tracked
+                if (match.participants.size() > 1) {
+                    int teamKills;
+                    teamKills = match.participants.stream()
+                        .filter(p -> {
+                            if (parameter.getQueueType() == GameQueueType.CHERRY)
+                                return p.subTeam == participant.subTeam;
+                            return  p.team == team;
+                        })
+                        .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
+                        .sum();
+                    double killParticipation = teamKills == 0 ? 0 : (double) (kills + assists) / teamKills;
+                    overallStats.computeIfAbsent("kill_participation", k -> new Accumulator()).add((int)(killParticipation * 100));
+                }
 
                 boolean isDuo = lane == LaneType.BOT || lane == LaneType.UTILITY;
 

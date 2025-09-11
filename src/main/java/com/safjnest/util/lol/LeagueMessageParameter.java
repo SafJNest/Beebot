@@ -80,10 +80,9 @@ public class LeagueMessageParameter {
       if (b.getCustomId().startsWith(prefix + "-leftpage")) 
           this.offset = Integer.parseInt(buttonValue);
 
-      if (b.getCustomId().startsWith(prefix + "-change")) {
+      if (b.getCustomId().startsWith(prefix + "-change")) 
         fallbackChampion = Integer.parseInt(buttonValue);
-        System.out.println(fallbackChampion);
-      }
+      
     }
 
     if (this.champion == null && fallbackChampion > 0) 

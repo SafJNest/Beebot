@@ -694,4 +694,35 @@ public class MatchTracker {
         }
     }
 
+    public static void retriveMatchHistory(Summoner summoner, GameQueueType queue) {
+        try {
+            List<String> matchIds = new ArrayList<>();
+            List<String> retrivedMatchIds = summoner.getLeagueGames().withCount(100).withQueue(queue).get();
+            do {
+                matchIds.addAll(retrivedMatchIds);
+
+                try { Thread.sleep(350); }
+                catch (InterruptedException e) {e.printStackTrace();}
+
+                int i = 0;
+                for (String matchId : retrivedMatchIds) {
+                    try {
+                        LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
+                        if (match == null) continue;
+                        System.out.println("[" + i + "/" + retrivedMatchIds.size() + "] " + match.getGameId() + " - " + match.getPlatform() + " - " + match.getQueue());
+                        MatchTracker.queueMatch(match);
+                        i++;
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                retrivedMatchIds = summoner.getLeagueGames().withCount(100).withQueue(queue).withBeginIndex(matchIds.size()).get();
+            } while (retrivedMatchIds.size() > 0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

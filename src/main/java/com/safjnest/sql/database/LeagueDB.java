@@ -618,7 +618,7 @@ public class LeagueDB extends AbstractDB {
             "FROM `match` sm " +
             "JOIN participant st ON st.match_id = sm.id " +
             "WHERE st.summoner_id = " + summonerId + " " +
-            timeFilter + queueFilter + championFilter + laneFilter + " ORDER BY sm.id DESC " +
+            timeFilter + queueFilter + championFilter + laneFilter + " ORDER BY sm.time_start DESC " +
             offsetFilter + ";";
     }
 
@@ -645,7 +645,7 @@ public class LeagueDB extends AbstractDB {
             "FROM `match` sm " +
             "JOIN participant st ON st.match_id = sm.id " +
             "WHERE st.summoner_id = " + summonerId + " " +
-            timeFilter + queueFilter + championFilter + laneFilter + " ORDER BY sm.id DESC;";
+            timeFilter + queueFilter + championFilter + laneFilter + " ORDER BY sm.time_start DESC;";
 
         return instance.query(q).size();
     }
@@ -703,7 +703,7 @@ public class LeagueDB extends AbstractDB {
                         "JOIN `match` sm ON st.match_id = sm.id " +
                         "LEFT JOIN summoner su on su.id = st.summoner_id " +
                         "WHERE st.match_id IN " + inClause + ";";
-            System.out.println(q2);
+
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q2)) {
                 while (rs.next()) {
                     ParticipantData p = new ParticipantData();
