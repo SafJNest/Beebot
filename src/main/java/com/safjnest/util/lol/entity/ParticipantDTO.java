@@ -3,7 +3,7 @@ package com.safjnest.util.lol.entity;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "participant")
+@Table(name = "participant", schema = "league_of_legends")
 public class ParticipantDTO {
     
     @Id
@@ -78,7 +78,7 @@ public class ParticipantDTO {
     @Column(columnDefinition = "longtext", nullable = false)
     private String build;
     
-    // Getters and Setters (omitted for brevity)
+    // Getters and Setters
     public Integer getId() {
         return id;
     }
@@ -87,5 +87,179 @@ public class ParticipantDTO {
         this.id = id;
     }
     
-    // Add remaining getters and setters here
+    public SummonerDTO getSummoner() {
+        return summoner;
+    }
+    
+    public void setSummoner(SummonerDTO summoner) {
+        this.summoner = summoner;
+    }
+    
+    public MatchDTO getMatch() {
+        return match;
+    }
+    
+    public void setMatch(MatchDTO match) {
+        this.match = match;
+    }
+    
+    public Boolean getWin() {
+        return win;
+    }
+    
+    public void setWin(Boolean win) {
+        this.win = win;
+    }
+    
+    public String getKda() {
+        return kda;
+    }
+    
+    public void setKda(String kda) {
+        this.kda = kda;
+    }
+    
+    public Short getChampion() {
+        return champion;
+    }
+    
+    public void setChampion(Short champion) {
+        this.champion = champion;
+    }
+    
+    public Byte getLane() {
+        return lane;
+    }
+    
+    public void setLane(Byte lane) {
+        this.lane = lane;
+    }
+    
+    public Byte getTeam() {
+        return team;
+    }
+    
+    public void setTeam(Byte team) {
+        this.team = team;
+    }
+    
+    public Byte getSubteam() {
+        return subteam;
+    }
+    
+    public void setSubteam(Byte subteam) {
+        this.subteam = subteam;
+    }
+    
+    public Byte getSubteamPlacement() {
+        return subteamPlacement;
+    }
+    
+    public void setSubteamPlacement(Byte subteamPlacement) {
+        this.subteamPlacement = subteamPlacement;
+    }
+    
+    public Short getRank() {
+        return rank;
+    }
+    
+    public void setRank(Short rank) {
+        this.rank = rank;
+    }
+    
+    public Short getLp() {
+        return lp;
+    }
+    
+    public void setLp(Short lp) {
+        this.lp = lp;
+    }
+    
+    public Short getGain() {
+        return gain;
+    }
+    
+    public void setGain(Short gain) {
+        this.gain = gain;
+    }
+    
+    public Integer getDamage() {
+        return damage;
+    }
+    
+    public void setDamage(Integer damage) {
+        this.damage = damage;
+    }
+    
+    public Integer getDamageBuilding() {
+        return damageBuilding;
+    }
+    
+    public void setDamageBuilding(Integer damageBuilding) {
+        this.damageBuilding = damageBuilding;
+    }
+    
+    public Integer getHealing() {
+        return healing;
+    }
+    
+    public void setHealing(Integer healing) {
+        this.healing = healing;
+    }
+    
+    public Short getCs() {
+        return cs;
+    }
+    
+    public void setCs(Short cs) {
+        this.cs = cs;
+    }
+    
+    public Integer getGoldEarned() {
+        return goldEarned;
+    }
+    
+    public void setGoldEarned(Integer goldEarned) {
+        this.goldEarned = goldEarned;
+    }
+    
+    public Short getWard() {
+        return ward;
+    }
+    
+    public void setWard(Short ward) {
+        this.ward = ward;
+    }
+    
+    public Short getWardKilled() {
+        return wardKilled;
+    }
+    
+    public void setWardKilled(Short wardKilled) {
+        this.wardKilled = wardKilled;
+    }
+    
+    public Short getVisionScore() {
+        return visionScore;
+    }
+    
+    public void setVisionScore(Short visionScore) {
+        this.visionScore = visionScore;
+    }
+    
+    public String getPings() {
+        return pings;
+    }
+    
+    public void setPings(String pings) {
+        this.pings = pings;
+    }
+    
+    public String getBuild() {
+        return build;
+    }
+    
+    public void setBuild(String build) {
+        this.build = build;
+    }
 }

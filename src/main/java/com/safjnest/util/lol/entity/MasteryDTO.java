@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "masteries")
+@Table(name = "masteries", schema = "league_of_legends")
 public class MasteryDTO {
     
     @Id

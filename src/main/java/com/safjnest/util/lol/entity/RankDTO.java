@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "rank")
+@Table(name = "rank", schema = "league_of_legends")
 public class RankDTO {
     
     @Id

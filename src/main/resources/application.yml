@@ -1,3 +1,16 @@
 spring:
   mvc:
     dispatch-options-request: true
+  datasource:
+    url: jdbc:mariadb://localhost:3306/league_of_legends
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.mariadb.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
+        format_sql: true

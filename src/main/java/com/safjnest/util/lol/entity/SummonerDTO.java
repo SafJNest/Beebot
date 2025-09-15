@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
-@Table(name = "league_of_legends.summoner")
+@Table(name = "summoner", schema = "league_of_legends")
 public class SummonerDTO {
     
     @Id
