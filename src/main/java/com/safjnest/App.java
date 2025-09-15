@@ -13,6 +13,8 @@ import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.LeagueService;
+import com.safjnest.util.lol.SummonerRepository;
 import com.safjnest.util.twitch.TwitchClient;
 
 @SpringBootApplication
@@ -30,14 +32,16 @@ public class App {
 
         if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
-            //runSpring();
+            runSpring();
         }
         else {
             TwitchClient.init();
             //runSpring();
         }
-        bot = new Bot();
-        bot.il_risveglio_della_bestia();
+        
+        //bot = new Bot();
+        //bot.il_risveglio_della_bestia();
+        System.out.println(LeagueService.getSummonerById(50));
     }
 
     public static void runSpring() {
