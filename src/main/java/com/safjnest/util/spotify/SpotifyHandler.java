@@ -11,6 +11,7 @@ import java.util.zip.ZipInputStream;
 
 import org.json.JSONObject;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -134,6 +135,7 @@ public class SpotifyHandler {
     }
 
     public static List<?> getTopItems(SpotifyMessageType type, String userId, int limit, int offset, SpotifyTimeRange timeRange) {
+        
         switch (timeRange) {
             case SHORT_TERM:
             case MEDIUM_TERM:
@@ -204,8 +206,48 @@ public class SpotifyHandler {
             return items;
         } catch (Exception e) {
             e.printStackTrace();
-            throw new SpotifyException(SpotifyException.ErrorType.ERROR_PARSING, 
+            throw new SpotifyException(SpotifyException.ErrorType.ERROR_PARSING,
                 "Error parsing Spotify response: " + e.getMessage());
         }
     }
+
+    public static List<SpotifyTrack> getHistoryFromSpotifyApi(String userId, int limit, int offset) {
+        String token = WebsiteDB.getSpotifyUserToken(userId);
+
+        if (token == null) {
+            throw new SpotifyException(SpotifyException.ErrorType.NOT_LINKED,
+                "Spotify token not found for user: " + userId);
+        }
+
+        String url = SPOTIFY_API_BASE_URL + "/me/player/recently-played"
+            + "?limit=" + limit;
+
+        JSONObject response = HttpUtils.sendGetRequest(url, token);
+        if (response == null) {
+            throw new SpotifyException(SpotifyException.ErrorType.API_ERROR,
+                "Failed to fetch data from Spotify API");
+        }
+
+        try {
+            List<SpotifyTrack> items = new ArrayList<>();
+            for (Object item : response.getJSONArray("items")) {
+                JSONObject jsonItem = (JSONObject) item;
+                JSONObject track = jsonItem.getJSONObject("track");
+                items.add(new SpotifyTrack(
+                    track.getString("name"),
+                    track.getJSONArray("artists").getJSONObject(0).getString("name"),
+                    track.getJSONObject("album").getString("name"),
+                    track.getString("id"),
+                    0,
+                    track.getJSONObject("album").getJSONArray("images").getJSONObject(0).getString("url")
+                ));
+            }
+            return items;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new SpotifyException(SpotifyException.ErrorType.ERROR_PARSING,
+                "Error parsing Spotify response: " + e.getMessage());
+        }
+    }
+
 }

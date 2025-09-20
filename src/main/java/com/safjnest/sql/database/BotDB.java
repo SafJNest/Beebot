@@ -413,12 +413,12 @@ public class BotDB extends AbstractDB {
     }
 
     public static QueryResult getGuildData(){
-        String query = "SELECT guild_id, PREFIX, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild;";
+        String query = "SELECT guild_id, prefix, exp_enabled, threshold, blacklist_channel, blacklist_enabled FROM guild;";
         return instance.query(query);
     }
 
     public static QueryRecord getGuildData(String guild_id) {
-        String query = "SELECT guild_id, PREFIX, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
+        String query = "SELECT guild_id, prefix, exp_enabled, name_tts, language_tts, threshold, blacklist_channel, blacklist_enabled, league_shard FROM guild WHERE guild_id = '" + guild_id + "';";
         return instance.lineQuery(query);
     }
 
@@ -428,7 +428,7 @@ public class BotDB extends AbstractDB {
     }
 
     public static boolean insertGuild(String guild_id, String prefix) {
-        String query = "INSERT INTO guild (guild_id, PREFIX, exp_enabled, threshold, blacklist_channel) VALUES ('" + guild_id + "', '" + prefix + "', '1', '0', null) ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';";
+        String query = "INSERT INTO guild (guild_id, prefix, exp_enabled, threshold, blacklist_channel) VALUES ('" + guild_id + "', '" + prefix + "', '1', '0', null) ON DUPLICATE KEY UPDATE prefix = '" + prefix + "';";
         return instance.defaultQuery(query);
     }
 

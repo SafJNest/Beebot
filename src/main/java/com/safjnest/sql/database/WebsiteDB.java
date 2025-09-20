@@ -53,7 +53,6 @@ public class WebsiteDB extends AbstractDB {
 
     public static String getSpotifyUserToken(String userId) {
         QueryRecord res = instance.lineQuery("SELECT * FROM SpotifyToken WHERE discordId = '" + userId + "';");
-
         if (res == null || res.emptyValues()) 
             return null;
             

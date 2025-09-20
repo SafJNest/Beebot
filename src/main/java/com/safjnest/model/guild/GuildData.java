@@ -87,6 +87,7 @@ public class GuildData {
     }
 
     public GuildData(QueryRecord data) {
+        System.out.println(data);
         this.ID = data.get("guild_id");
         this.prefix = data.get("prefix");
         this.experience = data.getAsBoolean("exp_enabled");

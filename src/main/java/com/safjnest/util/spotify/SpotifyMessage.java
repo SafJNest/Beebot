@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import com.safjnest.commands.misc.spotify.Spotify;
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.spotify.SpotifyAlbum;
@@ -50,7 +51,7 @@ public class SpotifyMessage {
                     SpotifyMessageType oldType = (SpotifyMessageType) oldTimeMsgInfo.get(1);
                     int oldIndex = (int) oldTimeMsgInfo.get(2);
                     SpotifyTimeRange oldRange = (SpotifyTimeRange) oldTimeMsgInfo.get(3);
-
+                    
                     try {
                         List<Container> fallbackComponents = SpotifyMessage.build(oldUserId, oldType, oldIndex, oldRange);
                         hook.editOriginalComponents(fallbackComponents)
@@ -101,7 +102,13 @@ public class SpotifyMessage {
             }
         }
 
-        return List.of(userId, type, currentIndex, timeRange);
+        List<Object> list = new ArrayList<>();
+        list.add(userId);
+        list.add(type);
+        list.add(currentIndex);
+        list.add(timeRange);
+
+        return list;
     }
 
 
@@ -132,15 +139,9 @@ public class SpotifyMessage {
         Button authorsButton = Button.primary(SpotifyMessageType.ARTISTS.toButtonId(), SpotifyMessageType.ARTISTS.getLabel())
             .withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
 
-
-        StringSelectMenu timeRangeMenu = StringSelectMenu.create("spotify-time_range-" + timeRange.getLabel())
-            .setPlaceholder(timeRange.getDisplayLabel())
-            .addOptions(SpotifyTimeRange.SHORT_TERM.toSelectOption(),
-                        SpotifyTimeRange.MEDIUM_TERM.toSelectOption(),
-                        SpotifyTimeRange.LONG_TERM.toSelectOption(),
-                        SpotifyTimeRange.FULL_TERM.toSelectOption())
-            .build();
-
+        Button historyButton = Button.primary(SpotifyMessageType.HISTORY.toButtonId(), SpotifyMessageType.HISTORY.getLabel())
+            .withEmoji(CustomEmojiHandler.getRichEmoji("microphone"));
+        
         switch (type) {
             case TRACKS:
                 tracksButton = tracksButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
@@ -153,7 +154,9 @@ public class SpotifyMessage {
             case ARTISTS:
                 authorsButton = authorsButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
                 break;
-
+            case HISTORY:
+                historyButton = historyButton.asDisabled().withStyle(ButtonStyle.SUCCESS);
+                break;
             default:
                 break;
         }
@@ -164,8 +167,18 @@ public class SpotifyMessage {
         List<ContainerChildComponent> buttons = new ArrayList<>();
         buttons.add(ActionRow.of(left, center, right));
         buttons.add(Separator.createDivider(Separator.Spacing.SMALL));
-        buttons.add(ActionRow.of(albumsButton,tracksButton,authorsButton));
-        buttons.add(ActionRow.of(timeRangeMenu));
+        buttons.add(ActionRow.of(albumsButton, tracksButton, authorsButton, historyButton));
+
+        if(timeRange != null) {
+            StringSelectMenu timeRangeMenu = StringSelectMenu.create("spotify-time_range-" + timeRange.getLabel())
+            .setPlaceholder(timeRange.getDisplayLabel())
+            .addOptions(SpotifyTimeRange.SHORT_TERM.toSelectOption(),
+                        SpotifyTimeRange.MEDIUM_TERM.toSelectOption(),
+                        SpotifyTimeRange.LONG_TERM.toSelectOption(),
+                        SpotifyTimeRange.FULL_TERM.toSelectOption())
+            .build();
+            buttons.add(ActionRow.of(timeRangeMenu));
+        }
 
         return Container.of(buttons)
             .withAccentColor(Bot.getColor());
@@ -173,7 +186,18 @@ public class SpotifyMessage {
 
 
     public static List<Container> build(String userId, SpotifyMessageType type, int index, SpotifyTimeRange timeRange) {
-        List<?> items = SpotifyHandler.getTopItems(type, userId, ITEM_LIMIT, index, timeRange);
+        List<?> items = null;
+        switch (type) {
+            case HISTORY:
+                timeRange = null;
+                items = SpotifyHandler.getHistoryFromSpotifyApi(userId, ITEM_LIMIT, index);
+                break;
+            default:
+                if(timeRange == null) timeRange = SpotifyTimeRange.SHORT_TERM;
+                items = SpotifyHandler.getTopItems(type, userId, ITEM_LIMIT, index, timeRange);
+                break;
+        }
+        
         Container body = null, buttons = null;
         try {
             body = getMainContent(userId, type, index, items);
@@ -195,7 +219,6 @@ public class SpotifyMessage {
                     buildRow(index + items.indexOf(track), track.getName(), track.getArtist(), 
                             track.getPlayCount(), track.getImageUrl())
                 );
-
             case ALBUMS:
                 return getSpotifyContainer(index, (List<SpotifyAlbum>) items, album ->
                     buildRow(index + items.indexOf(album), album.getName(), album.getArtist(),
@@ -205,6 +228,11 @@ public class SpotifyMessage {
                 return getSpotifyContainer(index, (List<SpotifyArtist>) items, artist ->
                     buildRow(index + items.indexOf(artist), artist.getName(), null,
                             artist.getPlayCount(), artist.getImageUrl())
+                );
+            case HISTORY:
+                return getSpotifyContainer(index, (List<SpotifyTrack>) items, track -> 
+                    buildRow(index + items.indexOf(track), track.getName(), track.getArtist(), 
+                            track.getPlayCount(), track.getImageUrl())
                 );
             default:
                 return Container.of(TextDisplay.of("This feature is not implemented yet."))
