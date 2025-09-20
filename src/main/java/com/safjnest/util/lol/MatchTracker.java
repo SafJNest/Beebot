@@ -36,6 +36,8 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrameEvent;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
+
 import java.time.LocalDateTime;
 
 public class MatchTracker {
@@ -572,36 +574,33 @@ public class MatchTracker {
         BotLogger.info("[LPTracker] Pushing sample matches");
         List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
         for (LeagueShard shard : shards) {
-            System.out.println(shard);
-            for (int i =  TierDivisionType.CHALLENGER_I.ordinal(); i <= TierDivisionType.MASTER_I.ordinal(); i++) {
-                try {
-                    TierDivisionType rank = TierDivisionType.values()[i];
-                    if (rank.getDivision().equals("V")) continue;
+            try {
+                List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 0);
 
-                    List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, rank, 0);
-                    int size = TierDivisionType.CHALLENGER_I == rank ? entries.size() : (entries.size() < 117 ? entries.size() : 117);
+                BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " matches for region " + shard);
 
-                    BotLogger.info("[LPTracker] Start analyzing " + size + " matches for region " + shard + " and rank " + rank);
+                for (int j = 0; j < entries.size() ; j++) {
+                    try {
+                        LeagueEntry entry = entries.get(j);
+                        Summoner summoner = LeagueHandler.getSummonerByPuuid(entry.getPuuid(), shard);
+                        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+                        BotLogger.info("[LPTracker] Analyzing summoner " + account.getName() + "#" + account.getTag() + " | " + j + "/" + entries.size());
 
-                    for (int j = 0; j < size ; j++) {
-                        try {
-                            LeagueEntry entry = entries.get(j);
-                            Summoner summoner = LeagueHandler.getSummonerByPuuid(entry.getPuuid(), shard);
+                        List<String> matchIds = summoner.getLeagueGames().withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).get();
+                        if (matchIds.isEmpty()) 
+                            continue;
 
-                            List<String> matchIds = summoner.getLeagueGames().withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).get();
-                            if (matchIds.isEmpty()) 
-                                continue;
-
-                            String matchId = matchIds.get(0);
+                        for (int k = 0; k < 5; k++) {
+                            String matchId = matchIds.get(k);
                             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), matchId);
                             
-                            BotLogger.info("[LPTracker] Pushing match data for region " + shard + " and rank " + rank + " | " + j + "/" + size);
+                            BotLogger.info("[LPTracker] Pushing match data for region " + shard + " | " + k + "/5 -  " + j + "/" + entries.size());
                             analyzeMatchHistory(match).complete();
                             Thread.sleep(350);
-                        } catch (Exception e) { e.printStackTrace(); }
-                    }
-                } catch (Exception e) { e.printStackTrace(); }
-            } //TODO: check all the things that could go wrong and check it instead of 200 trycatch
+                        }
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+            } catch (Exception e) { e.printStackTrace(); }
         }
     }
 

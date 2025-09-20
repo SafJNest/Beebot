@@ -1147,22 +1147,9 @@ public class Test extends Command{
                 case "retriveallgames":
                     ChronoTask retriveAllGames = () -> {
                         System.out.println(args[1]);
-                        MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], LeagueShard.EUW1));
-                        for (GameQueueType q : GameQueueType.values()) {
-                            MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], LeagueShard.EUW1), q);
-                        }
+                        MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()));
                     };
                     retriveAllGames.queue();
-                break;
-                case "retriveallgamesfast":
-                    ChronoTask retriveAllGamesFast = () -> {
-                        System.out.println(args[1]);
-                        for (GameQueueType q : GameQueueType.values()) {
-                            System.out.println(q);
-                            MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], LeagueShard.EUW1), q);
-                        }
-                    };
-                    retriveAllGamesFast.queue();
                 break;
                 case "setmatchevent":
                     query = "SELECT id, game_id, league_shard FROM `match` WHERE events = '{}' ORDER BY id DESC";
