@@ -42,7 +42,7 @@ import java.time.LocalDateTime;
 
 public class MatchTracker {
 
-    private static long period = TimeConstant.MINUTE * 10;
+    private static long period = TimeConstant.MINUTE * 5;
 
     private static List<GameQueueType> toTrack = List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.CHERRY);
     private static Set<LOLMatch> matchQueue = ConcurrentHashMap.newKeySet();

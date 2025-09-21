@@ -1196,6 +1196,13 @@
         "arguments" : "faker"
     },
 
+    "sunyx": {
+        "alias" : ["keria"],
+        "help"  : "Extreme Safj things",
+        "category" : "Owner",
+        "arguments" : "faker"
+    },
+
     "omegle":{
         "alias" : ["om", "ommomomavaffanculova"],
         "help"  : "Talk to strangers like omegle.",
