@@ -133,17 +133,17 @@ public class ParticipantData {
         }
         
         if (build.has("build")) {
-            JSONObject buildObj = build.getJSONObject("build");
+            JSONObject buildObj = build.optJSONObject("build", new JSONObject());
             
             if (buildObj.has("starter")) {
-                JSONArray starter = buildObj.getJSONArray("starter");
+                JSONArray starter = buildObj.optJSONArray("starter", new JSONArray());
                 for (int i = 0; i < starter.length(); i++) {
                     starterItems.add(starter.optInt(i, 0));
                 }
             }
             
             if (buildObj.has("build")) {
-                JSONArray buildPathArray = buildObj.getJSONArray("build");
+                JSONArray buildPathArray = buildObj.optJSONArray("build", new JSONArray());
                 for (int i = 0; i < buildPathArray.length(); i++) {
                     buildPath.add(buildPathArray.optInt(i, 0));
                 }

@@ -60,14 +60,21 @@ public class LeagueMessageParameter {
       boolean isActive = b.getStyle() == ButtonStyle.SUCCESS;
       String buttonValue = b.getCustomId().split("-").length == 2 ? b.getCustomId().split("-")[1] : b.getCustomId().split("-")[2];
 
-      if (b.getCustomId().startsWith(prefix + "-queue-") && isActive) 
+      if (b.getCustomId().startsWith(prefix + "-queue-") && isActive) {
+        try {
           this.queueType = GameQueueType.valueOf(buttonValue);
+        } catch (Exception e) { }
+      }
       
       if (b.getCustomId().startsWith(prefix + "-type-") && isActive)
           this.messageType = LeagueMessageType.valueOf(buttonValue);
 
-      if (b.getCustomId().startsWith(prefix + "-lane-") && isActive)
-          this.laneType = LaneType.valueOf(buttonValue);
+      if (b.getCustomId().startsWith(prefix + "-lane-") && isActive) {
+          try {
+            this.laneType = LaneType.valueOf(buttonValue);
+          } catch (Exception e) { }
+      }
+          
 
       if (b.getCustomId().startsWith(prefix + "-champion-")) {
           this.champion = LeagueHandler.getChampionById(Integer.parseInt(buttonValue));
