@@ -1390,22 +1390,22 @@ public class LeagueMessage {
         eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         eb.setColor(Bot.getColor());
         switch (parameter.getMessageType()) {
-            case CHAMPION_OVERVIEW:
+            case OVERVIEW:
                 eb = getGenericStats(eb, matches, summoner, summonerId, parameter);                
                 break;
-            case CHAMPION_MATCHUP:
+            case MATCHUP:
                 eb = getMatchups(eb, matches, summonerId, parameter);
                 break;
-            case CHAMPION_PING:
+            case OVERVIEW_PING:
                 eb = getPings(eb, matches, summonerId);
                 break;
-            case CHAMPION_OBJECTIVES:
+            case OVERVIEW_OBJECTIVES:
                 eb = getObjectives(eb, matches, summoner, summonerId);
                 break;
-            case CHAMPION_CHAMPIONS:
+            case OVERVIEW_CHAMPIONS:
                 eb = getAllChampions(eb, matches, summoner, summonerId, parameter);
                 break;
-            case CHAMPION_OPGG:
+            case OVERVIEW_OPGG:
                 eb = getChampionOPGG(eb, matches, summoner, summonerId, parameter);
                 break;
             default:
@@ -1433,30 +1433,30 @@ public class LeagueMessage {
             championButton = parameter.isShowChampion() ? championButton.withStyle(ButtonStyle.SUCCESS) : championButton;
         }
 
-        Button generic = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OVERVIEW, "Overview");
-        Button matchups = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_MATCHUP, "Matchups");
-        Button pings = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_PING, "Pings");
-        Button objectives = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OBJECTIVES, "Objectives");
-        Button champions = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_CHAMPIONS, "Champions");
-        Button opgg = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OPGG, "Opgg");
+        Button generic = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW, "Overview");
+        Button matchups = Button.primary("champion-type-" + LeagueMessageType.MATCHUP, "Matchups");
+        Button pings = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW_PING, "Pings");
+        Button objectives = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW_OBJECTIVES, "Objectives");
+        Button champions = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW_CHAMPIONS, "Champions");
+        Button opgg = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW_OPGG, "Opgg");
 
         switch (parameter.getMessageType()) {
-            case CHAMPION_OVERVIEW:
+            case OVERVIEW:
                 generic = generic.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_MATCHUP:
+            case MATCHUP:
                 matchups = matchups.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_PING:
+            case OVERVIEW_PING:
                 pings = pings.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_OBJECTIVES:
+            case OVERVIEW_OBJECTIVES:
                 objectives = objectives.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_CHAMPIONS:
+            case OVERVIEW_CHAMPIONS:
                 champions = champions.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_OPGG:
+            case OVERVIEW_OPGG:
                 opgg = opgg.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
             default:
@@ -1489,7 +1489,7 @@ public class LeagueMessage {
             if (parameter.getOffset() == 0) 
                 leftPage = leftPage.asDisabled();
             
-            if (parameter.getMessageType() == LeagueMessageType.CHAMPION_OPGG) {
+            if (parameter.getMessageType() == LeagueMessageType.OVERVIEW_OPGG) {
                 if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
                     center = center.withStyle(ButtonStyle.SUCCESS).asEnabled();
                 rows.add(ActionRow.of(center, championButton, settings, leftPage, rightPage));
