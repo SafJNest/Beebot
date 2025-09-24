@@ -69,41 +69,76 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class LeagueMessage {
 
+    public static final String BUTTON_ID_PREFIX = "lol";
+    
+    public static void send(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        MessageEmbed embed = null;
+        List<MessageTopLevelComponent> components = new ArrayList<>();
 
-    public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, String id) {
-        Button left = Button.primary(id + "-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
-        Button right = Button.primary(id + "-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
-        Button refresh = Button.primary(id + "-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
+        switch (parameter.getMessageType()) {
+            case PROFILE:
+                embed = getSummonerEmbed(summoner, summonerId, parameter).build();   
+                components = getSummonerButtons(summoner, userId, parameter);
+                break;
+            case LIVEGAME:
+                List<SpectatorParticipant> users = summoner.getCurrentGame() != null ? summoner.getCurrentGame().getParticipants() : null;
+                StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
 
-        Button profile = Button.primary(id + "-lol", " ").withEmoji(CustomEmojiHandler.getRichEmoji("user"));
-        Button opgg = Button.primary(id + "-match", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list2"));
-        Button livegame = Button.primary(id + "-rank", " ").withEmoji(CustomEmojiHandler.getRichEmoji("game"));
-        Button champ = Button.primary(id + "-champion", " ").withEmoji(CustomEmojiHandler.getRichEmoji("graph"));
+                embed = LeagueMessage.getLivegameEmbed(summoner, users).build();
+                components = new ArrayList<>(LeagueMessage.getLivegameButtons(summoner, userId != null ? userId : null));
+                if (menu != null) 
+                    components.add(0, ActionRow.of(menu));
+                
+                break;
+            case OPGG:
+                embed = getOpggEmbed(summoner, parameter).build();
+                components = getOpggButtons(summoner, userId, parameter);
+                break;
+            case OVERVIEW:
+            case MATCHUP:
+            case OVERVIEW_PING:
+            case OVERVIEW_OBJECTIVES:
+            case OVERVIEW_CHAMPIONS:
+            case OVERVIEW_OPGG:
+                embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
+                components = getChampionButtons(userId, summoner, summonerId, parameter);
+            default:
+                break;
+        }
 
-        switch (id) {
-            case "lol":
+        hook.editOriginalEmbeds(embed).setComponents(components).queue();
+    }
+
+    public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
+        Button left = Button.primary(BUTTON_ID_PREFIX + "-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary(BUTTON_ID_PREFIX + "-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button refresh = Button.primary(BUTTON_ID_PREFIX + "-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
+
+        Button profile = Button.primary(BUTTON_ID_PREFIX + "-type-profile", " ").withEmoji(CustomEmojiHandler.getRichEmoji("user"));
+        Button opgg = Button.primary(BUTTON_ID_PREFIX + "-type-opgg", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list2"));
+        Button livegame = Button.primary(BUTTON_ID_PREFIX + "-type-livegame", " ").withEmoji(CustomEmojiHandler.getRichEmoji("game"));
+        Button champ = Button.primary(BUTTON_ID_PREFIX + "-type-overview", " ").withEmoji(CustomEmojiHandler.getRichEmoji("graph"));
+
+        switch (parameter.getMessageType()) {
+            case PROFILE:
                 profile = profile.asDisabled().withStyle(ButtonStyle.SUCCESS);
                 break;
-            case "match":
+            case OPGG:
                 opgg = opgg.withStyle(ButtonStyle.SUCCESS);
                 break;
-            case "rank":
+            case LIVEGAME:
                 livegame = livegame.asDisabled().withStyle(ButtonStyle.SUCCESS);
                 break;
-            case "champion":
-                champ = champ.asDisabled().withStyle(ButtonStyle.SUCCESS);
+            default:
                 break;
         }
 
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        Button center = Button.primary(id + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
+        Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
-        if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) {
+        if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) 
             return List.of(ActionRow.of(left, center, right), ActionRow.of(profile, opgg, livegame, champ, refresh));
-
-        }
-
         return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(center, refresh));
     }
 
@@ -321,7 +356,7 @@ public class LeagueMessage {
     public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
         int index = 0;
 
-        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
+        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, parameter));
 
         boolean hasTrackedGames = LeagueDB.hasSummonerData(LeagueHandler.updateSummonerDB(s));
 
@@ -1222,7 +1257,7 @@ public class LeagueMessage {
         Button page = Button.primary("match-index-" + index, "Match " + ((index/5)+1)).asDisabled();
         Button right = Button.primary("match-matchright", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
-        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "match"));
+        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, parameter));
 
         StringSelectMenu menu = LeagueMessage.getOpggMenu(s, queue, index);
         if (menu != null) {
@@ -1359,45 +1394,7 @@ public class LeagueMessage {
     }
 
     public static List<MessageTopLevelComponent> getLivegameButtons(Summoner s, String user_id) {
-        return composeButtons(s, user_id, "rank");
-    }
-
-    public static void send(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        MessageEmbed embed = null;
-        List<MessageTopLevelComponent> components = new ArrayList<>();
-
-        switch (parameter.getMessageType()) {
-            case PROFILE:
-                embed = getSummonerEmbed(summoner, summonerId, parameter).build();   
-                components = getSummonerButtons(summoner, userId, parameter);
-                break;
-            case LIVEGAME:
-                List<SpectatorParticipant> users = summoner.getCurrentGame() != null ? summoner.getCurrentGame().getParticipants() : null;
-                StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
-
-                embed = LeagueMessage.getLivegameEmbed(summoner, users).build();
-                components = new ArrayList<>(LeagueMessage.getLivegameButtons(summoner, userId != null ? userId : null));
-                if (menu != null) 
-                    components.add(0, ActionRow.of(menu));
-                
-                break;
-            case OPGG:
-                embed = getOpggEmbed(summoner, parameter).build();
-                components = getOpggButtons(summoner, userId, parameter);
-                break;
-            case OVERVIEW:
-            case MATCHUP:
-            case OVERVIEW_PING:
-            case OVERVIEW_OBJECTIVES:
-            case OVERVIEW_CHAMPIONS:
-            case OVERVIEW_OPGG:
-                embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
-                components = getChampionButtons(userId, summoner, summonerId, parameter);
-            default:
-                break;
-        }
-
-        hook.editOriginalEmbeds(embed).setComponents(components).queue();
+        return composeButtons(s, user_id, new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
     }
 
     public static void sendChampionMessage(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {

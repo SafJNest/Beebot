@@ -1,7 +1,6 @@
 package com.safjnest.core.events;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +12,6 @@ import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.util.lol.LeagueMessageParameter;
@@ -59,7 +57,6 @@ import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.requests.ErrorResponse;
@@ -67,10 +64,6 @@ import net.dv8tion.jda.api.utils.FileUpload;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
-
 import com.safjnest.core.cache.managers.GuildCache;
 
 
@@ -101,8 +94,8 @@ public class EventButtonHandler extends ListenerAdapter {
             return;
         }
 
-        else if (buttonId.startsWith("champion-")) {
-            champion(event);
+        else if (buttonId.startsWith(LeagueMessage.BUTTON_ID_PREFIX + "-")) {
+            lol(event);
             return;
         }
 
@@ -120,16 +113,7 @@ public class EventButtonHandler extends ListenerAdapter {
         }
         */
 
-        if (buttonId.startsWith("lol-"))
-            lolButtonEvent(event);
-
-        else if (buttonId.startsWith("match-"))
-            matchButtonEvent(event);
-
-        else if (buttonId.startsWith("rank-"))
-            rankButtonEvent(event);
-
-        else if (buttonId.startsWith("list-"))
+        if (buttonId.startsWith("list-"))
             listButtonEvent(event);
 
         else if (buttonId.startsWith("listuser-"))
@@ -789,459 +773,6 @@ public class EventButtonHandler extends ListenerAdapter {
         event.getHook().editOriginalEmbeds((new EmbedBuilder()).setTitle("Connected").build()).setComponents(Collections.emptyList()).queue();
     }
 
-    public void lolButtonEvent(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().substring(event.getButton().getCustomId().indexOf("-") + 1).split("-")[0];
-
-        String puuid = "";
-        String region = "";
-
-        int index = 0;
-
-        String[] parts;
-        String queueString = "";
-
-        GameQueueType queue = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
-
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getCustomId().startsWith("lol-center-")) {
-                puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
-                region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
-            }
-            else if (b.getCustomId().startsWith("lol-queue") && b.getStyle() == ButtonStyle.SUCCESS) {
-                parts = b.getCustomId().split("-", 3);
-                queueString = parts[2];
-                queue = queueString.equals("all") ? null : GameQueueType.valueOf(queueString);
-            }
-        }
-
-        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
-
-        if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
-
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        int i = 0;
-        for (String k : accounts.keySet()) {
-            if (LeagueHandler.getSummonerByPuuid(k, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getPUUID().equals(puuid)) {
-                puuid = k;
-                index = i;
-                break;
-            }
-            i++;
-        }
-
-        String platform = "";
-
-        long[] time = LeagueHandler.getCurrentSplitRange();
-
-        switch (args) {
-
-            case "right":
-                if ((index + 1) == accounts.size()) index = 0;
-                else index += 1;
-
-                puuid = (String) accounts.keySet().toArray()[index];
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
-                
-                break;
-            case "left":
-                if (index == 0) index = accounts.size() - 1;
-                else index -= 1;
-
-                puuid = (String) accounts.keySet().toArray()[index];
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
-                break;
-            case "refresh":
-                for (Button b : EventUtils.getButtons(event)) {
-                    if (b.getCustomId().startsWith("lol-center")) {
-                        parts = b.getCustomId().split("-", 3);
-
-                        puuid = parts[2].substring(0, parts[2].indexOf("#"));
-                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
-                        break;
-                    }
-                }
-
-                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
-
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
-                LeagueHandler.clearSummonerCache(s);
-                break;
-            case "match":
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-
-                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
-                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, null, 0)).queue();
-                return;
-            case "rank":
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-
-                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
-
-                List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-
-                StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
-                EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
-                List<MessageTopLevelComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
-
-                if (menu != null) {
-                    row.add(0, ActionRow.of(menu));
-                    event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
-                }
-                else event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
-
-                return;
-            case "shard":
-                parts = event.getButton().getCustomId().split("-", 3);
-
-                puuid = parts[2].substring(0, parts[2].indexOf("#"));
-                platform = parts[2].substring(parts[2].indexOf("#") + 1);
-
-                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
-            break;
-            case "queue":
-                parts = event.getButton().getCustomId().split("-", 3);
-                queueString = parts[2];
-                queue = queueString.equals("all") ? null : GameQueueType.valueOf(queueString);
-
-                for (Button b : EventUtils.getButtons(event)) {
-                    if (b.getCustomId().startsWith("lol-season") && b.getStyle() == ButtonStyle.SUCCESS) {
-                        parts = b.getCustomId().split("-", 3);
-
-                        switch (parts[2]) {
-                            case "all":
-                                time = new long[] {0, 0};
-                                break;
-                            case "current":
-                                time = LeagueHandler.getCurrentSplitRange();
-                                break;
-                            case "previous":
-                                time = LeagueHandler.getPreviousSplitRange();
-                                break;
-                        }
-                        break;
-                    }
-                }
-                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-            break;
-            case "season":
-                parts = event.getButton().getCustomId().split("-", 3);
-                switch (parts[2]) {
-                    case "all":
-                        time = new long[] {0, 0};
-                        break;
-                    case "current":
-                        time = LeagueHandler.getCurrentSplitRange();
-                        break;
-                    case "previous":
-                        time = LeagueHandler.getPreviousSplitRange();
-                        break;
-                }
-
-                for (Button b : EventUtils.getButtons(event)) {
-                    if (b.getCustomId().startsWith("lol-queue") && b.getStyle() == ButtonStyle.SUCCESS) {
-                        parts = b.getCustomId().split("-", 3);
-                        queueString = parts[2];
-                        queue = queueString.equals("all") ? null : GameQueueType.valueOf(queueString);
-                        break;
-                    }
-                }
-                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-            break;
-            case "champion":
-                if (EventUtils.getButtonById(event, "lol-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-                int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-                LeagueMessageParameter parameter = new LeagueMessageParameter("lol", EventUtils.getButtons(event));
-                parameter.setMessageType(LeagueMessageType.OVERVIEW);
-                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, parameter); 
-            return;
-        }
-
-        EmbedBuilder eb = LeagueMessage.getSummonerEmbed(s, time[0], time[1], queue);
-        List<MessageTopLevelComponent> row = LeagueMessage.getSummonerButtons(s, user_id, time[0], time[1], queue);
-        event.getMessage().editMessageEmbeds(eb.build()).setComponents(row).queue();
-
-    }
-
-    public void matchButtonEvent(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 3)[1];
-
-        String puuid = "";
-        String region = "";
-        int index = 0;
-
-        GameQueueType queue = null;
-        int page = 0;
-
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getCustomId().startsWith("match-center-")) {
-                puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
-                region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
-            }
-            if (b.getCustomId().startsWith("match-queue-") && b.getStyle() == ButtonStyle.SUCCESS) {
-                queue = GameQueueType.valueOf(b.getCustomId().split("-")[2]);
-            }
-            if (b.getCustomId().startsWith("match-index-"))
-                page = Integer.parseInt(b.getCustomId().split("-")[2]);
-        }
-
-        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
-
-        if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
-
-        int i = 0;
-        for (String k : accounts.keySet()) {
-            if (LeagueHandler.getSummonerByPuuid(k, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getPUUID().equals(puuid)) {
-                puuid = k;
-                index = i;
-                break;
-            }
-            i++;
-        }
-
-        String platform = "";
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        switch (args) {
-
-            case "right":
-                if ((index + 1) == accounts.size()) index = 0;
-                else index += 1;
-
-                puuid = (String) accounts.keySet().toArray()[index];
-                page = 0;
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
-
-                break;
-
-            case "left":
-                if (index == 0) index = accounts.size() - 1;
-                else index -= 1;
-
-                puuid = (String) accounts.keySet().toArray()[index];
-                page = 0;
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
-
-                break;
-            case "refresh":
-                for (Button b : EventUtils.getButtons(event)) {
-                    if (b.getCustomId().startsWith("match-center-")) {
-                        String[] parts = b.getCustomId().split("-", 3);
-
-                        puuid = parts[2].substring(0, parts[2].indexOf("#"));
-                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
-                    }
-                    else if (b.getCustomId().startsWith("match-queue-") && b.getStyle() == ButtonStyle.SUCCESS) {
-                        queue = GameQueueType.valueOf(b.getCustomId().split("-")[2]);
-                    }
-                }
-
-                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
-
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
-                LOLMatch lastMatch = queue != null ? s.getLeagueGames().withCount(1).withQueue(queue).getMatchIterator().iterator().next() : s.getLeagueGames().withCount(1).getMatchIterator().iterator().next();
-                MatchTracker.analyzeMatchHistory(lastMatch.getQueue(), s).queue();
-
-                LeagueHandler.clearSummonerCache(s);
-                break;
-            case "queue":
-                for (Button b : EventUtils.getButtons(event)) {
-                    if (b.getCustomId().startsWith("match-center-")) {
-                        String[] parts = b.getCustomId().split("-", 3);
-
-                        puuid = parts[2].substring(0, parts[2].indexOf("#"));
-                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
-                        break;
-                    }
-                }
-
-                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
-
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
-
-                queue = event.getButton().getStyle() != ButtonStyle.SUCCESS ? GameQueueType.valueOf(event.getButton().getCustomId().split("-")[2]) : null;
-                break;
-            case "lol":
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-
-                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
-
-                event.getMessage().editMessageEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(LeagueMessage.getSummonerButtons(s, user_id)).queue();
-                return;
-            case "rank":
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-
-                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
-
-                List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-
-                StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
-                EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
-                List<MessageTopLevelComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
-
-                if (menu != null) {
-                    row.add(0, ActionRow.of(menu));
-                    event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
-                }
-                else event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
-
-                return;
-            case "match":
-                page = 0;
-                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-            break;
-            case "matchleft":
-                page = page - 5;
-                if (page < 0) page = 0;
-                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-            break;
-            case "matchright":
-                page = page + 5;
-
-                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-            break;
-            case "champion":
-                if (EventUtils.getButtonById(event, "match-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-                int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-                LeagueMessageParameter parameter = new LeagueMessageParameter("match", EventUtils.getButtons(event));
-                parameter.setMessageType(LeagueMessageType.OVERVIEW);
-                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, parameter); 
-            return;
-        }
-
-        EmbedBuilder eb = LeagueMessage.getOpggEmbed(s, queue, page);
-
-        event.getMessage().editMessageEmbeds(eb.build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, queue, page)).queue();
-    }
-
-    public void rankButtonEvent(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().substring(event.getButton().getCustomId().indexOf("-") + 1);
-
-        String puuid = "";
-        String region = "";
-        int index = 0;
-
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getCustomId().startsWith("rank-center-")) {
-                puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
-                region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
-            }
-        }
-
-        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
-
-        if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
-
-        int i = 0;
-        for (String k : accounts.keySet()) {
-            if (LeagueHandler.getSummonerByPuuid(k, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getPUUID().equals(puuid)) {
-                puuid = k;
-                index = i;
-                break;
-            }
-            i++;
-        }
-
-
-        List<SpectatorParticipant> users = null;
-        List<RiotAccount> riotAccounts = new ArrayList<>();
-
-
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        RiotAccount account = null;
-        switch (args) {
-
-            case "right":
-                if ((index + 1) == accounts.size())index = 0;
-                else index += 1;
-
-                puuid = (String) accounts.keySet().toArray()[index];
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
-
-                account = LeagueHandler.getRiotAccountFromSummoner(s);
-                riotAccounts.add(account);
-
-
-                break;
-
-            case "left":
-
-                if (index == 0) index = accounts.size() - 1;
-                else index -= 1;
-
-                puuid = (String) accounts.keySet().toArray()[index];
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
-
-                account = LeagueHandler.getRiotAccountFromSummoner(s);
-                riotAccounts.add(account);
-
-                break;
-            case "refresh":
-                String platform = "";
-                for (Button b : EventUtils.getButtons(event)) {
-                    if (!b.getCustomId().equals("rank-left") && !b.getCustomId().equals("rank-right") && !b.getCustomId().equals("rank-refresh")) {
-                        String[] parts = b.getCustomId().split("-", 3);
-                        puuid = parts[2].substring(0, parts[2].indexOf("#"));
-                        platform = parts[2].substring(parts[2].indexOf("#") + 1);
-                        break;
-                    }
-                }
-
-                if (EventUtils.getButtonById(event, "rank-left") == null) user_id = "";
-
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
-
-                LeagueHandler.clearSummonerCache(s);
-
-                account = LeagueHandler.getRiotAccountFromSummoner(s);
-                riotAccounts.add(account);
-
-                break;
-            case "lol":
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-
-                if (EventUtils.getButtonById(event, "rank-left") == null) user_id = "";
-
-                event.getMessage().editMessageEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(LeagueMessage.getSummonerButtons(s, user_id)).queue();
-                return;
-            case "match":
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-
-                if (EventUtils.getButtonById(event, "rank-left") == null) user_id = "";
-
-                event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbed(s).build()).setComponents(LeagueMessage.getOpggButtons(s, user_id, null, 0)).queue();
-
-                return;
-            case "champion":
-                if (EventUtils.getButtonById(event, "rank-left") == null) user_id = "";
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-                int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-                LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW)); 
-            return;
-        }
-
-        users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
-        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
-        List<MessageTopLevelComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, user_id));
-
-        if (menu != null) {
-            row.add(0, ActionRow.of(menu));
-            event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
-        }
-        else event.getMessage().editMessageEmbeds(builder.build()).setComponents(row).queue();
-
-    }
-
     public void listButtonEvent(ButtonInteractionEvent event) {
         String args = event.getButton().getCustomId().substring(event.getButton().getCustomId().indexOf("-") + 1);
 
@@ -1574,7 +1105,7 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
 
-    private void champion(ButtonInteractionEvent event) {
+    private void lol(ButtonInteractionEvent event) {
         String args = event.getButton().getCustomId().split("-", 3)[1];
 
         String puuid = "";
@@ -1592,7 +1123,7 @@ public class EventButtonHandler extends ListenerAdapter {
             }
         }
 
-        LeagueMessageParameter parameter = new LeagueMessageParameter("champion", EventUtils.getButtons(event));
+        LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event));
 
         String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
 

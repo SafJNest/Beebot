@@ -50,7 +50,9 @@ public class LeagueMessageParameter {
     this.offset = offset;
   }
 
-  public LeagueMessageParameter(String prefix, List<Button> buttons) {
+  public LeagueMessageParameter(List<Button> buttons) {
+    String prefix = LeagueMessage.BUTTON_ID_PREFIX;
+    
     this.period = LeagueHandler.getCurrentSplitRange();
     String timeString = "current";
 
