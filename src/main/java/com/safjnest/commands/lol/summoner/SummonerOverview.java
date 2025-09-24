@@ -49,7 +49,7 @@ public class SummonerOverview extends SlashCommand {
     int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
     String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
-    LeagueMessage.sendChampionMessage(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
+    LeagueMessage.send(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
 	}
 
   @Override
@@ -58,7 +58,7 @@ public class SummonerOverview extends SlashCommand {
     int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
     String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
-    LeagueMessage.sendChampionMessage(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
+    LeagueMessage.send(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
 	}
 
 

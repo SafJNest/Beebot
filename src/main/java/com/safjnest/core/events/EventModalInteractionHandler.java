@@ -244,7 +244,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
             }
         }
 
-        LeagueMessageParameter parameter = new LeagueMessageParameter("champion", EventUtils.getButtons(event.getMessage().getComponents()));
+        LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event.getMessage().getComponents()));
         parameter.setChampion(newChampion);
         parameter.setShowChampion(true);
         
@@ -255,6 +255,6 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-        LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, parameter); 
+        LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
     }
 }

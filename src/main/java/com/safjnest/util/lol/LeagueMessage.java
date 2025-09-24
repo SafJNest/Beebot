@@ -85,7 +85,7 @@ public class LeagueMessage {
                 StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
 
                 embed = LeagueMessage.getLivegameEmbed(summoner, users).build();
-                components = new ArrayList<>(LeagueMessage.getLivegameButtons(summoner, userId != null ? userId : null));
+                components = new ArrayList<>(composeButtons(summoner, userId != null ? userId : null, new LeagueMessageParameter(LeagueMessageType.LIVEGAME)));
                 if (menu != null) 
                     components.add(0, ActionRow.of(menu));
                 
@@ -123,7 +123,7 @@ public class LeagueMessage {
                 StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
 
                 embed = LeagueMessage.getLivegameEmbed(summoner, users).build();
-                components = new ArrayList<>(LeagueMessage.getLivegameButtons(summoner, userId != null ? userId : null));
+                components = new ArrayList<>(composeButtons(summoner, userId != null ? userId : null, new LeagueMessageParameter(LeagueMessageType.LIVEGAME)));
                 if (menu != null) 
                     components.add(0, ActionRow.of(menu));
                 
@@ -189,12 +189,6 @@ public class LeagueMessage {
 //     ▄█    ███ ███    ███ ███   ███   ███ ███   ███   ███ ███    ███ ███   ███   ███    ███   ███    ███
 //   ▄████████▀  ████████▀   ▀█   ███   █▀   ▀█   ███   █▀   ▀██████▀   ▀█   █▀    ██████████   ███    ███
 //                                                                                              ███    ███
-
-    public static EmbedBuilder getSummonerEmbed(Summoner s) {
-        int summonerId = LeagueDB.addLOLAccount(s);
-        return getSummonerEmbed(s, summonerId, new LeagueMessageParameter(LeagueMessageType.PROFILE));
-    }
-
 
     public static EmbedBuilder getSummonerEmbed(Summoner s, int summonerId, LeagueMessageParameter parameter) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
@@ -387,10 +381,6 @@ public class LeagueMessage {
         return builder;
     }
 
-    public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id) {
-        return getSummonerButtons(s, user_id, new LeagueMessageParameter(LeagueMessageType.PROFILE));
-    }
-
     public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
         int index = 0;
 
@@ -458,10 +448,6 @@ public class LeagueMessage {
 //  ███    ███   ███          ███    ███   ███    ███
 //   ▀██████▀   ▄████▀        ████████▀    ████████▀
 //
-
-    public static StringSelectMenu getOpggMenu(Summoner summoner) {
-        return getOpggMenu(summoner, null, 0);
-    }
 
     public static StringSelectMenu getOpggMenu(Summoner summoner, GameQueueType queue, int index) {
         List<String> gameIds = getMatchIds(summoner, queue, index);
@@ -731,10 +717,6 @@ public class LeagueMessage {
                 break;
         }
         return eb;
-    }
-
-    public static EmbedBuilder getOpggEmbed(Summoner s) {
-        return getOpggEmbed(s, new LeagueMessageParameter(LeagueMessageType.OPGG));
     }
 
     public static List<String> getMatchIds(Summoner s, GameQueueType queue, int index) {
@@ -1289,11 +1271,11 @@ public class LeagueMessage {
         int index = parameter.getOffset();
         GameQueueType queue = parameter.getQueueType();
         int order = 0;
-        Button left = Button.primary("match-matchleft", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button left = Button.primary(BUTTON_ID_PREFIX + "-leftpage-" + index, " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         if (index == 0) left = left.asDisabled();
 
-        Button page = Button.primary("match-index-" + index, "Match " + ((index/5)+1)).asDisabled();
-        Button right = Button.primary("match-matchright", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button page = Button.primary(BUTTON_ID_PREFIX + "-index-" + index, "Match " + ((index/5)+1)).asDisabled();
+        Button right = Button.primary(BUTTON_ID_PREFIX + "-rightpage-" + index, " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
         List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, parameter));
 
@@ -1429,22 +1411,6 @@ public class LeagueMessage {
                 .setMaxValues(1)
                 .addOptions(options)
                 .build();
-    }
-
-    public static List<MessageTopLevelComponent> getLivegameButtons(Summoner s, String user_id) {
-        return composeButtons(s, user_id, new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
-    }
-
-    public static void sendChampionMessage(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        MessageEmbed embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
-        List<MessageTopLevelComponent> components = getChampionButtons(userId, summoner, summonerId, parameter);
-        hook.editOriginalEmbeds(embed).setComponents(components).queue();
-    }
-
-    public static void sendChampionMessage(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        MessageEmbed embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
-        List<MessageTopLevelComponent> components = getChampionButtons(userId, summoner, summonerId, parameter);
-        event.getChannel().sendMessageEmbeds(embed).addComponents(components).queue();
     }
 
     private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {

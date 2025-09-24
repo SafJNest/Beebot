@@ -1,17 +1,17 @@
 package com.safjnest.commands.lol.summoner;
 
 import java.util.Arrays;
-import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
+import com.safjnest.util.lol.LeagueMessageParameter;
+import com.safjnest.util.lol.LeagueMessageType;
 
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -58,12 +58,9 @@ public class SummonerProfile extends SlashCommand {
             return;
         }
 
-        EmbedBuilder builder = LeagueMessage.getSummonerEmbed(s);
-        List<MessageTopLevelComponent> buttons = LeagueMessage.getSummonerButtons(s, theGuy != null ? theGuy.getId() : null);
 
-        event.getHook().editOriginalEmbeds(builder.build()).setComponents(buttons).queue();
-        
-
+        int summonerId = LeagueDB.addLOLAccount(s);
+        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.PROFILE));
 	}
 
 }

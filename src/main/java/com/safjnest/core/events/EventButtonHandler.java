@@ -1116,13 +1116,13 @@ public class EventButtonHandler extends ListenerAdapter {
         boolean userIdFallback = false;
 
         for (Button b : EventUtils.getButtons(event)) {
-            if (b.getCustomId().startsWith("champion-center-")) {
+            if (b.getCustomId().startsWith(LeagueMessage.BUTTON_ID_PREFIX + "-center-")) {
                 puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
                 region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
                 if (b.getStyle() == ButtonStyle.SUCCESS) userIdFallback = true;
             }
         }
-
+        System.out.println(region);
         LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event));
 
         String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
@@ -1161,7 +1161,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "queue":
                 for (Button b : EventUtils.getButtons(event)) {
-                    if (b.getCustomId().startsWith("champion-center-")) {
+                    if (b.getCustomId().startsWith(LeagueMessage.BUTTON_ID_PREFIX + "-center-")) {
                         String[] parts = b.getCustomId().split("-", 3);
 
                         puuid = parts[2].substring(0, parts[2].indexOf("#"));
@@ -1177,7 +1177,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 parameter.setOffset(0);
                 break;
             case "type":
-                parameter.setMessageType(LeagueMessageType.valueOf(event.getButton().getCustomId().split("-")[2]));
+                parameter.setMessageType(LeagueMessageType.valueOf(event.getButton().getCustomId().split("-")[2].toUpperCase()));
                 switch (parameter.getMessageType()) {
                     case OVERVIEW_CHAMPIONS:
                         parameter.setShowChampion(false);
@@ -1227,10 +1227,10 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         event.deferEdit().queue();
-        if (EventUtils.getButtonById(event, "champion-left") == null && !userIdFallback) user_id = "";
+        if (EventUtils.getButtonById(event, LeagueMessage.BUTTON_ID_PREFIX + "-left") == null && !userIdFallback) user_id = "";
         s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-        LeagueMessage.sendChampionMessage(event.getHook(), user_id, s, summonerId, parameter); 
+        LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
     }
 }

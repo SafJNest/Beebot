@@ -69,7 +69,7 @@ public class LeagueMessageParameter {
       }
       
       if (b.getCustomId().startsWith(prefix + "-type-") && isActive)
-          this.messageType = LeagueMessageType.valueOf(buttonValue);
+          this.messageType = LeagueMessageType.valueOf(buttonValue.toUpperCase());
 
       if (b.getCustomId().startsWith(prefix + "-lane-") && isActive) {
           try {
