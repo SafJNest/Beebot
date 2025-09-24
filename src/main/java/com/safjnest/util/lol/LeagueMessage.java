@@ -1709,6 +1709,7 @@ public class LeagueMessage {
                 //when beebot started to track games it used to track only one participant who asked to be tracked
                 if (match.participants.size() > 1) {
                     int teamKills;
+                    int enemyTeamKills;
                     teamKills = match.participants.stream()
                         .filter(p -> {
                             if (parameter.getQueueType() == GameQueueType.CHERRY)
@@ -1717,8 +1718,18 @@ public class LeagueMessage {
                         })
                         .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
                         .sum();
+                    enemyTeamKills = match.participants.stream()
+                        .filter(p -> {
+                            if (parameter.getQueueType() != GameQueueType.CHERRY)
+                                return  p.team != team;
+                            return false;
+                        })
+                        .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
+                        .sum();
                     double killParticipation = teamKills == 0 ? 0 : (double) (kills + assists) / teamKills;
+                    double deathShare = enemyTeamKills == 0 ? 0 : (double) deaths / enemyTeamKills;
                     overallStats.computeIfAbsent("kill_participation", k -> new Accumulator()).add((int)(killParticipation * 100));
+                    overallStats.computeIfAbsent("death_share", k -> new Accumulator()).add((int)(deathShare * 100));
                 }
 
                 boolean isDuo = lane == LaneType.BOT || lane == LaneType.UTILITY;
@@ -1847,7 +1858,9 @@ public class LeagueMessage {
         
         String performace = 
             (!arenaPlacement.equals("") ? "**Arena**\n`" + arenaPlacement + "`\n" : "") +
-            "**KDA**\n`" + kda + " (" + String.format("%.2f", overallStats.get("kill_participation").avg()) + "% kp)`\n" +
+            "**KDA**\n`" + kda + 
+            " (" + String.format("%.2f", overallStats.get("kill_participation").avg()) + "% kp & " +
+            String.format("%.2f", overallStats.get("death_share").avg()) + "% dp)`\n" +
             "**Vision Score**\n`" + visionScore + "`\n" +
             "**CS**\n`" + cs + "`\n" +
             "**Damage**\n`" + damaString + "`\n" +
