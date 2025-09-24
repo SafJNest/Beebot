@@ -109,6 +109,44 @@ public class LeagueMessage {
         hook.editOriginalEmbeds(embed).setComponents(components).queue();
     }
 
+    public static void send(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        MessageEmbed embed = null;
+        List<MessageTopLevelComponent> components = new ArrayList<>();
+
+        switch (parameter.getMessageType()) {
+            case PROFILE:
+                embed = getSummonerEmbed(summoner, summonerId, parameter).build();   
+                components = getSummonerButtons(summoner, userId, parameter);
+                break;
+            case LIVEGAME:
+                List<SpectatorParticipant> users = summoner.getCurrentGame() != null ? summoner.getCurrentGame().getParticipants() : null;
+                StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
+
+                embed = LeagueMessage.getLivegameEmbed(summoner, users).build();
+                components = new ArrayList<>(LeagueMessage.getLivegameButtons(summoner, userId != null ? userId : null));
+                if (menu != null) 
+                    components.add(0, ActionRow.of(menu));
+                
+                break;
+            case OPGG:
+                embed = getOpggEmbed(summoner, parameter).build();
+                components = getOpggButtons(summoner, userId, parameter);
+                break;
+            case OVERVIEW:
+            case MATCHUP:
+            case OVERVIEW_PING:
+            case OVERVIEW_OBJECTIVES:
+            case OVERVIEW_CHAMPIONS:
+            case OVERVIEW_OPGG:
+                embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
+                components = getChampionButtons(userId, summoner, summonerId, parameter);
+            default:
+                break;
+        }
+
+        event.getChannel().sendMessageEmbeds(embed).setComponents(components).queue();
+    }
+
     public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
         Button left = Button.primary(BUTTON_ID_PREFIX + "-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary(BUTTON_ID_PREFIX + "-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));

@@ -5,12 +5,14 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
+import com.safjnest.util.lol.LeagueMessageParameter;
+import com.safjnest.util.lol.LeagueMessageType;
 
-import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -61,11 +63,8 @@ public class Opgg extends SlashCommand {
             event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
             return;
         }
-        
-        
-        EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);
-        event.getChannel().sendMessageEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
-        
+        int summonerId = LeagueDB.addLOLAccount(s);
+        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.OPGG));
     }
 
     @Override
@@ -83,11 +82,8 @@ public class Opgg extends SlashCommand {
         if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
         else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
-        EmbedBuilder builder = LeagueMessage.getOpggEmbed(s);        
-        event.getHook().editOriginalEmbeds(builder.build()).setComponents(LeagueMessage.getOpggButtons(s, theGuy != null ? theGuy.getId() : null, null, 0)).queue();
-
-
-        //event.getHook().editOriginalComponents(LeagueMessage.getOpggEmbedV2(s, null, 0)).useComponentsV2().queue();
+        int summonerId = LeagueDB.addLOLAccount(s);
+        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.OPGG));
 	}
     
 }
