@@ -91,7 +91,7 @@ public class LeagueMessage {
                 
                 break;
             case OPGG:
-                embed = getOpggEmbed(summoner, parameter).build();
+                embed = parameter.getMatch() != null ? getOpggEmbedMatch(summoner, parameter.getMatch()).build() : getOpggEmbed(summoner, parameter).build();
                 components = getOpggButtons(summoner, userId, parameter);
                 break;
             case OVERVIEW:
@@ -451,7 +451,6 @@ public class LeagueMessage {
 
     public static StringSelectMenu getOpggMenu(Summoner summoner, GameQueueType queue, int index) {
         List<String> gameIds = getMatchIds(summoner, queue, index);
-
         ArrayList<SelectOption> options = new ArrayList<>();
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
@@ -461,7 +460,7 @@ public class LeagueMessage {
 
                 MatchParticipant me = null;
                 for(MatchParticipant mp : match.getParticipants())
-                    if(mp.getSummonerId().equals(summoner.getSummonerId()))
+                    if(mp.getPuuid().equals(summoner.getPUUID()))
                         me = mp;
 
                 Emoji icon = LeagueHandler.getEmojiByChampion(me.getChampionId());

@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class LeagueMessageParameter {
@@ -21,6 +22,8 @@ public class LeagueMessageParameter {
 
   private int offset;
 
+  private LOLMatch match;
+
   public LeagueMessageParameter(LeagueMessageType messageType) {
     this.messageType = messageType;
 
@@ -34,6 +37,7 @@ public class LeagueMessageParameter {
 
     this.offset = 0;
 
+    this.match = null;
   }
 
   public LeagueMessageParameter(LeagueMessageType messageType, long[] period, GameQueueType queueType, LaneType laneType, StaticChampion champion, boolean showChampion, int offset) {
@@ -48,6 +52,8 @@ public class LeagueMessageParameter {
     this.showChampion = showChampion;
 
     this.offset = offset;
+
+    this.match = null;
   }
 
   public LeagueMessageParameter(List<Button> buttons) {
@@ -185,5 +191,13 @@ public class LeagueMessageParameter {
 
   public long getTimeEnd() {
     return this.period[1];
+  }
+
+  public void setMatch(LOLMatch match) {
+    this.match = match;
+  }
+
+  public LOLMatch getMatch() {
+    return this.match;
   }
 }

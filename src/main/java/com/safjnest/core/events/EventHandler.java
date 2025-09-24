@@ -1,14 +1,21 @@
 package com.safjnest.core.events;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+
 import com.safjnest.App;
 import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.database.BotDB;
+import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.LeagueMessage;
 
 import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.components.MessageTopLevelComponent;
+import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
@@ -29,6 +36,9 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 
@@ -190,33 +200,33 @@ public class EventHandler extends ListenerAdapter {
 
         //     event.deferEdit().setEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(compontens).queue();
         // }
-        // else if (event.getComponentId().equals("opgg-select")) {
-        //     event.deferEdit().queue();
-        //     String gameId = event.getValues().get(0);
-        //     String platform =  event.getValues().get(0).split("_")[0];
-        //     String puuid =  event.getValues().get(0).split("#")[1];
+        if (event.getComponentId().equals("opgg-select")) {
+            event.deferEdit().queue();
+            String gameId = event.getValues().get(0);
+            String platform =  event.getValues().get(0).split("_")[0];
+            String puuid =  event.getValues().get(0).split("#")[1];
 
-        //     no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
             
-        //     LeagueShard shard = LeagueShard.valueOf(platform);
-        //     LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
+            LeagueShard shard = LeagueShard.valueOf(platform);
+            LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
             
-        //     List<MessageTopLevelComponent> compontens = new ArrayList<>();
-        //     compontens.add(0, ActionRow.of(LeagueMessage.getSelectedMatchMenu(match)));
+            List<MessageTopLevelComponent> compontens = new ArrayList<>();
+            compontens.add(0, ActionRow.of(LeagueMessage.getSelectedMatchMenu(match)));
             
-        //     for (MessageTopLevelComponent MessageTopLevelComponent : LeagueMessage.getOpggButtons(s, platform, null, 0)) {
-        //         compontens.add(MessageTopLevelComponent);
-        //     }
+            for (MessageTopLevelComponent MessageTopLevelComponent : LeagueMessage.getOpggButtons(s, platform, null, 0)) {
+                compontens.add(MessageTopLevelComponent);
+            }
 
-        //     for (MessageTopLevelComponent component : compontens) {
-        //         System.out.println(component.getType());
-        //         // if (component.getButtons().size() > 0 && component.getButtons().get(0).getId().equals("match-queue-TEAM_BUILDER_RANKED_SOLO")) {
-        //         //     compontens.remove(component);
-        //         //     break;
-        //         // }
-        //     }
+            for (MessageTopLevelComponent component : compontens) {
+                System.out.println(component.getType());
+                // if (component.getButtons().size() > 0 && component.getButtons().get(0).getId().equals("match-queue-TEAM_BUILDER_RANKED_SOLO")) {
+                //     compontens.remove(component);
+                //     break;
+                // }
+            }
 
-        //     event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbedMatch(s, match).build()).setComponents(compontens).queue(); 
-        // }
+            event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbedMatch(s, match).build()).setComponents(compontens).queue(); 
+        }
     }
 }
