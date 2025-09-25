@@ -1122,17 +1122,16 @@ public class EventButtonHandler extends ListenerAdapter {
                 if (b.getStyle() == ButtonStyle.SUCCESS) userIdFallback = true;
             }
         }
-        System.out.println(region);
+
         LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event));
 
         String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
-
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
         int i = 0;
         for (String k : accounts.keySet()) {
-            if (LeagueHandler.getSummonerByPuuid(k, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(k)))).getPUUID().equals(puuid)) {
+            if (accounts.get(k).equals(puuid)) {
                 puuid = k;
                 index = i;
                 break;

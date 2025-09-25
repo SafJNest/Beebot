@@ -186,13 +186,6 @@ public class LeagueMessage {
         builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
         builder.setColor(Bot.getColor());
         builder.setThumbnail(LeagueHandler.getSummonerProfilePic(s));
-        
-        String userId = LeagueDB.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform());
-        if(userId != null){
-            QueryRecord data = LeagueDB.getSummonerData(userId, s.getPUUID());
-            if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
-            else builder.setFooter("LPs tracking disabled for the current summoner");
-        }
 
         String description = "Summoner is level **" + s.getSummonerLevel() + "** on " + LeagueHandler.getShardFlag(s.getPlatform()) + s.getPlatform().getRealmValue() + " server.";
         builder.setDescription(description);
@@ -364,8 +357,7 @@ public class LeagueMessage {
             }
             builder.addField("Champions", champStats, false);
         }
-
-        builder.addField("Activity", LeagueHandler.getActivity(s), false);
+        builder = LeagueHandler.getActivity(builder, s);
 
         return builder;
     }
@@ -380,50 +372,48 @@ public class LeagueMessage {
             return buttons;
         }
 
-        boolean hasTrackedGames = LeagueDB.hasSummonerData(LeagueHandler.updateSummonerDB(s));
-        if (hasTrackedGames) {
-            long[] time = LeagueHandler.getCurrentSplitRange();
-            long[] previousTime = LeagueHandler.getPreviousSplitRange();
+        long[] time = LeagueHandler.getCurrentSplitRange();
+        long[] previousTime = LeagueHandler.getPreviousSplitRange();
 
-            Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
-            Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
-            Button draft = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
-            Button curretModeButton = Button.secondary("lol-queue-" + GameQueueType.CHERRY, "Arena");
+        Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
+        Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
+        Button draft = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
+        Button curretModeButton = Button.secondary("lol-queue-" + GameQueueType.CHERRY, "Arena");
 
-            if (parameter.getQueueType() != null) {
-                switch (parameter.getQueueType()) {
-                    case TEAM_BUILDER_RANKED_SOLO:
-                        soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
-                        break;
-                    case RANKED_FLEX_SR:
-                        flex = flex.withStyle(ButtonStyle.SUCCESS);
-                        break;
-                    case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
-                        draft = draft.withStyle(ButtonStyle.SUCCESS);
-                        break;
-                    case CHERRY:
-                    case ULTBOOK:
-                    case SWIFTPLAY:
-                        curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
-                        break;
-                    default:
-                        break;
-                }
+        if (parameter.getQueueType() != null) {
+            switch (parameter.getQueueType()) {
+                case TEAM_BUILDER_RANKED_SOLO:
+                    soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case RANKED_FLEX_SR:
+                    flex = flex.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
+                    draft = draft.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case CHERRY:
+                case ULTBOOK:
+                case SWIFTPLAY:
+                    curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                default:
+                    break;
             }
-                
-            Button allSeason = Button.secondary("lol-season-all", "General");
-            Button currentSplit = Button.secondary("lol-season-current", "Current Split");
-            Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
-
-            if (parameter.getTimeStart() == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
-            else if (parameter.getTimeStart() == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
-            else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
-
-            buttons.add(index, ActionRow.of(soloQ, flex, draft, curretModeButton));
-            index++;
-            buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
-            index++;
         }
+            
+        Button allSeason = Button.secondary("lol-season-all", "General");
+        Button currentSplit = Button.secondary("lol-season-current", "Current Split");
+        Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
+
+        if (parameter.getTimeStart() == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
+        else if (parameter.getTimeStart() == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
+        else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
+
+        buttons.add(index, ActionRow.of(soloQ, flex, draft, curretModeButton));
+        index++;
+        buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
+        index++;
+        
 
         return buttons;
     }
