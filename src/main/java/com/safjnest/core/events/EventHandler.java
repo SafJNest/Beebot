@@ -1,8 +1,6 @@
 package com.safjnest.core.events;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import com.safjnest.App;
 import com.safjnest.core.chat.ChatHandler;
@@ -14,10 +12,9 @@ import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
 import com.safjnest.util.lol.LeagueMessageParameter;
+import com.safjnest.util.lol.LeagueMessageType;
 
 import net.dv8tion.jda.api.Permission;
-import net.dv8tion.jda.api.components.MessageTopLevelComponent;
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
@@ -209,7 +206,7 @@ public class EventHandler extends ListenerAdapter {
             no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
 
             LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event)).withComponents(EventUtils.getStringSelectMneu(event.getMessage().getComponents()));
-            
+            parameter.setMessageType(LeagueMessageType.PROFILE);
             int summonerId = LeagueDB.addLOLAccount(s);
             LeagueMessage.edit(event.getMessage(), null, s, summonerId, parameter);
         }

@@ -11,7 +11,6 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 public class LeagueMessageParameter {
   private LeagueMessageType messageType;
@@ -27,7 +26,9 @@ public class LeagueMessageParameter {
   private int offset;
 
   private LOLMatch match;
-  private Summoner summoner;
+
+  private StringSelectMenu livegameMenu;
+  private StringSelectMenu opggMenu;
 
   public LeagueMessageParameter(LeagueMessageType messageType) {
     this.messageType = messageType;
@@ -42,7 +43,6 @@ public class LeagueMessageParameter {
 
     this.offset = 0;
 
-    this.match = null;
   }
 
   public LeagueMessageParameter(LeagueMessageType messageType, long[] period, GameQueueType queueType, LaneType laneType, StaticChampion champion, boolean showChampion, int offset) {
@@ -59,7 +59,6 @@ public class LeagueMessageParameter {
     this.offset = offset;
 
     this.match = null;
-    this.summoner = null;
   }
 
   public LeagueMessageParameter(List<Button> buttons) {
@@ -124,9 +123,7 @@ public class LeagueMessageParameter {
   }
 
   public LeagueMessageParameter withComponents(List<StringSelectMenu> menus) {
-    System.out.println(menus.size());
     for (StringSelectMenu menu : menus) {
-      System.out.println(menu.getCustomId());
       if (menu.getCustomId().equals("opgg-select")) {
         for (SelectOption option : menu.getOptions()) {
           if (option.isDefault()) {
@@ -136,6 +133,10 @@ public class LeagueMessageParameter {
             this.match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
           }
         }
+        this.opggMenu = menu;
+      }
+      if (menu.getCustomId().equals("rank-select")) {
+        this.livegameMenu = menu;
       }
     }
     return this;
@@ -223,5 +224,13 @@ public class LeagueMessageParameter {
 
   public LOLMatch getMatch() {
     return this.match;
+  }
+
+  public StringSelectMenu getLivegameMenu() {
+    return this.livegameMenu;
+  }
+
+  public StringSelectMenu getOpggMenu() {
+    return this.opggMenu;
   }
 }

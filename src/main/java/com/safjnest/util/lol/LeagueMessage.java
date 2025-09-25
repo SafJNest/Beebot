@@ -374,9 +374,13 @@ public class LeagueMessage {
         int index = 0;
 
         List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, parameter));
+        if (parameter.getLivegameMenu() != null) {
+            buttons.add(0, ActionRow.of(parameter.getOpggMenu()));
+            buttons.add(1, ActionRow.of(parameter.getLivegameMenu()));
+            return buttons;
+        }
 
         boolean hasTrackedGames = LeagueDB.hasSummonerData(LeagueHandler.updateSummonerDB(s));
-
         if (hasTrackedGames) {
             long[] time = LeagueHandler.getCurrentSplitRange();
             long[] previousTime = LeagueHandler.getPreviousSplitRange();
