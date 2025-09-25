@@ -385,16 +385,12 @@ public class LeagueMessage {
             long[] time = LeagueHandler.getCurrentSplitRange();
             long[] previousTime = LeagueHandler.getPreviousSplitRange();
 
-            Button allQueue = Button.secondary("lol-queue-all", "All Queue");
             Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
             Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
             Button draft = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
             Button curretModeButton = Button.secondary("lol-queue-" + GameQueueType.CHERRY, "Arena");
 
-            if (parameter.getQueueType() == null) {
-                allQueue = allQueue.withStyle(ButtonStyle.SUCCESS);
-            }
-            else {
+            if (parameter.getQueueType() != null) {
                 switch (parameter.getQueueType()) {
                     case TEAM_BUILDER_RANKED_SOLO:
                         soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
@@ -423,7 +419,7 @@ public class LeagueMessage {
             else if (parameter.getTimeStart() == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
             else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
-            buttons.add(index, ActionRow.of(allQueue, soloQ, flex, draft, curretModeButton));
+            buttons.add(index, ActionRow.of(soloQ, flex, draft, curretModeButton));
             index++;
             buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
             index++;
@@ -1514,8 +1510,8 @@ public class LeagueMessage {
         List<MessageTopLevelComponent> rows = new ArrayList<>();
         if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("champion", parameter.getLaneType()));
 
-        rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
         rows.add(LeagueMessageUtils.getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, parameter.getQueueType()));
+        rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
         rows.add(ActionRow.of(generic, opgg, champions, matchups, pings));
 
 
