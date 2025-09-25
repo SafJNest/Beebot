@@ -44,6 +44,7 @@ import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.separator.Separator;
 import net.dv8tion.jda.api.components.separator.Separator.Spacing;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -70,8 +71,11 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 public class LeagueMessage {
 
     public static final String BUTTON_ID_PREFIX = "lol";
-    
-    public static void send(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+
+    /**
+     * create a class
+     */
+    private static Object[] build(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         MessageEmbed embed = null;
         List<MessageTopLevelComponent> components = new ArrayList<>();
 
@@ -105,46 +109,31 @@ public class LeagueMessage {
             default:
                 break;
         }
+        return new Object[]{embed, components};     
+    }
+    
+    public static void send(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        Object[] built = build(userId, summoner, summonerId, parameter);
+        MessageEmbed embed = (MessageEmbed) built[0];
+        List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
 
         hook.editOriginalEmbeds(embed).setComponents(components).queue();
     }
 
     public static void send(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        MessageEmbed embed = null;
-        List<MessageTopLevelComponent> components = new ArrayList<>();
-
-        switch (parameter.getMessageType()) {
-            case PROFILE:
-                embed = getSummonerEmbed(summoner, summonerId, parameter).build();   
-                components = getSummonerButtons(summoner, userId, parameter);
-                break;
-            case LIVEGAME:
-                List<SpectatorParticipant> users = summoner.getCurrentGame() != null ? summoner.getCurrentGame().getParticipants() : null;
-                StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
-
-                embed = LeagueMessage.getLivegameEmbed(summoner, users).build();
-                components = new ArrayList<>(composeButtons(summoner, userId != null ? userId : null, new LeagueMessageParameter(LeagueMessageType.LIVEGAME)));
-                if (menu != null) 
-                    components.add(0, ActionRow.of(menu));
-                
-                break;
-            case OPGG:
-                embed = getOpggEmbed(summoner, parameter).build();
-                components = getOpggButtons(summoner, userId, parameter);
-                break;
-            case OVERVIEW:
-            case MATCHUP:
-            case OVERVIEW_PING:
-            case OVERVIEW_OBJECTIVES:
-            case OVERVIEW_CHAMPIONS:
-            case OVERVIEW_OPGG:
-                embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
-                components = getChampionButtons(userId, summoner, summonerId, parameter);
-            default:
-                break;
-        }
+        Object[] built = build(userId, summoner, summonerId, parameter);
+        MessageEmbed embed = (MessageEmbed) built[0];
+        List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
 
         event.getChannel().sendMessageEmbeds(embed).setComponents(components).queue();
+    }
+
+    public static void edit(Message message, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        Object[] built = build(userId, summoner, summonerId, parameter);
+        MessageEmbed embed = (MessageEmbed) built[0];
+        List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
+
+        message.editMessageEmbeds(embed).setComponents(components).queue();   
     }
 
     public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
@@ -486,7 +475,7 @@ public class LeagueMessage {
     public static EmbedBuilder getOpggEmbedMatch(Summoner s, LOLMatch match) {
         MatchParticipant me = null;
         for(MatchParticipant mp : match.getParticipants())
-            if(mp.getSummonerId().equals(s.getSummonerId()))
+            if(mp.getPuuid().equals(s.getPUUID()))
                 me = mp;
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -1283,8 +1272,13 @@ public class LeagueMessage {
             buttons.add(0, ActionRow.of(menu));
             order++;
         }
-
-        buttons.add(order, LeagueMessageUtils.getOpggQueueTypeButtons(queue));
+        if (parameter.getMatch() != null) {
+            StringSelectMenu matchMenu = getSelectedMatchMenu(parameter.getMatch());
+            buttons.add(1, ActionRow.of(matchMenu));
+        }
+        else {
+            buttons.add(order, LeagueMessageUtils.getOpggQueueTypeButtons(queue));
+        }
         order++;
         buttons.add(order, ActionRow.of(left, page, right));
 

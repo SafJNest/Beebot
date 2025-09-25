@@ -10,8 +10,10 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.database.BotDB;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
+import com.safjnest.util.lol.LeagueMessageParameter;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
@@ -211,22 +213,11 @@ public class EventHandler extends ListenerAdapter {
             LeagueShard shard = LeagueShard.valueOf(platform);
             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
             
-            List<MessageTopLevelComponent> compontens = new ArrayList<>();
-            compontens.add(0, ActionRow.of(LeagueMessage.getSelectedMatchMenu(match)));
+            LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event));
+            parameter.setMatch(match);
             
-            for (MessageTopLevelComponent MessageTopLevelComponent : LeagueMessage.getOpggButtons(s, platform, null, 0)) {
-                compontens.add(MessageTopLevelComponent);
-            }
-
-            for (MessageTopLevelComponent component : compontens) {
-                System.out.println(component.getType());
-                // if (component.getButtons().size() > 0 && component.getButtons().get(0).getId().equals("match-queue-TEAM_BUILDER_RANKED_SOLO")) {
-                //     compontens.remove(component);
-                //     break;
-                // }
-            }
-
-            event.getMessage().editMessageEmbeds(LeagueMessage.getOpggEmbedMatch(s, match).build()).setComponents(compontens).queue(); 
+            int summonerId = LeagueDB.addLOLAccount(s);
+            LeagueMessage.edit(event.getMessage(), null, s, summonerId, parameter);
         }
     }
 }
