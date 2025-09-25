@@ -4,10 +4,14 @@ import java.util.List;
 
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.selections.SelectOption;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 public class LeagueMessageParameter {
   private LeagueMessageType messageType;
@@ -23,6 +27,7 @@ public class LeagueMessageParameter {
   private int offset;
 
   private LOLMatch match;
+  private Summoner summoner;
 
   public LeagueMessageParameter(LeagueMessageType messageType) {
     this.messageType = messageType;
@@ -54,6 +59,7 @@ public class LeagueMessageParameter {
     this.offset = offset;
 
     this.match = null;
+    this.summoner = null;
   }
 
   public LeagueMessageParameter(List<Button> buttons) {
@@ -115,6 +121,24 @@ public class LeagueMessageParameter {
             this.period = LeagueHandler.getPreviousSplitRange();
             break;
     }
+  }
+
+  public LeagueMessageParameter withComponents(List<StringSelectMenu> menus) {
+    System.out.println(menus.size());
+    for (StringSelectMenu menu : menus) {
+      System.out.println(menu.getCustomId());
+      if (menu.getCustomId().equals("opgg-select")) {
+        for (SelectOption option : menu.getOptions()) {
+          if (option.isDefault()) {
+            String gameId = option.getValue();
+            String platform =  option.getValue().split("_")[0];
+            LeagueShard shard = LeagueShard.valueOf(platform);
+            this.match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
+          }
+        }
+      }
+    }
+    return this;
   }
 
   public LeagueMessageType getMessageType() {

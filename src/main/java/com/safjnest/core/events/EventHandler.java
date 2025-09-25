@@ -202,6 +202,17 @@ public class EventHandler extends ListenerAdapter {
 
         //     event.deferEdit().setEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(compontens).queue();
         // }
+        if (event.getComponentId().startsWith("rank-select")) {
+            event.deferEdit().queue();
+            String puuid = event.getValues().get(0).split("#")[0];
+            String platform =  event.getValues().get(0).split("#")[1];
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
+
+            LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event)).withComponents(EventUtils.getStringSelectMneu(event.getMessage().getComponents()));
+            
+            int summonerId = LeagueDB.addLOLAccount(s);
+            LeagueMessage.edit(event.getMessage(), null, s, summonerId, parameter);
+        }
         if (event.getComponentId().equals("opgg-select")) {
             event.deferEdit().queue();
             String gameId = event.getValues().get(0);

@@ -438,8 +438,8 @@ public class LeagueMessage {
 //   ▀██████▀   ▄████▀        ████████▀    ████████▀
 //
 
-    public static StringSelectMenu getOpggMenu(Summoner summoner, GameQueueType queue, int index) {
-        List<String> gameIds = getMatchIds(summoner, queue, index);
+    public static StringSelectMenu getOpggMenu(Summoner summoner, LeagueMessageParameter parameter) {
+        List<String> gameIds = getMatchIds(summoner, parameter.getQueueType(), parameter.getOffset());
         ArrayList<SelectOption> options = new ArrayList<>();
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
@@ -457,7 +457,8 @@ public class LeagueMessage {
                 String label = match.getGameDurationAsDuration().toMinutes() + " minutes " + LeagueHandler.formatMatchName(match.getQueue());
                 String description = "As " + me.getChampionName() + " (" + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " " + me.getTotalMinionsKilled() + " CS)";
 
-                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getPUUID()).withEmoji(icon).withDescription(description));
+                boolean isDefault = parameter.getMatch() != null ? (parameter.getMatch().getGameId() == match.getGameId()) : false;
+                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getPUUID()).withEmoji(icon).withDescription(description).withDefault(isDefault));
             } catch (Exception e) {
                 continue;
             }
@@ -1267,7 +1268,7 @@ public class LeagueMessage {
 
         List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, parameter));
 
-        StringSelectMenu menu = LeagueMessage.getOpggMenu(s, queue, index);
+        StringSelectMenu menu = LeagueMessage.getOpggMenu(s, parameter);
         if (menu != null) {
             buttons.add(0, ActionRow.of(menu));
             order++;
@@ -1292,7 +1293,7 @@ public class LeagueMessage {
             options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getPuuid() + "#" + match.getPlatform().name()).withEmoji(icon));
         }
 
-        return StringSelectMenu.create("rank-select"  + "#" + match.getGameId())
+        return StringSelectMenu.create("rank-select")
                 .setPlaceholder("Select a summoner")
                 .setMaxValues(1)
                 .addOptions(options)
