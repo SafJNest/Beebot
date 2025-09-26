@@ -28,6 +28,7 @@ Finally, the bot includes several commands related to the popular game League of
 
 ## ***Build with***
 - Java version 17
+- Redis for caching (see [REDIS_SETUP.md](REDIS_SETUP.md) for setup instructions)
 
 ## ***Contacts***
 ### Lorenzo Sanseverino 
