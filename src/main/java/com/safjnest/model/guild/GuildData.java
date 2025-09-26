@@ -1,6 +1,6 @@
 package com.safjnest.model.guild;
 
-
+import java.io.Serializable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,7 +39,8 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
  * </ul>
  * @author <a href="https://github.com/Leon412">Leon412</a>
  */
-public class GuildData {
+public class GuildData implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private final String ID;
 

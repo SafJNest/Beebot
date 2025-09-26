@@ -49,10 +49,17 @@ public abstract class AbstractCache<K, V> {
             Long ttlNanos = expireTimes.get(type);
             if (ttlNanos != null) {
                 int ttlSeconds = (int) TimeUnit.NANOSECONDS.toSeconds(ttlNanos);
-                jedis.setex(keyStr, ttlSeconds, serializedValue);
+                if (ttlSeconds > 0) {
+                    jedis.setex(keyStr, ttlSeconds, serializedValue);
+                } else {
+                    jedis.set(keyStr, serializedValue);
+                }
             } else {
                 jedis.set(keyStr, serializedValue);
             }
+        } catch (Exception e) {
+            // Log error but don't fail - could fall back to in-memory if needed
+            System.err.println("Redis operation failed: " + e.getMessage());
         }
         
         countMap.put(key, 1);
@@ -67,6 +74,9 @@ public abstract class AbstractCache<K, V> {
             if (serializedValue != null) {
                 return SerializationUtils.deserialize(serializedValue, getValueType());
             }
+        } catch (Exception e) {
+            // Log error but don't fail
+            System.err.println("Redis get operation failed: " + e.getMessage());
         }
         return null;
     }
@@ -85,6 +95,9 @@ public abstract class AbstractCache<K, V> {
         String keyStr = key.toString();
         try (Jedis jedis = redisManager.getResource()) {
             return jedis.exists(keyStr);
+        } catch (Exception e) {
+            System.err.println("Redis exists operation failed: " + e.getMessage());
+            return false;
         }
     }
 
@@ -143,6 +156,8 @@ public abstract class AbstractCache<K, V> {
         String keyStr = key.toString();
         try (Jedis jedis = redisManager.getResource()) {
             jedis.del(keyStr);
+        } catch (Exception e) {
+            System.err.println("Redis delete operation failed: " + e.getMessage());
         }
         
         // Also remove from count map
@@ -154,6 +169,8 @@ public abstract class AbstractCache<K, V> {
     protected void invalidateAll() {
         try (Jedis jedis = redisManager.getResource()) {
             jedis.flushDB();
+        } catch (Exception e) {
+            System.err.println("Redis flush operation failed: " + e.getMessage());
         }
         
         // Clear all count maps
