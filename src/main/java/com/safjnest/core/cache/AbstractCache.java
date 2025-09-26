@@ -1,8 +1,6 @@
 package com.safjnest.core.cache;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.Expiry;
+import redis.clients.jedis.Jedis;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -10,38 +8,18 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractCache<K, V> {
     
-    private static final Cache<Object, Object> cache;
+    private static final RedisManager redisManager = RedisManager.getInstance();
 
     protected static final Map<Class<?>, Integer> typeLimits = new HashMap<>();
     protected static final Map<Class<?>, Map<Object, Integer>> typeCounts = new HashMap<>();
-
     protected static final Map<Class<?>, Long> expireTimes = new HashMap<>();
-
-    static {
-        cache = Caffeine.newBuilder()
-                        .expireAfter(new Expiry<Object, Object>() {
-                            @Override
-                            public long expireAfterCreate(Object key, Object value, long currentTime) {
-                                Class<?> type = value.getClass();
-                                return expireTimes.getOrDefault(type, TimeUnit.MINUTES.toNanos(10));
-                            }
-
-                            @Override
-                            public long expireAfterUpdate(Object key, Object value, long currentTime, long currentDuration) {
-                                return currentDuration;
-                            }
-
-                            @Override
-                            public long expireAfterRead(Object key, Object value, long currentTime, long currentDuration) {
-                                Class<?> type = value.getClass();
-                                return expireTimes.getOrDefault(type, TimeUnit.MINUTES.toNanos(10));
-                            }
-                        })
-                .build();
-    }
 
     protected void setTypeLimit(int limit) {
         typeLimits.put(getValueType(), limit);
@@ -62,15 +40,33 @@ public abstract class AbstractCache<K, V> {
         if (countMap.size() >= limit) {
             removeOldest(countMap);
         }
-        cache.put(key, value);
+        
+        String keyStr = key.toString();
+        String serializedValue = SerializationUtils.serialize(value);
+        
+        try (Jedis jedis = redisManager.getResource()) {
+            // Set value with TTL if configured
+            Long ttlNanos = expireTimes.get(type);
+            if (ttlNanos != null) {
+                int ttlSeconds = (int) TimeUnit.NANOSECONDS.toSeconds(ttlNanos);
+                jedis.setex(keyStr, ttlSeconds, serializedValue);
+            } else {
+                jedis.set(keyStr, serializedValue);
+            }
+        }
+        
         countMap.put(key, 1);
     }
     
 
     protected V get(K key) {
-        Object value = cache.getIfPresent(key);
-        if (value != null && getValueType().isInstance(value)) {
-            return getValueType().cast(value);
+        String keyStr = key.toString();
+        
+        try (Jedis jedis = redisManager.getResource()) {
+            String serializedValue = jedis.get(keyStr);
+            if (serializedValue != null) {
+                return SerializationUtils.deserialize(serializedValue, getValueType());
+            }
         }
         return null;
     }
@@ -86,54 +82,138 @@ public abstract class AbstractCache<K, V> {
     }
 
     protected boolean contains(K key) {
-        return cache.getIfPresent(key) != null;
+        String keyStr = key.toString();
+        try (Jedis jedis = redisManager.getResource()) {
+            return jedis.exists(keyStr);
+        }
     }
 
     @SuppressWarnings("unchecked")
     protected Collection<K> keySet() {
-        return cache.asMap().entrySet().stream()
-                .filter(entry -> getValueType().isInstance(entry.getValue()))
-                .map(entry -> (K) entry.getKey())
-                .toList();
+        List<K> keys = new ArrayList<>();
+        String pattern = "*"; // Get all keys, could be refined with type-specific patterns
+        
+        try (Jedis jedis = redisManager.getResource()) {
+            Set<String> keyStrings = jedis.keys(pattern);
+            for (String keyStr : keyStrings) {
+                String value = jedis.get(keyStr);
+                if (value != null) {
+                    try {
+                        V deserializedValue = SerializationUtils.deserialize(value, getValueType());
+                        if (deserializedValue != null) {
+                            // Try to convert string key back to K type
+                            keys.add((K) keyStr);
+                        }
+                    } catch (Exception e) {
+                        // Skip invalid entries
+                    }
+                }
+            }
+        }
+        return keys;
     }
 
     public Collection<V> values() {
-        return cache.asMap().values().stream()
-                .filter(getValueType()::isInstance)
-                .map(getValueType()::cast)
-                .toList();
+        List<V> values = new ArrayList<>();
+        String pattern = "*";
+        
+        try (Jedis jedis = redisManager.getResource()) {
+            Set<String> keyStrings = jedis.keys(pattern);
+            for (String keyStr : keyStrings) {
+                String serializedValue = jedis.get(keyStr);
+                if (serializedValue != null) {
+                    try {
+                        V value = SerializationUtils.deserialize(serializedValue, getValueType());
+                        if (value != null) {
+                            values.add(value);
+                        }
+                    } catch (Exception e) {
+                        // Skip invalid entries
+                    }
+                }
+            }
+        }
+        return values;
     }
 
 
 
 
     protected void invalidate(K key) {
-        cache.invalidate(key);
+        String keyStr = key.toString();
+        try (Jedis jedis = redisManager.getResource()) {
+            jedis.del(keyStr);
+        }
+        
+        // Also remove from count map
+        for (Map<Object, Integer> countMap : typeCounts.values()) {
+            countMap.remove(key);
+        }
     }
 
     protected void invalidateAll() {
-        cache.invalidateAll();
+        try (Jedis jedis = redisManager.getResource()) {
+            jedis.flushDB();
+        }
+        
+        // Clear all count maps
+        for (Map<Object, Integer> countMap : typeCounts.values()) {
+            countMap.clear();
+        }
     }
 
     protected V remove(K key) {
-        Object value = cache.getIfPresent(key);
-        if (value != null && getValueType().isInstance(value)) {
-            cache.invalidate(key);
-            return getValueType().cast(value);
+        String keyStr = key.toString();
+        V value = null;
+        
+        try (Jedis jedis = redisManager.getResource()) {
+            String serializedValue = jedis.get(keyStr);
+            if (serializedValue != null) {
+                value = SerializationUtils.deserialize(serializedValue, getValueType());
+                jedis.del(keyStr);
+            }
         }
-        return null;
+        
+        // Remove from count map
+        for (Map<Object, Integer> countMap : typeCounts.values()) {
+            countMap.remove(key);
+        }
+        
+        return value;
     }
 
 
 
 
     protected ConcurrentMap<Object,Object> asMap() {
-        return cache.asMap();
+        ConcurrentMap<Object, Object> map = new ConcurrentHashMap<>();
+        String pattern = "*";
+        
+        try (Jedis jedis = redisManager.getResource()) {
+            Set<String> keyStrings = jedis.keys(pattern);
+            for (String keyStr : keyStrings) {
+                String serializedValue = jedis.get(keyStr);
+                if (serializedValue != null) {
+                    try {
+                        Object value = SerializationUtils.deserialize(serializedValue, Object.class);
+                        if (value != null) {
+                            map.put(keyStr, value);
+                        }
+                    } catch (Exception e) {
+                        // Skip invalid entries
+                    }
+                }
+            }
+        }
+        return map;
     }
 
     private void removeOldest(Map<K, Integer> countMap) {
         K oldestKey = countMap.keySet().iterator().next();
-        cache.invalidate(oldestKey);
+        String keyStr = oldestKey.toString();
+        try (Jedis jedis = redisManager.getResource()) {
+            jedis.del(keyStr);
+        }
         countMap.remove(oldestKey);
     }
 
@@ -149,12 +229,14 @@ public abstract class AbstractCache<K, V> {
     }
 
     protected long expiresAfter(K key) {
-        return cache.policy().expireVariably()
-                .flatMap(policy -> {
-                    var duration = policy.getExpiresAfter(key);
-                    return duration.map(d -> d.toMillis());
-                })
-                .orElse(0L);
+        String keyStr = key.toString();
+        try (Jedis jedis = redisManager.getResource()) {
+            Long ttl = jedis.ttl(keyStr);
+            if (ttl != null && ttl > 0) {
+                return ttl * 1000; // Convert seconds to milliseconds
+            }
+        }
+        return 0L;
     }
 
 

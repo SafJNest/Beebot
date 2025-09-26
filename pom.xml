@@ -253,9 +253,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.ben-manes.caffeine</groupId>
-      <artifactId>caffeine</artifactId>
-      <version>3.1.8</version>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>5.2.0</version>
     </dependency>
 
     <!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss

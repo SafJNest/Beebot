@@ -1,5 +1,6 @@
 package com.safjnest.model.sound;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -8,7 +9,8 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-public class Sound {
+public class Sound implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String ID;
     private final String GUILD_ID;
     private final String USER_ID;

@@ -1,6 +1,9 @@
 package com.safjnest.model;
 
-public class AliasData {
+import java.io.Serializable;
+
+public class AliasData implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final int ID;
     private String name;
     private String command;

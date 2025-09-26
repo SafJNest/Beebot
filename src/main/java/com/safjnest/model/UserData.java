@@ -1,5 +1,6 @@
 package com.safjnest.model;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -14,7 +15,8 @@ import com.safjnest.util.log.LoggerIDpair;
 import net.dv8tion.jda.api.entities.User;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
-public class UserData {
+public class UserData implements Serializable {
+    private static final long serialVersionUID = 1L;
     
     private final String USER_ID;
     private HashMap<String, AliasData> aliases;

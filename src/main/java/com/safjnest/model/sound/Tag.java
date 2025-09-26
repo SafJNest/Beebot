@@ -1,6 +1,9 @@
 package com.safjnest.model.sound;
 
-public class Tag {
+import java.io.Serializable;
+
+public class Tag implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     public static final int MAX_TAG_SOUND = 5;
 
