@@ -105,6 +105,7 @@ public class LeagueMessage {
         return new Object[]{embed, components};     
     }
     
+    @SuppressWarnings("unchecked")
     public static void send(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         Object[] built = build(userId, summoner, summonerId, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
@@ -113,6 +114,7 @@ public class LeagueMessage {
         hook.editOriginalEmbeds(embed).setComponents(components).queue();
     }
 
+    @SuppressWarnings("unchecked")
     public static void send(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         Object[] built = build(userId, summoner, summonerId, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
@@ -121,6 +123,7 @@ public class LeagueMessage {
         event.getChannel().sendMessageEmbeds(embed).setComponents(components).queue();
     }
 
+    @SuppressWarnings("unchecked")
     public static void edit(Message message, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         Object[] built = build(userId, summoner, summonerId, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
@@ -1292,28 +1295,29 @@ public class LeagueMessage {
     private static List<MessageTopLevelComponent> getChampionButtons(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         StaticChampion champion = parameter.getChampion();
         
-        Button left = Button.primary("champion-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
-        Button right = Button.primary("champion-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("lol-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
-        Button center = Button.primary("champion-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
+        Button center = Button.primary("lol-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
-        Button settings = Button.primary("champion-change-" + parameter.getChampionId(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+        Button settings = Button.primary("lol-change-" + parameter.getChampionId(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
 
 
-        Button championButton = Button.secondary("champion-champion-0", " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")).asDisabled();
+        Button championButton = Button.secondary("lol-champion-0", " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")).asDisabled();
         if (champion != null) {
-            championButton = Button.secondary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
+            championButton = Button.secondary("lol-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
             championButton = parameter.isShowChampion() ? championButton.withStyle(ButtonStyle.SUCCESS) : championButton;
         }
 
-        Button generic = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW, "Overview");
-        Button matchups = Button.primary("champion-type-" + LeagueMessageType.MATCHUP, "Matchups");
-        Button pings = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW_PING, "Pings");
-        Button objectives = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW_OBJECTIVES, "Objectives");
-        Button champions = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW_CHAMPIONS, "Champions");
-        Button opgg = Button.primary("champion-type-" + LeagueMessageType.OVERVIEW_OPGG, "Opgg");
+        Button generic = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW, "Overview");
+        Button profile = Button.primary("lol-type-" + LeagueMessageType.PROFILE, "Profile");
+        Button matchups = Button.primary("lol-type-" + LeagueMessageType.MATCHUP, "Matchups");
+        Button pings = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW_PING, "Pings");
+        Button objectives = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW_OBJECTIVES, "Objectives");
+        Button champions = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW_CHAMPIONS, "Champions");
+        Button opgg = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW_OPGG, "Opgg");
 
         switch (parameter.getMessageType()) {
             case OVERVIEW:
@@ -1334,13 +1338,16 @@ public class LeagueMessage {
             case OVERVIEW_OPGG:
                 opgg = opgg.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
+            case PROFILE:
+                profile = profile.withStyle(ButtonStyle.SUCCESS).asDisabled();
+                break;
             default:
                 break;
         }
 
-        Button allSeason = Button.secondary("champion-season-all", "General");
-        Button currentSplit = Button.secondary("champion-season-current", "Current Split");
-        Button previousSplit = Button.secondary("champion-season-previous", "Previous Split");
+        Button allSeason = Button.secondary("lol-season-all", "General");
+        Button currentSplit = Button.secondary("lol-season-current", "Current Split");
+        Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
 
         long[] time = LeagueHandler.getCurrentSplitRange();
         long[] previousTime = LeagueHandler.getPreviousSplitRange();
@@ -1352,14 +1359,14 @@ public class LeagueMessage {
         List<MessageTopLevelComponent> rows = new ArrayList<>();
         if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("champion", parameter.getLaneType()));
 
-        rows.add(LeagueMessageUtils.getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, parameter.getQueueType()));
+        rows.add(LeagueMessageUtils.getOpggQueueTypeButtons("lol", ButtonStyle.SECONDARY, parameter.getQueueType()));
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
-        rows.add(ActionRow.of(generic, opgg, champions, matchups, pings));
+        rows.add(ActionRow.of(profile, generic, opgg, champions, matchups));
 
 
         if (parameter.getMessageType().hasPageButtons()) {
-            Button leftPage = Button.secondary("champion-leftpage-" + parameter.getOffset(), "Previous Page");
-            Button rightPage = Button.secondary("champion-rightpage-" + parameter.getOffset(), "Next Page");
+            Button leftPage = Button.secondary("lol-leftpage-" + parameter.getOffset(), "Previous Page");
+            Button rightPage = Button.secondary("lol-rightpage-" + parameter.getOffset(), "Next Page");
 
             if (parameter.getOffset() == 0) 
                 leftPage = leftPage.asDisabled();
