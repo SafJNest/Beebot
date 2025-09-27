@@ -161,7 +161,7 @@ public class LeagueMessage {
         center = center.asDisabled();
 
         if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) 
-            return List.of(ActionRow.of(left, center, right), ActionRow.of(profile, opgg, livegame, champ, refresh));
+            return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(left, center, right, refresh));
         return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(center, refresh));
     }
 
