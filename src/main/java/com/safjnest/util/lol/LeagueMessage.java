@@ -362,9 +362,12 @@ public class LeagueMessage {
         int index = 0;
 
         List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, parameter));
+        if (parameter.getOpggMenu() != null) {
+            buttons.add(index, ActionRow.of(parameter.getOpggMenu()));
+            index++;
+        }
         if (parameter.getLivegameMenu() != null) {
-            buttons.add(0, ActionRow.of(parameter.getOpggMenu()));
-            buttons.add(1, ActionRow.of(parameter.getLivegameMenu()));
+            buttons.add(index, ActionRow.of(parameter.getLivegameMenu()));
             return buttons;
         }
 
