@@ -1202,7 +1202,10 @@ public class LeagueMessage {
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
                         LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getPuuid(), summoner.getPlatform());
                         if (entry != null) {
-                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + LeagueMessageUtils.getFormatedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"% WR`";
+                            int wins = entry.getWins();
+                            int losses = entry.getLosses();
+                            double winrate = (Double.valueOf(wins) / Double.valueOf(wins + losses)) * 100;
+                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + LeagueMessageUtils.getFormatedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP \n" + wins + "W/" + losses + "L " + "(" + Math.ceil(winrate) + " WR%)`";
                             entryName = LeagueHandler.formatMatchName(entry.getQueueType());
                         }
 
