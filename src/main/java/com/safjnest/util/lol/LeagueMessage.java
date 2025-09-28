@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.awt.Color;
 import java.sql.SQLException;
 
 import com.jagrosh.jdautilities.command.CommandEvent;
@@ -36,14 +35,9 @@ import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.components.container.Container;
-import net.dv8tion.jda.api.components.container.ContainerChildComponent;
-import net.dv8tion.jda.api.components.section.Section;
 import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
-import net.dv8tion.jda.api.components.separator.Separator;
-import net.dv8tion.jda.api.components.separator.Separator.Spacing;
-import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.interactions.InteractionHook;
@@ -69,41 +63,105 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class LeagueMessage {
 
+    public static final String BUTTON_ID_PREFIX = "lol";
 
-    public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, String id) {
-        Button left = Button.primary(id + "-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
-        Button right = Button.primary(id + "-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
-        Button refresh = Button.primary(id + "-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
+    /**
+     * create a class
+     */
+    private static Object[] build(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        MessageEmbed embed = null;
+        List<MessageTopLevelComponent> components = new ArrayList<>();
 
-        Button profile = Button.primary(id + "-lol", " ").withEmoji(CustomEmojiHandler.getRichEmoji("user"));
-        Button opgg = Button.primary(id + "-match", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list2"));
-        Button livegame = Button.primary(id + "-rank", " ").withEmoji(CustomEmojiHandler.getRichEmoji("game"));
-        Button champ = Button.primary(id + "-champion", " ").withEmoji(CustomEmojiHandler.getRichEmoji("graph"));
+        switch (parameter.getMessageType()) {
+            case PROFILE:
+                embed = getSummonerEmbed(summoner, summonerId, parameter).build();   
+                components = getSummonerButtons(summoner, userId, parameter);
+                break;
+            case LIVEGAME:
+                List<SpectatorParticipant> users = summoner.getCurrentGame() != null ? summoner.getCurrentGame().getParticipants() : null;
+                StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
 
-        switch (id) {
-            case "lol":
+                embed = LeagueMessage.getLivegameEmbed(summoner, users).build();
+                components = new ArrayList<>(composeButtons(summoner, userId != null ? userId : null, new LeagueMessageParameter(LeagueMessageType.LIVEGAME)));
+                if (menu != null) 
+                    components.add(0, ActionRow.of(menu));
+                
+                break;
+            case OPGG:
+                embed = parameter.getMatch() != null ? getOpggEmbedMatch(summoner, parameter.getMatch()).build() : getOpggEmbed(summoner, parameter).build();
+                components = getOpggButtons(summoner, userId, parameter);
+                break;
+            case OVERVIEW:
+            case MATCHUP:
+            case OVERVIEW_PING:
+            case OVERVIEW_OBJECTIVES:
+            case OVERVIEW_CHAMPIONS:
+            case OVERVIEW_OPGG:
+                embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
+                components = getChampionButtons(userId, summoner, summonerId, parameter);
+            default:
+                break;
+        }
+        return new Object[]{embed, components};     
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static void send(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        Object[] built = build(userId, summoner, summonerId, parameter);
+        MessageEmbed embed = (MessageEmbed) built[0];
+        List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
+
+        hook.editOriginalEmbeds(embed).setComponents(components).queue();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void send(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        Object[] built = build(userId, summoner, summonerId, parameter);
+        MessageEmbed embed = (MessageEmbed) built[0];
+        List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
+
+        event.getChannel().sendMessageEmbeds(embed).setComponents(components).queue();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void edit(Message message, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        Object[] built = build(userId, summoner, summonerId, parameter);
+        MessageEmbed embed = (MessageEmbed) built[0];
+        List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
+
+        message.editMessageEmbeds(embed).setComponents(components).queue();   
+    }
+
+    public static List<MessageTopLevelComponent> composeButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
+        Button left = Button.primary(BUTTON_ID_PREFIX + "-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary(BUTTON_ID_PREFIX + "-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button refresh = Button.primary(BUTTON_ID_PREFIX + "-refresh", " ").withEmoji(CustomEmojiHandler.getRichEmoji("refresh"));
+
+        Button profile = Button.primary(BUTTON_ID_PREFIX + "-type-profile", " ").withEmoji(CustomEmojiHandler.getRichEmoji("user"));
+        Button opgg = Button.primary(BUTTON_ID_PREFIX + "-type-opgg", " ").withEmoji(CustomEmojiHandler.getRichEmoji("list2"));
+        Button livegame = Button.primary(BUTTON_ID_PREFIX + "-type-livegame", " ").withEmoji(CustomEmojiHandler.getRichEmoji("game"));
+        Button champ = Button.primary(BUTTON_ID_PREFIX + "-type-overview", " ").withEmoji(CustomEmojiHandler.getRichEmoji("graph"));
+
+        switch (parameter.getMessageType()) {
+            case PROFILE:
                 profile = profile.asDisabled().withStyle(ButtonStyle.SUCCESS);
                 break;
-            case "match":
+            case OPGG:
                 opgg = opgg.withStyle(ButtonStyle.SUCCESS);
                 break;
-            case "rank":
+            case LIVEGAME:
                 livegame = livegame.asDisabled().withStyle(ButtonStyle.SUCCESS);
                 break;
-            case "champion":
-                champ = champ.asDisabled().withStyle(ButtonStyle.SUCCESS);
+            default:
                 break;
         }
 
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        Button center = Button.primary(id + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
+        Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
-        if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) {
-            return List.of(ActionRow.of(left, center, right), ActionRow.of(profile, opgg, livegame, champ, refresh));
-
-        }
-
+        if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) 
+            return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(left, center, right, refresh));
         return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(center, refresh));
     }
 
@@ -117,27 +175,13 @@ public class LeagueMessage {
 //   ▄████████▀  ████████▀   ▀█   ███   █▀   ▀█   ███   █▀   ▀██████▀   ▀█   █▀    ██████████   ███    ███
 //                                                                                              ███    ███
 
-    public static EmbedBuilder getSummonerEmbed(Summoner s) {
-        long[] split = LeagueHandler.getCurrentSplitRange();
-        return getSummonerEmbed(s, split[0], split[1], GameQueueType.TEAM_BUILDER_RANKED_SOLO);
-    }
-
-
-    public static EmbedBuilder getSummonerEmbed(Summoner s, long time_start, long time_end, GameQueueType queue) {
-        int summonerId = LeagueHandler.updateSummonerDB(s);
+    public static EmbedBuilder getSummonerEmbed(Summoner s, int summonerId, LeagueMessageParameter parameter) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
 
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
         builder.setColor(Bot.getColor());
         builder.setThumbnail(LeagueHandler.getSummonerProfilePic(s));
-        
-        String userId = LeagueDB.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform());
-        if(userId != null){
-            QueryRecord data = LeagueDB.getSummonerData(userId, s.getPUUID());
-            if (data.getAsBoolean("tracking")) builder.setFooter("LPs tracking enabled for the current summoner.");
-            else builder.setFooter("LPs tracking disabled for the current summoner");
-        }
 
         String description = "Summoner is level **" + s.getSummonerLevel() + "** on " + LeagueHandler.getShardFlag(s.getPlatform()) + s.getPlatform().getRealmValue() + " server.";
         builder.setDescription(description);
@@ -158,7 +202,7 @@ public class LeagueMessage {
         builder.addField("Highest Masteries", masteryString, false);
 
 
-        QueryResult advanceData = LeagueDB.getAdvancedLOLData(summonerId, time_start, time_end, queue);
+        QueryResult advanceData = LeagueDB.getAdvancedLOLData(summonerId, parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
 
         if (!advanceData.isEmpty()) {
             LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
@@ -206,8 +250,8 @@ public class LeagueMessage {
                 laneString += LeagueHandler.getLaneTypeEmoji(lane) + " " + LeagueHandler.getPrettyName(lane) + " " + games + " games\n`(" +  wins + "W/" + losses + "L) - " + percent +"% WR`\n";
             }
 
-            if (queue == null) {
-                QueryResult gameData = LeagueDB.getAllGamesForAccount(summonerId, time_start, time_end);
+            if (parameter.getQueueType() == null) {
+                QueryResult gameData = LeagueDB.getAllGamesForAccount(summonerId, parameter.getTimeStart(), parameter.getTimeEnd());
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
                     GameQueueType type = GameQueueType.values()[row.getAsInt("game_type")];
@@ -279,25 +323,8 @@ public class LeagueMessage {
                 builder.addField("Games", gameString, true);
                 builder.addField("Roles", laneString , true);
             }
-            else if (queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) {
-                LeagueEntry entry = LeagueHandler.getRankEntry(s.getPUUID(), s.getPlatform());
-                
-                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
-                String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
-                
-                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + totalGames + " you have played this split.\n" + laneString , false);
-            }
-            else if (queue == GameQueueType.RANKED_FLEX_SR) {
-                LeagueEntry entry = LeagueHandler.getFlexEntry(s.getSummonerId(), s.getPlatform());
-                
-                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
-                String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
-                
-                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + totalGames + " you have played this split.\n" + laneString , false);
-            }
             else {                
-                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();            
-                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games.\n" + laneString , false);
+                builder.addField("Games", laneString , false);
             }
 
             HashMap<Integer, ChampionMastery> masteries = LeagueHandler.getMastery(s);
@@ -309,71 +336,66 @@ public class LeagueMessage {
             }
             builder.addField("Champions", champStats, false);
         }
-
-        builder.addField("Activity", LeagueHandler.getActivity(s), false);
+        builder = LeagueHandler.getActivity(builder, s);
 
         return builder;
     }
 
-    public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id) {
-        long[] time = LeagueHandler.getCurrentSplitRange();
-        return getSummonerButtons(s, user_id, time[0], time[1], GameQueueType.TEAM_BUILDER_RANKED_SOLO);
-    }
-
-    public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id, long start, long end, GameQueueType queue) {
+    public static List<MessageTopLevelComponent> getSummonerButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
         int index = 0;
 
-        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "lol"));
-
-        boolean hasTrackedGames = LeagueDB.hasSummonerData(LeagueHandler.updateSummonerDB(s));
-
-        if (hasTrackedGames) {
-            long[] time = LeagueHandler.getCurrentSplitRange();
-            long[] previousTime = LeagueHandler.getPreviousSplitRange();
-
-            Button allQueue = Button.secondary("lol-queue-all", "All Queue");
-            Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
-            Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
-            Button draft = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
-            Button curretModeButton = Button.secondary("lol-queue-" + GameQueueType.CHERRY, "Arena");
-
-            if (queue == null) {
-                allQueue = allQueue.withStyle(ButtonStyle.SUCCESS);
-            }
-            else {
-                switch (queue) {
-                    case TEAM_BUILDER_RANKED_SOLO:
-                        soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
-                        break;
-                    case RANKED_FLEX_SR:
-                        flex = flex.withStyle(ButtonStyle.SUCCESS);
-                        break;
-                    case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
-                        draft = draft.withStyle(ButtonStyle.SUCCESS);
-                        break;
-                    case CHERRY:
-                    case ULTBOOK:
-                    case SWIFTPLAY:
-                        curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
-                        break;
-                    default:
-                        break;
-                }
-            }
-                
-            Button allSeason = Button.secondary("lol-season-all", "General");
-            Button currentSplit = Button.secondary("lol-season-current", "Current Split");
-            Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
-
-            if (start == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
-            else if (start == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
-            else if (start == previousTime[0] && end == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
-
-            buttons.add(index, ActionRow.of(allQueue, soloQ, flex, draft, curretModeButton));
-            index++;
-            buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
+        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, parameter));
+        if (parameter.getOpggMenu() != null) {
+            buttons.add(index, ActionRow.of(parameter.getOpggMenu()));
             index++;
         }
+        if (parameter.getLivegameMenu() != null) {
+            buttons.add(index, ActionRow.of(parameter.getLivegameMenu()));
+            return buttons;
+        }
+
+        long[] time = LeagueHandler.getCurrentSplitRange();
+        long[] previousTime = LeagueHandler.getPreviousSplitRange();
+
+        Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
+        Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
+        Button draft = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
+        Button curretModeButton = Button.secondary("lol-queue-" + GameQueueType.CHERRY, "Arena");
+
+        if (parameter.getQueueType() != null) {
+            switch (parameter.getQueueType()) {
+                case TEAM_BUILDER_RANKED_SOLO:
+                    soloQ = soloQ.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case RANKED_FLEX_SR:
+                    flex = flex.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case TEAM_BUILDER_DRAFT_UNRANKED_5X5:
+                    draft = draft.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                case CHERRY:
+                case ULTBOOK:
+                case SWIFTPLAY:
+                    curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
+                    break;
+                default:
+                    break;
+            }
+        }
+            
+        Button allSeason = Button.secondary("lol-season-all", "General");
+        Button currentSplit = Button.secondary("lol-season-current", "Current Split");
+        Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
+
+        if (parameter.getTimeStart() == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
+        else if (parameter.getTimeStart() == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
+        else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
+
+        buttons.add(index, ActionRow.of(soloQ, flex, draft, curretModeButton));
+        index++;
+        buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
+        index++;
+        
 
         return buttons;
     }
@@ -388,13 +410,8 @@ public class LeagueMessage {
 //   ▀██████▀   ▄████▀        ████████▀    ████████▀
 //
 
-    public static StringSelectMenu getOpggMenu(Summoner summoner) {
-        return getOpggMenu(summoner, null, 0);
-    }
-
-    public static StringSelectMenu getOpggMenu(Summoner summoner, GameQueueType queue, int index) {
-        List<String> gameIds = getMatchIds(summoner, queue, index);
-
+    public static StringSelectMenu getOpggMenu(Summoner summoner, LeagueMessageParameter parameter) {
+        List<String> gameIds = getMatchIds(summoner, parameter.getQueueType(), parameter.getOffset());
         ArrayList<SelectOption> options = new ArrayList<>();
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
@@ -404,7 +421,7 @@ public class LeagueMessage {
 
                 MatchParticipant me = null;
                 for(MatchParticipant mp : match.getParticipants())
-                    if(mp.getSummonerId().equals(summoner.getSummonerId()))
+                    if(mp.getPuuid().equals(summoner.getPUUID()))
                         me = mp;
 
                 Emoji icon = LeagueHandler.getEmojiByChampion(me.getChampionId());
@@ -412,7 +429,8 @@ public class LeagueMessage {
                 String label = match.getGameDurationAsDuration().toMinutes() + " minutes " + LeagueHandler.formatMatchName(match.getQueue());
                 String description = "As " + me.getChampionName() + " (" + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " " + me.getTotalMinionsKilled() + " CS)";
 
-                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getPUUID()).withEmoji(icon).withDescription(description));
+                boolean isDefault = parameter.getMatch() != null ? (parameter.getMatch().getGameId() == match.getGameId()) : false;
+                options.add(SelectOption.of(label, summoner.getPlatform().name() + "_" + match.getGameId() + "#" + summoner.getPUUID()).withEmoji(icon).withDescription(description).withDefault(isDefault));
             } catch (Exception e) {
                 continue;
             }
@@ -430,7 +448,7 @@ public class LeagueMessage {
     public static EmbedBuilder getOpggEmbedMatch(Summoner s, LOLMatch match) {
         MatchParticipant me = null;
         for(MatchParticipant mp : match.getParticipants())
-            if(mp.getSummonerId().equals(s.getSummonerId()))
+            if(mp.getPuuid().equals(s.getPUUID()))
                 me = mp;
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -660,10 +678,6 @@ public class LeagueMessage {
                 break;
         }
         return eb;
-    }
-
-    public static EmbedBuilder getOpggEmbed(Summoner s) {
-        return getOpggEmbed(s, null, 0);
     }
 
     public static List<String> getMatchIds(Summoner s, GameQueueType queue, int index) {
@@ -1033,7 +1047,7 @@ public class LeagueMessage {
         return sb.toString();
     }
 
-    public static EmbedBuilder getOpggEmbed(Summoner s, GameQueueType queue, int index) {
+    public static EmbedBuilder getOpggEmbed(Summoner s, LeagueMessageParameter parameter) {
         LeagueShard shard = s.getPlatform();
         RegionShard region = shard.toRegionShard();
 
@@ -1045,7 +1059,7 @@ public class LeagueMessage {
         eb.setColor(Bot.getColor());
         eb.setTitle("Showing matches from " + LeagueHandler.getShardFlag(shard) + " " + shard.getRealmValue());
 
-        List<String> gameIds = getMatchIds(s, queue, index);
+        List<String> gameIds = getMatchIds(s, parameter.getQueueType(), parameter.getOffset());
 
         QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
 
@@ -1073,164 +1087,30 @@ public class LeagueMessage {
         return eb;
     }
 
-
-    @SuppressWarnings("unused")
-    @Deprecated
-    public static List<Container> getOpggEmbedV2(Summoner s, GameQueueType queue, int index) {
-        List<Container> containers = new ArrayList<>();
-        LeagueShard shard = s.getPlatform();
-        RegionShard region = shard.toRegionShard();
-
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
-        EmbedBuilder eb = new EmbedBuilder();
-        MatchParticipant me = null;
-        LOLMatch match = null;
-        R4J r4j = LeagueHandler.getRiotApi();
-
-        List<String> gameIds = getMatchIds(s, queue, index);
-
-        QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
-
-        for(int i = 0; i < 5 && i < gameIds.size(); i++){
-            try {
-
-                match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
-                if (MatchTracker.isRemake(match))
-                    continue;
-                MatchTracker.queueMatch(match);
-                if (match.getParticipants().size() == 0)
-                    continue; //riot di merda che quando crasha il game lascia dati sporchi
-
-                LeagueHandler.updateSummonerDB(match);
-                for(MatchParticipant mp : match.getParticipants()){
-                    if(mp.getPuuid().equals(s.getPUUID())){
-                        me = mp;
-                    }
-                }
-                ArrayList<String> blue = new ArrayList<>();
-                ArrayList<String> red = new ArrayList<>();
-                for(MatchParticipant searchMe : match.getParticipants()){
-                    String partecipantString = CustomEmojiHandler.getFormattedEmoji(searchMe.getChampionName())
-                                                + " "
-                                                + searchMe.getKills() + "/" + searchMe.getDeaths() + "/" + searchMe.getAssists();
-
-                    if(searchMe.getTeam() == TeamType.BLUE)
-                        blue.add(partecipantString);
-                    else
-                        red.add(partecipantString);
-                }
-
-                String kda = me.getKills() + "/" + me.getDeaths()+ "/" + me.getAssists();
-                String content = "";
-                Instant instant = Instant.ofEpochMilli(match.getGameCreation() + match.getGameDurationAsDuration().toMillis() + 3600000*2);
-                ZoneOffset offset = ZoneOffset.UTC;
-                OffsetDateTime offsetDateTime = instant.atOffset(offset);
-                String date = DateHandler.formatDate(offsetDateTime);
-                date = "<t:" + ((match.getGameCreation()/1000) + match.getGameDurationAsDuration().getSeconds()) + ":R>";
-                switch (match.getQueue()){
-                    case STRAWBERRY:
-                    content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + " Level: " +  me.getChampionLevel() + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + me.getGoldEarned() +  "\n"
-                    + date  + " | ** " + LeagueMessageUtils.getFormattedDuration((match.getGameDuration())) + "**\n"
-                    + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
-
-                    String swarmTeam = "";
-                    for(MatchParticipant mt : match.getParticipants())
-                        swarmTeam += CustomEmojiHandler.getFormattedEmoji(mt.getChampionName()) + " Level: " +  mt.getChampionLevel() + " | " + CustomEmojiHandler.getFormattedEmoji("golds") + mt.getGoldEarned() +  "\n";
-
-                    break;
-
-                    case CHERRY:
-
-                        content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda +"\n"
-                        + date + " | **"+ LeagueMessageUtils.getFormattedDuration((match.getGameDuration()))  + "**\n"
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner1Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment1())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment2())) + "\n"
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment3())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment4())) + "\n"
-                        + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5()));
-
-                    break;
-
-                    default:
-                    String matchTitle = LeagueHandler.formatMatchName(match.getQueue()) + ": " + (me.didWin() ? "WIN" : "LOSE");
-                    for (int j = 0; j < result.size(); j ++) {
-                        QueryRecord row = result.get(j);
-                        if (row.getAsLong("game_id") != match.getGameId()) continue;
-
-                        TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
-
-                        String displayRank = LeagueMessageUtils.getFormatedRank(rank, true);
-
-                        String gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") + " LP" : row.getAsInt("gain") + " LP";
-
-
-                        if (rank == TierDivisionType.UNRANKED) {
-                            matchTitle += "(Placement)";
-                        }
-                        else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
-                            matchTitle = "Promoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
-                        }
-                        else if (j > 0 && row.getAsInt("rank") > result.get(j - 1).getAsInt("rank")) {
-                            matchTitle = "Demoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
-                        }
-                        else if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) {
-                            matchTitle += "-0 LP"; //demotion shield
-                        }
-                        else {
-                            matchTitle += " " + gain;
-                        }
-                    }
-                    content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda + " | " + "**Vision: **"+ me.getVisionScore()+"\n"
-                                + date  + " | ** " + LeagueMessageUtils.getFormattedDuration((match.getGameDuration())) + "**\n"
-                                + CustomEmojiHandler.getFormattedEmoji( String.valueOf(me.getSummoner1Id()) + "_") + LeagueMessageUtils.getFormattedRunes(me, 0) + "\n"
-                                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + LeagueMessageUtils.getFormattedRunes(me, 1) + "\n"
-                                + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem6()));
-
-                    break;
-
-
-                }
-
-                StringSelectMenu menu = getSelectedMatchMenu(match);
-                Button viewMatch = Button.primary("match-view-" + match.getGameId(), "View");
-
-                Section section = Section.of(
-                    viewMatch,
-                    TextDisplay.of(content)
-                );
-
-
-                
-                List<ContainerChildComponent> buttons = new ArrayList<>();
-                buttons.add(section);
-                buttons.add(Separator.createDivider(Spacing.SMALL));
-                buttons.add(ActionRow.of(menu));
-                
-                containers.add(Container.of(buttons).withAccentColor(me.didWin() ? Color.green : Color.RED));
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                continue;
-            }
-        }
-        return containers;
-    }
-
-    public static List<MessageTopLevelComponent> getOpggButtons(Summoner s, String user_id, GameQueueType queue, int index) {
+    public static List<MessageTopLevelComponent> getOpggButtons(Summoner s, String user_id, LeagueMessageParameter parameter) {
+        int index = parameter.getOffset();
+        GameQueueType queue = parameter.getQueueType();
         int order = 0;
-        Button left = Button.primary("match-matchleft", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button left = Button.primary(BUTTON_ID_PREFIX + "-leftpage-" + index, " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         if (index == 0) left = left.asDisabled();
 
-        Button page = Button.primary("match-index-" + index, "Match " + ((index/5)+1)).asDisabled();
-        Button right = Button.primary("match-matchright", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button page = Button.primary(BUTTON_ID_PREFIX + "-index-" + index, "Match " + ((index/5)+1)).asDisabled();
+        Button right = Button.primary(BUTTON_ID_PREFIX + "-rightpage-" + index, " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
-        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, "match"));
+        List<MessageTopLevelComponent> buttons = new ArrayList<>(composeButtons(s, user_id, parameter));
 
-        StringSelectMenu menu = LeagueMessage.getOpggMenu(s, queue, index);
+        StringSelectMenu menu = LeagueMessage.getOpggMenu(s, parameter);
         if (menu != null) {
             buttons.add(0, ActionRow.of(menu));
             order++;
         }
-
-        buttons.add(order, LeagueMessageUtils.getOpggQueueTypeButtons(queue));
+        if (parameter.getMatch() != null) {
+            StringSelectMenu matchMenu = getSelectedMatchMenu(parameter.getMatch());
+            buttons.add(1, ActionRow.of(matchMenu));
+        }
+        else {
+            buttons.add(order, LeagueMessageUtils.getOpggQueueTypeButtons(queue));
+        }
         order++;
         buttons.add(order, ActionRow.of(left, page, right));
 
@@ -1244,7 +1124,7 @@ public class LeagueMessage {
             options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getPuuid() + "#" + match.getPlatform().name()).withEmoji(icon));
         }
 
-        return StringSelectMenu.create("rank-select"  + "#" + match.getGameId())
+        return StringSelectMenu.create("rank-select")
                 .setPlaceholder("Select a summoner")
                 .setMaxValues(1)
                 .addOptions(options)
@@ -1308,7 +1188,10 @@ public class LeagueMessage {
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
                         LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getPuuid(), summoner.getPlatform());
                         if (entry != null) {
-                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + LeagueMessageUtils.getFormatedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100)+"% WR`";
+                            int wins = entry.getWins();
+                            int losses = entry.getLosses();
+                            double winrate = (Double.valueOf(wins) / Double.valueOf(wins + losses)) * 100;
+                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + LeagueMessageUtils.getFormatedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP \n" + wins + "W/" + losses + "L " + "(" + Math.ceil(winrate) + " WR%)`";
                             entryName = LeagueHandler.formatMatchName(entry.getQueueType());
                         }
 
@@ -1358,22 +1241,6 @@ public class LeagueMessage {
                 .build();
     }
 
-    public static List<MessageTopLevelComponent> getLivegameButtons(Summoner s, String user_id) {
-        return composeButtons(s, user_id, "rank");
-    }
-
-    public static void sendChampionMessage(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        MessageEmbed embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
-        List<MessageTopLevelComponent> components = getChampionButtons(userId, summoner, summonerId, parameter);
-        hook.editOriginalEmbeds(embed).setComponents(components).queue();
-    }
-
-    public static void sendChampionMessage(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        MessageEmbed embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
-        List<MessageTopLevelComponent> components = getChampionButtons(userId, summoner, summonerId, parameter);
-        event.getChannel().sendMessageEmbeds(embed).addComponents(components).queue();
-    }
-
     private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         List<MatchData> matches = null;
@@ -1390,22 +1257,22 @@ public class LeagueMessage {
         eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
         eb.setColor(Bot.getColor());
         switch (parameter.getMessageType()) {
-            case CHAMPION_OVERVIEW:
+            case OVERVIEW:
                 eb = getGenericStats(eb, matches, summoner, summonerId, parameter);                
                 break;
-            case CHAMPION_MATCHUP:
+            case MATCHUP:
                 eb = getMatchups(eb, matches, summonerId, parameter);
                 break;
-            case CHAMPION_PING:
+            case OVERVIEW_PING:
                 eb = getPings(eb, matches, summonerId);
                 break;
-            case CHAMPION_OBJECTIVES:
+            case OVERVIEW_OBJECTIVES:
                 eb = getObjectives(eb, matches, summoner, summonerId);
                 break;
-            case CHAMPION_CHAMPIONS:
+            case OVERVIEW_CHAMPIONS:
                 eb = getAllChampions(eb, matches, summoner, summonerId, parameter);
                 break;
-            case CHAMPION_OPGG:
+            case OVERVIEW_OPGG:
                 eb = getChampionOPGG(eb, matches, summoner, summonerId, parameter);
                 break;
             default:
@@ -1417,55 +1284,59 @@ public class LeagueMessage {
     private static List<MessageTopLevelComponent> getChampionButtons(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         StaticChampion champion = parameter.getChampion();
         
-        Button left = Button.primary("champion-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
-        Button right = Button.primary("champion-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary("lol-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
-        Button center = Button.primary("champion-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
+        Button center = Button.primary("lol-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
-        Button settings = Button.primary("champion-change-" + parameter.getChampionId(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+        Button settings = Button.primary("lol-change-" + parameter.getChampionId(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
 
 
-        Button championButton = Button.secondary("champion-champion-0", " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")).asDisabled();
+        Button championButton = Button.secondary("lol-champion-0", " ").withEmoji(CustomEmojiHandler.getRichEmoji("blank")).asDisabled();
         if (champion != null) {
-            championButton = Button.secondary("champion-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
+            championButton = Button.secondary("lol-champion-" + champion.getId(), champion.getName()).withEmoji(CustomEmojiHandler.getRichEmoji(champion.getName()));
             championButton = parameter.isShowChampion() ? championButton.withStyle(ButtonStyle.SUCCESS) : championButton;
         }
 
-        Button generic = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OVERVIEW, "Overview");
-        Button matchups = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_MATCHUP, "Matchups");
-        Button pings = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_PING, "Pings");
-        Button objectives = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OBJECTIVES, "Objectives");
-        Button champions = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_CHAMPIONS, "Champions");
-        Button opgg = Button.primary("champion-type-" + LeagueMessageType.CHAMPION_OPGG, "Opgg");
+        Button generic = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW, "Overview");
+        Button profile = Button.primary("lol-type-" + LeagueMessageType.PROFILE, "Profile");
+        Button matchups = Button.primary("lol-type-" + LeagueMessageType.MATCHUP, "Matchups");
+        Button pings = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW_PING, "Pings");
+        Button objectives = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW_OBJECTIVES, "Objectives");
+        Button champions = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW_CHAMPIONS, "Champions");
+        Button opgg = Button.primary("lol-type-" + LeagueMessageType.OVERVIEW_OPGG, "Opgg");
 
         switch (parameter.getMessageType()) {
-            case CHAMPION_OVERVIEW:
+            case OVERVIEW:
                 generic = generic.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_MATCHUP:
+            case MATCHUP:
                 matchups = matchups.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_PING:
+            case OVERVIEW_PING:
                 pings = pings.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_OBJECTIVES:
+            case OVERVIEW_OBJECTIVES:
                 objectives = objectives.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_CHAMPIONS:
+            case OVERVIEW_CHAMPIONS:
                 champions = champions.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
-            case CHAMPION_OPGG:
+            case OVERVIEW_OPGG:
                 opgg = opgg.withStyle(ButtonStyle.SUCCESS).asDisabled();
+                break;
+            case PROFILE:
+                profile = profile.withStyle(ButtonStyle.SUCCESS).asDisabled();
                 break;
             default:
                 break;
         }
 
-        Button allSeason = Button.secondary("champion-season-all", "General");
-        Button currentSplit = Button.secondary("champion-season-current", "Current Split");
-        Button previousSplit = Button.secondary("champion-season-previous", "Previous Split");
+        Button allSeason = Button.secondary("lol-season-all", "General");
+        Button currentSplit = Button.secondary("lol-season-current", "Current Split");
+        Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
 
         long[] time = LeagueHandler.getCurrentSplitRange();
         long[] previousTime = LeagueHandler.getPreviousSplitRange();
@@ -1475,21 +1346,21 @@ public class LeagueMessage {
         else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-        if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("champion", parameter.getLaneType()));
+        if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("lol", parameter.getLaneType()));
 
+        rows.add(LeagueMessageUtils.getOpggQueueTypeButtons("lol", ButtonStyle.SECONDARY, parameter.getQueueType()));
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
-        rows.add(LeagueMessageUtils.getOpggQueueTypeButtons("champion", ButtonStyle.SECONDARY, parameter.getQueueType()));
-        rows.add(ActionRow.of(generic, opgg, champions, matchups, pings));
+        rows.add(ActionRow.of(profile, generic, opgg, champions, matchups));
 
 
         if (parameter.getMessageType().hasPageButtons()) {
-            Button leftPage = Button.secondary("champion-leftpage-" + parameter.getOffset(), "Previous Page");
-            Button rightPage = Button.secondary("champion-rightpage-" + parameter.getOffset(), "Next Page");
+            Button leftPage = Button.secondary("lol-leftpage-" + parameter.getOffset(), "Previous Page");
+            Button rightPage = Button.secondary("lol-rightpage-" + parameter.getOffset(), "Next Page");
 
             if (parameter.getOffset() == 0) 
                 leftPage = leftPage.asDisabled();
             
-            if (parameter.getMessageType() == LeagueMessageType.CHAMPION_OPGG) {
+            if (parameter.getMessageType() == LeagueMessageType.OVERVIEW_OPGG) {
                 if (userId != null && LeagueHandler.getNumberOfProfile(userId) > 1)
                     center = center.withStyle(ButtonStyle.SUCCESS).asEnabled();
                 rows.add(ActionRow.of(center, championButton, settings, leftPage, rightPage));

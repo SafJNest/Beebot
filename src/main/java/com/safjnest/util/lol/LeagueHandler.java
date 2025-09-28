@@ -39,6 +39,7 @@ import com.safjnest.util.lol.model.AugmentData;
 import com.safjnest.util.lol.model.rune.PageRunes;
 import com.safjnest.util.lol.model.rune.Rune;
 
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
@@ -748,6 +749,21 @@ import com.safjnest.core.cache.managers.UserCache;
             return "Not in a game";
         }
         return "Not in a game";
+    }
+
+    public static EmbedBuilder getActivity(EmbedBuilder eb, Summoner s){
+        try {
+            for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
+                if(partecipant.getPuuid().equals(s.getPUUID())) {
+                    String gameName = LeagueHandler.formatMatchName(s.getCurrentGame().getGameQueueConfig());
+                    return eb.setFooter("Playing a " + gameName, 
+                    CustomEmojiHandler.getRichEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()).getImageUrl());
+                }
+            }
+        } catch (Exception e) {
+            return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
+        }
+        return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
     }
 
 //     ▄████████ ███    █▄  ███▄▄▄▄      ▄████████

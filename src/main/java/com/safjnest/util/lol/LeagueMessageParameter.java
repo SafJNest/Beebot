@@ -4,8 +4,12 @@ import java.util.List;
 
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.selections.SelectOption;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class LeagueMessageParameter {
@@ -20,6 +24,11 @@ public class LeagueMessageParameter {
   private boolean showChampion;
 
   private int offset;
+
+  private LOLMatch match;
+
+  private StringSelectMenu livegameMenu;
+  private StringSelectMenu opggMenu;
 
   public LeagueMessageParameter(LeagueMessageType messageType) {
     this.messageType = messageType;
@@ -48,9 +57,13 @@ public class LeagueMessageParameter {
     this.showChampion = showChampion;
 
     this.offset = offset;
+
+    this.match = null;
   }
 
-  public LeagueMessageParameter(String prefix, List<Button> buttons) {
+  public LeagueMessageParameter(List<Button> buttons) {
+    String prefix = LeagueMessage.BUTTON_ID_PREFIX;
+    
     this.period = LeagueHandler.getCurrentSplitRange();
     String timeString = "current";
 
@@ -67,7 +80,7 @@ public class LeagueMessageParameter {
       }
       
       if (b.getCustomId().startsWith(prefix + "-type-") && isActive)
-          this.messageType = LeagueMessageType.valueOf(buttonValue);
+          this.messageType = LeagueMessageType.valueOf(buttonValue.toUpperCase());
 
       if (b.getCustomId().startsWith(prefix + "-lane-") && isActive) {
           try {
@@ -107,6 +120,26 @@ public class LeagueMessageParameter {
             this.period = LeagueHandler.getPreviousSplitRange();
             break;
     }
+  }
+
+  public LeagueMessageParameter withComponents(List<StringSelectMenu> menus) {
+    for (StringSelectMenu menu : menus) {
+      if (menu.getCustomId().equals("opgg-select")) {
+        for (SelectOption option : menu.getOptions()) {
+          if (option.isDefault()) {
+            String gameId = option.getValue();
+            String platform =  option.getValue().split("_")[0];
+            LeagueShard shard = LeagueShard.valueOf(platform);
+            this.match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
+          }
+        }
+        this.opggMenu = menu;
+      }
+      if (menu.getCustomId().equals("rank-select")) {
+        this.livegameMenu = menu;
+      }
+    }
+    return this;
   }
 
   public LeagueMessageType getMessageType() {
@@ -183,5 +216,21 @@ public class LeagueMessageParameter {
 
   public long getTimeEnd() {
     return this.period[1];
+  }
+
+  public void setMatch(LOLMatch match) {
+    this.match = match;
+  }
+
+  public LOLMatch getMatch() {
+    return this.match;
+  }
+
+  public StringSelectMenu getLivegameMenu() {
+    return this.livegameMenu;
+  }
+
+  public StringSelectMenu getOpggMenu() {
+    return this.opggMenu;
   }
 }

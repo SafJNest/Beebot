@@ -599,7 +599,7 @@ public class LeagueDB extends AbstractDB {
         int offset = parameter.getOffset();
         int limit = parameter.getMessageType().getPageItem();
 
-        String offsetFilter = parameter.getMessageType() == LeagueMessageType.CHAMPION_OPGG
+        String offsetFilter = parameter.getMessageType() == LeagueMessageType.OVERVIEW_OPGG
             ? "LIMIT " + limit + " OFFSET " + offset
             : "";
 

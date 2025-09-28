@@ -1,27 +1,23 @@
 package com.safjnest.commands.lol;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessage;
+import com.safjnest.util.lol.LeagueMessageParameter;
+import com.safjnest.util.lol.LeagueMessageType;
 
-import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.components.MessageTopLevelComponent;
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
-import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
@@ -69,17 +65,8 @@ public class Livegame extends SlashCommand {
             return;
         }
         
-        List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-
-        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
-        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
-        List<MessageTopLevelComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null));
-
-        if (menu != null) {
-            row.add(0, ActionRow.of(menu));
-            event.getChannel().sendMessageEmbeds(builder.build()).setComponents(row).queue();
-        }
-        else event.getChannel().sendMessageEmbeds(builder.build()).setComponents(row).queue();
+        int summonerId = LeagueDB.addLOLAccount(s);
+        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
     }
 
     @Override
@@ -98,17 +85,8 @@ public class Livegame extends SlashCommand {
             return;
         }
 
-        List<SpectatorParticipant> users = s.getCurrentGame() != null ? s.getCurrentGame().getParticipants() : null;
-
-        StringSelectMenu menu = LeagueMessage.getLivegameMenu(s, users);
-        EmbedBuilder builder = LeagueMessage.getLivegameEmbed(s, users);
-        List<MessageTopLevelComponent> row = new ArrayList<>(LeagueMessage.getLivegameButtons(s, theGuy != null ? theGuy.getId() : null));
-
-        if (menu != null) {
-            row.add(0, ActionRow.of(menu));
-            event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
-        }
-        else event.getHook().editOriginalEmbeds(builder.build()).setComponents(row).queue();
+        int summonerId = LeagueDB.addLOLAccount(s);
+        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
 	}
 
 }

@@ -1,12 +1,15 @@
 package com.safjnest.util.lol;
 
 public enum LeagueMessageType {
-  CHAMPION_OVERVIEW("Overview", false),
-  CHAMPION_MATCHUP("Matchups", false),
-  CHAMPION_PING("Pings", false),
-  CHAMPION_OBJECTIVES("Objectives", false),
-  CHAMPION_CHAMPIONS("Champions", true, 10),
-  CHAMPION_OPGG("OPgg", true, 5);
+  PROFILE("Profile", false),
+  OPGG("OPgg", true, 5),
+  LIVEGAME("Live Game", false),
+  OVERVIEW("Overview", false),
+  MATCHUP("Matchups", false),
+  OVERVIEW_PING("Pings", false),
+  OVERVIEW_OBJECTIVES("Objectives", false),
+  OVERVIEW_CHAMPIONS("Champions", true, 10),
+  OVERVIEW_OPGG("OPgg", true, 5);
 
   private String label;
   private boolean hasPageButton;
