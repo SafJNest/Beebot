@@ -1363,7 +1363,7 @@ public class LeagueMessage {
         else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-        if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("champion", parameter.getLaneType()));
+        if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents("lol", parameter.getLaneType()));
 
         rows.add(LeagueMessageUtils.getOpggQueueTypeButtons("lol", ButtonStyle.SECONDARY, parameter.getQueueType()));
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
