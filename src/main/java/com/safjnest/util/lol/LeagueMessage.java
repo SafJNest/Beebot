@@ -323,25 +323,8 @@ public class LeagueMessage {
                 builder.addField("Games", gameString, true);
                 builder.addField("Roles", laneString , true);
             }
-            else if (parameter.getQueueType() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) {
-                LeagueEntry entry = LeagueHandler.getRankEntry(s.getPUUID(), s.getPlatform());
-                
-                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
-                String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
-                
-                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + totalGames + " you have played this split.\n" + laneString , false);
-            }
-            else if (parameter.getQueueType() == GameQueueType.RANKED_FLEX_SR) {
-                LeagueEntry entry = LeagueHandler.getFlexEntry(s.getSummonerId(), s.getPlatform());
-                
-                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();
-                String totalGames = entry != null ? String.valueOf(entry.getWins() + entry.getLosses()) : "0 (placements dont count)";
-                
-                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games over the " + totalGames + " you have played this split.\n" + laneString , false);
-            }
             else {                
-                int totalGamesAnalized = advanceData.arrayColumn("games").stream().mapToInt(Integer::parseInt).sum();            
-                builder.addField("Games", "The bot has analyzed " + totalGamesAnalized +" games.\n" + laneString , false);
+                builder.addField("Games", laneString , false);
             }
 
             HashMap<Integer, ChampionMastery> masteries = LeagueHandler.getMastery(s);

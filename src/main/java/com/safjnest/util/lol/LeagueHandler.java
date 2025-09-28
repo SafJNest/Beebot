@@ -761,9 +761,9 @@ import com.safjnest.core.cache.managers.UserCache;
                 }
             }
         } catch (Exception e) {
-            return eb.setFooter("Currently not in a game");
+            return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
         }
-        return eb.setFooter("Currently not in a game");
+        return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
     }
 
 //     ▄████████ ███    █▄  ███▄▄▄▄      ▄████████
