@@ -284,7 +284,7 @@
     <dependency>
       <groupId>com.github.stelar7</groupId>
       <artifactId>R4J</artifactId>
-      <version>618a40a9dc0458026f0f2b044a7ec912b0c9598e</version>
+      <version>5a696227e1359d1d2062d345000115c81570d92d</version>
     </dependency>
 
     <dependency>

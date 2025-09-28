@@ -660,33 +660,41 @@ public class Test extends Command{
                     String game_id = region + "_"+row.get("game_id");
                     //String account_id = row.get("account_id");
                     //String summoner_id = row.get("summoner_id");
-                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
-                    String puuid = "";
+                    try {
+                        LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
+                        String puuid = "";
 
-                    LaneType lane = null;
-                    TeamType team = null;
-                    //Summoner su = LeagueHandler.getSummonerByPuuid(account_id, LeagueShard.values()[row.getAsInt("league_shard")]);
-                    for (MatchParticipant participant : match.getParticipants()) {
-                        QueryRecord record = LeagueDB.get().lineQuery("select s.id, p.build from summoner s left join participant p on s.id = p.summoner_id and p.match_id = " + row.get("id") + " where s.puuid = '" + participant.getPuuid() + "' and s.league_shard = " + row.getAsInt("league_shard") + ";"); 
-                        int sumId = record != null ? record.getAsInt("id") : 0;
-                        if (sumId == 0) continue;
-
-                        JSONObject build = new JSONObject(record.get("build") != null && !record.get("build").isEmpty() ? record.get("build") : "{}");
-                        HashMap<Integer, Integer> items = new HashMap<Integer, Integer>();
-                        items.put(0, participant.getItem0());
-                        items.put(1, participant.getItem1());
-                        items.put(2, participant.getItem2());
-                        items.put(3, participant.getItem3());
-                        items.put(4, participant.getItem4());
-                        items.put(5, participant.getItem5());
-                        items.put(6, participant.getItem6());
-                        build.put("items", items);
-
-                        query = "UPDATE participant SET build='" + build.toString() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
+                        LaneType lane = null;
+                        TeamType team = null;
+                        query = "update `match` set game_type = " + match.getQueue().ordinal() + ", queue = '" + match.getQueue() + "', game_id = '" + match.getGameId() + "' where id = " + row.get("id") + ";";
                         LeagueDB.get().query(query);
+                        System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());
+                        aaa++; 
+                    } catch (Exception eeeee) {
+                        System.out.println("Match not found: " + game_id + " " + LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard());
                     }
-                    System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + res.size());
-                    aaa++;
+
+                    //Summoner su = LeagueHandler.getSummonerByPuuid(account_id, LeagueShard.values()[row.getAsInt("league_shard")]);
+                    // for (MatchParticipant participant : match.getParticipants()) {
+                    //     QueryRecord record = LeagueDB.get().lineQuery("select s.id, p.build from summoner s left join participant p on s.id = p.summoner_id and p.match_id = " + row.get("id") + " where s.puuid = '" + participant.getPuuid() + "' and s.league_shard = " + row.getAsInt("league_shard") + ";"); 
+                    //     int sumId = record != null ? record.getAsInt("id") : 0;
+                    //     if (sumId == 0) continue;
+
+                    //     JSONObject build = new JSONObject(record.get("build") != null && !record.get("build").isEmpty() ? record.get("build") : "{}");
+                    //     HashMap<Integer, Integer> items = new HashMap<Integer, Integer>();
+                    //     items.put(0, participant.getItem0());
+                    //     items.put(1, participant.getItem1());
+                    //     items.put(2, participant.getItem2());
+                    //     items.put(3, participant.getItem3());
+                    //     items.put(4, participant.getItem4());
+                    //     items.put(5, participant.getItem5());
+                    //     items.put(6, participant.getItem6());
+                    //     build.put("items", items);
+
+                    //     query = "UPDATE participant SET build='" + build.toString() + "' WHERE summoner_id=" + sumId + " AND match_id=" + row.get("id") + ";";
+                    //     LeagueDB.get().query(query);
+                    // }
+
                     // HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(match, match.getParticipants());
                     // if (matchData.get(puuid) == null) continue;
                     // if (matchData.get(puuid).get("items") == null || matchData.get(puuid).get("starter") == null || matchData.get(puuid).get("starter").isBlank()) {
