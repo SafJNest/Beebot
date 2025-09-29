@@ -1156,7 +1156,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 else index -= 1;
 
                 puuid = (String) accounts.keySet().toArray()[index];
-                region = LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))).getValue();
+                region = accounts.get(puuid);
                 break;
             case "queue":
                 for (Button b : EventUtils.getButtons(event)) {

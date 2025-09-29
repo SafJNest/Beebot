@@ -325,7 +325,7 @@ public class LeagueDB extends AbstractDB {
 
 
     public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
-        return instance.query("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND queue = '" + shard + "' LIMIT 25;");
+        return instance.query("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND region = '" + shard + "' LIMIT 25;");
     }
 
 
@@ -334,7 +334,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static QueryResult getSummonerData(int summoner_id, LeagueShard shard, long time_start, long time_end) {
-        return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND queue = '" + shard + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
+        return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND region = '" + shard + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
     public static QueryResult getSummonerData(int summoner_id) {
@@ -378,7 +378,7 @@ public class LeagueDB extends AbstractDB {
         if(c == null) return id;
 
         try (Statement stmt = c.createStatement()) {
-            PreparedStatement ps = c.prepareStatement("SELECT id FROM `match` WHERE game_id = ? AND queue = ?;");
+            PreparedStatement ps = c.prepareStatement("SELECT id FROM `match` WHERE game_id = ? AND region = ?;");
             ps.setString(1, String.valueOf(match.getGameId()));
             ps.setString(2, match.getPlatform().name());
             ResultSet rs = ps.executeQuery();
