@@ -48,7 +48,7 @@ public class MatchTracker {
     private static Set<LOLMatch> matchQueue = ConcurrentHashMap.newKeySet();
 
 	static {
-        if(!App.isTesting()) {
+        if(App.isTesting()) {
             ChronoTask track = () -> retriveSummoners();
             track.scheduleAtFixedRate(TimeConstant.MINUTE * 0, period, TimeUnit.MILLISECONDS);
 
@@ -68,7 +68,7 @@ public class MatchTracker {
             for (QueryRecord account : result) {
                 Summoner summoner = null;
                 try {
-                    summoner = LeagueHandler.getSummonerByPuuid(account.get("puuid"), LeagueShard.values()[Integer.valueOf(account.get("league_shard"))]);
+                    summoner = LeagueHandler.getSummonerByPuuid(account.get("puuid"), account.getAsLeagueShard("region"));
                     if (summoner == null) 
                         throw new Exception("account null ??????");
                     

@@ -63,6 +63,7 @@ import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
@@ -1183,6 +1184,41 @@ public class Test extends Command{
                         }
                     };
                     setMatchEvent.queue();
+                    break;
+                case "fixordinal":
+                    query = "SELECT id, league_shard, game_type FROM `match` ORDER BY id DESC";
+                    String query2 = "select id, league_shard from summoner ORDER BY id DESC";
+                    res = LeagueDB.get().query(query);
+                    QueryResult res2 = LeagueDB.get().query(query2);
+                    ChronoTask fixOrdinalMatch = () -> {
+                        int n = 0;
+                        for (QueryRecord row : res) {
+                            try {
+                                String q = "UPDATE `match` SET queue = '" + GameQueueType.values()[row.getAsInt("game_type")] + "', region = '" + LeagueShard.values()[row.getAsInt("league_shard")] + "' WHERE id = " + row.get("id");
+                                LeagueDB.get().query(q);
+                            } catch (Exception eeee) {
+                                eeee.printStackTrace();
+                            }
+                            n++;
+                            System.out.println(n + "/" + res.size());
+                        }
+                    };
+                    ChronoTask fixOrdinalSummoner = () -> {
+                        int n = 0;
+                        for (QueryRecord row : res2) {
+                            try {
+                                String q = "UPDATE summoner SET region = '" + LeagueShard.values()[row.getAsInt("league_shard")] + "' WHERE id = " + row.get("id");
+                                LeagueDB.get().query(q);
+                            } catch (Exception eeee) {
+                                eeee.printStackTrace();
+                            }
+                            n++;
+                            System.out.println(n + "/" + res2.size());
+                        }
+                    };
+                    fixOrdinalSummoner.queue();
+                    fixOrdinalMatch.queue();
+                break;
         }
     }  
 

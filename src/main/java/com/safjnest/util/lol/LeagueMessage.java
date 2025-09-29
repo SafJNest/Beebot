@@ -254,7 +254,7 @@ public class LeagueMessage {
                 QueryResult gameData = LeagueDB.getAllGamesForAccount(summonerId, parameter.getTimeStart(), parameter.getTimeEnd());
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
-                    GameQueueType type = GameQueueType.values()[row.getAsInt("game_type")];
+                    GameQueueType type = row.getAsGameQueueType("queue");
                     boolean win = row.getAsBoolean("win");
     
                     String stats = gameTypeStats.getOrDefault(type, "0-0");

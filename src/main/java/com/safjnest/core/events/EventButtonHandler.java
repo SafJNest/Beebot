@@ -1147,7 +1147,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if ((index + 1) == accounts.size()) index = 0;
                 else index += 1;
                 puuid = (String) accounts.keySet().toArray()[index];
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueHandler.getShardFromOrdinal(Integer.parseInt(accounts.get(puuid))));
+                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(accounts.get(puuid)));
 
                 break;
 
