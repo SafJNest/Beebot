@@ -475,7 +475,7 @@ import com.safjnest.core.cache.managers.UserCache;
             if (accounts == null || accounts.size() == 0) return null;
 
             String firstAccount = accounts.keySet().stream().findFirst().get();
-            LeagueShard shard = LeagueShard.values()[Integer.valueOf(accounts.get(firstAccount))];
+            LeagueShard shard = LeagueShard.valueOf(accounts.get(firstAccount));
 
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, firstAccount);
         } catch (Exception e) {return null;}

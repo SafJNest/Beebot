@@ -210,7 +210,7 @@ public class LeagueMessage {
                 String[] lanes = stats.split(",");
                 for (String lane : lanes) {
                     lane = lane.trim();
-                    LaneType laneType = LaneType.values()[Integer.parseInt(lane.split("-")[0])];
+                    LaneType laneType = LaneType.valueOf(lane.split("-")[0]);
                     laneStats.merge(laneType, lane.split("-")[1] + "-" + lane.split("-")[2], (oldValue, newValue) -> {
                         String[] oldStats = oldValue.split("-");
                         String[] newStats = newValue.split("-");
@@ -254,7 +254,7 @@ public class LeagueMessage {
                 QueryResult gameData = LeagueDB.getAllGamesForAccount(summonerId, parameter.getTimeStart(), parameter.getTimeEnd());
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
-                    GameQueueType type = GameQueueType.values()[row.getAsInt("game_type")];
+                    GameQueueType type = row.getAsGameQueueType("queue");
                     boolean win = row.getAsBoolean("win");
     
                     String stats = gameTypeStats.getOrDefault(type, "0-0");
@@ -574,8 +574,8 @@ public class LeagueMessage {
 
                     if (row.getAsLong("game_id") != match.getGameId()) continue;
 
-                    TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
-                    TierDivisionType prevRank = previosRow != null ? TierDivisionType.values()[row.getAsInt("rank")] : null;
+                    TierDivisionType rank = row.getAsTier("rank");
+                    TierDivisionType prevRank = previosRow != null ? row.getAsTier("rank") : null;
 
                     String displayRank = LeagueMessageUtils.getFormatedRank(rank, true);
 
@@ -817,7 +817,7 @@ public class LeagueMessage {
                 QueryRecord row = result.get(j);
                 if (row.getAsLong("game_id") != match.getGameId()) continue;
 
-                TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank")];
+                TierDivisionType rank = row.getAsTier("rank");
 
                 String displayRank = LeagueMessageUtils.getFormatedRank(rank, true);
 
