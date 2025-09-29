@@ -15,6 +15,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class QueryRecord extends HashMap<String, String> {
     private static final DateTimeFormatter BASE_FORMATTER =
@@ -151,7 +152,7 @@ public class QueryRecord extends HashMap<String, String> {
 
     public LaneType getAsLaneType(String columnName) {
         try {
-            return LaneType.values()[getAsInt(columnName)];
+            return LaneType.valueOf(get(columnName));
         } catch (Exception e) {
             return null;
         }
@@ -167,7 +168,7 @@ public class QueryRecord extends HashMap<String, String> {
 
     public TeamType getAsTeamType(String columnName) {
         try {
-            return TeamType.values()[getAsInt(columnName)];
+            return TeamType.valueOf(get(columnName));
         } catch (Exception e) {
             return null;
         }
@@ -176,6 +177,14 @@ public class QueryRecord extends HashMap<String, String> {
     public LeagueShard getAsLeagueShard(String columnName) {
         try {
             return LeagueShard.valueOf(get(columnName));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public TierDivisionType getAsTier(String columnName) {
+        try {
+            return TierDivisionType.valueOf(get(columnName));
         } catch (Exception e) {
             return null;
         }

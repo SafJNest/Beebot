@@ -48,7 +48,7 @@ public class MatchTracker {
     private static Set<LOLMatch> matchQueue = ConcurrentHashMap.newKeySet();
 
 	static {
-        if(!App.isTesting()) {
+        if(App.isTesting()) {
             ChronoTask track = () -> retriveSummoners();
             track.scheduleAtFixedRate(TimeConstant.MINUTE * 0, period, TimeUnit.MILLISECONDS);
 
@@ -284,10 +284,9 @@ public class MatchTracker {
             List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
             LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
 
-            TierDivisionType oldDivision = TierDivisionType.values()[dataGame.getAsInt("rank")];
+            TierDivisionType oldDivision = dataGame.getAsTier("rank");
             TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
 
-            int rank = division.ordinal();
             int lp = league != null ? league.getLeaguePoints() : 0;
             int gain = 0;
 
@@ -295,15 +294,15 @@ public class MatchTracker {
             boolean isMasterPlus = division == TierDivisionType.MASTER_I || division == TierDivisionType.GRANDMASTER_I || division == TierDivisionType.CHALLENGER_I;
 
             if (dataGame.get("rank") == null || match.getQueue() != GameQueueType.TEAM_BUILDER_RANKED_SOLO) gain = 0;
-            else if ((isPromotionToMaster || !isMasterPlus) && rank != dataGame.getAsInt("rank")) {
+            else if ((isPromotionToMaster || !isMasterPlus) && division != dataGame.getAsTier("rank")) {
                 gain = 100 - (Math.abs(lp - dataGame.getAsInt("lp")));
-                gain = rank < dataGame.getAsInt("rank") ? gain : -gain;
+                gain = division.ordinal() < dataGame.getAsTier("rank").ordinal() ? gain : -gain;
             } else {
                 gain = lp - dataGame.getAsInt("lp");
             }
             int summonerId = LeagueDB.addLOLAccount(summoner);
             LeagueDB.updateSummonerEntries(summonerId, entries);
-            LeagueDB.setSummonerData(summonerId, summonerMatch, participant, rank, lp, gain, createJSONBuild(matchData));
+            LeagueDB.setSummonerData(summonerId, summonerMatch, participant, division, lp, gain, createJSONBuild(matchData));
         };
     }
 

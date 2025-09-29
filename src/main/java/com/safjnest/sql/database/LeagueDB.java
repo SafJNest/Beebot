@@ -289,7 +289,7 @@ public class LeagueDB extends AbstractDB {
 
 
 
-    public static boolean setSummonerData(int summonerId, int summonerMatchId, MatchParticipant participant, int rank, int lp, int gain, String build) {
+    public static boolean setSummonerData(int summonerId, int summonerMatchId, MatchParticipant participant, TierDivisionType rank, int lp, int gain, String build) {
         boolean win = participant.didWin();
         int champion = participant.getChampionId();
         String kda = participant.getKills() + "/" + participant.getDeaths() + "/" + participant.getAssists();
@@ -325,7 +325,7 @@ public class LeagueDB extends AbstractDB {
 
 
     public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
-        return instance.query("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND league_shard = '" + shard.ordinal() + "' LIMIT 25;");
+        return instance.query("SELECT riot_id FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND queue = '" + shard + "' LIMIT 25;");
     }
 
 
@@ -334,7 +334,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static QueryResult getSummonerData(int summoner_id, LeagueShard shard, long time_start, long time_end) {
-        return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND league_shard = '" + shard.ordinal() + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
+        return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND queue = '" + shard + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
     public static QueryResult getSummonerData(int summoner_id) {
@@ -363,40 +363,6 @@ public class LeagueDB extends AbstractDB {
         return instance.query("SELECT account_id, region FROM summoner WHERE puuid = '" + puuid + "';");
     }
 
-    public static boolean setChampionData(LOLMatch match, HashMap<String, HashMap<String, String>> matchData) {
-       String query = "INSERT INTO summoner_build(game_id, shard, game_type, champion, win, lane, starter, build, first_root, second_root, shard_root, summoner_spells, skill_order, patch, boots) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
-        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
-            for (String account_id : matchData.keySet()) {
-                HashMap<String, String> data = matchData.get(account_id);
-                if (data.get("items") == null || data.get("starter") == null || data.get("starter").isBlank()) {
-                    continue;
-                }
-                pstmt.setLong(1, match.getGameId());
-                pstmt.setInt(2, match.getPlatform().ordinal());
-                pstmt.setInt(3, match.getQueue().ordinal());
-                pstmt.setInt(4, Integer.parseInt(data.get("champion")));
-                pstmt.setInt(5, data.get("win").equals("1") ? 1 : 0);
-                pstmt.setInt(6, Integer.parseInt(data.get("lane")));
-                pstmt.setString(7, normalize(data.get("starter")));
-                pstmt.setString(8, data.get("items"));
-                pstmt.setString(9, data.get("perks-0"));
-                pstmt.setString(10, data.get("perks-1"));
-                pstmt.setString(11, data.get("stats"));
-                pstmt.setString(12, normalize(data.get("summoner_spells")));
-                pstmt.setString(13, data.get("skill_order"));
-                pstmt.setString(14, match.getGameVersion());
-                pstmt.setString(15, data.get("boots"));
-                pstmt.addBatch();
-            }
-            pstmt.executeBatch();
-            conn.commit();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     public static int setMatchData(LOLMatch match) {
         return setMatchData(match, false);
     }
@@ -412,9 +378,9 @@ public class LeagueDB extends AbstractDB {
         if(c == null) return id;
 
         try (Statement stmt = c.createStatement()) {
-            PreparedStatement ps = c.prepareStatement("SELECT id FROM `match` WHERE game_id = ? AND league_shard = ?;");
+            PreparedStatement ps = c.prepareStatement("SELECT id FROM `match` WHERE game_id = ? AND queue = ?;");
             ps.setString(1, String.valueOf(match.getGameId()));
-            ps.setInt(2, match.getPlatform().ordinal());
+            ps.setString(2, match.getPlatform().name());
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 id = emptyIfExist ? 0 : rs.getInt("id");
@@ -603,7 +569,7 @@ public class LeagueDB extends AbstractDB {
                 : "";
         String queueFilter = queue != null ? "AND sm.queue = '" + queue + "' " : "";
         String championFilter = champion != 0 ? "AND st.champion = " + champion + " " : "";
-        String laneFilter = lane != null ? "AND st.lane = " + lane.ordinal() + " " : "";
+        String laneFilter = lane != null ? "AND st.lane = '" + lane + "' " : "";
 
         return
             "SELECT sm.* " +
@@ -630,7 +596,7 @@ public class LeagueDB extends AbstractDB {
                 : "";
         String queueFilter = queue != null ? "AND sm.queue = '" + queue + "' " : "";
         String championFilter = champion != 0 ? "AND st.champion = " + champion + " " : "";
-        String laneFilter = lane != null ? "AND st.lane = " + lane.ordinal() + " " : "";
+        String laneFilter = lane != null ? "AND st.lane = '" + lane + "' " : "";
 
         String q = 
             "SELECT sm.id " +
@@ -705,9 +671,9 @@ public class LeagueDB extends AbstractDB {
                     p.win = rs.getBoolean("win");
                     p.kda = rs.getString("kda");
                     p.champion = rs.getInt("champion");
-                    p.lane = LaneType.values()[rs.getInt("lane")];
-                    p.team = TeamType.values()[rs.getInt("team")];
-                    p.rank = TierDivisionType.values()[rs.getInt("rank")];
+                    p.lane = LaneType.valueOf(rs.getString("lane"));
+                    p.team = TeamType.valueOf(rs.getString("team"));
+                    p.rank = TierDivisionType.valueOf(rs.getString("rank"));
                     p.gain = rs.getInt("gain");
                     p.damage = rs.getInt("damage");
                     p.damageBuilding = rs.getInt("damage_building");
