@@ -48,7 +48,7 @@ public class MatchTracker {
     private static Set<LOLMatch> matchQueue = ConcurrentHashMap.newKeySet();
 
 	static {
-        if(App.isTesting()) {
+        if(!App.isTesting()) {
             ChronoTask track = () -> retriveSummoners();
             track.scheduleAtFixedRate(TimeConstant.MINUTE * 0, period, TimeUnit.MILLISECONDS);
 

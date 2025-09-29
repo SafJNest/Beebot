@@ -320,7 +320,7 @@ public class LeagueDB extends AbstractDB {
         pings.put("enemy_missing", participant.getEnemyMissingPings());
         pings.put("vision_cleared", participant.getVisionClearedPings());
         
-        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane.ordinal() + "', '" + side.ordinal() + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "');");
+        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "');");
     }
 
 
@@ -536,7 +536,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static boolean updateSummonerEntries(int summonerId, List<LeagueEntry> entries) {
-        String query = "INSERT INTO `rank` (summoner_id, game_type, rank, lp, wins, losses) " +
+        String query = "INSERT INTO `rank` (summoner_id, queue, rank, lp, wins, losses) " +
                        "VALUES (?, ?, ?, ?, ?, ?) " +
                        "ON DUPLICATE KEY UPDATE " +
                        "rank = VALUES(rank), " +
@@ -549,8 +549,8 @@ public class LeagueDB extends AbstractDB {
             try (PreparedStatement pstmt = conn.prepareStatement(query)) {
                 for (LeagueEntry entry : entries) {
                     pstmt.setInt(1, summonerId);
-                    pstmt.setInt(2, entry.getQueueType().ordinal());
-                    pstmt.setInt(3, entry.getTierDivisionType().ordinal());
+                    pstmt.setString(2, entry.getQueueType().name());
+                    pstmt.setString(3, entry.getTierDivisionType().name());
                     pstmt.setInt(4, entry.getLeaguePoints());
                     pstmt.setInt(5, entry.getWins());
                     pstmt.setInt(6, entry.getLosses());

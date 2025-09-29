@@ -66,6 +66,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
@@ -1186,13 +1187,17 @@ public class Test extends Command{
                     setMatchEvent.queue();
                     break;
                 case "fixordinal":
-                    query = "SELECT id, league_shard, game_type FROM `match` ORDER BY id DESC";
-                    String query2 = "select id, league_shard from summoner ORDER BY id DESC";
-                    res = LeagueDB.get().query(query);
-                    QueryResult res2 = LeagueDB.get().query(query2);
+                    String queryMatch = "SELECT id, league_shard, game_type FROM `match` ORDER BY id DESC";
+                    String querySum = "select id, league_shard from summoner ORDER BY id DESC";
+                    String queryPart = "select id, lane_o, team_o, rank_o from participant order by id desc";
+                    String queryRank = "select id, rank_o, game_type from rank order by id desc";
+                    QueryResult matches = LeagueDB.get().query(queryMatch);
+                    QueryResult summoners = LeagueDB.get().query(querySum);
+                    QueryResult participants = LeagueDB.get().query(queryPart);
+                    QueryResult ranks = LeagueDB.get().query(queryRank);
                     ChronoTask fixOrdinalMatch = () -> {
                         int n = 0;
-                        for (QueryRecord row : res) {
+                        for (QueryRecord row : matches) {
                             try {
                                 String q = "UPDATE `match` SET queue = '" + GameQueueType.values()[row.getAsInt("game_type")] + "', region = '" + LeagueShard.values()[row.getAsInt("league_shard")] + "' WHERE id = " + row.get("id");
                                 LeagueDB.get().query(q);
@@ -1200,12 +1205,12 @@ public class Test extends Command{
                                 eeee.printStackTrace();
                             }
                             n++;
-                            System.out.println(n + "/" + res.size());
+                            System.out.println(n + "/" + matches.size());
                         }
                     };
                     ChronoTask fixOrdinalSummoner = () -> {
                         int n = 0;
-                        for (QueryRecord row : res2) {
+                        for (QueryRecord row : summoners) {
                             try {
                                 String q = "UPDATE summoner SET region = '" + LeagueShard.values()[row.getAsInt("league_shard")] + "' WHERE id = " + row.get("id");
                                 LeagueDB.get().query(q);
@@ -1213,9 +1218,42 @@ public class Test extends Command{
                                 eeee.printStackTrace();
                             }
                             n++;
-                            System.out.println(n + "/" + res2.size());
+                            System.out.println(n + "/" + summoners.size());
                         }
                     };
+                    ChronoTask fixOrdinalParticipant = () -> {
+                        int n = 0;
+                        for (QueryRecord row : participants) {
+                            try {
+                                LaneType lane = LaneType.values()[row.getAsInt("lane_o")];
+                                TeamType team = TeamType.values()[row.getAsInt("team_o")];
+                                TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank_o")];
+                                String q = "UPDATE participant SET team = '" + team + "', lane = '" + lane + "', rank = '" + rank + "' WHERE id = " + row.get("id");
+                                LeagueDB.get().query(q);
+                            } catch (Exception eeee) {
+                                eeee.printStackTrace();
+                            }
+                            n++;
+                            System.out.println(n + "/" + participants.size());
+                        }
+                    };
+                    ChronoTask fixOrdinalRank = () -> {
+                        int n = 0;
+                        for (QueryRecord row : ranks) {
+                            try {
+                                TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank_o")];
+                                GameQueueType gameType = GameQueueType.values()[row.getAsInt("game_type")];
+                                String q = "UPDATE rank SET rank = '" + rank + "', queue = '" + gameType + "' WHERE id = " + row.get("id");
+                                LeagueDB.get().query(q);
+                            } catch (Exception eeee) {
+                                eeee.printStackTrace();
+                            }
+                            n++;
+                            System.out.println(n + "/" + ranks.size());
+                        }
+                    };
+                    fixOrdinalRank.queue();
+                    fixOrdinalParticipant.queue();
                     fixOrdinalSummoner.queue();
                     fixOrdinalMatch.queue();
                 break;
