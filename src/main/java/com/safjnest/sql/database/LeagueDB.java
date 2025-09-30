@@ -351,16 +351,8 @@ public class LeagueDB extends AbstractDB {
         return !instance.lineQuery("SELECT 1 from participant where summoner_id = '" + sumonerId + "';").isEmpty();
     }
 
-    public static boolean trackSummoner(String user_id, String account_id, boolean track) {
-        return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
-    }
-
-    public static QueryRecord getSummonerData(String user_id, String account_id) {
-        return instance.lineQuery("SELECT account_id, summoner_id, region, tracking FROM summoner WHERE user_id = '" + user_id + "' AND puuid = '" + account_id + "';");
-    }
-
-    public static QueryResult getSummonersBuPuuid(String puuid) {
-        return instance.query("SELECT account_id, region FROM summoner WHERE puuid = '" + puuid + "';");
+    public static boolean trackSummoner(String user_id, String puuid, boolean track) {
+        return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';");
     }
 
     public static int setMatchData(LOLMatch match) {
@@ -428,10 +420,6 @@ public class LeagueDB extends AbstractDB {
             }
         }
         return id;
-    }
-
-    public static QueryResult getMatchData() {
-        return instance.query("SELECT sm.id, sm.game_id, sm.region, sm.queue, sm.bans, sm.time_start, sm.time_end, sm.patch, st.account_id, st.win, st.kda, st.rank, st.lp, st.gain, st.champion, st.lane, st.side, st.build FROM participant st JOIN `match` sm ON st.match_id = sm.id where sm.id > 10353;");
     }
 
     public static String normalize(String string) {
