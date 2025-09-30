@@ -609,8 +609,8 @@ public class MatchTracker {
      * @param lane
      */
     public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        QueryResult matchDatas = LeagueDB.get().query("SELECT * FROM `match`");
-        QueryResult championDatas = LeagueDB.get().query("SELECT * FROM participant WHERE champion = " + champion + " AND lane = " + lane.ordinal());
+        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match`");
+        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "'");
 
         HashMap<String, String> result = new HashMap<>();
 
