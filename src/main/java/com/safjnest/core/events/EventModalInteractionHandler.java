@@ -238,7 +238,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
 
 
         for (Button b : EventUtils.getButtons(event.getMessage().getComponents())) {
-            if (b.getCustomId().startsWith("champion-center-")) {
+            if (b.getCustomId().startsWith(LeagueMessage.BUTTON_ID_PREFIX + "-center-")) {
                 puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
                 region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
             }
@@ -251,7 +251,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         
         event.deferEdit().queue();
         String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
-        if (EventUtils.getButtonById(event.getMessage().getComponents(), "champion-left") == null) user_id = "";
+        if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) user_id = "";
         Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
