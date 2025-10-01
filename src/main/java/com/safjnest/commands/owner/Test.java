@@ -71,6 +71,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
@@ -1257,6 +1258,20 @@ public class Test extends Command{
                     fixOrdinalSummoner.queue();
                     fixOrdinalMatch.queue();
                 break;
+            case "analyzechamps":
+                ChronoTask analyzeChamps = () -> {
+                    for (StaticChampion champ : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
+                        for (LaneType lane : LaneType.values()) {
+                            if (lane == LaneType.NONE) continue;
+                            ChronoTask aa = () -> {
+                                MatchTracker.analyzeChampionData(champ.getId(), lane);
+                            };
+                            aa.queue();
+                        }
+                    }
+                };
+                analyzeChamps.queue();
+                
         }
     }  
 

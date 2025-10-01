@@ -609,8 +609,8 @@ public class MatchTracker {
      * @param lane
      */
     public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match`");
-        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "'");
+        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE patch >= '15.18.' AND patch <  '15.19.' AND queue = '" + GameQueueType.TEAM_BUILDER_RANKED_SOLO + "'");
+        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "' AND match_id IN (SELECT id FROM `match` WHERE patch >= '15.18.' AND patch <  '15.19.' AND queue = '" + GameQueueType.TEAM_BUILDER_RANKED_SOLO + "')");
 
         HashMap<String, String> result = new HashMap<>();
 
@@ -656,6 +656,18 @@ public class MatchTracker {
         result.put("winrate", String.valueOf(Math.round(winrate * 100.0) / 100.0));
         result.put("banrate", String.valueOf(Math.round(banrate * 100.0) / 100.0));
         result.put("pickrate", String.valueOf(Math.round(pickrate * 100.0) / 100.0));
+
+        String query = "INSERT INTO champion_metric (champion, lane, games, winrate, banrate, pickrate, last_update, patch) " +
+                      "VALUES (" + champion + ", '" + lane + "', " + totalPicks + ", " + winrate + ", " + banrate + ", " + pickrate + ", NOW(3), '15.18') " +
+                      "ON DUPLICATE KEY UPDATE " +
+                      "games = VALUES(games), " +
+                      "winrate = VALUES(winrate), " +
+                      "banrate = VALUES(banrate), " +
+                      "pickrate = VALUES(pickrate), " +
+                      "last_update = VALUES(last_update), " +
+                      "patch = VALUES(patch)";
+        
+        LeagueDB.get().query(query);
         
         return result;
     }
