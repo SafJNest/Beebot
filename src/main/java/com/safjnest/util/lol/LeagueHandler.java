@@ -124,6 +124,23 @@ import com.safjnest.core.cache.managers.UserCache;
         return version;
     }
 
+    public static List<String> getVersions() {
+        try {
+            URI uri = new URI("https://ddragon.leagueoflegends.com/api/versions.json");
+            URL url = uri.toURL();
+            String json = IOUtils.toString(url, Charset.forName("UTF-8"));
+            JSONParser parser = new JSONParser();
+            JSONArray file = (JSONArray) parser.parse(json);
+
+            // Get the latest version (first element in the array)
+            return (List<String>) file;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new ArrayList<String>();
+    }
+
     public static HashMap<String, PageRunes> getRunesHandler() {
         return runesHandler;
     }

@@ -2,7 +2,6 @@ package com.safjnest.commands.lol;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -15,12 +14,14 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.MatchTracker;
 import com.safjnest.util.lol.MobalyticsHandler;
+import com.safjnest.util.lol.model.ChampionMetric;
 import com.safjnest.util.lol.model.build.BuildData;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
@@ -54,7 +55,8 @@ public class Champion extends SlashCommand {
                 .addChoice("Jungle", "JUNGLE")
                 .addChoice("Mid", "MID")
                 .addChoice("ADC", "ADC")
-                .addChoice("Support", "SUPPORT")
+                .addChoice("Support", "SUPPORT"),
+            LeagueHandler.getLeagueShardOptions(false)
         );
 
         commandData.setThings(this);
@@ -98,13 +100,14 @@ public class Champion extends SlashCommand {
         }
         champName = SafJNest.findSimilarWord(champName, championsName);
         StaticChampion champion = LeagueHandler.getChampionByName(champName);
-    
+        
+        LeagueShard region = event.getOption("region") != null ? LeagueShard.values()[event.getOption("region").getAsInt()] : null;
         
         EmbedBuilder eb = new EmbedBuilder(); 
         eb = new EmbedBuilder(); 
         eb.setTitle(champName + " " + laneFormatName + " " + CustomEmojiHandler.getFormattedEmoji(laneFormatName)); 
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
-        HashMap<String, String> champInfo = MatchTracker.analyzeChampionData(champion.getId(), laneType);
+        ChampionMetric champInfo = MatchTracker.analyzeChampionData(champion.getId(), laneType, region, LeagueHandler.getVersion());
         
 
 
@@ -117,7 +120,7 @@ public class Champion extends SlashCommand {
         BuildData build = new BuildData(champion, laneType, json);
                 
         eb.setDescription("Patch **" + build.getPatch() + "** | Win rate **" + build.getWinrate() + "%** based on **" + build.getGames() + "** matches");
-        eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + build.getPatch() + ")**");
+        eb.setDescription("**" + champName + "** has a winrate of **" + String.format("%.2f", champInfo.getWinrate()) + "%** (**" +String.format("%.2f", champInfo.getPickrate()) + "%** pickrate and **" + String.format("%.2f", champInfo.getBanrate()) + "%** banrate) over **" + champInfo.getGames() + "** matches in **(" + build.getPatch() + ")**");
         
         String msg = "";
         for(int i = 0; i < 18; i++){

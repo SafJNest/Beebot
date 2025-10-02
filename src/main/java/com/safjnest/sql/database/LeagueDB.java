@@ -38,6 +38,7 @@ import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.lol.LeagueMessageParameter;
 import com.safjnest.util.lol.LeagueMessageType;
+import com.safjnest.util.lol.model.ChampionMetric;
 import com.safjnest.util.lol.model.MatchData;
 import com.safjnest.util.lol.model.ParticipantData;
 import com.safjnest.util.lol.model.build.CustomBuildData;
@@ -698,6 +699,30 @@ public class LeagueDB extends AbstractDB {
         return result;
     }
 
+    public static ChampionMetric getChampionMetric(int champion, LaneType lane, LeagueShard region, String patch) {
+        String r = region != null ? region.name() : "ALL";
+        String query = "SELECT * FROM champion_metric WHERE champion = '" + champion + "' AND lane = '" + lane + "' AND region = '" + r + "' AND patch = '" + patch + "';";
+        QueryRecord record = instance.lineQuery(query);
+        if(record.isEmpty()) {
+            return new ChampionMetric(champion, lane, region, patch);
+        }
+        return new ChampionMetric(record);
+    }
+
+    public static boolean upsertChampionMetric(ChampionMetric metric) {
+        String r = metric.getRegion() != null ? metric.getRegion().name() : "ALL";
+        String query = "INSERT INTO champion_metric (champion, lane, games, region, winrate, banrate, pickrate, last_update, patch) " +
+                          "VALUES ('" + metric.getChampion() + "', '" + metric.getLane() + "', '" + metric.getGames() + "', '" + r + "', '" + metric.getWinrate() + "', '" + metric.getBanrate() + "', '" + metric.getPickrate() + "', '" + new Timestamp(metric.getLastUpdate() * 1000) + "', '" + metric.getPatch() + "') " +
+                          "ON DUPLICATE KEY UPDATE " +
+                          "games = VALUES(games), " +
+                          "region = VALUES(region), " +
+                          "winrate = VALUES(winrate), " +
+                          "banrate = VALUES(banrate), " +
+                          "pickrate = VALUES(pickrate), " +
+                          "last_update = VALUES(last_update), " +
+                          "patch = VALUES(patch);";
+        return instance.defaultQuery(query);
+    }
 
 
 }

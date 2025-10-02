@@ -1262,15 +1262,32 @@ public class Test extends Command{
                 ChronoTask analyzeChamps = () -> {
                     for (StaticChampion champ : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
                         for (LaneType lane : LaneType.values()) {
+                            // for (String patch : LeagueHandler.getVersions()) {
+                            //     final String patchz = patch.substring(0, patch.lastIndexOf('.'));
+                            //     if (lane == LaneType.NONE) continue;
+                            //     ChronoTask aa = () -> {
+                            //         MatchTracker.analyzeChampionData(champ.getId(), lane, null, patchz);
+                            //     };
+                            //     aa.queue();
+                            // }
                             if (lane == LaneType.NONE) continue;
-                            ChronoTask aa = () -> {
-                                MatchTracker.analyzeChampionData(champ.getId(), lane);
-                            };
-                            aa.queue();
-                        }
+                                for (LeagueShard region : LeagueShard.values()) {
+                                    ChronoTask aa = () -> {
+                                        MatchTracker.analyzeChampionData(champ.getId(), lane, region, LeagueHandler.getVersion());
+                                    };
+                                    aa.queue();
+                                }
+                            }
                     }
                 };
                 analyzeChamps.queue();
+                break;
+            case "updatechams":
+                ChronoTask updateChamps = () -> {
+                    MatchTracker.updateChampionData();
+                };
+                updateChamps.queue();
+            break;
                 
         }
     }  

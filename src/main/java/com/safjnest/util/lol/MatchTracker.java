@@ -22,6 +22,7 @@ import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.model.ChampionMetric;
 
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -603,16 +604,39 @@ public class MatchTracker {
         }
     }
 
-    /**
-     * WIP
-     * @param champion
-     * @param lane
-     */
-    public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE patch >= '15.18.' AND patch <  '15.19.' AND queue = '" + GameQueueType.TEAM_BUILDER_RANKED_SOLO + "'");
-        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "' AND match_id IN (SELECT id FROM `match` WHERE patch >= '15.18.' AND patch <  '15.19.' AND queue = '" + GameQueueType.TEAM_BUILDER_RANKED_SOLO + "')");
+    public static void updateChampionData() {
+        String currentPatch = LeagueHandler.getVersion();
+        String query = "SELECT champion, lane, region, patch FROM champion_metric WHERE (last_update < NOW() - INTERVAL 1 DAY OR last_update IS NULL) OR last_update IS NULL AND patch = '" + currentPatch + "'";
+        QueryResult result = LeagueDB.get().query(query);
+        BotLogger.info("[LPTracker] Updating " + result.size() + " champion metrics for patch " + currentPatch);
+        for (QueryRecord record : result) {
+            try {
+                int champion = record.getAsInt("champion");
+                LaneType lane = record.getAsLaneType("lane");
+                LeagueShard region = record.getAsLeagueShard("region");
+                String patch = record.get("patch");
+                analyzeChampionData(champion, lane, region, patch);
+            } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
 
-        HashMap<String, String> result = new HashMap<>();
+
+    public static ChampionMetric analyzeChampionData(int champion, LaneType lane, LeagueShard region, String patch) {
+        ChampionMetric metric = LeagueDB.getChampionMetric(champion, lane, region, patch);
+        if (metric != null && metric.getLastUpdate() > (System.currentTimeMillis() / 1000) - 86400) {
+            return metric;
+        }
+
+        int patchMajor = Integer.parseInt(patch.split("\\.")[0]);
+        int patchMinor = Integer.parseInt(patch.split("\\.")[1]);
+
+        String patchFilter = "patch >=  '" + patchMajor + "." + patchMinor + ".' AND patch <  '" + patchMajor + "." + (patchMinor + 1) + ".'";
+        String regionFilter = region != null ? " AND region = '" + region + "'" : "";
+        String queueFilter = " AND queue IN ('" + GameQueueType.TEAM_BUILDER_RANKED_SOLO + "','" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5 + "')";
+
+        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE " + patchFilter  + regionFilter + queueFilter);
+        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "' AND match_id IN (SELECT id FROM `match` WHERE " + patchFilter + regionFilter + queueFilter + ")");
+
 
         int totalGames = matchDatas.size();
 
@@ -620,7 +644,6 @@ public class MatchTracker {
         int totalPicks = 0;
 
         int totalWins = 0;
-        int totalLosses = 0;
 
         for (QueryRecord record : matchDatas) {
             JSONObject ban = new JSONObject(record.get("bans"));
@@ -641,35 +664,19 @@ public class MatchTracker {
         for (QueryRecord record : championDatas) {
             totalPicks++;
             if (record.getAsBoolean("win")) totalWins++;
-            else totalLosses++;
         }
 
         double winrate = (double) totalWins / totalPicks * 100;
         double banrate = (double) totalBans / totalGames * 100;
         double pickrate = (double) totalPicks / totalGames * 100;
 
-        result.put("games", String.valueOf(totalGames));
-        result.put("bans", String.valueOf(totalBans));
-        result.put("picks", String.valueOf(totalPicks));
-        result.put("wins", String.valueOf(totalWins));
-        result.put("losses", String.valueOf(totalLosses));
-        result.put("winrate", String.valueOf(Math.round(winrate * 100.0) / 100.0));
-        result.put("banrate", String.valueOf(Math.round(banrate * 100.0) / 100.0));
-        result.put("pickrate", String.valueOf(Math.round(pickrate * 100.0) / 100.0));
-
-        String query = "INSERT INTO champion_metric (champion, lane, games, winrate, banrate, pickrate, last_update, patch) " +
-                      "VALUES (" + champion + ", '" + lane + "', " + totalPicks + ", " + winrate + ", " + banrate + ", " + pickrate + ", NOW(3), '15.18') " +
-                      "ON DUPLICATE KEY UPDATE " +
-                      "games = VALUES(games), " +
-                      "winrate = VALUES(winrate), " +
-                      "banrate = VALUES(banrate), " +
-                      "pickrate = VALUES(pickrate), " +
-                      "last_update = VALUES(last_update), " +
-                      "patch = VALUES(patch)";
+        metric.setGames(totalPicks);
+        metric.setWinrate(winrate);
+        metric.setBanrate(banrate);
+        metric.setPickrate(pickrate);
+        metric.update();
         
-        LeagueDB.get().query(query);
-        
-        return result;
+        return metric;
     }
 
     public static void retriveMatchHistory(Summoner summoner) {

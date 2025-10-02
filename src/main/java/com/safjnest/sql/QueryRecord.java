@@ -71,8 +71,7 @@ public class QueryRecord extends HashMap<String, String> {
      */
     public long getAsEpochSecond(String columnName){
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            LocalDateTime dateTime = LocalDateTime.parse(get(columnName), formatter);
+            LocalDateTime dateTime = getAsLocalDateTime(get(columnName));
             return dateTime.toEpochSecond(java.time.ZoneOffset.UTC);
         } catch (Exception e) {
             return 0;
