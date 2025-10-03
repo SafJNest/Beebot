@@ -42,6 +42,9 @@ import com.safjnest.util.lol.model.ChampionMetric;
 import com.safjnest.util.lol.model.MatchData;
 import com.safjnest.util.lol.model.ParticipantData;
 import com.safjnest.util.lol.model.build.CustomBuildData;
+import com.safjnest.util.lol.model.AdvancedStatsFilter;
+import com.safjnest.util.lol.model.PlayerStats;
+import com.safjnest.core.cache.managers.StatsCache;
 
 public class LeagueDB extends AbstractDB {
 
@@ -321,7 +324,14 @@ public class LeagueDB extends AbstractDB {
         pings.put("enemy_missing", participant.getEnemyMissingPings());
         pings.put("vision_cleared", participant.getVisionClearedPings());
         
-        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "');");
+        boolean result = instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "');");
+        
+        // Invalidate stats cache when new data is added
+        if (result) {
+            invalidateStatsCache(summonerId);
+        }
+        
+        return result;
     }
 
 
@@ -722,6 +732,348 @@ public class LeagueDB extends AbstractDB {
                           "last_update = VALUES(last_update), " +
                           "patch = VALUES(patch);";
         return instance.defaultQuery(query);
+    }
+
+    /**
+     * Get advanced player statistics with comprehensive filtering and caching support.
+     * This method first checks the cache, and if data is not found or stale, it calculates
+     * the statistics from the database and caches the result.
+     * 
+     * @param summonerId The summoner ID to get stats for
+     * @param filter The filter parameters (rank, region, lane, queue, time period, etc.)
+     * @param forceRefresh If true, bypass cache and recalculate stats
+     * @return PlayerStats object with comprehensive statistics
+     */
+    public static PlayerStats getAdvancedPlayerStats(int summonerId, AdvancedStatsFilter filter, boolean forceRefresh) {
+        String cacheKey = filter.generateCacheKey(summonerId);
+        
+        // Check cache first (unless force refresh)
+        if (!forceRefresh) {
+            PlayerStats cachedStats = StatsCache.getStats(cacheKey);
+            if (cachedStats != null) {
+                // Check if cache is stale (new matches since calculation)
+                long lastMatchTime = getLastMatchTime(summonerId);
+                if (!cachedStats.isStale(lastMatchTime)) {
+                    return cachedStats;
+                }
+            }
+        }
+        
+        // Calculate new stats
+        PlayerStats stats = calculatePlayerStats(summonerId, filter);
+        
+        // Cache the result
+        if (stats != null) {
+            StatsCache.putStats(cacheKey, stats);
+        }
+        
+        return stats;
+    }
+
+    /**
+     * Calculate comprehensive player statistics based on filter parameters
+     * 
+     * @param summonerId The summoner ID
+     * @param filter The filter parameters
+     * @return PlayerStats object with calculated statistics
+     */
+    private static PlayerStats calculatePlayerStats(int summonerId, AdvancedStatsFilter filter) {
+        PlayerStats stats = new PlayerStats(summonerId);
+        stats.setLastMatchTime(getLastMatchTime(summonerId));
+        
+        // Build filter clauses
+        StringBuilder filterClauses = new StringBuilder();
+        filterClauses.append("WHERE t.`summoner_id` = ").append(summonerId).append(" ");
+        
+        if (filter.getTimeStart() > 0) {
+            filterClauses.append("AND sm.`time_start` >= '").append(new Timestamp(filter.getTimeStart())).append("' ");
+            filterClauses.append("AND sm.`time_end` <= '").append(new Timestamp(filter.getTimeEnd())).append("' ");
+        }
+        
+        if (filter.getQueue() != null) {
+            filterClauses.append("AND sm.`queue` = '").append(filter.getQueue()).append("' ");
+        }
+        
+        if (filter.getRegion() != null) {
+            filterClauses.append("AND sm.`region` = '").append(filter.getRegion()).append("' ");
+        }
+        
+        if (filter.getLane() != null) {
+            filterClauses.append("AND t.`lane` = '").append(filter.getLane()).append("' ");
+        }
+        
+        if (filter.getMinRank() != null) {
+            filterClauses.append("AND t.`rank` >= ").append(filter.getMinRank().ordinal()).append(" ");
+        }
+        
+        if (filter.getMaxRank() != null) {
+            filterClauses.append("AND t.`rank` <= ").append(filter.getMaxRank().ordinal()).append(" ");
+        }
+        
+        if (filter.getPatch() != null) {
+            filterClauses.append("AND sm.`patch` LIKE '").append(filter.getPatch()).append("%' ");
+        }
+        
+        if (filter.getChampionId() != null) {
+            filterClauses.append("AND t.`champion` = ").append(filter.getChampionId()).append(" ");
+        }
+        
+        String limitClause = filter.getLimit() != null ? "LIMIT " + filter.getLimit() : "";
+        
+        // Main statistics query
+        String query = 
+            "SELECT " +
+            "  COUNT(*) AS total_games, " +
+            "  SUM(t.`win`) AS total_wins, " +
+            "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS total_losses, " +
+            "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, " +
+            "  AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, " +
+            "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, " +
+            "  AVG(t.`cs`) AS avg_cs, " +
+            "  AVG(t.`damage`) AS avg_damage, " +
+            "  AVG(t.`gold_earned`) AS avg_gold, " +
+            "  AVG(t.`vision_score`) AS avg_vision, " +
+            "  AVG(TIMESTAMPDIFF(MINUTE, sm.`time_start`, sm.`time_end`)) AS avg_duration, " +
+            "  SUM(t.`gain`) AS total_lp_gain " +
+            "FROM `participant` t " +
+            "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+            filterClauses.toString() +
+            limitClause + ";";
+        
+        QueryRecord mainStats = instance.lineQuery(query);
+        
+        if (mainStats.isEmpty()) {
+            return stats;
+        }
+        
+        // Set basic stats
+        int totalGames = mainStats.getAsInt("total_games");
+        int totalWins = mainStats.getAsInt("total_wins");
+        int totalLosses = mainStats.getAsInt("total_losses");
+        
+        stats.setTotalGames(totalGames);
+        stats.setTotalWins(totalWins);
+        stats.setTotalLosses(totalLosses);
+        stats.setWinRate(totalGames > 0 ? (double) totalWins / totalGames : 0.0);
+        
+        // Set KDA stats
+        double avgKills = mainStats.getAsDouble("avg_kills");
+        double avgDeaths = mainStats.getAsDouble("avg_deaths");
+        double avgAssists = mainStats.getAsDouble("avg_assists");
+        
+        stats.setAvgKills(avgKills);
+        stats.setAvgDeaths(avgDeaths);
+        stats.setAvgAssists(avgAssists);
+        stats.setAvgKDA(avgDeaths > 0 ? (avgKills + avgAssists) / avgDeaths : (avgKills + avgAssists));
+        
+        // Set efficiency metrics
+        double avgCS = mainStats.getAsDouble("avg_cs");
+        double avgDuration = mainStats.getAsDouble("avg_duration");
+        double avgDamage = mainStats.getAsDouble("avg_damage");
+        double avgGold = mainStats.getAsDouble("avg_gold");
+        double avgVision = mainStats.getAsDouble("avg_vision");
+        
+        stats.setAvgCS(avgCS);
+        stats.setAvgGameDuration(avgDuration);
+        stats.setAvgCSM(avgDuration > 0 ? avgCS / avgDuration : 0);
+        stats.setAvgGPM(avgDuration > 0 ? avgGold / avgDuration : 0);
+        stats.setAvgDPM(avgDuration > 0 ? avgDamage / avgDuration : 0);
+        stats.setAvgDPG(avgGold > 0 ? avgDamage / avgGold : 0);
+        stats.setAvgVSPM(avgDuration > 0 ? avgVision / avgDuration : 0);
+        
+        // Set LP stats
+        int totalLPGain = mainStats.getAsInt("total_lp_gain");
+        stats.setTotalLPGain(totalLPGain);
+        stats.setAvgLPGain(totalGames > 0 ? (double) totalLPGain / totalGames : 0);
+        
+        // Calculate current streak
+        stats.setCurrentStreak(calculateStreak(summonerId, filter));
+        
+        // Get champion-specific stats (if not filtering by champion)
+        if (filter.getChampionId() == null) {
+            populateChampionStats(stats, summonerId, filterClauses.toString());
+        }
+        
+        // Get lane-specific stats (if not filtering by lane)
+        if (filter.getLane() == null) {
+            populateLaneStats(stats, summonerId, filterClauses.toString());
+        }
+        
+        // Calculate recent form
+        stats.setRecentForm(calculateRecentForm(summonerId, filter));
+        
+        return stats;
+    }
+
+    /**
+     * Get the timestamp of the last match for a summoner
+     */
+    private static long getLastMatchTime(int summonerId) {
+        String query = "SELECT MAX(sm.`time_end`) AS last_match " +
+                      "FROM `participant` t " +
+                      "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+                      "WHERE t.`summoner_id` = " + summonerId + ";";
+        QueryRecord result = instance.lineQuery(query);
+        if (result.isEmpty() || result.get("last_match") == null) {
+            return 0;
+        }
+        return result.getAsTimestamp("last_match").getTime();
+    }
+
+    /**
+     * Calculate the current win/loss streak
+     */
+    private static int calculateStreak(int summonerId, AdvancedStatsFilter filter) {
+        String query = "SELECT t.`win` " +
+                      "FROM `participant` t " +
+                      "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+                      "WHERE t.`summoner_id` = " + summonerId + " " +
+                      "ORDER BY sm.`time_end` DESC LIMIT 20;";
+        
+        QueryResult results = instance.query(query);
+        if (results.isEmpty()) {
+            return 0;
+        }
+        
+        boolean lastResult = results.get(0).getAsBoolean("win");
+        int streak = 0;
+        
+        for (QueryRecord record : results) {
+            boolean win = record.getAsBoolean("win");
+            if (win == lastResult) {
+                streak += win ? 1 : -1;
+            } else {
+                break;
+            }
+        }
+        
+        return streak;
+    }
+
+    /**
+     * Populate champion-specific statistics
+     */
+    private static void populateChampionStats(PlayerStats stats, int summonerId, String baseFilter) {
+        String query = "SELECT " +
+                      "  t.`champion`, " +
+                      "  COUNT(*) AS games, " +
+                      "  SUM(t.`win`) AS wins, " +
+                      "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS losses, " +
+                      "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, " +
+                      "  AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(t.`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, " +
+                      "  AVG(CAST(SUBSTRING_INDEX(t.`kda`, '/', -1) AS UNSIGNED)) AS avg_assists " +
+                      "FROM `participant` t " +
+                      "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+                      baseFilter +
+                      "GROUP BY t.`champion` " +
+                      "ORDER BY games DESC;";
+        
+        QueryResult results = instance.query(query);
+        
+        for (QueryRecord record : results) {
+            int championId = record.getAsInt("champion");
+            PlayerStats.ChampionStats champStats = new PlayerStats.ChampionStats(championId);
+            
+            int games = record.getAsInt("games");
+            int wins = record.getAsInt("wins");
+            
+            champStats.setGames(games);
+            champStats.setWins(wins);
+            champStats.setLosses(record.getAsInt("losses"));
+            champStats.setWinRate(games > 0 ? (double) wins / games : 0.0);
+            
+            double kills = record.getAsDouble("avg_kills");
+            double deaths = record.getAsDouble("avg_deaths");
+            double assists = record.getAsDouble("avg_assists");
+            champStats.setAvgKDA(deaths > 0 ? (kills + assists) / deaths : (kills + assists));
+            
+            stats.addChampionStats(championId, champStats);
+        }
+    }
+
+    /**
+     * Populate lane-specific statistics
+     */
+    private static void populateLaneStats(PlayerStats stats, int summonerId, String baseFilter) {
+        String query = "SELECT " +
+                      "  t.`lane`, " +
+                      "  COUNT(*) AS games, " +
+                      "  SUM(t.`win`) AS wins, " +
+                      "  SUM(CASE WHEN t.`win` = 0 THEN 1 ELSE 0 END) AS losses " +
+                      "FROM `participant` t " +
+                      "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+                      baseFilter +
+                      "GROUP BY t.`lane`;";
+        
+        QueryResult results = instance.query(query);
+        
+        for (QueryRecord record : results) {
+            String lane = record.get("lane");
+            PlayerStats.LaneStats laneStats = new PlayerStats.LaneStats(lane);
+            
+            int games = record.getAsInt("games");
+            int wins = record.getAsInt("wins");
+            
+            laneStats.setGames(games);
+            laneStats.setWins(wins);
+            laneStats.setLosses(record.getAsInt("losses"));
+            laneStats.setWinRate(games > 0 ? (double) wins / games : 0.0);
+            
+            stats.addLaneStats(lane, laneStats);
+        }
+    }
+
+    /**
+     * Calculate recent form statistics
+     */
+    private static PlayerStats.RecentForm calculateRecentForm(int summonerId, AdvancedStatsFilter filter) {
+        PlayerStats.RecentForm form = new PlayerStats.RecentForm();
+        
+        // Last 20 games
+        String last20Query = "SELECT " +
+                            "  SUM(t.`win`) AS wins, " +
+                            "  COUNT(*) AS games " +
+                            "FROM `participant` t " +
+                            "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+                            "WHERE t.`summoner_id` = " + summonerId + " " +
+                            "ORDER BY sm.`time_end` DESC LIMIT 20;";
+        
+        QueryRecord last20 = instance.lineQuery(last20Query);
+        if (!last20.isEmpty()) {
+            int wins = last20.getAsInt("wins");
+            int games = last20.getAsInt("games");
+            form.setLast20Wins(wins);
+            form.setLast20Losses(games - wins);
+            form.setLast20WinRate(games > 0 ? (double) wins / games : 0.0);
+        }
+        
+        // Last 7 days
+        long sevenDaysAgo = System.currentTimeMillis() - (7L * 24 * 60 * 60 * 1000);
+        String last7DaysQuery = "SELECT " +
+                               "  SUM(t.`win`) AS wins, " +
+                               "  COUNT(*) AS games " +
+                               "FROM `participant` t " +
+                               "JOIN `match` sm ON t.`match_id` = sm.`id` " +
+                               "WHERE t.`summoner_id` = " + summonerId + " " +
+                               "AND sm.`time_end` >= '" + new Timestamp(sevenDaysAgo) + "';";
+        
+        QueryRecord last7Days = instance.lineQuery(last7DaysQuery);
+        if (!last7Days.isEmpty()) {
+            form.setLast7DaysWins(last7Days.getAsInt("wins"));
+            form.setLast7DaysGames(last7Days.getAsInt("games"));
+        }
+        
+        return form;
+    }
+
+    /**
+     * Invalidate cached stats for a summoner when new matches are added
+     * Call this method after adding new match data
+     * 
+     * @param summonerId The summoner ID whose stats should be invalidated
+     */
+    public static void invalidateStatsCache(int summonerId) {
+        StatsCache.invalidateSummoner(summonerId);
     }
 
 
