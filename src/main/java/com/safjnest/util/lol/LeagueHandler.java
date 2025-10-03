@@ -53,6 +53,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -369,6 +370,88 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static boolean isHighElo(TierDivisionType division) {
         return Arrays.asList(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I).contains(division);
+    }
+
+    public static TierType getTierFromTierDivision(TierDivisionType type) {
+        switch (type) {
+            case IRON_IV:
+            case IRON_III:
+            case IRON_II:
+            case IRON_I:
+                return TierType.IRON;
+            case BRONZE_IV:
+            case BRONZE_III:
+            case BRONZE_II:
+            case BRONZE_I:
+                return TierType.BRONZE;
+            case SILVER_IV:
+            case SILVER_III:
+            case SILVER_II:
+            case SILVER_I:
+                return TierType.SILVER;
+            case GOLD_IV:
+            case GOLD_III:
+            case GOLD_II:
+            case GOLD_I:
+                return TierType.GOLD;
+            case PLATINUM_IV:
+            case PLATINUM_III:
+            case PLATINUM_II:
+            case PLATINUM_I:
+                return TierType.PLATINUM;
+            case DIAMOND_IV:
+            case DIAMOND_III:
+            case DIAMOND_II:
+            case DIAMOND_I:
+                return TierType.DIAMOND;
+            case MASTER_I:
+                return TierType.MASTER;
+            case GRANDMASTER_I:
+                return TierType.GRANDMASTER;
+            case CHALLENGER_I:
+                return TierType.CHALLENGER;
+            case UNRANKED:
+            default:
+                return TierType.UNRANKED;
+        }
+    }
+
+    public static List<TierDivisionType> getTierDivisionsFromTier(TierType type) {
+        List<TierDivisionType> divisions = new ArrayList<>();
+        switch (type) {
+            case IRON:
+                divisions = Arrays.asList(TierDivisionType.IRON_IV, TierDivisionType.IRON_III, TierDivisionType.IRON_II, TierDivisionType.IRON_I);
+                break;
+            case BRONZE:
+                divisions = Arrays.asList(TierDivisionType.BRONZE_IV, TierDivisionType.BRONZE_III, TierDivisionType.BRONZE_II, TierDivisionType.BRONZE_I);
+                break;
+            case SILVER:
+                divisions = Arrays.asList(TierDivisionType.SILVER_IV, TierDivisionType.SILVER_III, TierDivisionType.SILVER_II, TierDivisionType.SILVER_I);
+                break;
+            case GOLD:
+                divisions = Arrays.asList(TierDivisionType.GOLD_IV, TierDivisionType.GOLD_III, TierDivisionType.GOLD_II, TierDivisionType.GOLD_I);
+                break;
+            case PLATINUM:
+                divisions = Arrays.asList(TierDivisionType.PLATINUM_IV, TierDivisionType.PLATINUM_III, TierDivisionType.PLATINUM_II, TierDivisionType.PLATINUM_I);
+                break;
+            case DIAMOND:
+                divisions = Arrays.asList(TierDivisionType.DIAMOND_IV, TierDivisionType.DIAMOND_III, TierDivisionType.DIAMOND_II, TierDivisionType.DIAMOND_I);
+                break;
+            case MASTER:
+                divisions = Arrays.asList(TierDivisionType.MASTER_I);
+                break;
+            case GRANDMASTER:
+                divisions = Arrays.asList(TierDivisionType.GRANDMASTER_I);
+                break;
+            case CHALLENGER:
+                divisions = Arrays.asList(TierDivisionType.CHALLENGER_I);
+                break;
+            case UNRANKED:
+            default:
+                divisions = Arrays.asList(TierDivisionType.UNRANKED);
+                break;
+        }
+        return divisions;
     }
 
 //   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████

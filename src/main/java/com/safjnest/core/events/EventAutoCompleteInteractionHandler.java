@@ -33,6 +33,7 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
@@ -116,7 +117,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         else if (e.getFocusedOption().getName().equals("custom-build"))
             name = "custom_build";
 
-        
+        else if (e.getFocusedOption().getName().equals("rank-range"))
+            name = "rank-range";
+
         switch (name) {
             case "play":
                 choices = playSound(e);
@@ -184,6 +187,9 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 break;
             case "custom_build":
                 choices = customBuild(e);
+                break;
+            case "rank-range":
+                choices = rankRange(e);
                 break;
                 
         }
@@ -711,6 +717,39 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         for (QueryRecord build : builds) {
             choices.add(new Choice(build.get("name"), build.get("id")));
+        }
+
+        return choices;
+    }
+
+    private ArrayList<Choice> rankRange(CommandAutoCompleteInteractionEvent e) {
+        ArrayList<Choice> choices = new ArrayList<>();
+        ArrayList<String> ranks = new ArrayList<>();
+
+        for (TierType tier : TierType.values()) {
+            if (tier != TierType.UNRANKED && tier != TierType.CHALLENGER && tier != TierType.GRANDMASTER) {
+                ranks.add(tier.name().toUpperCase());
+                ranks.add(tier.name().toUpperCase() + " +");
+            }
+            else ranks.add(tier.name().toUpperCase());
+        }
+        
+
+        if (isFocused) {
+            int max = 0;
+            for (int i = 0; i < ranks.size() && max < MAX_CHOICES; i++) {
+                if (ranks.get(i).toLowerCase().startsWith(value.toLowerCase())) {
+                    String rankName = ranks.get(i).replaceAll("_", " ");
+                    choices.add(new Choice(rankName, ranks.get(i)));
+                    max++;
+                }
+            }
+        } else {
+            Collections.shuffle(ranks);
+            for (int i = 0; i < ranks.size() && i < MAX_CHOICES; i++) {
+                String rankName = ranks.get(i).replaceAll("_", " ");
+                choices.add(new Choice(rankName, ranks.get(i)));
+            }
         }
 
         return choices;

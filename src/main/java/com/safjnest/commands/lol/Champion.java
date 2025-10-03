@@ -56,7 +56,8 @@ public class Champion extends SlashCommand {
                 .addChoice("Mid", "MID")
                 .addChoice("ADC", "ADC")
                 .addChoice("Support", "SUPPORT"),
-            LeagueHandler.getLeagueShardOptions(false)
+            LeagueHandler.getLeagueShardOptions(false),
+            new OptionData(OptionType.STRING, "rank-range", "Rank", false).setAutoComplete(true)
         );
 
         commandData.setThings(this);
