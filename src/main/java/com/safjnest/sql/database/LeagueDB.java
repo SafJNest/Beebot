@@ -20,6 +20,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
@@ -361,6 +362,10 @@ public class LeagueDB extends AbstractDB {
 
     public static boolean setMatchEvent(int matchId, String json) {
         return instance.defaultQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
+    }
+
+    public static boolean setMatchRank(int matchId, TierType rank) {
+        return instance.defaultQuery("UPDATE `match` SET rank = '" + rank + "' WHERE id = " + matchId + ";");
     }
 
     public static int setMatchData(LOLMatch match, boolean emptyIfExist) {

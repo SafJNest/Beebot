@@ -28,6 +28,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
@@ -209,7 +210,6 @@ public class MatchTracker {
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
-            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
 
             List<TierDivisionType> ranks = new ArrayList<>();
             for (MatchParticipant partecipant : match.getParticipants()) {
@@ -231,13 +231,10 @@ public class MatchTracker {
                 catch (InterruptedException e) {e.printStackTrace();}
                 ranks.add(pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())));
             }
-            int avgRank = 0;
-            for (TierDivisionType rank : ranks) {
-                if (rank == null) continue;
-                avgRank += rank.ordinal();
-            }
-            avgRank = ranks.size() > 0 ? (avgRank / ranks.size()) : 0;
-            System.out.println(TierDivisionType.values()[avgRank]);
+            TierType avgRank = LeagueHandler.getAvarageRank(ranks);
+            LeagueDB.setMatchRank(summoner_match_id, avgRank);
+            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
+            
             BotLogger.info("[LPTracker] Pushed match data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         };
         return task;
@@ -254,8 +251,6 @@ public class MatchTracker {
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
 
-            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
-
             List<TierDivisionType> ranks = new ArrayList<>();
             for (MatchParticipant partecipant : match.getParticipants()) {
                 try { Thread.sleep(2000); }
@@ -267,13 +262,9 @@ public class MatchTracker {
                 TierDivisionType rank = pushSummoner(match, summoner_match_id, summoner, partecipant, matchData.get(partecipant.getPuuid()));
                 ranks.add(rank);
             }
-            int avgRank = 0;
-            for (TierDivisionType rank : ranks) {
-                if (rank == null) continue;
-                avgRank += rank.ordinal();
-            }
-            avgRank = ranks.size() > 0 ? (avgRank / ranks.size()) : 0;
-            System.out.println(TierDivisionType.values()[avgRank]);
+            TierType avgRank = LeagueHandler.getAvarageRank(ranks);
+            LeagueDB.setMatchRank(summoner_match_id, avgRank);
+            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
         };
     }
 
