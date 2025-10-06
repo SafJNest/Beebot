@@ -29,6 +29,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
@@ -615,13 +616,13 @@ public class MatchTracker {
                 LaneType lane = record.getAsLaneType("lane");
                 LeagueShard region = record.getAsLeagueShard("region");
                 String patch = record.get("patch");
-                analyzeChampionData(champion, lane, region, patch);
+                analyzeChampionData(champion, lane, null, region, patch);
             } catch (Exception e) { e.printStackTrace(); }
         }
     }
 
 
-    public static ChampionMetric analyzeChampionData(int champion, LaneType lane, LeagueShard region, String patch) {
+    public static ChampionMetric analyzeChampionData(int champion, LaneType lane, List<TierDivisionType> ranks, LeagueShard region, String patch) {
         ChampionMetric metric = LeagueDB.getChampionMetric(champion, lane, region, patch);
         if (metric != null && metric.getLastUpdate() > (System.currentTimeMillis() / 1000) - 86400) {
             return metric;
@@ -630,12 +631,24 @@ public class MatchTracker {
         int patchMajor = Integer.parseInt(patch.split("\\.")[0]);
         int patchMinor = Integer.parseInt(patch.split("\\.")[1]);
 
-        String patchFilter = "patch >=  '" + patchMajor + "." + patchMinor + ".' AND patch <  '" + patchMajor + "." + (patchMinor + 1) + ".'";
+        String patchFilter = "patch LIKE '" + patchMajor + "." + patchMinor + ".%'";
         String regionFilter = region != null ? " AND region = '" + region + "'" : "";
         String queueFilter = " AND queue IN ('" + GameQueueType.TEAM_BUILDER_RANKED_SOLO + "','" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5 + "')";
 
-        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE " + patchFilter  + regionFilter + queueFilter);
-        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "' AND match_id IN (SELECT id FROM `match` WHERE " + patchFilter + regionFilter + queueFilter + ")");
+        String matchRankFilter = "";
+        String rankFilter = "";
+        if (ranks != null && !ranks.isEmpty()) {
+            rankFilter = "rank IN (";
+            for (TierDivisionType rank : ranks) {
+                rankFilter += "'" + rank + "',";
+            }
+            rankFilter = rankFilter.substring(0, rankFilter.length() - 1) + ")";
+            
+            matchRankFilter = " AND ID IN ( SELECT DISTINCT match_id FROM participant WHERE " + rankFilter + ")";
+        }
+
+        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "' AND " + rankFilter + "AND match_id IN (SELECT id FROM `match` WHERE " + patchFilter + regionFilter + queueFilter + matchRankFilter +  ")");
+        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE " + patchFilter  + regionFilter + queueFilter + matchRankFilter);
 
 
         int totalGames = matchDatas.size();

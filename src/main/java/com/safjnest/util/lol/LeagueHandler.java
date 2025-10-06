@@ -454,6 +454,54 @@ import com.safjnest.core.cache.managers.UserCache;
         return divisions;
     }
 
+    public static List<TierDivisionType> getTierDivisionsFromTierPlus(TierType type) {
+        List<TierDivisionType> divisions = new ArrayList<>();
+        switch (type) {
+            case CHALLENGER:
+                divisions = Arrays.asList(TierDivisionType.CHALLENGER_I);
+                break;
+            case GRANDMASTER:
+                divisions = Arrays.asList(TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I);
+                break;
+            case MASTER:
+                divisions = Arrays.asList(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I);
+                break;
+            case DIAMOND:
+                divisions = new ArrayList<>(Arrays.asList(TierDivisionType.DIAMOND_IV, TierDivisionType.DIAMOND_III, TierDivisionType.DIAMOND_II, TierDivisionType.DIAMOND_I));
+                divisions.addAll(getTierDivisionsFromTierPlus(TierType.MASTER));
+                break;
+            case EMERALD:
+                divisions = new ArrayList<>(Arrays.asList(TierDivisionType.EMERALD_I, TierDivisionType.EMERALD_II, TierDivisionType.EMERALD_III, TierDivisionType.EMERALD_IV));
+                divisions.addAll(getTierDivisionsFromTierPlus(TierType.DIAMOND));
+                break;
+            case PLATINUM:
+                divisions = new ArrayList<>(Arrays.asList(TierDivisionType.PLATINUM_IV, TierDivisionType.PLATINUM_III, TierDivisionType.PLATINUM_II, TierDivisionType.PLATINUM_I));
+                divisions.addAll(getTierDivisionsFromTierPlus(TierType.EMERALD));
+                break;
+            case GOLD:
+                divisions = new ArrayList<>(Arrays.asList(TierDivisionType.GOLD_IV, TierDivisionType.GOLD_III, TierDivisionType.GOLD_II, TierDivisionType.GOLD_I));
+                divisions.addAll(getTierDivisionsFromTierPlus(TierType.PLATINUM));
+                break;
+            case SILVER:
+                divisions = new ArrayList<>(Arrays.asList(TierDivisionType.SILVER_IV, TierDivisionType.SILVER_III, TierDivisionType.SILVER_II, TierDivisionType.SILVER_I));
+                divisions.addAll(getTierDivisionsFromTierPlus(TierType.GOLD));
+                break;
+            case BRONZE:
+                divisions = new ArrayList<>(Arrays.asList(TierDivisionType.BRONZE_IV, TierDivisionType.BRONZE_III, TierDivisionType.BRONZE_II, TierDivisionType.BRONZE_I));
+                divisions.addAll(getTierDivisionsFromTierPlus(TierType.SILVER));
+                break;
+            case IRON:
+                divisions = new ArrayList<>(Arrays.asList(TierDivisionType.IRON_IV, TierDivisionType.IRON_III, TierDivisionType.IRON_II, TierDivisionType.IRON_I));
+                divisions.addAll(getTierDivisionsFromTierPlus(TierType.BRONZE));
+                break;
+            case UNRANKED:
+            default:
+                divisions = Arrays.asList(TierDivisionType.UNRANKED);
+                break;
+        }
+        return divisions;
+    }
+
 //   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████
 //  ███       ███    ███   ███    ███ ███   ▀███      ▀█████████▄   ███    ███   ███  ███▀▀▀██▄   ███    ███   ███    ███
 //  ███       ███    ███   ███    ███ ███    ███         ▀███▀▀██   ███    ███   ███▌ ███   ███   ███    █▀    ███    █▀

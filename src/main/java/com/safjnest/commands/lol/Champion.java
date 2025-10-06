@@ -23,6 +23,8 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
@@ -103,12 +105,23 @@ public class Champion extends SlashCommand {
         StaticChampion champion = LeagueHandler.getChampionByName(champName);
         
         LeagueShard region = event.getOption("region") != null ? LeagueShard.values()[event.getOption("region").getAsInt()] : null;
+        List<TierDivisionType> ranks = new ArrayList<>();
+        if(event.getOption("rank-range") != null){
+            String rank = event.getOption("rank-range").getAsString();
+            if (rank.contains("+")) {
+                rank = rank.replace("+", "").trim();
+                ranks = LeagueHandler.getTierDivisionsFromTierPlus(TierType.valueOf(rank));
+            }
+            else {
+                ranks = LeagueHandler.getTierDivisionsFromTier(TierType.valueOf(rank));
+            }
+        }
         
         EmbedBuilder eb = new EmbedBuilder(); 
         eb = new EmbedBuilder(); 
         eb.setTitle(champName + " " + laneFormatName + " " + CustomEmojiHandler.getFormattedEmoji(laneFormatName)); 
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
-        ChampionMetric champInfo = MatchTracker.analyzeChampionData(champion.getId(), laneType, region, LeagueHandler.getVersion());
+        ChampionMetric champInfo = MatchTracker.analyzeChampionData(champion.getId(), laneType, ranks, region, LeagueHandler.getVersion());
         
 
 

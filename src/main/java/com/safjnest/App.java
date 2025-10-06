@@ -15,6 +15,7 @@ import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
 
+
 @SpringBootApplication
 public class App {
 

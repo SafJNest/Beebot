@@ -1273,7 +1273,7 @@ public class Test extends Command{
                             if (lane == LaneType.NONE) continue;
                                 for (LeagueShard region : LeagueShard.values()) {
                                     ChronoTask aa = () -> {
-                                        MatchTracker.analyzeChampionData(champ.getId(), lane, region, LeagueHandler.getVersion());
+                                        MatchTracker.analyzeChampionData(champ.getId(), lane, null, region, LeagueHandler.getVersion());
                                     };
                                     aa.queue();
                                 }
