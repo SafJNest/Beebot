@@ -399,6 +399,8 @@ import com.safjnest.core.cache.managers.UserCache;
             }
         }
         return avarageRank.getTier() != null ? TierType.valueOf(avarageRank.getTier().toUpperCase()) : TierType.UNRANKED;
+    }
+
     public static TierType getTierFromTierDivision(TierDivisionType type) {
         switch (type) {
             case IRON_IV:

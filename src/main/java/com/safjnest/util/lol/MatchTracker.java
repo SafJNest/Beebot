@@ -627,34 +627,6 @@ public class MatchTracker {
     }
 
 
-    public static ChampionMetric analyzeChampionData(int champion, LaneType lane, List<TierDivisionType> ranks, LeagueShard region, String patch) {
-        ChampionMetric metric = LeagueDB.getChampionMetric(champion, lane, region, patch);
-        if (metric != null && metric.getLastUpdate() > (System.currentTimeMillis() / 1000) - 86400) {
-            return metric;
-        }
-
-        int patchMajor = Integer.parseInt(patch.split("\\.")[0]);
-        int patchMinor = Integer.parseInt(patch.split("\\.")[1]);
-
-        String patchFilter = "patch LIKE '" + patchMajor + "." + patchMinor + ".%'";
-        String regionFilter = region != null ? " AND region = '" + region + "'" : "";
-        String queueFilter = " AND queue IN ('" + GameQueueType.TEAM_BUILDER_RANKED_SOLO + "','" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5 + "')";
-
-        String matchRankFilter = "";
-        String rankFilter = "";
-        if (ranks != null && !ranks.isEmpty()) {
-            rankFilter = "rank IN (";
-            for (TierDivisionType rank : ranks) {
-                rankFilter += "'" + rank + "',";
-            }
-            rankFilter = rankFilter.substring(0, rankFilter.length() - 1) + ")";
-            
-            matchRankFilter = " AND ID IN ( SELECT DISTINCT match_id FROM participant WHERE " + rankFilter + ")";
-        }
-
-        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "' AND " + rankFilter + "AND match_id IN (SELECT id FROM `match` WHERE " + patchFilter + regionFilter + queueFilter + matchRankFilter +  ")");
-        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE " + patchFilter  + regionFilter + queueFilter + matchRankFilter);
-
     public static void retriveSampleGamesPatch() {
         String currentPatch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
         BotLogger.info("[LPTracker] Pushing sample matches");
@@ -699,9 +671,33 @@ public class MatchTracker {
      * @param champion
      * @param lane
      */
-    public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match`");
-        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "'");
+  public static ChampionMetric analyzeChampionData(int champion, LaneType lane, List<TierDivisionType> ranks, LeagueShard region, String patch) {
+        ChampionMetric metric = LeagueDB.getChampionMetric(champion, lane, region, patch);
+        if (metric != null && metric.getLastUpdate() > (System.currentTimeMillis() / 1000) - 86400) {
+            return metric;
+        }
+
+        int patchMajor = Integer.parseInt(patch.split("\\.")[0]);
+        int patchMinor = Integer.parseInt(patch.split("\\.")[1]);
+
+        String patchFilter = "patch LIKE '" + patchMajor + "." + patchMinor + ".%'";
+        String regionFilter = region != null ? " AND region = '" + region + "'" : "";
+        String queueFilter = " AND queue IN ('" + GameQueueType.TEAM_BUILDER_RANKED_SOLO + "','" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5 + "')";
+
+        String matchRankFilter = "";
+        String rankFilter = "";
+        if (ranks != null && !ranks.isEmpty()) {
+            rankFilter = "rank IN (";
+            for (TierDivisionType rank : ranks) {
+                rankFilter += "'" + rank + "',";
+            }
+            rankFilter = rankFilter.substring(0, rankFilter.length() - 1) + ")";
+            
+            matchRankFilter = " AND ID IN ( SELECT DISTINCT match_id FROM participant WHERE " + rankFilter + ")";
+        }
+
+        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "' AND " + rankFilter + "AND match_id IN (SELECT id FROM `match` WHERE " + patchFilter + regionFilter + queueFilter + matchRankFilter +  ")");
+        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE " + patchFilter  + regionFilter + queueFilter + matchRankFilter);
 
 
         int totalGames = matchDatas.size();
