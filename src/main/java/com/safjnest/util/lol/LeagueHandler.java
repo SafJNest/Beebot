@@ -53,6 +53,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -352,6 +353,35 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static boolean isHighElo(TierDivisionType division) {
         return Arrays.asList(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I).contains(division);
+    }
+
+    public static TierType getAvarageRank(List<TierDivisionType> divisions) {
+        if (divisions == null || divisions.size() == 0) return TierType.UNRANKED; 
+        
+        int avarage = 0;
+        TierDivisionType avarageRank = TierDivisionType.UNRANKED;
+
+        int unranked = 0;
+        for (TierDivisionType division : divisions) {
+            if (TierDivisionType.UNRANKED == division) {
+                unranked++;
+                continue;
+            }
+
+            avarage += division.ordinal();
+        }
+        avarage = (divisions.size() - unranked) > 0 ? Math.round(avarage / (divisions.size() - unranked)) : TierDivisionType.UNRANKED.ordinal();
+
+        if (avarage >= TierDivisionType.values().length) 
+            avarage = TierDivisionType.UNRANKED.ordinal();
+
+        avarageRank = TierDivisionType.values()[avarage];
+        if (avarageRank.getDivision() != null && avarageRank.getDivision().equalsIgnoreCase("V")) {
+            if (avarage - 1 < TierDivisionType.values().length) {
+                avarageRank = TierDivisionType.values()[avarage - 1];
+            }
+        }
+        return avarageRank.getTier() != null ? TierType.valueOf(avarageRank.getTier().toUpperCase()) : TierType.UNRANKED;
     }
 
 //   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████

@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.checkerframework.checker.units.qual.m;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -29,6 +28,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
@@ -210,12 +210,11 @@ public class MatchTracker {
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
-            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
 
-
+            List<TierDivisionType> ranks = new ArrayList<>();
             for (MatchParticipant partecipant : match.getParticipants()) {
                 if (partecipant.getPuuid().equals(summoner.getPUUID())) {
-                    pushSummoner(match, summoner_match_id, summoner, partecipant, dataGame, matchData.get(partecipant.getPuuid())).complete();
+                    ranks.add(pushSummoner(match, summoner_match_id, summoner, partecipant, dataGame, matchData.get(partecipant.getPuuid())));
                     continue;
                 }
 
@@ -230,8 +229,12 @@ public class MatchTracker {
                     Thread.sleep(500); 
                 }
                 catch (InterruptedException e) {e.printStackTrace();}
-                pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())).complete();
+                ranks.add(pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())));
             }
+            TierType avgRank = LeagueHandler.getAvarageRank(ranks);
+            LeagueDB.setMatchRank(summoner_match_id, avgRank);
+            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
+            
             BotLogger.info("[LPTracker] Pushed match data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         };
         return task;
@@ -248,8 +251,7 @@ public class MatchTracker {
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
 
-            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
-
+            List<TierDivisionType> ranks = new ArrayList<>();
             for (MatchParticipant partecipant : match.getParticipants()) {
                 try { Thread.sleep(2000); }
                 catch (InterruptedException e) {e.printStackTrace();}
@@ -257,8 +259,12 @@ public class MatchTracker {
                 Summoner summoner = LeagueHandler.getSummonerByPuuid(partecipant.getPuuid(), match.getPlatform());
                 if (summoner == null) continue;
 
-                pushSummoner(match, summoner_match_id, summoner, partecipant, matchData.get(partecipant.getPuuid())).complete();
+                TierDivisionType rank = pushSummoner(match, summoner_match_id, summoner, partecipant, matchData.get(partecipant.getPuuid()));
+                ranks.add(rank);
             }
+            TierType avgRank = LeagueHandler.getAvarageRank(ranks);
+            LeagueDB.setMatchRank(summoner_match_id, avgRank);
+            LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
         };
     }
 
@@ -272,39 +278,38 @@ public class MatchTracker {
 //   ▄████▀      ████████▀   ▄████████▀    ███    █▀
 //
 
-    public static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant partecipant, HashMap<String, String> matchData) {
+    public static TierDivisionType pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant partecipant, HashMap<String, String> matchData) {
         QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
         return pushSummoner(match, summonerMatch, summoner, partecipant, row, matchData);
     }
 
-    private static ChronoTask pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant participant, QueryRecord dataGame, HashMap<String, String> matchData) {
-        return () -> {
-            if (match.getGameId() == dataGame.getAsLong("game_id")) return;
-            if (participant.getPuuid().equals("BOT")) return;
+    private static TierDivisionType pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant participant, QueryRecord dataGame, HashMap<String, String> matchData) {
+        if (match.getGameId() == dataGame.getAsLong("game_id")) return dataGame.getAsTier("rank");
+        if (participant.getPuuid().equals("BOT")) return TierDivisionType.UNRANKED;
 
-            List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
-            LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
+        List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
+        LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
 
-            TierDivisionType oldDivision = dataGame.getAsTier("rank");
-            TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
+        TierDivisionType oldDivision = dataGame.getAsTier("rank");
+        TierDivisionType division = league != null ? league.getTierDivisionType() : TierDivisionType.UNRANKED;
 
-            int lp = league != null ? league.getLeaguePoints() : 0;
-            int gain = 0;
+        int lp = league != null ? league.getLeaguePoints() : 0;
+        int gain = 0;
 
-            boolean isPromotionToMaster = oldDivision == TierDivisionType.DIAMOND_I && division == TierDivisionType.MASTER_I;
-            boolean isMasterPlus = division == TierDivisionType.MASTER_I || division == TierDivisionType.GRANDMASTER_I || division == TierDivisionType.CHALLENGER_I;
+        boolean isPromotionToMaster = oldDivision == TierDivisionType.DIAMOND_I && division == TierDivisionType.MASTER_I;
+        boolean isMasterPlus = division == TierDivisionType.MASTER_I || division == TierDivisionType.GRANDMASTER_I || division == TierDivisionType.CHALLENGER_I;
 
-            if (dataGame.get("rank") == null || match.getQueue() != GameQueueType.TEAM_BUILDER_RANKED_SOLO) gain = 0;
-            else if ((isPromotionToMaster || !isMasterPlus) && division != dataGame.getAsTier("rank")) {
-                gain = 100 - (Math.abs(lp - dataGame.getAsInt("lp")));
-                gain = division.ordinal() < dataGame.getAsTier("rank").ordinal() ? gain : -gain;
-            } else {
-                gain = lp - dataGame.getAsInt("lp");
-            }
-            int summonerId = LeagueDB.addLOLAccount(summoner);
-            LeagueDB.updateSummonerEntries(summonerId, entries);
-            LeagueDB.setSummonerData(summonerId, summonerMatch, participant, division, lp, gain, createJSONBuild(matchData));
-        };
+        if (dataGame.get("rank") == null || match.getQueue() != GameQueueType.TEAM_BUILDER_RANKED_SOLO) gain = 0;
+        else if ((isPromotionToMaster || !isMasterPlus) && division != dataGame.getAsTier("rank")) {
+            gain = 100 - (Math.abs(lp - dataGame.getAsInt("lp")));
+            gain = division.ordinal() < dataGame.getAsTier("rank").ordinal() ? gain : -gain;
+        } else {
+            gain = lp - dataGame.getAsInt("lp");
+        }
+        int summonerId = LeagueDB.addLOLAccount(summoner);
+        LeagueDB.updateSummonerEntries(summonerId, entries);
+        LeagueDB.setSummonerData(summonerId, summonerMatch, participant, division, lp, gain, createJSONBuild(matchData));
+        return division;
     }
 
 //  ███    █▄      ███      ▄█   ▄█
