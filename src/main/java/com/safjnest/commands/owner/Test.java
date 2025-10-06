@@ -1260,6 +1260,36 @@ public class Test extends Command{
             case "getpatch":
                 MatchTracker.retriveSampleGamesPatch();
                 break;
+            case "fixrank":
+                ChronoTask fixRank = () -> {
+                    String q = "SELECT m.id, GROUP_CONCAT(p.rank) AS ranks FROM `match` m JOIN participant p ON m.id = p.match_id GROUP BY m.id ORDER BY m.id DESC";
+                    QueryResult resRanks = LeagueDB.get().query(q);
+                    for (QueryRecord row : resRanks) {
+                        try {
+                            String[] ranksString = row.get("ranks").split(",");
+                            int avgRank = 0;
+                            for (String rank : ranksString) {
+                                avgRank += TierDivisionType.valueOf(rank).ordinal();
+                            }
+                            avgRank = Math.round(avgRank / ranksString.length);
+                            TierDivisionType newRank = TierDivisionType.UNRANKED;
+                            try {
+                                newRank = TierDivisionType.values()[avgRank];
+                            } catch (Exception eeee) {  }
+                            if (newRank.getDivision().equalsIgnoreCase("V")) {
+                                if (avgRank - 1 < TierDivisionType.values().length) {
+                                    newRank = TierDivisionType.values()[avgRank - 1];
+                                }
+                            }
+                            String updateQuery = "UPDATE `match` SET rank = '" + newRank.name().split("_")[0] + "' WHERE id = " + row.get("id");
+                            LeagueDB.get().query(updateQuery);
+                        } catch (Exception eeee) {
+                            eeee.printStackTrace();
+                        }
+                    }
+                };
+                fixRank.queue();
+                break;
         }
     }  
 
