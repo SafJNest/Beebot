@@ -1053,7 +1053,7 @@ public class Test extends Command{
                     System.out.println(row.get("id"));
                     for (MatchParticipant partecipant : m.getParticipants()) {
                         Summoner toPush = LeagueHandler.getSummonerByPuuid(partecipant.getPuuid(), LeagueShard.values()[row.getAsInt("league_shard")]);
-                        MatchTracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())).complete();
+                        MatchTracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
                         try {
                             Thread.sleep(1000);
                         } catch (Exception eee) { eee.printStackTrace(); }
