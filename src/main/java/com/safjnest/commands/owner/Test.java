@@ -1257,6 +1257,9 @@ public class Test extends Command{
                     fixOrdinalSummoner.queue();
                     fixOrdinalMatch.queue();
                 break;
+            case "getpatch":
+                MatchTracker.retriveSampleGamesPatch();
+                break;
         }
     }  
 

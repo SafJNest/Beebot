@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import org.checkerframework.checker.units.qual.m;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -597,6 +598,46 @@ public class MatchTracker {
                             analyzeMatchHistory(match).complete();
                             Thread.sleep(350);
                         }
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+
+
+    public static void retriveSampleGamesPatch() {
+        String currentPatch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
+        BotLogger.info("[LPTracker] Pushing sample matches");
+        List<LeagueShard> shards = List.of(LeagueShard.EUW1);
+        for (LeagueShard shard : shards) {
+            try {
+                List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 0);
+
+                BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " matches for region " + shard);
+
+                for (int j = 0; j < entries.size() ; j++) {
+                    try {
+                        LeagueEntry entry = entries.get(j);
+                        Summoner summoner = LeagueHandler.getSummonerByPuuid(entry.getPuuid(), shard);
+                        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+                        BotLogger.info("[LPTracker] Analyzing summoner " + account.getName() + "#" + account.getTag() + " | " + j + "/" + entries.size());
+
+                        List<String> matchIds = summoner.getLeagueGames().withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO).get();
+                        if (matchIds.isEmpty()) 
+                            continue;
+
+                        int k = 0;
+                        LOLMatch match;
+                        do {
+                            String matchId = matchIds.get(k); 
+                            match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), matchId);
+                            System.out.println(match.getGameVersion() + " - " +  currentPatch + " | " + match.getGameVersion().startsWith(currentPatch));
+                            
+                            BotLogger.info("[LPTracker] Pushing match data for region " + shard + " | " + k + "/5 -  " + j + "/" + entries.size());
+                            analyzeMatchHistory(match).complete();
+                            Thread.sleep(350);
+                            k++;
+                        } while (match.getGameVersion().startsWith(currentPatch) && k < matchIds.size());
                     } catch (Exception e) { e.printStackTrace(); }
                 }
             } catch (Exception e) { e.printStackTrace(); }
