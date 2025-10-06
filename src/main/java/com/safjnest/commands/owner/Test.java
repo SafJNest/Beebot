@@ -67,6 +67,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
@@ -1054,7 +1055,7 @@ public class Test extends Command{
                     System.out.println(row.get("id"));
                     for (MatchParticipant partecipant : m.getParticipants()) {
                         Summoner toPush = LeagueHandler.getSummonerByPuuid(partecipant.getPuuid(), LeagueShard.values()[row.getAsInt("league_shard")]);
-                        MatchTracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())).complete();
+                        MatchTracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
                         try {
                             Thread.sleep(1000);
                         } catch (Exception eee) { eee.printStackTrace(); }
@@ -1289,6 +1290,30 @@ public class Test extends Command{
                 updateChamps.queue();
             break;
                 
+            case "getpatch":
+                MatchTracker.retriveSampleGamesPatch();
+                break;
+            case "fixrank":
+                ChronoTask fixRank = () -> {
+                    String q = "SELECT m.id, GROUP_CONCAT(p.rank) AS ranks FROM `match` m JOIN participant p ON m.id = p.match_id GROUP BY m.id ORDER BY m.id DESC";
+                    QueryResult resRanks = LeagueDB.get().query(q);
+                    for (QueryRecord row : resRanks) {
+                        try {
+                            String[] ranksString = row.get("ranks").split(",");
+                            List<TierDivisionType> ranksT = new ArrayList<TierDivisionType>();
+                            for (String rank : ranksString) {
+                                ranksT.add(TierDivisionType.valueOf(rank));
+                            }
+                            TierType newRank = LeagueHandler.getAvarageRank(ranksT);
+                            String updateQuery = "UPDATE `match` SET rank = '" + newRank + "' WHERE id = " + row.get("id");
+                            LeagueDB.get().query(updateQuery);
+                        } catch (Exception eeee) {
+                            eeee.printStackTrace();
+                        }
+                    }
+                };
+                fixRank.queue();
+                break;
         }
     }  
 
