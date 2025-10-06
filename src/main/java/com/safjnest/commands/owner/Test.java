@@ -67,6 +67,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
@@ -1267,21 +1268,12 @@ public class Test extends Command{
                     for (QueryRecord row : resRanks) {
                         try {
                             String[] ranksString = row.get("ranks").split(",");
-                            int avgRank = 0;
+                            List<TierDivisionType> ranksT = new ArrayList<TierDivisionType>();
                             for (String rank : ranksString) {
-                                avgRank += TierDivisionType.valueOf(rank).ordinal();
+                                ranksT.add(TierDivisionType.valueOf(rank));
                             }
-                            avgRank = Math.round(avgRank / ranksString.length);
-                            TierDivisionType newRank = TierDivisionType.UNRANKED;
-                            try {
-                                newRank = TierDivisionType.values()[avgRank];
-                            } catch (Exception eeee) {  }
-                            if (newRank.getDivision().equalsIgnoreCase("V")) {
-                                if (avgRank - 1 < TierDivisionType.values().length) {
-                                    newRank = TierDivisionType.values()[avgRank - 1];
-                                }
-                            }
-                            String updateQuery = "UPDATE `match` SET rank = '" + newRank.name().split("_")[0] + "' WHERE id = " + row.get("id");
+                            TierType newRank = LeagueHandler.getAvarageRank(ranksT);
+                            String updateQuery = "UPDATE `match` SET rank = '" + newRank + "' WHERE id = " + row.get("id");
                             LeagueDB.get().query(updateQuery);
                         } catch (Exception eeee) {
                             eeee.printStackTrace();

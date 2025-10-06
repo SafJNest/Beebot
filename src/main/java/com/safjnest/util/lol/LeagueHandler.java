@@ -360,10 +360,18 @@ import com.safjnest.core.cache.managers.UserCache;
         
         int avarage = 0;
         TierDivisionType avarageRank = TierDivisionType.UNRANKED;
+
+        int unranked = 0;
         for (TierDivisionType division : divisions) {
+            if (TierDivisionType.UNRANKED == division) {
+                unranked++;
+                continue;
+            }
+
             avarage += division.ordinal();
         }
-        avarage = Math.round(avarage / divisions.size());
+        avarage = Math.round(avarage / (divisions.size() - unranked));
+
         if (avarage >= TierDivisionType.values().length) 
             avarage = TierDivisionType.values().length - 1;
 
