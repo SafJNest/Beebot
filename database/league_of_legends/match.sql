@@ -1,16 +1,22 @@
 CREATE TABLE `match` (
  `id` int(11) NOT NULL AUTO_INCREMENT,
  `game_id` varchar(191) NOT NULL,
- `league_shard` int(11) NOT NULL,
- `game_type` int(11) NOT NULL,
- `bans` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`bans`)),
- `time_start` datetime(3) NOT NULL,
- `time_end` datetime(3) NOT NULL,
+ `queue` varchar(255) DEFAULT NULL,
+ `region` varchar(255) DEFAULT NULL,
+ `rank` varchar(255) DEFAULT NULL,
+ `time_start` datetime(3) DEFAULT NULL,
+ `time_end` datetime(3) DEFAULT NULL,
+ `events` longtext DEFAULT NULL,
+ `bans` longtext DEFAULT NULL,
  `patch` varchar(191) NOT NULL,
  PRIMARY KEY (`id`),
  UNIQUE KEY `match_game_id_key` (`game_id`),
- UNIQUE KEY `unique_game` (`game_id`,`league_shard`),
- KEY `game_type_idx` (`game_type`),
+ UNIQUE KEY `unique_game` (`game_id`,`region`) USING BTREE,
  KEY `time_start_idx` (`time_start`),
- KEY `time_end_idx` (`time_end`)
-) ENGINE=InnoDB AUTO_INCREMENT=32768 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+ KEY `idx_match_time` (`time_start`,`time_end`),
+ KEY `idx_match_time_desc` (`time_start` DESC,`id`),
+ KEY `idx_match_time_range_desc` (`time_start` DESC,`time_end`,`id`),
+ KEY `idx_match_id_time_desc` (`id`,`time_start` DESC),
+ KEY `idx_patch` (`patch`),
+ KEY `rank` (`rank`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

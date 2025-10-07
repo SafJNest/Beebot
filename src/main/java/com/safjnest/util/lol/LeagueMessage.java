@@ -190,6 +190,7 @@ public class LeagueMessage {
         builder.addField("Flex", LeagueHandler.getFlexStats(s), true);
 
         ((ChronoTask) () -> {
+            LeagueDB.addLOLAccount(s);
             LeagueDB.updateSummonerMasteries(summonerId, s.getChampionMasteries());
             LeagueDB.updateSummonerEntries(summonerId, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
         }).queue();

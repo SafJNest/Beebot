@@ -156,14 +156,16 @@ public class LeagueDB extends AbstractDB {
 
     public static int addLOLAccount(String user_id, Summoner summoner) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
-        String query = "INSERT INTO summoner(user_id, puuid, riot_id, region) " +
-                "VALUES(?, ?, ?, ?) " +
+        String query = "INSERT INTO summoner(user_id, puuid, riot_id, region, icon, level) " +
+                "VALUES(?, ?, ?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE " +
                 "id = LAST_INSERT_ID(id), " +
                 "user_id = IF(VALUES(user_id) IS NOT NULL, VALUES(user_id), user_id), " +
                 "puuid = VALUES(puuid), " +
                 "riot_id = VALUES(riot_id), " +
-                "region = VALUES(region);";
+                "region = VALUES(region), " +
+                "icon = VALUES(icon), " +
+                "level = VALUES(level);";
 
         try (Connection conn = instance.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
@@ -175,6 +177,8 @@ public class LeagueDB extends AbstractDB {
             pstmt.setString(2, summoner.getPUUID());
             pstmt.setString(3, account.getName() + "#" + account.getTag());
             pstmt.setString(4, summoner.getPlatform().name());
+            pstmt.setInt(5, summoner.getProfileIconId());
+            pstmt.setInt(6, summoner.getSummonerLevel());
 
             pstmt.executeUpdate();
             
@@ -193,18 +197,20 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static boolean addLOLAccount(SpectatorGameInfo info) {
-        String query = "INSERT INTO summoner(puuid, riot_id, region) " +
-                       "VALUES(?, ?, ?) " +
+        String query = "INSERT INTO summoner(puuid, riot_id, region, icon) " +
+                       "VALUES(?, ?, ?, ?) " +
                        "ON DUPLICATE KEY UPDATE " +
                        "puuid = VALUES(puuid), " +
                        "riot_id = VALUES(riot_id), " +
-                       "region = VALUES(region);";
+                       "region = VALUES(region), " +
+                       "icon = VALUES(icon);";
 
         try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
             for (SpectatorParticipant summoner : info.getParticipants()) {
                 pstmt.setString(1, summoner.getPuuid());
                 pstmt.setString(2, summoner.getRiotId());
                 pstmt.setString(3, info.getPlatform().name());
+                pstmt.setLong(4, summoner.getProfileIconId());
                 pstmt.addBatch();
             }
 
@@ -218,18 +224,22 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static boolean addLOLAccountFromMatch(LOLMatch match) {
-        String query = "INSERT INTO summoner(puuid, riot_id, region) " +
-                       "VALUES(?, ?, ?) " +
+        String query = "INSERT INTO summoner(puuid, riot_id, region, icon, level) " +
+                       "VALUES(?, ?, ?, ?, ?) " +
                        "ON DUPLICATE KEY UPDATE " +
                        "puuid = VALUES(puuid), " +
                        "riot_id = VALUES(riot_id), " +
-                       "region = VALUES(region);";
+                       "region = VALUES(region), " +
+                       "icon = VALUES(icon), " +
+                       "level = VALUES(level);";
 
         try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
             for (MatchParticipant summoner : match.getParticipants()) {
                 pstmt.setString(1, summoner.getPuuid());
                 pstmt.setString(2, summoner.getRiotIdName() + "#" + summoner.getRiotIdTagline());
                 pstmt.setString(3, match.getPlatform().name());
+                pstmt.setInt(4, summoner.getProfileIcon());
+                pstmt.setInt(5, summoner.getSummonerLevel());
                 pstmt.addBatch();
             }
 

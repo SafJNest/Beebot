@@ -833,26 +833,25 @@ public class Test extends Command{
                 BotDB.addTrackToPlaylist(Integer.valueOf(args[1]), (List<AudioTrack>) PlayerManager.get().getGuildMusicManager(e.getGuild()).getTrackScheduler().getQueue(), null);
             break;
             case "fixloldb":
-                query = "SELECT id, summoner_id, league_shard from summoner";
-                res = BotDB.get().query(query);;
-                for (QueryRecord acc : res) {
-                    String summoner_id = acc.get("summoner_id");
-                    int league_shard = acc.getAsInt("league_shard");
-                    Summoner summoner = LeagueHandler.getSummonerByPuuid(summoner_id, LeagueShard.values()[league_shard]);
-                    if (summoner == null) {
-                        System.out.println("Summoner not found");
-                        continue;
+                ChronoTask fixlolDB = () -> {
+                    String q = "SELECT id, puuid, region from summoner order by id desc";
+                    QueryResult r = LeagueDB.get().query(q);;
+                    int bbb = 0;
+                    for (QueryRecord acc : r) {
+                        String puuid = acc.get("puuid");
+                        LeagueShard region = acc.getAsLeagueShard("region");
+                        Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, region);
+                        if (summoner == null) {
+                            System.out.println("Summoner not found");
+                            continue;
+                        }
+                        String query1 = "UPDATE summoner SET level = '" + summoner.getSummonerLevel() + "', icon = '" + summoner.getProfileIconId() + "' WHERE id = " + acc.get("id") + ";";
+                        LeagueDB.get().query(query1);
+                        System.out.println("total summoner: " + bbb + " ( " + acc.get("id")  + ") / " + r.size());
+                        bbb++;
                     }
-                    RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
-                    String query1 = "UPDATE summoner SET riot_id = '" + (account.getName() + "#" + account.getTag()) + "', account_id = '" + summoner.getAccountId() + "', puuid = '" + summoner.getPUUID() + "' WHERE id = " + acc.get("id");
-                    System.out.println(query1);
-                    BotDB.get().query(query1);
-                    try {
-                        Thread.sleep(350);
-                    } catch (InterruptedException e1) {
-                        e1.printStackTrace();
-                    }
-                }
+                };
+                fixlolDB.queue();
                 e.reply("Done");
             break;
             case "getprivatehistory":
