@@ -509,6 +509,7 @@ public class LeagueDB extends AbstractDB {
                        "VALUES (?, ?, ?, ?, ?, ?) " +
                        "ON DUPLICATE KEY UPDATE " +
                        "rank = VALUES(rank), " +
+                       "queue = VALUES(queue), " +
                        "lp = VALUES(lp), " +
                        "wins = VALUES(wins), " +
                        "losses = VALUES(losses);";

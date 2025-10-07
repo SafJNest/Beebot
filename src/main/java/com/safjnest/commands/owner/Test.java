@@ -845,8 +845,8 @@ public class Test extends Command{
                             System.out.println("Summoner not found");
                             continue;
                         }
+                        LeagueDB.updateSummonerEntries(acc.getAsInt("id"), summoner.getLeagueEntry());
                         String query1 = "UPDATE summoner SET level = '" + summoner.getSummonerLevel() + "', icon = '" + summoner.getProfileIconId() + "' WHERE id = " + acc.get("id") + ";";
-                        LeagueDB.get().query(query1);
                         System.out.println("total summoner: " + bbb + " ( " + acc.get("id")  + ") / " + r.size());
                         bbb++;
                     }
