@@ -154,6 +154,21 @@ public class LeagueDB extends AbstractDB {
         return addLOLAccount(null, summoner);
     }
 
+    public static int addLOLAccount(LeagueEntry entry, LeagueShard shard) {
+        int id = getSummonerIdByPuuid(entry.getPuuid(), shard);
+        if (id != 0) {
+            return id;
+        }
+        try {
+            Thread.sleep(350);
+        } catch (Exception e) { }
+        Summoner summoner = LeagueHandler.getSummonerByPuuid(entry.getPuuid(), shard);
+        if (summoner == null) {
+            return 0;
+        }
+        return addLOLAccount(summoner);
+    }
+
     public static int addLOLAccount(String user_id, Summoner summoner) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         String query = "INSERT INTO summoner(user_id, puuid, riot_id, region, icon, level) " +
@@ -169,13 +184,16 @@ public class LeagueDB extends AbstractDB {
 
         try (Connection conn = instance.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-            if (user_id != null) {
+            if (user_id != null) 
                 pstmt.setString(1, user_id);
-            } else {
+            else 
                 pstmt.setNull(1, java.sql.Types.VARCHAR);
-            }
+            
             pstmt.setString(2, summoner.getPUUID());
-            pstmt.setString(3, account.getName() + "#" + account.getTag());
+            if (account != null) 
+                pstmt.setString(3, account.getName() + "#" + account.getTag());
+            else
+                pstmt.setNull(3, java.sql.Types.VARCHAR);
             pstmt.setString(4, summoner.getPlatform().name());
             pstmt.setInt(5, summoner.getProfileIconId());
             pstmt.setInt(6, summoner.getSummonerLevel());
@@ -518,6 +536,54 @@ public class LeagueDB extends AbstractDB {
             conn = instance.getConnection();
             try (PreparedStatement pstmt = conn.prepareStatement(query)) {
                 for (LeagueEntry entry : entries) {
+                    pstmt.setInt(1, summonerId);
+                    pstmt.setString(2, entry.getQueueType().name());
+                    pstmt.setString(3, entry.getTierDivisionType().name());
+                    pstmt.setInt(4, entry.getLeaguePoints());
+                    pstmt.setInt(5, entry.getWins());
+                    pstmt.setInt(6, entry.getLosses());
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
+                conn.commit();
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static boolean updateSummonerEntries(List<LeagueEntry> entries, LeagueShard shard) {
+        String query = "INSERT INTO `rank` (summoner_id, queue, rank, lp, wins, losses) " +
+                       "VALUES (?, ?, ?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "rank = VALUES(rank), " +
+                       "queue = VALUES(queue), " +
+                       "lp = VALUES(lp), " +
+                       "wins = VALUES(wins), " +
+                       "losses = VALUES(losses);";
+        Connection conn = null;
+        try {
+            conn = instance.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                for (LeagueEntry entry : entries) {
+                    int summonerId = addLOLAccount(entry, shard);
                     pstmt.setInt(1, summonerId);
                     pstmt.setString(2, entry.getQueueType().name());
                     pstmt.setString(3, entry.getTierDivisionType().name());

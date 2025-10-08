@@ -1104,6 +1104,14 @@ public class Test extends Command{
                     ChronoTask sampleTask =  () -> MatchTracker.retriveSampleGames();
                     sampleTask.queue();
                 break;
+                case "pushchallenger":
+                    ChronoTask challenger =  () -> MatchTracker.retriveChallengerEntries();
+                    challenger.queue();
+                break;
+                case "pushhighelo":
+                    ChronoTask master =  () -> MatchTracker.retriveHighEloEntries();
+                    master.queue();
+                break;
                 case "fixaccountid":
                     query = "SELECT id, puuid, league_shard FROM summoner WHERE account_id IS NULL ORDER BY id DESC";
                     res = LeagueDB.get().query(query);

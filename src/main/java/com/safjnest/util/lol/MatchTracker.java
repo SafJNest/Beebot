@@ -580,6 +580,12 @@ public class MatchTracker {
         List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
         for (LeagueShard shard : shards) {
             try {
+
+                Map<String, Object> data = new LinkedHashMap<>();
+                data.put("platform", shard);
+                data.put("queue", GameQueueType.RANKED_SOLO_5X5);
+                LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_CHALLENGER, data);
+                Thread.sleep(500);
                 List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 0);
 
                 BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " matches for region " + shard);
@@ -606,6 +612,50 @@ public class MatchTracker {
                     } catch (Exception e) { e.printStackTrace(); }
                 }
             } catch (Exception e) { e.printStackTrace(); }
+        }
+    }
+
+    public static void retriveChallengerEntries() {
+        BotLogger.info("[LPTracker] Pushing challenger entries");
+        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
+        for (LeagueShard shard : shards) {
+            for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR)) {
+                try {
+                    Map<String, Object> data = new LinkedHashMap<>();
+                    data.put("platform", shard);
+                    data.put("queue", queue);
+                    LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_CHALLENGER, data);
+                    Thread.sleep(500);
+    
+                    List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, queue, TierDivisionType.CHALLENGER_I, 0);
+                    BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " challengers for region " + shard);
+                    LeagueDB.updateSummonerEntries(entries, shard);
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+        }  
+    }
+
+
+    public static void retriveHighEloEntries() {
+        BotLogger.info("[LPTracker] Pushing challenger entries");
+        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
+        for (TierDivisionType tier : List.of(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I)) {
+            for (LeagueShard shard : shards) {
+                for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR)) {
+                    try {
+                        URLEndpoint endpoint = tier == TierDivisionType.CHALLENGER_I ? URLEndpoint.V4_LEAGUE_CHALLENGER : (tier == TierDivisionType.GRANDMASTER_I ? URLEndpoint.V4_LEAGUE_GRANDMASTER : URLEndpoint.V4_LEAGUE_MASTER);
+                        Map<String, Object> data = new LinkedHashMap<>();
+                        data.put("platform", shard);
+                        data.put("queue", queue);
+                        LeagueHandler.clearCache(endpoint, data);
+                        Thread.sleep(500);
+        
+                        List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, queue, tier, 0);
+                        BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " " + tier + " for region " + shard);
+                        LeagueDB.updateSummonerEntries(entries, shard);
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+            }  
         }
     }
 
