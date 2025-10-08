@@ -12,7 +12,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "summoner", schema = "league_of_legends_test")
+@Table(name = "summoner")
 public class SummonerDTO {
     
     @Id

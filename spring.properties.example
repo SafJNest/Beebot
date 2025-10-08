@@ -1,0 +1,29 @@
+# Database Configuration for League of Legends database (Primary)
+spring.datasource.url=jdbc:mariadb://db/league_of_legends
+spring.datasource.username=root
+spring.datasource.password=
+spring.datasource.driver-class-name=org.mariadb.jdbc.Driver
+
+# Database Configuration for Website database (Secondary)
+spring.datasource.website.url=jdbc:mariadb://db/website_dev
+spring.datasource.website.username=root
+spring.datasource.website.password=
+
+# Server Configuration
+server.port=8081
+
+# JWT Configuration
+jwt.secret=your-secret-key-here
+jwt.expiration=86400000
+
+# JPA Configuration (Applied to both databases via DataSourceConfig classes)
+# Note: spring.jpa.hibernate.ddl-auto is set to 'update' in DataSourceConfig classes
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MariaDB106Dialect
+
+# Connection Pool Configuration (for both databases)
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.idle-timeout=300000
+spring.datasource.hikari.connection-timeout=20000

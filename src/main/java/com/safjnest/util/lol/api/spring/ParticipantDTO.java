@@ -11,7 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "participant", schema = "league_of_legends_test")
+@Table(name = "participant")
 public class ParticipantDTO {
     
     @Id

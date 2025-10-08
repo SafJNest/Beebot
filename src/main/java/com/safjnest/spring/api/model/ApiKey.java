@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ApiKey", schema = "website_dev")
+@Table(name = "ApiKey")
 public class ApiKey {
 
     @Id

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "match", schema = "league_of_legends_test")
+@Table(name = "match")
 public class MatchDTO {
     
     @Id

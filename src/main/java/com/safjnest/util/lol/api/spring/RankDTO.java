@@ -13,7 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "rank", schema = "league_of_legends_test")
+@Table(name = "rank")
 public class RankDTO {
     
     @Id
