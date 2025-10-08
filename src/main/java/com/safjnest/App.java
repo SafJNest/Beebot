@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -13,13 +14,19 @@ import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.api.SummonerService;
 import com.safjnest.util.twitch.TwitchClient;
+
+
 
 @SpringBootApplication
 public class App {
 
     private static Settings settings;
     private static Bot bot;
+
+    @Autowired
+    private static SummonerService SummonerService;
 
     public static void main(String args[]) {
         SafJNest.bee();
@@ -30,14 +37,15 @@ public class App {
 
         if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
-            //runSpring();
+            runSpring();
         }
         else {
             TwitchClient.init();
             //runSpring();
         }
-        bot = new Bot();
-        bot.il_risveglio_della_bestia();
+        //bot = new Bot();
+        //bot.il_risveglio_della_bestia();
+        System.out.println(SummonerService.findSummonerByPuuid("qwf0lHM8o9ZrlWuyVwmNnz5RZwuE_z9SdWCGwOJ5Ypi5-zNapWjTRgKl08HH0XjNS0XZ0yzfRQJApA"));
     }
 
     public static void runSpring() {
