@@ -3,6 +3,7 @@ package com.safjnest.spring.config;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,15 +27,19 @@ import java.util.Map;
 )
 public class LeagueDataSourceConfig {
 
+    @Value("${spring.datasource.url:jdbc:mariadb://localhost:3306/league_of_legends}")
+    private String url;
+    
+    @Value("${spring.datasource.username:root}")
+    private String username;
+    
+    @Value("${spring.datasource.password:}")
+    private String password;
+
     @Primary
     @Bean(name = "leagueDataSource")
     public DataSource leagueDataSource() {
         HikariConfig config = new HikariConfig();
-        
-        // Read from spring.properties file
-        String url = System.getProperty("spring.datasource.url", "jdbc:mariadb://localhost:3306/league_of_legends");
-        String username = System.getProperty("spring.datasource.username", "root");
-        String password = System.getProperty("spring.datasource.password", "");
         
         config.setJdbcUrl(url);
         config.setUsername(username);

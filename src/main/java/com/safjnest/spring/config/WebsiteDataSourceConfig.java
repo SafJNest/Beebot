@@ -3,6 +3,7 @@ package com.safjnest.spring.config;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,18 +26,22 @@ import java.util.Map;
 )
 public class WebsiteDataSourceConfig {
 
+    @Value("${spring.datasource.website.url:jdbc:mariadb://localhost:3306/website_dev}")
+    private String url;
+    
+    @Value("${spring.datasource.website.username:root}")
+    private String username;
+    
+    @Value("${spring.datasource.website.password:}")
+    private String password;
+
     @Bean(name = "websiteDataSource")
     public DataSource websiteDataSource() {
         HikariConfig config = new HikariConfig();
         
-        // Read from spring.properties file - website database configuration
-        String websiteUrl = System.getProperty("spring.datasource.website.url", "jdbc:mariadb://localhost:3306/website_dev");
-        String websiteUsername = System.getProperty("spring.datasource.website.username", "root");
-        String websitePassword = System.getProperty("spring.datasource.website.password", "");
-        
-        config.setJdbcUrl(websiteUrl);
-        config.setUsername(websiteUsername);
-        config.setPassword(websitePassword);
+        config.setJdbcUrl(url);
+        config.setUsername(username);
+        config.setPassword(password);
         config.setDriverClassName("org.mariadb.jdbc.Driver");
         config.setMaximumPoolSize(10);
         config.setMinimumIdle(5);
