@@ -7,6 +7,8 @@ package com.safjnest.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
+
+
 import java.awt.Color;
 import java.text.MessageFormat;
 
@@ -71,6 +73,8 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.AutomatedActionTimer;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.api.LoLData;
+import com.safjnest.util.lol.api.SummonerRepository;
 
 /**
  * Main class of the bot.
@@ -220,6 +224,8 @@ public class Bot {
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
         jda.addEventListener(new EventComponentsHandler());
+
+        System.out.println(LoLData.findSummonerByPuuid("qwf0lHM8o9ZrlWuyVwmNnz5RZwuE_z9SdWCGwOJ5Ypi5-zNapWjTRgKl08HH0XjNS0XZ0yzfRQJApA"));
     }
 
 
