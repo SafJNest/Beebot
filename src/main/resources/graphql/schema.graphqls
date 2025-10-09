@@ -1,0 +1,78 @@
+type Query {
+    summonerByPuuid(puuid: String!): Summoner
+    summonerByRiotId(riotId: String!): Summoner
+    
+    matchById(id: ID!): Match
+    matchByGameId(gameId: String!): Match
+    
+
+    matchesBySummoner(puuid: String!, limit: Int = 10): [Match]
+    matchesBySummonerAndQueue(puuid: String!, queue: String!, limit: Int = 10): [Match]
+    
+    participantById(id: ID!): Participant
+    participantsBySummoner(puuid: String!, limit: Int = 10): [Participant]
+}
+
+type Summoner {
+    id: ID!
+    riotId: String
+    puuid: String
+    level: Int
+    icon: Int
+    region: String
+    ban: Boolean
+    tracking: Int
+    masteries: [Mastery]
+    ranks: [Rank]
+}
+
+type Mastery {
+    id: ID!
+    championId: Int
+    championLevel: Int
+    championPoints: Int
+    lastPlayTime: String
+}
+
+type Rank {
+    id: ID!
+    queue: String
+    rank: String
+    lp: Int
+    wins: Int
+    losses: Int
+    lastUpdate: String
+}
+
+type Match {
+    id: ID!
+    gameId: String
+    queue: String
+    region: String
+    rank: String
+    timeStart: String
+    timeEnd: String
+    events: String
+    bans: String
+    patch: String
+    participants: [Participant]
+}
+
+type Participant {
+    id: ID!
+    summoner: Summoner
+    champion: Int
+    team: String
+    lane: String
+    position: String
+    win: Boolean
+    kda: String
+    kills: Int
+    deaths: Int
+    assists: Int
+    csTotal: Int
+    goldEarned: Int
+    champDamage: Int
+    visionScore: Int
+    items: [Int]
+}

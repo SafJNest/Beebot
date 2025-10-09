@@ -27,7 +27,12 @@ public class ParticipantDTO {
     private MatchDTO match;
     
     private boolean win;
+    
     private String kda;
+    private int kills;
+    private int deaths;
+    private int assists;
+
     private Short champion;
     private String team;
     private String lane;
@@ -252,5 +257,16 @@ public class ParticipantDTO {
     
     public void setBuild(String build) {
         this.build = build;
+    }
+
+    public int getKills() {
+        return this.kda != null && this.kda.contains("/") ? Integer.parseInt(this.kda.split("/")[0]) : 0;
+    }
+    public int getDeaths() {
+        return this.kda != null && this.kda.contains("/") ? Integer.parseInt(this.kda.split("/")[1]) : 0;
+    }
+
+    public int getAssists() {
+        return this.kda != null && this.kda.contains("/") ? Integer.parseInt(this.kda.split("/")[2]) : 0;
     }
 }
