@@ -58,6 +58,9 @@ public class MatchTracker {
             
             ChronoTask trackSampleGames = () -> retriveSampleGames();
             trackSampleGames.scheduleAtFixedTime(2, 0, 0);
+
+            ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
+            retriveHighEloEntries.scheduleAtFixedRate(TimeConstant.HOUR, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
         }
 	}
 
@@ -577,7 +580,7 @@ public class MatchTracker {
 
     public static void retriveSampleGames() {
         BotLogger.info("[LPTracker] Pushing sample matches");
-        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
+        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.BR1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
         for (LeagueShard shard : shards) {
             try {
 
@@ -617,7 +620,7 @@ public class MatchTracker {
 
     public static void retriveChallengerEntries() {
         BotLogger.info("[LPTracker] Pushing challenger entries");
-        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
+        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.BR1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
         for (LeagueShard shard : shards) {
             for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR)) {
                 try {
@@ -651,7 +654,7 @@ public class MatchTracker {
                         Thread.sleep(500);
         
                         List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, queue, tier, 0);
-                        BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " " + tier + " for region " + shard);
+                        BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " " + tier + "( " + queue +  " ) for region " + shard);
                         LeagueDB.updateSummonerEntries(entries, shard);
                     } catch (Exception e) { e.printStackTrace(); }
                 }

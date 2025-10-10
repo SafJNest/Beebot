@@ -1068,6 +1068,10 @@ import com.safjnest.core.cache.managers.UserCache;
                 data.put("platform", summoner.getPlatform());
                 data.put("id", summoner.getPUUID());
                 break;
+            case V4_MASTERY_BY_PUUID:
+                data.put("platform", summoner.getPlatform());
+                data.put("puuid", summoner.getPUUID());
+                break;
 
             default:
                 break;
@@ -1081,6 +1085,7 @@ import com.safjnest.core.cache.managers.UserCache;
         clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner, null);
+        clearCache(URLEndpoint.V4_MASTERY_BY_PUUID, summoner, null);
     }
 
 //     ▄████████    ▄███████▄  ▄█        ▄█      ███
