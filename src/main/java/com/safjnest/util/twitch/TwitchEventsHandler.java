@@ -58,7 +58,6 @@ class TwitchEventsHandler {
         
         eb.setAuthor(streamer.getDisplayName() + " is now live on Twitch!", liveUrl, streamer.getProfileImageUrl());
         eb.setColor(Bot.getColor());
-        eb.setFooter("Twitch", TwitchClient.getTwitchIconUrl());
         eb.setTimestamp(Instant.now());
 
         for (QueryRecord guildRow : result) {
@@ -85,6 +84,7 @@ class TwitchEventsHandler {
             final String finalMessage = message;
             final String finalPrivateMessage = privateMessage;
 
+            eb.setFooter("Twitch", TwitchClient.getTwitchIconUrl());
             final MessageEmbed finalMessageEmbed = eb.build();
 
             eb.setFooter("Message sent from " + guild.getName(), guild.getIconUrl());
