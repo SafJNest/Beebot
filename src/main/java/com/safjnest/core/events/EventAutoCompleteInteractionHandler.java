@@ -539,7 +539,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
         if (!isFocused) {
             HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
-            R4J r4j = LeagueHandler.getRiotApi();
     
             if (accounts == null || accounts.isEmpty()) {
                 return choices;
@@ -549,8 +548,8 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             for (String puuid : accounts.keySet()) {    
                 shard = LeagueShard.valueOf(accounts.get(puuid));
                 Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
-                RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
-                accountNames.put(riotAccount.getName() + "#" + riotAccount.getTag(), riotAccount.getName() + "#" + riotAccount.getTag());
+                RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(summoner);
+                accountNames.put(riotAccount.getName() + "#" + riotAccount.getTag(), puuid);
             }
         
             accountNames.forEach((k, v) -> choices.add(new Choice(v, k)));
@@ -561,7 +560,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         
 
         for (QueryRecord summoner : summoners) {
-            choices.add(new Choice(summoner.get("riot_id"), summoner.get("riot_id")));
+            choices.add(new Choice(summoner.get("riot_id"), summoner.get("puuid")));
         }
 
         return choices;

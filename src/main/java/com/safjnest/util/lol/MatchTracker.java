@@ -256,11 +256,13 @@ public class MatchTracker {
 
             List<TierDivisionType> ranks = new ArrayList<>();
             for (MatchParticipant partecipant : match.getParticipants()) {
-                try { Thread.sleep(2000); }
-                catch (InterruptedException e) {e.printStackTrace();}
-
                 Summoner summoner = LeagueHandler.getSummonerByPuuid(partecipant.getPuuid(), match.getPlatform());
                 if (summoner == null) continue;
+                try { 
+                    LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_ENTRY_BY_PUUID, summoner, null);
+                    Thread.sleep(500); 
+                }
+                catch (InterruptedException e) {e.printStackTrace();}
 
                 TierDivisionType rank = pushSummoner(match, summoner_match_id, summoner, partecipant, matchData.get(partecipant.getPuuid()));
                 ranks.add(rank);
@@ -311,6 +313,7 @@ public class MatchTracker {
         }
         int summonerId = LeagueDB.addLOLAccount(summoner);
         LeagueDB.updateSummonerEntries(summonerId, entries);
+        LeagueDB.updateSummonerMasteries(summonerId, summoner.getChampionMasteries());
         LeagueDB.setSummonerData(summonerId, summonerMatch, participant, division, lp, gain, createJSONBuild(matchData));
         return division;
     }
@@ -580,8 +583,7 @@ public class MatchTracker {
 
     public static void retriveSampleGames() {
         BotLogger.info("[LPTracker] Pushing sample matches");
-        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.BR1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
-        for (LeagueShard shard : shards) {
+        for (LeagueShard shard : LeagueHandler.getActiveShards()) {
             try {
 
                 Map<String, Object> data = new LinkedHashMap<>();
@@ -620,8 +622,7 @@ public class MatchTracker {
 
     public static void retriveChallengerEntries() {
         BotLogger.info("[LPTracker] Pushing challenger entries");
-        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.BR1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
-        for (LeagueShard shard : shards) {
+        for (LeagueShard shard : LeagueHandler.getActiveShards()) {
             for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR)) {
                 try {
                     Map<String, Object> data = new LinkedHashMap<>();
@@ -641,9 +642,8 @@ public class MatchTracker {
 
     public static void retriveHighEloEntries() {
         BotLogger.info("[LPTracker] Pushing challenger entries");
-        List<LeagueShard> shards = List.of(LeagueShard.EUW1, LeagueShard.EUN1, LeagueShard.KR, LeagueShard.JP1, LeagueShard.NA1, LeagueShard.ME1, LeagueShard.TR1, LeagueShard.RU);
         for (TierDivisionType tier : List.of(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I)) {
-            for (LeagueShard shard : shards) {
+            for (LeagueShard shard : LeagueHandler.getActiveShards()) {
                 for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR)) {
                     try {
                         URLEndpoint endpoint = tier == TierDivisionType.CHALLENGER_I ? URLEndpoint.V4_LEAGUE_CHALLENGER : (tier == TierDivisionType.GRANDMASTER_I ? URLEndpoint.V4_LEAGUE_GRANDMASTER : URLEndpoint.V4_LEAGUE_MASTER);

@@ -50,6 +50,7 @@ import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
@@ -480,7 +481,41 @@ import com.safjnest.core.cache.managers.UserCache;
      * safj
      */
     public static RiotAccount getRiotAccountFromSummoner(Summoner s){
-        return riotApi.getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
+        return riotApi.getAccountAPI().getAccountByPUUID(getAccountRegionShard(s.getPlatform()), s.getPUUID());
+    }
+
+    public static RegionShard getAccountRegionShard(LeagueShard shard){
+        switch (shard) {
+            case VN2:
+            case OC1:
+            case SG2:
+            case PH2:
+            case TH2:
+            case TW2:
+                return RegionShard.ASIA;
+            default:
+                return shard.toRegionShard();
+        }
+    }
+
+    public static List<LeagueShard> getActiveShards() {
+        return List.of(
+            LeagueShard.EUW1,
+            LeagueShard.NA1,
+            LeagueShard.KR,
+            LeagueShard.EUN1,
+            LeagueShard.JP1,
+            LeagueShard.BR1,
+            LeagueShard.LA1,
+            LeagueShard.LA2,
+            LeagueShard.TR1,
+            LeagueShard.RU,
+            LeagueShard.OC1,
+            LeagueShard.VN2,
+            LeagueShard.SG2,
+            LeagueShard.TW2,
+            LeagueShard.ME1
+        );
     }
 
 
@@ -519,7 +554,7 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static Summoner getSummonerByName(String nameAccount, String tag, LeagueShard shard) {
         try {
-            String puiid = riotApi.getAccountAPI().getAccountByTag(shard.toRegionShard(), nameAccount, tag).getPUUID();
+            String puiid = riotApi.getAccountAPI().getAccountByTag(getAccountRegionShard(shard), nameAccount, tag).getPUUID();
             return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puiid);
         } catch (Exception e) {
             return null;
@@ -576,6 +611,12 @@ import com.safjnest.core.cache.managers.UserCache;
 
         LeagueShard guildShard = event.isFromGuild()  ? guild.getLeagueShard(event.getChannel().getId()) : LeagueShard.EUW1;
         LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guildShard;
+
+        if (event.getOption("summoner") != null) {
+            s = getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
+        }
+
+        if (s != null) return s;
 
         String summoner = event.getOption("summoner").getAsString().replaceAll("[\\p{C}]", ""); //when you copy the name from riot chat it adds some weird characters
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : getRegionCode(shard);
@@ -866,9 +907,8 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static OptionData getLeagueShardOptions(boolean required) {
         List<Choice> choices = new ArrayList<>();
-        for (int i = 0; i < LeagueShard.values().length; i++) {
-            if (LeagueShard.values()[i] == LeagueShard.UNKNOWN) continue;
-            choices.add(new Choice(LeagueShard.values()[i].getRealmValue().toUpperCase(), String.valueOf(i)));
+        for (int i = 0; i < LeagueHandler.getActiveShards().size(); i++) {
+            choices.add(new Choice(LeagueHandler.getActiveShards().get(i).getRealmValue().toUpperCase(), String.valueOf(i)));
         }
 
         return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", required).addChoices(choices);
