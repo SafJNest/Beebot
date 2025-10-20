@@ -25,7 +25,7 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
-
+import static com.mongodb.client.model.Filters.eq;
 @SpringBootApplication
 public class App {
 
@@ -58,53 +58,113 @@ public class App {
             String query = "SELECT id, riot_id, puuid, region, level, icon FROM summoner ORDER BY id ASC LIMIT 100;";
             QueryResult summoners = LeagueDB.get().query(query);
 
-            for (QueryRecord qr : summoners) {
-                int summonerId = qr.getAsInt("id");
+            // for (QueryRecord qr : summoners) {
+            //     int summonerId = qr.getAsInt("id");
 
-                String qRank = "SELECT queue, rank, lp, wins, losses FROM rank WHERE summoner_id = " + summonerId + ";";
-                String qMastery = "SELECT champion_id, champion_points, champion_level FROM masteries WHERE summoner_id = " + summonerId + ";";
+            //     String qRank = "SELECT queue, rank, lp, wins, losses FROM rank WHERE summoner_id = " + summonerId + ";";
+            //     String qMastery = "SELECT champion_id, champion_points, champion_level FROM masteries WHERE summoner_id = " + summonerId + ";";
 
-                QueryResult qrRank = LeagueDB.get().query(qRank);
-                QueryResult qrMastery = LeagueDB.get().query(qMastery);
+            //     QueryResult qrRank = LeagueDB.get().query(qRank);
+            //     QueryResult qrMastery = LeagueDB.get().query(qMastery);
 
-                Document summoner = new Document();
-                summoner.append("id", summonerId);
-                summoner.append("riot_id", qr.get("riot_id"));
-                summoner.append("puuid", qr.get("puuid"));
-                summoner.append("region", qr.get("region"));
-                summoner.append("level", qr.getAsInt("level"));
-                summoner.append("icon", qr.getAsInt("icon"));
-                List<Document> rankedList = new ArrayList<>();
-                for (QueryRecord r : qrRank) {
+            //     Document summoner = new Document();
+            //     summoner.append("id", summonerId);
+            //     summoner.append("riot_id", qr.get("riot_id"));
+            //     summoner.append("puuid", qr.get("puuid"));
+            //     summoner.append("region", qr.get("region"));
+            //     summoner.append("level", qr.getAsInt("level"));
+            //     summoner.append("icon", qr.getAsInt("icon"));
+            //     List<Document> rankedList = new ArrayList<>();
+            //     for (QueryRecord r : qrRank) {
+            //         Document doc = new Document()
+            //             .append("queue", r.get("queue"))
+            //             .append("tier", r.get("tier"))
+            //             .append("rank", r.get("rank"))
+            //             .append("lp", r.getAsInt("lp"))
+            //             .append("wins", r.getAsInt("wins"))
+            //             .append("losses", r.getAsInt("losses"));
+            //         rankedList.add(doc);
+            //     }
+            //     summoner.append("ranked", rankedList);
+            //     List<Document> masteryList = new ArrayList<>();
+            //     for (QueryRecord m : qrMastery) {
+            //         Document doc = new Document()
+            //             .append("champion_id", m.getAsInt("champion_id"))
+            //             .append("champion_points", m.getAsInt("champion_points"))
+            //             .append("champion_level", m.getAsInt("champion_level"));
+            //         masteryList.add(doc);
+            //     }
+            //     summoner.append("masteries", masteryList);
+
+
+            //     // upsert: inserisce se non esiste, aggiorna se esiste
+            //     collection.replaceOne(
+            //         new Document("puuid", qr.get("puuid")),
+            //         summoner,
+            //         new ReplaceOptions().upsert(true)
+            //     );
+
+            //     System.out.println("✅ Imported: " + qr.get("riot_id"));
+            // }
+            MongoCollection<Document> summonerCollection = database.getCollection("summoner");
+            query = "SELECT id, game_id, queue, region, rank, time_start, time_end, events, bans, patch FROM `match` ORDER by ID asc";
+            QueryResult matches = LeagueDB.get().query(query);
+            collection = database.getCollection("match");
+            for (QueryRecord qr : matches) {
+                int matchId = qr.getAsInt("id");
+
+                String qParticipants = "SELECT id, summoner_id, win, kda, champion, team, lane, subteam, subteam_placement, rank, lp, gain, damage, damage_building, healing, cs, gold_earned, ward, ward_killed, vision_score, pings, build FROM participant WHERE match_id = " + matchId + ";";
+                QueryResult qrParticipants = LeagueDB.get().query(qParticipants);
+
+                Document match = new Document();
+                match.append("id", matchId);
+                match.append("game_id", qr.get("game_id"));
+                match.append("queue", qr.get("queue"));
+                match.append("region", qr.get("region"));
+                match.append("rank", qr.get("rank"));
+                match.append("time_start", qr.getAsLong("time_start"));
+                match.append("time_end", qr.getAsLong("time_end"));
+                match.append("events", Document.parse(qr.get("events")));
+                match.append("bans", Document.parse(qr.get("bans")));
+                match.append("patch", qr.get("patch"));
+                List<Document> participantList = new ArrayList<>();
+                for (QueryRecord p : qrParticipants) {
+                    Document summonerDoc = summonerCollection.find(eq("id", p.getAsInt("summoner_id"))).first();
+                    String objId = summonerDoc.getObjectId("_id").toString();
                     Document doc = new Document()
-                        .append("queue", r.get("queue"))
-                        .append("tier", r.get("tier"))
-                        .append("rank", r.get("rank"))
-                        .append("lp", r.getAsInt("lp"))
-                        .append("wins", r.getAsInt("wins"))
-                        .append("losses", r.getAsInt("losses"));
-                    rankedList.add(doc);
+                        .append("id", p.getAsInt("id"))
+                        .append("summoner_id", objId)
+                        .append("win", p.getAsBoolean("win"))
+                        .append("kda", p.get("kda"))
+                        .append("champion", p.getAsInt("champion"))
+                        .append("team", p.getAsInt("team"))
+                        .append("lane", p.get("lane"))
+                        .append("subteam", p.get("subteam"))
+                        .append("subteam_placement", p.getAsInt("subteam_placement"))
+                        .append("rank", p.get("rank"))
+                        .append("lp", p.getAsInt("lp"))
+                        .append("gain", p.getAsInt("gain"))
+                        .append("damage", p.getAsInt("damage"))
+                        .append("damage_building", p.getAsInt("damage_building"))
+                        .append("healing", p.getAsInt("healing"))
+                        .append("cs", p.getAsInt("cs"))
+                        .append("gold_earned", p.getAsInt("gold_earned"))
+                        .append("ward", p.getAsInt("ward"))
+                        .append("ward_killed", p.getAsInt("ward_killed"))
+                        .append("vision_score", p.getAsInt("vision_score"))
+                        .append("pings", p.getAsInt("pings"))
+                        .append("build", Document.parse(p.get("build")));
+                    participantList.add(doc);
                 }
-                summoner.append("ranked", rankedList);
-                List<Document> masteryList = new ArrayList<>();
-                for (QueryRecord m : qrMastery) {
-                    Document doc = new Document()
-                        .append("champion_id", m.getAsInt("champion_id"))
-                        .append("champion_points", m.getAsInt("champion_points"))
-                        .append("champion_level", m.getAsInt("champion_level"));
-                    masteryList.add(doc);
-                }
-                summoner.append("masteries", masteryList);
+                match.append("participants", participantList);
 
-
-                // upsert: inserisce se non esiste, aggiorna se esiste
                 collection.replaceOne(
-                    new Document("puuid", qr.get("puuid")),
-                    summoner,
+                    new Document("id", qr.get("id")),
+                    match,
                     new ReplaceOptions().upsert(true)
                 );
 
-                System.out.println("✅ Imported: " + qr.get("riot_id"));
+                System.out.println("✅ Imported: " + qr.get("game_id"));
             }
         }
             
