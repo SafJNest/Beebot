@@ -161,8 +161,8 @@ public class LeagueMessage {
         center = center.asDisabled();
 
         if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) 
-            return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(left, center, right, refresh));
-        return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(center, refresh));
+            return List.of(ActionRow.of(profile, opgg, champ), ActionRow.of(left, center, right, refresh));
+        return List.of(ActionRow.of(profile, opgg, champ), ActionRow.of(center, refresh));
     }
 
 //     ▄████████ ███    █▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄    ▄██████▄  ███▄▄▄▄      ▄████████    ▄████████
@@ -337,7 +337,7 @@ public class LeagueMessage {
             }
             builder.addField("Champions", champStats, false);
         }
-        builder = LeagueHandler.getActivity(builder, s);
+        //builder = LeagueHandler.getActivity(builder, s); byebye spectator v5...
 
         return builder;
     }

@@ -552,7 +552,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 accountNames.put(riotAccount.getName() + "#" + riotAccount.getTag(), puuid);
             }
         
-            accountNames.forEach((k, v) -> choices.add(new Choice(v, k)));
+            accountNames.forEach((k, v) -> choices.add(new Choice(k, v)));
             return choices;
         }
         
