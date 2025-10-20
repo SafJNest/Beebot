@@ -43,7 +43,12 @@ import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.lol.MatchTracker;
+import com.safjnest.util.lol.ParticipantChampionStat;
+import com.safjnest.util.lol.model.MatchData;
+import com.safjnest.util.lol.model.ParticipantData;
 import com.safjnest.util.lol.LeagueHandler;
+import com.safjnest.util.lol.LeagueMessageParameter;
+import com.safjnest.util.lol.LeagueMessageType;
 import com.safjnest.util.twitch.TwitchClient;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -68,6 +73,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
@@ -1287,6 +1293,69 @@ public class Test extends Command{
                     }
                 };
                 fixRank.queue();
+                break;
+            case "finalstats":
+                query = "SELECT id from summoner ORDER BY id ASC";
+                res = LeagueDB.get().query(query);
+                ChronoTask finalStats = () -> {
+                    int n = 0;
+                    LeagueMessageParameter param = new LeagueMessageParameter(LeagueMessageType.LIVEGAME);
+                    param.setQueueType(GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+                    for (QueryRecord row : res) {
+                        try {
+                            List<MatchData> ms = LeagueDB.getMatchHistory(row.getAsInt("id"), param);
+                            HashMap<Integer, ParticipantChampionStat> championStats = new HashMap<>();
+    
+                            HashMap<String, Set<Integer>> unique = new HashMap<>();
+    
+                            unique.put("champion", new HashSet<>());
+    
+    
+                            for (MatchData m : ms) {
+                                for (ParticipantData participant : m.participants) {
+                                    if (participant.summonerId != row.getAsInt("id")) continue;
+    
+                                        unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
+                                        String kda = participant.kda;
+                                        int kills = Integer.parseInt(kda.split("/")[0]);
+                                        int deaths = Integer.parseInt(kda.split("/")[1]);
+                                        int assists = Integer.parseInt(kda.split("/")[2]);
+                                        championStats.computeIfAbsent(participant.champion, p -> new ParticipantChampionStat(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
+                                }
+                            }
+                            if (!championStats.isEmpty()) {
+                                String q = "INSERT INTO summoner_metric(summoner_id, champion, games, wins, losses, kills, deaths, assists, lp, score) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE games = games + VALUES(games), wins = wins + VALUES(wins), losses = losses + VALUES(losses), kills = kills + VALUES(kills), deaths = deaths + VALUES(deaths), assists = assists + VALUES(assists), lp = lp + VALUES(lp), score = VALUES(score);";
+                                try (Connection c = LeagueDB.get().getConnection();
+                                     PreparedStatement pstmt = c.prepareStatement(q)) {
+
+                                    for (ParticipantChampionStat stat : championStats.values()) {
+                                        pstmt.setInt(1, row.getAsInt("id"));
+                                        pstmt.setInt(2, stat.getChampion());
+                                        pstmt.setInt(3, stat.getGames());
+                                        pstmt.setInt(4, stat.getWins());
+                                        pstmt.setInt(5, stat.getLossess());
+                                        pstmt.setInt(6, stat.getKills());
+                                        pstmt.setInt(7, stat.getDeaths());
+                                        pstmt.setInt(8, stat.getAssist());
+                                        pstmt.setInt(9, stat.getLp());
+                                        pstmt.setInt(10, stat.getScore());
+                                        pstmt.addBatch();
+                                    }
+
+                                    pstmt.executeBatch();
+                                    c.commit();
+
+                                } catch (SQLException eeeee) {
+                                    eeeee.printStackTrace();
+                                }
+                            }                        } catch (Exception eeee) {
+                            // TODO: handle exception
+                        }
+                        n++;
+                        System.out.println(n + "/" + res.size());
+                    }
+                };                
+                finalStats.queue();
                 break;
         }
     }  

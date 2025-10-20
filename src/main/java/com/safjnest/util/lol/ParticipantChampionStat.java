@@ -68,4 +68,23 @@ public class ParticipantChampionStat {
     return g == 0 ? 0.0 : (double) wins * 100.0 / g;
   }
 
+    public int getScore() {
+      double wWinrate = 2.0;
+      double wKDA = 1.5;
+      double wGames = 0.01;
+      double wLp = 0.05;
+
+      double score =
+        (winrate() * wWinrate) +
+        (avgKDA() * wKDA) +
+        (getGames() * wGames) +
+        (lp * wLp);
+
+      if (Double.isNaN(score) || Double.isInfinite(score)) {
+        return 0;
+      }
+
+      return (int) Math.round(score);
+    }
+
 }
