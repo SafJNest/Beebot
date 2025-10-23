@@ -12,7 +12,6 @@ import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
-import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -28,8 +27,6 @@ public class Region extends SlashCommand {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
 
-        this.contexts = new InteractionContextType[]{InteractionContextType.GUILD, InteractionContextType.BOT_DM};
-
         this.options = Arrays.asList(
             LeagueHandler.getLeagueShardOptions(true),
             new OptionData(OptionType.CHANNEL, "channel", "If empty the region will be use in the guild, select to override for the channel",false)
@@ -43,7 +40,7 @@ public class Region extends SlashCommand {
         event.deferReply(false).queue();
 
         GuildData gs = GuildCache.getGuildOrPut(event.getGuild().getId());
-        LeagueShard shard = LeagueShard.values()[Integer.parseInt(event.getOption("region").getAsString())];
+        LeagueShard shard = LeagueShard.valueOf(event.getOption("region").getAsString());
 
         TextChannel channel = event.getOption("channel") != null ? event.getOption("channel").getAsChannel().asTextChannel() : null;
 
@@ -52,13 +49,13 @@ public class Region extends SlashCommand {
                 event.getHook().sendMessage("Something went wrong.").queue();
                 return;
             }
-            channel.sendMessage("Region set to " + LeagueHandler.getShardFlag(shard) + shard.getRealmValue().toUpperCase()).queue();
+            event.getHook().sendMessage("Region set for " + channel.getAsMention() + " to " + LeagueHandler.getShardFlag(shard) + shard.getRealmValue().toUpperCase()).queue();
+            return;
         }
         else if(!gs.setLeagueShard(shard)) {
             event.getHook().sendMessage("Something went wrong.").queue();
             return;
         }
-
 
         event.getHook().sendMessage("Region set to " + LeagueHandler.getShardFlag(shard) + shard.getRealmValue().toUpperCase()).queue();
 	}

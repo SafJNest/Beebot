@@ -225,6 +225,7 @@ public class LeagueDB extends AbstractDB {
 
         try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
             for (SpectatorParticipant summoner : info.getParticipants()) {
+                if (summoner.getPuuid() == null) continue;
                 pstmt.setString(1, summoner.getPuuid());
                 pstmt.setString(2, summoner.getRiotId());
                 pstmt.setString(3, info.getPlatform().name());

@@ -161,8 +161,8 @@ public class LeagueMessage {
         center = center.asDisabled();
 
         if (user_id != null && LeagueHandler.getNumberOfProfile(user_id) > 1) 
-            return List.of(ActionRow.of(profile, opgg, champ), ActionRow.of(left, center, right, refresh));
-        return List.of(ActionRow.of(profile, opgg, champ), ActionRow.of(center, refresh));
+            return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(left, center, right, refresh));
+        return List.of(ActionRow.of(profile, opgg, livegame, champ), ActionRow.of(center, refresh));
     }
 
 //     ▄████████ ███    █▄    ▄▄▄▄███▄▄▄▄     ▄▄▄▄███▄▄▄▄    ▄██████▄  ███▄▄▄▄      ▄████████    ▄████████
@@ -337,7 +337,7 @@ public class LeagueMessage {
             }
             builder.addField("Champions", champStats, false);
         }
-        //builder = LeagueHandler.getActivity(builder, s); byebye spectator v5...
+        builder = LeagueHandler.getActivity(builder, s);
 
         return builder;
     }
@@ -1231,6 +1231,7 @@ public class LeagueMessage {
 
         ArrayList<SelectOption> options = new ArrayList<>();
         for(SpectatorParticipant p : spectators){
+            if (p.getPuuid() == null) continue;
             Emoji icon = LeagueHandler.getEmojiByChampion(p.getChampionId());
             options.add(SelectOption.of(p.getRiotId(), p.getPuuid() + "#" + summoner.getPlatform().name()).withEmoji(icon));
         }

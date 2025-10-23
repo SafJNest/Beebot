@@ -544,15 +544,16 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 return choices;
             }
             
-            HashMap<String, String> accountNames = new HashMap<>();
             for (String puuid : accounts.keySet()) {    
                 shard = LeagueShard.valueOf(accounts.get(puuid));
                 Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
                 RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(summoner);
-                accountNames.put(riotAccount.getName() + "#" + riotAccount.getTag(), puuid);
+                choices.add(new Choice(
+                    riotAccount.getName() + "#" + riotAccount.getTag(), 
+                    riotAccount.getPUUID()
+                ));
             }
         
-            accountNames.forEach((k, v) -> choices.add(new Choice(k, v)));
             return choices;
         }
         

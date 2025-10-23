@@ -610,7 +610,7 @@ import com.safjnest.core.cache.managers.UserCache;
         }
 
         LeagueShard guildShard = event.isFromGuild()  ? guild.getLeagueShard(event.getChannel().getId()) : LeagueShard.EUW1;
-        LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guildShard;
+        LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
         if (event.getOption("summoner") != null) {
             s = getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
@@ -907,8 +907,8 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static OptionData getLeagueShardOptions(boolean required) {
         List<Choice> choices = new ArrayList<>();
-        for (int i = 0; i < LeagueHandler.getActiveShards().size(); i++) {
-            choices.add(new Choice(LeagueHandler.getActiveShards().get(i).getRealmValue().toUpperCase(), String.valueOf(i)));
+        for (LeagueShard shard : LeagueHandler.getActiveShards()) {
+            choices.add(new Choice(shard.name(), shard.name()));
         }
 
         return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", required).addChoices(choices);
