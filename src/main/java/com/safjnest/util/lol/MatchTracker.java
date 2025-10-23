@@ -312,8 +312,11 @@ public class MatchTracker {
             gain = lp - dataGame.getAsInt("lp");
         }
         int summonerId = LeagueDB.addLOLAccount(summoner);
-        LeagueDB.updateSummonerEntries(summonerId, entries);
-        LeagueDB.updateSummonerMasteries(summonerId, summoner.getChampionMasteries());
+        ((ChronoTask) () -> {
+            LeagueDB.updateSummonerEntries(summonerId, entries);
+            LeagueDB.updateSummonerMasteries(summonerId, summoner.getChampionMasteries());
+        }).queue();
+
         LeagueDB.setSummonerData(summonerId, summonerMatch, participant, division, lp, gain, createJSONBuild(matchData));
         return division;
     }
