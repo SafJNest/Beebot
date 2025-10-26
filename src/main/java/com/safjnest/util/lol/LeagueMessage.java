@@ -828,10 +828,10 @@ public class LeagueMessage {
                 if (rank == TierDivisionType.UNRANKED) {
                     matchTitle += "(Placement)";
                 }
-                else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
+                else if (j > 0 && row.getAsTier("rank").ordinal() < result.get(j - 1).getAsTier("rank").ordinal()) {
                     matchTitle = "Promoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
                 }
-                else if (j > 0 && row.getAsInt("rank") > result.get(j - 1).getAsInt("rank")) {
+                else if (j > 0 && row.getAsTier("rank").ordinal() > result.get(j - 1).getAsTier("rank").ordinal()) {
                     matchTitle = "Demoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
                 }
                 else if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) {
