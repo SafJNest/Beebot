@@ -1172,6 +1172,15 @@ public class Test extends Command{
                     };
                     retriveAllGames.queue();
                 break;
+                case "retriveallgamesfast":
+                    ChronoTask retriveAllGamesFast = () -> {
+                        System.out.println(args[1]);
+                        for (GameQueueType queueType : GameQueueType.values()) {
+                            MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()), queueType);
+                        }
+                    };
+                    retriveAllGamesFast.queue();
+                break;
                 case "setmatchevent":
                     query = "SELECT id, game_id, league_shard FROM `match` WHERE events = '{}' ORDER BY id DESC";
                     res = LeagueDB.get().query(query);
@@ -1270,7 +1279,16 @@ public class Test extends Command{
                     fixOrdinalMatch.queue();
                 break;
             case "getpatch":
-                MatchTracker.retriveSampleGamesPatch();
+                ChronoTask getPatch = () -> {
+                    MatchTracker.retriveSampleGamesPatch();
+                };
+                getPatch.queue();
+                break;
+            case "getrank":
+                ChronoTask getRank = () -> {
+                    MatchTracker.retriveHighEloEntries();
+                };
+                getRank.queue();
                 break;
             case "fixrank":
                 ChronoTask fixRank = () -> {

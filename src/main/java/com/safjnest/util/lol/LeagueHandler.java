@@ -1087,7 +1087,7 @@ import com.safjnest.core.cache.managers.UserCache;
                 data.put("puuid", summoner.getPUUID());
                 break;
             case V1_SHARED_ACCOUNT_BY_PUUID:
-                data.put("platform", summoner.getPlatform().toRegionShard());
+                data.put("platform", getAccountRegionShard(summoner.getPlatform()));
                 data.put("puuid", summoner.getPUUID());
                 break;
             case V5_MATCHLIST:
