@@ -213,7 +213,7 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static String formatMatchName(GameQueueType queue) {
-        String name = queue.name().replaceAll("_", " ").toLowerCase();
+        String name = SafJNest.capitalize(queue.name().replaceAll("_", " "));
         switch (queue) {
             case CHERRY:
                 name = "Arena";
