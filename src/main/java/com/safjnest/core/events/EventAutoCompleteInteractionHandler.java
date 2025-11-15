@@ -503,7 +503,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
-        R4J r4j = LeagueHandler.getRiotApi();
 
         if (accounts == null || accounts.isEmpty()) {
             return choices;
@@ -512,8 +511,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         HashMap<String, String> accountNames = new HashMap<>();
         for (String puuid : accounts.keySet()) {
             LeagueShard shard = LeagueShard.valueOf(accounts.get(puuid));
-            Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
-            RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
+            RiotAccount riotAccount = LeagueHandler.getRiotAccountFromPuuid(puuid, shard);
             accountNames.put(puuid, riotAccount.getName() + "#" + riotAccount.getTag());
         }
 
