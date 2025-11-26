@@ -503,7 +503,10 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static Summoner getSummonerByName(String nameAccount, String tag, LeagueShard shard) {
-        return getSummonerByPuuid(getRiotAccountFromName(nameAccount, tag, shard).getPUUID(), shard);
+        RiotAccount account = getRiotAccountFromName(nameAccount, tag, shard);
+        return account != null 
+            ? getSummonerByPuuid(account.getPUUID(), shard) 
+            : null;
     }
 
     public static String getFormattedSummonerName(Summoner s) {

@@ -23,6 +23,7 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
 
+import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -586,7 +587,7 @@ public class MatchTracker {
 
     public static void retriveSampleGames() {
         BotLogger.info("[LPTracker] Pushing sample matches");
-        
+        DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
         String currentPatch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
         for (LeagueShard shard : LeagueHandler.getActiveShards()) {
             ChronoTask shardTask = () -> {
