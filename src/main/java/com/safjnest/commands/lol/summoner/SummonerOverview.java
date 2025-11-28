@@ -6,13 +6,14 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.message.LeagueMessage;
+import com.safjnest.lol.message.LeagueMessageParameter;
+import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.lol.LeagueHandler;
-import com.safjnest.util.lol.LeagueMessage;
-import com.safjnest.util.lol.LeagueMessageParameter;
-import com.safjnest.util.lol.LeagueMessageType;
+
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;

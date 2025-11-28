@@ -5,10 +5,10 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.lol.LeagueHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;

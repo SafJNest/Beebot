@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol.message;
 
 public enum LeagueMessageType {
   PROFILE("Profile", false),

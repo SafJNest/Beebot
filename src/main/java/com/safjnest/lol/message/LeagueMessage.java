@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol.message;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -21,14 +21,18 @@ import java.sql.SQLException;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.MatchTracker;
+import com.safjnest.lol.model.Accumulator;
+import com.safjnest.lol.model.MatchData;
+import com.safjnest.lol.model.ParticipantChampionStat;
+import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.DateHandler;
 import com.safjnest.util.SafJNest;
-import com.safjnest.util.lol.model.MatchData;
-import com.safjnest.util.lol.model.ParticipantData;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;

@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol.model;
 
 public class ParticipantChampionStat {
   private int champion;

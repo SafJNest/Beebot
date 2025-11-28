@@ -32,16 +32,16 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.message.LeagueMessageParameter;
+import com.safjnest.lol.message.LeagueMessageType;
+import com.safjnest.lol.model.MatchData;
+import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.model.build.CustomBuildData;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.lol.LeagueHandler;
-import com.safjnest.util.lol.LeagueMessageParameter;
-import com.safjnest.util.lol.LeagueMessageType;
-import com.safjnest.util.lol.model.MatchData;
-import com.safjnest.util.lol.model.ParticipantData;
-import com.safjnest.util.lol.model.build.CustomBuildData;
 
 public class LeagueDB extends AbstractDB {
 

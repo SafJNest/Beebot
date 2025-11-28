@@ -14,8 +14,6 @@ import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
-import com.safjnest.util.lol.LeagueHandler;
-import com.safjnest.util.lol.model.AugmentData;
 import com.safjnest.util.twitch.TwitchClient;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
@@ -40,6 +38,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.AugmentData;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private boolean isFocused;

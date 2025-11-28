@@ -1,15 +1,15 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol.model;
 
 public class Accumulator {
   int sum = 0;
-  int count = 0;
+  public int count = 0;
 
-  void add(int value) {
+  public void add(int value) {
     sum += value;
     count++;
   }
 
-  double avg() {
+  public double avg() {
     return count == 0 ? 0 : (double) sum / count;
   }
 

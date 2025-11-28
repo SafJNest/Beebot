@@ -4,15 +4,15 @@ import java.util.Collections;
 
 import com.safjnest.App;
 import com.safjnest.core.chat.ChatHandler;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.message.LeagueMessage;
+import com.safjnest.lol.message.LeagueMessageParameter;
+import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.lol.LeagueHandler;
-import com.safjnest.util.lol.LeagueMessage;
-import com.safjnest.util.lol.LeagueMessageParameter;
-import com.safjnest.util.lol.LeagueMessageType;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;

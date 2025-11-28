@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol;
 
 import java.util.ArrayList;
 import java.util.HashMap;

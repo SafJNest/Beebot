@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -35,9 +35,6 @@ import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.model.AugmentData;
-import com.safjnest.util.lol.model.rune.PageRunes;
-import com.safjnest.util.lol.model.rune.Rune;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
@@ -67,6 +64,9 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.model.AugmentData;
+import com.safjnest.lol.model.rune.PageRunes;
+import com.safjnest.lol.model.rune.Rune;
 
 
 /**

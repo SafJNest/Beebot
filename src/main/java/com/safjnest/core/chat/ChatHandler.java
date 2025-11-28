@@ -11,7 +11,6 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.TimeConstant;
-import com.safjnest.util.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Icon;
@@ -27,6 +26,7 @@ import net.dv8tion.jda.api.components.buttons.Button;
 import rx.internal.util.SynchronizedQueue;
 
 import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.lol.LeagueHandler;
 
 public class ChatHandler {
     private static final long connectTimeoutDelay = TimeConstant.MINUTE * 3;
