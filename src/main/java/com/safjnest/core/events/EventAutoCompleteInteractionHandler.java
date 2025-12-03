@@ -31,7 +31,6 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.command.CommandAutoCompleteInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
