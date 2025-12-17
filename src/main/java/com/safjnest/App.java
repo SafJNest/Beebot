@@ -107,7 +107,7 @@ public class App {
             //     System.out.println("✅ Imported: " + qr.get("riot_id"));
             // }
             MongoCollection<Document> summonerCollection = database.getCollection("summoner");
-            query = "SELECT id, game_id, queue, region, rank, time_start, time_end, events, bans, patch FROM `match` ORDER by ID asc";
+            query = "SELECT id, game_id, queue, region, rank, time_start, time_end, events, bans, patch FROM `match` ORDER by ID desc limit 10000";
             QueryResult matches = LeagueDB.get().query(query);
             collection = database.getCollection("match");
             for (QueryRecord qr : matches) {
@@ -116,8 +116,7 @@ public class App {
                 String qParticipants = "SELECT id, summoner_id, win, kda, champion, team, lane, subteam, subteam_placement, rank, lp, gain, damage, damage_building, healing, cs, gold_earned, ward, ward_killed, vision_score, pings, build FROM participant WHERE match_id = " + matchId + ";";
                 QueryResult qrParticipants = LeagueDB.get().query(qParticipants);
 
-                Document match = new Document();
-                match.append("id", matchId);
+                Document match = new Document("_id", qr.get("region") + "_" + qr.get("game_id"));
                 match.append("game_id", qr.get("game_id"));
                 match.append("queue", qr.get("queue"));
                 match.append("region", qr.get("region"));
@@ -129,11 +128,8 @@ public class App {
                 match.append("patch", qr.get("patch"));
                 List<Document> participantList = new ArrayList<>();
                 for (QueryRecord p : qrParticipants) {
-                    Document summonerDoc = summonerCollection.find(eq("id", p.getAsInt("summoner_id"))).first();
-                    String objId = summonerDoc.getObjectId("_id").toString();
                     Document doc = new Document()
-                        .append("id", p.getAsInt("id"))
-                        .append("summoner_id", objId)
+                        .append("puuid", "aa")
                         .append("win", p.getAsBoolean("win"))
                         .append("kda", p.get("kda"))
                         .append("champion", p.getAsInt("champion"))
@@ -159,7 +155,7 @@ public class App {
                 match.append("participants", participantList);
 
                 collection.replaceOne(
-                    new Document("id", qr.get("id")),
+                    new Document("_id", qr.get("region") + "_" + qr.get("game_id")),
                     match,
                     new ReplaceOptions().upsert(true)
                 );
