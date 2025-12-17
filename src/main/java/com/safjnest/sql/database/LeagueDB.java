@@ -757,6 +757,11 @@ public class LeagueDB extends AbstractDB {
                     p.subTeam = rs.getInt("subteam");
                     p.subTeamPlacement = rs.getInt("subteam_placement");
                     p.puuid = rs.getString("puuid");
+                    p.level = rs.getInt("level");
+                    p.doubles = rs.getInt("doubles");
+                    p.triples = rs.getInt("triples");
+                    p.quadruples = rs.getInt("quadruples");
+                    p.pentas = rs.getInt("pentas");
 
                     try {
                         JSONObject pingsJson = new JSONObject(rs.getString("pings"));

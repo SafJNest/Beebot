@@ -1,7 +1,7 @@
 package com.safjnest.lol.model;
 
 public class Accumulator {
-  int sum = 0;
+  public int sum = 0;
   public int count = 0;
 
   public void add(int value) {

@@ -34,6 +34,13 @@ public class ParticipantData {
     public int subTeam;
     public int subTeamPlacement;
     public String puuid;
+
+    public int level;
+
+    public int doubles;
+    public int triples;
+    public int quadruples;
+    public int pentas;
     
     public int item0;
     public int item1;
