@@ -4,7 +4,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import org.bson.Document;
@@ -17,6 +19,7 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.ReplaceOptions;
 import com.safjnest.core.Bot;
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
@@ -25,7 +28,7 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
-import static com.mongodb.client.model.Filters.eq;
+
 @SpringBootApplication
 public class App {
 
@@ -41,130 +44,273 @@ public class App {
 
         if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
-            //runSpring();
-        }
-        else {
+        } else {
             TwitchClient.init();
-            //runSpring();
         }
-        //bot = new Bot();
-        //bot.il_risveglio_della_bestia();
 
         String uri = "enacoid";
+        
         try (MongoClient mongoClient = MongoClients.create(uri)) {
             MongoDatabase database = mongoClient.getDatabase("league_of_legends");
-            MongoCollection<Document> collection = database.getCollection("summoner");
 
-            String query = "SELECT id, riot_id, puuid, region, level, icon FROM summoner ORDER BY id ASC LIMIT 100;";
-            QueryResult summoners = LeagueDB.get().query(query);
+            ChronoTask a = () -> {
+                migrateSummoners(database);            
+            };
+            a.queue();
+            
+            migrateMatches(database);
+            
+            BotLogger.info("Migration completed successfully!");
+            
+        } catch (Exception e) {
+            BotLogger.error("Migration failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
-            // for (QueryRecord qr : summoners) {
-            //     int summonerId = qr.getAsInt("id");
+    private static void migrateSummoners(MongoDatabase database) {
+        BotLogger.info("Starting summoner migration (per-summoner mode)...");
+    
+        MongoCollection<Document> collection = database.getCollection("summoner");
+    
+        QueryResult summonerIds = LeagueDB.get().query(
+            "SELECT id FROM summoner ORDER BY id DESC"
+        );
+    
+        int count = 0;
+        int errors = 0;
+        int skipped = 0;
+    
+        for (QueryRecord idRow : summonerIds) {
+            int summonerId = idRow.getAsInt("id");
+    
+            try {
+                // 🔹 summoner base
+                QueryResult qrSummoner = LeagueDB.get().query(
+                    "SELECT riot_id, puuid, region, level, icon " +
+                    "FROM summoner WHERE id = " + summonerId + " LIMIT 1"
+                );
+    
+                if (!qrSummoner.iterator().hasNext()) {
+                    skipped++;
+                    continue;
+                }
+    
+                QueryRecord qr = qrSummoner.iterator().next();
+                String puuid = qr.get("puuid");
+    
+                if (puuid == null || puuid.isEmpty()) {
+                    skipped++;
+                    continue;
+                }
+    
+                Document summoner = new Document("_id", puuid)
+                    .append("riot_id", qr.get("riot_id"))
+                    .append("puuid", puuid)
+                    .append("region", qr.get("region"))
+                    .append("level", qr.getAsInt("level"))
+                    .append("icon", qr.getAsInt("icon"));
+    
+                // 🔹 ranked
+                QueryResult qrRank = LeagueDB.get().query(
+                    "SELECT queue, rank, lp, wins, losses " +
+                    "FROM rank WHERE summoner_id = " + summonerId
+                );
+    
+                List<Document> ranked = new ArrayList<>();
+                for (QueryRecord r : qrRank) {
+                    ranked.add(new Document()
+                        .append("queue", r.get("queue"))
+                        .append("rank", r.get("rank"))
+                        .append("lp", r.getAsInt("lp"))
+                        .append("wins", r.getAsInt("wins"))
+                        .append("losses", r.getAsInt("losses"))
+                    );
+                }
+                summoner.append("ranked", ranked);
+    
+                // 🔹 masteries (top 50)
+                QueryResult qrMastery = LeagueDB.get().query(
+                    "SELECT champion_id, champion_points, champion_level " +
+                    "FROM masteries WHERE summoner_id = " + summonerId +
+                    " ORDER BY champion_points DESC LIMIT 50"
+                );
+    
+                List<Document> masteries = new ArrayList<>();
+                for (QueryRecord m : qrMastery) {
+                    masteries.add(new Document()
+                        .append("champion_id", m.getAsInt("champion_id"))
+                        .append("champion_points", m.getAsInt("champion_points"))
+                        .append("champion_level", m.getAsInt("champion_level"))
+                    );
+                }
+                summoner.append("masteries", masteries);
+    
+                // 🔹 upsert
+                collection.replaceOne(
+                    new Document("_id", puuid),
+                    summoner,
+                    new ReplaceOptions().upsert(true)
+                );
+    
+                count++;
+                if (count % 1000 == 0) {
+                    BotLogger.info(
+                        "Summoners migrated: " + count +
+                        " | errors: " + errors +
+                        " | skipped: " + skipped
+                    );
+                }
+    
+            } catch (Exception e) {
+                errors++;
+                if (errors % 50 == 0) {
+                    BotLogger.error(
+                        "Summoner error (" + errors + "): " + e.getMessage()
+                    );
+                }
+            }
+        }
+    
+        BotLogger.info(
+            "Summoner migration completed. Total: " + count +
+            ", Errors: " + errors +
+            ", Skipped: " + skipped
+        );
+    }
 
-            //     String qRank = "SELECT queue, rank, lp, wins, losses FROM rank WHERE summoner_id = " + summonerId + ";";
-            //     String qMastery = "SELECT champion_id, champion_points, champion_level FROM masteries WHERE summoner_id = " + summonerId + ";";
-
-            //     QueryResult qrRank = LeagueDB.get().query(qRank);
-            //     QueryResult qrMastery = LeagueDB.get().query(qMastery);
-
-            //     Document summoner = new Document();
-            //     summoner.append("id", summonerId);
-            //     summoner.append("riot_id", qr.get("riot_id"));
-            //     summoner.append("puuid", qr.get("puuid"));
-            //     summoner.append("region", qr.get("region"));
-            //     summoner.append("level", qr.getAsInt("level"));
-            //     summoner.append("icon", qr.getAsInt("icon"));
-            //     List<Document> rankedList = new ArrayList<>();
-            //     for (QueryRecord r : qrRank) {
-            //         Document doc = new Document()
-            //             .append("queue", r.get("queue"))
-            //             .append("tier", r.get("tier"))
-            //             .append("rank", r.get("rank"))
-            //             .append("lp", r.getAsInt("lp"))
-            //             .append("wins", r.getAsInt("wins"))
-            //             .append("losses", r.getAsInt("losses"));
-            //         rankedList.add(doc);
-            //     }
-            //     summoner.append("ranked", rankedList);
-            //     List<Document> masteryList = new ArrayList<>();
-            //     for (QueryRecord m : qrMastery) {
-            //         Document doc = new Document()
-            //             .append("champion_id", m.getAsInt("champion_id"))
-            //             .append("champion_points", m.getAsInt("champion_points"))
-            //             .append("champion_level", m.getAsInt("champion_level"));
-            //         masteryList.add(doc);
-            //     }
-            //     summoner.append("masteries", masteryList);
-
-
-            //     // upsert: inserisce se non esiste, aggiorna se esiste
-            //     collection.replaceOne(
-            //         new Document("puuid", qr.get("puuid")),
-            //         summoner,
-            //         new ReplaceOptions().upsert(true)
-            //     );
-
-            //     System.out.println("✅ Imported: " + qr.get("riot_id"));
-            // }
-            MongoCollection<Document> summonerCollection = database.getCollection("summoner");
-            query = "SELECT id, game_id, queue, region, rank, time_start, time_end, events, bans, patch FROM `match` ORDER by ID desc limit 10000";
-            QueryResult matches = LeagueDB.get().query(query);
-            collection = database.getCollection("match");
-            for (QueryRecord qr : matches) {
-                int matchId = qr.getAsInt("id");
-
-                String qParticipants = "SELECT id, summoner_id, win, kda, champion, team, lane, subteam, subteam_placement, rank, lp, gain, damage, damage_building, healing, cs, gold_earned, ward, ward_killed, vision_score, pings, build FROM participant WHERE match_id = " + matchId + ";";
-                QueryResult qrParticipants = LeagueDB.get().query(qParticipants);
-
-                Document match = new Document("_id", qr.get("region") + "_" + qr.get("game_id"));
-                match.append("game_id", qr.get("game_id"));
-                match.append("queue", qr.get("queue"));
-                match.append("region", qr.get("region"));
-                match.append("rank", qr.get("rank"));
-                match.append("time_start", qr.getAsLong("time_start"));
-                match.append("time_end", qr.getAsLong("time_end"));
-                match.append("events", Document.parse(qr.get("events")));
-                match.append("bans", Document.parse(qr.get("bans")));
-                match.append("patch", qr.get("patch"));
-                List<Document> participantList = new ArrayList<>();
-                for (QueryRecord p : qrParticipants) {
+    private static void migrateMatches(MongoDatabase database) {
+        BotLogger.info("Starting match migration (per-match mode)...");
+    
+        MongoCollection<Document> matchCollection = database.getCollection("match");
+    
+        // summoner_id -> puuid
+        Map<Integer, String> summonerIdToPuuid = new HashMap<>();
+        QueryResult summoners = LeagueDB.get().query(
+            "SELECT id, puuid FROM summoner WHERE puuid IS NOT NULL AND puuid != ''"
+        );
+        for (QueryRecord s : summoners) {
+            summonerIdToPuuid.put(s.getAsInt("id"), s.get("puuid"));
+        }
+    
+        QueryResult matchIds = LeagueDB.get().query(
+            "SELECT id FROM `match` ORDER BY id DESC"
+        );
+    
+        int count = 0;
+        int errors = 0;
+    
+        for (QueryRecord idRow : matchIds) {
+            int matchId = idRow.getAsInt("id");
+    
+            try {
+                // 🔹 match
+                QueryResult matchQR = LeagueDB.get().query(
+                    "SELECT id, game_id, queue, region, rank, time_start, time_end, events, bans, patch " +
+                    "FROM `match` WHERE id = " + matchId + " LIMIT 1"
+                );
+    
+                if (!matchQR.iterator().hasNext()) continue;
+                QueryRecord m = matchQR.iterator().next();
+    
+                String gameId = m.get("game_id");
+                String region = m.get("region");
+    
+                if (gameId == null || region == null) continue;
+    
+                Document match = new Document("_id", region + "_" + gameId)
+                    .append("game_id", gameId)
+                    .append("queue", m.get("queue"))
+                    .append("region", region)
+                    .append("rank", m.get("rank"))
+                    .append("time_start", m.getAsLong("time_start"))
+                    .append("time_end", m.getAsLong("time_end"))
+                    .append("patch", m.get("patch"));
+    
+                match.append("events", safeJson(m.get("events")));
+                match.append("bans", safeJson(m.get("bans")));
+    
+                // 🔹 participants (NUOVA STRUTTURA)
+                QueryResult participants = LeagueDB.get().query(
+                    "SELECT summoner_id, win, kda, champion, level, team, lane, subteam, subteam_placement, " +
+                    "rank, lp, gain, damage, doubles, triples, quadruples, pentas, damage_building, healing, " +
+                    "cs, gold_earned, ward, ward_killed, vision_score, pings, build " +
+                    "FROM participant WHERE match_id = " + matchId
+                );
+    
+                List<Document> participantDocs = new ArrayList<>();
+    
+                for (QueryRecord p : participants) {
+                    int summonerId = p.getAsInt("summoner_id");
+                    String puuid = summonerIdToPuuid.getOrDefault(
+                        summonerId, "unknown_" + summonerId
+                    );
+    
                     Document doc = new Document()
-                        .append("puuid", "aa")
+                        .append("puuid", puuid)
                         .append("win", p.getAsBoolean("win"))
                         .append("kda", p.get("kda"))
                         .append("champion", p.getAsInt("champion"))
-                        .append("team", p.getAsInt("team"))
+                        .append("level", p.getAsInt("level"))
+                        .append("team", p.get("team"))
                         .append("lane", p.get("lane"))
-                        .append("subteam", p.get("subteam"))
+                        .append("subteam", p.getAsInt("subteam"))
                         .append("subteam_placement", p.getAsInt("subteam_placement"))
                         .append("rank", p.get("rank"))
                         .append("lp", p.getAsInt("lp"))
                         .append("gain", p.getAsInt("gain"))
                         .append("damage", p.getAsInt("damage"))
+                        .append("doubles", p.getAsInt("doubles"))
+                        .append("triples", p.getAsInt("triples"))
+                        .append("quadruples", p.getAsInt("quadruples"))
+                        .append("pentas", p.getAsInt("pentas"))
                         .append("damage_building", p.getAsInt("damage_building"))
                         .append("healing", p.getAsInt("healing"))
                         .append("cs", p.getAsInt("cs"))
                         .append("gold_earned", p.getAsInt("gold_earned"))
                         .append("ward", p.getAsInt("ward"))
                         .append("ward_killed", p.getAsInt("ward_killed"))
-                        .append("vision_score", p.getAsInt("vision_score"))
-                        .append("pings", p.getAsInt("pings"))
-                        .append("build", Document.parse(p.get("build")));
-                    participantList.add(doc);
+                        .append("vision_score", p.getAsInt("vision_score"));
+    
+                    doc.append("pings", safeJson(p.get("pings")));
+                    doc.append("build", safeJson(p.get("build")));
+    
+                    participantDocs.add(doc);
                 }
-                match.append("participants", participantList);
-
-                collection.replaceOne(
-                    new Document("_id", qr.get("region") + "_" + qr.get("game_id")),
+    
+                match.append("participants", participantDocs);
+    
+                matchCollection.replaceOne(
+                    new Document("_id", region + "_" + gameId),
                     match,
                     new ReplaceOptions().upsert(true)
                 );
-
-                System.out.println("✅ Imported: " + qr.get("game_id"));
+    
+                count++;
+                if (count % 1000 == 0) {
+                    BotLogger.info("Matches migrated: " + count);
+                }
+    
+            } catch (Exception e) {
+                errors++;
+                if (errors % 50 == 0) {
+                    BotLogger.error("Match error (" + errors + "): " + e.getMessage());
+                }
             }
         }
-            
+    
+        BotLogger.info("Match migration completed. Total: " + count + ", Errors: " + errors);
     }
+
+    private static Document safeJson(String json) {
+        try {
+            if (json != null && !json.isEmpty() && !json.equals("{}")) {
+                return Document.parse(json);
+            }
+        } catch (Exception ignored) {}
+        return new Document();
+    }
+    
 
     public static void runSpring() {
         SpringApplication springApplication = new SpringApplication(App.class);
@@ -196,5 +342,4 @@ public class App {
     public static boolean isTesting() {
         return settings.getConfig().isTesting();
     }
-
 }
