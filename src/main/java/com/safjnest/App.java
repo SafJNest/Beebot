@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import org.bson.Document;
+import org.json.JSONObject;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -52,7 +53,7 @@ public class App {
             MongoDatabase database = mongoClient.getDatabase("league_of_legends");
 
             
-            migrateSummoners(database);  
+            //migrateSummoners(database);  
             migrateMatches(database);
             
             BotLogger.info("Migration completed successfully!");
@@ -273,10 +274,31 @@ public class App {
                         .append("vision_score", p.getAsInt("vision_score"));
     
                     doc.append("pings", safeJson(p.get("pings")));
-                    doc.append("build", safeJson(p.get("build")));
-    
-                    participantDocs.add(doc);
-                }
+                    // Parsing JSON del build
+                    Document buildDoc = safeJson(p.get("build"));
+
+                    if (!buildDoc.isEmpty()) {
+                        // Runes
+                        Document runes = buildDoc.get("runes", Document.class);
+                        if (runes != null) doc.append("runes", runes);
+                    
+                        // Build / starter / boots
+                        Document buildItems = buildDoc.get("build", Document.class);
+                        if (buildItems != null) doc.append("build_items", buildItems);
+                    
+                        // Summoner spells
+                        List<String> summonerSpells = buildDoc.getList("summoner_spells", String.class);
+                        if (summonerSpells != null) doc.append("summoner_spells", summonerSpells);
+                    
+                        // Skill order
+                        List<String> skillOrder = buildDoc.getList("skill_order", String.class);
+                        if (skillOrder != null) doc.append("skill_order", skillOrder);
+                    
+                        // Augments (opzionale)
+                        List<String> augments = buildDoc.getList("augments", String.class);
+                        if (augments != null) doc.append("augments", augments);
+                    }
+                    
     
                 match.append("participants", participantDocs);
     
@@ -290,6 +312,7 @@ public class App {
                 if (count % 1000 == 0) {
                     BotLogger.info("Matches migrated: " + count);
                 }
+            }
     
             } catch (Exception e) {
                 errors++;
