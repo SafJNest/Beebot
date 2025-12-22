@@ -48,9 +48,7 @@ public class App {
             TwitchClient.init();
         }
 
-        String uri = "enacoid";
-        
-        try (MongoClient mongoClient = MongoClients.create(uri)) {
+        try (MongoClient mongoClient = MongoClients.create(settings.getJsonSettings().getMonbodb())) {
             MongoDatabase database = mongoClient.getDatabase("league_of_legends");
 
             
