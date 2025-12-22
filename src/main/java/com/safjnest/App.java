@@ -53,11 +53,8 @@ public class App {
         try (MongoClient mongoClient = MongoClients.create(uri)) {
             MongoDatabase database = mongoClient.getDatabase("league_of_legends");
 
-            ChronoTask a = () -> {
-                migrateSummoners(database);            
-            };
-            a.queue();
             
+            migrateSummoners(database);  
             migrateMatches(database);
             
             BotLogger.info("Migration completed successfully!");
@@ -74,7 +71,7 @@ public class App {
         MongoCollection<Document> collection = database.getCollection("summoner");
     
         QueryResult summonerIds = LeagueDB.get().query(
-            "SELECT id FROM summoner ORDER BY id DESC"
+            "SELECT id FROM summoner ORDER BY id ASC"
         );
     
         int count = 0;
@@ -87,7 +84,7 @@ public class App {
             try {
                 // 🔹 summoner base
                 QueryResult qrSummoner = LeagueDB.get().query(
-                    "SELECT riot_id, puuid, region, level, icon " +
+                    "SELECT riot_id, puuid, region, level, icon, tracking, user_id " +
                     "FROM summoner WHERE id = " + summonerId + " LIMIT 1"
                 );
     
@@ -109,11 +106,13 @@ public class App {
                     .append("puuid", puuid)
                     .append("region", qr.get("region"))
                     .append("level", qr.getAsInt("level"))
-                    .append("icon", qr.getAsInt("icon"));
+                    .append("icon", qr.getAsInt("icon"))
+                    .append("tracking", qr.getAsBoolean("tracking"))
+                    .append("user_id", qr.get("user_id"));
     
                 // 🔹 ranked
                 QueryResult qrRank = LeagueDB.get().query(
-                    "SELECT queue, rank, lp, wins, losses " +
+                    "SELECT queue, rank, lp, wins, losses, last_update " +
                     "FROM rank WHERE summoner_id = " + summonerId
                 );
     
@@ -125,15 +124,16 @@ public class App {
                         .append("lp", r.getAsInt("lp"))
                         .append("wins", r.getAsInt("wins"))
                         .append("losses", r.getAsInt("losses"))
+                        .append("updated_at", r.getAsDate("last_update"))
                     );
                 }
                 summoner.append("ranked", ranked);
     
                 // 🔹 masteries (top 50)
                 QueryResult qrMastery = LeagueDB.get().query(
-                    "SELECT champion_id, champion_points, champion_level " +
+                    "SELECT champion_id, champion_points, champion_level, last_play_time " +
                     "FROM masteries WHERE summoner_id = " + summonerId +
-                    " ORDER BY champion_points DESC LIMIT 50"
+                    " ORDER BY champion_points DESC"
                 );
     
                 List<Document> masteries = new ArrayList<>();
@@ -142,6 +142,7 @@ public class App {
                         .append("champion_id", m.getAsInt("champion_id"))
                         .append("champion_points", m.getAsInt("champion_points"))
                         .append("champion_level", m.getAsInt("champion_level"))
+                        .append("last_play_time", m.getAsDate("last_play_time"))
                     );
                 }
                 summoner.append("masteries", masteries);
@@ -164,6 +165,7 @@ public class App {
     
             } catch (Exception e) {
                 errors++;
+                e.printStackTrace();
                 if (errors % 50 == 0) {
                     BotLogger.error(
                         "Summoner error (" + errors + "): " + e.getMessage()
@@ -194,7 +196,7 @@ public class App {
         }
     
         QueryResult matchIds = LeagueDB.get().query(
-            "SELECT id FROM `match` ORDER BY id DESC"
+            "SELECT id FROM `match` ORDER BY id where game_id = 7649130455"
         );
     
         int count = 0;
@@ -223,8 +225,8 @@ public class App {
                     .append("queue", m.get("queue"))
                     .append("region", region)
                     .append("rank", m.get("rank"))
-                    .append("time_start", m.getAsLong("time_start"))
-                    .append("time_end", m.getAsLong("time_end"))
+                    .append("time_start", m.getAsDate("time_start"))
+                    .append("time_end", m.getAsDate("time_end"))
                     .append("patch", m.get("patch"));
     
                 match.append("events", safeJson(m.get("events")));

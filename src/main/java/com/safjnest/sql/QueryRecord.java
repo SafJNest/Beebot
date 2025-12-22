@@ -1,13 +1,14 @@
 package com.safjnest.sql;
 
 import java.sql.Blob;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -91,9 +92,15 @@ public class QueryRecord extends HashMap<String, String> {
 
     public Date getAsDate(String columnName){
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            LocalDateTime dateTime = LocalDateTime.parse(get(columnName), formatter);
-            return Date.valueOf(dateTime.toLocalDate());
+            String value = get(columnName); // es: 2025-12-19 08:06:28.574000
+
+            DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
+    
+            LocalDateTime ldt = LocalDateTime.parse(value, formatter);
+    
+            // UTC consigliato
+            return Date.from(ldt.toInstant(ZoneOffset.UTC));
         } catch (Exception e) {
             return null;
         }
