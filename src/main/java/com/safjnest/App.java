@@ -131,7 +131,7 @@ public class App {
     
                 // 🔹 masteries (top 50)
                 QueryResult qrMastery = LeagueDB.get().query(
-                    "SELECT champion_id, champion_points, champion_level, last_play_time " +
+                    "SELECT champion_id, champion_points, champion_level, last_play_time" +
                     "FROM masteries WHERE summoner_id = " + summonerId +
                     " ORDER BY champion_points DESC"
                 );
@@ -196,7 +196,7 @@ public class App {
         }
     
         QueryResult matchIds = LeagueDB.get().query(
-            "SELECT id FROM `match` ORDER BY id where game_id = 7649130455"
+            "SELECT id FROM `match` ORDER BY id DESC"
         );
     
         int count = 0;
