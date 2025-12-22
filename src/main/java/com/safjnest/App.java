@@ -49,7 +49,7 @@ public class App {
             TwitchClient.init();
         }
 
-        try (MongoClient mongoClient = MongoClients.create(settings.getJsonSettings().getMonbodb())) {
+        try (MongoClient mongoClient = MongoClients.create(settings.getJsonSettings().getMongodb())) {
             MongoDatabase database = mongoClient.getDatabase("league_of_legends");
 
             
@@ -298,7 +298,9 @@ public class App {
                         List<String> augments = buildDoc.getList("augments", String.class);
                         if (augments != null) doc.append("augments", augments);
                     }
+                    participantDocs.add(doc);
                     
+                }
     
                 match.append("participants", participantDocs);
     
@@ -312,7 +314,6 @@ public class App {
                 if (count % 1000 == 0) {
                     BotLogger.info("Matches migrated: " + count);
                 }
-            }
     
             } catch (Exception e) {
                 errors++;
