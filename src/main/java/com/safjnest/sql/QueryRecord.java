@@ -95,13 +95,23 @@ public class QueryRecord extends HashMap<String, String> {
             String value = get(columnName); // es: 2025-12-19 08:06:28.574000
 
             DateTimeFormatter formatter =
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS");
-    
-            LocalDateTime ldt = LocalDateTime.parse(value, formatter);
-    
-            // UTC consigliato
-            return Date.from(ldt.toInstant(ZoneOffset.UTC));
+            new DateTimeFormatterBuilder()
+                .appendPattern("yyyy-MM-dd HH:mm:ss")
+                .optionalStart()
+                .appendFraction(
+                    ChronoField.NANO_OF_SECOND,
+                    0,   // minimo
+                    6,   // massimo (microsecondi)
+                    true // include il punto
+                )
+                .optionalEnd()
+                .toFormatter();
+
+        LocalDateTime ldt = LocalDateTime.parse(value, formatter);
+
+        return Date.from(ldt.toInstant(ZoneOffset.UTC));
         } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
     }
