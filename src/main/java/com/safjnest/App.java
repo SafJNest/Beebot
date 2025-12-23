@@ -220,16 +220,16 @@ public class App {
                 if (gameId == null || region == null) continue;
     
                 Document match = new Document("_id", region + "_" + gameId)
+                    .append("region", region)
                     .append("game_id", gameId)
                     .append("queue", m.get("queue"))
-                    .append("region", region)
                     .append("rank", m.get("rank"))
                     .append("time_start", m.getAsDate("time_start"))
                     .append("time_end", m.getAsDate("time_end"))
                     .append("patch", m.get("patch"));
     
-                match.append("events", safeJson(m.get("events")));
                 match.append("bans", safeJson(m.get("bans")));
+                match.append("events", safeJson(m.get("events")));
     
                 // 🔹 participants (NUOVA STRUTTURA)
                 QueryResult participants = LeagueDB.get().query(
@@ -250,7 +250,13 @@ public class App {
                     Document doc = new Document()
                         .append("puuid", puuid)
                         .append("win", p.getAsBoolean("win"))
-                        .append("kda", p.get("kda"))
+                        .append("kills", p.get("kda").split("/")[0])
+                        .append("deaths", p.get("kda").split("/")[1])
+                        .append("assists", p.get("kda").split("/")[2])
+                        .append("doubles", p.getAsInt("doubles"))
+                        .append("triples", p.getAsInt("triples"))
+                        .append("quadruples", p.getAsInt("quadruples"))
+                        .append("pentas", p.getAsInt("pentas"))
                         .append("champion", p.getAsInt("champion"))
                         .append("level", p.getAsInt("level"))
                         .append("team", p.get("team"))
@@ -261,10 +267,6 @@ public class App {
                         .append("lp", p.getAsInt("lp"))
                         .append("gain", p.getAsInt("gain"))
                         .append("damage", p.getAsInt("damage"))
-                        .append("doubles", p.getAsInt("doubles"))
-                        .append("triples", p.getAsInt("triples"))
-                        .append("quadruples", p.getAsInt("quadruples"))
-                        .append("pentas", p.getAsInt("pentas"))
                         .append("damage_building", p.getAsInt("damage_building"))
                         .append("healing", p.getAsInt("healing"))
                         .append("cs", p.getAsInt("cs"))
