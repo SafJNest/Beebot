@@ -53,7 +53,7 @@ public class App {
             MongoDatabase database = mongoClient.getDatabase("league_of_legends");
 
             
-            //migrateSummoners(database);  
+            migrateSummoners(database);  
             migrateMatches(database);
             
             BotLogger.info("Migration completed successfully!");
