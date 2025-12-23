@@ -53,7 +53,7 @@ public class App {
             MongoDatabase database = mongoClient.getDatabase("league_of_legends");
 
             
-            migrateSummoners(database);  
+            //migrateSummoners(database);  
             migrateMatches(database);
             
             BotLogger.info("Migration completed successfully!");
@@ -250,9 +250,9 @@ public class App {
                     Document doc = new Document()
                         .append("puuid", puuid)
                         .append("win", p.getAsBoolean("win"))
-                        .append("kills", p.get("kda").split("/")[0])
-                        .append("deaths", p.get("kda").split("/")[1])
-                        .append("assists", p.get("kda").split("/")[2])
+                        .append("kills", Integer.parseInt(p.get("kda").split("/")[0]))
+                        .append("deaths", Integer.parseInt(p.get("kda").split("/")[1]))
+                        .append("assists", Integer.parseInt(p.get("kda").split("/")[2]))
                         .append("doubles", p.getAsInt("doubles"))
                         .append("triples", p.getAsInt("triples"))
                         .append("quadruples", p.getAsInt("quadruples"))
