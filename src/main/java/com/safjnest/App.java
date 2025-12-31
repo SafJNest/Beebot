@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.mongodb.Immigrator;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -31,15 +30,16 @@ public class App {
 
         if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
-        } else {
-            TwitchClient.init();
+            //runSpring();
         }
-
-        Immigrator.runMigrations();
-
-        BotLogger.info("Migration completed successfully!");
+        else {
+            TwitchClient.init();
+            //runSpring();
+        }
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
-    
+
     public static void runSpring() {
         SpringApplication springApplication = new SpringApplication(App.class);
             
@@ -70,4 +70,5 @@ public class App {
     public static boolean isTesting() {
         return settings.getConfig().isTesting();
     }
+
 }

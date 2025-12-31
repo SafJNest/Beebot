@@ -34,6 +34,7 @@ import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.mongodb.Immigrator;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
@@ -1287,6 +1288,9 @@ public class Test extends Command{
                     }
                 };
                 fixRank.queue();
+                break;
+            case "migrate":
+                Immigrator.runMigrations();
                 break;
         }
     }  
