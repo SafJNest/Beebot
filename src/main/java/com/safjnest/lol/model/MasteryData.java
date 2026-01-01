@@ -1,4 +1,4 @@
-package com.safjnest.util.lol.model;
+package com.safjnest.lol.model;
 
 import java.util.Date;
 

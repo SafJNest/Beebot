@@ -12,9 +12,9 @@ import static com.mongodb.client.model.Projections.*;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Sorts;
-import com.safjnest.util.lol.model.MatchData;
-import com.safjnest.util.lol.model.ParticipantData;
-import com.safjnest.util.lol.model.SummonerData;
+import com.safjnest.lol.model.MatchData;
+import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.model.SummonerData;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;

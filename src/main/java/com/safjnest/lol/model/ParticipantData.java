@@ -1,4 +1,4 @@
-package com.safjnest.util.lol.model;
+package com.safjnest.lol.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,7 +20,6 @@ public class ParticipantData {
     public int matchId; //TODO: i think i can remove this with mongo
     
     public boolean win;
-    public String kda;
     public int champion;
     public LaneType lane;
     public TeamType team;
@@ -37,6 +36,14 @@ public class ParticipantData {
     public HashMap<String, Integer> pings;
     public int subTeam;
     public int subTeamPlacement;
+
+    public int level;
+
+    public String kda;
+    public int doubles;
+    public int triples;
+    public int quadruples;
+    public int pentas;
     
     public int item0;
     public int item1;

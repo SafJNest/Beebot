@@ -25,6 +25,8 @@ import com.safjnest.core.audio.SafjAudioPlaylist;
 import com.safjnest.core.audio.types.PlayTiming;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.MatchTracker;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -43,8 +45,6 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
-import com.safjnest.util.lol.MatchTracker;
-import com.safjnest.util.lol.LeagueHandler;
 import com.safjnest.util.twitch.TwitchClient;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 

@@ -9,13 +9,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
+import com.safjnest.lol.model.MatchData;
+import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.model.MatchData;
-import com.safjnest.util.lol.model.ParticipantData;
 import com.safjnest.util.twitch.TwitchClient;
 
 @SpringBootApplication

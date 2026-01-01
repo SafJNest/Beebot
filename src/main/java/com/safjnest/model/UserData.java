@@ -12,7 +12,7 @@ import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
-import com.safjnest.util.lol.model.SummonerData;
+import com.safjnest.lol.model.SummonerData;
 
 import net.dv8tion.jda.api.entities.User;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
