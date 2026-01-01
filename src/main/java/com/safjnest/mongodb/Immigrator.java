@@ -41,18 +41,13 @@ public final class Immigrator {
         executor.shutdown();
     }
 
-    // =========================================================
-    // SUMMONERS
-    // =========================================================
-
     private static void migrateSummoners(MongoDatabase database) {
-        BotLogger.info("Starting summoner migration...");
 
         MongoCollection<Document> collection =
             database.getCollection("summoner");
 
         QueryResult summonerIds =
-            LeagueDB.get().query("SELECT id FROM summoner ORDER BY id ASC LIMIT 1000");
+            LeagueDB.get().query("SELECT id FROM summoner ORDER BY id ASC");
 
         int count = 0;
         int errors = 0;
@@ -156,9 +151,6 @@ public final class Immigrator {
         return masteries;
     }
 
-    // =========================================================
-    // MATCHES
-    // =========================================================
 
     private static void migrateMatches(MongoDatabase database) {
         BotLogger.info("Starting match migration...");
@@ -263,16 +255,24 @@ public final class Immigrator {
                         Document buildItems = buildDoc.get("build", Document.class);
                         if (buildItems != null) doc.append("build_items", buildItems);
                     
-                        // Summoner spells
-                        List<String> summonerSpells = buildDoc.getList("summoner_spells", String.class);
+                        List<Integer> summonerSpells =
+                            buildDoc.getList("summoner_spells", Object.class)
+                            .stream()
+                            .map(o -> Integer.parseInt(o.toString()))
+                            .toList();
+
                         if (summonerSpells != null) doc.append("summoner_spells", summonerSpells);
                     
-                        // Skill order
-                        List<String> skillOrder = buildDoc.getList("skill_order", String.class);
+                        List<Integer> skillOrder = buildDoc.getList("skill_order", Object.class)
+                            .stream()
+                            .map(o -> Integer.parseInt(o.toString()))
+                            .toList();
                         if (skillOrder != null) doc.append("skill_order", skillOrder);
                     
-                        // Augments (opzionale)
-                        List<String> augments = buildDoc.getList("augments", String.class);
+                        List<Integer> augments = buildDoc.getList("augments", Object.class)
+                            .stream()
+                            .map(o -> Integer.parseInt(o.toString()))
+                            .toList();
                         if (augments != null) doc.append("augments", augments);
                     }
                     participantDocs.add(doc);
@@ -293,6 +293,7 @@ public final class Immigrator {
                 }
 
             } catch (Exception e) {
+                e.printStackTrace();
                 errors++;
                 if (errors % 50 == 0) {
                     BotLogger.error("Match migration error (" + errors + ")");

@@ -685,8 +685,8 @@ public class LeagueDB extends AbstractDB {
                     MatchData match = new MatchData();
                     match.id = rs.getInt("id");
                     match.gameId = rs.getString("game_id");
-                    match.leagueShard = LeagueShard.valueOf(rs.getString("region"));
-                    match.gameType = GameQueueType.valueOf(rs.getString("queue"));
+                    match.region = LeagueShard.valueOf(rs.getString("region"));
+                    match.queue = GameQueueType.valueOf(rs.getString("queue"));
                     match.timeStart = rs.getTimestamp("time_start").getTime();
                     match.timeEnd = rs.getTimestamp("time_end").getTime();
                     match.patch = rs.getString("patch");

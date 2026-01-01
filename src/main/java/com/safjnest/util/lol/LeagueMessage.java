@@ -893,7 +893,7 @@ public class LeagueMessage {
         OffsetDateTime offsetDateTime = instant.atOffset(offset);
         String date = DateHandler.formatDate(offsetDateTime);
         date = "<t:" + ((match.timeStart/1000) + (match.getDuration()/1000)) + ":R>";
-        switch (match.gameType){
+        switch (match.queue){
             case STRAWBERRY:
                 content = CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.champion)) + " Level: " + 
                         (me.skillOrder.size() > 0 ? me.skillOrder.size() : 1) + 
@@ -999,7 +999,7 @@ public class LeagueMessage {
                 break;
 
             default:
-                String matchTitle = LeagueHandler.formatMatchName(match.gameType) + ": " + (me.win ? "WIN" : "LOSE");
+                String matchTitle = LeagueHandler.formatMatchName(match.queue) + ": " + (me.win ? "WIN" : "LOSE");
                 content = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(me.champion).getName()) + kda + " | " + "**Vision: **" + me.visionScore + "\n"
                         + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
                         + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_") 
@@ -1525,11 +1525,11 @@ public class LeagueMessage {
 
                 unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
                 unique.getOrDefault("lane", new HashSet<>()).add(participant.lane.ordinal());
-                unique.getOrDefault("queue", new HashSet<>()).add(match.gameType.ordinal());
+                unique.getOrDefault("queue", new HashSet<>()).add(match.queue.ordinal());
 
                 LaneType lane = participant.lane;
                 TeamType team = participant.team;
-                GameQueueType gameQueue = match.gameType;
+                GameQueueType gameQueue = match.queue;
                 boolean win = participant.win;
     
                 String kda = participant.kda;

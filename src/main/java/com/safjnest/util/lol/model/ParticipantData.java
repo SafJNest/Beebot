@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.bson.Document;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -12,9 +13,12 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class ParticipantData {
-    public int id;
-    public int summonerId;
-    public int matchId;
+    public int id; //TODO: remove
+    public int summonerId; //TODO: remove
+    public String puuid;
+
+    public int matchId; //TODO: i think i can remove this with mongo
+    
     public boolean win;
     public String kda;
     public int champion;
@@ -33,7 +37,6 @@ public class ParticipantData {
     public HashMap<String, Integer> pings;
     public int subTeam;
     public int subTeamPlacement;
-    public String puuid;
     
     public int item0;
     public int item1;
@@ -210,5 +213,40 @@ public class ParticipantData {
         build.put("build", buildPath);
         
         return build;
+    }
+
+    public void setBuild(Document build) {
+        if (build == null)
+            return;
+
+        // ITEMS
+        Document items = build.get("items", Document.class);
+        if (items != null) {
+            item0 = items.getInteger("0", 0);
+            item1 = items.getInteger("1", 0);
+            item2 = items.getInteger("2", 0);
+            item3 = items.getInteger("3", 0);
+            item4 = items.getInteger("4", 0);
+            item5 = items.getInteger("5", 0);
+            item6 = items.getInteger("6", 0);
+        }
+
+
+        Document runes = build.get("runes", Document.class);
+        if (runes != null) {
+            primaryRunes = runes.getList("primary", Integer.class, new ArrayList<>());
+            secondaryRunes = runes.getList("secondary", Integer.class, new ArrayList<>());
+            statsRunes = runes.getList("stats", Integer.class, new ArrayList<>());
+        }
+        // AUGMENTS
+        augments = build.getList("augments", Integer.class, new ArrayList<>());
+
+        // BUILD PATH
+        Document buildObj = build.get("build", Document.class);
+        if (buildObj != null) {
+            starterItems = buildObj.getList("starter", Integer.class, new ArrayList<>());
+            buildPath = buildObj.getList("build", Integer.class, new ArrayList<>());
+            boots = buildObj.getInteger("boots", 0);
+        }
     }
 }

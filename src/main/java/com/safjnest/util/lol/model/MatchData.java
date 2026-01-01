@@ -10,10 +10,11 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 public class MatchData {
-    public int id;
+
+    public int id; //TODO: remove
     public String gameId;
-    public LeagueShard leagueShard;
-    public GameQueueType gameType;
+    public LeagueShard region;
+    public GameQueueType queue;
     public HashMap<TeamType, Integer> bans;      
     public JSONObject events;
     public long timeStart;

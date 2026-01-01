@@ -14,6 +14,8 @@ import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
+import com.safjnest.util.lol.model.MatchData;
+import com.safjnest.util.lol.model.ParticipantData;
 import com.safjnest.util.twitch.TwitchClient;
 
 @SpringBootApplication
@@ -39,7 +41,20 @@ public class App {
         }
         //bot = new Bot();
         //bot.il_risveglio_della_bestia();
-        System.out.println(MongoLeague.getSummonersByUserId("383358222972616705"));
+        //System.out.println(MongoLeague.getSummonersByUserId("383358222972616705"));
+        MatchData m = MongoLeague.getMatches().get(0);
+        //Immigrator.runMigrations();
+
+        System.out.println(m.region);
+        System.out.println(m.queue);
+        System.out.println(m.bans);
+
+        for (ParticipantData p : m.participants) {
+            System.out.println(p.champion);
+            System.out.println(p.summonerSpell1);
+        }
+
+
     }
 
     public static void runSpring() {
