@@ -37,6 +37,7 @@ import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
+import com.safjnest.mongodb.MongoLeague;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -1125,7 +1126,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event));
 
-        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = MongoLeague.getUserIdByPuuid(puuid, LeagueShard.valueOf(region));
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 

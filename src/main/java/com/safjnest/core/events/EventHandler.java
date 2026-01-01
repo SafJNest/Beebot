@@ -7,6 +7,7 @@ import com.safjnest.core.chat.ChatHandler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.lol.LeagueHandler;
@@ -208,7 +209,7 @@ public class EventHandler extends ListenerAdapter {
             LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event)).withComponents(EventUtils.getStringSelectMneu(event.getMessage().getComponents()));
             parameter.setMessageType(LeagueMessageType.PROFILE);
             int summonerId = LeagueDB.addLOLAccount(s);
-            String userId = LeagueDB.getUserIdByLOLAccountId(puuid, s.getPlatform());
+            String userId = MongoLeague.getUserIdByPuuid(puuid, s.getPlatform());
             if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) userId = "";
             LeagueMessage.edit(event.getMessage(), userId, s, summonerId, parameter);
         }
@@ -228,7 +229,7 @@ public class EventHandler extends ListenerAdapter {
             
             int summonerId = LeagueDB.addLOLAccount(s);
 
-            String userId = LeagueDB.getUserIdByLOLAccountId(puuid, s.getPlatform());
+            String userId = MongoLeague.getUserIdByPuuid(puuid, s.getPlatform());
             if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) userId = "";
             LeagueMessage.edit(event.getMessage(), userId, s, summonerId, parameter);
         }

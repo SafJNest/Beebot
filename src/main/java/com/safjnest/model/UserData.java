@@ -2,14 +2,17 @@ package com.safjnest.model;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import com.safjnest.core.Bot;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.log.LoggerIDpair;
+import com.safjnest.util.lol.model.SummonerData;
 
 import net.dv8tion.jda.api.entities.User;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
@@ -184,13 +187,14 @@ public class UserData {
 //  █████▄▄██   ██████████   ███    █▀    ████████▀  ████████▀    ██████████ 
 //  ▀                                                                        
 
+    //TODo: instead of hashmap use summonerData
     private void retriveRiotAccounts() {
-        QueryResult result = LeagueDB.getLOLAccountsByUserId(USER_ID);
-        if (result == null) { return; }
+        List<SummonerData> summoners = MongoLeague.getSummonersByUserId(USER_ID);
+        if (summoners == null) { return; }
 
         this.riotAccounts = new LinkedHashMap<>();
-        for(QueryRecord row: result){
-            riotAccounts.put(row.get("puuid"), row.get("region"));
+        for(SummonerData s: summoners){
+            riotAccounts.put(s.getPuuid(), s.getRegion().toString());
         }
     }
 

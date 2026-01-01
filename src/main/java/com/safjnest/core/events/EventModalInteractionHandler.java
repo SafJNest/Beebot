@@ -20,6 +20,7 @@ import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.AlertMessage;
 import com.safjnest.util.SafJNest;
@@ -250,7 +251,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         
         
         event.deferEdit().queue();
-        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = MongoLeague.getUserIdByPuuid(puuid, LeagueShard.valueOf(region));
         if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) user_id = "";
         Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 

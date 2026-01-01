@@ -59,15 +59,6 @@ public class LeagueDB extends AbstractDB {
         return instance;
     }
 
-    public static QueryResult getLOLAccountsByUserId(String user_id){
-        String query = "SELECT puuid, region, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
-        return instance.query(query);
-    }
-
-    public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
-        return instance.lineQuery("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND region = '" + shard + "';").get("user_id");
-    }
-
     public static QueryResult getAdvancedLOLData(String summonerId) {
         return instance.query("SELECT `champion`, COUNT(*) AS `games`, SUM(`win`) AS `wins`, SUM(CASE WHEN `win` = 0 THEN 1 ELSE 0 END) AS `losses`, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', 1) AS UNSIGNED)) AS avg_kills, AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(`kda`, '/', -2), '/', 1) AS UNSIGNED)) AS avg_deaths, AVG(CAST(SUBSTRING_INDEX(`kda`, '/', -1) AS UNSIGNED)) AS avg_assists, SUM(`gain`) AS total_lp_gain FROM `participant` WHERE `summoner_id` = '" + summonerId + "' GROUP BY `champion` ORDER BY `games` DESC;");
     }

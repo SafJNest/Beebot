@@ -52,7 +52,7 @@ public final class Immigrator {
             database.getCollection("summoner");
 
         QueryResult summonerIds =
-            LeagueDB.get().query("SELECT id FROM summoner ORDER BY id ASC");
+            LeagueDB.get().query("SELECT id FROM summoner ORDER BY id ASC LIMIT 1000");
 
         int count = 0;
         int errors = 0;
@@ -168,8 +168,7 @@ public final class Immigrator {
 
         Map<Integer, String> summonerIdToPuuid = loadPuuidMap();
 
-        QueryResult matchIds =
-            LeagueDB.get().query("SELECT id FROM `match` ORDER BY id DESC");
+        QueryResult matchIds = LeagueDB.get().query("SELECT m.id FROM `match` m JOIN `participant` p ON m.id = p.match_id WHERE p.summoner_id = '50' ORDER BY m.id DESC");
 
         int count = 0;
         int errors = 0;

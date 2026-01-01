@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.BotSettings.Settings;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -36,8 +37,9 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-        bot = new Bot();
-        bot.il_risveglio_della_bestia();
+        //bot = new Bot();
+        //bot.il_risveglio_della_bestia();
+        System.out.println(MongoLeague.getSummonersByUserId("383358222972616705"));
     }
 
     public static void runSpring() {

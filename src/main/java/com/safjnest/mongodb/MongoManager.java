@@ -1,6 +1,10 @@
 package com.safjnest.mongodb;
 
 import org.bson.Document;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.codecs.pojo.PojoCodecProvider;
+import static org.bson.codecs.configuration.CodecRegistries.*;
+
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -23,10 +27,16 @@ public class MongoManager {
   }
 
   private static void init() {
+    CodecRegistry pojoCodecRegistry = fromRegistries(
+      MongoClientSettings.getDefaultCodecRegistry(),
+      fromProviders(PojoCodecProvider.builder().automatic(true).build())
+    );
+
     ConnectionString connectionString = new ConnectionString(SettingsLoader.getSettings().getJsonSettings().getMongodb());
 
     MongoClientSettings settings = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
+            .codecRegistry(pojoCodecRegistry)
             .build();
 
     mongo = MongoClients.create(settings);
