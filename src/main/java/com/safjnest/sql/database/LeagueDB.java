@@ -32,16 +32,16 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.message.LeagueMessageParameter;
+import com.safjnest.lol.message.LeagueMessageType;
+import com.safjnest.lol.model.MatchData;
+import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.model.build.CustomBuildData;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.lol.LeagueHandler;
-import com.safjnest.util.lol.LeagueMessageParameter;
-import com.safjnest.util.lol.LeagueMessageType;
-import com.safjnest.util.lol.model.MatchData;
-import com.safjnest.util.lol.model.ParticipantData;
-import com.safjnest.util.lol.model.build.CustomBuildData;
 
 public class LeagueDB extends AbstractDB {
 
@@ -216,6 +216,7 @@ public class LeagueDB extends AbstractDB {
 
         try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
             for (SpectatorParticipant summoner : info.getParticipants()) {
+                if (summoner.getPuuid() == null) continue;
                 pstmt.setString(1, summoner.getPuuid());
                 pstmt.setString(2, summoner.getRiotId());
                 pstmt.setString(3, info.getPlatform().name());
@@ -340,7 +341,7 @@ public class LeagueDB extends AbstractDB {
         pings.put("enemy_missing", participant.getEnemyMissingPings());
         pings.put("vision_cleared", participant.getVisionClearedPings());
         
-        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "');");
+        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ");");
     }
 
 
@@ -747,6 +748,11 @@ public class LeagueDB extends AbstractDB {
                     p.subTeam = rs.getInt("subteam");
                     p.subTeamPlacement = rs.getInt("subteam_placement");
                     p.puuid = rs.getString("puuid");
+                    p.level = rs.getInt("level");
+                    p.doubles = rs.getInt("doubles");
+                    p.triples = rs.getInt("triples");
+                    p.quadruples = rs.getInt("quadruples");
+                    p.pentas = rs.getInt("pentas");
 
                     try {
                         JSONObject pingsJson = new JSONObject(rs.getString("pings"));

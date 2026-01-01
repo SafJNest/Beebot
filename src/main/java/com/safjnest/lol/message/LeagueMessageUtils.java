@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol.message;
 
 import java.text.DecimalFormat;
 import java.util.HashMap;
@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.ParticipantChampionStat;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryRecord;
 

@@ -15,6 +15,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -482,5 +483,16 @@ public class SafJNest extends Thread {
         }
 
         return result.toString();
+    }
+
+    /**
+     * sunyx is the best => Sunyx Is The Best
+     */
+    public static String capitalize(String string) {
+        return List.of(string.split(" "))
+                     .stream()
+                     .map(word -> word.isEmpty() ? word : Character.toUpperCase(word.charAt(0)) + word.substring(1).toLowerCase())
+                     .reduce((a, b) -> a + " " + b)
+                     .orElse("");
     }
 }

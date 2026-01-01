@@ -14,8 +14,6 @@ import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
-import com.safjnest.util.lol.LeagueHandler;
-import com.safjnest.util.lol.model.AugmentData;
 import com.safjnest.util.twitch.TwitchClient;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
@@ -40,6 +38,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.AugmentData;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private boolean isFocused;
@@ -503,7 +503,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         ArrayList<Choice> choices = new ArrayList<>();
 
         HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
-        R4J r4j = LeagueHandler.getRiotApi();
 
         if (accounts == null || accounts.isEmpty()) {
             return choices;
@@ -512,8 +511,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         HashMap<String, String> accountNames = new HashMap<>();
         for (String puuid : accounts.keySet()) {
             LeagueShard shard = LeagueShard.valueOf(accounts.get(puuid));
-            Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
-            RiotAccount riotAccount = r4j.getAccountAPI().getAccountByPUUID(shard.toRegionShard(), summoner.getPUUID());
+            RiotAccount riotAccount = LeagueHandler.getRiotAccountFromPuuid(puuid, shard);
             accountNames.put(puuid, riotAccount.getName() + "#" + riotAccount.getTag());
         }
 
@@ -535,7 +533,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
         QueryResult summoners = new QueryResult();
         LeagueShard defaultShard = e.isFromGuild() ? GuildCache.getGuildOrPut(e.getGuild().getId()).getLeagueShard(e.getChannelId()) : LeagueShard.EUW1;
-        LeagueShard shard = e.getOption("region") != null ? LeagueHandler.getShardFromOrdinal(Integer.valueOf(e.getOption("region").getAsString())) : defaultShard;
+        LeagueShard shard = e.getOption("region") != null ? LeagueShard.valueOf(e.getOption("region").getAsString().toUpperCase()) : defaultShard;
         
         if (!isFocused) {
             HashMap<String, String> accounts = UserCache.getUser(e.getUser().getId()).getRiotAccounts();
@@ -544,15 +542,16 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
                 return choices;
             }
             
-            HashMap<String, String> accountNames = new HashMap<>();
             for (String puuid : accounts.keySet()) {    
                 shard = LeagueShard.valueOf(accounts.get(puuid));
                 Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
                 RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(summoner);
-                accountNames.put(riotAccount.getName() + "#" + riotAccount.getTag(), puuid);
+                choices.add(new Choice(
+                    riotAccount.getName() + "#" + riotAccount.getTag(), 
+                    riotAccount.getPUUID()
+                ));
             }
         
-            accountNames.forEach((k, v) -> choices.add(new Choice(v, k)));
             return choices;
         }
         

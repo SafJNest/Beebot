@@ -1,10 +1,10 @@
-package com.safjnest.util.lol.model.build;
+package com.safjnest.lol.model.build;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.MobalyticsHandler;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.util.lol.LeagueHandler;
-import com.safjnest.util.lol.MobalyticsHandler;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;

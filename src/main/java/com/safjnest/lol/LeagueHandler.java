@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -35,9 +35,6 @@ import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.lol.model.AugmentData;
-import com.safjnest.util.lol.model.rune.PageRunes;
-import com.safjnest.util.lol.model.rune.Rune;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
@@ -67,6 +64,9 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.model.AugmentData;
+import com.safjnest.lol.model.rune.PageRunes;
+import com.safjnest.lol.model.rune.Rune;
 
 
 /**
@@ -213,7 +213,7 @@ import com.safjnest.core.cache.managers.UserCache;
     }
 
     public static String formatMatchName(GameQueueType queue) {
-        String name = queue.name().replaceAll("_", " ").toLowerCase();
+        String name = SafJNest.capitalize(queue.name().replaceAll("_", " "));
         switch (queue) {
             case CHERRY:
                 name = "Arena";
@@ -475,13 +475,44 @@ import com.safjnest.core.cache.managers.UserCache;
 //   ▄████████▀  ████████▀   ▀█   ███   █▀   ▀█   ███   █▀   ▀██████▀   ▀█   █▀    ██████████   ███    ███
 //                                                                                              ███    ███
 
+
+
+    public static RiotAccount getRiotAccountFromPuuid(String puuid, LeagueShard shard){
+        try { return riotApi.getAccountAPI().getAccountByPUUID(getAccountRegionShard(shard), puuid); } 
+        catch (Exception e) { return null; }
+    }
+
+    public static RiotAccount getRiotAccountFromName(String name, String tag, LeagueShard shard){
+        try { return riotApi.getAccountAPI().getAccountByTag(getAccountRegionShard(shard), name, tag); } 
+        catch (Exception e) { return null; }
+
+    }
+
+    public static Summoner getSummonerByPuuid(String puuid, LeagueShard shard){
+        try { return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid); } 
+        catch (Exception e) { return null; }
+    }
+
     /**
      * After like 2 years I realized that this method COULD save me a lot of time.
      * <br>
      * safj
      */
     public static RiotAccount getRiotAccountFromSummoner(Summoner s){
-        return riotApi.getAccountAPI().getAccountByPUUID(getAccountRegionShard(s.getPlatform()), s.getPUUID());
+        return getRiotAccountFromPuuid(s.getPUUID(), s.getPlatform());
+    }
+
+    public static Summoner getSummonerByName(String nameAccount, String tag, LeagueShard shard) {
+        RiotAccount account = getRiotAccountFromName(nameAccount, tag, shard);
+        return account != null 
+            ? getSummonerByPuuid(account.getPUUID(), shard) 
+            : null;
+    }
+
+    public static String getFormattedSummonerName(Summoner s) {
+        RiotAccount account = getRiotAccountFromSummoner(s);
+        if (account == null) return "";
+        return account.getName() + "#" + account.getTag();
     }
 
     public static RegionShard getAccountRegionShard(LeagueShard shard){
@@ -518,20 +549,8 @@ import com.safjnest.core.cache.managers.UserCache;
         );
     }
 
-
-    /**
-     * @deprecated
-     * @param discordId
-     * @return
-     */
-    public static Summoner getSummonerFromDB(String discordId){
-        // try {
-        //     ResultRow account = BotDB.getLOLAccountIdByUserId(discordId);
-        //     LeagueShard shard = LeagueShard.values()[Integer.valueOf(account.get("league_shard"))];
-
-        //     return riotApi.getLoLAPI().getSummonerAPI().getSummonerByAccount(shard, account.get("account_id"));
-        // } catch (Exception e) {return null;}
-        return getSummonerByUserData(UserCache.getUser(discordId));
+    public static Summoner getSummonerFromDB(String userId){
+        return getSummonerByUserData(UserCache.getUser(userId));
     }
 
     public static Summoner getSummonerByUserData(UserData user){
@@ -542,7 +561,7 @@ import com.safjnest.core.cache.managers.UserCache;
             String firstAccount = accounts.keySet().stream().findFirst().get();
             LeagueShard shard = LeagueShard.valueOf(accounts.get(firstAccount));
 
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, firstAccount);
+            return getSummonerByPuuid(firstAccount, shard);
         } catch (Exception e) {return null;}
     }
 
@@ -550,21 +569,6 @@ import com.safjnest.core.cache.managers.UserCache;
         try {
             return UserCache.getUser(userId).getRiotAccounts().size();
         } catch (Exception e) { return 0; }
-    }
-
-    public static Summoner getSummonerByName(String nameAccount, String tag, LeagueShard shard) {
-        try {
-            String puiid = riotApi.getAccountAPI().getAccountByTag(getAccountRegionShard(shard), nameAccount, tag).getPUUID();
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puiid);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public static Summoner getSummonerByPuuid(String id, LeagueShard shard){
-        try {
-            return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, id);
-        } catch (Exception e) { return null; }
     }
 
     public static Summoner getSummonerByArgs(CommandEvent event) {
@@ -610,7 +614,7 @@ import com.safjnest.core.cache.managers.UserCache;
         }
 
         LeagueShard guildShard = event.isFromGuild()  ? guild.getLeagueShard(event.getChannel().getId()) : LeagueShard.EUW1;
-        LeagueShard shard = event.getOption("region") != null ? getShardFromOrdinal(Integer.valueOf(event.getOption("region").getAsString())) : guildShard;
+        LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
         if (event.getOption("summoner") != null) {
             s = getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
@@ -623,12 +627,6 @@ import com.safjnest.core.cache.managers.UserCache;
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
 
         return getSummonerByName(name, tag, shard);
-    }
-
-    public static String getFormattedSummonerName(Summoner s) {
-        RiotAccount account = riotApi.getAccountAPI().getAccountByPUUID(s.getPlatform().toRegionShard(), s.getPUUID());
-        if (account == null) return "";
-        return account.getName() + "#" + account.getTag();
     }
 
     public static int updateSummonerDB(Summoner summoner) {
@@ -907,8 +905,8 @@ import com.safjnest.core.cache.managers.UserCache;
 
     public static OptionData getLeagueShardOptions(boolean required) {
         List<Choice> choices = new ArrayList<>();
-        for (int i = 0; i < LeagueHandler.getActiveShards().size(); i++) {
-            choices.add(new Choice(LeagueHandler.getActiveShards().get(i).getRealmValue().toUpperCase(), String.valueOf(i)));
+        for (LeagueShard shard : LeagueHandler.getActiveShards()) {
+            choices.add(new Choice(shard.name(), shard.name()));
         }
 
         return new OptionData(OptionType.STRING, "region", "Region you want to get the summoner from", required).addChoices(choices);
@@ -1087,7 +1085,7 @@ import com.safjnest.core.cache.managers.UserCache;
                 data.put("puuid", summoner.getPUUID());
                 break;
             case V1_SHARED_ACCOUNT_BY_PUUID:
-                data.put("platform", summoner.getPlatform().toRegionShard());
+                data.put("platform", getAccountRegionShard(summoner.getPlatform()));
                 data.put("puuid", summoner.getPUUID());
                 break;
             case V5_MATCHLIST:

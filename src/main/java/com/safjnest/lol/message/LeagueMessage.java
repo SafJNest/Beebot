@@ -1,4 +1,4 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol.message;
 
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -21,14 +21,18 @@ import java.sql.SQLException;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.MatchTracker;
+import com.safjnest.lol.model.Accumulator;
+import com.safjnest.lol.model.MatchData;
+import com.safjnest.lol.model.ParticipantChampionStat;
+import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.DateHandler;
 import com.safjnest.util.SafJNest;
-import com.safjnest.util.lol.model.MatchData;
-import com.safjnest.util.lol.model.ParticipantData;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
@@ -828,10 +832,10 @@ public class LeagueMessage {
                 if (rank == TierDivisionType.UNRANKED) {
                     matchTitle += "(Placement)";
                 }
-                else if (j > 0 && row.getAsInt("rank") < result.get(j - 1).getAsInt("rank")) {
+                else if (j > 0 && row.getAsTier("rank").ordinal() < result.get(j - 1).getAsTier("rank").ordinal()) {
                     matchTitle = "Promoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
                 }
-                else if (j > 0 && row.getAsInt("rank") > result.get(j - 1).getAsInt("rank")) {
+                else if (j > 0 && row.getAsTier("rank").ordinal() > result.get(j - 1).getAsTier("rank").ordinal()) {
                     matchTitle = "Demoted to " + displayRank + " " + row.getAsInt("lp") + "LP";
                 }
                 else if (!row.getAsBoolean("win") && row.getAsInt("gain") == 0) {
@@ -1231,6 +1235,7 @@ public class LeagueMessage {
 
         ArrayList<SelectOption> options = new ArrayList<>();
         for(SpectatorParticipant p : spectators){
+            if (p.getPuuid() == null) continue;
             Emoji icon = LeagueHandler.getEmojiByChampion(p.getChampionId());
             options.add(SelectOption.of(p.getRiotId(), p.getPuuid() + "#" + summoner.getPlatform().name()).withEmoji(icon));
         }
@@ -1494,10 +1499,13 @@ public class LeagueMessage {
             return eb;
         }
 
+        boolean isArena = parameter.getQueueType() == GameQueueType.CHERRY;
+
 
         LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
         LinkedHashMap<GameQueueType, String> queueStats = new LinkedHashMap<>();
         HashMap<String, Accumulator> overallStats = new HashMap<>();
+        HashMap<String, Integer> pings = new HashMap<>();
 
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
@@ -1522,6 +1530,9 @@ public class LeagueMessage {
 
             for (ParticipantData participant : match.participants) {
                 if (participant.summonerId != summonerId) continue;
+
+                for (String ping : participant.pings.keySet()) 
+                    pings.put(ping, pings.getOrDefault(ping, 0) + participant.pings.get(ping));
 
                 unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
                 unique.getOrDefault("lane", new HashSet<>()).add(participant.lane.ordinal());
@@ -1568,9 +1579,16 @@ public class LeagueMessage {
                 overallStats.computeIfAbsent("assists", k -> new Accumulator()).add(assists);
                 overallStats.computeIfAbsent("cs_min", k -> new Accumulator()).add((int) csPerMin);
 
+                overallStats.computeIfAbsent("level", k -> new Accumulator()).add(participant.level);
+
+                overallStats.computeIfAbsent("doubles", k -> new Accumulator()).add(participant.doubles);
+                overallStats.computeIfAbsent("triples", k -> new Accumulator()).add(participant.triples);
+                overallStats.computeIfAbsent("quadruples", k -> new Accumulator()).add(participant.quadruples);
+                overallStats.computeIfAbsent("pentas", k -> new Accumulator()).add(participant.pentas);
+
                 championStats.computeIfAbsent(participant.champion, p -> new ParticipantChampionStat(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
 
-                if (parameter.getQueueType() == GameQueueType.CHERRY) {
+                if (isArena) {
                     int placement = participant.subTeamPlacement;
                     if (placement == 1) overallStats.computeIfAbsent("arena_first", k -> new Accumulator()).add(1);
                     else if (placement == 2) overallStats.computeIfAbsent("arena_second", k -> new Accumulator()).add(1);
@@ -1584,7 +1602,7 @@ public class LeagueMessage {
                     int enemyTeamKills;
                     teamKills = match.participants.stream()
                         .filter(p -> {
-                            if (parameter.getQueueType() == GameQueueType.CHERRY)
+                            if (isArena)
                                 return p.subTeam == participant.subTeam;
                             return  p.team == team;
                         })
@@ -1720,23 +1738,46 @@ public class LeagueMessage {
             String.format("%.2f", overallStats.get("damage_building").avg()) + " to buildings";
     
         String arenaPlacement = "";
-        if (parameter.getQueueType() == GameQueueType.CHERRY) {
+        if (isArena) {
             arenaPlacement = "1. " + overallStats.getOrDefault("arena_first", new Accumulator()).count + " times\n" +
                 "2. " + overallStats.getOrDefault("arena_second", new Accumulator()).count + " times\n" +
                 "3. " + overallStats.getOrDefault("arena_third", new Accumulator()).count + " times\n" +
                 "avg. " + String.format("%.2f", overallStats.get("arena_placement").avg()) + " placement";
         }
 
+        StringBuilder streak = new StringBuilder();
+
+        int pentas = overallStats.getOrDefault("pentas", new Accumulator()).sum;
+        int quadras = overallStats.getOrDefault("quadruples", new Accumulator()).sum;
+        int triples = overallStats.getOrDefault("triples", new Accumulator()).sum;
+        int doubles = overallStats.getOrDefault("doubles", new Accumulator()).sum;
+
+        if (pentas > 0) 
+            streak.append("Pentakills: ").append(pentas).append("\n");
+        
+        if (quadras > 0) 
+            streak.append("Quadrakills: ").append(quadras).append("\n");
+        
+        if (triples > 0) 
+            streak.append("Triplakills: ").append(triples).append("\n");
+        
+        if (doubles > 0) 
+            streak.append("Doublekills: ").append(doubles).append("\n");
+        
+
+        String streakString = streak.toString().trim();
+
         
         String performace = 
-            (!arenaPlacement.equals("") ? "**Arena**\n`" + arenaPlacement + "`\n" : "") +
+            (isArena ? "**Placement**\n`" + arenaPlacement + "`\n" : "") +
             "**KDA**\n`" + kda + 
             " (" + String.format("%.2f", overallStats.get("kill_participation").avg()) + "% kp & " +
-            String.format("%.2f", overallStats.get("death_share").avg()) + "% dp)`\n" +
-            "**Vision Score**\n`" + visionScore + "`\n" +
-            "**CS**\n`" + cs + "`\n" +
+            String.format("%.2f", overallStats.get("death_share").avg()) + "% dp)\n" +
+            (!streakString.isEmpty() ? (streakString + "`\n") : "`") +
+            (!isArena ? "**Vision Score**\n`" + visionScore + "`\n" : "") +
+            (!isArena ? "**CS**\n`" + cs + "`\n" : "") +
             "**Damage**\n`" + damaString + "`\n" +
-            "**Gold Earned**\n`" + String.format("%.2f", overallStats.get("gold_earned").avg()) + "`\n";
+            (!isArena ? "**Gold Earned**\n`" + String.format("%.2f", overallStats.get("gold_earned").avg()) + "`\n" : "");
 
         String championString = "";
         if (!parameter.isShowChampion()) 
@@ -1753,10 +1794,10 @@ public class LeagueMessage {
             "Newest game: <t:" + (newest / 1000) + ":R>"
         );
         
-        eb.addField("Games", gameString, true);
-
-        if (parameter.getQueueType() != GameQueueType.CHERRY)
+        if (!isArena) {
+            eb.addField("Games", gameString, true);
             eb.addField("Roles", laneString , true);
+        }
 
         if (!parameter.isShowChampion()) {
             String champStats = championStats.entrySet().stream()
@@ -1773,6 +1814,46 @@ public class LeagueMessage {
         }
 
         eb.addField("Avarage Performace", performace, false);
+
+        List<Map.Entry<String, Integer>> sortedPings = pings.entrySet()
+            .stream()
+            .filter(e -> !e.getKey().equals("basic"))
+            .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
+            .limit(9)
+            .collect(Collectors.toList());
+        
+        StringBuilder[] columns = {
+            new StringBuilder(),
+            new StringBuilder(),
+            new StringBuilder()
+        };
+        
+        for (int i = 0; i < sortedPings.size(); i++) {
+            Map.Entry<String, Integer> entry = sortedPings.get(i);
+        
+            String pingName;
+            switch (entry.getKey()) {
+                case "command":
+                    pingName = "Generic Ping";
+                    break;
+                default:
+                    pingName = Arrays.stream(entry.getKey().replace("_", " ").split(" "))
+                        .map(w -> w.isEmpty() ? "" :
+                            Character.toUpperCase(w.charAt(0)) + w.substring(1).toLowerCase())
+                        .collect(Collectors.joining(" "));
+            }
+        
+            String line =
+                CustomEmojiHandler.getFormattedEmoji(entry.getKey() + "_ping") + " " + pingName + "\n" +
+                "`" + entry.getValue() + " total`\n";
+        
+            int columnIndex = i / 3;
+            columns[columnIndex].append(line);
+        }
+    
+        eb.addField("Pings Usage", columns[0].toString(), true);
+        eb.addField(" ", columns[1].toString(), true);
+        eb.addField(" ", columns[2].toString(), true);
 
         return eb;
 

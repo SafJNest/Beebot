@@ -1,6 +1,8 @@
-package com.safjnest.util.lol;
+package com.safjnest.lol.message;
 
 import java.util.List;
+
+import com.safjnest.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
