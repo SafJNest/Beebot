@@ -12,6 +12,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.model.BotSettings.Settings;
+import com.safjnest.mongodb.Immigrator;
 import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
@@ -39,8 +40,8 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-        //bot = new Bot();
-        //bot.il_risveglio_della_bestia();
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
         //System.out.println(MongoLeague.getSummonersByUserId("383358222972616705"));
         MatchData m = MongoLeague.getMatches().get(0);
         //Immigrator.runMigrations();

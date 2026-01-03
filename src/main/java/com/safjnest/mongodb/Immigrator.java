@@ -255,25 +255,35 @@ public final class Immigrator {
                         Document buildItems = buildDoc.get("build", Document.class);
                         if (buildItems != null) doc.append("build_items", buildItems);
                     
-                        List<Integer> summonerSpells =
-                            buildDoc.getList("summoner_spells", Object.class)
-                            .stream()
-                            .map(o -> Integer.parseInt(o.toString()))
-                            .toList();
+                        if (buildDoc.containsKey("summoner_spells")) {
+                            List<Integer> summonerSpells = buildDoc
+                                .getList("summoner_spells", Object.class)
+                                .stream()
+                                .map(o -> Integer.parseInt(o.toString()))
+                                .toList();
 
-                        if (summonerSpells != null) doc.append("summoner_spells", summonerSpells);
-                    
-                        List<Integer> skillOrder = buildDoc.getList("skill_order", Object.class)
-                            .stream()
-                            .map(o -> Integer.parseInt(o.toString()))
-                            .toList();
-                        if (skillOrder != null) doc.append("skill_order", skillOrder);
-                    
-                        List<Integer> augments = buildDoc.getList("augments", Object.class)
-                            .stream()
-                            .map(o -> Integer.parseInt(o.toString()))
-                            .toList();
-                        if (augments != null) doc.append("augments", augments);
+                            doc.append("summoner_spells", summonerSpells);
+                        }
+
+                        if (buildDoc.containsKey("skill_order")) {
+                            List<Integer> skillOrder = buildDoc
+                                .getList("skill_order", Object.class)
+                                .stream()
+                                .map(o -> Integer.parseInt(o.toString()))
+                                .toList();
+
+                            doc.append("skill_order", skillOrder);
+                        }
+
+                        if (buildDoc.containsKey("augments")) {
+                            List<Integer> augments = buildDoc
+                                .getList("augments", Object.class)
+                                .stream()
+                                .map(o -> Integer.parseInt(o.toString()))
+                                .toList();
+
+                            doc.append("augments", augments);
+                        }
                     }
                     participantDocs.add(doc);
                     

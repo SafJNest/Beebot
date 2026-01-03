@@ -28,6 +28,7 @@ import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantChampionStat;
 import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
@@ -1251,8 +1252,8 @@ public class LeagueMessage {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         List<MatchData> matches = null;
         try {
-            matches = LeagueDB.getMatchHistory(summonerId, parameter);
-        } catch (SQLException e) {
+            matches = MongoLeague.getMatches();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         
@@ -1529,7 +1530,7 @@ public class LeagueMessage {
             if (newest < match.timeStart) newest = match.timeStart;
 
             for (ParticipantData participant : match.participants) {
-                if (participant.summonerId != summonerId) continue;
+                if (!participant.puuid.equals(summoner.getPUUID())) continue;
 
                 for (String ping : participant.pings.keySet()) 
                     pings.put(ping, pings.getOrDefault(ping, 0) + participant.pings.get(ping));
@@ -1544,9 +1545,9 @@ public class LeagueMessage {
                 boolean win = participant.win;
     
                 String kda = participant.kda;
-                int kills = Integer.parseInt(kda.split("/")[0]);
-                int deaths = Integer.parseInt(kda.split("/")[1]);
-                int assists = Integer.parseInt(kda.split("/")[2]);
+                int kills = participant.kills;
+                int deaths = participant.deaths;
+                int assists = participant.assists;
         
                 laneStats.merge(lane, (win ? "1-0" : "0-1"), (oldValue, newValue) -> {
                     String[] oldStats = oldValue.split("-");
@@ -1606,7 +1607,7 @@ public class LeagueMessage {
                                 return p.subTeam == participant.subTeam;
                             return  p.team == team;
                         })
-                        .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
+                        .mapToInt(p -> p.kills)
                         .sum();
                     enemyTeamKills = match.participants.stream()
                         .filter(p -> {
@@ -1614,7 +1615,7 @@ public class LeagueMessage {
                                 return  p.team != team;
                             return false;
                         })
-                        .mapToInt(p -> Integer.parseInt(p.kda.split("/")[0]))
+                        .mapToInt(p -> p.kills)
                         .sum();
                     double killParticipation = teamKills == 0 ? 0 : (double) (kills + assists) / teamKills;
                     double deathShare = enemyTeamKills == 0 ? 0 : (double) deaths / enemyTeamKills;

@@ -39,7 +39,10 @@ public class ParticipantData {
 
     public int level;
 
-    public String kda;
+    public String kda; //TODO: remove
+    public int kills;
+    public int deaths;
+    public int assists;
     public int doubles;
     public int triples;
     public int quadruples;

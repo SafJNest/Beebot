@@ -10,7 +10,9 @@ import org.json.JSONObject;
 
 import static com.mongodb.client.model.Projections.*;
 
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantData;
@@ -50,11 +52,13 @@ public class MongoLeague {
   public static List<MatchData> getMatches() {
     List<MatchData> matches = new ArrayList<>();
 
-    Document d = matchCollection
-            .find(new Document("_id", "EUW1_7644912818"))
-            .first();
+    FindIterable<Document> docs = matchCollection.find(
+        Filters.eq("participants.puuid", "qwf0lHM8o9ZrlWuyVwmNnz5RZwuE_z9SdWCGwOJ5Ypi5-zNapWjTRgKl08HH0XjNS0XZ0yzfRQJApA")
+    );
 
-    matches.add(parseMatch(d));
+    for (Document d : docs) {
+        matches.add(parseMatch(d));
+    }
 
     return matches;
   }
@@ -114,16 +118,30 @@ public class MongoLeague {
   private static ParticipantData parseParticipant(Document d) {
     ParticipantData p = new ParticipantData();
 
+    p.puuid = d.getString("puuid");
+
     p.win = d.getBoolean("win", false);
 
     p.kda = d.getString("kda");
+    p.kills = d.getInteger("kills", 0);
+    p.deaths = d.getInteger("deaths", 0);
+    p.assists = d.getInteger("assists", 0);
+    p.doubles = d.getInteger("doubles", 0);
+    p.triples = d.getInteger("triples", 0);
+    p.quadruples = d.getInteger("quadruples", 0);
+    p.pentas = d.getInteger("pentas", 0);
+    
+    
     p.champion = d.getInteger("champion", 0);
 
     p.lane = LaneType.valueOf(d.getString("lane"));
     p.team = TeamType.valueOf(d.getString("team"));
+    p.subTeam = d.getInteger("subTeam", 0);
+    p.subTeamPlacement = d.getInteger("subTeamPlacement", 0);
+    
     p.rank = TierDivisionType.valueOf(d.getString("rank"));
-
     p.gain = d.getInteger("gain", 0);
+    
     p.damage = d.getInteger("damage", 0);
     p.damageBuilding = d.getInteger("damageBuilding", 0);
     p.healing = d.getInteger("healing", 0);
@@ -147,9 +165,6 @@ public class MongoLeague {
         }
     }
 
-    p.subTeam = d.getInteger("subTeam", 0);
-    p.subTeamPlacement = d.getInteger("subTeamPlacement", 0);
-    p.puuid = d.getString("puuid");
 
     List<Integer> spells = d.getList("summoner_spells", Integer.class);
     if (spells != null) {
