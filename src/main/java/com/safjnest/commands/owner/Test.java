@@ -62,6 +62,8 @@ import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
+import no.stelar7.api.r4j.basic.calling.DataCall;
+import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -1291,6 +1293,21 @@ public class Test extends Command{
                 break;
             case "migrate":
                 Immigrator.runMigrations();
+                break;
+            case "clearmatch":
+                query = "select region, game_id from `match` WHERE time_start >= UNIX_TIMESTAMP(NOW() - INTERVAL 2 MONTH);";
+                res = LeagueDB.get().query(query);
+                for (QueryRecord r : res) {
+                    try {
+                        String gameId = r.get("region") + "_" + r.get("game_id");
+                        Map<String, Object> data = new LinkedHashMap<>();
+                        data.put("platform", r.getAsLeagueShard("region").toRegionShard());
+                        data.put("gameid", gameId);   
+                        DataCall.getCacheProvider().clear(URLEndpoint.V5_MATCH, data);
+                    } catch (Exception eeeee) {
+                        eeeee.printStackTrace();
+                    }
+                }
                 break;
         }
     }  
