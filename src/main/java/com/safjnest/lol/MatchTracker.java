@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import com.safjnest.App;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
@@ -314,8 +315,7 @@ public class MatchTracker {
         }
         int summonerId = LeagueDB.addLOLAccount(summoner);
         ((ChronoTask) () -> {
-            LeagueDB.updateSummonerEntries(summonerId, entries);
-            //LeagueDB.updateSummonerMasteries(summonerId, summoner.getChampionMasteries());
+            MongoLeague.updateSummonerEntries(summoner, entries);
         }).queue();
 
         LeagueDB.setSummonerData(summonerId, summonerMatch, participant, division, lp, gain, createJSONBuild(matchData));

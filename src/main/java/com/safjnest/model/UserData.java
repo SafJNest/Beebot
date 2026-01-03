@@ -210,7 +210,7 @@ public class UserData {
 
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
-        boolean result = LeagueDB.addLOLAccount(USER_ID, s) > 0;
+        boolean result = MongoLeague.saveSummoner(s, USER_ID) != null;
         if (result) riotAccounts.put(s.getPUUID(), String.valueOf(s.getPlatform().ordinal()));
         
         return result;

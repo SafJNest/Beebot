@@ -38,6 +38,7 @@ import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.lol.model.build.CustomBuildData;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -142,7 +143,8 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static int addLOLAccount(Summoner summoner) {
-        return addLOLAccount(null, summoner);
+        MongoLeague.saveSummoner(summoner, null);
+        return 0;
     }
 
     public static int addLOLAccount(LeagueEntry entry, LeagueShard shard) {
@@ -158,108 +160,6 @@ public class LeagueDB extends AbstractDB {
             return 0;
         }
         return addLOLAccount(summoner);
-    }
-
-    public static int addLOLAccount(String user_id, Summoner summoner) {
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
-        String query = "INSERT INTO summoner(user_id, puuid, riot_id, region, icon, level) " +
-                "VALUES(?, ?, ?, ?, ?, ?) " +
-                "ON DUPLICATE KEY UPDATE " +
-                "id = LAST_INSERT_ID(id), " +
-                "user_id = IF(VALUES(user_id) IS NOT NULL, VALUES(user_id), user_id), " +
-                "puuid = VALUES(puuid), " +
-                "riot_id = VALUES(riot_id), " +
-                "region = VALUES(region), " +
-                "icon = VALUES(icon), " +
-                "level = VALUES(level);";
-
-        try (Connection conn = instance.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-            if (user_id != null) 
-                pstmt.setString(1, user_id);
-            else 
-                pstmt.setNull(1, java.sql.Types.VARCHAR);
-            
-            pstmt.setString(2, summoner.getPUUID());
-            if (account != null) 
-                pstmt.setString(3, account.getName() + "#" + account.getTag());
-            else
-                pstmt.setNull(3, java.sql.Types.VARCHAR);
-            pstmt.setString(4, summoner.getPlatform().name());
-            pstmt.setInt(5, summoner.getProfileIconId());
-            pstmt.setInt(6, summoner.getSummonerLevel());
-
-            pstmt.executeUpdate();
-            
-            ResultSet rs = pstmt.getGeneratedKeys();
-            int id = 0;
-            if (rs.next()) {
-                id = rs.getInt(1);
-            }
-            
-            conn.commit();
-            return id;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
-
-    public static boolean addLOLAccount(SpectatorGameInfo info) {
-        String query = "INSERT INTO summoner(puuid, riot_id, region, icon) " +
-                       "VALUES(?, ?, ?, ?) " +
-                       "ON DUPLICATE KEY UPDATE " +
-                       "puuid = VALUES(puuid), " +
-                       "riot_id = VALUES(riot_id), " +
-                       "region = VALUES(region), " +
-                       "icon = VALUES(icon);";
-
-        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
-            for (SpectatorParticipant summoner : info.getParticipants()) {
-                if (summoner.getPuuid() == null) continue;
-                pstmt.setString(1, summoner.getPuuid());
-                pstmt.setString(2, summoner.getRiotId());
-                pstmt.setString(3, info.getPlatform().name());
-                pstmt.setLong(4, summoner.getProfileIconId());
-                pstmt.addBatch();
-            }
-
-            int[] affectedRows = pstmt.executeBatch();
-            conn.commit();
-            return affectedRows.length == info.getParticipants().size();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public static boolean addLOLAccountFromMatch(LOLMatch match) {
-        String query = "INSERT INTO summoner(puuid, riot_id, region, icon, level) " +
-                       "VALUES(?, ?, ?, ?, ?) " +
-                       "ON DUPLICATE KEY UPDATE " +
-                       "puuid = VALUES(puuid), " +
-                       "riot_id = VALUES(riot_id), " +
-                       "region = VALUES(region), " +
-                       "icon = VALUES(icon), " +
-                       "level = VALUES(level);";
-
-        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
-            for (MatchParticipant summoner : match.getParticipants()) {
-                pstmt.setString(1, summoner.getPuuid());
-                pstmt.setString(2, summoner.getRiotIdName() + "#" + summoner.getRiotIdTagline());
-                pstmt.setString(3, match.getPlatform().name());
-                pstmt.setInt(4, summoner.getProfileIcon());
-                pstmt.setInt(5, summoner.getSummonerLevel());
-                pstmt.addBatch();
-            }
-
-            int[] affectedRows = pstmt.executeBatch();
-            conn.commit();
-            return affectedRows.length == match.getParticipants().size();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
     }
 
     public static boolean deleteLOLaccount(String user_id, String puuid){
@@ -372,10 +272,6 @@ public class LeagueDB extends AbstractDB {
         return !instance.lineQuery("SELECT 1 from participant where summoner_id = '" + sumonerId + "';").isEmpty();
     }
 
-    public static boolean trackSummoner(String user_id, String puuid, boolean track) {
-        return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';");
-    }
-
     public static int setMatchData(LOLMatch match) {
         return setMatchData(match, false);
     }
@@ -480,84 +376,11 @@ public class LeagueDB extends AbstractDB {
         return instance.query("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
     }
 
-    public static boolean updateSummonerMasteries(int summonerId, List<ChampionMastery> masteries) {
-        String query = "INSERT INTO masteries (summoner_id, champion_id, champion_level, champion_points, last_play_time) " +
-                       "VALUES (?, ?, ?, ?, ?) " +
-                       "ON DUPLICATE KEY UPDATE " +
-                       "champion_level = VALUES(champion_level), " +
-                       "champion_points = VALUES(champion_points), " +
-                       "last_play_time = VALUES(last_play_time);";
-
-        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
-            for (ChampionMastery mastery : masteries) {
-                pstmt.setInt(1, summonerId);
-                pstmt.setLong(2, mastery.getChampionId());
-                pstmt.setInt(3, mastery.getChampionLevel());
-                pstmt.setInt(4, mastery.getChampionPoints());
-                pstmt.setTimestamp(5, new Timestamp(mastery.getLastPlayTime()));
-                pstmt.addBatch();
-            }
-            pstmt.executeBatch();
-            conn.commit();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     public static int getSummonerIdByPuuid(String puuid, LeagueShard shard) {
         try {
             return instance.lineQuery("select id from summoner where puuid = '"+ puuid +"' and region = '" + shard + "'").getAsInt("id");  
         } catch (Exception e) {
            return 0;
-        }
-    }
-
-    public static boolean updateSummonerEntries(int summonerId, List<LeagueEntry> entries) {
-        String query = "INSERT INTO `rank` (summoner_id, queue, rank, lp, wins, losses) " +
-                       "VALUES (?, ?, ?, ?, ?, ?) " +
-                       "ON DUPLICATE KEY UPDATE " +
-                       "rank = VALUES(rank), " +
-                       "queue = VALUES(queue), " +
-                       "lp = VALUES(lp), " +
-                       "wins = VALUES(wins), " +
-                       "losses = VALUES(losses);";
-        Connection conn = null;
-        try {
-            conn = instance.getConnection();
-            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
-                for (LeagueEntry entry : entries) {
-                    pstmt.setInt(1, summonerId);
-                    pstmt.setString(2, entry.getQueueType().name());
-                    pstmt.setString(3, entry.getTierDivisionType().name());
-                    pstmt.setInt(4, entry.getLeaguePoints());
-                    pstmt.setInt(5, entry.getWins());
-                    pstmt.setInt(6, entry.getLosses());
-                    pstmt.addBatch();
-                }
-                pstmt.executeBatch();
-                conn.commit();
-                return true;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            return false;
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 

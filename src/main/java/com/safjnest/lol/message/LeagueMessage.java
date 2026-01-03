@@ -196,8 +196,8 @@ public class LeagueMessage {
 
         ((ChronoTask) () -> {
             LeagueDB.addLOLAccount(s);
-            LeagueDB.updateSummonerMasteries(summonerId, s.getChampionMasteries());
-            LeagueDB.updateSummonerEntries(summonerId, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
+            MongoLeague.updateSummonerMasteries(s, s.getChampionMasteries());
+            MongoLeague.updateSummonerEntries(s, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
         }).queue();
 
 

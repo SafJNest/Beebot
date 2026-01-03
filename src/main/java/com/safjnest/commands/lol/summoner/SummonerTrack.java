@@ -6,7 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
-import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -45,20 +45,20 @@ public class SummonerTrack extends SlashCommand {
      */
 	@Override
 	protected void execute(SlashCommandEvent event) {
-        String account_id = event.getOption("personal_summoner") != null ? event.getOption("personal_summoner").getAsString() : "";
+        String puuid = event.getOption("personal_summoner") != null ? event.getOption("personal_summoner").getAsString() : "";
         boolean track = event.getOption("track") != null ? event.getOption("track").getAsBoolean() : true;
-        if (account_id.isEmpty()) {
+        if (puuid.isEmpty()) {
             event.deferReply(false).addContent("You dont have a Riot account connected, for more information use /help summoner").queue();
             return;
         }
 
         UserData data = UserCache.getUser(event.getMember().getId());
-        if (!data.getRiotAccounts().containsKey(account_id)) {
+        if (!data.getRiotAccounts().containsKey(puuid)) {
             event.deferReply(false).addContent("This account is not connected to your profile.").queue();
             return;
         }
 
-        LeagueDB.trackSummoner(event.getMember().getId(), account_id, track);
+        MongoLeague.trackSummoner(puuid, track);
         
         String response = track ? "Tracking enabled" : "Tracking disabled";
         event.deferReply(false).addContent(response).queue();

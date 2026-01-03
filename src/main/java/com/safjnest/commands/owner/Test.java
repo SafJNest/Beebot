@@ -37,6 +37,7 @@ import com.safjnest.model.guild.alert.AlertKey;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.mongodb.Immigrator;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
@@ -848,7 +849,7 @@ public class Test extends Command{
                             System.out.println("Summoner not found");
                             continue;
                         }
-                        LeagueDB.updateSummonerEntries(acc.getAsInt("id"), summoner.getLeagueEntry());
+                        //LeagueDB.updateSummonerEntries(acc.getAsInt("id"), summoner.getLeagueEntry());
                         String query1 = "UPDATE summoner SET level = '" + summoner.getSummonerLevel() + "', icon = '" + summoner.getProfileIconId() + "' WHERE id = " + acc.get("id") + ";";
                         System.out.println("total summoner: " + bbb + " ( " + acc.get("id")  + ") / " + r.size());
                         bbb++;
@@ -1153,7 +1154,7 @@ public class Test extends Command{
                                 } catch (Exception ee) {
                                 ee.printStackTrace();
                                 }
-                                LeagueDB.updateSummonerMasteries(summonerId, sssss.getChampionMasteries());
+                                MongoLeague.updateSummonerMasteries(sssss, sssss.getChampionMasteries());
                             } catch (Exception eeee) {
                                 eeee.printStackTrace();
                             }

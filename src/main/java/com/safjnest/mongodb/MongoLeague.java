@@ -1,19 +1,30 @@
 package com.safjnest.mongodb;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.json.JSONObject;
 
 import static com.mongodb.client.model.Projections.*;
 
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.UpdateOneModel;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
+import com.mongodb.client.model.WriteModel;
+import com.mongodb.client.result.UpdateResult;
+import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.lol.model.SummonerData;
@@ -23,6 +34,14 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
+import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class MongoLeague {
 
@@ -47,6 +66,146 @@ public class MongoLeague {
 
     return summoner != null ? summoner.getUserId() : null;
   }
+
+  public static SummonerData saveSummoner(Summoner summoner, String userId) {
+    RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+
+    Document filter = new Document("_id", summoner.getPUUID())
+        .append("region", summoner.getPlatform().name())
+        .append("puuid", summoner.getPUUID());
+
+    Document update = new Document("$set", new Document()
+        .append("icon", summoner.getProfileIconId())
+        .append("level", summoner.getSummonerLevel())
+        .append("riot_id", account != null
+            ? account.getName() + "#" + account.getTag()
+            : null
+        )
+    );
+
+    if (userId != null) {
+        update.get("$set", Document.class)
+            .append("user_id", userId);
+    }
+
+    FindOneAndUpdateOptions options = new FindOneAndUpdateOptions()
+        .upsert(true)
+        .returnDocument(ReturnDocument.AFTER);
+
+    return summonerCollection.findOneAndUpdate(filter, update, options);
+  }
+
+  public static boolean saveSummoners(SpectatorGameInfo info) {
+
+    List<WriteModel<SummonerData>> bulkOps = new ArrayList<>();
+
+    for (SpectatorParticipant summoner : info.getParticipants()) {
+        if (summoner.getPuuid() == null) continue;
+
+        Bson filter = Filters.eq("_id", summoner.getPuuid());
+
+        Bson update = Updates.combine(
+            Updates.set("puuid", summoner.getPuuid()),
+            Updates.set("riot_id", summoner.getRiotId()),
+            Updates.set("region", info.getPlatform().name()),
+            Updates.set("icon", summoner.getProfileIconId())
+        );
+
+        bulkOps.add(
+            new UpdateOneModel<>(
+                filter,
+                update,
+                new UpdateOptions().upsert(true)
+            )
+        );
+    }
+
+    if (bulkOps.isEmpty()) return true;
+
+    BulkWriteResult result = summonerCollection.bulkWrite(bulkOps);
+    return result.getModifiedCount() + result.getUpserts().size() == bulkOps.size();
+  
+  }
+
+  public static boolean saveSummoners(LOLMatch match) {
+    List<WriteModel<SummonerData>> bulkOps = new ArrayList<>();
+
+    for (MatchParticipant summoner : match.getParticipants()) {
+
+        Bson filter = Filters.eq("_id", summoner.getPuuid());
+
+        Bson update = Updates.combine(
+            Updates.set("puuid", summoner.getPuuid()),
+            Updates.set("riot_id",
+                summoner.getRiotIdName() + "#" + summoner.getRiotIdTagline()
+            ),
+            Updates.set("region", match.getPlatform().name()),
+            Updates.set("icon", summoner.getProfileIcon()),
+            Updates.set("level", summoner.getSummonerLevel())
+        );
+
+        bulkOps.add(
+            new UpdateOneModel<>(
+                filter,
+                update,
+                new UpdateOptions().upsert(true)
+            )
+        );
+    }
+
+    if (bulkOps.isEmpty()) return true;
+
+    BulkWriteResult result = summonerCollection.bulkWrite(bulkOps);
+    return result.getModifiedCount() + result.getUpserts().size() == bulkOps.size();
+  }
+
+  public static boolean updateSummonerMasteries(Summoner summoner, List<ChampionMastery> masteries) {
+    List<Document> masteryDocs = masteries.stream()
+        .map(m -> new Document()
+            .append("champion_id", m.getChampionId())
+            .append("champion_level", m.getChampionLevel())
+            .append("champion_points", m.getChampionPoints())
+            .append("last_play_time", new Date(m.getLastPlayTime()))
+        )
+        .toList();
+
+    summonerCollection.updateOne(
+        Filters.eq("_id", summoner.getPUUID()),
+        Updates.set("masteries", masteryDocs)
+    );
+
+    return true;
+  }
+
+  public static boolean updateSummonerEntries(Summoner summoner, List<LeagueEntry> entries) {
+    List<Document> rankDocs = entries.stream()
+        .map(e -> new Document()
+            .append("queue", e.getQueueType().name())
+            .append("rank", e.getTierDivisionType().name())
+            .append("lp", e.getLeaguePoints())
+            .append("wins", e.getWins())
+            .append("losses", e.getLosses())
+        )
+        .toList();
+
+    summonerCollection.updateOne(
+        Filters.eq("_id", summoner.getPUUID()),
+        Updates.set("rank", rankDocs)
+    );
+
+    return true;
+  }
+
+  public static boolean trackSummoner(String puuid, boolean tracking) {
+    summonerCollection.updateOne(
+        Filters.eq("_id", puuid),
+        Updates.set("tracking", tracking)
+    );
+
+    return true;
+  }
+
+
 
 
   public static List<MatchData> getMatches() {

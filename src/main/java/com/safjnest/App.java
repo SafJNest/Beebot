@@ -12,7 +12,6 @@ import com.safjnest.core.Bot;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.mongodb.Immigrator;
 import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;

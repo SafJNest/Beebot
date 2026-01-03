@@ -31,6 +31,7 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
@@ -634,11 +635,11 @@ import com.safjnest.lol.model.rune.Rune;
     }
 
     public static void updateSummonerDB(SpectatorGameInfo game) {
-        LeagueDB.addLOLAccount(game);
+        MongoLeague.saveSummoners(game);
     }
 
     public static void updateSummonerDB(LOLMatch match) {
-        LeagueDB.addLOLAccountFromMatch(match);
+        MongoLeague.saveSummoners(match);
     }
 
 //     ▄███████▄  ▄█   ▄████████
