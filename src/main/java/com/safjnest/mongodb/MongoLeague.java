@@ -1,5 +1,11 @@
 package com.safjnest.mongodb;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,13 +23,13 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
-import com.mongodb.client.result.UpdateResult;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantData;
@@ -49,12 +55,12 @@ public class MongoLeague {
   private static MongoCollection<SummonerData> summonerCollection = MongoManager.LOLdb.getCollection("summoner", SummonerData.class);
 
   public static List<SummonerData> getSummonersByUserId(String userId) {
-      List<SummonerData> results = summonerCollection
-        .find(new org.bson.Document("user_id", userId))
-        .sort(Sorts.ascending("id"))
-        .into(new ArrayList<>());
+    List<SummonerData> results = summonerCollection
+      .find(new org.bson.Document("user_id", userId))
+      .sort(Sorts.ascending("id"))
+      .into(new ArrayList<>());
 
-      return results;
+    return results;
   }
 
   public static String getUserIdByPuuid(String puuid, LeagueShard shard) {
@@ -65,6 +71,13 @@ public class MongoLeague {
       .first();
 
     return summoner != null ? summoner.getUserId() : null;
+  }
+
+  public static List<SummonerData> getSummonerWithTracking() {
+    List<SummonerData> results = summonerCollection
+      .find(new org.bson.Document("tracking", true))
+      .into(new ArrayList<>());
+    return results;
   }
 
   public static SummonerData saveSummoner(Summoner summoner, String userId) {
@@ -206,7 +219,70 @@ public class MongoLeague {
   }
 
 
+  public static void saveMatch(MatchData match) {
 
+    String id = match.region + "_" + match.gameId;
+    Map<String, List<Integer>> bansDoc = new HashMap<>();
+
+    for (Map.Entry<TeamType, List<Integer>> entry : match.bans.entrySet()) {
+        bansDoc.put(entry.getKey().name(), entry.getValue());
+    }
+    Document eventsDoc = Document.parse(match.events.toString());
+    
+    Document document = new Document("_id", id)
+      .append("region", match.region)
+      .append("game_id",  match.gameId)
+      .append("queue", match.queue)
+      .append("rank", match.rank)
+      .append("time_start", new Timestamp(match.timeStart))
+      .append("time_end", new Timestamp(match.timeEnd))
+      .append("patch", match.patch)
+      .append("bans", bansDoc)
+      .append("events", eventsDoc);
+
+    List<Document> participantsDocs = match.participants.stream()
+      .map(p -> {
+          Document pDoc = new Document()
+              .append("puuid", p.puuid)
+              .append("win", p.win)
+              .append("kills", p.kills)
+              .append("deaths", p.deaths)
+              .append("assists", p.assists)
+              .append("doubles", p.doubles)
+              .append("triples", p.triples)
+              .append("quadruples", p.quadruples)
+              .append("pentas", p.pentas)
+              .append("gain", p.gain)
+              .append("champion", p.champion)
+              .append("lane", p.lane.name())
+              .append("team", p.team.name())
+              .append("subTeam", p.subTeam)
+              .append("subTeamPlacement", p.subTeamPlacement)
+              .append("damage", p.damage)
+              .append("damageBuilding", p.damageBuilding)
+              .append("healing", p.healing)
+              .append("cs", p.cs)
+              .append("goldEarned", p.goldEarned)
+              .append("ward", p.ward)
+              .append("wardKilled", p.wardKilled)
+              .append("visionScore", p.visionScore)
+              .append("pings", p.pings)
+              .append("summoner_spells", List.of(p.summonerSpell1, p.summonerSpell2))
+              .append("skill_order", p.skillOrder);
+
+          if (p.rank != null) 
+              pDoc.append("rank", p.rank.name());
+          
+          return pDoc;
+      }).toList();
+    document.append("participants", participantsDocs);
+
+    matchCollection.replaceOne(
+      new Document("_id", id),
+      document,
+      new ReplaceOptions().upsert(true)
+    );
+  }
 
   public static List<MatchData> getMatches() {
     List<MatchData> matches = new ArrayList<>();

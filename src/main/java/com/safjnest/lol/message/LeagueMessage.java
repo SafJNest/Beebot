@@ -16,8 +16,6 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.sql.SQLException;
-
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
@@ -1544,7 +1542,6 @@ public class LeagueMessage {
                 GameQueueType gameQueue = match.queue;
                 boolean win = participant.win;
     
-                String kda = participant.kda;
                 int kills = participant.kills;
                 int deaths = participant.deaths;
                 int assists = participant.assists;

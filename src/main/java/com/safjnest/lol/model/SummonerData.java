@@ -2,7 +2,10 @@ package com.safjnest.lol.model;
 
 import java.util.List;
 
+import com.safjnest.lol.LeagueHandler;
+
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 
 public class SummonerData {
 
@@ -46,6 +49,10 @@ public class SummonerData {
 
     public List<MasteryData> getMasteries() { return masteries; }
     public void setMasteries(List<MasteryData> masteries) { this.masteries = masteries; }
+
+    public Summoner toSummoner() {
+        return LeagueHandler.getSummonerByPuuid(this.puuid, this.region);
+    }
 
     @Override
     public String toString() {

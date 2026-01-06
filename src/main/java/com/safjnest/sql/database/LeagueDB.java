@@ -21,16 +21,12 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
-import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
-import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessageParameter;
@@ -515,18 +511,7 @@ public class LeagueDB extends AbstractDB {
                     match.timeEnd = rs.getTimestamp("time_end").getTime();
                     match.patch = rs.getString("patch");
 
-                    match.bans = new HashMap<>();
-                    JSONObject bansJson = new JSONObject(rs.getString("bans"));
-                    for(String key : bansJson.keySet()) {
-                        TeamType team = TeamType.values()[Integer.parseInt(key)];
-                        try {
-                            match.bans.put(team, bansJson.getJSONArray(key).getInt(0));    
-                        } catch (Exception e) {
-                            match.bans.put(team, null);
-                        }
-                        
-                    }
-                    
+                    match.bans = new HashMap<>();                    
                     match.events = new JSONObject(rs.getString("events"));
                     match.participants = new ArrayList<>();
 

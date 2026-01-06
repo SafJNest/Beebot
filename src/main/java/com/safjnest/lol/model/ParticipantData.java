@@ -11,8 +11,68 @@ import org.json.JSONObject;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 
 public class ParticipantData {
+
+    public ParticipantData() {}
+
+    //rank, gain
+    public ParticipantData(MatchParticipant participant) {
+        this.puuid = participant.getPuuid();
+
+        this.win = participant.didWin();
+        this.champion = participant.getChampionId();
+        this.lane = participant.getLane();
+        this.team = participant.getTeam();
+
+        this.damage = participant.getTotalDamageDealtToChampions();
+        this.damageBuilding = participant.getDamageDealtToBuildings();
+        this.healing = participant.getTotalHeal();
+        this.cs = participant.getTotalMinionsKilled() + participant.getNeutralMinionsKilled();
+        this.goldEarned = participant.getGoldEarned();
+        this.ward = participant.getWardsPlaced();
+        this.wardKilled = participant.getWardsKilled();
+        this.visionScore = participant.getVisionScore();
+        this.kills = participant.getKills();
+        this.deaths = participant.getDeaths();
+        this.assists = participant.getAssists();
+        this.doubles = participant.getDoubleKills();
+        this.triples = participant.getTripleKills();
+        this.quadruples = participant.getQuadraKills();
+        this.pentas = participant.getPentaKills();
+        this.level = participant.getChampionLevel();
+
+        this.item0 = participant.getItem0();
+        this.item1 = participant.getItem1();
+        this.item2 = participant.getItem2();
+        this.item3 = participant.getItem3();
+        this.item4 = participant.getItem4();
+        this.item5 = participant.getItem5();
+        this.item6 = participant.getItem6();
+
+        this.summonerSpell1 = participant.getSummoner1Id();
+        this.summonerSpell2 = participant.getSummoner2Id();
+
+        HashMap<String, Integer> pings = new HashMap<>();        
+        pings.put("push", participant.getPushPings());
+        pings.put("bait", participant.getBaitPings());
+        pings.put("danger", participant.getDangerPings());
+        pings.put("hold", participant.getHoldPings());
+        pings.put("all_in", participant.getAllInPings());
+        pings.put("basic", participant.getBasicPings());
+        pings.put("command", participant.getCommandPings());
+        pings.put("get_back", participant.getGetBackPings());
+        pings.put("on_my_way", participant.getOnMyWayPings());
+        pings.put("assist_me", participant.getAssistMePings());
+        pings.put("need_vision", participant.getNeedVisionPings());
+        pings.put("enemy_vision", participant.getEnemyVisionPings());
+        pings.put("enemy_missing", participant.getEnemyMissingPings());
+        pings.put("vision_cleared", participant.getVisionClearedPings());
+        this.pings = pings;
+    }
+
+
     public int id; //TODO: remove
     public int summonerId; //TODO: remove
     public String puuid;
