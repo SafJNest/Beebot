@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 import org.bson.Document;
+import org.json.JSONObject;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -13,6 +14,8 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.log.BotLogger;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 /**
  * Gestisce la migrazione SQL -> MongoDB
@@ -160,7 +163,7 @@ public final class Immigrator {
 
         Map<Integer, String> summonerIdToPuuid = loadPuuidMap();
 
-        QueryResult matchIds = LeagueDB.get().query("SELECT m.id FROM `match` m ORDER BY m.id DESC");
+        QueryResult matchIds = LeagueDB.get().query("SELECT m.id FROM `match` m ORDER BY m.id DESC limit 10");
 
         int count = 0;
         int errors = 0;
@@ -184,6 +187,18 @@ public final class Immigrator {
                 if (gameId == null || region == null) continue;
 
                 String mongoId = region + "_" + gameId;
+                HashMap<String, List<Integer>> bans = new HashMap<>();
+
+                JSONObject bansJ = new JSONObject(m.get("bans"));
+                bansJ.keySet().forEach(k ->
+                    bans.put(
+                        "1".equals(k) ? TeamType.BLUE.name() : TeamType.RED.name(),
+                        bansJ.getJSONArray(k.toString()).toList().stream()
+                            .map(o -> Integer.parseInt(o.toString()))
+                            .toList()
+                    )
+                );
+
 
                 Document match = new Document("_id", mongoId)
                     .append("region", region)
@@ -193,7 +208,7 @@ public final class Immigrator {
                     .append("time_start", m.getAsDate("time_start"))
                     .append("time_end", m.getAsDate("time_end"))
                     .append("patch", m.get("patch"))
-                    .append("bans", safeJson(m.get("bans")))
+                    .append("bans", bans)
                     .append("events", safeJson(m.get("events")));
 
 
