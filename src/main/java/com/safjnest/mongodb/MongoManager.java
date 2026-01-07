@@ -47,7 +47,7 @@ public class MongoManager {
   private static void loadLOLDb() { 
     LOLdb = mongo.getDatabase(
       App.isTesting() 
-        ? "league_of_legends_test3"
+        ? "league_of_legends_test"
         : "league_of_legends"
     );
     setupIndexes();

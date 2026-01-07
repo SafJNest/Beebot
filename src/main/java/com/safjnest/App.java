@@ -37,12 +37,8 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-        //bot = new Bot();
-        //bot.il_risveglio_della_bestia();
-        //System.out.println(MongoLeague.getSummonersByUserId("383358222972616705"));
-        new MongoTracker();
-
-
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {
