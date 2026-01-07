@@ -163,7 +163,7 @@ public final class Immigrator {
 
         Map<Integer, String> summonerIdToPuuid = loadPuuidMap();
 
-        QueryResult matchIds = LeagueDB.get().query("SELECT m.id FROM `match` m ORDER BY m.id DESC limit 10");
+        QueryResult matchIds = LeagueDB.get().query("SELECT m.id FROM `match` m ORDER BY m.id DESC");
 
         int count = 0;
         int errors = 0;
