@@ -41,7 +41,18 @@
           {
             "split": 1,
             "start_date": "2025-01-09 12:00:00",
-            "end_date": "2026-01-10 12:00:00",
+            "end_date": "2026-01-8 00:00:00",
+            "is_current": true
+          }
+        ]
+      },
+      {
+        "season": 16,
+        "splits": [
+          {
+            "split": 1,
+            "start_date": "2026-01-8 00:00:01",
+            "end_date": "2027-01-8 00:00:00",
             "is_current": true
           }
         ]

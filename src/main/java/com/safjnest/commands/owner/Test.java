@@ -661,7 +661,7 @@ public class Test extends Command{
                 break;
             case "fixlol":
                 ChronoTask fixlol = () -> {
-                    String q = "SELECT id, game_id, region from `match` order by id desc";     
+                    String q = "SELECT id, game_id, region from `match` where time_start > '2026-01-07' order by id desc";     
                     QueryResult r = LeagueDB.get().query(q);
                     System.out.println("total match: " + r.size());
                     int aaa = 0;
@@ -673,7 +673,7 @@ public class Test extends Command{
     
                             for (MatchParticipant participant : match.getParticipants()) {    
                                 int sumId = LeagueDB.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
-                                q = "UPDATE participant SET doubles = " + participant.getDoubleKills() + ", triples = " + participant.getTripleKills() + ", quadruples = " + participant.getQuadraKills() + ", pentas = " + participant.getPentaKills() + " WHERE match_id = " + row.get("id") + " AND summoner_id = " + sumId + ";";
+                                q = "UPDATE participant SET role_quest_id = " + participant.getRoleBoundItem() + " WHERE match_id = " + row.get("id") + " AND summoner_id = " + sumId + ";";
                                 LeagueDB.get().query(q);
                                 System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + r.size());
                                 aaa++; 
