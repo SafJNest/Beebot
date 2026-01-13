@@ -26,6 +26,7 @@ import com.safjnest.util.log.BotLogger;
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
@@ -209,7 +210,8 @@ public class MatchTracker {
     public static ChronoTask analyzeMatchHistory(LOLMatch match, Summoner summoner, QueryRecord dataGame) {
         ChronoTask task = () -> {
             if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp()) && match.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return;
-
+            if (isRemake(match)) return;
+            
             int summoner_match_id = LeagueDB.setMatchData(match);
             LeagueHandler.updateSummonerDB(match);
 
@@ -664,12 +666,49 @@ public class MatchTracker {
                         Thread.sleep(500);
         
                         List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, queue, tier, 0);
-                        BotLogger.info("[LPTracker] Start analyzing " + entries.size() + " " + tier + "( " + queue +  " ) for region " + shard);
                         LeagueDB.updateSummonerEntries(entries, shard);
                     } catch (Exception e) { e.printStackTrace(); }
                 }
             }  
         }
+    }
+
+    public static void retriveAllEntries() {
+        BotLogger.info("[LPTracker] Pushing all entries");
+        HashMap<RegionShard, List<LeagueShard>> regions = new HashMap<>();
+        for (LeagueShard shard : LeagueHandler.getActiveShards()) {
+            regions.computeIfAbsent(shard.toAccountRegionShard(), k -> new ArrayList<>()).add(shard);
+        }
+        for (RegionShard region : regions.keySet()) {
+            ChronoTask task = () -> {
+                regions.get(region).forEach(shard -> {
+                    for (TierDivisionType tier : TierDivisionType.values()) {
+                        int page = 1;
+                        if (tier == TierDivisionType.CHALLENGER_I || tier == TierDivisionType.GRANDMASTER_I
+                                || tier == TierDivisionType.UNRANKED || tier == TierDivisionType.MASTER_I)
+                            continue;
+                        if (tier.getDivision() != null && tier.getDivision().equals("V"))
+                            continue;
+                        try {
+                            List<LeagueEntry> entries = new ArrayList<>();
+                            do {
+                                entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI()
+                                        .getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, tier, page);
+                                System.out.println("[LPTracker] Start analyzing page " + page + " of " + tier.name()
+                                        + " for region " + shard + " | Entries: " + entries.size());
+                                LeagueDB.updateSummonerEntries(entries, shard);
+                                page++;
+                                Thread.sleep(500);
+                            } while (entries.size() > 0);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            };
+            task.queue();
+        }
+        
     }
 
 

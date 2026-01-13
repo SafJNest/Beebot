@@ -1278,6 +1278,10 @@ public class Test extends Command{
                 };
                 fixRank.queue();
                 break;
+            case "getallrank":
+                ChronoTask retriveAllEntries = () -> MatchTracker.retriveAllEntries();
+                retriveAllEntries.queue();
+            break;
             case "finalstats":
                 query = "SELECT id from summoner ORDER BY id ASC";
                 res = LeagueDB.get().query(query);
