@@ -100,7 +100,6 @@ public class GuildData {
 
         this.voice = data.get("name_tts") != null ? data.get("name_tts") : "John";
         this.language = data.get("language_tts") != null ? data.get("language_tts") : "en-us";
-
         this.blacklistData = new BlacklistData(
             data.getAsInt("threshold"),
             data.get("blacklist_channel") != null ? data.get("blacklist_channel") : null,

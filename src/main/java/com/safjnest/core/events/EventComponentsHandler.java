@@ -6,11 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.safjnest.commands.members.Blacklist;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.model.guild.BlacklistData;
 import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
@@ -64,6 +66,9 @@ import net.dv8tion.jda.api.modals.Modal;
       switch (type) {
         case "alert":
           alert(event, innerType, args);
+          return;
+        case "blacklist":
+          blacklist(event, innerType, args);
           return;
         default:
           break;
@@ -324,6 +329,39 @@ import net.dv8tion.jda.api.modals.Modal;
                 System.out.println("error: " + throwable.getMessage());
             }
         });
+
+    }
+
+    private void blacklist(GenericComponentInteractionCreateEvent event, String innerType, String args) {
+      GuildData guild = GuildCache.getGuild(event.getGuild());
+      BlacklistData bl = guild.getBlacklistData();
+
+      switch (innerType) {
+        case "toggle":
+          bl.setBlacklistEnabled(!bl.isBlacklistEnabled());
+          break;
+        case "channel":
+          EntitySelectInteractionEvent entityEvent = (EntitySelectInteractionEvent) event;
+          bl.setBlackChannelId(entityEvent.getValues().get(0).getId());
+          break;
+        case "threshold":
+          TextInput input = TextInput.create("blacklist-threshold", "Select a threshold", TextInputStyle.SHORT)
+            .setPlaceholder("3")
+            .setMinLength(1)
+            .setRequired(true)
+            .build();
+          Modal modal = Modal.create("blacklist", "Modify Blacklist")
+            .addComponents(ActionRow.of(input))
+            .build();
+
+          event.replyModal(modal).queue();
+        return;
+      }
+
+      event.deferEdit().queue();
+      event.getMessage().editMessageComponents(Blacklist.getMessage(guild))
+          .useComponentsV2()
+          .queue();
 
     }
 

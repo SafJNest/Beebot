@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.safjnest.commands.audio.sound.SoundCustomize;
+import com.safjnest.commands.members.Blacklist;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
@@ -64,6 +65,9 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 break;
             case "champion":
                 champion(event);
+                break;
+            case "blacklist":
+                blacklist(event);
                 break;
             default:
                 break;
@@ -275,5 +279,18 @@ public class EventModalInteractionHandler extends ListenerAdapter {
 
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
         LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
+    }
+
+    private void blacklist(ModalInteractionEvent event) {
+        try {
+            int threshold = Integer.parseInt(event.getValue("blacklist-threshold").getAsString());
+            GuildCache.getGuildOrPut(event.getGuild()).setThreshold(threshold);
+        } catch (Exception e) {
+            event.deferReply(true).setContent("Insert a valid number").queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+        event.getMessage().editMessageComponents(Blacklist.getMessage(GuildCache.getGuild(event.getGuild()))).useComponentsV2().queue();
     }
 }

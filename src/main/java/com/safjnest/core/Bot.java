@@ -48,7 +48,6 @@ import com.safjnest.commands.lol.*;
 import com.safjnest.commands.lol.summoner.Summoner;
 import com.safjnest.commands.math.*;
 import com.safjnest.commands.members.*;
-import com.safjnest.commands.members.blacklist.Blacklist;
 import com.safjnest.commands.members.move.*;
 import com.safjnest.commands.misc.*;
 import com.safjnest.commands.misc.omegle.Omegle;

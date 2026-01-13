@@ -766,7 +766,7 @@
 
     "blacklist":{
         "alias" : ["blackbeard", "list of death"],
-        "help" : "json",
+        "help" : "Manage the blacklist for this guild.",
         "longhelp"  : "The 'Blacklist' feature in Discord enhances server security.\nIt keeps track of banned users across servers. Admins set a minimum ban count, and if it's exceeded, notifications alert the servers with the command enabled.\nThis helps ensure a safer and more secure server environment by identifying problematic users.",
         "category" : "Member Management",
         "arguments" : "",
