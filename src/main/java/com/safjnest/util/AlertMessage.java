@@ -8,6 +8,7 @@ import java.awt.Color;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
+import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
@@ -32,6 +33,10 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 public class AlertMessage {
 
     public static List<Container> build(GuildData guild, AlertData alert) {
+      return build(guild, alert, null);
+    }
+
+    public static List<Container> build(GuildData guild, AlertData alert, ChannelData channel) {
       List<Container> containers = new ArrayList<>();
       List<ContainerChildComponent> children = new ArrayList<>();
 
@@ -106,6 +111,9 @@ public class AlertMessage {
         containers.add(getContainerError(guild, alert));
       }
 
+      if (alert.getType() == AlertType.LEVEL_UP)
+        containers.add(getLevelUpChannel(guild, alert, channel));
+
       if (alert.getType() == AlertType.REWARD)
         containers.add(getRewardButtons(guild, (RewardData) alert));
 
@@ -114,6 +122,42 @@ public class AlertMessage {
       return containers;
     }
 
+
+    private static Container getLevelUpChannel(GuildData guild, AlertData alert, ChannelData channel) {
+      Builder builder = EntitySelectMenu.create("alert-levelchannel-" + alert.getID(), SelectTarget.CHANNEL).setPlaceholder("Select Channel").setChannelTypes(ChannelType.TEXT).setMaxValues(1);
+      if (channel != null) 
+        builder.setDefaultValues(DefaultValue.channel(channel.getRoomId()));
+      
+
+      builder.build();
+
+      List<ContainerChildComponent> children = new ArrayList<>();
+
+      if (channel == null) {
+        children.add(TextDisplay.of("Select a channel for further customization"));
+        children.add(ActionRow.of(builder.build()));
+
+        return Container.of(children).withAccentColor(Bot.getColor());
+      }
+
+      Section modifier = Section.of(
+        Button.primary("alert-modifier", "Change"),
+        TextDisplay.of("In this channel you gain " + channel.getExperienceModifier() + "% exp")
+      );
+
+      Section toggle = Section.of(
+        channel.isExpSystemEnabled() ? Button.success("alert-togglechannel", "Enabled") : Button.danger("alert-togglechannel", "Disabled") ,
+        channel.isExpSystemEnabled() ? TextDisplay.of("Experience enabled on this channel") : TextDisplay.of("Experience disabled on this channel")
+      );
+
+
+      children.add(modifier);
+      children.add(Separator.createDivider(Spacing.SMALL));
+      children.add(toggle);
+      children.add(ActionRow.of(builder.build()));
+
+      return Container.of(children).withAccentColor(Bot.getColor());
+    }
 
     private static Container getRewardButtons(GuildData guild, RewardData reward) {
       RewardData previous = guild.getLowerReward(reward.getLevel());

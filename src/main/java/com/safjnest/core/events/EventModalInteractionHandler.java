@@ -16,6 +16,7 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
+import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
@@ -30,6 +31,7 @@ import com.safjnest.util.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -185,6 +187,12 @@ public class EventModalInteractionHandler extends ListenerAdapter {
     private void alert(ModalInteractionEvent event) {
         String alertId = event.getModalId().split("-", 2)[1];
         AlertData alert = GuildCache.getGuild(event.getGuild()).getAlertByID(alertId);
+        ChannelData channelData = null;
+        for (EntitySelectMenu menu : EventUtils.getChannelMenu(event.getMessage().getComponents())) {
+          if (menu.getCustomId().startsWith("alert-levelchannel-") && menu.getDefaultValues().size() > 0) {
+            channelData = GuildCache.getGuild(event.getGuild()).getChannelData(menu.getDefaultValues().get(0).getId());
+          }
+        }
 
 
         String publicMessage = event.getValue("alert-message-public") != null ? event.getValue("alert-message-public").getAsString() : null;
@@ -193,8 +201,19 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         if (publicMessage != null) alert.setMessage(publicMessage);
         if (privateMessage != null) alert.setPrivateMessage(privateMessage);
 
+        if (alert.getType() == AlertType.LEVEL_UP && channelData != null) {
+            double modifier = channelData.getExperienceModifier();
+            try {
+                if (event.getValue("alert-modifier") != null) {
+                    modifier = Double.parseDouble(event.getValue("alert-modifier").getAsString());
+                    channelData.setExperienceModifier(modifier);
+                }
+            } catch (Exception ignore) { }
+
+        }
+
         event.deferEdit().queue();
-        event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), alert)).useComponentsV2().queue();
+        event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), alert, channelData)).useComponentsV2().queue();
     }
 
     private void reward(ModalInteractionEvent event) {

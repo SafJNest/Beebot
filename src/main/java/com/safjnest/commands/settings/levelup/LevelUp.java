@@ -5,6 +5,11 @@ import java.util.Collections;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.model.guild.GuildData;
+import com.safjnest.model.guild.alert.AlertData;
+import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -18,20 +23,25 @@ public class LevelUp extends SlashCommand {
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-
-        String father = this.getClass().getSimpleName().replace("Slash", "");
         
-        ArrayList<SlashCommand> slashCommandsList = new ArrayList<SlashCommand>();
-        Collections.addAll(slashCommandsList, new LevelUpPreview(father), new LevelUpChannelToggle(father), new LevelUpModifier(father), new LevelUpUpdateTime(father));
-        this.children = slashCommandsList.toArray(new SlashCommand[slashCommandsList.size()]);
-
         commandData.setThings(this);                               
         
     }
 
     @Override
     protected void execute(SlashCommandEvent event) { 
-        
+        String guildId = event.getGuild().getId();
+
+        GuildData gs = GuildCache.getGuildOrPut(guildId);
+
+        AlertData level = gs.getAlert(AlertType.LEVEL_UP);
+
+        if(level == null) {
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.LEVEL_UP)).useComponentsV2().queue();
+            return;
+        }
+
+        event.deferReply().addComponents(AlertMessage.build(gs, level)).useComponentsV2().queue();
     }
     
 }

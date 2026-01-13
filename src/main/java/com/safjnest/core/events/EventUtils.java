@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import net.dv8tion.jda.api.components.MessageTopLevelComponentUnion;
 import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.components.utils.ComponentIterator;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
@@ -42,6 +43,15 @@ public class EventUtils {
       Objects.requireNonNull(Button.class);
       return (List)var10000.map(Button.class::cast).collect(Collectors.toList());
    }
+
+   @SuppressWarnings({ "unchecked"})
+   public @Unmodifiable static List<EntitySelectMenu> getChannelMenu(List<MessageTopLevelComponentUnion> components) {
+     Stream var10000 = ComponentIterator.createStream(components);
+     Objects.requireNonNull(EntitySelectMenu.class);
+     var10000 = var10000.filter(EntitySelectMenu.class::isInstance);
+     Objects.requireNonNull(EntitySelectMenu.class);
+     return (List)var10000.map(EntitySelectMenu.class::cast).collect(Collectors.toList());
+  }
 
    @SuppressWarnings({ "unchecked"})
     public @Unmodifiable static List<StringSelectMenu> getStringSelectMneu(List<MessageTopLevelComponentUnion> components) {
