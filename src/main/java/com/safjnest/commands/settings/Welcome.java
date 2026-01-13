@@ -1,4 +1,4 @@
-package com.safjnest.commands.settings.boost;
+package com.safjnest.commands.settings;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,9 +13,9 @@ import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
-public class Boost extends SlashCommand {
+public class Welcome extends SlashCommand{
 
-    public Boost(){
+    public Welcome(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -24,7 +24,7 @@ public class Boost extends SlashCommand {
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
 
-        commandData.setThings(this);                          
+        commandData.setThings(this);                               
     }
 
     @Override
@@ -33,14 +33,14 @@ public class Boost extends SlashCommand {
 
         GuildData gs = GuildCache.getGuildOrPut(guildId);
 
-        AlertData boost = gs.getAlert(AlertType.BOOST);
+        AlertData welcome = gs.getAlert(AlertType.WELCOME);
 
-        if(boost == null) {
-            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.BOOST)).useComponentsV2().queue();
+
+        if(welcome == null) {
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.WELCOME)).useComponentsV2().queue();
             return;
         }
 
-        event.deferReply().addComponents(AlertMessage.build(gs, boost)).useComponentsV2().queue();
+        event.deferReply().addComponents(AlertMessage.build(gs, welcome)).useComponentsV2().queue();
     }
-    
 }

@@ -1,4 +1,4 @@
-package com.safjnest.commands.settings.leave;
+package com.safjnest.commands.settings;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,10 +13,9 @@ import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
-public class Leave extends SlashCommand {
+public class Boost extends SlashCommand {
 
-
-    public Leave(){
+    public Boost(){
         this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);
@@ -24,8 +23,8 @@ public class Leave extends SlashCommand {
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-        
-        commandData.setThings(this);
+
+        commandData.setThings(this);                          
     }
 
     @Override
@@ -34,14 +33,14 @@ public class Leave extends SlashCommand {
 
         GuildData gs = GuildCache.getGuildOrPut(guildId);
 
-        AlertData leave = gs.getAlert(AlertType.LEAVE);
+        AlertData boost = gs.getAlert(AlertType.BOOST);
 
-        if(leave == null) {
-            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.LEAVE)).useComponentsV2().queue();
+        if(boost == null) {
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.BOOST)).useComponentsV2().queue();
             return;
         }
 
-        event.deferReply().addComponents(AlertMessage.build(gs, leave)).useComponentsV2().queue();
+        event.deferReply().addComponents(AlertMessage.build(gs, boost)).useComponentsV2().queue();
     }
     
 }
