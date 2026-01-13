@@ -18,6 +18,7 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.util.AlertMessage;
 
@@ -222,7 +223,10 @@ import net.dv8tion.jda.api.modals.Modal;
           break;
         case "delete":
           event.deferEdit().queue();
-          guild.deleteAlert(alert.getType());
+          if (alert.getType() == AlertType.REWARD)
+            guild.deleteAlert(AlertType.REWARD, alert.asReward().getLevel());
+          else guild.deleteAlert(alert.getType());
+          
           Container delete = Container.of(TextDisplay.of("Alert deleted correctly")).withAccentColor(Color.GREEN);
           event.getMessage().editMessageComponents(delete)
             .useComponentsV2()

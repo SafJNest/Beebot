@@ -29,7 +29,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 
 import com.safjnest.App;
 import com.safjnest.commands.audio.Connect;
-import com.safjnest.commands.audio.DeleteSound;
 import com.safjnest.commands.audio.Disconnect;
 import com.safjnest.commands.audio.Stop;
 import com.safjnest.commands.audio.TTS;
@@ -158,7 +157,7 @@ public class Bot {
 
         Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
             new InviteBot(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
-            new Permissions(), new ModifyNickname(), new RandomMove(), new Calculator(), new Dice(), new VandalizeServer(), new Jelly(), new Alias());
+            new Permissions(), new Nickname(), new RandomMove(), new Calculator(), new Dice(), new VandalizeServer(), new Jelly(), new Alias());
 
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
@@ -185,13 +184,13 @@ public class Bot {
         Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
             new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
             new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
-            new Permissions(), new ModifyNickname(), new Welcome(), new Leave(), new Boost(), 
+            new Permissions(), new Nickname(), new Welcome(), new Leave(), new Boost(), 
             new Blacklist(), new Twitch(), new Omegle(),new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), 
             new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode()
         );
 
         
-        Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), 
+        Collections.addAll(slashCommandsList, new Disconnect(), 
             new List(), new Play(), new Playlist(), new TTS(), new Stop(), new Sound(),
             new Voice(), new Soundboard(), new Greet(), new Pause(), new Resume(),
             new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn(), new Build()

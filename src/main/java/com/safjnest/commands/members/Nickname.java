@@ -21,11 +21,11 @@ import net.dv8tion.jda.api.requests.ErrorResponse;
  * 
  * @since 1.1
  */
-public class ModifyNickname extends SlashCommand {
+public class Nickname extends SlashCommand {
     /**
      * Default constructor for the class.
      */
-    public ModifyNickname() {
+    public Nickname() {
         this.name = this.getClass().getSimpleName().toLowerCase();
 
         BotCommand commandData = CommandsLoader.getCommand(this.name);

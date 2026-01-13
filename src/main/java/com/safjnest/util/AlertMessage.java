@@ -206,7 +206,11 @@ public class AlertMessage {
 
         int id = buttonAlert != null ? buttonAlert.getID() : 0;
         if (alert.getType() == AlertType.REWARD) id = alert.getID();
-        Button button = Button.primary("alert-type-" + type + "-" + id , type.getName());
+
+        String buttonId = type == AlertType.REWARD && id == 0
+          ? "alert-createReward"
+          : "alert-type-" + type + "-" + id;
+        Button button = Button.primary(buttonId , type.getName());
         
         ButtonStyle style = buttonAlert == null ? ButtonStyle.SECONDARY : (alert.getType() == type ? ButtonStyle.SUCCESS : ButtonStyle.PRIMARY);
         button = button.withStyle(style);
@@ -228,7 +232,7 @@ public class AlertMessage {
         }
       }
 
-      Builder builder = EntitySelectMenu.create("alert-role-" + alert.getID(), SelectTarget.ROLE).setPlaceholder("Select roles").setMaxValues(25);
+      Builder builder = EntitySelectMenu.create("alert-role-" + alert.getID(), SelectTarget.ROLE).setPlaceholder("Select roles").setMaxValues(25).setMinValues(0);
       if (values.size() > 0) builder.setDefaultValues(values);
 
       return builder.build();
