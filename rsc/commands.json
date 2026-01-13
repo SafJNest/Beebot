@@ -468,7 +468,7 @@
 
     "welcome": {
         "alias" : ["setwelcome", "welcome"],
-        "help"  : "json",
+        "help"  : "Create a welcome message for this guild.",
         "longhelp"  : "Allow to set a 'welcome message' that would be sent every time a user join the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the role write #role",
         "category" : "Settings",
         "children": {
@@ -516,7 +516,7 @@
 
     "reward": {
         "alias" : [],
-        "help" : "json",
+        "help" : "Create a reward for this guild.",
         "longhelp"  : "Allow to set a reward for the leveling up system. A message will be sent every time a user reach a certain level and one or more roles will be given.\nThe message will be sent in the current channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the level write #level, the role write #role.",
         "category" : "Settings",
         "arguments" : "",
@@ -562,7 +562,7 @@
 
     "leave": {
         "alias" : ["setleave", "leave"],
-        "help" : "json",
+        "help" : "Create a leave message for this guild.",
         "longhelp"  : "Allow to set a 'leave message' that would be sent every time a user leaves the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user",
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [message]",
@@ -602,7 +602,7 @@
 
     "levelup": {
         "alias" : ["setlevelup", "setlvl"],
-        "help" : "json",
+        "help" : "Change the level up message's text.",
         "longhelp"  : "These are the commands to manage the levelup system in your guild.\nYou can set a 'level up message' to be sent every time a user levels up.The message will be sent in the current channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the level write #level`.\n\n[The levelup system is enabled by default]",
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [messagge]",
@@ -642,7 +642,7 @@
 
     "boost": {
         "alias" : ["nitro", "setboost", "boosts"],
-        "help" : "json",
+        "help" : "Create a boost message for this guild.",
         "longhelp"  : "Allow to set a 'boost server message' to be sent every time a user boost the server.\nIts necessary to set also a channel otherwise will be used the default system channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user",
         "category" : "Settings",
         "arguments" : "[CommandName] (#channel) | [messagge]",

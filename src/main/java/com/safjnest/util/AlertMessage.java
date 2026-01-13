@@ -198,7 +198,10 @@ public class AlertMessage {
     }
 
     public static Container getEmptyAlert(AlertType type) {
-      Button create = Button.success("alert-type-" + type.name() + "-0", "Create");
+      String id = "alert-type-" + type.name() + "-0";
+      if (type == AlertType.REWARD)
+        id = "alert-createReward";
+      Button create = Button.success(id, "Create");
       TextDisplay display = TextDisplay.of("This guild does not have a " + type.getDescription().toLowerCase() + ".");
       return Container.of(Section.of(create, display)).withAccentColor(Color.red);
     }
