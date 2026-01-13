@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.safjnest.commands.audio.sound.SoundCustomize;
+import com.safjnest.commands.members.Blacklist;
 import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
@@ -16,6 +17,7 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
+import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
@@ -30,6 +32,7 @@ import com.safjnest.util.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -62,6 +65,9 @@ public class EventModalInteractionHandler extends ListenerAdapter {
                 break;
             case "champion":
                 champion(event);
+                break;
+            case "blacklist":
+                blacklist(event);
                 break;
             default:
                 break;
@@ -185,6 +191,12 @@ public class EventModalInteractionHandler extends ListenerAdapter {
     private void alert(ModalInteractionEvent event) {
         String alertId = event.getModalId().split("-", 2)[1];
         AlertData alert = GuildCache.getGuild(event.getGuild()).getAlertByID(alertId);
+        ChannelData channelData = null;
+        for (EntitySelectMenu menu : EventUtils.getChannelMenu(event.getMessage().getComponents())) {
+          if (menu.getCustomId().startsWith("alert-levelchannel-") && menu.getDefaultValues().size() > 0) {
+            channelData = GuildCache.getGuild(event.getGuild()).getChannelData(menu.getDefaultValues().get(0).getId());
+          }
+        }
 
 
         String publicMessage = event.getValue("alert-message-public") != null ? event.getValue("alert-message-public").getAsString() : null;
@@ -193,8 +205,19 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         if (publicMessage != null) alert.setMessage(publicMessage);
         if (privateMessage != null) alert.setPrivateMessage(privateMessage);
 
+        if (alert.getType() == AlertType.LEVEL_UP && channelData != null) {
+            double modifier = channelData.getExperienceModifier();
+            try {
+                if (event.getValue("alert-modifier") != null) {
+                    modifier = Double.parseDouble(event.getValue("alert-modifier").getAsString());
+                    channelData.setExperienceModifier(modifier);
+                }
+            } catch (Exception ignore) { }
+
+        }
+
         event.deferEdit().queue();
-        event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), alert)).useComponentsV2().queue();
+        event.getMessage().editMessageComponents(AlertMessage.build(GuildCache.getGuild(event.getGuild()), alert, channelData)).useComponentsV2().queue();
     }
 
     private void reward(ModalInteractionEvent event) {
@@ -256,5 +279,18 @@ public class EventModalInteractionHandler extends ListenerAdapter {
 
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
         LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
+    }
+
+    private void blacklist(ModalInteractionEvent event) {
+        try {
+            int threshold = Integer.parseInt(event.getValue("blacklist-threshold").getAsString());
+            GuildCache.getGuildOrPut(event.getGuild()).setThreshold(threshold);
+        } catch (Exception e) {
+            event.deferReply(true).setContent("Insert a valid number").queue();
+            return;
+        }
+
+        event.deferEdit().queue();
+        event.getMessage().editMessageComponents(Blacklist.getMessage(GuildCache.getGuild(event.getGuild()))).useComponentsV2().queue();
     }
 }

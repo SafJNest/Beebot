@@ -447,7 +447,7 @@ public class BotDB extends AbstractDB {
     }
 
     public static boolean toggleBlacklist(String guild_id, boolean toggle) {
-        return instance.defaultQuery("UPDATE guild SET blacklist_enabled = '" + toggle + "' WHERE guild_id = '" + guild_id + "';");
+        return instance.defaultQuery("UPDATE guild SET blacklist_enabled = " + (toggle ? 1 : 0) + " WHERE guild_id = '" + guild_id + "';");
     }
 
 

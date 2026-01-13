@@ -1,27 +1,27 @@
-package com.safjnest.commands.settings.boost;
+package com.safjnest.commands.settings;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
+import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
-public class BoostPreview extends SlashCommand{
+public class Reward extends SlashCommand {
 
-    public BoostPreview(String father){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
+    public Reward(){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
-        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
         
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
 
-        commandData.setThings(this);
+        commandData.setThings(this);                            
     }
 
     @Override
@@ -29,14 +29,15 @@ public class BoostPreview extends SlashCommand{
         String guildId = event.getGuild().getId();
 
         GuildData gs = GuildCache.getGuildOrPut(guildId);
+        
+        RewardData lowerReward = (RewardData) gs.getHigherReward(0);
 
-        AlertData boost = gs.getAlert(AlertType.BOOST);
-
-        if(boost == null) {
-            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.BOOST)).useComponentsV2().queue();
+        if(lowerReward == null) {
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.REWARD)).useComponentsV2().queue();
             return;
         }
 
-        event.deferReply().addComponents(AlertMessage.build(gs, boost)).useComponentsV2().queue();
+        event.deferReply().addComponents(AlertMessage.build(gs, lowerReward)).useComponentsV2().queue();
     }
+    
 }

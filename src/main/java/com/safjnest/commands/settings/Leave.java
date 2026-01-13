@@ -1,26 +1,27 @@
-package com.safjnest.commands.settings.levelup;
+package com.safjnest.commands.settings;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
+import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.util.AlertMessage;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
-import com.safjnest.core.cache.managers.GuildCache;
 
-public class LevelUpPreview extends SlashCommand{
+public class Leave extends SlashCommand {
 
-    public LevelUpPreview(String father){
-        this.name = this.getClass().getSimpleName().replace("Slash", "").replace(father, "").toLowerCase();
 
-        BotCommand commandData = CommandsLoader.getCommand(father).getChild(this.name);
+    public Leave(){
+        this.name = this.getClass().getSimpleName().replace("Slash", "").toLowerCase();
 
+        BotCommand commandData = CommandsLoader.getCommand(this.name);
+        
         this.help = commandData.getHelp();
         this.cooldown = commandData.getCooldown();
         this.category = commandData.getCategory();
-
+        
         commandData.setThings(this);
     }
 
@@ -30,13 +31,14 @@ public class LevelUpPreview extends SlashCommand{
 
         GuildData gs = GuildCache.getGuildOrPut(guildId);
 
-        AlertData level = gs.getAlert(AlertType.LEVEL_UP);
+        AlertData leave = gs.getAlert(AlertType.LEAVE);
 
-        if(level == null) {
-            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.LEVEL_UP)).useComponentsV2().queue();
+        if(leave == null) {
+            event.deferReply().addComponents(AlertMessage.getEmptyAlert(AlertType.LEAVE)).useComponentsV2().queue();
             return;
         }
 
-        event.deferReply().addComponents(AlertMessage.build(gs, level)).useComponentsV2().queue();
+        event.deferReply().addComponents(AlertMessage.build(gs, leave)).useComponentsV2().queue();
     }
+    
 }
