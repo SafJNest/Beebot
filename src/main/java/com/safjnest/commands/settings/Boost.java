@@ -1,8 +1,5 @@
 package com.safjnest.commands.settings;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.GuildCache;
