@@ -1,6 +1,7 @@
 package com.safjnest.lol;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -675,13 +676,21 @@ public class MatchTracker {
 
     public static void retriveAllEntries() {
         BotLogger.info("[LPTracker] Pushing all entries");
-        HashMap<RegionShard, List<LeagueShard>> regions = new HashMap<>();
-        for (LeagueShard shard : LeagueHandler.getActiveShards()) {
-            regions.computeIfAbsent(shard.toAccountRegionShard(), k -> new ArrayList<>()).add(shard);
-        }
-        for (RegionShard region : regions.keySet()) {
+        List<LeagueShard> activeShards = List.of(
+            LeagueShard.JP1,
+            LeagueShard.BR1,
+            LeagueShard.LA1,
+            LeagueShard.LA2,
+            LeagueShard.TR1,
+            LeagueShard.RU,
+            LeagueShard.OC1,
+            LeagueShard.VN2,
+            LeagueShard.SG2,
+            LeagueShard.TW2,
+            LeagueShard.ME1
+        );
+        for (LeagueShard shard : activeShards) {
             ChronoTask task = () -> {
-                regions.get(region).forEach(shard -> {
                     for (TierDivisionType tier : TierDivisionType.values()) {
                         int page = 1;
                         if (tier == TierDivisionType.CHALLENGER_I || tier == TierDivisionType.GRANDMASTER_I
@@ -704,7 +713,7 @@ public class MatchTracker {
                             e.printStackTrace();
                         }
                     }
-                });
+
             };
             task.queue();
         }
