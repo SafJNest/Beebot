@@ -42,7 +42,6 @@ class TwitchEventsHandler {
             stream = TwitchClient.getStream(event.getBroadcasterUserId());
             if (stream == null) {
                 BotLogger.error("[TWITCH] Stream is null for " + event.getBroadcasterUserName());
-                PermissionHandler.getUntouchables().forEach((id) -> Bot.getJDA().retrieveUserById(id).complete().openPrivateChannel().queue((privateChannel) -> privateChannel.sendMessage("dio ladro schifoso animale non va twitch leggi la console svegliati").queue()));
             }
         }
 
