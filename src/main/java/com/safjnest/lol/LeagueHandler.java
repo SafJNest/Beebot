@@ -105,7 +105,7 @@ import com.safjnest.lol.model.rune.Rune;
         loadChampions();
         loadRunes();
         loadAguments();
-        new MatchTracker();
+        new MongoTracker();
     }
 
     public static String getVersion() {

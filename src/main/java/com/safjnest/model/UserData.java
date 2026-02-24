@@ -218,7 +218,7 @@ public class UserData {
 
     public boolean deleteRiotAccount(String puuid) {
         checkRiotAccounts();
-        boolean result = LeagueDB.deleteLOLaccount(USER_ID, puuid);
+        boolean result = MongoLeague.untrackAndUnlinkUser(USER_ID, puuid);
         if (result) riotAccounts.remove(puuid);
         
         return result;

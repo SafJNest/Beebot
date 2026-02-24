@@ -20,7 +20,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.MatchTracker;
+import com.safjnest.lol.MongoTracker;
 import com.safjnest.lol.model.Accumulator;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantChampionStat;
@@ -29,7 +29,6 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.mongodb.MongoLeague;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.DateHandler;
 import com.safjnest.util.SafJNest;
 
@@ -193,7 +192,7 @@ public class LeagueMessage {
         builder.addField("Flex", LeagueHandler.getFlexStats(s), true);
 
         ((ChronoTask) () -> {
-            LeagueDB.addLOLAccount(s);
+            MongoLeague.saveSummoner(s, null);
             MongoLeague.updateSummonerMasteries(s, s.getChampionMasteries());
             MongoLeague.updateSummonerEntries(s, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
         }).queue();
@@ -206,7 +205,7 @@ public class LeagueMessage {
         builder.addField("Highest Masteries", masteryString, false);
 
 
-        QueryResult advanceData = LeagueDB.getAdvancedLOLData(summonerId, parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
+        QueryResult advanceData = MongoLeague.getAdvancedLOLData(s.getPUUID(), s.getPlatform(), parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
 
         if (!advanceData.isEmpty()) {
             LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
@@ -255,7 +254,7 @@ public class LeagueMessage {
             }
 
             if (parameter.getQueueType() == null) {
-                QueryResult gameData = LeagueDB.getAllGamesForAccount(summonerId, parameter.getTimeStart(), parameter.getTimeEnd());
+                QueryResult gameData = MongoLeague.getAllGamesForAccount(s.getPUUID(), s.getPlatform(), parameter.getTimeStart(), parameter.getTimeEnd());
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
                     GameQueueType type = row.getAsGameQueueType("queue");
@@ -571,7 +570,7 @@ public class LeagueMessage {
                 String redSide = "";
 
                 String lpLabel = "";
-                QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
+                QueryResult result = MongoLeague.getSummonerData(s.getPUUID(), s.getPlatform());
                 for (int j = 0; j < result.size(); j ++) {
                     QueryRecord row = result.get(j);
                     QueryRecord previosRow = j > 0 ? result.get(j - 1) : null;
@@ -1065,15 +1064,15 @@ public class LeagueMessage {
 
         List<String> gameIds = getMatchIds(s, parameter.getQueueType(), parameter.getOffset());
 
-        QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
+        QueryResult result = MongoLeague.getSummonerData(s.getPUUID(), s.getPlatform());
 
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
 
                 LOLMatch match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
-                if (MatchTracker.isRemake(match))
+                if (MongoTracker.isRemake(match))
                     continue;
-                MatchTracker.queueMatch(match);
+                MongoTracker.queueMatch(match);
                 if (match.getParticipants().size() == 0)
                     continue; //riot di merda che quando crasha il game lascia dati sporchi
 
@@ -1250,7 +1249,7 @@ public class LeagueMessage {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
         List<MatchData> matches = null;
         try {
-            matches = MongoLeague.getMatches();
+            matches = MongoLeague.getMatchHistory(summoner.getPUUID(), summoner.getPlatform(), parameter);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1266,10 +1265,10 @@ public class LeagueMessage {
                 eb = getGenericStats(eb, matches, summoner, summonerId, parameter);                
                 break;
             case MATCHUP:
-                eb = getMatchups(eb, matches, summonerId, parameter);
+                eb = getMatchups(eb, matches, summoner, parameter);
                 break;
             case OVERVIEW_PING:
-                eb = getPings(eb, matches, summonerId);
+                eb = getPings(eb, matches, summoner);
                 break;
             case OVERVIEW_OBJECTIVES:
                 eb = getObjectives(eb, matches, summoner, summonerId);
@@ -1387,12 +1386,13 @@ public class LeagueMessage {
         return rows;
     }
 
-    private static EmbedBuilder getPings(EmbedBuilder eb, List<MatchData> matches, int summonerId) {
+    private static EmbedBuilder getPings(EmbedBuilder eb, List<MatchData> matches, Summoner summoner) {
         HashMap<String, Integer> pings = new HashMap<>();
+        String puuid = summoner != null ? summoner.getPUUID() : null;
 
         for (MatchData match : matches) {
             for (ParticipantData participant : match.participants) {
-                if (participant.summonerId != summonerId) continue;
+                if (puuid == null || !puuid.equals(participant.puuid)) continue;
                 for (String ping : participant.pings.keySet()) 
                     pings.put(ping, pings.getOrDefault(ping, 0) + participant.pings.get(ping));
             }
@@ -1428,16 +1428,17 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<MatchData> matches, int summonerId, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, LeagueMessageParameter parameter) {
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
+        String puuid = summoner != null ? summoner.getPUUID() : null;
 
         HashMap<String, Set<Integer>> unique = new HashMap<>();
         unique.put("champion", new HashSet<>());
 
         for (MatchData match : matches) {
             for (ParticipantData participant : match.participants) {
-                if (participant.summonerId != summonerId) {
+                if (puuid == null || !puuid.equals(participant.puuid)) {
                     continue;
                 }
 
@@ -1874,7 +1875,7 @@ public class LeagueMessage {
 
         for (MatchData match : matches) {
             for (ParticipantData participant : match.participants) {
-                if (participant.summonerId != summonerId) continue;
+                if (participant.puuid == null || !participant.puuid.equals(summoner.getPUUID())) continue;
 
                     unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
                     String kda = participant.kda;
@@ -1913,7 +1914,7 @@ public class LeagueMessage {
         for (MatchData match : matches) 
             eb = getOpggEmbedMatchData(eb, match, s);
         
-        int totalPages = LeagueDB.countMatchHistory(summonerId, parameter);
+        int totalPages = MongoLeague.countMatchHistory(s.getPUUID(), s.getPlatform(), parameter);
         int pages = (int) Math.ceil((double) totalPages / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);
@@ -1934,7 +1935,7 @@ public class LeagueMessage {
         
         for (MatchData match : matches) {
             ParticipantData participant = match.participants.stream()
-                    .filter(p -> p.summonerId == summonerId)
+                    .filter(p -> p.puuid != null && p.puuid.equals(summoner.getPUUID()))
                     .findFirst()
                     .orElse(null);
             
