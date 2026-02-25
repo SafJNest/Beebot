@@ -677,17 +677,10 @@ public class MatchTracker {
     public static void retriveAllEntries() {
         BotLogger.info("[LPTracker] Pushing all entries");
         List<LeagueShard> activeShards = List.of(
-            LeagueShard.JP1,
-            LeagueShard.BR1,
-            LeagueShard.LA1,
-            LeagueShard.LA2,
-            LeagueShard.TR1,
-            LeagueShard.RU,
-            LeagueShard.OC1,
-            LeagueShard.VN2,
-            LeagueShard.SG2,
-            LeagueShard.TW2,
-            LeagueShard.ME1
+            LeagueShard.EUW1,
+            LeagueShard.NA1,
+            LeagueShard.KR,
+            LeagueShard.EUN1
         );
         for (LeagueShard shard : activeShards) {
             ChronoTask task = () -> {
