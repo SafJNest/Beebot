@@ -13,9 +13,9 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <java.version>17</java.version>
+    <maven.compiler.source>25</maven.compiler.source>
+    <maven.compiler.target>25</maven.compiler.target>
+    <java.version>25</java.version>
   </properties>
 
 
@@ -184,10 +184,41 @@
       <type>pom</type>
     </dependency>
 
+    <!-- Source: https://mvnrepository.com/artifact/club.minnced/jdave-api -->
+    <dependency>
+      <groupId>club.minnced</groupId>
+      <artifactId>jdave-api</artifactId>
+      <version>0.1.6</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>club.minnced</groupId>
+      <artifactId>jdave-native-linux-x86-64</artifactId>
+      <version>0.1.6</version>
+  </dependency>
+
+  <dependency>
+      <groupId>club.minnced</groupId>
+      <artifactId>jdave-native-linux-aarch64</artifactId>
+      <version>0.1.6</version>
+  </dependency>
+
+  <dependency>
+      <groupId>club.minnced</groupId>
+      <artifactId>jdave-native-win-x86-64</artifactId>
+      <version>0.1.6</version>
+  </dependency>
+
+  <dependency>
+      <groupId>club.minnced</groupId>
+      <artifactId>jdave-native-darwin</artifactId>
+      <version>0.1.6</version>
+  </dependency>
+
     <dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
-      <version>6.0.0-rc.3</version>
+      <version>6.3.1</version>
     </dependency>
     <!--
     <dependency>
