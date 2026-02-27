@@ -12,6 +12,7 @@ import java.text.MessageFormat;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.audio.AudioModuleConfig;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.GenericEvent;
@@ -65,6 +66,8 @@ import com.safjnest.util.AutomatedActionTimer;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 
+import club.minnced.discord.jdave.interop.JDaveSessionFactory;
+
 /**
  * Main class of the bot.
  * <p>
@@ -108,6 +111,8 @@ public class Bot {
             .setMemberCachePolicy(MemberCachePolicy.ALL)
             .setChunkingFilter(ChunkingFilter.ALL)
             .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
+            .setAudioModuleConfig(new AudioModuleConfig()
+                .withDaveSessionFactory(new JDaveSessionFactory()))
             .build();
 
         botID = jda.getSelfUser().getId();
