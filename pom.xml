@@ -18,6 +18,64 @@
     <java.version>25</java.version>
   </properties>
 
+  <profiles>
+    <profile>
+      <id>linux-x86</id>
+      <activation>
+        <os><family>unix</family><arch>amd64</arch></os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>club.minnced</groupId>
+          <artifactId>jdave-native-linux-x86-64</artifactId>
+          <version>0.1.7</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  
+    <profile>
+      <id>linux-aarch64</id>
+      <activation>
+        <os><family>unix</family><arch>aarch64</arch></os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>club.minnced</groupId>
+          <artifactId>jdave-native-linux-aarch64</artifactId>
+          <version>0.1.7</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  
+    <profile>
+      <id>windows</id>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>club.minnced</groupId>
+          <artifactId>jdave-native-win-x86-64</artifactId>
+          <version>0.1.7</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  
+    <profile>
+      <id>mac</id>
+      <activation>
+        <os><family>mac</family></os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>club.minnced</groupId>
+          <artifactId>jdave-native-darwin</artifactId>
+          <version>0.1.7</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
+
 
   <repositories>
     <repository>
@@ -188,7 +246,7 @@
     <dependency>
       <groupId>club.minnced</groupId>
       <artifactId>jdave-api</artifactId>
-      <version>0.1.6</version>
+      <version>0.1.7</version>
   </dependency>
   
   <dependency>
@@ -391,17 +449,12 @@
   </dependencies>
 
   <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to
-      parent pom) -->
+    <pluginManagement>
       <plugins>
-        <!-- clean lifecycle, see
-        https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <version>3.1.0</version>
         </plugin>
-        <!-- default lifecycle, jar packaging: see
-        https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <version>3.0.2</version>
