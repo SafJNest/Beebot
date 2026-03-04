@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -32,7 +31,6 @@
         </dependency>
       </dependencies>
     </profile>
-  
     <profile>
       <id>linux-aarch64</id>
       <activation>
@@ -46,7 +44,6 @@
         </dependency>
       </dependencies>
     </profile>
-  
     <profile>
       <id>windows</id>
       <activation>
@@ -60,7 +57,6 @@
         </dependency>
       </dependencies>
     </profile>
-  
     <profile>
       <id>mac</id>
       <activation>
@@ -75,7 +71,6 @@
       </dependencies>
     </profile>
   </profiles>
-
 
   <repositories>
     <repository>
@@ -104,7 +99,6 @@
     </repository>
   </repositories>
 
-
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -112,33 +106,26 @@
       <version>3.3.4</version>
       <type>pom</type>
     </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
       <version>3.3.4</version>
     </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
       <version>3.3.4</version>
     </dependency>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-json</artifactId>
       <version>3.3.4</version>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-core -->
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-core</artifactId>
       <version>6.4.4</version>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api -->
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>
@@ -152,88 +139,63 @@
     </dependency>
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
-      <artifactId>jjwt-jackson</artifactId> <!-- or jjwt-gson if Gson is preferred -->
+      <artifactId>jjwt-jackson</artifactId>
       <version>0.12.6</version>
       <scope>runtime</scope>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/jakarta.servlet/jakarta.servlet-api -->
     <dependency>
       <groupId>jakarta.servlet</groupId>
       <artifactId>jakarta.servlet-api</artifactId>
       <version>6.1.0</version>
       <scope>provided</scope>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>2.18.2</version>
     </dependency>
-
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>2.2.224</version>
       <scope>runtime</scope>
     </dependency>
-
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.17.0</version>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>5.12.0-M1</version>
       <scope>test</scope>
     </dependency>
-
-
-    <!-- https://mvnrepository.com/artifact/com.sedmelluq/lavaplayer
-    <dependency>
-      <groupId>com.sedmelluq</groupId>
-      <artifactId>lavaplayer</artifactId>
-      <version>1.3.78</version>
-    </dependency>
-    -->
-
-    <!-- Use a specific commit version -->
     <dependency>
       <groupId>dev.arbjerg</groupId>
       <artifactId>lavaplayer</artifactId>
       <version>2.2.4</version>
     </dependency>
-
     <dependency>
       <groupId>dev.lavalink.youtube</groupId>
       <artifactId>v2</artifactId>
       <version>1.16.0</version>
     </dependency>
-
     <dependency>
       <groupId>dev.arbjerg</groupId>
       <artifactId>lavaplayer-ext-youtube-rotator</artifactId>
       <version>2.2.2</version>
     </dependency>
-
     <dependency>
       <groupId>com.github.topi314.lavasrc</groupId>
       <artifactId>lavasrc</artifactId>
       <version>4.2.0</version>
     </dependency>
-
     <dependency>
       <groupId>com.github.topi314.lavasrc</groupId>
       <artifactId>protocol-jvm</artifactId>
       <version>4.2.0</version>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/net.dv8tion/JDA -->
     <dependency>
       <groupId>pw.chew</groupId>
       <artifactId>jda-chewtils</artifactId>
@@ -241,211 +203,143 @@
       <scope>compile</scope>
       <type>pom</type>
     </dependency>
-
-    <!-- Source: https://mvnrepository.com/artifact/club.minnced/jdave-api -->
     <dependency>
       <groupId>club.minnced</groupId>
       <artifactId>jdave-api</artifactId>
       <version>0.1.7</version>
-  </dependency>
-  
-  <dependency>
+    </dependency>
+    <dependency>
       <groupId>club.minnced</groupId>
       <artifactId>jdave-native-linux-x86-64</artifactId>
       <version>0.1.6</version>
-  </dependency>
-
+    </dependency>
     <dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
       <version>6.3.1</version>
     </dependency>
-    <!--
-    <dependency>
-      <groupId>io.github.freya022</groupId>
-      <artifactId>JDA</artifactId>
-      <version>620fd62d12</version>
-    </dependency>
-    -->
-
-    <!-- https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-shade-plugin -->
-    <dependency>
-      <groupId>org.apache.maven.plugins</groupId>
-      <artifactId>maven-shade-plugin</artifactId>
-      <version>3.6.0</version>
-    </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-api -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>2.1.0-alpha1</version>
     </dependency>
-
-    <!--
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>2.0.11</version>
-    </dependency> 
-    -->
-
-    <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
     <dependency>
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
       <version>2.3.1</version>
     </dependency>
-
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
       <artifactId>json-simple</artifactId>
       <version>1.1.1</version>
     </dependency>
-
     <dependency>
       <groupId>org.gagravarr</groupId>
       <artifactId>vorbis-java</artifactId>
       <version>0.8</version>
       <type>pom</type>
     </dependency>
-
     <dependency>
       <groupId>org.jfree</groupId>
       <artifactId>jfreechart</artifactId>
       <version>1.5.4</version>
     </dependency>
-
     <dependency>
       <groupId>org.gagravarr</groupId>
       <artifactId>vorbis-java-core</artifactId>
       <version>0.8</version>
-      <type>jar</type>
     </dependency>
-
     <dependency>
       <groupId>com.github.ben-manes.caffeine</groupId>
       <artifactId>caffeine</artifactId>
       <version>3.1.8</version>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.openhab.voice/org.openhab.voice.voicerss
-    <dependency>
-      <groupId>org.openhab.voice</groupId>
-      <artifactId>org.openhab.voice.voicerss</artifactId>
-      <version>2.0.0</version>
-      <scope>system</scope>
-      <systemPath>${basedir}/rsc/jar/voicerss_tts.jar</systemPath>
-    </dependency>-->
-
     <dependency>
       <groupId>org.gagravarr</groupId>
       <artifactId>vorbis-java-parent</artifactId>
       <version>0.8</version>
       <type>pom</type>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.google.apis/google-api-services-youtube -->
     <dependency>
       <groupId>com.google.apis</groupId>
       <artifactId>google-api-services-youtube</artifactId>
       <version>v3-rev222-1.25.0</version>
     </dependency>
-
     <dependency>
       <groupId>com.github.stelar7</groupId>
       <artifactId>R4J</artifactId>
       <version>bfd7ca8053f2588115e6b4226f65c1aa0ce69190</version>
     </dependency>
-
     <dependency>
       <groupId>io.quickchart</groupId>
       <artifactId>QuickChart</artifactId>
       <version>1.2.0</version>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.mariadb.jdbc/mariadb-java-client -->
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
       <version>3.5.1</version>
     </dependency>
-
     <dependency>
       <groupId>com.vdurmont</groupId>
       <artifactId>emoji-java</artifactId>
       <version>5.1.1</version>
     </dependency>
-
-    <!--  https://mvnrepository.com/artifact/org.json/json  -->
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
       <version>20231013</version>
     </dependency>
-
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-text</artifactId>
       <version>1.10.0</version>
     </dependency>
-
     <dependency>
       <groupId>com.github.twitch4j</groupId>
       <artifactId>twitch4j</artifactId>
       <version>1.23.0</version>
     </dependency>
-
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-core</artifactId>
       <version>1.4.11</version>
-  </dependency>
-
-  <dependency>
+    </dependency>
+    <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>1.4.11</version>
-  </dependency>
-
+    </dependency>
     <dependency>
       <groupId>com.opencsv</groupId>
       <artifactId>opencsv</artifactId>
-      <version>5.5.2</version> <!-- Make sure to use the latest version -->
+      <version>5.5.2</version>
     </dependency>
-
     <dependency>
       <groupId>com.mpatric</groupId>
       <artifactId>mp3agic</artifactId>
       <version>0.9.0</version>
     </dependency>
-
     <dependency>
       <groupId>com.github.sealedtx</groupId>
       <artifactId>java-youtube-downloader</artifactId>
       <version>3.2.4</version>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/com.zaxxer/HikariCP -->
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
       <version>6.2.1</version>
     </dependency>
-
     <dependency>
       <groupId>io.nayuki</groupId>
       <artifactId>qrcodegen</artifactId>
       <version>1.8.0</version>
     </dependency>
-
-    <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
     <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-        <version>1.18.42</version>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.42</version>
     </dependency>
-
   </dependencies>
 
   <build>
@@ -460,35 +354,8 @@
           <version>3.0.2</version>
         </plugin>
         <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.1</version>
-          <configuration>
-            <source>1.8</source>
-            <target>1.8</target>
-            <compilerArgs>
-              <arg>-parameters</arg>
-            </compilerArgs>
-          </configuration>
-        </plugin>
-        <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.22.1</version>
-        </plugin>
-        <plugin>
-          <!-- Build an executable JAR -->
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>3.1.0</version>
-          <configuration>
-            <archive>
-              <manifest>
-                <addClasspath>true</addClasspath>
-                <classpathPrefix>lib/</classpathPrefix>
-                <mainClass>com.safjnest.App</mainClass>
-              </manifest>
-            </archive>
-          </configuration>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
@@ -498,8 +365,6 @@
           <artifactId>maven-deploy-plugin</artifactId>
           <version>2.8.2</version>
         </plugin>
-        <!-- site lifecycle, see
-        https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
         <plugin>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.7.1</version>
@@ -507,19 +372,6 @@
         <plugin>
           <artifactId>maven-project-info-reports-plugin</artifactId>
           <version>3.0.0</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-assembly-plugin</artifactId>
-          <configuration>
-            <archive>
-              <manifest>
-                <mainClass>com.safjnest.App</mainClass>
-              </manifest>
-            </archive>
-            <descriptorRefs>
-              <descriptorRef>jar-with-dependencies</descriptorRef>
-            </descriptorRefs>
-          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -538,11 +390,11 @@
           <target>25</target>
           <annotationProcessorPaths>
             <path>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>1.18.42</version>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>1.18.42</version>
             </path>
-        </annotationProcessorPaths>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
       <plugin>
@@ -550,25 +402,44 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <version>3.6.0</version>
         <executions>
-            <execution>
-                <id>extract-jdave-natives</id>
-                <phase>process-resources</phase>
-                <goals>
-                    <goal>unpack</goal>
-                </goals>
-                <configuration>
-                    <artifactItems>
-                        <artifactItem>
-                            <groupId>club.minnced</groupId>
-                            <artifactId>jdave-native-linux-x86-64</artifactId>
-                            <version>0.1.6</version>
-                            <outputDirectory>${project.build.directory}/native</outputDirectory>
-                        </artifactItem>
-                    </artifactItems>
-                </configuration>
-            </execution>
+          <execution>
+            <id>extract-jdave-natives</id>
+            <phase>process-resources</phase>
+            <goals><goal>unpack</goal></goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>club.minnced</groupId>
+                  <artifactId>jdave-native-linux-x86-64</artifactId>
+                  <version>0.1.6</version>
+                  <outputDirectory>${project.build.directory}/native</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
         </executions>
-    </plugin>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.1</version>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals><goal>single</goal></goals>
+          </execution>
+        </executions>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>com.safjnest.App</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>
