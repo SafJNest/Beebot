@@ -11,7 +11,6 @@ import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.log.BotLogger;
 
 import net.dv8tion.jda.api.EmbedBuilder;

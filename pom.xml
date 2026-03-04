@@ -13,10 +13,68 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <java.version>17</java.version>
+    <maven.compiler.source>25</maven.compiler.source>
+    <maven.compiler.target>25</maven.compiler.target>
+    <java.version>25</java.version>
   </properties>
+
+  <profiles>
+    <profile>
+      <id>linux-x86</id>
+      <activation>
+        <os><family>unix</family><arch>amd64</arch></os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>club.minnced</groupId>
+          <artifactId>jdave-native-linux-x86-64</artifactId>
+          <version>0.1.7</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  
+    <profile>
+      <id>linux-aarch64</id>
+      <activation>
+        <os><family>unix</family><arch>aarch64</arch></os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>club.minnced</groupId>
+          <artifactId>jdave-native-linux-aarch64</artifactId>
+          <version>0.1.7</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  
+    <profile>
+      <id>windows</id>
+      <activation>
+        <os><family>windows</family></os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>club.minnced</groupId>
+          <artifactId>jdave-native-win-x86-64</artifactId>
+          <version>0.1.7</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  
+    <profile>
+      <id>mac</id>
+      <activation>
+        <os><family>mac</family></os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>club.minnced</groupId>
+          <artifactId>jdave-native-darwin</artifactId>
+          <version>0.1.7</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 
 
   <repositories>
@@ -184,10 +242,23 @@
       <type>pom</type>
     </dependency>
 
+    <!-- Source: https://mvnrepository.com/artifact/club.minnced/jdave-api -->
+    <dependency>
+      <groupId>club.minnced</groupId>
+      <artifactId>jdave-api</artifactId>
+      <version>0.1.7</version>
+  </dependency>
+  
+  <dependency>
+      <groupId>club.minnced</groupId>
+      <artifactId>jdave-native-linux-x86-64</artifactId>
+      <version>0.1.6</version>
+  </dependency>
+
     <dependency>
       <groupId>net.dv8tion</groupId>
       <artifactId>JDA</artifactId>
-      <version>6.0.0-rc.3</version>
+      <version>6.3.1</version>
     </dependency>
     <!--
     <dependency>
@@ -327,9 +398,15 @@
 
     <dependency>
       <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
+      <version>1.4.11</version>
+  </dependency>
+
+  <dependency>
+      <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
-      <version>1.5.7</version>
-    </dependency>
+      <version>1.4.11</version>
+  </dependency>
 
     <dependency>
       <groupId>com.opencsv</groupId>
@@ -366,23 +443,18 @@
     <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.18.38</version>
+        <version>1.18.42</version>
     </dependency>
 
   </dependencies>
 
   <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to
-      parent pom) -->
+    <pluginManagement>
       <plugins>
-        <!-- clean lifecycle, see
-        https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <version>3.1.0</version>
         </plugin>
-        <!-- default lifecycle, jar packaging: see
-        https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <version>3.0.2</version>
@@ -473,6 +545,30 @@
         </annotationProcessorPaths>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+            <execution>
+                <id>extract-jdave-natives</id>
+                <phase>process-resources</phase>
+                <goals>
+                    <goal>unpack</goal>
+                </goals>
+                <configuration>
+                    <artifactItems>
+                        <artifactItem>
+                            <groupId>club.minnced</groupId>
+                            <artifactId>jdave-native-linux-x86-64</artifactId>
+                            <version>0.1.6</version>
+                            <outputDirectory>${project.build.directory}/native</outputDirectory>
+                        </artifactItem>
+                    </artifactItems>
+                </configuration>
+            </execution>
+        </executions>
+    </plugin>
     </plugins>
   </build>
 </project>

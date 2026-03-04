@@ -57,6 +57,7 @@ import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.requests.ErrorResponse;
@@ -194,13 +195,13 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "set":
                 type = clicked.getCustomId().split("-")[2];
-                TextInput subject = TextInput.create("greet-set", "Select your " + type +" greet!", TextInputStyle.SHORT)
+                TextInput subject = TextInput.create("greet-set", TextInputStyle.SHORT)
                     .setPlaceholder("Name or id of the sound")
                     .setMaxLength(100)
                     .build();
 
                 Modal modal = Modal.create("greet-" + type, "Select your " + type +" greet!")
-                        .addComponents(ActionRow.of(subject))
+                        .addComponents(Label.of("Select your " + type + " greet!", subject))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -278,43 +279,43 @@ public class EventButtonHandler extends ListenerAdapter {
                         .queue();
                 break;
             case "addSub":
-                TextInput streamerInput = TextInput.create("twitch-streamer", "Streamer name", TextInputStyle.SHORT)
+                TextInput streamerInput = TextInput.create("twitch-streamer", TextInputStyle.SHORT)
                     .setPlaceholder("sunny314_")
                     .setMinLength(4)
                     .setMaxLength(25)
                     .build();
 
-                messageInput = TextInput.create("twitch-changeMessage", "New Message", TextInputStyle.PARAGRAPH)
+                messageInput = TextInput.create("twitch-changeMessage", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("#streamer is now live!")
                     .setMaxLength(1000)
                     .build();
 
-                privateInput = TextInput.create("twitch-changePrivateMessage", "New Private Message", TextInputStyle.PARAGRAPH)
+                privateInput = TextInput.create("twitch-changePrivateMessage", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hello #streamer is now live! (not required)")
                     .setRequired(false)
                     .setMaxLength(1000)
                     .build();
 
-                channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
+                channelInput = TextInput.create("twitch-changeChannel", TextInputStyle.SHORT)
                     .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
                     .setMinLength(17)
                     .setMaxLength(100)
                     .build();
 
-                roleInput = TextInput.create("twitch-changeRole", "Role to ping", TextInputStyle.SHORT)
+                roleInput = TextInput.create("twitch-changeRole", TextInputStyle.SHORT)
                     .setPlaceholder("Name or id (better) of the role")
                     .setRequired(false)
                     .setMaxLength(100)
                     .build();
 
-
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
                         .addComponents(
-                                ActionRow.of(streamerInput),
-                                ActionRow.of(messageInput),
-                                ActionRow.of(privateInput),
-                                ActionRow.of(channelInput),
-                                ActionRow.of(roleInput))
+                            Label.of("Streamer", streamerInput),
+                            Label.of("Message", messageInput),
+                            Label.of("Private Message", privateInput),
+                            Label.of("Channel", channelInput),
+                            Label.of("Role", roleInput)
+                        )
                         .build();
 
                 event.replyModal(modal).queue();
@@ -326,44 +327,47 @@ public class EventButtonHandler extends ListenerAdapter {
                         .queue();
                 break;
             case "changeMessage":
-                messageInput = TextInput.create("twitch-changeMessage", "New Message", TextInputStyle.PARAGRAPH)
+                messageInput = TextInput.create("twitch-changeMessage", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hello #streamer is now live!")
                     .setMaxLength(1000)
                     .build();
 
-                privateInput = TextInput.create("twitch-changePrivateMessage", "New Private Message", TextInputStyle.PARAGRAPH)
+                privateInput = TextInput.create("twitch-changePrivateMessage", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hello #streamer is now live!")
                     .setRequired(false)
                     .setMaxLength(1000)
                     .build();
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
-                        .addComponents(ActionRow.of(messageInput), ActionRow.of(privateInput))
+                        .addComponents(
+                            Label.of("Message", messageInput),
+                            Label.of("Private Message", privateInput)
+                        )
                         .build();
 
                 event.replyModal(modal).queue();
                 break;
             case "changeChannel":
-                channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
+                channelInput = TextInput.create("twitch-changeChannel", TextInputStyle.SHORT)
                     .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
                     .setMinLength(17)
                     .setMaxLength(100)
                     .build();
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
-                        .addComponents(ActionRow.of(channelInput))
+                        .addComponents(Label.of("Channel", channelInput))
                         .build();
 
                 event.replyModal(modal).queue();
                 break;
             case "changeRole":
-                roleInput = TextInput.create("twitch-changeRole", "Role to ping", TextInputStyle.SHORT)
+                roleInput = TextInput.create("twitch-changeRole", TextInputStyle.SHORT)
                     .setPlaceholder("Name or id (better) of the role")
                     .setMaxLength(100)
                     .build();
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
-                        .addComponents(ActionRow.of(roleInput))
+                        .addComponents(Label.of("Role", roleInput))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -454,13 +458,13 @@ public class EventButtonHandler extends ListenerAdapter {
                 tagSwitch = false;
                 break;
             case "name":
-                TextInput subject = TextInput.create("tag-name", "Tag Name", TextInputStyle.SHORT)
+                TextInput subject = TextInput.create("tag-name", TextInputStyle.SHORT)
                 .setPlaceholder("Change Tag")
                 .setMaxLength(20)
                 .build();
 
                 Modal modal = Modal.create("tag-" + soundId + "-" + tagId, "Customize Your Sound")
-                        .addComponents(ActionRow.of(subject))
+                        .addComponents(Label.of("Tag Name", subject))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -510,13 +514,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
         switch (args) {
             case "name":
-                TextInput subject = TextInput.create("sound-name", "Sound Name ( " + soundData.getName() + " )", TextInputStyle.SHORT)
+                TextInput subject = TextInput.create("sound-name", TextInputStyle.SHORT)
                     .setPlaceholder("New Sound Name")
                     .setMaxLength(100)
                     .build();
 
                 Modal modal = Modal.create("sound-" + soundId, "Customize Your Sound")
-                        .addComponents(ActionRow.of(subject))
+                        .addComponents(Label.of("Sound Name ( " + soundData.getName() + " )", subject))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -1206,13 +1210,13 @@ public class EventButtonHandler extends ListenerAdapter {
                  parameter.setOffset(0);
                 break;
             case "change":
-                TextInput subject = TextInput.create("champion-change", "Select a champion", TextInputStyle.SHORT)
+                TextInput subject = TextInput.create("champion-change", TextInputStyle.SHORT)
                     .setPlaceholder("Champion name")
                     .setMaxLength(100)
                     .build();
 
                 Modal modal = Modal.create("champion-change", "Select a champion")
-                        .addComponents(ActionRow.of(subject))
+                        .addComponents(Label.of("Select a champion", subject))
                         .build();
 
                 event.replyModal(modal).queue();

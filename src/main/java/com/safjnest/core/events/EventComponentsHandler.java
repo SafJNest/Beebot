@@ -18,8 +18,7 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.model.guild.alert.RewardData;
-import com.safjnest.model.sound.Sound;
+import com.safjnest.model.sound.Sound;  
 import com.safjnest.util.AlertMessage;
 
 
@@ -31,8 +30,8 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
@@ -62,7 +61,6 @@ import net.dv8tion.jda.api.modals.Modal;
       String type = event.getComponentId().split("-")[0];
       String innerType = event.getComponentId().split("-", 3)[1];
       String args = event.getComponentId().split("-", 3).length > 2 ? event.getComponentId().split("-", 3)[2] : "";
-
 
       switch (type) {
         case "alert":
@@ -181,24 +179,24 @@ import net.dv8tion.jda.api.modals.Modal;
           channelData.enableExperience(!channelData.isExpSystemEnabled());
           break;
         case "modifier":
-          TextInput modifierInput = TextInput.create("alert-modifier", "Change how much exp its gained in the channel", TextInputStyle.SHORT)
+          TextInput modifierInput = TextInput.create("alert-modifier", TextInputStyle.SHORT)
           .setPlaceholder("1.2")
           .setRequired(true)
           .build();
           modal = Modal.create("alert-" + alertId, "Modify Alert message")
-                  .addComponents(ActionRow.of(modifierInput))
+                  .addComponents(Label.of("Change how much exp its gained in the channel", modifierInput))
                   .build();
 
           event.replyModal(modal).queue();
           break;
         case "modal":
-              TextInput messageInput = TextInput.create("alert-message-" + args, "Alert Message, leave blank to remove", TextInputStyle.PARAGRAPH)
+              TextInput messageInput = TextInput.create("alert-message-" + args, TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hi #user, welcome in #server")
                     .setRequired(false)
                     .setMaxLength(1500)
                     .build();
                 modal = Modal.create("alert-" + alertId, "Modify Alert message")
-                        .addComponents(ActionRow.of(messageInput))
+                        .addComponents(Label.of("Alert Message, leave blank to remove", messageInput))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -245,13 +243,13 @@ import net.dv8tion.jda.api.modals.Modal;
           alert = guild.getHigherReward(rewardLevel);
           break;
         case "createReward":
-              TextInput rewardInputLevel = TextInput.create("reward-level", "Select a new reward level", TextInputStyle.SHORT)
+              TextInput rewardInputLevel = TextInput.create("reward-level", TextInputStyle.SHORT)
                     .setPlaceholder("117")
                     .setMinLength(1)
                     .setRequired(true)
                     .build();
                 modal = Modal.create("reward-" + alertId, "Modify Alert message")
-                        .addComponents(ActionRow.of(rewardInputLevel))
+                        .addComponents(Label.of("Select a new reward level", rewardInputLevel))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -349,13 +347,13 @@ import net.dv8tion.jda.api.modals.Modal;
           bl.setBlackChannelId(entityEvent.getValues().get(0).getId());
           break;
         case "threshold":
-          TextInput input = TextInput.create("blacklist-threshold", "Select a threshold", TextInputStyle.SHORT)
+          TextInput input = TextInput.create("blacklist-threshold", TextInputStyle.SHORT)
             .setPlaceholder("3")
             .setMinLength(1)
             .setRequired(true)
             .build();
           Modal modal = Modal.create("blacklist", "Modify Blacklist")
-            .addComponents(ActionRow.of(input))
+            .addComponents(Label.of("Select a threshold", input))
             .build();
 
           event.replyModal(modal).queue();

@@ -22,7 +22,6 @@ import net.dv8tion.jda.api.entities.channel.ChannelType;
 
 import java.awt.Color;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
