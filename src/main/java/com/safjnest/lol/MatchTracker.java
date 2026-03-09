@@ -756,54 +756,45 @@ public class MatchTracker {
      * @param lane
      */
     public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match`");
-        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant WHERE champion = " + champion + " AND lane = '" + lane + "'");
-
-        HashMap<String, String> result = new HashMap<>();
-
+        String[] parts = LeagueHandler.getVersion().split("\\.", 3);
+        String patch = parts[0] + "." + parts[1];
+    
+        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE patch_major = '" + patch + "'");
+        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant p JOIN `match` m ON p.match_id = m.id WHERE m.patch_major = '" + patch + "' AND p.champion = " + champion + " AND p.lane = '" + lane + "'");
+    
         int totalGames = matchDatas.size();
-
         int totalBans = 0;
-        int totalPicks = 0;
-
+        int totalPicks = championDatas.size();
         int totalWins = 0;
-        int totalLosses = 0;
-
+    
         for (QueryRecord record : matchDatas) {
-            JSONObject ban = new JSONObject(record.get("bans"));
-            JSONArray bans;
-            if (ban.has("1")) {
-                bans = (JSONArray) ban.get("1");
-                for (int i = 0; i < bans.length(); i++) {
-                    if (champion == bans.getInt(i)) totalBans++;
-                }
-            }
-            if (ban.has("2")) {
-                bans = (JSONArray) ban.get("2");
+            JSONObject bansObj = new JSONObject(record.get("bans"));
+            for (String key : bansObj.keySet()) {
+                JSONArray bans = bansObj.getJSONArray(key);
                 for (int i = 0; i < bans.length(); i++) {
                     if (champion == bans.getInt(i)) totalBans++;
                 }
             }
         }
+    
         for (QueryRecord record : championDatas) {
-            totalPicks++;
             if (record.getAsBoolean("win")) totalWins++;
-            else totalLosses++;
         }
-
-        double winrate = (double) totalWins / totalPicks * 100;
-        double banrate = (double) totalBans / totalGames * 100;
-        double pickrate = (double) totalPicks / totalGames * 100;
-
-        result.put("games", String.valueOf(totalGames));
-        result.put("bans", String.valueOf(totalBans));
-        result.put("picks", String.valueOf(totalPicks));
-        result.put("wins", String.valueOf(totalWins));
-        result.put("losses", String.valueOf(totalLosses));
-        result.put("winrate", String.valueOf(Math.round(winrate * 100.0) / 100.0));
-        result.put("banrate", String.valueOf(Math.round(banrate * 100.0) / 100.0));
+    
+        double winrate  = totalPicks > 0 ? (double) totalWins / totalPicks * 100 : 0;
+        double pickrate = totalGames > 0 ? (double) totalPicks / totalGames * 100 : 0;
+        double banrate  = totalGames > 0 ? (double) totalBans  / totalGames * 100 : 0;
+    
+        HashMap<String, String> result = new HashMap<>();
+        result.put("games",    String.valueOf(totalGames));
+        result.put("picks",    String.valueOf(totalPicks));
+        result.put("bans",     String.valueOf(totalBans));
+        result.put("wins",     String.valueOf(totalWins));
+        result.put("losses",   String.valueOf(totalPicks - totalWins));
+        result.put("winrate",  String.valueOf(Math.round(winrate  * 100.0) / 100.0));
         result.put("pickrate", String.valueOf(Math.round(pickrate * 100.0) / 100.0));
-        
+        result.put("banrate",  String.valueOf(Math.round(banrate  * 100.0) / 100.0));
+    
         return result;
     }
 
