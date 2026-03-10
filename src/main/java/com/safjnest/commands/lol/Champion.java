@@ -9,9 +9,9 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.MatchTracker;
 import com.safjnest.lol.MobalyticsHandler;
 import com.safjnest.lol.model.build.BuildData;
+import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -104,7 +104,7 @@ public class Champion extends SlashCommand {
         eb = new EmbedBuilder(); 
         eb.setTitle(champName + " " + laneFormatName + " " + CustomEmojiHandler.getFormattedEmoji(laneFormatName)); 
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
-        HashMap<String, String> champInfo = MatchTracker.analyzeChampionData(champion.getId(), laneType);
+        HashMap<String, String> champInfo = Tracker.analyzeChampionData(champion.getId(), laneType);
         
 
 

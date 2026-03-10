@@ -22,11 +22,11 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.MatchTracker;
 import com.safjnest.lol.model.Accumulator;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantChampionStat;
 import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -1072,9 +1072,9 @@ public class LeagueMessage {
             try {
 
                 LOLMatch match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
-                if (MatchTracker.isRemake(match))
+                if (Tracker.isRemake(match))
                     continue;
-                MatchTracker.queueMatch(match);
+                Tracker.queueMatch(match);
                 if (match.getParticipants().size() == 0)
                     continue; //riot di merda che quando crasha il game lascia dati sporchi
 

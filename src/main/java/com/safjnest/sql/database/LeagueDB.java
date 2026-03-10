@@ -679,6 +679,11 @@ public class LeagueDB extends AbstractDB {
         return instance.query(q).size();
     }
 
+    public static int getMatchIdByGameId(String id) {
+        QueryResult result = LeagueDB.get().query("SELECT id FROM `match` WHERE game_id = '" + id + "'");
+        return result.isEmpty() ? 0 : result.get(0).getAsInt("id");
+    }
+
 
     public static List<MatchData> getMatchHistory(int summonerId, LeagueMessageParameter parameter) throws SQLException {
         List<MatchData> result = new ArrayList<>();

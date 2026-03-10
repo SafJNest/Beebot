@@ -67,6 +67,7 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.AugmentData;
 import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
+import com.safjnest.lol.tracker.TrackerScheduler;
 
 
 /**
@@ -104,7 +105,7 @@ import com.safjnest.lol.model.rune.Rune;
         loadChampions();
         loadRunes();
         loadAguments();
-        new MatchTracker();
+        new TrackerScheduler();
     }
 
     public static String getVersion() {

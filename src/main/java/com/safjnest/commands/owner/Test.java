@@ -26,12 +26,13 @@ import com.safjnest.core.audio.types.PlayTiming;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.MatchTracker;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantChampionStat;
 import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -1020,12 +1021,12 @@ public class Test extends Command{
                     String puuid = "";
                     int summoner_match_id = LeagueDB.setMatchData(m);
 
-                    HashMap<String, HashMap<String, String>> matchData = MatchTracker.analyzeMatchBuild(m, m.getParticipants());
+                    HashMap<String, HashMap<String, String>> matchData = Tracker.analyzeMatchBuild(m, m.getParticipants());
 
                     System.out.println(row.get("id"));
                     for (MatchParticipant partecipant : m.getParticipants()) {
                         Summoner toPush = LeagueHandler.getSummonerByPuuid(partecipant.getPuuid(), LeagueShard.values()[row.getAsInt("league_shard")]);
-                        MatchTracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
+                        Tracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
                         try {
                             Thread.sleep(1000);
                         } catch (Exception eee) { eee.printStackTrace(); }
@@ -1062,10 +1063,10 @@ public class Test extends Command{
                 }
                 break;
                 case "lolqueue":
-                    System.out.println(MatchTracker.getMatchQueueCopy().size());
+                    System.out.println(Tracker.getMatchQueueCopy().size());
                 break;
                 case "pushlolqueue":
-                    ChronoTask task =  () -> MatchTracker.popSet();
+                    ChronoTask task =  () -> TrackerScheduler.popSet();
                     task.queue();
                 break;
                 case "error":
@@ -1073,15 +1074,11 @@ public class Test extends Command{
                     a.get(0);
                 break;
                 case "pushsamplegame":
-                    ChronoTask sampleTask =  () -> MatchTracker.retriveSampleGames();
+                    ChronoTask sampleTask =  () -> TrackerScheduler.retriveSampleGames();
                     sampleTask.queue();
                 break;
-                case "pushchallenger":
-                    ChronoTask challenger =  () -> MatchTracker.retriveChallengerEntries();
-                    challenger.queue();
-                break;
                 case "pushhighelo":
-                    ChronoTask master =  () -> MatchTracker.retriveHighEloEntries();
+                    ChronoTask master =  () -> TrackerScheduler.retriveHighEloEntries();
                     master.queue();
                 break;
                 case "fixaccountid":
@@ -1135,7 +1132,7 @@ public class Test extends Command{
                 case "retriveallgames":
                     ChronoTask retriveAllGames = () -> {
                         System.out.println(args[1]);
-                        MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()));
+                        Tracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()));
                     };
                     retriveAllGames.queue();
                 break;
@@ -1143,7 +1140,7 @@ public class Test extends Command{
                     ChronoTask retriveAllGamesFast = () -> {
                         System.out.println(args[1]);
                         for (GameQueueType queueType : GameQueueType.values()) {
-                            MatchTracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()), queueType);
+                            Tracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()), queueType);
                         }
                     };
                     retriveAllGamesFast.queue();
@@ -1159,7 +1156,7 @@ public class Test extends Command{
                                 String game_id = region + "_"+row.get("game_id");
                                 LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                                 if (m == null) continue;
-                                LeagueDB.setMatchEvent(row.getAsInt("id"), MatchTracker.createJSONEvents(MatchTracker.analyzeMatchBuild(m, m.getParticipants()).get("match")));
+                                LeagueDB.setMatchEvent(row.getAsInt("id"), Tracker.createJSONEvents(Tracker.analyzeMatchBuild(m, m.getParticipants()).get("match")));
                                 try {
                                     Thread.sleep(400);
                                 } catch (Exception ee) {
@@ -1245,15 +1242,9 @@ public class Test extends Command{
                     fixOrdinalSummoner.queue();
                     fixOrdinalMatch.queue();
                 break;
-            case "getpatch":
-                ChronoTask getPatch = () -> {
-                    MatchTracker.retriveSampleGamesPatch();
-                };
-                getPatch.queue();
-                break;
             case "getrank":
                 ChronoTask getRank = () -> {
-                    MatchTracker.retriveHighEloEntries();
+                    TrackerScheduler.retriveHighEloEntries();
                 };
                 getRank.queue();
                 break;
@@ -1279,7 +1270,7 @@ public class Test extends Command{
                 fixRank.queue();
                 break;
             case "getallrank":
-                ChronoTask retriveAllEntries = () -> MatchTracker.retriveAllEntries();
+                ChronoTask retriveAllEntries = () -> Tracker.retriveAllEntries();
                 retriveAllEntries.queue();
             break;
             case "finalstats":
