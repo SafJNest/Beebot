@@ -671,10 +671,7 @@ public class Test extends Command{
                         String region = row.getAsLeagueShard("region").name();
                         String game_id = region + "_"+row.get("game_id");
                         try {
-                            Map<String, Object> data = new LinkedHashMap<>();
-                            data.put("platform", row.getAsLeagueShard("region").toRegionShard());
-                            data.put("gameid", game_id);   
-                            Optional<?> exists = DataCall.getCacheProvider().get(URLEndpoint.V5_MATCH, data);
+                            boolean exists = LeagueHandler.isMatchLocallyCached(game_id, row.getAsLeagueShard("region"));
     
                             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(row.getAsLeagueShard("region").toRegionShard(), game_id);
     
@@ -685,9 +682,9 @@ public class Test extends Command{
                             }
                             aaa++; 
                             System.out.println("total match: " + aaa + " / " + r.size() + " (" + row.get("id") + " - " + game_id + ")");
-                            if (!exists.isPresent()) {
+                            if (!exists) {
                                 Thread.sleep(400);
-                                DataCall.getCacheProvider().clear(URLEndpoint.V5_MATCH, data);
+                                LeagueHandler.clearMatchCache(game_id, row.getAsLeagueShard("region"));
                             }
                         } catch (Exception eeeee) {
                             eeeee.printStackTrace();

@@ -798,12 +798,14 @@ public class Tracker {
                 int i = 0;
                 for (String matchId : retrivedMatchIds) {
                     try {
+                        if (!LeagueHandler.isMatchLocallyCached(matchId, summoner.getPlatform())) {
+                            Thread.sleep(350);
+                        }
                         LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
                         if (match == null) continue;
                         System.out.println("[" + i + "/" + retrivedMatchIds.size() + "] " + match.getGameId() + " - " + match.getPlatform() + " - " + match.getQueue());
                         i++;
                         Tracker.queueMatch(match);
-                        Thread.sleep(350);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -1129,6 +1130,21 @@ import com.safjnest.lol.tracker.TrackerScheduler;
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner, null);
         clearCache(URLEndpoint.V4_MASTERY_BY_PUUID, summoner, null);
+    }
+
+    public static boolean isMatchLocallyCached(String gameId, LeagueShard shard) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("platform", shard.toRegionShard());
+        data.put("gameid", gameId);   
+        Optional<?> exists = DataCall.getCacheProvider().get(URLEndpoint.V5_MATCH, data);
+        return exists.isPresent();
+    }
+
+    public static void clearMatchCache(String gameId, LeagueShard shard) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("platform", shard.toRegionShard());
+        data.put("gameid", gameId);   
+        DataCall.getCacheProvider().clear(URLEndpoint.V5_MATCH, data);
     }
 
 //     ▄████████    ▄███████▄  ▄█        ▄█      ███
