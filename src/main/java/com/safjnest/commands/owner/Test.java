@@ -50,6 +50,7 @@ import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.PermissionHandler;
 import com.safjnest.util.SafJNest;
+import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
@@ -662,7 +663,7 @@ public class Test extends Command{
                 break;
             case "fixlol":
                 ChronoTask fixlol = () -> {
-                    String q = "SELECT id, game_id, region from `match` where time_start > '2026-01-07' order by id desc";     
+                    String q = "SELECT id, game_id, region from `match` where id in (select m.id from `match` m join participant p on m.id = p.match_id where p.q = 0 and p.w = 0 and p.e = 0 and p.r = 0 and p.d = 0 and p.f = 0) order by game_id asc";
                     QueryResult r = LeagueDB.get().query(q);
                     System.out.println("total match: " + r.size());
                     int aaa = 0;
@@ -670,18 +671,27 @@ public class Test extends Command{
                         String region = row.getAsLeagueShard("region").name();
                         String game_id = region + "_"+row.get("game_id");
                         try {
+                            Map<String, Object> data = new LinkedHashMap<>();
+                            data.put("platform", row.getAsLeagueShard("region").toRegionShard());
+                            data.put("gameid", game_id);   
+                            Optional<?> exists = DataCall.getCacheProvider().get(URLEndpoint.V5_MATCH, data);
+    
                             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(row.getAsLeagueShard("region").toRegionShard(), game_id);
     
                             for (MatchParticipant participant : match.getParticipants()) {    
                                 int sumId = LeagueDB.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
-                                q = "UPDATE participant SET role_quest_id = " + participant.getRoleBoundItem() + " WHERE match_id = " + row.get("id") + " AND summoner_id = " + sumId + ";";
+                                q = "UPDATE participant SET q = " + participant.getSpell1Casts() + ", w = " + participant.getSpell2Casts() + ", e = " + participant.getSpell3Casts() + ", r = " + participant.getSpell4Casts() + ", d = " + participant.getSummoner1Casts() + ", f = " + participant.getSummoner2Casts() + " WHERE match_id = " + row.get("id") + " AND summoner_id = " + sumId + ";";
                                 LeagueDB.get().query(q);
-                                System.out.println("total match: " + aaa + "( " + row.get("id")  + ") / " + r.size());
-                                aaa++; 
+                            }
+                            aaa++; 
+                            System.out.println("total match: " + aaa + " / " + r.size() + " (" + row.get("id") + " - " + game_id + ")");
+                            if (!exists.isPresent()) {
+                                Thread.sleep(400);
+                                DataCall.getCacheProvider().clear(URLEndpoint.V5_MATCH, data);
                             }
                         } catch (Exception eeeee) {
                             eeeee.printStackTrace();
-                            System.out.println("Match not found: " + game_id + " " + row.getAsLeagueShard("region").toRegionShard());
+                            BotLogger.error("Match not found: " + game_id + " " + row.getAsLeagueShard("region").toRegionShard());
                         }
     
                     }

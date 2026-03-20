@@ -49,6 +49,13 @@ public class ParticipantData {
     public int item4;
     public int item5;
     public int item6;
+
+    public int q;
+    public int w;
+    public int e;
+    public int r;
+    public int d;
+    public int f;
     
 
     public int summonerSpell1;

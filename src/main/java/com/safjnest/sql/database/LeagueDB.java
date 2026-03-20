@@ -349,8 +349,16 @@ public class LeagueDB extends AbstractDB {
         pings.put("enemy_vision", participant.getEnemyVisionPings());
         pings.put("enemy_missing", participant.getEnemyMissingPings());
         pings.put("vision_cleared", participant.getVisionClearedPings());
+
+        int q = participant.getSpell1Casts();
+        int w = participant.getSpell2Casts();
+        int e = participant.getSpell3Casts();
+        int r = participant.getSpell4Casts();
+        int d = participant.getSummoner1Casts();
+        int f = participant.getSummoner2Casts();
         
-        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas, role_quest_id) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ", " + participant.getRoleBoundItem() + ");");
+        
+        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas, role_quest_id, q, w, e, r, d, f) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ", " + participant.getRoleBoundItem() + ", " + q + ", " + w + ", " + e + ", " + r + ", " + d + ", " + f + ");");
     }
 
 
@@ -767,6 +775,12 @@ public class LeagueDB extends AbstractDB {
                     p.triples = rs.getInt("triples");
                     p.quadruples = rs.getInt("quadruples");
                     p.pentas = rs.getInt("pentas");
+                    p.q = rs.getInt("q");
+                    p.w = rs.getInt("w");
+                    p.e = rs.getInt("e");
+                    p.r = rs.getInt("r");
+                    p.d = rs.getInt("d");
+                    p.f = rs.getInt("f");
 
                     try {
                         JSONObject pingsJson = new JSONObject(rs.getString("pings"));

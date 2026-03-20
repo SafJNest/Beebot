@@ -39,19 +39,12 @@ public class CustomEmojiHandler {
             return ":black_large_square:";
         }
 
-        if(name.equals("2201_")) {
-            name = "4_";
-        }
         name = LeagueHandler.transposeChampionNameForDataDragon(name);
         CustomEmoji em = emoji.get(name.toLowerCase());     
         return em != null ? emoji.get(name.toLowerCase()).toString() : String.valueOf(name);
     }
 
     public static RichCustomEmoji getRichEmoji(String name){
-        if(name.equals("2201_")) {
-            name = "4_";
-        }
-
         name = LeagueHandler.transposeChampionNameForDataDragon(name);
         return emoji.get(name.toLowerCase()).getObject();
        

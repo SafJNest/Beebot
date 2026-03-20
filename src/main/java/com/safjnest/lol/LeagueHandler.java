@@ -353,6 +353,10 @@ import com.safjnest.lol.tracker.TrackerScheduler;
         return name;
     }
 
+    public static String getSpellName(int id) {
+        return riotApi.getDDragonAPI().getSummonerSpell(id).getName();
+    }
+
     public static boolean isHighElo(TierDivisionType division) {
         return Arrays.asList(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I).contains(division);
     }

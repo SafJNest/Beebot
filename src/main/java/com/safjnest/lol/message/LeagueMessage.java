@@ -1507,6 +1507,9 @@ public class LeagueMessage {
         HashMap<String, Accumulator> overallStats = new HashMap<>();
         HashMap<String, Integer> pings = new HashMap<>();
 
+        HashMap<Integer, Integer> dSpells = new HashMap<>();
+        HashMap<Integer, Integer> fSpells = new HashMap<>();
+
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
 
@@ -1585,6 +1588,16 @@ public class LeagueMessage {
                 overallStats.computeIfAbsent("triples", k -> new Accumulator()).add(participant.triples);
                 overallStats.computeIfAbsent("quadruples", k -> new Accumulator()).add(participant.quadruples);
                 overallStats.computeIfAbsent("pentas", k -> new Accumulator()).add(participant.pentas);
+
+                overallStats.computeIfAbsent("q", k -> new Accumulator()).add(participant.q);
+                overallStats.computeIfAbsent("w", k -> new Accumulator()).add(participant.w);
+                overallStats.computeIfAbsent("e", k -> new Accumulator()).add(participant.e);
+                overallStats.computeIfAbsent("r", k -> new Accumulator()).add(participant.r);
+                overallStats.computeIfAbsent("d", k -> new Accumulator()).add(participant.d);
+                overallStats.computeIfAbsent("f", k -> new Accumulator()).add(participant.f);
+
+                dSpells.merge(LeagueMessageUtils.normalizeSpellId(participant.summonerSpell1), participant.d, Integer::sum);
+                fSpells.merge(LeagueMessageUtils.normalizeSpellId(participant.summonerSpell2), participant.f, Integer::sum);
 
                 championStats.computeIfAbsent(participant.champion, p -> new ParticipantChampionStat(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
 
@@ -1850,7 +1863,44 @@ public class LeagueMessage {
             int columnIndex = i / 3;
             columns[columnIndex].append(line);
         }
+
+        List<Integer> topD = dSpells.entrySet().stream()
+        .filter(e -> e.getKey() != 0)
+        .sorted(Map.Entry.<Integer, Integer>comparingByValue().reversed())
+        .limit(3)
+        .map((Map.Entry<Integer, Integer> e) -> e.getKey())
+        .collect(Collectors.toList());
     
+        List<Integer> topF = fSpells.entrySet().stream()
+            .filter(e -> e.getKey() != 0)
+            .sorted(Map.Entry.<Integer, Integer>comparingByValue().reversed())
+            .limit(3)
+            .map((Map.Entry<Integer, Integer> e) -> e.getKey())
+            .collect(Collectors.toList());
+
+
+            String spellCol1 = CustomEmojiHandler.getFormattedEmoji("q_") + " Ability 1\n`" + overallStats.get("q").sum + " times`\n" +
+            CustomEmojiHandler.getFormattedEmoji("w_") + " Ability 2\n`" + overallStats.get("w").sum + " times`\n" +
+            CustomEmojiHandler.getFormattedEmoji("e_") + " Ability 3\n`" + overallStats.get("e").sum + " times`\n" +
+            CustomEmojiHandler.getFormattedEmoji("r_") + " Ultimate\n`" + overallStats.get("r").sum + " times`\n";
+        
+        String spellCol2 = CustomEmojiHandler.getFormattedEmoji("d_") + " Spell 1\n`" + dSpells.values().stream().mapToInt(Integer::intValue).sum() + " times`\n" +
+            topD.stream().filter(id -> dSpells.get(id) > 0).map(id -> {
+                return CustomEmojiHandler.getFormattedEmoji(id + "_") + " " + LeagueHandler.getSpellName(id) + "\n" + 
+                "`" + dSpells.get(id) + " times`\n";
+            }).collect(Collectors.joining());
+        
+        String spellCol3 = CustomEmojiHandler.getFormattedEmoji("f_") + " Spell 2\n`" + fSpells.values().stream().mapToInt(Integer::intValue).sum() + " times`\n" +
+            topF.stream().filter(id -> fSpells.get(id) > 0).map(id -> {
+                return CustomEmojiHandler.getFormattedEmoji(id + "_") + " " + LeagueHandler.getSpellName(id) + "\n" + 
+                "`" + fSpells.get(id) + " times`\n";
+            }).collect(Collectors.joining());
+    
+
+        eb.addField("Spell Performance", spellCol1, true);
+        eb.addField(" ", spellCol2, true);
+        eb.addField(" ", spellCol3, true);
+
         eb.addField("Pings Usage", columns[0].toString(), true);
         eb.addField(" ", columns[1].toString(), true);
         eb.addField(" ", columns[2].toString(), true);

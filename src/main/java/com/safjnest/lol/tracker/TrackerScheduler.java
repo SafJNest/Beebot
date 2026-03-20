@@ -22,11 +22,11 @@ public class TrackerScheduler {
             ChronoTask trackQueuedGames = () -> popSet();
             trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
 
-            ChronoTask trackSampleGames = () -> retriveSampleGames();
-            trackSampleGames.scheduleAtFixedTime(2, 0, 0);
+            // ChronoTask trackSampleGames = () -> retriveSampleGames();
+            // trackSampleGames.scheduleAtFixedTime(2, 0, 0);
 
-            ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
-            retriveHighEloEntries.scheduleAtFixedRate(TimeConstant.HOUR, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+            // ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
+            // retriveHighEloEntries.scheduleAtFixedRate(TimeConstant.HOUR, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
         }
     }
 

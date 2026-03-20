@@ -267,4 +267,9 @@ public class LeagueMessageUtils {
         return result.toString().trim();
     }
 
+    public static int normalizeSpellId(int spellId) {
+        if (spellId == 2202) return 4;
+        return spellId;
+    }
+
 }
