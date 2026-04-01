@@ -1,6 +1,7 @@
 package com.safjnest.lol.tracker;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +11,8 @@ import com.safjnest.lol.tracker.TrackerState.Priority;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
 
+import no.stelar7.api.r4j.basic.calling.DataCall;
+import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public class TrackerScheduler {
@@ -22,11 +25,14 @@ public class TrackerScheduler {
             ChronoTask trackQueuedGames = () -> popSet();
             trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
 
-            // ChronoTask trackSampleGames = () -> retriveSampleGames();
-            // trackSampleGames.scheduleAtFixedTime(2, 0, 0);
+            //ChronoTask trackSampleGames = () -> retriveSampleGames();
+            //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
 
-            // ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
-            // retriveHighEloEntries.scheduleAtFixedRate(TimeConstant.HOUR, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+            ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
+            retriveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+
+            ChronoTask clearTimelineCache = () -> DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
+            clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
         }
     }
 

@@ -64,6 +64,10 @@ public class LeagueDB extends AbstractDB {
         return instance.query(query);
     }
 
+    public static String getSummonerNameById(String puuid, LeagueShard shard) {
+        return instance.lineQuery("SELECT riot_id FROM summoner WHERE puuid = '" + puuid + "' AND region = '" + shard + "';").get("riot_id");
+    }
+
     public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
         return instance.lineQuery("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND region = '" + shard + "';").get("user_id");
     }

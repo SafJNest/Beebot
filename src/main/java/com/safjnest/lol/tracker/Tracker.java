@@ -41,6 +41,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import java.time.LocalDateTime;
 
+import java.sql.Timestamp;
+
 public class Tracker {
 
     private static long period = TimeConstant.MINUTE * 10;
@@ -571,49 +573,62 @@ public class Tracker {
 
     public static void retriveSampleGames() {
         BotLogger.info("[LPTracker] Pushing sample matches");
-        DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
         String currentPatch = LeagueHandler.getVersion().split("\\.")[0];
+    
+        long[] splitRange = LeagueHandler.getCurrentSplitRange();
+    
         for (LeagueShard shard : LeagueHandler.getActiveShards()) {
             ChronoTask shardTask = () -> {
-                TrackerState.awaitCondition(TrackerState.Priority.LOW);
+                long threshold = (splitRange != null) ? LeagueDB.get().query("SELECT game_id FROM `match` WHERE time_start >= '"+ new Timestamp(LeagueHandler.getCurrentSplitRange()[0]) + "' and region = '"+ shard + "' ORDER BY time_start ASC LIMIT 1").get(0).getAsLong("game_id") : 0;
                 Map<String, Object> data = new LinkedHashMap<>();
                 data.put("platform", shard);
                 data.put("queue", GameQueueType.RANKED_SOLO_5X5);
                 LeagueHandler.clearCache(URLEndpoint.V4_LEAGUE_CHALLENGER, data);
-                try { Thread.sleep(500); } 
-                catch (InterruptedException e) {}
-                List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 0);
-
-                for (int j = 0; j < entries.size() ; j++) {
-                    TrackerState.awaitCondition(TrackerState.Priority.LOW);
+                try { Thread.sleep(500); } catch (InterruptedException e) {}
+    
+                List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI()
+                    .getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 0);
+    
+                record MatchEntry(LeagueEntry entry, Summoner summoner, String matchId) {}
+                List<MatchEntry> allMatches = new ArrayList<>();
+                Set<String> seenMatchIds = new HashSet<>();
+    
+                for (LeagueEntry entry : entries) {
                     try {
-                        LeagueEntry entry = entries.get(j);
                         Summoner summoner = LeagueHandler.getSummonerByPuuid(entry.getPuuid(), shard);
-                        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
-
                         List<String> matchIds = new ArrayList<>();
                         for (int start = 0; matchIds.size() == start; start += 100) {
                             matchIds.addAll(
                                 summoner.getLeagueGames()
                                     .withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
                                     .withCount(100)
+                                    .withStartTime(splitRange[0] / 1000L)
                                     .withBeginIndex(start)
                                     .get()
                             );
                         }
-                        if (matchIds.isEmpty()) continue;
-
                         for (String matchId : matchIds) {
-                            TrackerState.awaitCondition(TrackerState.Priority.LOW);
-                            if (LeagueDB.getMatchIdByGameId(matchId.split("_")[1]) != 0) continue;
-                            LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), matchId);
-
-                            if (!match.getGameVersion().startsWith(currentPatch)) continue;
-                            
-                            BotLogger.info("[LPTracker] Pushing " + entry.getTier() + " match " + shard + " - " + account.getName() + "#" + account.getTag() + " -> " + matchId + " | " + matchIds.indexOf(matchId) + "/" + matchIds.size() + " | " + j + "/" + entries.size());
-                            analyzeMatchHistory(match).complete();
-                            Thread.sleep(350);
+                            if (Long.parseLong(matchId.split("_")[1]) <= threshold) continue;
+                            if (LeagueHandler.isMatchDBCached(matchId)) continue;
+                            if (!seenMatchIds.add(matchId)) continue;
+                            allMatches.add(new MatchEntry(entry, summoner, matchId));
                         }
+                        try { Thread.sleep(500); } catch (InterruptedException e) {}
+                        System.out.println(shard + " - " + allMatches.size());
+                    } catch (Exception e) { e.printStackTrace(); }
+                }
+                BotLogger.error("TOTAL: " + shard + " - " + allMatches.size());
+                int i = 0;
+                for (MatchEntry me : allMatches) {
+                    TrackerState.awaitCondition(TrackerState.Priority.LOW);
+                    try {
+                        LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI()
+                            .getMatch(shard.toRegionShard(), me.matchId());
+                        if (!match.getGameVersion().startsWith(currentPatch)) continue;
+                        i++;
+                        BotLogger.info("[LPTracker] [" + i + "/" + allMatches.size() + "] Pushing " + me.entry().getTier() + " match " + shard + " - " + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId());
+                        analyzeMatchHistory(match).complete();
+                        Thread.sleep(350);
                     } catch (Exception e) { e.printStackTrace(); }
                 }
             };
@@ -788,32 +803,32 @@ public class Tracker {
     public static void retriveMatchHistory(Summoner summoner) {
         try {
             List<String> matchIds = new ArrayList<>();
-            List<String> retrivedMatchIds = summoner.getLeagueGames().withCount(100).get();
+            List<String> retrivedMatchIds;
+    
             do {
-                matchIds.addAll(retrivedMatchIds);
-
-                try { Thread.sleep(350); }
-                catch (InterruptedException e) {e.printStackTrace();}
-
-                int i = 0;
-                for (String matchId : retrivedMatchIds) {
-                    try {
-                        if (!LeagueHandler.isMatchLocallyCached(matchId, summoner.getPlatform())) {
-                            Thread.sleep(350);
-                        }
-                        LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
-                        if (match == null) continue;
-                        System.out.println("[" + i + "/" + retrivedMatchIds.size() + "] " + match.getGameId() + " - " + match.getPlatform() + " - " + match.getQueue());
-                        i++;
-                        Tracker.queueMatch(match);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-
                 retrivedMatchIds = summoner.getLeagueGames().withCount(100).withBeginIndex(matchIds.size()).get();
+                matchIds.addAll(retrivedMatchIds);
+                Thread.sleep(350);
             } while (retrivedMatchIds.size() > 0);
-
+    
+            int i = 0;
+            for (String matchId : matchIds) {
+                try {
+                    i++;
+                    if (LeagueHandler.isMatchDBCached(matchId)) continue;
+                    if (!LeagueHandler.isMatchLocallyCached(matchId, summoner.getPlatform())) {
+                        Thread.sleep(350);
+                    }
+                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), matchId);
+                    if (match == null) continue;
+                    System.out.println("[" + i + "/" + matchIds.size() + "] " + match.getGameId() + " - " + match.getPlatform() + " - " + match.getQueue());
+                    Tracker.queueMatch(match);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("[" + i + "/" + matchIds.size() + "] ");
+    
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -663,7 +663,7 @@ public class Test extends Command{
                 break;
             case "fixlol":
                 ChronoTask fixlol = () -> {
-                    String q = "SELECT id, game_id, region from `match` where id in (select m.id from `match` m join participant p on m.id = p.match_id where p.q = 0 and p.w = 0 and p.e = 0 and p.r = 0 and p.d = 0 and p.f = 0) order by game_id asc";
+                    String q = "SELECT id, game_id, region from `match` where region = 'EUW1' and id in (select m.id from `match` m join participant p on m.id = p.match_id where p.q = 0 and p.w = 0 and p.e = 0 and p.r = 0 and p.d = 0 and p.f = 0) order by game_id asc";
                     QueryResult r = LeagueDB.get().query(q);
                     System.out.println("total match: " + r.size());
                     int aaa = 0;

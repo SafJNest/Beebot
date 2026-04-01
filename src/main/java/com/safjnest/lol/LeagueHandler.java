@@ -516,6 +516,8 @@ import com.safjnest.lol.tracker.TrackerScheduler;
     }
 
     public static String getFormattedSummonerName(Summoner s) {
+        String dbName = LeagueDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
+        if (dbName != null) return dbName;
         RiotAccount account = getRiotAccountFromSummoner(s);
         if (account == null) return "";
         return account.getName() + "#" + account.getTag();
@@ -1138,6 +1140,14 @@ import com.safjnest.lol.tracker.TrackerScheduler;
         data.put("gameid", gameId);   
         Optional<?> exists = DataCall.getCacheProvider().get(URLEndpoint.V5_MATCH, data);
         return exists.isPresent();
+    }
+
+    public static boolean isMatchDBCached(String gameId) {
+        return LeagueDB.getMatchIdByGameId(gameId.split("_")[1]) != 0;
+    }
+
+    public static boolean isMatchSomewhereCached(String gameId, LeagueShard shard) {
+        return isMatchLocallyCached(gameId, shard) || isMatchDBCached(gameId);
     }
 
     public static void clearMatchCache(String gameId, LeagueShard shard) {

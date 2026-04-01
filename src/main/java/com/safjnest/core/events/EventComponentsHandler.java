@@ -56,7 +56,6 @@ import net.dv8tion.jda.api.modals.Modal;
     @Override
     public void onGenericComponentInteractionCreate(GenericComponentInteractionCreateEvent event) {
       if (!event.getMessage().isUsingComponentsV2()) return;
-      if (event.getComponent().isModalCompatible()) return;
 
       String type = event.getComponentId().split("-")[0];
       String innerType = event.getComponentId().split("-", 3)[1];
