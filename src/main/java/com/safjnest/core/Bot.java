@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.awt.Color;
 import java.text.MessageFormat;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -82,6 +84,9 @@ import club.minnced.discord.jdave.interop.JDaveSessionFactory;
  */
 public class Bot {
 
+    private static final ExecutorService JDA_EVENT_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
+    private static final ExecutorService JDA_CALLBACK_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
+
     private static JDA jda;
     private static String botID;
     private static BotSettings settings;
@@ -111,6 +116,8 @@ public class Bot {
             .setMemberCachePolicy(MemberCachePolicy.ALL)
             .setChunkingFilter(ChunkingFilter.ALL)
             .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
+            .setEventPool(JDA_EVENT_EXECUTOR)
+            .setCallbackPool(JDA_CALLBACK_EXECUTOR)
             .setAudioModuleConfig(new AudioModuleConfig()
                 .withDaveSessionFactory(new JDaveSessionFactory()))
             .build();
@@ -221,8 +228,15 @@ public class Bot {
     }
 
 
-    public void distruzione_demoniaca(){
+    public void distruzione_demoniaca() {
         jda.shutdown();
+        try {
+            jda.awaitShutdown();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        JDA_EVENT_EXECUTOR.close();
+        JDA_CALLBACK_EXECUTOR.close();
     }
 
     public static JDA getJDA() {
