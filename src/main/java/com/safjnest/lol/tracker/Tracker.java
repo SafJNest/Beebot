@@ -22,7 +22,6 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.TimeConstant;
 import com.safjnest.util.log.BotLogger;
 
-import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -606,6 +605,7 @@ public class Tracker {
                                     .withBeginIndex(start)
                                     .get()
                             );
+                            try { Thread.sleep(500); } catch (InterruptedException e) {}
                         }
                         for (String matchId : matchIds) {
                             if (Long.parseLong(matchId.split("_")[1]) <= threshold) continue;
@@ -613,7 +613,7 @@ public class Tracker {
                             if (!seenMatchIds.add(matchId)) continue;
                             allMatches.add(new MatchEntry(entry, summoner, matchId));
                         }
-                        try { Thread.sleep(500); } catch (InterruptedException e) {}
+                        try { Thread.sleep(1000); } catch (InterruptedException e) {}
                         System.out.println(shard + " - " + allMatches.size());
                     } catch (Exception e) { e.printStackTrace(); }
                 }

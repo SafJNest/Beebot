@@ -74,4 +74,10 @@ public class EventUtils {
       }).findFirst().orElse((Button)null);
    }
 
+   public static Button getButtonByPrefix(ButtonInteractionEvent event, String prefix) {
+    return (Button)getButtons(event).stream().filter((it) -> {
+      return it.getCustomId().startsWith(prefix);
+    }).findFirst().orElse((Button)null);
+   }
+
 }
