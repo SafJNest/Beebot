@@ -2,14 +2,17 @@ package com.safjnest.sql;
 
 import java.sql.Blob;
 import java.sql.Date;
-import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.sql.rowset.serial.SerialBlob;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -18,6 +21,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public class QueryRecord extends HashMap<String, String> {
+
     private static final DateTimeFormatter BASE_FORMATTER =
         new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd HH:mm:ss")
@@ -26,15 +30,8 @@ public class QueryRecord extends HashMap<String, String> {
             .optionalEnd()
             .toFormatter();
 
-    private ResultSet resultSet;
-
-    public QueryRecord(ResultSet resultSet){
+    public QueryRecord() {
         super();
-        this.resultSet = resultSet;
-    }
-
-    public void setResultSet(ResultSet resultSet){
-        this.resultSet = resultSet;
     }
 
     public int getAsInt(String columnName){
@@ -99,19 +96,29 @@ public class QueryRecord extends HashMap<String, String> {
         }
     }
 
-    public Blob getAsBlob(String columnName){
+    /**
+     * Decodes the Base64 value for this column (see {@link #putBinaryColumn}).
+     *
+     * @return JDBC {@link Blob} or {@code null} if missing / not valid Base64
+     */
+    public Blob getAsBlob(String columnName) {
+        String enc = get(columnName.toLowerCase());
+        if (enc == null || enc.isEmpty()) {
+            return null;
+        }
         try {
-            return resultSet.getBlob(columnName);
-        } catch (Exception e) {
+            byte[] raw = Base64.getDecoder().decode(enc);
+            return new SerialBlob(raw);
+        } catch (IllegalArgumentException | SQLException e) {
             return null;
         }
     }
 
-
-    public boolean emptyValues(){
-        for(String value : values()){
-            if(value != null && !value.isEmpty())
+    public boolean emptyValues() {
+        for (String value : values()) {
+            if (value != null && !value.isEmpty()) {
                 return false;
+            }
         }
         return true;
     }

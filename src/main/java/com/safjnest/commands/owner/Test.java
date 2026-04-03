@@ -33,6 +33,8 @@ import com.safjnest.lol.model.ParticipantChampionStat;
 import com.safjnest.lol.model.ParticipantData;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
+import com.safjnest.lol.tracker.TrackerState;
+import com.safjnest.lol.tracker.TrackerState.Priority;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -879,26 +881,21 @@ public class Test extends Command{
             case "testblob":
                 query = "SELECT * FROM soundboard WHERE id = 23";
                 QueryRecord row1 = BotDB.get().lineQuery(query);
-                String blobString = row1.get("thumbnail");
-                if (blobString != null) {
-                    try {
-                        // Decode the base64 string to get the byte array
-                        byte[] bytes = Base64.getDecoder().decode(blobString);
-        
-                        // Create a temporary file
+                try {
+                    java.sql.Blob blob = row1.getAsBlob("thumbnail");
+                    if (blob != null) {
+                        byte[] bytes = blob.getBytes(1, (int) blob.length());
                         File file = new File("thumbnail.png");
                         try (FileOutputStream fos = new FileOutputStream(file)) {
                             fos.write(bytes);
                         }
-        
                         System.out.println("File written successfully: " + file.getAbsolutePath());
-                    } catch (IOException ee) {
-                        ee.printStackTrace();
+                    } else {
+                        System.out.println("No BLOB data found for the specified column.");
                     }
-                } else {
-                    System.out.println("No BLOB data found for the specified column.");
+                } catch (Exception ee) {
+                    ee.printStackTrace();
                 }
-                
                 break;
             case "converttwitchalert":
                 query = "select * from twitch_subscription";
@@ -1357,6 +1354,20 @@ public class Test extends Command{
                         eeeee.printStackTrace();
                     }
                 }
+                break;
+            case "sleep":
+                try {
+                    Thread.sleep(Long.parseLong(args[1]));
+                } catch (InterruptedException eeeee) {
+                    eeeee.printStackTrace();
+                }
+                e.reply("Done");
+                break;
+            case "pausetracker":
+                TrackerState.acquire(Priority.HIGH);
+                break;
+            case "resumetracker":
+                TrackerState.release(Priority.HIGH);
                 break;
         }
     }  

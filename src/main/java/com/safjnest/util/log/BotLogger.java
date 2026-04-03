@@ -85,7 +85,7 @@ public class BotLogger {
     
         String[] channelIds = {
             "1485317225903816826",
-            "1487043736163713085"
+            "1489673945476108478"
         };
     
         try {

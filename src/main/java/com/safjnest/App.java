@@ -9,15 +9,12 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.SafJNest;
+import com.safjnest.util.SafJNest;  
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
 
-import java.sql.Timestamp;
 
 @SpringBootApplication
 public class App {

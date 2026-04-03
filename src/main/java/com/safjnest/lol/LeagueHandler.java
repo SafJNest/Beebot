@@ -621,6 +621,10 @@ import com.safjnest.lol.tracker.TrackerScheduler;
             return s;
         }
 
+        if (event.getOption("summoner") == null) {
+            return null;
+        }
+
         LeagueShard guildShard = event.isFromGuild()  ? guild.getLeagueShard(event.getChannel().getId()) : LeagueShard.EUW1;
         LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 

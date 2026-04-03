@@ -164,7 +164,7 @@ public class Bot {
         ArrayList<Command> commandsList = new ArrayList<Command>();
         Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix(), new Shutdown(), new Restart(), new Query());
 
-        Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
+        Collections.addAll(commandsList, new Summoner(), new Augment(), new Livegame(), 
             new Opgg(), new UltimateBravery());
 
         Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
@@ -186,7 +186,7 @@ public class Bot {
         Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix());
 
 
-        Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
+        Collections.addAll(slashCommandsList, new Summoner(), new Augment(), 
             new Livegame(),
             new Champion(), new Opgg(),
             new Region(), new UltimateBravery(), new Item()

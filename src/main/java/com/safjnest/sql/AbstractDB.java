@@ -6,7 +6,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -87,15 +89,30 @@ public abstract class AbstractDB {
         QueryResult result = new QueryResult();
         ResultSetMetaData rsmd = set.getMetaData();
         while (set.next()) {
-            QueryRecord row = new QueryRecord(set);
+            QueryRecord row = new QueryRecord();
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                 String key = rsmd.getColumnLabel(i).toLowerCase();
-                String valye = set.getString(i);
-                row.put(key, valye);
+                if (isBinarySqlType(rsmd, i)) {
+                    byte[] bytes = set.getBytes(i);
+                    if (bytes != null) {
+                        row.put(key, Base64.getEncoder().encodeToString(bytes));
+                    }
+                } else {
+                    row.put(key, set.getString(i));
+                }
             }
             result.add(row);
         }
         return result;
+    }
+
+    private static boolean isBinarySqlType(ResultSetMetaData rsmd, int columnIndex) throws SQLException {
+        int type = rsmd.getColumnType(columnIndex);
+        if (type == Types.BLOB || type == Types.BINARY || type == Types.VARBINARY || type == Types.LONGVARBINARY) {
+            return true;
+        }
+        String typeName = rsmd.getColumnTypeName(columnIndex);
+        return typeName != null && typeName.toUpperCase().contains("BLOB");
     }
 
     public List<QueryResult> queries(String... queries) {
@@ -147,7 +164,7 @@ public abstract class AbstractDB {
      */
     public QueryRecord lineQuery(String query) {
         try { return query(query).get(0); } 
-        catch (Exception e) { return new QueryRecord(null); }
+        catch (Exception e) { return new QueryRecord(); }
     }
 
 
