@@ -60,6 +60,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -85,6 +86,8 @@ import com.safjnest.lol.tracker.TrackerScheduler;
 
     private static String runesURL;
 
+    public static Map<Integer, Item> itemsMap = new HashMap<>();
+
     private static String[] champions;
 
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
@@ -102,6 +105,7 @@ import com.safjnest.lol.tracker.TrackerScheduler;
         LeagueHandler.version = getVersion();
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
 
+        itemsMap = riotApi.getDDragonAPI().getItems();
         championsMap = riotApi.getDDragonAPI().getChampions();
         loadChampions();
         loadRunes();

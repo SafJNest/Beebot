@@ -3,13 +3,18 @@ package com.safjnest;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Connection;
+import java.util.List;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.build.RecommendationService;
 import com.safjnest.model.BotSettings.Settings;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;  
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -37,8 +42,27 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-        bot = new Bot();
-        bot.il_risveglio_della_bestia();
+        
+        try (Connection conn = LeagueDB.get().getConnection()) {
+            String role = "JUNGLE";
+            var a = new RecommendationService().get(412, "UTILITY", role, RecommendationService.Strategy.MOST_USED, conn);
+            if (a.build() != null) {
+                System.out.println(a.games());
+                System.out.println("role=" + role);
+                System.out.println("starter=" + toItemNames(a.build().starterItems()));
+                System.out.println("core=" + toItemNames(a.build().coreItems()));
+                System.out.println("fullBuild=" + toItemNames(a.build().fullBuildItems()));
+                System.out.println("suggestions=" + toItemNames(a.build().suggestionItems()));
+                System.out.println("boots=" + itemName(a.build().boots()));
+            } else {
+                System.out.println("No build recommendation (no matching stats or below MIN_GAMES).");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+    
+        }
+        //bot = new Bot();
+        //bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {
@@ -70,6 +94,31 @@ public class App {
 
     public static boolean isTesting() {
         return settings.getConfig().isTesting();
+    }
+
+    private static String toItemNames(List<Integer> itemIds) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < itemIds.size(); i++) {
+            if (i > 0) {
+                sb.append(", ");
+            }
+            int id = itemIds.get(i);
+            sb.append(id).append(": ").append(itemName(id));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private static String itemName(int itemId) {
+        try {
+            var item = LeagueHandler.getRiotApi().getDDragonAPI().getItem(itemId);
+            if (item == null || item.getName() == null || item.getName().isBlank()) {
+                return "Unknown item";
+            }
+            return item.getName();
+        } catch (Exception ignored) {
+            return "Unknown item";
+        }
     }
 
 }
