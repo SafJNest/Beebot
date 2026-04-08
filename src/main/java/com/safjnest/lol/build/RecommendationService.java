@@ -74,8 +74,8 @@ public class RecommendationService {
         RuneSignature runes = top(runeSr.stats(), RuneSignature::decode, strategy == Strategy.HIGHEST_WR);
 
         int totalGames = buildSr.stats().values().stream().mapToInt(v -> v[0]).sum();
-        int[] bs       = buildGroupKey != null ? buildSr.stats().getOrDefault(buildGroupKey, new int[]{0, 0}) : new int[]{0, 0};
-        double winrate = bs[0] > 0 ? (double) bs[1] / bs[0] : 0;
+        int totalWins  = buildSr.stats().values().stream().mapToInt(v -> v[1]).sum();
+        double winrate = totalGames > 0 ? (double) totalWins / totalGames : 0;
 
         return new Recommendation(championId, lane, role, strategy, build, runes, totalGames, winrate);
     }
@@ -105,7 +105,7 @@ public class RecommendationService {
 
         String sql = "SELECT p.win, p.build FROM participant p " +
                      "JOIN `match` m ON m.id = p.match_id " +
-                     "WHERE p.champion = ? AND p.lane = ?";
+                     "WHERE p.champion = ? AND p.lane = ? AND m.patch_major = '16.6' AND m.queue = 'TEAM_BUILDER_RANKED_SOLO'";
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, championId);

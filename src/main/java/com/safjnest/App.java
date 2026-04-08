@@ -45,9 +45,10 @@ public class App {
         
         try (Connection conn = LeagueDB.get().getConnection()) {
             String role = "JUNGLE";
-            var a = new RecommendationService().get(32, "JUNGLE", role, RecommendationService.Strategy.MOST_USED, conn);
+            var a = new RecommendationService().get(81, "BOT", role, RecommendationService.Strategy.MOST_USED, conn);
             if (a.build() != null) {
                 System.out.println(a.games());
+                System.out.println(a.winrate());
                 System.out.println("role=" + role);
                 System.out.println("starter=" + toItemNames(a.build().starterItems()));
                 System.out.println("core=" + toItemNames(a.build().coreItems()));
@@ -59,6 +60,8 @@ public class App {
                 System.out.println("runes=" + a.runes().primaryRuneItems());
                 System.out.println("runes=" + a.runes().secondaryRuneItems());
                 System.out.println("runes=" + a.runes().statShardItems());
+
+                System.out.println("stats=" + a.build().spellOrder());
             } else {
                 System.out.println("No build recommendation (no matching stats or below MIN_GAMES).");
             }
