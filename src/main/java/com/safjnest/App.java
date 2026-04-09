@@ -13,7 +13,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.build.BuildFilter;
-import com.safjnest.lol.build.RecommendationService;
+import com.safjnest.lol.build.ChampionBuild;
+import com.safjnest.lol.build.ChampionBuildService;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;  
@@ -51,32 +52,12 @@ public class App {
         
         try (Connection conn = LeagueDB.get().getConnection()) {
             BuildFilter filter = new BuildFilter()
-                .setChampion(27)
-                .setLane(LaneType.TOP)
-                .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-                .setRank(TierType.CHALLENGER)
-                .setRegion(LeagueShard.LA2)
-                .setPatch("16.7");
+                .setChampion(81)
+                .setLane(LaneType.BOT)
+                .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO);
 
-            var a = new RecommendationService().get(filter, RecommendationService.Strategy.MOST_USED, conn);
-            if (a.build() != null) {
-                System.out.println(a.games());
-                System.out.println(a.winrate());
-                System.out.println("starter=" + toItemNames(a.build().starterItems()));
-                System.out.println("core=" + toItemNames(a.build().coreItems()));
-                System.out.println("fullBuild=" + toItemNames(a.build().fullBuildItems()));
-                System.out.println("suggestions=" + toItemNames(a.build().suggestionItems()));
-                System.out.println("boots=" + itemName(a.build().boots()));
-
-                System.out.println("runes=" + a.runes());
-                System.out.println("runes=" + a.runes().primaryRuneItems());
-                System.out.println("runes=" + a.runes().secondaryRuneItems());
-                System.out.println("runes=" + a.runes().statShardItems());
-
-                System.out.println("stats=" + a.build().spellOrder());
-            } else {
-                System.out.println("No build recommendation (no matching stats or below MIN_GAMES).");
-            }
+            ChampionBuild cb = new ChampionBuildService().getSlotBreakdown(filter, ChampionBuildService.Strategy.MOST_USED, conn);
+            if (cb != null) cb.print();
         } catch (Exception e) {
             e.printStackTrace();
     

@@ -24,26 +24,15 @@ public record RuneSignature(
 
         if (primary == null || primary.length() < 2 || secondary == null) return null;
 
-        int primaryTree  = primary.optInt(0, 0);
-        int keystone     = primary.optInt(1, 0);
-        int secondaryTree = secondary.optInt(0, 0);
-
-        List<Integer> pRunes = extractSorted(primary, 2);
-        List<Integer> sRunes = extractSorted(secondary, 1);
-
-        String statShardsStr = stats != null
-                ? IntStream.range(0, stats.length())
-                        .mapToObj(i -> String.valueOf(stats.optInt(i, 0)))
-                        .collect(Collectors.joining("-"))
-                : "";
-
         return new RuneSignature(
-                primaryTree,
-                keystone,
-                joinInts(pRunes),
-                secondaryTree,
-                joinInts(sRunes),
-                statShardsStr
+                primary.optInt(0, 0),
+                primary.optInt(1, 0),
+                joinInts(extractSorted(primary, 2)),
+                secondary.optInt(0, 0),
+                joinInts(extractSorted(secondary, 1)),
+                stats != null
+                        ? IntStream.range(0, stats.length()).mapToObj(i -> String.valueOf(stats.optInt(i, 0))).collect(Collectors.joining("-"))
+                        : ""
         );
     }
 
@@ -52,32 +41,25 @@ public record RuneSignature(
     public List<Integer> statShardItems()     { return parseDashList(statShards); }
 
     public String toKey() {
-        String raw = primaryTree + "|" + keystone + "|" + primaryRunes + "|"
-                + secondaryTree + "|" + secondaryRunes + "|" + statShards;
+        String raw = primaryTree + "|" + keystone + "|" + primaryRunes + "|" + secondaryTree + "|" + secondaryRunes + "|" + statShards;
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
     public static RuneSignature decode(String key) {
         String[] p = new String(Base64.getDecoder().decode(key), StandardCharsets.UTF_8).split("\\|", -1);
-        return new RuneSignature(
-                Integer.parseInt(p[0]), Integer.parseInt(p[1]), p[2],
-                Integer.parseInt(p[3]), p[4], p[5]
-        );
+        return new RuneSignature(Integer.parseInt(p[0]), Integer.parseInt(p[1]), p[2], Integer.parseInt(p[3]), p[4], p[5]);
     }
 
-    private static List<Integer> extractSorted(JSONArray arr, int startIdx) {
-        List<Integer> result = new ArrayList<>();
-        for (int i = startIdx; i < arr.length(); i++) result.add(arr.optInt(i, 0));
-        Collections.sort(result);
-        return result;
+    private static List<Integer> extractSorted(JSONArray arr, int from) {
+        List<Integer> list = new ArrayList<>();
+        for (int i = from; i < arr.length(); i++) list.add(arr.optInt(i, 0));
+        Collections.sort(list);
+        return list;
     }
 
-    static List<Integer> parseDashList(String source) {
-        if (source == null || source.isBlank()) return Collections.emptyList();
-        return Arrays.stream(source.split("-"))
-                .filter(s -> !s.isBlank())
-                .map(Integer::parseInt)
-                .collect(Collectors.toList());
+    static List<Integer> parseDashList(String s) {
+        if (s == null || s.isBlank()) return Collections.emptyList();
+        return Arrays.stream(s.split("-")).filter(t -> !t.isBlank()).map(Integer::parseInt).collect(Collectors.toList());
     }
 
     static String joinInts(List<Integer> ids) {
