@@ -12,6 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.build.BuildFilter;
 import com.safjnest.lol.build.RecommendationService;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.sql.database.LeagueDB;
@@ -19,6 +20,11 @@ import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
+
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 
 @SpringBootApplication
@@ -44,12 +50,18 @@ public class App {
         }
         
         try (Connection conn = LeagueDB.get().getConnection()) {
-            String role = "JUNGLE";
-            var a = new RecommendationService().get(81, "BOT", role, RecommendationService.Strategy.MOST_USED, conn);
+            BuildFilter filter = new BuildFilter()
+                .setChampion(27)
+                .setLane(LaneType.TOP)
+                .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                .setRank(TierType.CHALLENGER)
+                .setRegion(LeagueShard.LA2)
+                .setPatch("16.7");
+
+            var a = new RecommendationService().get(filter, RecommendationService.Strategy.MOST_USED, conn);
             if (a.build() != null) {
                 System.out.println(a.games());
                 System.out.println(a.winrate());
-                System.out.println("role=" + role);
                 System.out.println("starter=" + toItemNames(a.build().starterItems()));
                 System.out.println("core=" + toItemNames(a.build().coreItems()));
                 System.out.println("fullBuild=" + toItemNames(a.build().fullBuildItems()));

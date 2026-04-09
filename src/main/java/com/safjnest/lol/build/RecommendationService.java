@@ -39,16 +39,16 @@ public class RecommendationService {
 
     // -------------------------------------------------------------------------
 
-    public Recommendation get(int championId, String lane, String role, Strategy strategy, Connection conn) throws Exception {
-        Recommendation cached = retrieve(championId, lane, role, strategy, conn);
+    public Recommendation get(BuildFilter filter,Strategy strategy, Connection conn) throws Exception {
+        Recommendation cached = retrieve(filter, strategy, conn);
         if (cached != null) return cached;
 
-        Recommendation computed = analyze(championId, lane, role, strategy, conn);
+        Recommendation computed = analyze(filter, strategy, conn);
         save(computed, conn);
         return computed;
     }
 
-    private Recommendation retrieve(int championId, String lane, String role, Strategy strategy, Connection conn) {
+    private Recommendation retrieve(BuildFilter filter, Strategy strategy, Connection conn) {
         // TODO: SELECT FROM recommendations WHERE champion_id=? AND lane=? AND role=? AND strategy=?
         // BuildSignature.decode(rs.getString("build_key")), RuneSignature.decode(rs.getString("rune_key"))
         return null;
@@ -61,12 +61,12 @@ public class RecommendationService {
 
     // -------------------------------------------------------------------------
 
-    private Recommendation analyze(int championId, String lane, String role, Strategy strategy, Connection conn) throws Exception {
-        StatsResult buildSr = computeStats(championId, lane, conn, true);
-        StatsResult runeSr  = computeStats(championId, lane, conn, false);
+    private Recommendation analyze(BuildFilter filter,  Strategy strategy, Connection conn) throws Exception {
+        StatsResult buildSr = computeStats(filter, conn, true);
+        StatsResult runeSr  = computeStats(filter, conn, false);
 
-        log.info("[Recommendation] champion={} lane={} role={} strategy={} buildKeys={} runeKeys={}",
-                championId, lane, role, strategy, buildSr.stats().size(), runeSr.stats().size());
+        log.info("[Recommendation] filter={} strategy={} buildKeys={} runeKeys={}",
+                filter, strategy, buildSr.stats().size(), runeSr.stats().size());
 
         String buildGroupKey = topKey(buildSr.stats(), strategy == Strategy.HIGHEST_WR);
         BuildSignature build = resolveBuild(buildGroupKey, buildSr);
@@ -77,7 +77,7 @@ public class RecommendationService {
         int totalWins  = buildSr.stats().values().stream().mapToInt(v -> v[1]).sum();
         double winrate = totalGames > 0 ? (double) totalWins / totalGames : 0;
 
-        return new Recommendation(championId, lane, role, strategy, build, runes, totalGames, winrate);
+        return new Recommendation(filter.champion(), filter.lane().toString(), filter.queue().toString(), strategy, build, runes, totalGames, winrate);
     }
 
     private BuildSignature resolveBuild(String groupKey, StatsResult sr) {
@@ -98,18 +98,18 @@ public class RecommendationService {
 
     // -------------------------------------------------------------------------
 
-    private StatsResult computeStats(int championId, String lane, Connection conn, boolean isBuild) throws Exception {
+    private StatsResult computeStats(BuildFilter filter, Connection conn, boolean isBuild) throws Exception {
         Map<String, int[]> stats                        = new LinkedHashMap<>();
         Map<String, Map<String, Integer>> variantsByGroup  = new HashMap<>();
         Map<String, Map<Integer, Integer>> itemFreqByGroup = new HashMap<>();
 
         String sql = "SELECT p.win, p.build FROM participant p " +
                      "JOIN `match` m ON m.id = p.match_id " +
-                     "WHERE p.champion = ? AND p.lane = ? AND m.patch_major = '16.6' AND m.queue = 'TEAM_BUILDER_RANKED_SOLO'";
+                     filter.sql();
+
+        System.out.println(sql);
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, championId);
-            ps.setString(2, lane);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     boolean win = rs.getInt("win") == 1;
