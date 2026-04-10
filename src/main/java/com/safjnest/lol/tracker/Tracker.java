@@ -450,6 +450,8 @@ public class Tracker {
         }
 
         LOLTimeline timeline = match.getTimeline();
+        Map<String, List<String>> matchItemData = new HashMap<>();
+
         timeline.getParticipants().forEach(partecipant -> {
             matchData.put(String.valueOf(partecipant.getParticipantId()), matchData.get(partecipant.getPuuid()));
             matchData.remove(partecipant.getPuuid());
@@ -475,26 +477,24 @@ public class Tracker {
 
                             if (i != 1 && item.getDepth() != 3) continue;
 
-                            String itemList = matchData.get(participantId).getOrDefault(itemType, "");
-                            if (itemList.isEmpty()) itemList = item.getId() + "";
-                            else itemList += "," + item.getId();
-                            matchData.get(participantId).put(itemType, itemList);
+                            List<String> itemList = matchItemData.computeIfAbsent(participantId + "-" + itemType, k -> new ArrayList<>());
+                            itemList.add(item.getId() + "");
+                            matchItemData.put(participantId + "-" + itemType, itemList);
+                            matchData.get(participantId).put(itemType, String.join(",", itemList));
+                    
                             break;
                         case ITEM_UNDO:
                         case ITEM_SOLD:
                             item = items.get(event.getBeforeId());
                             if (item == null) continue;
                             if (i != 1 && item.getDepth() != 3) continue;
-
-                            String[] itemsList = matchData.get(participantId).get(itemType).split(",");
-                            String undoList = "";
-                            for (String itemStr : itemsList) {
-                                if (!itemStr.equals(item.getId() + "")) {
-                                    if (!undoList.isEmpty()) undoList += ",";
-                                    undoList += itemStr;
-                                }
+                    
+                            List<String> currentList = matchItemData.get(participantId + "-" + itemType);
+                            if (currentList != null) {
+                                currentList.remove(item.getId() + "");
                             }
-                            matchData.get(participantId).put(itemType, undoList);
+                            matchData.get(participantId).put(itemType, String.join(",", currentList));
+                    
                             break;
                         case SKILL_LEVEL_UP:
                             String skillList = matchData.get(participantId).getOrDefault("skill_order", "");

@@ -1159,6 +1159,7 @@ import com.safjnest.lol.tracker.TrackerScheduler;
         data.put("platform", shard.toRegionShard());
         data.put("gameid", gameId);   
         DataCall.getCacheProvider().clear(URLEndpoint.V5_MATCH, data);
+        DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, data);
     }
 
 //     ▄████████    ▄███████▄  ▄█        ▄█      ███
