@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
@@ -22,10 +22,9 @@ import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
 
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
 @SpringBootApplication
@@ -51,14 +50,21 @@ public class App {
         }
         
         try (Connection conn = LeagueDB.get().getConnection()) {
-            BuildFilter filter = new BuildFilter()
-                .setChampion(27)
-                .setLane(LaneType.TOP)
-                .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-                .setPatch("16.7");
-
-            ChampionBuild cb = new ChampionBuildService().getSlotBreakdown(filter, ChampionBuildService.Strategy.MOST_USED, conn);
-            if (cb != null) cb.print();
+            for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
+                for (LaneType lane : Arrays.asList(LaneType.TOP, LaneType.JUNGLE, LaneType.MID, LaneType.BOT, LaneType.UTILITY)) {
+                    BuildFilter filter = new BuildFilter()
+                        .setChampion(champion.getId())
+                        .setLane(lane)
+                        .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                        .setPatch("16.7");
+        
+                    ChampionBuild cb = new ChampionBuildService().getSlotBreakdown(filter, ChampionBuildService.Strategy.MOST_USED, conn);
+                    if (cb != null) cb.print();
+                    conn.commit();
+                
+                }
+            }
+            conn.close();
         } catch (Exception e) {
             e.printStackTrace();
     
@@ -96,31 +102,6 @@ public class App {
 
     public static boolean isTesting() {
         return settings.getConfig().isTesting();
-    }
-
-    private static String toItemNames(List<Integer> itemIds) {
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < itemIds.size(); i++) {
-            if (i > 0) {
-                sb.append(", ");
-            }
-            int id = itemIds.get(i);
-            sb.append(id).append(": ").append(itemName(id));
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private static String itemName(int itemId) {
-        try {
-            var item = LeagueHandler.getRiotApi().getDDragonAPI().getItem(itemId);
-            if (item == null || item.getName() == null || item.getName().isBlank()) {
-                return "Unknown item";
-            }
-            return item.getName();
-        } catch (Exception ignored) {
-            return "Unknown item";
-        }
     }
 
 }

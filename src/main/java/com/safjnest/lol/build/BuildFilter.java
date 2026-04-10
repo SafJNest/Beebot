@@ -28,28 +28,23 @@ public class BuildFilter {
     public BuildFilter setPatch(String patch)              { this.patch = patch; return this; }
     public BuildFilter setRegion(LeagueShard region)       { this.region = region; return this; }
 
-    public int champion()      { return champion; }
-    public LaneType lane()     { return lane; }
+    public int champion()        { return champion; }
+    public LaneType lane()       { return lane; }
     public GameQueueType queue() { return queue; }
 
     public String sql() {
         StringBuilder sb = new StringBuilder("WHERE p.champion = ").append(champion);
-        if (lane != null)   sb.append(" AND p.lane = '").append(lane).append("'");
-        if (queue != null)  sb.append(" AND m.queue = '").append(queue).append("'");
-        if (patch != null)  sb.append(" AND m.patch_major = '").append(patch).append("'");
-        if (rank != null)   sb.append(rankSql());
-        if (region != null) sb.append(" AND m.region = '").append(region).append("'");
-
-    //    sb.append(" AND EXISTS (SELECT 1 FROM participant opp WHERE opp.match_id = m.id" +
-    //         " AND opp.lane = '" + lane + "'" +
-    //         " AND opp.team != p.team" +
-    //         " AND opp.champion = 799)");
-        
+        if (lane != null)         sb.append(" AND p.lane = '").append(lane).append("'");
+        if (queue != null)        sb.append(" AND m.queue = '").append(queue).append("'");
+        if (patch != null)        sb.append(" AND m.patch_major = '").append(patch).append("'");
+        if (rank != null)         sb.append(rankSql());
+        if (region != null)       sb.append(" AND m.region = '").append(region).append("'");
         return sb.toString();
     }
 
-    public String toKey() {
-        String raw = champion + "|" + val(lane) + "|" + val(queue) + "|" + val(rank) + "|" + val(patch) + "|" + val(region);
+    public String toKey(ChampionBuildService.Strategy strategy) {
+        String raw = champion + "|" + val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
+                + val(patch) + "|" + val(region) + "|" + strategy.name();
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -58,7 +53,7 @@ public class BuildFilter {
             return " AND m.rank IN ('CHALLENGER', 'GRANDMASTER')";
         if (rankBehavior == RankBehavior.EXACT)
             return " AND p.rank = '" + rank + "'";
-        // TODO: GREATER_OR_EQUAL → build the IN list from TierType ordering
+        // TODO: GREATER_OR_EQUAL → IN list from TierType ordering
         return " AND p.rank = '" + rank + "'";
     }
 
