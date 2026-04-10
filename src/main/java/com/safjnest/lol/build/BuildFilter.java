@@ -39,6 +39,12 @@ public class BuildFilter {
         if (patch != null)  sb.append(" AND m.patch_major = '").append(patch).append("'");
         if (rank != null)   sb.append(rankSql());
         if (region != null) sb.append(" AND m.region = '").append(region).append("'");
+
+    //    sb.append(" AND EXISTS (SELECT 1 FROM participant opp WHERE opp.match_id = m.id" +
+    //         " AND opp.lane = '" + lane + "'" +
+    //         " AND opp.team != p.team" +
+    //         " AND opp.champion = 799)");
+        
         return sb.toString();
     }
 

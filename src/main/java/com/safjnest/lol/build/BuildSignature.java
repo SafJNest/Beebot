@@ -67,7 +67,7 @@ public record BuildSignature(
     public List<Integer> suggestionItems() { return RuneSignature.parseDashList(suggestions); }
 
     public String toCoreKey() {
-        String raw = starter + "|" + boots + "|" + suppItem + "|" + core + "|" + spellOrder;
+        String raw = starter + "|" + boots + "|" + suppItem + "|" + core;
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 

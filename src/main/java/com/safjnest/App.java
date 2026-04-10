@@ -52,9 +52,10 @@ public class App {
         
         try (Connection conn = LeagueDB.get().getConnection()) {
             BuildFilter filter = new BuildFilter()
-                .setChampion(81)
-                .setLane(LaneType.BOT)
-                .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+                .setChampion(27)
+                .setLane(LaneType.TOP)
+                .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                .setPatch("16.7");
 
             ChampionBuild cb = new ChampionBuildService().getSlotBreakdown(filter, ChampionBuildService.Strategy.MOST_USED, conn);
             if (cb != null) cb.print();
