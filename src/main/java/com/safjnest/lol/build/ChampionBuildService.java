@@ -3,7 +3,10 @@ package com.safjnest.lol.build;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.sql.*;
+import com.safjnest.sql.QueryRecord;
+import com.safjnest.sql.QueryResult;
+import com.safjnest.sql.database.LeagueDB;
+
 import java.util.*;
 import java.util.function.Function;
 
@@ -25,46 +28,29 @@ public class ChampionBuildService {
 
     // -------------------------------------------------------------------------
 
-    public ChampionBuild getSlotBreakdown(BuildFilter filter, Strategy strategy, Connection conn) throws Exception {
-        ChampionBuild cached = retrieveSlotBreakdown(filter, strategy, conn);
+    public ChampionBuild get(BuildFilter filter, Strategy strategy)  {
+        ChampionBuild cached = retrive(filter, strategy);
         if (cached != null) return cached;
 
-        ChampionBuild computed = computeSlotBreakdown(filter, strategy, conn);
-        System.out.println("computed=" + computed);
-        if (computed != null) saveSlotBreakdown(filter, strategy, computed, conn);
+        ChampionBuild computed = compute(filter, strategy);
+        if (computed != null) save(computed);
         return computed;
     }
 
-    private ChampionBuild retrieveSlotBreakdown(BuildFilter filter, Strategy strategy, Connection conn) {
-        String sql = "SELECT build_data FROM champion_builds WHERE filter_key = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, filter.toKey(strategy));
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return ChampionBuild.fromBase64(rs.getString("build_data"), filter, strategy);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+    private ChampionBuild retrive(BuildFilter filter, Strategy strategy) {
+        return LeagueDB.getChampionBuild(filter, strategy);
     }
 
-    private void saveSlotBreakdown(BuildFilter filter, Strategy strategy, ChampionBuild build, Connection conn) {
-        String sql = "INSERT INTO champion_builds (filter_key, build_data, updated_at) VALUES (?, ?, NOW()) " +
-                     "ON DUPLICATE KEY UPDATE build_data = VALUES(build_data), updated_at = NOW()";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, filter.toKey(strategy));
-            ps.setString(2, build.toBase64());
-            ps.executeUpdate();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private void save(ChampionBuild build) {
+        LeagueDB.saveChampionBuild(build);
     }
 
     // -------------------------------------------------------------------------
 
-    private ChampionBuild computeSlotBreakdown(BuildFilter filter, Strategy strategy, Connection conn) throws Exception {
-        StatsResult buildSr = computeBuildStats(filter, conn);
-        StatsResult runeSr  = computeRuneStats(filter, conn);
+    private ChampionBuild compute(BuildFilter filter, Strategy strategy)  {
+        QueryResult result = LeagueDB.getChampionBuildsRaw(filter);
+        StatsResult buildSr = computeBuildStats(result);
+        StatsResult runeSr = computeRuneStats(result);
 
         String groupKey = topKey(buildSr.stats(), strategy == Strategy.HIGHEST_WR);
         if (groupKey == null) return null;
@@ -100,54 +86,50 @@ public class ChampionBuildService {
 
     // -------------------------------------------------------------------------
 
-    private StatsResult computeBuildStats(BuildFilter filter, Connection conn) throws Exception {
+    private StatsResult computeBuildStats(QueryResult result)  {
         Map<String, int[]> stats                             = new LinkedHashMap<>();
         Map<String, Map<String, Integer>> variantsByGroup    = new HashMap<>();
         Map<String, Map<Integer, Integer>> itemFreqByGroup   = new HashMap<>();
         Map<String, Map<String, Integer>> spellOrdersByGroup = new HashMap<>();
         Map<String, Map<Integer, Map<Integer, int[]>>> slotStatsByGroup = new HashMap<>();
 
-        String sql = "SELECT m.game_id, p.win, p.build, p.summoner_id FROM participant p JOIN `match` m ON m.id = p.match_id " + filter.sql();
+        for (QueryRecord record : result) {
+            boolean win = record.getAsBoolean("win");
+            String rawJson = record.get("build");
+            if (rawJson == null) continue;
 
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                boolean win    = rs.getInt("win") == 1;
-                String rawJson = rs.getString("build");
-                if (rawJson == null) continue;
-
-                JSONObject full;
-                try { full = new JSONObject(rawJson); } catch (Exception ex) { continue; }
-
-                JSONObject buildObj  = full.optJSONObject("build");
-                JSONArray skillOrder = full.optJSONArray("skill_order");
-                if (buildObj == null || skillOrder == null || buildObj.optJSONArray("build") == null) continue;
-
-                BuildSignature sig = BuildSignature.from(full, skillOrder);
-                if (sig == null) continue;
-
-                String coreKey = sig.toCoreKey();
-
-                variantsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.toKey(), 1, Integer::sum);
-                itemFreqByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
-                sig.fullBuildItems().forEach(id -> itemFreqByGroup.get(coreKey).merge(id, 1, Integer::sum));
-                spellOrdersByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.spellOrder(), 1, Integer::sum);
-
-                List<Integer> extra = sig.fullBuildItems().stream()
-                        .filter(id -> !coreExcluded(sig).contains(id))
-                        .toList();
-
-                Map<Integer, Map<Integer, int[]>> slotStats = slotStatsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
-                if (extra.size() >= 1) addSlot(slotStats, 4, extra.get(0), win);
-                if (extra.size() >= 2) addSlot(slotStats, 5, extra.get(1), win);
-                if (extra.size() >= 3) addSlot(slotStats, 6, extra.get(2), win);
-                if (extra.size() >= 4) addSlot(slotStats, 6, extra.get(3), win);
-                if (extra.size() >= 5) addSlot(slotStats, 7, extra.get(4), win);
-
-                stats.computeIfAbsent(coreKey, k -> new int[2]);
-                stats.get(coreKey)[0]++;
-                if (win) stats.get(coreKey)[1]++;
-            }
+            JSONObject full;
+            try { full = new JSONObject(rawJson); } catch (Exception ex) { continue; }
+    
+            JSONObject buildObj  = full.optJSONObject("build");
+            JSONArray skillOrder = full.optJSONArray("skill_order");
+            if (buildObj == null || skillOrder == null || buildObj.optJSONArray("build") == null) continue;
+    
+            BuildSignature sig = BuildSignature.from(full, skillOrder);
+            if (sig == null) continue;
+    
+            String coreKey = sig.toCoreKey();
+    
+            variantsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.toKey(), 1, Integer::sum);
+            itemFreqByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
+            sig.fullBuildItems().forEach(id -> itemFreqByGroup.get(coreKey).merge(id, 1, Integer::sum));
+            spellOrdersByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.spellOrder(), 1, Integer::sum);
+    
+            List<Integer> extra = sig.fullBuildItems().stream()
+                    .filter(id -> !coreExcluded(sig).contains(id))
+                    .toList();
+    
+            Map<Integer, Map<Integer, int[]>> slotStats = slotStatsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
+            if (extra.size() >= 1) addSlot(slotStats, 4, extra.get(0), win);
+            if (extra.size() >= 2) addSlot(slotStats, 5, extra.get(1), win);
+            if (extra.size() >= 3) addSlot(slotStats, 6, extra.get(2), win);
+            if (extra.size() >= 4) addSlot(slotStats, 6, extra.get(3), win);
+            if (extra.size() >= 5) addSlot(slotStats, 7, extra.get(4), win);
+    
+            stats.computeIfAbsent(coreKey, k -> new int[2]);
+            stats.get(coreKey)[0]++;
+            if (win) stats.get(coreKey)[1]++;
+        
         }
 
         return new StatsResult(stats, resolveRepresentatives(variantsByGroup), itemFreqByGroup,
@@ -160,32 +142,27 @@ public class ChampionBuildService {
         if (win) s[1]++;
     }
 
-    private StatsResult computeRuneStats(BuildFilter filter, Connection conn) throws Exception {
+    private StatsResult computeRuneStats(QueryResult result)  {
         Map<String, int[]> stats = new LinkedHashMap<>();
 
-        String sql = "SELECT p.win, p.build FROM participant p JOIN `match` m ON m.id = p.match_id " + filter.sql();
+        for (QueryRecord record : result) {
+            boolean win    = record.getAsBoolean("win");
+            String rawJson = record.get("build");
+            if (rawJson == null) continue;
 
-        try (PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                boolean win    = rs.getInt("win") == 1;
-                String rawJson = rs.getString("build");
-                if (rawJson == null) continue;
+            JSONObject full;
+            try { full = new JSONObject(rawJson); } catch (Exception ex) { continue; }
 
-                JSONObject full;
-                try { full = new JSONObject(rawJson); } catch (Exception ex) { continue; }
+            JSONObject runesObj = full.optJSONObject("runes");
+            if (runesObj == null) continue;
 
-                JSONObject runesObj = full.optJSONObject("runes");
-                if (runesObj == null) continue;
+            RuneSignature sig = RuneSignature.from(runesObj);
+            if (sig == null) continue;
 
-                RuneSignature sig = RuneSignature.from(runesObj);
-                if (sig == null) continue;
-
-                String key = sig.toKey();
-                stats.computeIfAbsent(key, k -> new int[2]);
-                stats.get(key)[0]++;
-                if (win) stats.get(key)[1]++;
-            }
+            String key = sig.toKey();
+            stats.computeIfAbsent(key, k -> new int[2]);
+            stats.get(key)[0]++;
+            if (win) stats.get(key)[1]++;
         }
 
         return new StatsResult(stats, Collections.emptyMap(), Collections.emptyMap(),

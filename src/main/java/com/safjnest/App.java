@@ -49,26 +49,20 @@ public class App {
             //runSpring();
         }
         
-        try (Connection conn = LeagueDB.get().getConnection()) {
-            for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
-                for (LaneType lane : Arrays.asList(LaneType.TOP, LaneType.JUNGLE, LaneType.MID, LaneType.BOT, LaneType.UTILITY)) {
-                    BuildFilter filter = new BuildFilter()
-                        .setChampion(champion.getId())
-                        .setLane(lane)
-                        .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-                        .setPatch("16.7");
-        
-                    ChampionBuild cb = new ChampionBuildService().getSlotBreakdown(filter, ChampionBuildService.Strategy.MOST_USED, conn);
-                    if (cb != null) cb.print();
-                    conn.commit();
-                
-                }
-            }
-            conn.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
+            for (LaneType lane : Arrays.asList(LaneType.TOP, LaneType.JUNGLE, LaneType.MID, LaneType.BOT, LaneType.UTILITY)) {
+                BuildFilter filter = new BuildFilter()
+                    .setChampion(champion.getId())
+                    .setLane(lane)
+                    .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                    .setPatch("16.7");
     
+                ChampionBuild cb = new ChampionBuildService().get(filter, ChampionBuildService.Strategy.MOST_USED);
+                if (cb != null) cb.print();
+            }
         }
+
+
         //bot = new Bot();
         //bot.il_risveglio_della_bestia();
     }

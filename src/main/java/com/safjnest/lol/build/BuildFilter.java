@@ -10,7 +10,10 @@ import java.util.Base64;
 
 public class BuildFilter {
 
-    public enum RankBehavior { EXACT, GREATER_OR_EQUAL }
+    public enum RankBehavior { 
+        EXACT, 
+        GREATER_OR_EQUAL 
+    }
 
     private int champion;
     private LaneType lane;
@@ -20,25 +23,65 @@ public class BuildFilter {
     private String patch;
     private LeagueShard region;
 
-    public BuildFilter setChampion(int champion)           { this.champion = champion; return this; }
-    public BuildFilter setLane(LaneType lane)              { this.lane = lane; return this; }
-    public BuildFilter setQueue(GameQueueType queue)       { this.queue = queue; return this; }
-    public BuildFilter setRank(TierType rank)              { this.rank = rank; return this; }
-    public BuildFilter setRankBehavior(RankBehavior b)     { this.rankBehavior = b; return this; }
-    public BuildFilter setPatch(String patch)              { this.patch = patch; return this; }
-    public BuildFilter setRegion(LeagueShard region)       { this.region = region; return this; }
+    public BuildFilter setChampion(int champion) {
+        this.champion = champion;
+        return this;
+    }
+    
+    public BuildFilter setLane(LaneType lane) {
+        this.lane = lane;
+        return this;
+    }
+    
+    public BuildFilter setQueue(GameQueueType queue) {
+        this.queue = queue;
+        return this;
+    }
+    
+    public BuildFilter setRank(TierType rank) {
+        this.rank = rank;
+        return this;
+    }
+    
+    public BuildFilter setRankBehavior(RankBehavior b) {
+        this.rankBehavior = b;
+        return this;
+    }
+    
+    public BuildFilter setPatch(String patch) {
+        this.patch = patch;
+        return this;
+    }
+    
+    public BuildFilter setRegion(LeagueShard region) {
+        this.region = region;
+        return this;
+    }
 
-    public int champion()        { return champion; }
-    public LaneType lane()       { return lane; }
-    public GameQueueType queue() { return queue; }
+    public int champion() { 
+        return champion; 
+    }
+    
+    public LaneType lane() { 
+        return lane; 
+    }
+
+    public GameQueueType queue() { 
+        return queue; 
+    }
 
     public String sql() {
         StringBuilder sb = new StringBuilder("WHERE p.champion = ").append(champion);
-        if (lane != null)         sb.append(" AND p.lane = '").append(lane).append("'");
-        if (queue != null)        sb.append(" AND m.queue = '").append(queue).append("'");
-        if (patch != null)        sb.append(" AND m.patch_major = '").append(patch).append("'");
-        if (rank != null)         sb.append(rankSql());
-        if (region != null)       sb.append(" AND m.region = '").append(region).append("'");
+        if (lane != null) 
+            sb.append(" AND p.lane = '").append(lane).append("'");
+        if (queue != null)
+            sb.append(" AND m.queue = '").append(queue).append("'");
+        if (patch != null)
+            sb.append(" AND m.patch_major = '").append(patch).append("'");
+        if (rank != null)
+            sb.append(rankSql());
+        if (region != null)       
+            sb.append(" AND m.region = '").append(region).append("'");
         return sb.toString();
     }
 
