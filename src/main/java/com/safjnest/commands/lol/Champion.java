@@ -9,7 +9,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.MobalyticsHandler;
 import com.safjnest.lol.build.BuildFilter;
 import com.safjnest.lol.build.ChampionBuild;
 import com.safjnest.lol.build.ChampionBuild.SlotOption;
@@ -120,13 +119,6 @@ public class Champion extends SlashCommand {
         if (build != null) build.print();
 
 
-        String json = MobalyticsHandler.getChampioStats(champName, lane);
-         if(json == null){
-            event.getHook().editOriginal("Could be some problem with our database or lack of data due to new patch. Try again later.").queue();
-            return;
-        }
-
-       
         eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + LeagueHandler.getVersion() + ")**");
         
         String msg = "";
