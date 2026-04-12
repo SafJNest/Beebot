@@ -109,4 +109,12 @@ public record ChampionBuild(
         }
     }
 
+    public List<String> getSkillOrder() {
+        List<String> skillOrder = new ArrayList<>();
+        for (int i = 0; i < 18; i++) {
+            skillOrder.add(String.valueOf(spellOrder.charAt(i)));
+        }
+        return skillOrder;
+    }
+
 }

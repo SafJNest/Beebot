@@ -10,7 +10,10 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.MobalyticsHandler;
-import com.safjnest.lol.model.build.BuildData;
+import com.safjnest.lol.build.BuildFilter;
+import com.safjnest.lol.build.ChampionBuild;
+import com.safjnest.lol.build.ChampionBuild.SlotOption;
+import com.safjnest.lol.build.ChampionBuildService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
@@ -21,6 +24,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
@@ -105,7 +109,15 @@ public class Champion extends SlashCommand {
         eb.setTitle(champName + " " + laneFormatName + " " + CustomEmojiHandler.getFormattedEmoji(laneFormatName)); 
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
         HashMap<String, String> champInfo = Tracker.analyzeChampionData(champion.getId(), laneType);
-        
+
+        BuildFilter filter = new BuildFilter()
+            .setChampion(champion.getId())
+            .setLane(laneType)
+            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+            .setPatch("16.7");
+
+        ChampionBuild build = new ChampionBuildService().get(filter, ChampionBuildService.Strategy.MOST_USED);
+        if (build != null) build.print();
 
 
         String json = MobalyticsHandler.getChampioStats(champName, lane);
@@ -114,14 +126,12 @@ public class Champion extends SlashCommand {
             return;
         }
 
-        BuildData build = new BuildData(champion, laneType, json);
-                
-        eb.setDescription("Patch **" + build.getPatch() + "** | Win rate **" + build.getWinrate() + "%** based on **" + build.getGames() + "** matches");
-        eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + build.getPatch() + ")**");
+       
+        eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + LeagueHandler.getVersion() + ")**");
         
         String msg = "";
-        for(int i = 0; i < 18; i++){
-            switch (build.getSkillOrder().get(i)){
+        for(String skill : build.getSkillOrder()){
+            switch (skill){
                 case "1":
                 msg +=  CustomEmojiHandler.getFormattedEmoji("q_") + " > ";
                 break;
@@ -139,8 +149,9 @@ public class Champion extends SlashCommand {
         }
         
         eb.addField("**Skill Order**", msg.substring(0, msg.length()-2), false);
-        eb.addField("**Summoner Spells**", CustomEmojiHandler.getFormattedEmoji(build.getD() + "_") + " " + CustomEmojiHandler.getFormattedEmoji(build.getF() + "_") + "\n​\n", false);//DO NOT TOUCH \N\N THERE IS AN INVISIBLEAR CHARFATERT
+        //eb.addField("**Summoner Spells**", CustomEmojiHandler.getFormattedEmoji(build.getD() + "_") + " " + CustomEmojiHandler.getFormattedEmoji(build.getF() + "_") + "\n​\n", false);//DO NOT TOUCH \N\N THERE IS AN INVISIBLEAR CHARFATERT
 
+        /*
         msg = "";
         List<String> runes = build.getPrimaryRunes();
         for (int i = 1; i < runes.size(); i++) {
@@ -159,45 +170,41 @@ public class Champion extends SlashCommand {
         }
         support = LeagueHandler.getRunesHandler().get(build.getSecondaryRunesRoot()).getName();
         eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
-
+        
 
         msg = "";
         msg += CustomEmojiHandler.getFormattedEmoji(build.getOffense()) + " Offense\n";
         msg += CustomEmojiHandler.getFormattedEmoji(build.getFlex()) + " Flex\n";
         msg += CustomEmojiHandler.getFormattedEmoji(build.getDefense()) + " Defense\n";
         eb.addField("**Shard**", msg, true);
+        */
 
-        for (String label : build.getBuildMap().keySet()) {
-            List<String> items = build.getBuildMap().get(label); 
-            String title;
-            switch(label) {
-                case "starter": title = "**Starter Items**"; break;
-                case "core": title = "**Core Items**"; break;
-                case "fullbuild": title = "**Full Build Items**"; break;
-                case "boots": title = "**Boots**"; break;
-                case "situational": title = "**Situational Items**"; break;
-                default: title = "**" + label.substring(0, 1).toUpperCase() + label.substring(1) + "**"; break;
-            }
+        String starters = "";
 
-            if (label.equals("situational") && items.size() > 3) {
-                String msg1 = "", msg2 = "";
-                for (int i = 0; i < 3 && i < items.size(); i++) {
-                    msg1 += CustomEmojiHandler.getFormattedEmoji(items.get(i)) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(items.get(i))).getName() + "\n";
-                }
-                for (int i = 3; i < 6 && i < items.size(); i++) {
-                    msg2 += CustomEmojiHandler.getFormattedEmoji(items.get(i)) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(items.get(i))).getName() + "\n";
-                }
-                eb.addField(title, msg1, true);
-                eb.addField(" ", msg2, true);
-            } else {
-                msg = "";
-                for (String item : items) {
-                    msg += CustomEmojiHandler.getFormattedEmoji(item) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(Integer.parseInt(item)).getName() + "\n";
-                }
-                eb.addField(title, msg, true);
-            }
+        for (Integer item : build.starter()) {
+            starters += CustomEmojiHandler.getFormattedEmoji(item.toString()) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(item).getName() + "\n";
         }
-        
+        eb.addField("**Starter Items**", starters, true);
+
+        String core = "";
+        for (Integer item : build.core()) {
+            core += CustomEmojiHandler.getFormattedEmoji(item.toString()) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(item).getName() + "\n";
+        }
+        eb.addField("**Core Items**", core, true);
+        eb.addBlankField(true);
+
+        String fourthSlot = "";
+        fourthSlot = formatSlot(build.slots().get(0));
+        eb.addField("**Fourth Slot**", fourthSlot, true);
+
+        String fifthSlot = "";
+        fifthSlot = formatSlot(build.slots().get(1));
+        eb.addField("**Fifth Slot**", fifthSlot, true);
+
+        String sixthSlot = "";
+        sixthSlot = formatSlot(build.slots().get(2));
+        eb.addField("**Sixth Slot**", sixthSlot, true);
+
 
 
         eb.setColor(Bot.getColor());
@@ -209,6 +216,15 @@ public class Champion extends SlashCommand {
 
         event.getHook().editOriginalEmbeds(eb.build()).queue();
 	}
+
+    private String formatSlot(List<SlotOption> slots) {
+        String string = "";
+        for (SlotOption slot : slots) {
+            string += CustomEmojiHandler.getFormattedEmoji(slot.itemId()) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(slot.itemId()).getName() + "\n"
+            + "`" + slot.matches() + " games " + String.format("%.2f", slot.winrate()) + "% WR`" + "\n";
+        }
+        return string;
+    }
 
 
     

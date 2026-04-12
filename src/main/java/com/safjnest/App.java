@@ -3,28 +3,17 @@ package com.safjnest;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.Connection;
-import java.util.Arrays;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.BuildFilter;
-import com.safjnest.lol.build.ChampionBuild;
-import com.safjnest.lol.build.ChampionBuildService;
 import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;  
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
 @SpringBootApplication
@@ -49,6 +38,7 @@ public class App {
             //runSpring();
         }
         
+         /*
         for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
             for (LaneType lane : Arrays.asList(LaneType.TOP, LaneType.JUNGLE, LaneType.MID, LaneType.BOT, LaneType.UTILITY)) {
                 BuildFilter filter = new BuildFilter()
@@ -61,10 +51,11 @@ public class App {
                 if (cb != null) cb.print();
             }
         }
+        */
 
 
-        //bot = new Bot();
-        //bot.il_risveglio_della_bestia();
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {
