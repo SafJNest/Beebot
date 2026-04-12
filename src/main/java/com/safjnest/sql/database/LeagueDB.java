@@ -40,7 +40,6 @@ import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantData;
-import com.safjnest.lol.model.build.CustomBuildData;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -494,10 +493,6 @@ public class LeagueDB extends AbstractDB {
 
     public static QueryResult getFocusedCustomBuild(String name){
         return instance.query("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
-    }
-
-    public static CustomBuildData getCustomBuild(String id){
-        return new CustomBuildData(instance.lineQuery("SELECT id, name, skin, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
     }
 
     public static QueryResult getCustomBuildByUser(String user_id){
