@@ -2,6 +2,7 @@ package com.safjnest.commands.lol;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -115,7 +116,7 @@ public class Champion extends SlashCommand {
             .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
             .setPatch("16.7");
 
-        ChampionBuild build = new ChampionBuildService().get(filter, ChampionBuildService.Strategy.MOST_USED);
+        ChampionBuild build = new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(ChampionBuild::games).reversed()).findFirst().orElse(null);
         if (build != null) build.print();
 
 
@@ -183,7 +184,12 @@ public class Champion extends SlashCommand {
             core += CustomEmojiHandler.getFormattedEmoji(item.toString()) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(item).getName() + "\n";
         }
         eb.addField("**Core Items**", core, true);
-        eb.addBlankField(true);
+
+        String boots = "";
+        for (SlotOption boot : build.boots()) {
+            boots += CustomEmojiHandler.getFormattedEmoji(boot.itemId()) + " " + LeagueHandler.getRiotApi().getDDragonAPI().getItem(boot.itemId()).getName() + "\n";
+        }
+        eb.addField("**Boots**", boots, true);
 
         String fourthSlot = "";
         fourthSlot = formatSlot(build.slots().get(0));

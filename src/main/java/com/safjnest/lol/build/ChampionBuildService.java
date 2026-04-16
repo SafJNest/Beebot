@@ -3,6 +3,7 @@ package com.safjnest.lol.build;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.safjnest.lol.build.ChampionBuild.SlotOption;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
@@ -15,47 +16,55 @@ public class ChampionBuildService {
     private static final int MIN_GAMES    = 5;
     private static final int SLOT_OPTIONS = 3;
 
-    public enum Strategy { HIGHEST_WR, MOST_USED }
-
     private record StatsResult(
             Map<String, int[]> stats,
             Map<String, String> representativeByGroup,
             Map<String, Map<Integer, Integer>> itemFreqByGroup,
             Map<String, Map<String, Integer>> variantsByGroup,
             Map<String, Map<String, Integer>> spellOrdersByGroup,
-            Map<String, Map<Integer, Map<Integer, int[]>>> slotStatsByGroup
+            Map<String, Map<Integer, Map<Integer, int[]>>> slotStatsByGroup,
+            Map<String, Map<Integer, int[]>> bootsStatsByGroup,
+            Map<String, Map<Integer, int[]>> suppItemStatsByGroup
     ) {}
 
     // -------------------------------------------------------------------------
 
-    public ChampionBuild get(BuildFilter filter, Strategy strategy)  {
-        ChampionBuild cached = retrive(filter, strategy);
-        if (cached != null) return cached;
+    public List<ChampionBuild> getAll(BuildFilter filter) {
+        ChampionBuild cached = LeagueDB.getChampionBuild(filter);
+        if (cached != null) return Collections.singletonList(cached);
 
-        ChampionBuild computed = compute(filter, strategy);
-        if (computed != null) save(computed);
+        List<ChampionBuild> computed = computeAll(filter);
+        if (computed != null && !computed.isEmpty()) {
+            for (ChampionBuild build : computed) {
+                System.out.println(build.games() + " " + build.winrate());
+                LeagueDB.saveChampionBuild(build);
+            }
+        }
         return computed;
-    }
-
-    private ChampionBuild retrive(BuildFilter filter, Strategy strategy) {
-        return LeagueDB.getChampionBuild(filter, strategy);
-    }
-
-    private void save(ChampionBuild build) {
-        LeagueDB.saveChampionBuild(build);
     }
 
     // -------------------------------------------------------------------------
 
-    private ChampionBuild compute(BuildFilter filter, Strategy strategy)  {
+    private List<ChampionBuild> computeAll(BuildFilter filter) {
         QueryResult result = LeagueDB.getChampionBuildsRaw(filter);
         StatsResult buildSr = computeBuildStats(result);
-        StatsResult runeSr = computeRuneStats(result);
+        StatsResult runeSr  = computeRuneStats(result);
 
-        String groupKey = topKey(buildSr.stats(), strategy == Strategy.HIGHEST_WR);
-        if (groupKey == null) return null;
+        RuneSignature topRunes = top(runeSr.stats(), RuneSignature::decode, false);
 
-        BuildSignature base = BuildSignature.decode(buildSr.representativeByGroup().get(groupKey));
+        return buildSr.stats().entrySet().stream()
+                .filter(e -> e.getValue()[0] >= MIN_GAMES)
+                .map(e -> buildFromGroup(e.getKey(), e.getValue(), buildSr, topRunes, filter))
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private ChampionBuild buildFromGroup(String groupKey, int[] groupStats, StatsResult buildSr,
+                                          RuneSignature runes, BuildFilter filter) {
+        String repKey = buildSr.representativeByGroup().get(groupKey);
+        if (repKey == null) return null;
+
+        BuildSignature base = BuildSignature.decode(repKey);
         String spellOrder   = mergeSpellOrder(buildSr.spellOrdersByGroup().getOrDefault(groupKey, Collections.emptyMap()));
 
         Map<Integer, Map<Integer, int[]>> slotStats = buildSr.slotStatsByGroup().getOrDefault(groupKey, Collections.emptyMap());
@@ -64,76 +73,99 @@ public class ChampionBuildService {
         for (int slot = 4; slot < 8; slot++) {
             Map<Integer, int[]> itemStats = slotStats.getOrDefault(slot, Collections.emptyMap());
             List<ChampionBuild.SlotOption> options = itemStats.entrySet().stream()
-                    .sorted(strategy == Strategy.HIGHEST_WR
-                            ? Comparator.<Map.Entry<Integer, int[]>>comparingDouble(e -> e.getValue()[0] > 0 ? -(double) e.getValue()[1] / e.getValue()[0] : 0)
-                            : Comparator.comparingInt(e -> -e.getValue()[0]))
+                    .sorted(Comparator.comparingInt(e -> -e.getValue()[0]))
                     .limit(SLOT_OPTIONS)
                     .map(e -> new ChampionBuild.SlotOption(
-                            e.getKey(),
-                            e.getValue()[0],
+                            e.getKey(), e.getValue()[0],
                             e.getValue()[0] > 0 ? (double) e.getValue()[1] / e.getValue()[0] : 0))
                     .toList();
             slots.add(options);
         }
 
-        RuneSignature runes = top(runeSr.stats(), RuneSignature::decode, strategy == Strategy.HIGHEST_WR);
+        List<SlotOption> boots = buildSr.bootsStatsByGroup().getOrDefault(groupKey, Collections.emptyMap()).entrySet().stream()
+            .map(e -> new SlotOption(e.getKey(), e.getValue()[0], e.getValue()[0] > 0 ? (double) e.getValue()[1] / e.getValue()[0] : 0))
+            .sorted(Comparator.comparingInt(SlotOption::matches).reversed())
+            .limit(SLOT_OPTIONS)
+            .toList();
 
-        int[] groupStats = buildSr.stats().getOrDefault(groupKey, new int[2]);
-        return new ChampionBuild(filter, strategy, base.starterItems(), base.boots(), base.suppItem(),
+        List<SlotOption> suppItem = buildSr.suppItemStatsByGroup().getOrDefault(groupKey, Collections.emptyMap()).entrySet().stream()
+            .map(e -> new SlotOption(e.getKey(), e.getValue()[0], e.getValue()[0] > 0 ? (double) e.getValue()[1] / e.getValue()[0] : 0))
+            .sorted(Comparator.comparingInt(SlotOption::matches).reversed())
+            .limit(SLOT_OPTIONS)
+            .toList();
+
+        return new ChampionBuild(filter, base.starterItems(), boots, suppItem,
                 base.coreItems(), slots, spellOrder, runes, groupStats[0],
                 groupStats[0] > 0 ? (double) groupStats[1] / groupStats[0] : 0);
     }
 
     // -------------------------------------------------------------------------
 
-    private StatsResult computeBuildStats(QueryResult result)  {
+    private StatsResult computeBuildStats(QueryResult result) {
         Map<String, int[]> stats                             = new LinkedHashMap<>();
         Map<String, Map<String, Integer>> variantsByGroup    = new HashMap<>();
         Map<String, Map<Integer, Integer>> itemFreqByGroup   = new HashMap<>();
         Map<String, Map<String, Integer>> spellOrdersByGroup = new HashMap<>();
         Map<String, Map<Integer, Map<Integer, int[]>>> slotStatsByGroup = new HashMap<>();
+        Map<String, Map<Integer, int[]>> bootsStatsByGroup = new HashMap<>();
+        Map<String, Map<Integer, int[]>> suppItemStatsByGroup = new HashMap<>();
 
         for (QueryRecord record : result) {
-            boolean win = record.getAsBoolean("win");
+            boolean win    = record.getAsBoolean("win");
             String rawJson = record.get("build");
             if (rawJson == null) continue;
 
             JSONObject full;
             try { full = new JSONObject(rawJson); } catch (Exception ex) { continue; }
-    
+
             JSONObject buildObj  = full.optJSONObject("build");
             JSONArray skillOrder = full.optJSONArray("skill_order");
             if (buildObj == null || skillOrder == null || buildObj.optJSONArray("build") == null) continue;
-    
+
             BuildSignature sig = BuildSignature.from(full, skillOrder);
             if (sig == null) continue;
-    
+
             String coreKey = sig.toCoreKey();
-    
+
             variantsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.toKey(), 1, Integer::sum);
             itemFreqByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
             sig.fullBuildItems().forEach(id -> itemFreqByGroup.get(coreKey).merge(id, 1, Integer::sum));
             spellOrdersByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.spellOrder(), 1, Integer::sum);
-    
+
+            Map<Integer, int[]> bootsStats = bootsStatsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
+            int[] b = bootsStats.computeIfAbsent(sig.boots(), k -> new int[2]);
+            b[0]++;
+            if (win) b[1]++;
+
+            Map<Integer, int[]> suppItemStats = suppItemStatsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
+            int[] s = suppItemStats.computeIfAbsent(sig.suppItem(), k -> new int[2]);
+            s[0]++;
+            if (win) s[1]++;
+
             List<Integer> extra = sig.fullBuildItems().stream()
                     .filter(id -> !coreExcluded(sig).contains(id))
                     .toList();
-    
+                    
+
             Map<Integer, Map<Integer, int[]>> slotStats = slotStatsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
             if (extra.size() >= 1) addSlot(slotStats, 4, extra.get(0), win);
             if (extra.size() >= 2) addSlot(slotStats, 5, extra.get(1), win);
             if (extra.size() >= 3) addSlot(slotStats, 6, extra.get(2), win);
             if (extra.size() >= 4) addSlot(slotStats, 6, extra.get(3), win);
             if (extra.size() >= 5) addSlot(slotStats, 7, extra.get(4), win);
-    
+
             stats.computeIfAbsent(coreKey, k -> new int[2]);
             stats.get(coreKey)[0]++;
             if (win) stats.get(coreKey)[1]++;
-        
+
+            System.out.println("--------------------------------");
+            System.out.println("game_id: " + record.get("game_id"));
+            System.out.println("core: " + BuildUtils.toItemName(sig.starterItems()));
+            System.out.println("--------------------------------");
         }
 
         return new StatsResult(stats, resolveRepresentatives(variantsByGroup), itemFreqByGroup,
-                variantsByGroup, spellOrdersByGroup, slotStatsByGroup);
+                variantsByGroup, spellOrdersByGroup, slotStatsByGroup, bootsStatsByGroup, suppItemStatsByGroup);
     }
 
     private void addSlot(Map<Integer, Map<Integer, int[]>> slotStats, int slot, int id, boolean win) {
@@ -142,7 +174,7 @@ public class ChampionBuildService {
         if (win) s[1]++;
     }
 
-    private StatsResult computeRuneStats(QueryResult result)  {
+    private StatsResult computeRuneStats(QueryResult result) {
         Map<String, int[]> stats = new LinkedHashMap<>();
 
         for (QueryRecord record : result) {
@@ -166,7 +198,7 @@ public class ChampionBuildService {
         }
 
         return new StatsResult(stats, Collections.emptyMap(), Collections.emptyMap(),
-                Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
+                Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     }
 
     // -------------------------------------------------------------------------

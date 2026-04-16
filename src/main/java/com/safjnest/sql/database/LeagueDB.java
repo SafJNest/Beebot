@@ -35,7 +35,6 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.build.BuildFilter;
 import com.safjnest.lol.build.ChampionBuild;
-import com.safjnest.lol.build.ChampionBuildService.Strategy;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.MatchData;
@@ -808,13 +807,13 @@ public class LeagueDB extends AbstractDB {
     }
 
 
-    public static ChampionBuild getChampionBuild(BuildFilter filter, Strategy strategy) {
-        QueryRecord result = instance.lineQuery("SELECT build_data FROM champion_builds WHERE filter_key = '" + filter.toKey(strategy) + "'");
-        return result.isEmpty() ? null : ChampionBuild.decode(result.get("build_data"), filter, strategy);
+    public static ChampionBuild getChampionBuild(BuildFilter filter) {
+        QueryRecord result = instance.lineQuery("SELECT build_data FROM champion_builds WHERE filter_key = '" + filter.toKey() + "' order by games desc limit 1");
+        return result.isEmpty() ? null : ChampionBuild.decode(result.get("build_data"), filter);
     }
 
     public static void saveChampionBuild(ChampionBuild build) {
-        instance.query("INSERT INTO champion_builds (filter_key, build_data) VALUES ('" + build.filter().toKey(build.strategy()) + "', '" + build.encode() + "')");
+        instance.query("INSERT INTO champion_builds (games, winrate, filter_key, build_data) VALUES ('" + build.games() + "', '" + build.winrate() + "', '" + build.filter().toKey() + "', '" + build.encode() + "')");
     }
 
     public static QueryResult getChampionBuildsRaw(BuildFilter filter) {

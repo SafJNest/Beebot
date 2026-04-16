@@ -36,7 +36,7 @@ public record BuildSignature(
         if (suppItem == 0)
             suppItem = fullBuildList.stream().filter(SUPPORT_ITEMS::contains).findFirst().orElse(0);
 
-        List<Integer> coreList = extractCore(fullBuildList, suppItem);
+        List<Integer> coreList = extractCore(fullBuildList);
         if (boots == 0 || coreList.size() < 2) return null;
 
         Collections.sort(starterList);
@@ -63,7 +63,7 @@ public record BuildSignature(
     public List<Integer> fullBuildItems()  { return BuildUtils.parseDashList(fullBuild); }
 
     public String toCoreKey() {
-        String raw = starter + "|" + boots + "|" + suppItem + "|" + core;
+        String raw = starter  + "|" + suppItem + "|" + core;
         return BuildUtils.toBase64(raw);
     }
 
@@ -80,14 +80,59 @@ public record BuildSignature(
     // -------------------------------------------------------------------------
 
     private static List<Integer> extractStarter(JSONObject buildObj) {
-        List<Integer> list = new ArrayList<>();
         JSONArray arr = buildObj.optJSONArray("starter");
-        if (arr == null) return list;
+        if (arr == null) return Collections.emptyList();
+    
+        Map<Integer, Integer> consumablesCount = new HashMap<>();
+        Integer boots = null;
+        Integer trinket = null;
+        Integer genericItem = null;
+    
         for (int i = 0; i < arr.length(); i++) {
             int id = BuildUtils.parseAnyInt(arr.opt(i));
-            if (id != 0) list.add(id);
+            if (id == 0) continue;
+    
+            if (TRINKETS.contains(id)) {
+                continue;
+            }
+    
+            if (BOOTS.contains(id)) {
+                boots = id;
+                continue;
+            }
+    
+            if (CONSUMABLES.contains(id)) {
+                if (id == 2055) {
+                    consumablesCount.merge(id, 1, Integer::sum);
+                } else {
+                    int count = consumablesCount.getOrDefault(id, 0);
+                    if (count < 2) {
+                        consumablesCount.put(id, count + 1);
+                    }
+                }
+                continue;
+            }
+    
+            genericItem = id;
         }
-        return list;
+    
+        if (trinket == null) {
+            trinket = 3340;
+        }
+    
+        List<Integer> result = new ArrayList<>();
+    
+        for (Map.Entry<Integer, Integer> e : consumablesCount.entrySet()) {
+            for (int i = 0; i < e.getValue(); i++) {
+                result.add(e.getKey());
+            }
+        }
+    
+        if (boots != null) result.add(boots);
+        if (trinket != null) result.add(trinket);
+        if (genericItem != null) result.add(genericItem);
+    
+        return result;
     }
 
     private static List<Integer> extractFullBuild(JSONObject buildObj) {
@@ -102,7 +147,7 @@ public record BuildSignature(
         return new ArrayList<>(ordered);
     }
 
-    private static List<Integer> extractCore(List<Integer> fullBuild, int suppItem) {
+    private static List<Integer> extractCore(List<Integer> fullBuild) {
         Integer first = null, second = null;
         for (Integer id : fullBuild) {
             if (id == null || id == 0 || BOOTS.contains(id) || SUPPORT_ITEMS.contains(id)) continue;
@@ -112,11 +157,7 @@ public record BuildSignature(
 
         List<Integer> core = new ArrayList<>();
         if (first != null) core.add(first);
-        if (suppItem != 0) {
-            if (first == null || !Objects.equals(first, suppItem)) core.add(suppItem);
-        } else if (second != null) {
-            core.add(second);
-        }
+        if (second != null) core.add(second);
         return core;
     }
 

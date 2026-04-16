@@ -85,9 +85,9 @@ public class BuildFilter {
         return sb.toString();
     }
 
-    public String toKey(ChampionBuildService.Strategy strategy) {
+    public String toKey() {
         String raw = champion + "|" + val(lane) + "|" + val(queue) + "|" + val(rank) + "|"
-                + val(patch) + "|" + val(region) + "|" + strategy.name();
+                + val(patch) + "|" + val(region);
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 

@@ -3,17 +3,28 @@ package com.safjnest;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.build.BuildFilter;
+import com.safjnest.lol.build.ChampionBuild;
+import com.safjnest.lol.build.ChampionBuildService;
+import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.util.SafJNest;  
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
+
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 
 @SpringBootApplication
@@ -53,9 +64,21 @@ public class App {
         }
         */
 
+        // LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.SG2.toRegionShard(), "SG2_145570341");
+        // Tracker.analyzeMatchHistory(match).complete();
 
-        bot = new Bot();
-        bot.il_risveglio_della_bestia();
+        // BuildFilter filter = new BuildFilter()
+        // .setChampion(412)
+        // .setLane(LaneType.UTILITY)
+        // .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+        // .setPatch("16.7");
+
+        // new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(3).forEach(ChampionBuild::print);
+
+
+
+       bot = new Bot();
+       bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {

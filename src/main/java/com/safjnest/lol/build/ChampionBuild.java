@@ -8,10 +8,9 @@ import java.util.List;
 
 public record ChampionBuild(
         BuildFilter filter,
-        ChampionBuildService.Strategy strategy,
         List<Integer> starter,
-        int boots,
-        int suppItem,
+        List<SlotOption> boots,
+        List<SlotOption> suppItems,
         List<Integer> core,
         List<List<SlotOption>> slots,
         String spellOrder,
@@ -35,7 +34,7 @@ public record ChampionBuild(
         JSONObject json = new JSONObject();
         json.put("starter", new JSONArray(starter));
         json.put("boots", boots);
-        json.put("suppItem", suppItem);
+        json.put("suppItems", suppItems);
         json.put("core", new JSONArray(core));
         json.put("spellOrder", spellOrder);
         json.put("games", games);
@@ -48,6 +47,14 @@ public record ChampionBuild(
             slotsArr.put(optArr);
         }
         json.put("slots", slotsArr);
+
+        JSONArray bootsArr = new JSONArray();
+        boots.forEach(b -> bootsArr.put(b.toJson()));
+        json.put("boots", bootsArr);
+
+        JSONArray suppItemsArr = new JSONArray();
+        suppItems.forEach(s -> suppItemsArr.put(s.toJson()));
+        json.put("suppItems", suppItemsArr);
 
         if (runes != null) {
             json.put("runes", new JSONObject()
@@ -62,7 +69,7 @@ public record ChampionBuild(
         return BuildUtils.toBase64(json.toString());
     }
 
-    public static ChampionBuild decode(String b64, BuildFilter filter, ChampionBuildService.Strategy strategy) {
+    public static ChampionBuild decode(String b64, BuildFilter filter) {
         JSONObject json = new JSONObject(BuildUtils.fromBase64(b64));
 
         List<Integer> starter = BuildUtils.toIntList(json.getJSONArray("starter"));
@@ -85,15 +92,33 @@ public record ChampionBuild(
                     r.getInt("secondaryTree"), r.getString("secondaryRunes"), r.getString("statShards"));
         }
 
-        return new ChampionBuild(filter, strategy, starter,
-                json.getInt("boots"), json.getInt("suppItem"), core, slots,
+        JSONArray bootsArr = json.getJSONArray("boots");
+        List<SlotOption> boots = new ArrayList<>();
+        for (int i = 0; i < bootsArr.length(); i++) {
+            boots.add(SlotOption.fromJson(bootsArr.getJSONObject(i)));
+        }
+
+        JSONArray suppItemArr = json.getJSONArray("suppItem");
+        List<SlotOption> suppItem = new ArrayList<>();
+        for (int i = 0; i < suppItemArr.length(); i++) {
+            suppItem.add(SlotOption.fromJson(suppItemArr.getJSONObject(i)));
+        }
+
+
+        return new ChampionBuild(filter, starter,
+                boots, suppItem, core, slots,
                 json.getString("spellOrder"), runes, json.getInt("games"), json.getDouble("winrate"));
     }
 
     public void print() {
         System.out.printf("=== ChampionBuild === games=%d winrate=%.1f%%%n", games, winrate * 100);
         System.out.println("starter=" + BuildUtils.toItemName(starter));
-        System.out.println("boots=" + boots + (suppItem != 0 ? " | supp=" + suppItem : ""));
+        for (SlotOption boot : boots) {
+            System.out.println("boot=" + BuildUtils.toItemName(boot.itemId()) + " " + boot.matches() + " matches " + boot.winrate() * 100 + "%");
+        }
+        for (SlotOption suppItem : suppItems) {
+            System.out.println("suppItem=" + BuildUtils.toItemName(suppItem.itemId()) + " " + suppItem.matches() + " matches " + suppItem.winrate() * 100 + "%");
+        }
         System.out.println("core=" + BuildUtils.toItemName(core));
         for (int i = 0; i < slots.size(); i++) {
             System.out.println("slot " + (i + 4) + ":");

@@ -232,10 +232,7 @@ public class Tracker {
     public static ChronoTask analyzeMatchHistory(LOLMatch match) {
         return () -> {
             int summoner_match_id = LeagueDB.setMatchData(match, true);
-            if (summoner_match_id == 0) {
-                BotLogger.info("[LPTracker] Match " + match.getGameId() + " already tracked");
-                return;
-            }
+
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
@@ -468,6 +465,10 @@ public class Tracker {
                             item = items.get(event.getItemId());
                             if (item == null) continue;
 
+                            if (event.getParticipantId() == 4) {
+                                System.out.println(event.getType() + " - " + event.getTimestamp() + " - " + LeagueHandler.itemsMap.get(event.getItemId()).getName());
+                            }
+
                             if (item.getFrom() != null && item.getFrom().contains("1001")) {
                                 matchData.get(participantId).put("boots", item.getId() + "");
                                 continue;
@@ -483,6 +484,9 @@ public class Tracker {
                         case ITEM_UNDO:
                         case ITEM_SOLD:
                             item = items.get(event.getBeforeId());
+                            if (event.getParticipantId() == 4) {
+                                System.out.println(event.getType() + " - " + event.getTimestamp() + " - " + LeagueHandler.itemsMap.get(event.getItemId()).getName());
+                            }
                             if (item == null) continue;
                             if (i != 1 && item.getDepth() != 3) continue;
 
