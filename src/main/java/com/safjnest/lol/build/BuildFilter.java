@@ -72,7 +72,7 @@ public class BuildFilter {
 
     public String sql() {
         StringBuilder sb = new StringBuilder("WHERE p.champion = ").append(champion);
-        if (lane != null) 
+        if (lane != null && queue != GameQueueType.CHERRY) 
             sb.append(" AND p.lane = '").append(lane).append("'");
         if (queue != null)
             sb.append(" AND m.queue = '").append(queue).append("'");

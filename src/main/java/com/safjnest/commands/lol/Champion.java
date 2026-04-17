@@ -113,8 +113,7 @@ public class Champion extends SlashCommand {
         BuildFilter filter = new BuildFilter()
             .setChampion(champion.getId())
             .setLane(laneType)
-            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-            .setPatch("16.7");
+            .setQueue(GameQueueType.CHERRY);
 
         ChampionBuild build = new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(ChampionBuild::games).reversed()).findFirst().orElse(null);
         if (build != null) build.print();

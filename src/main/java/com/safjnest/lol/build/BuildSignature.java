@@ -32,7 +32,6 @@ public record BuildSignature(
 
         List<Integer> starterList = extractStarter(buildObj);
         List<Integer> fullBuildList = extractFullBuild(buildObj);
-
         if (suppItem == 0)
             suppItem = fullBuildList.stream().filter(SUPPORT_ITEMS::contains).findFirst().orElse(0);
 
@@ -164,7 +163,7 @@ public record BuildSignature(
     private static boolean isSkippable(int id) {
         if (id == 0 || TRINKETS.contains(id) || CONSUMABLES.contains(id)) return true;
         Item item = LeagueHandler.itemsMap.get(id);
-        if (item == null || item.getDepth() < 3) return true;
+        if (item == null || (item.getDepth() < 3 && item.getMaps().get("30") == null)) return true;
         try {
             for (String from : item.getFrom())
                 if (BOOTS.contains(Integer.parseInt(from))) return true;
