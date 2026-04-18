@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -357,6 +358,9 @@ public class Tracker {
         if (matchData.containsKey("augments"))
             json.put("augments", matchData.get("augments").split(","));
 
+        if (matchData.containsKey("prismatics")) 
+            json.put("prismatics", matchData.get("prismatics").split(","));
+
         return json.toString();
 
     }
@@ -410,8 +414,12 @@ public class Tracker {
                 }
                 matchData.get(partecipant.getPuuid()).put("perks-" + i, partecipant.getPerks().getPerkStyles().get(i).getStyle() + "," + matchData.get(partecipant.getPuuid()).get("perks-" + i));
             }
+
+            String itemsIds = partecipant.getItem0() + "," + partecipant.getItem1() + "," + partecipant.getItem2() + "," + partecipant.getItem3() + "," + partecipant.getItem4() + "," + partecipant.getItem5() + "," + partecipant.getItem6();
+            
+
             matchData.get(partecipant.getPuuid()).put("summoner_spells", partecipant.getSummoner1Id() + "," + partecipant.getSummoner2Id());
-            matchData.get(partecipant.getPuuid()).put("items", partecipant.getItem0() + "," + partecipant.getItem1() + "," + partecipant.getItem2() + "," + partecipant.getItem3() + "," + partecipant.getItem4() + "," + partecipant.getItem5() + "," + partecipant.getItem6());
+            matchData.get(partecipant.getPuuid()).put("items", itemsIds);
 
             if (match.getQueue() == GameQueueType.CHERRY) {
                 String augmentList = "";
@@ -420,6 +428,10 @@ public class Tracker {
                 if (partecipant.getPlayerAugment3() != 0) augmentList += "," + partecipant.getPlayerAugment3();
                 if (partecipant.getPlayerAugment4() != 0) augmentList += "," + partecipant.getPlayerAugment4();
 
+                List<String> prismatics = List.of(itemsIds.split(",")).stream().filter(LeagueHandler::isPrismaticItem).collect(Collectors.toList());
+                if (!prismatics.isEmpty()) {
+                    matchData.get(partecipant.getPuuid()).put("prismatics", String.join(",", prismatics));
+                }
                 matchData.get(partecipant.getPuuid()).put("augments", augmentList);
             }
 
@@ -469,8 +481,8 @@ public class Tracker {
                         case ITEM_PURCHASED:
                             item = items.get(event.getItemId());
                             if (item == null) continue;
-
-                            if (item.getFrom() != null && item.getFrom().contains("1001")) {
+                            
+                            if (LeagueHandler.isBoots(item)) {
                                 matchData.get(participantId).put("boots", item.getId() + "");
                                 continue;
                             }

@@ -81,6 +81,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
@@ -665,7 +666,7 @@ public class Test extends Command{
                 break;
             case "fixlol":
                 ChronoTask fixlol = () -> {
-                    String q = "SELECT id, game_id, region from `match` where patch_major = '16.7' order by id asc";
+                    String q = "SELECT id, game_id, region from `match` where queue = 'CHERRY' order by id desc";
                     QueryResult r = LeagueDB.get().query(q);
                     System.out.println("total match: " + r.size());
                     int aaa = 0;
@@ -687,6 +688,11 @@ public class Test extends Command{
                                     boolean exists = LeagueHandler.isMatchLocallyCached(game_id, row.getAsLeagueShard("region"));
             
                                     LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(row.getAsLeagueShard("region").toRegionShard(), game_id);
+                                    LOLTimeline timeline = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getTimeline(row.getAsLeagueShard("region").toRegionShard(), game_id);
+                                    if (timeline == null) {
+                                        System.out.println("Timeline not found");
+                                        continue;
+                                    }
                                     HashMap<String, HashMap<String, String>> matchData = Tracker.analyzeMatchBuild(match, match.getParticipants());
         
                                     for (MatchParticipant participant : match.getParticipants()) {    

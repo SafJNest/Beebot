@@ -60,6 +60,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
+import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -389,6 +390,24 @@ import com.safjnest.lol.tracker.TrackerScheduler;
             }
         }
         return avarageRank.getTier() != null ? TierType.valueOf(avarageRank.getTier().toUpperCase()) : TierType.UNRANKED;
+    }
+
+    public static boolean isBoots(Item item) {
+        boolean fromBoots = item.getFrom() != null && item.getFrom().contains("1001");
+        boolean containsBoots = item.getName().toLowerCase().contains("boots") || item.getTags().contains("Boots");
+        return fromBoots || containsBoots;
+    }
+
+    public static boolean isPrismaticItem(Item item) {
+        return String.valueOf(item.getId()).startsWith("44") && item.getId() > 440000;
+    }
+
+    public static boolean isPrismaticItem(int id) {
+        return String.valueOf(id).startsWith("44") && id > 440000;
+    }
+
+    public static boolean isPrismaticItem(String id) {
+        return isPrismaticItem(Integer.parseInt(id));
     }
 
 //   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████
