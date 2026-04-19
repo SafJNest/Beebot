@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -232,7 +233,10 @@ public class Tracker {
     public static ChronoTask analyzeMatchHistory(LOLMatch match) {
         return () -> {
             int summoner_match_id = LeagueDB.setMatchData(match, true);
-
+            if (summoner_match_id == 0) {
+                BotLogger.info("[LPTracker] Match " + match.getGameId() + " already tracked");
+                return;
+            }
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
@@ -354,6 +358,9 @@ public class Tracker {
         if (matchData.containsKey("augments"))
             json.put("augments", matchData.get("augments").split(","));
 
+        if (matchData.containsKey("prismatics")) 
+            json.put("prismatics", matchData.get("prismatics").split(","));
+
         return json.toString();
 
     }
@@ -407,8 +414,12 @@ public class Tracker {
                 }
                 matchData.get(partecipant.getPuuid()).put("perks-" + i, partecipant.getPerks().getPerkStyles().get(i).getStyle() + "," + matchData.get(partecipant.getPuuid()).get("perks-" + i));
             }
+
+            String itemsIds = partecipant.getItem0() + "," + partecipant.getItem1() + "," + partecipant.getItem2() + "," + partecipant.getItem3() + "," + partecipant.getItem4() + "," + partecipant.getItem5() + "," + partecipant.getItem6();
+            
+
             matchData.get(partecipant.getPuuid()).put("summoner_spells", partecipant.getSummoner1Id() + "," + partecipant.getSummoner2Id());
-            matchData.get(partecipant.getPuuid()).put("items", partecipant.getItem0() + "," + partecipant.getItem1() + "," + partecipant.getItem2() + "," + partecipant.getItem3() + "," + partecipant.getItem4() + "," + partecipant.getItem5() + "," + partecipant.getItem6());
+            matchData.get(partecipant.getPuuid()).put("items", itemsIds);
 
             if (match.getQueue() == GameQueueType.CHERRY) {
                 String augmentList = "";
@@ -417,6 +428,10 @@ public class Tracker {
                 if (partecipant.getPlayerAugment3() != 0) augmentList += "," + partecipant.getPlayerAugment3();
                 if (partecipant.getPlayerAugment4() != 0) augmentList += "," + partecipant.getPlayerAugment4();
 
+                List<String> prismatics = List.of(itemsIds.split(",")).stream().filter(LeagueHandler::isPrismaticItem).collect(Collectors.toList());
+                if (!prismatics.isEmpty()) {
+                    matchData.get(partecipant.getPuuid()).put("prismatics", String.join(",", prismatics));
+                }
                 matchData.get(partecipant.getPuuid()).put("augments", augmentList);
             }
 
@@ -447,6 +462,8 @@ public class Tracker {
         }
 
         LOLTimeline timeline = match.getTimeline();
+        Map<String, List<String>> matchItemData = new HashMap<>();
+
         timeline.getParticipants().forEach(partecipant -> {
             matchData.put(String.valueOf(partecipant.getParticipantId()), matchData.get(partecipant.getPuuid()));
             matchData.remove(partecipant.getPuuid());
@@ -464,41 +481,32 @@ public class Tracker {
                         case ITEM_PURCHASED:
                             item = items.get(event.getItemId());
                             if (item == null) continue;
-
-                            if (event.getParticipantId() == 4) {
-                                System.out.println(event.getType() + " - " + event.getTimestamp() + " - " + LeagueHandler.itemsMap.get(event.getItemId()).getName());
-                            }
-
-                            if (item.getFrom() != null && item.getFrom().contains("1001")) {
+                            
+                            if (LeagueHandler.isBoots(item)) {
                                 matchData.get(participantId).put("boots", item.getId() + "");
                                 continue;
                             }
 
                             if (i != 1 && item.getDepth() != 3) continue;
 
-                            String itemList = matchData.get(participantId).getOrDefault(itemType, "");
-                            if (itemList.isEmpty()) itemList = item.getId() + "";
-                            else itemList += "," + item.getId();
-                            matchData.get(participantId).put(itemType, itemList);
+                            List<String> itemList = matchItemData.computeIfAbsent(participantId + "-" + itemType, k -> new ArrayList<>());
+                            itemList.add(item.getId() + "");
+                            matchItemData.put(participantId + "-" + itemType, itemList);
+                            matchData.get(participantId).put(itemType, String.join(",", itemList));
+                    
                             break;
                         case ITEM_UNDO:
                         case ITEM_SOLD:
                             item = items.get(event.getBeforeId());
-                            if (event.getParticipantId() == 4) {
-                                System.out.println(event.getType() + " - " + event.getTimestamp() + " - " + LeagueHandler.itemsMap.get(event.getItemId()).getName());
-                            }
                             if (item == null) continue;
                             if (i != 1 && item.getDepth() != 3) continue;
-
-                            String[] itemsList = matchData.get(participantId).get(itemType).split(",");
-                            String undoList = "";
-                            for (String itemStr : itemsList) {
-                                if (!itemStr.equals(item.getId() + "")) {
-                                    if (!undoList.isEmpty()) undoList += ",";
-                                    undoList += itemStr;
-                                }
+                    
+                            List<String> currentList = matchItemData.get(participantId + "-" + itemType);
+                            if (currentList != null) {
+                                currentList.remove(item.getId() + "");
                             }
-                            matchData.get(participantId).put(itemType, undoList);
+                            matchData.get(participantId).put(itemType, String.join(",", currentList));
+                    
                             break;
                         case SKILL_LEVEL_UP:
                             String skillList = matchData.get(participantId).getOrDefault("skill_order", "");

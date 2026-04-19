@@ -395,6 +395,24 @@ import com.safjnest.lol.tracker.TrackerScheduler;
         return avarageRank.getTier() != null ? TierType.valueOf(avarageRank.getTier().toUpperCase()) : TierType.UNRANKED;
     }
 
+    public static boolean isBoots(Item item) {
+        boolean fromBoots = item.getFrom() != null && item.getFrom().contains("1001");
+        boolean containsBoots = item.getName().toLowerCase().contains("boots") || item.getTags().contains("Boots");
+        return fromBoots || containsBoots;
+    }
+
+    public static boolean isPrismaticItem(Item item) {
+        return String.valueOf(item.getId()).startsWith("44") && item.getId() > 440000;
+    }
+
+    public static boolean isPrismaticItem(int id) {
+        return String.valueOf(id).startsWith("44") && id > 440000;
+    }
+
+    public static boolean isPrismaticItem(String id) {
+        return isPrismaticItem(Integer.parseInt(id));
+    }
+
 //   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████
 //  ███       ███    ███   ███    ███ ███   ▀███      ▀█████████▄   ███    ███   ███  ███▀▀▀██▄   ███    ███   ███    ███
 //  ███       ███    ███   ███    ███ ███    ███         ▀███▀▀██   ███    ███   ███▌ ███   ███   ███    █▀    ███    █▀
@@ -1163,6 +1181,7 @@ import com.safjnest.lol.tracker.TrackerScheduler;
         data.put("platform", shard.toRegionShard());
         data.put("gameid", gameId);   
         DataCall.getCacheProvider().clear(URLEndpoint.V5_MATCH, data);
+        DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, data);
     }
 
 //     ▄████████    ▄███████▄  ▄█        ▄█      ███

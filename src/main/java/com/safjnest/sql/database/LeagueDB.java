@@ -368,7 +368,7 @@ public class LeagueDB extends AbstractDB {
 
 
     public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
-        return instance.query("SELECT riot_id, puuid FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND region = '" + shard + "' LIMIT 25;");
+        return instance.query("SELECT riot_id, puuid FROM summoner WHERE riot_search LIKE CONCAT(LOWER(REPLACE('" + query + "', ' ', '')), '%') AND region = '" + shard + "' LIMIT 25;");
     }
 
 

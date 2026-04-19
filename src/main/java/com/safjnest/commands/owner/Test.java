@@ -81,6 +81,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
@@ -665,35 +666,57 @@ public class Test extends Command{
                 break;
             case "fixlol":
                 ChronoTask fixlol = () -> {
-                    String q = "SELECT id, game_id, region from `match` where region = 'EUW1' and id in (select m.id from `match` m join participant p on m.id = p.match_id where p.q = 0 and p.w = 0 and p.e = 0 and p.r = 0 and p.d = 0 and p.f = 0) order by game_id asc";
+                    String q = "SELECT id, game_id, region from `match` where queue = 'CHERRY' order by id desc";
                     QueryResult r = LeagueDB.get().query(q);
                     System.out.println("total match: " + r.size());
                     int aaa = 0;
-                    for(QueryRecord row : r){
+                    HashMap<String, List<QueryRecord>> sharded = new HashMap<>();
+                    for (QueryRecord row : r){
                         String region = row.getAsLeagueShard("region").name();
-                        String game_id = region + "_"+row.get("game_id");
-                        try {
-                            boolean exists = LeagueHandler.isMatchLocallyCached(game_id, row.getAsLeagueShard("region"));
-    
-                            LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(row.getAsLeagueShard("region").toRegionShard(), game_id);
-    
-                            for (MatchParticipant participant : match.getParticipants()) {    
-                                int sumId = LeagueDB.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
-                                q = "UPDATE participant SET q = " + participant.getSpell1Casts() + ", w = " + participant.getSpell2Casts() + ", e = " + participant.getSpell3Casts() + ", r = " + participant.getSpell4Casts() + ", d = " + participant.getSummoner1Casts() + ", f = " + participant.getSummoner2Casts() + " WHERE match_id = " + row.get("id") + " AND summoner_id = " + sumId + ";";
-                                LeagueDB.get().query(q);
-                            }
-                            aaa++; 
-                            System.out.println("total match: " + aaa + " / " + r.size() + " (" + row.get("id") + " - " + game_id + ")");
-                            if (!exists) {
-                                Thread.sleep(400);
-                                LeagueHandler.clearMatchCache(game_id, row.getAsLeagueShard("region"));
-                            }
-                        } catch (Exception eeeee) {
-                            eeeee.printStackTrace();
-                            BotLogger.error("Match not found: " + game_id + " " + row.getAsLeagueShard("region").toRegionShard());
+                        if (!sharded.containsKey(region)) {
+                            sharded.put(region, new ArrayList<>());
                         }
-    
+                        sharded.get(region).add(row);
                     }
+
+                    for(String region : sharded.keySet()) {
+                        ChronoTask fixlolRegion = () -> {
+                            int bbb = 0;
+                            for(QueryRecord row : sharded.get(region)){
+                                String game_id = region + "_" + row.get("game_id");
+                                try {
+                                    boolean exists = LeagueHandler.isMatchLocallyCached(game_id, row.getAsLeagueShard("region"));
+            
+                                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(row.getAsLeagueShard("region").toRegionShard(), game_id);
+                                    LOLTimeline timeline = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getTimeline(row.getAsLeagueShard("region").toRegionShard(), game_id);
+                                    if (timeline == null) {
+                                        System.out.println("Timeline not found");
+                                        continue;
+                                    }
+                                    HashMap<String, HashMap<String, String>> matchData = Tracker.analyzeMatchBuild(match, match.getParticipants());
+        
+                                    for (MatchParticipant participant : match.getParticipants()) {    
+                                        int sumId = LeagueDB.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
+                                        String build = Tracker.createJSONBuild(matchData.get(participant.getPuuid()));
+                                        String q1 = "UPDATE participant SET build = '" + build  + "' WHERE match_id = " + row.get("id") + " AND summoner_id = " + sumId + ";";
+                                        LeagueDB.get().query(q1);
+                                    }
+                                    bbb++; 
+                                    System.out.println("total match: " + bbb + " / " + sharded.get(region).size() + " (" + row.get("id") + " - " + game_id + ")");
+                                    if (!exists) {
+                                        Thread.sleep(400);
+                                        LeagueHandler.clearMatchCache(game_id, row.getAsLeagueShard("region"));
+                                    }
+                                } catch (Exception eeeee) {
+                                    eeeee.printStackTrace();
+                                    BotLogger.error("Match not found: " + game_id + " " + row.getAsLeagueShard("region").toRegionShard());
+                                }
+            
+                            }
+                        };
+                        fixlolRegion.queue();
+                    }
+
                 };
                 fixlol.queue();
             break;
