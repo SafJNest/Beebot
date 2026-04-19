@@ -13,6 +13,7 @@ import com.safjnest.util.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public class TrackerScheduler {
@@ -71,9 +72,9 @@ public class TrackerScheduler {
         }
     }
 
-    public static void retriveSampleGames() {
+    public static void retriveSampleGames(GameQueueType queue) {
         TrackerState.awaitCondition(Priority.LOW);
-        Tracker.retriveSampleGames();
+        Tracker.retriveSampleGames(queue);
     }
 
     public static void retriveHighEloEntries() {

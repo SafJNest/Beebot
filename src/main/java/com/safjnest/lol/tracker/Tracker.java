@@ -582,7 +582,7 @@ public class Tracker {
         return item.getFrom().contains("3867") ? item : null;
     }
 
-    public static void retriveSampleGames() {
+    public static void retriveSampleGames(GameQueueType queue) {
         BotLogger.info("[LPTracker] Pushing sample matches");
         String currentPatch = LeagueHandler.getVersion().split("\\.")[0];
     
@@ -611,7 +611,7 @@ public class Tracker {
                         for (int start = 0; matchIds.size() == start; start += 100) {
                             matchIds.addAll(
                                 summoner.getLeagueGames()
-                                    .withQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                                    .withQueue(queue)
                                     .withCount(100)
                                     .withStartTime(splitRange[0] / 1000L)
                                     .withBeginIndex(start)
