@@ -67,18 +67,17 @@ public class App {
         // LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.SG2.toRegionShard(), "SG2_145570341");
         // Tracker.analyzeMatchHistory(match).complete();
 
-        // BuildFilter filter = new BuildFilter()
-        // .setChampion(412)
-        // .setLane(LaneType.UTILITY)
-        // .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-        // .setPatch("16.7");
+        BuildFilter filter = new BuildFilter()
+        .setChampion(27)
+        .setLane(LaneType.UTILITY)
+        .setQueue(GameQueueType.CHERRY);
 
-        // new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(3).forEach(ChampionBuild::print);
-
+        new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(1).forEach(ChampionBuild::print);
 
 
-       bot = new Bot();
-       bot.il_risveglio_della_bestia();
+
+    //    bot = new Bot();
+    //    bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {

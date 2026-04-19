@@ -1,6 +1,10 @@
 package com.safjnest.lol.build;
 
 import com.safjnest.lol.LeagueHandler;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,27 +19,28 @@ public record BuildSignature(
         int suppItem,
         String core,
         String fullBuild,
-        String spellOrder
+        String spellOrder,
+        String prismatics
 ) {
 
     private static final Set<Integer> BOOTS = Set.of(3006, 3009, 3020, 3047, 3111, 3117, 3158);
     private static final Set<Integer> SUPPORT_ITEMS = Set.of(3869, 3870, 3871, 3872, 3873, 3876, 3877, 3901, 3902, 3903);
-    private static final Set<Integer> TRINKETS = Set.of(3340, 3364, 3363, 3465);
+    private static final Set<Integer> TRINKETS = Set.of(3340, 3364, 3363, 3465, 3348);
     private static final Set<Integer> CONSUMABLES = Set.of(2003, 2055, 2138, 2139, 2140, 2010);
 
-    public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson) {
+    public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson, JSONArray prismaticsJson, BuildFilter filter) {
         JSONObject buildObj = buildJson.optJSONObject("build");
         if (buildObj == null || buildObj.optJSONArray("build") == null) return null;
 
         int boots = BuildUtils.readInt(buildObj, "boots");
         int suppItem = BuildUtils.readInt(buildObj, "support_item");
 
-        List<Integer> starterList = extractStarter(buildObj);
+        List<Integer> starterList = extractStarter(filter, buildObj);
         List<Integer> fullBuildList = extractFullBuild(buildObj);
         if (suppItem == 0)
             suppItem = fullBuildList.stream().filter(SUPPORT_ITEMS::contains).findFirst().orElse(0);
 
-        List<Integer> coreList = extractCore(fullBuildList);
+        List<Integer> coreList = extractCore(fullBuildList, starterList);
         if (boots == 0 || coreList.size() < 2) return null;
 
         Collections.sort(starterList);
@@ -47,13 +52,24 @@ public record BuildSignature(
                 ? spellRaw.substring(0, 18)
                 : spellRaw + "0".repeat(18 - spellRaw.length());
 
+        String prismatics = "";
+        if (prismaticsJson != null && prismaticsJson.length() > 0) {
+            List<Integer> prismaticIds = new ArrayList<>();
+            for (int i = 0; i < prismaticsJson.length(); i++) {
+                int id = BuildUtils.parseAnyInt(prismaticsJson.getInt(i));
+                if (id != 0) prismaticIds.add(id);
+            }
+            if (!prismaticIds.isEmpty()) prismatics = BuildUtils.joinInts(prismaticIds);
+        }
+
         return new BuildSignature(
                 BuildUtils.joinInts(starterList),
                 boots,
                 suppItem,
                 BuildUtils.joinInts(coreList),
                 BuildUtils.joinInts(fullBuildList),
-                spellOrder
+                spellOrder,
+                prismatics
         );
     }
 
@@ -73,12 +89,19 @@ public record BuildSignature(
 
     public static BuildSignature decode(String key) {
         String[] p = BuildUtils.fromBase64(key).split("\\|", -1);
-        return new BuildSignature(p[0], Integer.parseInt(p[1]), Integer.parseInt(p[2]), p[3], p[3], p[4]);
+        return new BuildSignature(
+                p[0],
+                Integer.parseInt(p[1]),
+                Integer.parseInt(p[2]),
+                p[3],
+                p[4],
+                p[5],
+                p.length > 6 ? p[6] : "");
     }
 
     // -------------------------------------------------------------------------
 
-    private static List<Integer> extractStarter(JSONObject buildObj) {
+    private static List<Integer> extractStarter(BuildFilter filter, JSONObject buildObj) {
         JSONArray arr = buildObj.optJSONArray("starter");
         if (arr == null) return Collections.emptyList();
     
@@ -115,7 +138,7 @@ public record BuildSignature(
             genericItem = id;
         }
     
-        if (trinket == null) {
+        if (trinket == null && filter.queue() != GameQueueType.CHERRY) {
             trinket = 3340;
         }
     
@@ -146,10 +169,11 @@ public record BuildSignature(
         return new ArrayList<>(ordered);
     }
 
-    private static List<Integer> extractCore(List<Integer> fullBuild) {
+    private static List<Integer> extractCore(List<Integer> fullBuild, List<Integer> starterList) {
         Integer first = null, second = null;
         for (Integer id : fullBuild) {
-            if (id == null || id == 0 || BOOTS.contains(id) || SUPPORT_ITEMS.contains(id)) continue;
+            Item item = LeagueHandler.itemsMap.get(id);
+            if (id == null || id == 0 || starterList.contains(id) || LeagueHandler.isBoots(item) || SUPPORT_ITEMS.contains(id) || LeagueHandler.isPrismaticItem(item)) continue;
             if (first == null) { first = id; }
             else if (!Objects.equals(first, id)) { second = id; break; }
         }

@@ -13,6 +13,7 @@ public record ChampionBuild(
         List<SlotOption> suppItems,
         List<Integer> core,
         List<List<SlotOption>> slots,
+        List<List<SlotOption>> prismatics,
         String spellOrder,
         RuneSignature runes,
         int games,
@@ -104,9 +105,18 @@ public record ChampionBuild(
             suppItem.add(SlotOption.fromJson(suppItemArr.getJSONObject(i)));
         }
 
+        JSONArray prismaticsArr = json.getJSONArray("prismatics");
+        List<List<SlotOption>> prismatics = new ArrayList<>();
+        for (int i = 0; i < prismaticsArr.length(); i++) {
+            JSONArray optArr = prismaticsArr.getJSONArray(i);
+            List<SlotOption> options = new ArrayList<>();
+            for (int j = 0; j < optArr.length(); j++) options.add(SlotOption.fromJson(optArr.getJSONObject(j)));
+            prismatics.add(options);
+        }
+
 
         return new ChampionBuild(filter, starter,
-                boots, suppItem, core, slots,
+                boots, suppItem, core, slots, prismatics,
                 json.getString("spellOrder"), runes, json.getInt("games"), json.getDouble("winrate"));
     }
 
@@ -123,6 +133,11 @@ public record ChampionBuild(
         for (int i = 0; i < slots.size(); i++) {
             System.out.println("slot " + (i + 4) + ":");
             for (SlotOption opt : slots.get(i))
+                System.out.printf("  item=%-6s  %d matches  %.1f%% WR%n", BuildUtils.toItemName(opt.itemId()), opt.matches(), opt.winrate() * 100);
+        }
+        for (List<SlotOption> prismatic : prismatics) {
+            System.out.println("prismatic:");
+            for (SlotOption opt : prismatic)
                 System.out.printf("  item=%-6s  %d matches  %.1f%% WR%n", BuildUtils.toItemName(opt.itemId()), opt.matches(), opt.winrate() * 100);
         }
         System.out.println("spellOrder=" + spellOrder);
