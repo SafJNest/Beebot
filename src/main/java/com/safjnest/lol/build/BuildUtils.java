@@ -4,6 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.AugmentData;
 
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
@@ -65,6 +66,14 @@ public class BuildUtils {
     public static String toItemName(int id) {
         Item item = LeagueHandler.itemsMap.get(id);
         return item != null ? item.getName() : null;
+    }
+
+    public static String toAugmentName(int id) {
+        String name = "";
+        AugmentData item = LeagueHandler.getAugments().stream().filter(a -> a.getId().equals(String.valueOf(id))).findFirst().orElse(null);
+        if (item != null) name += item.getName() + ", ";
+        else name += "Unknown Augment (" + id + ")";
+        return name;
     }
 
     public static String toItemName(String ids) {

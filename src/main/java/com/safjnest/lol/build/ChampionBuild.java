@@ -14,6 +14,7 @@ public record ChampionBuild(
         List<Integer> core,
         List<List<SlotOption>> slots,
         List<List<SlotOption>> prismatics,
+        List<SlotOption> augments,
         String spellOrder,
         RuneSignature runes,
         int games,
@@ -114,9 +115,15 @@ public record ChampionBuild(
             prismatics.add(options);
         }
 
+        JSONArray augmentsArr = json.getJSONArray("augments");
+        List<SlotOption> augments = new ArrayList<>();
+        for (int i = 0; i < augmentsArr.length(); i++) {
+            augments.add(SlotOption.fromJson(augmentsArr.getJSONObject(i)));
+        }
+
 
         return new ChampionBuild(filter, starter,
-                boots, suppItem, core, slots, prismatics,
+                boots, suppItem, core, slots, prismatics, augments,
                 json.getString("spellOrder"), runes, json.getInt("games"), json.getDouble("winrate"));
     }
 
@@ -140,6 +147,11 @@ public record ChampionBuild(
             for (SlotOption opt : prismatic)
                 System.out.printf("  item=%-6s  %d matches  %.1f%% WR%n", BuildUtils.toItemName(opt.itemId()), opt.matches(), opt.winrate() * 100);
         }
+
+        System.out.println("augment:");
+        for (SlotOption opt : augments)
+            System.out.printf("  item=%-6s  %d matches  %.1f%% WR%n", BuildUtils.toAugmentName(opt.itemId()), opt.matches(), opt.winrate() * 100);
+        
         System.out.println("spellOrder=" + spellOrder);
         if (runes != null) {
             System.out.println("keystone=" + runes.keystone() + " | tree=" + runes.primaryTree());

@@ -3,8 +3,6 @@ package com.safjnest.lol.build;
 import com.safjnest.lol.LeagueHandler;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -20,7 +18,8 @@ public record BuildSignature(
         String core,
         String fullBuild,
         String spellOrder,
-        String prismatics
+        String prismatics,
+        String augments
 ) {
 
     private static final Set<Integer> BOOTS = Set.of(3006, 3009, 3020, 3047, 3111, 3117, 3158);
@@ -28,7 +27,7 @@ public record BuildSignature(
     private static final Set<Integer> TRINKETS = Set.of(3340, 3364, 3363, 3465, 3348);
     private static final Set<Integer> CONSUMABLES = Set.of(2003, 2055, 2138, 2139, 2140, 2010);
 
-    public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson, JSONArray prismaticsJson, BuildFilter filter) {
+    public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson, JSONArray prismaticsJson, JSONArray augmentsJson, BuildFilter filter) {
         JSONObject buildObj = buildJson.optJSONObject("build");
         if (buildObj == null || buildObj.optJSONArray("build") == null) return null;
 
@@ -52,6 +51,16 @@ public record BuildSignature(
                 ? spellRaw.substring(0, 18)
                 : spellRaw + "0".repeat(18 - spellRaw.length());
 
+        String augments = "";
+        if (augmentsJson != null && augmentsJson.length() > 0) {
+            List<Integer> augmentIds = new ArrayList<>();
+            for (int i = 0; i < augmentsJson.length(); i++) {
+                int id = BuildUtils.parseAnyInt(augmentsJson.opt(i));
+                if (id != 0) augmentIds.add(id);
+            }
+            if (!augmentIds.isEmpty()) augments = BuildUtils.joinInts(augmentIds);
+        }
+
         String prismatics = "";
         if (prismaticsJson != null && prismaticsJson.length() > 0) {
             List<Integer> prismaticIds = new ArrayList<>();
@@ -69,7 +78,8 @@ public record BuildSignature(
                 BuildUtils.joinInts(coreList),
                 BuildUtils.joinInts(fullBuildList),
                 spellOrder,
-                prismatics
+                prismatics,
+                augments
         );
     }
 
@@ -96,7 +106,8 @@ public record BuildSignature(
                 p[3],
                 p[4],
                 p[5],
-                p.length > 6 ? p[6] : "");
+                p.length > 6 ? p[6] : "",
+                p.length > 7 ? p[7] : "");
     }
 
     // -------------------------------------------------------------------------
