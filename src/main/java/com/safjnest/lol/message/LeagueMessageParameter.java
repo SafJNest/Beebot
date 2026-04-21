@@ -2,6 +2,7 @@ package com.safjnest.lol.message;
 
 import java.util.List;
 
+import com.safjnest.lol.GameQueueTypeUtils;
 import com.safjnest.lol.LeagueHandler;
 
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -209,7 +210,7 @@ public class LeagueMessageParameter {
   }
 
   public boolean isDuo() {
-    return laneType == LaneType.BOT || laneType == LaneType.UTILITY || queueType == GameQueueType.CHERRY;
+    return laneType == LaneType.BOT || laneType == LaneType.UTILITY || GameQueueTypeUtils.isCherry(queueType);
   }
 
   public long getTimeStart() {

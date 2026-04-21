@@ -15,7 +15,9 @@ import org.json.JSONObject;
 
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.lol.GameQueueTypeUtils;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.GameQueueTypeUtils;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
@@ -421,7 +423,7 @@ public class Tracker {
             matchData.get(partecipant.getPuuid()).put("summoner_spells", partecipant.getSummoner1Id() + "," + partecipant.getSummoner2Id());
             matchData.get(partecipant.getPuuid()).put("items", itemsIds);
 
-            if (match.getQueue() == GameQueueType.CHERRY) {
+            if (GameQueueTypeUtils.isCherry(match.getQueue())) {
                 String augmentList = "";
                 if (partecipant.getPlayerAugment1() != 0) augmentList = partecipant.getPlayerAugment1() + "";
                 if (partecipant.getPlayerAugment2() != 0) augmentList += "," + partecipant.getPlayerAugment2();

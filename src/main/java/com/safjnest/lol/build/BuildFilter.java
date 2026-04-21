@@ -8,6 +8,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import com.safjnest.lol.GameQueueTypeUtils;
+
 public class BuildFilter {
 
     public enum RankBehavior { 
@@ -72,7 +74,7 @@ public class BuildFilter {
 
     public String sql() {
         StringBuilder sb = new StringBuilder("WHERE p.champion = ").append(champion);
-        if (lane != null && queue != GameQueueType.CHERRY) 
+        if (lane != null && GameQueueTypeUtils.hasLane(queue)) 
             sb.append(" AND p.lane = '").append(lane).append("'");
         if (queue != null)
             sb.append(" AND m.queue = '").append(queue).append("'");

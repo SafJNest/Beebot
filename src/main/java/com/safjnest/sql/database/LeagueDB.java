@@ -32,6 +32,7 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
+import com.safjnest.lol.GameQueueTypeUtils;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.build.BuildFilter;
 import com.safjnest.lol.build.ChampionBuild;
@@ -641,7 +642,7 @@ public class LeagueDB extends AbstractDB {
             ? "LIMIT " + limit + " OFFSET " + offset
             : "";
 
-        if (queue == GameQueueType.CHERRY)
+        if (GameQueueTypeUtils.isCherry(queue))
                 lane = null;
 
         String timeFilter = timeStart != 0
@@ -668,7 +669,7 @@ public class LeagueDB extends AbstractDB {
         GameQueueType queue = parameter.getQueueType();
         LaneType lane = parameter.getLaneType();
 
-        if (queue == GameQueueType.CHERRY)
+        if (GameQueueTypeUtils.isCherry(queue))
                 lane = null;
 
         String timeFilter = timeStart != 0

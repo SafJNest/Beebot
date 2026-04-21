@@ -769,7 +769,7 @@ import com.safjnest.lol.tracker.TrackerScheduler;
     }
 
     public static LeagueEntry getEntry(GameQueueType type, String puuid, LeagueShard shard) {
-        if (type == GameQueueType.CHERRY) type = GameQueueType.RANKED_SOLO_5X5;
+        if (GameQueueTypeUtils.isCherry(type)) type = GameQueueType.RANKED_SOLO_5X5;
         LeagueEntry def = null;
         try {
             List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);

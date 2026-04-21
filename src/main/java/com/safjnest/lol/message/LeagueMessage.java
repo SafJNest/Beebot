@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.lol.GameQueueTypeUtils;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Accumulator;
 import com.safjnest.lol.model.MatchData;
@@ -1352,7 +1353,7 @@ public class LeagueMessage {
         else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-        if (parameter.getQueueType() != GameQueueType.CHERRY) rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
+        if (parameter.getQueueType() != null && GameQueueTypeUtils.hasLane(parameter.getQueueType())) rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
 
         rows.add(LeagueMessageUtils.getOpggQueueTypeButtons(ButtonStyle.SECONDARY, parameter.getQueueType()));
         rows.add(ActionRow.of(allSeason, currentSplit, previousSplit));
@@ -1467,7 +1468,7 @@ public class LeagueMessage {
                     List<Integer> allyChamps = match.participants.stream()
                         .filter(p -> p.team == team)
                         .filter(p -> p.id != participant.id)
-                        .filter(p -> (parameter.getQueueType() == GameQueueType.CHERRY && p.subTeam == participant.subTeam) || p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
+                        .filter(p -> (GameQueueTypeUtils.isCherry(parameter.getQueueType()) && p.subTeam == participant.subTeam) || p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
                         .map(p -> p.champion)
                         .collect(Collectors.toList());
                     
@@ -1499,7 +1500,7 @@ public class LeagueMessage {
             return eb;
         }
 
-        boolean isArena = parameter.getQueueType() == GameQueueType.CHERRY;
+        boolean isArena = GameQueueTypeUtils.isCherry(parameter.getQueueType());
 
 
         LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
@@ -1623,7 +1624,7 @@ public class LeagueMessage {
                         .sum();
                     enemyTeamKills = match.participants.stream()
                         .filter(p -> {
-                            if (parameter.getQueueType() != GameQueueType.CHERRY)
+                            if (!GameQueueTypeUtils.isCherry(parameter.getQueueType()))
                                 return  p.team != team;
                             return false;
                         })
