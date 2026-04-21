@@ -23,6 +23,7 @@ import com.safjnest.util.twitch.TwitchClient;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
@@ -69,8 +70,8 @@ public class App {
 
         BuildFilter filter = new BuildFilter()
         .setChampion(27)
-        .setLane(LaneType.UTILITY)
-        .setQueue(GameQueueType.CHERRY);
+        .setLane(LaneType.TOP);
+
 
         new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(1).forEach(ChampionBuild::print);
 

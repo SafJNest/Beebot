@@ -118,29 +118,41 @@ public class Champion extends SlashCommand {
         ChampionBuild build = new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(ChampionBuild::games).reversed()).findFirst().orElse(null);
         if (build != null) build.print();
 
-
         eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + LeagueHandler.getVersion() + ")**");
-        
+
+        if (build == null) {
+            eb.addField("Build", "No aggregated build data for this filter yet.", false);
+            eb.setColor(Bot.getColor());
+            champName = LeagueHandler.transposeChampionNameForDataDragon(champName);
+            eb.setThumbnail(LeagueHandler.getChampionProfilePic(champName));
+            eb.setFooter("We are doing our best to analyze more game as possible everyday to suggest you the best builds!", "https://cdn.discordapp.com/emojis/776346468700389436.png");
+            event.getHook().editOriginalEmbeds(eb.build()).queue();
+            return;
+        }
+
         String msg = "";
-        for(String skill : build.getSkillOrder()){
-            switch (skill){
+        for (String skill : build.getSkillOrder()) {
+            switch (skill) {
                 case "1":
-                msg +=  CustomEmojiHandler.getFormattedEmoji("q_") + " > ";
-                break;
+                    msg += CustomEmojiHandler.getFormattedEmoji("q_") + " > ";
+                    break;
                 case "2":
                     msg += CustomEmojiHandler.getFormattedEmoji("w_") + " > ";
                     break;
-                case "3":  
+                case "3":
                     msg += CustomEmojiHandler.getFormattedEmoji("e_") + " > ";
                     break;
-                case "4":      
+                case "4":
                     msg += CustomEmojiHandler.getFormattedEmoji("r_") + " > ";
                     break;
-
+                default:
+                    break;
             }
         }
-        
-        eb.addField("**Skill Order**", msg.substring(0, msg.length()-2), false);
+        if (msg.length() >= 3)
+            eb.addField("**Skill Order**", msg.substring(0, msg.length() - 2), false);
+        else
+            eb.addField("**Skill Order**", "—", false);
         //eb.addField("**Summoner Spells**", CustomEmojiHandler.getFormattedEmoji(build.getD() + "_") + " " + CustomEmojiHandler.getFormattedEmoji(build.getF() + "_") + "\n​\n", false);//DO NOT TOUCH \N\N THERE IS AN INVISIBLEAR CHARFATERT
 
         /*

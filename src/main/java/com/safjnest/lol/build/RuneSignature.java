@@ -3,17 +3,16 @@ package com.safjnest.lol.build;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public record RuneSignature(
         int primaryTree,
         int keystone,
-        String primaryRunes,
+        List<Integer> primaryRunes,
         int secondaryTree,
-        String secondaryRunes,
-        String statShards
+        List<Integer> secondaryRunes,
+        List<Integer> statShards
 ) {
 
     public static RuneSignature from(JSONObject runesJson) {
@@ -23,33 +22,42 @@ public record RuneSignature(
 
         if (primary == null || primary.length() < 2 || secondary == null) return null;
 
-        String shards = "";
+        List<Integer> statList = new ArrayList<>();
         if (stats != null) {
-            shards = IntStream.range(0, stats.length()).mapToObj(i -> String.valueOf(stats.optInt(i, 0))).collect(Collectors.joining("-"));
+            for (int i = 0; i < stats.length(); i++)
+                statList.add(stats.optInt(i, 0));
         }
 
         return new RuneSignature(
                 primary.optInt(0, 0),
                 primary.optInt(1, 0),
-                BuildUtils.joinInts(BuildUtils.extractSorted(primary, 2)),
+                BuildUtils.extractSorted(primary, 2),
                 secondary.optInt(0, 0),
-                BuildUtils.joinInts(BuildUtils.extractSorted(secondary, 1)),
-                shards
+                BuildUtils.extractSorted(secondary, 1),
+                List.copyOf(statList)
         );
     }
 
-    public List<Integer> primaryRuneItems()   { return BuildUtils.parseDashList(primaryRunes); }
-    public List<Integer> secondaryRuneItems() { return BuildUtils.parseDashList(secondaryRunes); }
-    public List<Integer> statShardItems()     { return BuildUtils.parseDashList(statShards); }
-
     public String toKey() {
-        String raw = primaryTree + "|" + keystone + "|" + primaryRunes + "|" + secondaryTree + "|" + secondaryRunes + "|" + statShards;
+        String raw = primaryTree + "|" + keystone + "|" + BuildUtils.joinInts(primaryRunes) + "|"
+                + secondaryTree + "|" + BuildUtils.joinInts(secondaryRunes) + "|" + BuildUtils.joinInts(statShards);
         return BuildUtils.toBase64(raw);
     }
 
     public static RuneSignature decode(String key) {
         String[] p = BuildUtils.fromBase64(key).split("\\|", -1);
-        return new RuneSignature(Integer.parseInt(p[0]), Integer.parseInt(p[1]), p[2], Integer.parseInt(p[3]), p[4], p[5]);
+        return new RuneSignature(
+                safeInt(p, 0),
+                safeInt(p, 1),
+                p.length > 2 ? BuildUtils.parseDashList(p[2]) : List.of(),
+                safeInt(p, 3),
+                p.length > 4 ? BuildUtils.parseDashList(p[4]) : List.of(),
+                p.length > 5 ? BuildUtils.parseDashList(p[5]) : List.of());
+    }
+
+    private static int safeInt(String[] p, int i) {
+        if (i >= p.length || p[i] == null || p[i].isBlank()) return 0;
+        try { return Integer.parseInt(p[i].trim()); } catch (NumberFormatException e) { return 0; }
     }
 
 }

@@ -69,7 +69,7 @@ public class ChampionBuildService {
         if (repKey == null) return null;
 
         BuildSignature base = BuildSignature.decode(repKey);
-        String spellOrder   = mergeSpellOrder(buildSr.spellOrdersByGroup().getOrDefault(groupKey, Collections.emptyMap()));
+        List<Integer> spellOrder = mergeSpellOrder(buildSr.spellOrdersByGroup().getOrDefault(groupKey, Collections.emptyMap()));
 
         Map<Integer, Map<Integer, int[]>> slotStats = buildSr.slotStatsByGroup().getOrDefault(groupKey, Collections.emptyMap());
 
@@ -113,8 +113,8 @@ public class ChampionBuildService {
             .limit(AUGMENT_OPTIONS)
             .toList();
 
-        return new ChampionBuild(filter, base.starterItems(), boots, suppItem,
-                base.coreItems(), slots, prismatics, augments, spellOrder, runes, groupStats[0],
+        return new ChampionBuild(filter, base.starter(), boots, suppItem,
+                base.core(), slots, prismatics, augments, spellOrder, runes, groupStats[0],
                 groupStats[0] > 0 ? (double) groupStats[1] / groupStats[0] : 0);
     }
 
@@ -161,12 +161,13 @@ public class ChampionBuildService {
 
             variantsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.toKey(), 1, Integer::sum);
             itemFreqByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
-            sig.fullBuildItems().forEach(id -> itemFreqByGroup.get(coreKey).merge(id, 1, Integer::sum));
-            spellOrdersByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.spellOrder(), 1, Integer::sum);
+            sig.fullBuild().forEach(id -> itemFreqByGroup.get(coreKey).merge(id, 1, Integer::sum));
+            spellOrdersByGroup.computeIfAbsent(coreKey, k -> new HashMap<>())
+                    .merge(BuildUtils.joinInts(sig.spellOrder()), 1, Integer::sum);
 
             if (sig.prismatics() != null && !sig.prismatics().isEmpty()) {
                 Map<Integer, int[]> prismaticsStats = prismaticsStatsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
-                for (int prismaticId : BuildUtils.parseDashList(sig.prismatics())) {
+                for (int prismaticId : sig.prismatics()) {
                     int[] row = prismaticsStats.computeIfAbsent(prismaticId, k -> new int[2]);
                     row[0]++;
                     if (win) row[1]++;
@@ -184,8 +185,8 @@ public class ChampionBuildService {
             s[0]++;
             if (win) s[1]++;
 
-            List<Integer> extra = sig.fullBuildItems().stream()
-                    .filter(id -> !coreExcluded(sig).contains(id) && !sig.starterItems().contains(id))
+            List<Integer> extra = sig.fullBuild().stream()
+                    .filter(id -> !coreExcluded(sig).contains(id) && !sig.starter().contains(id))
                     .toList();
 
             Map<Integer, Map<Integer, int[]>> slotStats = slotStatsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
@@ -196,8 +197,7 @@ public class ChampionBuildService {
             if (extra.size() >= 5) addSlot(slotStats, 7, extra.get(4), win);
 
             if (sig.augments() != null && !sig.augments().isEmpty()) {
-                List<Integer> augmentsList = BuildUtils.parseDashList(sig.augments());
-                for (int augmentId : augmentsList) {
+                for (int augmentId : sig.augments()) {
                     int[] row = augmentsStatsByGroup.computeIfAbsent(augmentId, k -> new int[2]);
                     row[0]++;
                     if (win) row[1]++;
@@ -211,7 +211,7 @@ public class ChampionBuildService {
 
             System.out.println("--------------------------------");
             System.out.println("game_id: " + record.get("game_id"));
-            System.out.println("core: " + BuildUtils.toItemName(sig.starterItems()));
+            System.out.println("core: " + BuildUtils.toItemName(sig.starter()));
             System.out.println("--------------------------------");
         }
 
@@ -268,29 +268,42 @@ public class ChampionBuildService {
         return result;
     }
 
-    private String mergeSpellOrder(Map<String, Integer> variants) {
+    private List<Integer> mergeSpellOrder(Map<String, Integer> variants) {
         int[][] votes = new int[18][5];
         for (Map.Entry<String, Integer> e : variants.entrySet()) {
-            String spell = e.getKey(); int count = e.getValue();
-            for (int i = 0; i < 18 && i < spell.length(); i++) {
-                int s = Character.getNumericValue(spell.charAt(i));
+            String key = e.getKey();
+            int count = e.getValue();
+            List<Integer> steps = key.contains("-")
+                    ? BuildUtils.parseDashList(key)
+                    : spellOrderFromLegacyString(key);
+            for (int i = 0; i < 18 && i < steps.size(); i++) {
+                int s = steps.get(i);
                 if (s >= 1 && s <= 4) votes[i][s] += count;
             }
         }
-        StringBuilder sb = new StringBuilder();
+        List<Integer> out = new ArrayList<>(18);
         for (int i = 0; i < 18; i++) {
             int best = 0, bestV = 0;
             for (int s = 1; s <= 4; s++) if (votes[i][s] > bestV) { bestV = votes[i][s]; best = s; }
-            sb.append(best == 0 ? "0" : best);
+            out.add(best == 0 ? 0 : best);
         }
-        return sb.toString();
+        return out;
+    }
+
+    private static List<Integer> spellOrderFromLegacyString(String key) {
+        List<Integer> o = new ArrayList<>(18);
+        for (int i = 0; i < key.length() && i < 18; i++)
+            o.add(Character.getNumericValue(key.charAt(i)));
+        while (o.size() < 18) o.add(0);
+        return o;
     }
 
     private Set<Integer> coreExcluded(BuildSignature base) {
-        Set<Integer> ex = new HashSet<>(base.coreItems());
+        Set<Integer> ex = new HashSet<>(base.core());
         ex.add(base.boots());
         if (base.suppItem() != 0) ex.add(base.suppItem());
-        ex.addAll(BuildUtils.parseDashList(base.prismatics()));
+        ex.addAll(base.prismatics());
+        ex.addAll(base.augments());
         return ex;
     }
 
@@ -310,6 +323,6 @@ public class ChampionBuildService {
     }
 
     private int itemCountFromKey(String key) {
-        try { return BuildSignature.decode(key).fullBuildItems().size(); } catch (Exception e) { return 0; }
+        try { return BuildSignature.decode(key).fullBuild().size(); } catch (Exception e) { return 0; }
     }
 }

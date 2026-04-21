@@ -1,5 +1,6 @@
 package com.safjnest.lol.build;
 
+import com.safjnest.lol.GameQueueTypeUtils;
 import com.safjnest.lol.LeagueHandler;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -12,14 +13,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public record BuildSignature(
-        String starter,
+        List<Integer> starter,
         int boots,
         int suppItem,
-        String core,
-        String fullBuild,
-        String spellOrder,
-        String prismatics,
-        String augments
+        List<Integer> core,
+        List<Integer> fullBuild,
+        List<Integer> spellOrder,
+        List<Integer> prismatics,
+        List<Integer> augments
 ) {
 
     private static final Set<Integer> BOOTS = Set.of(3006, 3009, 3020, 3047, 3111, 3117, 3158);
@@ -47,67 +48,91 @@ public record BuildSignature(
         String spellRaw = IntStream.range(0, skillOrderJson.length())
                 .mapToObj(i -> skillOrderJson.optString(i, ""))
                 .collect(Collectors.joining(""));
-        String spellOrder = spellRaw.length() >= 18
-                ? spellRaw.substring(0, 18)
-                : spellRaw + "0".repeat(18 - spellRaw.length());
+        List<Integer> spellOrderList = new ArrayList<>(18);
+        for (int i = 0; i < 18; i++) {
+            int v = i < spellRaw.length() ? Character.getNumericValue(spellRaw.charAt(i)) : 0;
+            spellOrderList.add(v >= 1 && v <= 4 ? v : 0);
+        }
 
-        String augments = "";
+        List<Integer> prismaticIds = new ArrayList<>();
+        if (prismaticsJson != null && prismaticsJson.length() > 0) {
+            for (int i = 0; i < prismaticsJson.length(); i++) {
+                int id = BuildUtils.parseAnyInt(prismaticsJson.opt(i));
+                if (id != 0) prismaticIds.add(id);
+            }
+        }
+
+        List<Integer> augmentIds = new ArrayList<>();
         if (augmentsJson != null && augmentsJson.length() > 0) {
-            List<Integer> augmentIds = new ArrayList<>();
             for (int i = 0; i < augmentsJson.length(); i++) {
                 int id = BuildUtils.parseAnyInt(augmentsJson.opt(i));
                 if (id != 0) augmentIds.add(id);
             }
-            if (!augmentIds.isEmpty()) augments = BuildUtils.joinInts(augmentIds);
-        }
-
-        String prismatics = "";
-        if (prismaticsJson != null && prismaticsJson.length() > 0) {
-            List<Integer> prismaticIds = new ArrayList<>();
-            for (int i = 0; i < prismaticsJson.length(); i++) {
-                int id = BuildUtils.parseAnyInt(prismaticsJson.getInt(i));
-                if (id != 0) prismaticIds.add(id);
-            }
-            if (!prismaticIds.isEmpty()) prismatics = BuildUtils.joinInts(prismaticIds);
         }
 
         return new BuildSignature(
-                BuildUtils.joinInts(starterList),
+                List.copyOf(starterList),
                 boots,
                 suppItem,
-                BuildUtils.joinInts(coreList),
-                BuildUtils.joinInts(fullBuildList),
-                spellOrder,
-                prismatics,
-                augments
+                List.copyOf(coreList),
+                List.copyOf(fullBuildList),
+                List.copyOf(spellOrderList),
+                List.copyOf(prismaticIds),
+                List.copyOf(augmentIds)
         );
     }
 
-    public List<Integer> starterItems()    { return BuildUtils.parseDashList(starter); }
-    public List<Integer> coreItems()       { return BuildUtils.parseDashList(core); }
-    public List<Integer> fullBuildItems()  { return BuildUtils.parseDashList(fullBuild); }
-
     public String toCoreKey() {
-        String raw = starter  + "|" + suppItem + "|" + core;
+        String raw = BuildUtils.joinInts(starter) + "|" + suppItem + "|" + BuildUtils.joinInts(core);
         return BuildUtils.toBase64(raw);
     }
 
     public String toKey() {
-        String raw = starter + "|" + boots + "|" + suppItem + "|" + core + "|" + fullBuild + "|" + spellOrder;
+        String raw = BuildUtils.joinInts(starter) + "|" + boots + "|" + suppItem + "|"
+                + BuildUtils.joinInts(core) + "|" + BuildUtils.joinInts(fullBuild) + "|"
+                + BuildUtils.joinInts(spellOrder) + "|" + BuildUtils.joinInts(prismatics) + "|"
+                + BuildUtils.joinInts(augments);
         return BuildUtils.toBase64(raw);
     }
 
     public static BuildSignature decode(String key) {
         String[] p = BuildUtils.fromBase64(key).split("\\|", -1);
+        List<Integer> defaultSpell = new ArrayList<>(18);
+        for (int i = 0; i < 18; i++) defaultSpell.add(0);
         return new BuildSignature(
-                p[0],
-                Integer.parseInt(p[1]),
-                Integer.parseInt(p[2]),
-                p[3],
-                p[4],
-                p[5],
-                p.length > 6 ? p[6] : "",
-                p.length > 7 ? p[7] : "");
+                p.length > 0 ? BuildUtils.parseDashList(p[0]) : List.of(),
+                safeIntSeg(p, 1),
+                safeIntSeg(p, 2),
+                p.length > 3 ? BuildUtils.parseDashList(p[3]) : List.of(),
+                p.length > 4 ? BuildUtils.parseDashList(p[4]) : List.of(),
+                p.length > 5 ? decodeSpellOrderSegment(p[5]) : defaultSpell,
+                p.length > 6 ? BuildUtils.parseDashList(p[6]) : List.of(),
+                p.length > 7 ? BuildUtils.parseDashList(p[7]) : List.of());
+    }
+
+    private static int safeIntSeg(String[] p, int i) {
+        if (i >= p.length || p[i] == null || p[i].isBlank()) return 0;
+        try { return Integer.parseInt(p[i].trim()); } catch (NumberFormatException e) { return 0; }
+    }
+
+    /** Supports dash-separated ints or legacy 18-digit string without separators. */
+    private static List<Integer> decodeSpellOrderSegment(String s) {
+        if (s == null || s.isBlank()) {
+            List<Integer> z = new ArrayList<>(18);
+            for (int i = 0; i < 18; i++) z.add(0);
+            return z;
+        }
+        if (s.contains("-")) {
+            List<Integer> x = new ArrayList<>(BuildUtils.parseDashList(s));
+            while (x.size() < 18) x.add(0);
+            return x.size() > 18 ? new ArrayList<>(x.subList(0, 18)) : x;
+        }
+        List<Integer> o = new ArrayList<>(18);
+        for (int i = 0; i < 18; i++) {
+            int v = i < s.length() ? Character.getNumericValue(s.charAt(i)) : 0;
+            o.add(v >= 1 && v <= 4 ? v : 0);
+        }
+        return o;
     }
 
     // -------------------------------------------------------------------------
@@ -115,25 +140,25 @@ public record BuildSignature(
     private static List<Integer> extractStarter(BuildFilter filter, JSONObject buildObj) {
         JSONArray arr = buildObj.optJSONArray("starter");
         if (arr == null) return Collections.emptyList();
-    
+
         Map<Integer, Integer> consumablesCount = new HashMap<>();
         Integer boots = null;
         Integer trinket = null;
         Integer genericItem = null;
-    
+
         for (int i = 0; i < arr.length(); i++) {
             int id = BuildUtils.parseAnyInt(arr.opt(i));
             if (id == 0) continue;
-    
+
             if (TRINKETS.contains(id)) {
                 continue;
             }
-    
+
             if (BOOTS.contains(id)) {
                 boots = id;
                 continue;
             }
-    
+
             if (CONSUMABLES.contains(id)) {
                 if (id == 2055) {
                     consumablesCount.merge(id, 1, Integer::sum);
@@ -145,26 +170,26 @@ public record BuildSignature(
                 }
                 continue;
             }
-    
+
             genericItem = id;
         }
-    
-        if (trinket == null && filter.queue() != GameQueueType.CHERRY) {
+
+        if (trinket == null && !GameQueueTypeUtils.isCherry(filter.queue())) {
             trinket = 3340;
         }
-    
+
         List<Integer> result = new ArrayList<>();
-    
+
         for (Map.Entry<Integer, Integer> e : consumablesCount.entrySet()) {
             for (int i = 0; i < e.getValue(); i++) {
                 result.add(e.getKey());
             }
         }
-    
+
         if (boots != null) result.add(boots);
         if (trinket != null) result.add(trinket);
         if (genericItem != null) result.add(genericItem);
-    
+
         return result;
     }
 

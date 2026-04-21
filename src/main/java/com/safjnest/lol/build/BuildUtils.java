@@ -54,6 +54,20 @@ public class BuildUtils {
         return list;
     }
 
+    /** Parses JSON array elements with {@link #parseAnyInt} (numbers or strings). */
+    public static List<Integer> jsonArrayToIntList(JSONArray arr) {
+        if (arr == null) return List.of();
+        List<Integer> list = new ArrayList<>(arr.length());
+        for (int i = 0; i < arr.length(); i++) list.add(parseAnyInt(arr.opt(i)));
+        return list;
+    }
+
+    public static JSONArray intListToJsonArray(List<Integer> ids) {
+        JSONArray a = new JSONArray();
+        if (ids != null) for (int id : ids) a.put(id);
+        return a;
+    }
+
     public static String toItemName(List<Integer> ids) {
         String name = "";
         for (int id : ids) {

@@ -15,7 +15,7 @@ public record ChampionBuild(
         List<List<SlotOption>> slots,
         List<List<SlotOption>> prismatics,
         List<SlotOption> augments,
-        String spellOrder,
+        List<Integer> spellOrder,
         RuneSignature runes,
         int games,
         double winrate
@@ -34,11 +34,9 @@ public record ChampionBuild(
 
     public String encode() {
         JSONObject json = new JSONObject();
-        json.put("starter", new JSONArray(starter));
-        json.put("boots", boots);
-        json.put("suppItems", suppItems);
-        json.put("core", new JSONArray(core));
-        json.put("spellOrder", spellOrder);
+        json.put("starter", BuildUtils.intListToJsonArray(starter));
+        json.put("core", BuildUtils.intListToJsonArray(core));
+        json.put("spellOrder", BuildUtils.intListToJsonArray(spellOrder));
         json.put("games", games);
         json.put("winrate", winrate);
 
@@ -58,14 +56,26 @@ public record ChampionBuild(
         suppItems.forEach(s -> suppItemsArr.put(s.toJson()));
         json.put("suppItems", suppItemsArr);
 
+        JSONArray prismaticsOuter = new JSONArray();
+        for (List<SlotOption> row : prismatics) {
+            JSONArray inner = new JSONArray();
+            row.forEach(o -> inner.put(o.toJson()));
+            prismaticsOuter.put(inner);
+        }
+        json.put("prismatics", prismaticsOuter);
+
+        JSONArray augmentsArr = new JSONArray();
+        augments.forEach(a -> augmentsArr.put(a.toJson()));
+        json.put("augments", augmentsArr);
+
         if (runes != null) {
             json.put("runes", new JSONObject()
                     .put("primaryTree",    runes.primaryTree())
                     .put("keystone",       runes.keystone())
-                    .put("primaryRunes",   runes.primaryRunes())
+                    .put("primaryRunes",   BuildUtils.intListToJsonArray(runes.primaryRunes()))
                     .put("secondaryTree",  runes.secondaryTree())
-                    .put("secondaryRunes", runes.secondaryRunes())
-                    .put("statShards",     runes.statShards()));
+                    .put("secondaryRunes", BuildUtils.intListToJsonArray(runes.secondaryRunes()))
+                    .put("statShards",     BuildUtils.intListToJsonArray(runes.statShards())));
         }
 
         return BuildUtils.toBase64(json.toString());
@@ -74,8 +84,9 @@ public record ChampionBuild(
     public static ChampionBuild decode(String b64, BuildFilter filter) {
         JSONObject json = new JSONObject(BuildUtils.fromBase64(b64));
 
-        List<Integer> starter = BuildUtils.toIntList(json.getJSONArray("starter"));
-        List<Integer> core = BuildUtils.toIntList(json.getJSONArray("core"));
+        List<Integer> starter = BuildUtils.jsonArrayToIntList(json.getJSONArray("starter"));
+        List<Integer> core = BuildUtils.jsonArrayToIntList(json.getJSONArray("core"));
+        List<Integer> spellOrder = decodeSpellOrder(json);
 
         JSONArray slotsArr = json.getJSONArray("slots");
         List<List<SlotOption>> slots = new ArrayList<>();
@@ -90,8 +101,12 @@ public record ChampionBuild(
         if (json.has("runes")) {
             JSONObject r = json.getJSONObject("runes");
             runes = new RuneSignature(
-                    r.getInt("primaryTree"), r.getInt("keystone"), r.getString("primaryRunes"),
-                    r.getInt("secondaryTree"), r.getString("secondaryRunes"), r.getString("statShards"));
+                    r.getInt("primaryTree"),
+                    r.getInt("keystone"),
+                    runeListField(r, "primaryRunes"),
+                    r.getInt("secondaryTree"),
+                    runeListField(r, "secondaryRunes"),
+                    runeListField(r, "statShards"));
         }
 
         JSONArray bootsArr = json.getJSONArray("boots");
@@ -100,31 +115,82 @@ public record ChampionBuild(
             boots.add(SlotOption.fromJson(bootsArr.getJSONObject(i)));
         }
 
-        JSONArray suppItemArr = json.getJSONArray("suppItem");
+        JSONArray suppItemArr = json.optJSONArray("suppItems");
+        if (suppItemArr == null) suppItemArr = json.optJSONArray("suppItem");
+        if (suppItemArr == null) suppItemArr = new JSONArray();
         List<SlotOption> suppItem = new ArrayList<>();
         for (int i = 0; i < suppItemArr.length(); i++) {
             suppItem.add(SlotOption.fromJson(suppItemArr.getJSONObject(i)));
         }
 
-        JSONArray prismaticsArr = json.getJSONArray("prismatics");
         List<List<SlotOption>> prismatics = new ArrayList<>();
-        for (int i = 0; i < prismaticsArr.length(); i++) {
-            JSONArray optArr = prismaticsArr.getJSONArray(i);
-            List<SlotOption> options = new ArrayList<>();
-            for (int j = 0; j < optArr.length(); j++) options.add(SlotOption.fromJson(optArr.getJSONObject(j)));
-            prismatics.add(options);
+        if (json.has("prismatics")) {
+            JSONArray prismaticsArr = json.getJSONArray("prismatics");
+            if (prismaticsArr.length() > 0 && prismaticsArr.opt(0) instanceof JSONObject) {
+                List<SlotOption> legacy = new ArrayList<>();
+                for (int i = 0; i < prismaticsArr.length(); i++)
+                    legacy.add(SlotOption.fromJson(prismaticsArr.getJSONObject(i)));
+                prismatics.add(legacy);
+            } else {
+                for (int i = 0; i < prismaticsArr.length(); i++) {
+                    JSONArray optArr = prismaticsArr.optJSONArray(i);
+                    List<SlotOption> options = new ArrayList<>();
+                    if (optArr != null)
+                        for (int j = 0; j < optArr.length(); j++) options.add(SlotOption.fromJson(optArr.getJSONObject(j)));
+                    prismatics.add(options);
+                }
+            }
         }
 
-        JSONArray augmentsArr = json.getJSONArray("augments");
         List<SlotOption> augments = new ArrayList<>();
-        for (int i = 0; i < augmentsArr.length(); i++) {
-            augments.add(SlotOption.fromJson(augmentsArr.getJSONObject(i)));
+        if (json.has("augments")) {
+            JSONArray augmentsArr = json.getJSONArray("augments");
+            for (int i = 0; i < augmentsArr.length(); i++) {
+                augments.add(SlotOption.fromJson(augmentsArr.getJSONObject(i)));
+            }
         }
-
 
         return new ChampionBuild(filter, starter,
                 boots, suppItem, core, slots, prismatics, augments,
-                json.getString("spellOrder"), runes, json.getInt("games"), json.getDouble("winrate"));
+                spellOrder, runes, json.getInt("games"), json.getDouble("winrate"));
+    }
+
+    private static List<Integer> decodeSpellOrder(JSONObject json) {
+        if (!json.has("spellOrder")) {
+            List<Integer> z = new ArrayList<>(18);
+            for (int i = 0; i < 18; i++) z.add(0);
+            return z;
+        }
+        Object so = json.get("spellOrder");
+        if (so instanceof JSONArray a) return normalizeSpellOrder(BuildUtils.jsonArrayToIntList(a));
+        if (so instanceof String s) {
+            List<Integer> o = new ArrayList<>(18);
+            for (int i = 0; i < 18; i++) {
+                int v = i < s.length() ? Character.getNumericValue(s.charAt(i)) : 0;
+                o.add(v >= 1 && v <= 4 ? v : 0);
+            }
+            return o;
+        }
+        List<Integer> z = new ArrayList<>(18);
+        for (int i = 0; i < 18; i++) z.add(0);
+        return z;
+    }
+
+    private static List<Integer> normalizeSpellOrder(List<Integer> raw) {
+        List<Integer> o = new ArrayList<>(18);
+        for (int i = 0; i < 18; i++) {
+            int v = i < raw.size() ? raw.get(i) : 0;
+            o.add(v >= 1 && v <= 4 ? v : 0);
+        }
+        return o;
+    }
+
+    private static List<Integer> runeListField(JSONObject r, String key) {
+        if (!r.has(key)) return List.of();
+        Object o = r.get(key);
+        if (o instanceof JSONArray a) return BuildUtils.jsonArrayToIntList(a);
+        if (o instanceof String s) return BuildUtils.parseDashList(s);
+        return List.of();
     }
 
     public void print() {
@@ -151,21 +217,22 @@ public record ChampionBuild(
         System.out.println("augment:");
         for (SlotOption opt : augments)
             System.out.printf("  item=%-6s  %d matches  %.1f%% WR%n", BuildUtils.toAugmentName(opt.itemId()), opt.matches(), opt.winrate() * 100);
-        
+
         System.out.println("spellOrder=" + spellOrder);
         if (runes != null) {
-            System.out.println("keystone=" + runes.keystone() + " | tree=" + runes.primaryTree());
-            System.out.println("primary=" + BuildUtils.toItemName(runes.primaryRuneItems()));
-            System.out.println("secondary=" + runes.secondaryTree() + " " + BuildUtils.toItemName(runes.secondaryRuneItems()));
-            System.out.println("shards=" + BuildUtils.toItemName(runes.statShardItems()));
+            System.out.println("keystone=" + runes.keystone() + " | primaryTree=" + runes.primaryTree());
+            System.out.println("primaryRunes=" + runes.primaryRunes());
+            System.out.println("secondaryTree=" + runes.secondaryTree() + " secondaryRunes=" + runes.secondaryRunes());
+            System.out.println("statShards=" + runes.statShards());
         }
     }
 
     public List<String> getSkillOrder() {
         List<String> skillOrder = new ArrayList<>();
-        for (int i = 0; i < 18; i++) {
-            skillOrder.add(String.valueOf(spellOrder.charAt(i)));
+        for (int i = 0; i < 18 && i < spellOrder.size(); i++) {
+            skillOrder.add(String.valueOf(spellOrder.get(i)));
         }
+        while (skillOrder.size() < 18) skillOrder.add("0");
         return skillOrder;
     }
 
