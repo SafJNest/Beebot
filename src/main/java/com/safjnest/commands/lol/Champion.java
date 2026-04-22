@@ -113,7 +113,7 @@ public class Champion extends SlashCommand {
         BuildFilter filter = new BuildFilter()
             .setChampion(champion.getId())
             .setLane(laneType)
-            .setQueue(GameQueueType.CHERRY);
+            .setPatch("16.8");
 
         ChampionBuild build = new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(ChampionBuild::games).reversed()).findFirst().orElse(null);
         if (build != null) build.print();
@@ -153,6 +153,18 @@ public class Champion extends SlashCommand {
             eb.addField("**Skill Order**", msg.substring(0, msg.length() - 2), false);
         else
             eb.addField("**Skill Order**", "—", false);
+
+        for (SlotOption opt : build.summonerSpells()) {
+            int spell1 = opt.itemId() / 100;
+            int spell2 = opt.itemId() % 100;
+
+            String spell1Name = spell1 + "";
+            String spell2Name = spell2 + "";
+            String summonerSpells = CustomEmojiHandler.getFormattedEmoji(spell1Name + "_") + " " + spell1Name + "\n" +
+            CustomEmojiHandler.getFormattedEmoji(spell2Name + "_") + " " + spell2Name + "\n";
+            eb.addField("**Summoner Spells**", summonerSpells, true);
+        }
+
         //eb.addField("**Summoner Spells**", CustomEmojiHandler.getFormattedEmoji(build.getD() + "_") + " " + CustomEmojiHandler.getFormattedEmoji(build.getF() + "_") + "\n​\n", false);//DO NOT TOUCH \N\N THERE IS AN INVISIBLEAR CHARFATERT
 
         /*
