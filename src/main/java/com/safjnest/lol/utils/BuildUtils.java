@@ -1,4 +1,4 @@
-package com.safjnest.lol.build;
+package com.safjnest.lol.utils;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -71,14 +71,14 @@ public class BuildUtils {
     public static String toItemName(List<Integer> ids) {
         String name = "";
         for (int id : ids) {
-            Item item = LeagueHandler.itemsMap.get(id);
+            Item item = ItemUtils.getItem(id);
             if (item != null) name += item.getName() + ", ";
         }
         return name;
     }
 
     public static String toItemName(int id) {
-        Item item = LeagueHandler.itemsMap.get(id);
+        Item item = ItemUtils.getItem(id);
         return item != null ? item.getName() : null;
     }
 
@@ -91,6 +91,6 @@ public class BuildUtils {
     }
 
     public static String toItemName(String ids) {
-        return Arrays.stream(ids.split("-")).map(Integer::parseInt).map(LeagueHandler.itemsMap::get).map(Item::getName).collect(Collectors.joining(", "));
+        return Arrays.stream(ids.split("-")).map(Integer::parseInt).map(ItemUtils::getItem).map(Item::getName).collect(Collectors.joining(", "));
     }
 }

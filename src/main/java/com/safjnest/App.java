@@ -73,12 +73,12 @@ public class App {
         .setLane(LaneType.TOP);
 
 
-        new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(1).forEach(ChampionBuild::print);
+        //new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(1).forEach(ChampionBuild::print);
 
 
 
-    //    bot = new Bot();
-    //    bot.il_risveglio_della_bestia();
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {

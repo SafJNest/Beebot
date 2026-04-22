@@ -1,9 +1,9 @@
 package com.safjnest.lol.build;
 
-import com.safjnest.lol.GameQueueTypeUtils;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.BuildUtils;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.ItemUtils;
 
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -208,8 +208,8 @@ public record BuildSignature(
     private static List<Integer> extractCore(List<Integer> fullBuild, List<Integer> starterList) {
         Integer first = null, second = null;
         for (Integer id : fullBuild) {
-            Item item = LeagueHandler.itemsMap.get(id);
-            if (id == null || id == 0 || starterList.contains(id) || LeagueHandler.isBoots(item) || SUPPORT_ITEMS.contains(id) || LeagueHandler.isPrismaticItem(item)) continue;
+            Item item = ItemUtils.getItem(id);
+            if (id == null || id == 0 || starterList.contains(id) || ItemUtils.isBoots(item) || SUPPORT_ITEMS.contains(id) || ItemUtils.isPrismatic(item)) continue;
             if (first == null) { first = id; }
             else if (!Objects.equals(first, id)) { second = id; break; }
         }
@@ -222,7 +222,7 @@ public record BuildSignature(
 
     private static boolean isSkippable(int id) {
         if (id == 0 || TRINKETS.contains(id) || CONSUMABLES.contains(id)) return true;
-        Item item = LeagueHandler.itemsMap.get(id);
+        Item item = ItemUtils.getItem(id);
         if (item == null || (item.getDepth() < 3 && item.getMaps().get("30") == null)) return true;
         try {
             for (String from : item.getFrom())

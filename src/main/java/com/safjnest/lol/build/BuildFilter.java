@@ -8,7 +8,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import com.safjnest.lol.GameQueueTypeUtils;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 
 public class BuildFilter {
 

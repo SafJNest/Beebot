@@ -6,6 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
@@ -37,7 +38,7 @@ public class SummonerLink extends SlashCommand {
 
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", true).setAutoComplete(true),
-            LeagueHandler.getLeagueShardOptions()
+            LeagueShardUtils.getAsOptions()
         );
         commandData.setThings(this);
     }

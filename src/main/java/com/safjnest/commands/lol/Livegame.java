@@ -10,6 +10,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -42,7 +43,7 @@ public class Livegame extends SlashCommand {
 
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to get information on", false).setAutoComplete(true),
-            LeagueHandler.getLeagueShardOptions(),
+            LeagueShardUtils.getAsOptions(),
             new OptionData(OptionType.USER, "user", "Discord user you want to get information on (if riot account is connected)", false)
         );
         commandData.setThings(this);

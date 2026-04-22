@@ -1,4 +1,4 @@
-package com.safjnest.lol.message;
+package com.safjnest.lol.utils;
 
 import java.text.DecimalFormat;
 import java.util.HashMap;
@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.model.ParticipantChampionStat;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryRecord;
@@ -116,11 +117,11 @@ public class LeagueMessageUtils {
     }
 
     public static ActionRow getLaneComponents(LaneType lane) {
-        Button top = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.TOP, "Top").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.TOP));
-        Button jungle = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.JUNGLE, "Jungle").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.JUNGLE));
-        Button mid = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.MID, "Mid").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.MID));
-        Button adc = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.BOT, "ADC").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.BOT));
-        Button support = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.UTILITY, "Support").withEmoji(LeagueHandler.getLaneTypeRichEmoji(LaneType.UTILITY));
+        Button top = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.TOP, "Top").withEmoji(LaneTypeUtils.getLaneTypeRichEmoji(LaneType.TOP));
+        Button jungle = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.JUNGLE, "Jungle").withEmoji(LaneTypeUtils.getLaneTypeRichEmoji(LaneType.JUNGLE));
+        Button mid = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.MID, "Mid").withEmoji(LaneTypeUtils.getLaneTypeRichEmoji(LaneType.MID));
+        Button adc = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.BOT, "ADC").withEmoji(LaneTypeUtils.getLaneTypeRichEmoji(LaneType.BOT));
+        Button support = Button.secondary(LeagueMessage.BUTTON_ID_PREFIX + "-lane-" + LaneType.UTILITY, "Support").withEmoji(LaneTypeUtils.getLaneTypeRichEmoji(LaneType.UTILITY));
 
         if (lane != null) {
             switch (lane) {
@@ -221,7 +222,7 @@ public class LeagueMessageUtils {
         Button flex = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex").withStyle(defaultStyle);
         Button draft = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft").withStyle(defaultStyle);
         Button aram = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.ARAM, "ARAM").withStyle(defaultStyle);
-        Button curretModeButton = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + currentGameQueueType, LeagueHandler.formatMatchName(currentGameQueueType)).withStyle(defaultStyle);
+        Button curretModeButton = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + currentGameQueueType, GameQueueTypeUtils.prettyName(currentGameQueueType)).withStyle(defaultStyle);
 
         if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
 

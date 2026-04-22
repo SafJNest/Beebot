@@ -15,9 +15,11 @@ import org.json.JSONObject;
 
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.lol.GameQueueTypeUtils;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.GameQueueTypeUtils;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.ItemUtils;
+import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
@@ -223,7 +225,7 @@ public class Tracker {
                 catch (InterruptedException e) {e.printStackTrace();}
                 ranks.add(pushSummoner(match, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid())));
             }
-            TierType avgRank = LeagueHandler.getAvarageRank(ranks);
+            TierType avgRank = TierDivisionUtils.getAvarageRank(ranks);
             LeagueDB.setMatchRank(summoner_match_id, avgRank);
             LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
             
@@ -256,7 +258,7 @@ public class Tracker {
                 TierDivisionType rank = pushSummoner(match, summoner_match_id, summoner, partecipant, matchData.get(partecipant.getPuuid()));
                 ranks.add(rank);
             }
-            TierType avgRank = LeagueHandler.getAvarageRank(ranks);
+            TierType avgRank = TierDivisionUtils.getAvarageRank(ranks);
             LeagueDB.setMatchRank(summoner_match_id, avgRank);
             LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
         };
@@ -430,7 +432,7 @@ public class Tracker {
                 if (partecipant.getPlayerAugment3() != 0) augmentList += "," + partecipant.getPlayerAugment3();
                 if (partecipant.getPlayerAugment4() != 0) augmentList += "," + partecipant.getPlayerAugment4();
 
-                List<String> prismatics = List.of(itemsIds.split(",")).stream().filter(LeagueHandler::isPrismaticItem).collect(Collectors.toList());
+                List<String> prismatics = List.of(itemsIds.split(",")).stream().filter(ItemUtils::isPrismatic).collect(Collectors.toList());
                 if (!prismatics.isEmpty()) {
                     matchData.get(partecipant.getPuuid()).put("prismatics", String.join(",", prismatics));
                 }
@@ -484,7 +486,7 @@ public class Tracker {
                             item = items.get(event.getItemId());
                             if (item == null) continue;
                             
-                            if (LeagueHandler.isBoots(item)) {
+                            if (ItemUtils.isBoots(item)) {
                                 matchData.get(participantId).put("boots", item.getId() + "");
                                 continue;
                             }
@@ -590,7 +592,7 @@ public class Tracker {
     
         long[] splitRange = LeagueHandler.getCurrentSplitRange();
     
-        for (LeagueShard shard : LeagueHandler.getActiveShards()) {
+        for (LeagueShard shard : LeagueShardUtils.getActives()) {
             ChronoTask shardTask = () -> {
                 long threshold = (splitRange != null) ? LeagueDB.get().query("SELECT game_id FROM `match` WHERE time_start >= '"+ new Timestamp(LeagueHandler.getCurrentSplitRange()[0]) + "' and region = '"+ shard + "' ORDER BY time_start ASC LIMIT 1").get(0).getAsLong("game_id") : 0;
                 Map<String, Object> data = new LinkedHashMap<>();
@@ -652,7 +654,7 @@ public class Tracker {
 
     public static void retriveChallengerEntries() {
         BotLogger.info("[LPTracker] Pushing challenger entries");
-        for (LeagueShard shard : LeagueHandler.getActiveShards()) {
+        for (LeagueShard shard : LeagueShardUtils.getActives()) {
             for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR)) {
                 try {
                     Map<String, Object> data = new LinkedHashMap<>();
@@ -672,7 +674,7 @@ public class Tracker {
     public static void retriveHighEloEntries() {
         BotLogger.info("[LPTracker] Pushing challenger entries");
         for (TierDivisionType tier : List.of(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I)) {
-            for (LeagueShard shard : LeagueHandler.getActiveShards()) {
+            for (LeagueShard shard : LeagueShardUtils.getActives()) {
                 TrackerState.awaitCondition(TrackerState.Priority.MID);
                 for (GameQueueType queue : List.of(GameQueueType.RANKED_SOLO_5X5, GameQueueType.RANKED_FLEX_SR)) {
                     try {

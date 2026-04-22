@@ -32,7 +32,6 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
-import com.safjnest.lol.GameQueueTypeUtils;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.build.BuildFilter;
 import com.safjnest.lol.build.ChampionBuild;
@@ -40,6 +39,7 @@ import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.MatchData;
 import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;

@@ -35,6 +35,7 @@ import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
 import com.safjnest.lol.tracker.TrackerState.Priority;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.BlacklistData;
@@ -1286,7 +1287,7 @@ public class Test extends Command{
                             for (String rank : ranksString) {
                                 ranksT.add(TierDivisionType.valueOf(rank));
                             }
-                            TierType newRank = LeagueHandler.getAvarageRank(ranksT);
+                            TierType newRank = TierDivisionUtils.getAvarageRank(ranksT);
                             String updateQuery = "UPDATE `match` SET rank = '" + newRank + "' WHERE id = " + row.get("id");
                             LeagueDB.get().query(updateQuery);
                         } catch (Exception eeee) {
