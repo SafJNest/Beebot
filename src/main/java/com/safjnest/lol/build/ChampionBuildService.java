@@ -18,6 +18,7 @@ public class ChampionBuildService {
     private static final int SLOT_OPTIONS = 3;
     private static final int AUGMENT_OPTIONS = 10;
     private static final int PRISMATIC_OPTIONS = 10;
+    private static final int SUMMONER_SPELLS_OPTIONS = 3;
 
     private record StatsResult(
             Map<String, int[]> stats,
@@ -29,7 +30,8 @@ public class ChampionBuildService {
             Map<String, Map<Integer, int[]>> bootsStatsByGroup,
             Map<String, Map<Integer, int[]>> suppItemStatsByGroup,
             Map<String, Map<Integer, int[]>> prismaticsStatsByGroup,
-            Map<Integer, int[]> augmentsStatsByGroup
+            Map<Integer, int[]> augmentsStatsByGroup,
+            Map<String, int[]> summonerSpellsStatsByGroup
     ) {}
 
     // -------------------------------------------------------------------------
@@ -114,8 +116,18 @@ public class ChampionBuildService {
             .limit(AUGMENT_OPTIONS)
             .toList();
 
+        List<SlotOption> summonerSpells = buildSr.summonerSpellsStatsByGroup().entrySet().stream()
+            .map(e -> {
+                String[] parts = e.getKey().split("-");
+                int key = Integer.parseInt(parts[0]) * 100 + Integer.parseInt(parts[1]);
+                return new SlotOption(key, e.getValue()[0], e.getValue()[0] > 0 ? (double) e.getValue()[1] / e.getValue()[0] : 0);
+            })
+            .sorted(Comparator.comparingInt(SlotOption::matches).reversed())
+            .limit(SUMMONER_SPELLS_OPTIONS)
+            .toList();
+
         return new ChampionBuild(filter, base.starter(), boots, suppItem,
-                base.core(), slots, prismatics, augments, spellOrder, runes, groupStats[0],
+                base.core(), slots, prismatics, summonerSpells, augments, spellOrder, runes, groupStats[0],
                 groupStats[0] > 0 ? (double) groupStats[1] / groupStats[0] : 0);
     }
 
@@ -131,6 +143,7 @@ public class ChampionBuildService {
         Map<String, Map<Integer, int[]>> suppItemStatsByGroup = new HashMap<>();
         Map<String, Map<Integer, int[]>> prismaticsStatsByGroup = new HashMap<>();
         Map<Integer, int[]> augmentsStatsByGroup = new HashMap<>();
+        Map<String, int[]> summonerSpellsStatsByGroup = new HashMap<>();
 
         for (QueryRecord record : result) {
             boolean win    = record.getAsBoolean("win");
@@ -144,9 +157,10 @@ public class ChampionBuildService {
             JSONArray skillOrder = full.optJSONArray("skill_order");
             JSONArray prismatics = full.optJSONArray("prismatics");
             JSONArray augments = full.optJSONArray("augments");
+            JSONArray summonerSpells = full.optJSONArray("summoner_spells");
             if (buildObj == null || skillOrder == null || buildObj.optJSONArray("build") == null) continue;
 
-            BuildSignature sig = BuildSignature.from(full, skillOrder, prismatics, augments, filter);
+            BuildSignature sig = BuildSignature.from(full, skillOrder, prismatics, augments, summonerSpells, filter);
             System.out.println("--------------------------------");
             System.out.println("sig: " + sig);
             System.out.println("--------------------------------");
@@ -210,6 +224,13 @@ public class ChampionBuildService {
             stats.get(coreKey)[0]++;
             if (win) stats.get(coreKey)[1]++;
 
+            if (sig.summonerSpells() != null && !sig.summonerSpells().isEmpty()) {
+                String key = BuildUtils.joinInts(sig.summonerSpells());
+                summonerSpellsStatsByGroup.computeIfAbsent(key, k -> new int[2]);
+                summonerSpellsStatsByGroup.get(key)[0]++;
+                if (win) summonerSpellsStatsByGroup.get(key)[1]++;
+            }
+
             System.out.println("--------------------------------");
             System.out.println("game_id: " + record.get("game_id"));
             System.out.println("core: " + BuildUtils.toItemName(sig.starter()));
@@ -218,7 +239,7 @@ public class ChampionBuildService {
 
         return new StatsResult(stats, resolveRepresentatives(variantsByGroup), itemFreqByGroup,
                 variantsByGroup, spellOrdersByGroup, slotStatsByGroup, bootsStatsByGroup, suppItemStatsByGroup,
-                prismaticsStatsByGroup, augmentsStatsByGroup);
+                prismaticsStatsByGroup, augmentsStatsByGroup, summonerSpellsStatsByGroup);
     }
 
     private void addSlot(Map<Integer, Map<Integer, int[]>> slotStats, int slot, int id, boolean win) {
@@ -252,7 +273,7 @@ public class ChampionBuildService {
 
         return new StatsResult(stats, Collections.emptyMap(), Collections.emptyMap(),
                 Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
-                Collections.emptyMap(), Collections.emptyMap());
+                Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     }
 
     // -------------------------------------------------------------------------

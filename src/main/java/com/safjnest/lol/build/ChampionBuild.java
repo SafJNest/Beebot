@@ -16,6 +16,7 @@ public record ChampionBuild(
         List<Integer> core,
         List<List<SlotOption>> slots,
         List<List<SlotOption>> prismatics,
+        List<SlotOption> summonerSpells,
         List<SlotOption> augments,
         List<Integer> spellOrder,
         RuneSignature runes,
@@ -152,8 +153,16 @@ public record ChampionBuild(
             }
         }
 
+        List<SlotOption> summonerSpells = new ArrayList<>();
+        if (json.has("summonerSpells")) {
+            JSONArray summonerSpellsArr = json.getJSONArray("summonerSpells");
+            for (int i = 0; i < summonerSpellsArr.length(); i++) {
+                summonerSpells.add(SlotOption.fromJson(summonerSpellsArr.getJSONObject(i)));
+            }
+        }
+
         return new ChampionBuild(filter, starter,
-                boots, suppItem, core, slots, prismatics, augments,
+                boots, suppItem, core, slots, prismatics, summonerSpells, augments,
                 spellOrder, runes, json.getInt("games"), json.getDouble("winrate"));
     }
 
@@ -227,6 +236,13 @@ public record ChampionBuild(
             System.out.println("secondaryTree=" + runes.secondaryTree() + " secondaryRunes=" + runes.secondaryRunes());
             System.out.println("statShards=" + runes.statShards());
         }
+
+        System.out.println("summonerSpells:");
+        for (SlotOption opt : summonerSpells) {
+            int key = opt.itemId();
+            System.out.printf("  item=%-6s  %d matches  %.1f%% WR%n", (key / 100) + "-" + (key % 100), opt.matches(), opt.winrate() * 100);
+        }
+
     }
 
     public List<String> getSkillOrder() {

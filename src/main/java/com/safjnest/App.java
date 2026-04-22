@@ -70,10 +70,11 @@ public class App {
 
         BuildFilter filter = new BuildFilter()
         .setChampion(27)
-        .setLane(LaneType.TOP);
+        .setLane(LaneType.TOP)
+        .setPatch("16.8");
 
 
-        //new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(1).forEach(ChampionBuild::print);
+        new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(1).forEach(ChampionBuild::print);
 
 
 

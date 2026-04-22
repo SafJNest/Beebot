@@ -20,7 +20,8 @@ public record BuildSignature(
         List<Integer> fullBuild,
         List<Integer> spellOrder,
         List<Integer> prismatics,
-        List<Integer> augments
+        List<Integer> augments,
+        List<Integer> summonerSpells
 ) {
 
     private static final Set<Integer> BOOTS = Set.of(3006, 3009, 3020, 3047, 3111, 3117, 3158);
@@ -28,7 +29,7 @@ public record BuildSignature(
     private static final Set<Integer> TRINKETS = Set.of(3340, 3364, 3363, 3465, 3348);
     private static final Set<Integer> CONSUMABLES = Set.of(2003, 2055, 2138, 2139, 2140, 2010);
 
-    public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson, JSONArray prismaticsJson, JSONArray augmentsJson, BuildFilter filter) {
+    public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson, JSONArray prismaticsJson, JSONArray augmentsJson, JSONArray summonerSpellsJson, BuildFilter filter) {
         JSONObject buildObj = buildJson.optJSONObject("build");
         if (buildObj == null || buildObj.optJSONArray("build") == null) return null;
 
@@ -70,6 +71,16 @@ public record BuildSignature(
             }
         }
 
+        List<Integer> summonerSpellIds = new ArrayList<>();
+        if (summonerSpellsJson != null && summonerSpellsJson.length() > 0) {
+            for (int i = 0; i < summonerSpellsJson.length(); i++) {
+                int id = BuildUtils.parseAnyInt(summonerSpellsJson.opt(i));
+                if (id != 0) summonerSpellIds.add(id);
+            }
+        }
+
+        Collections.sort(summonerSpellIds);
+
         return new BuildSignature(
                 List.copyOf(starterList),
                 boots,
@@ -78,7 +89,8 @@ public record BuildSignature(
                 List.copyOf(fullBuildList),
                 List.copyOf(spellOrderList),
                 List.copyOf(prismaticIds),
-                List.copyOf(augmentIds)
+                List.copyOf(augmentIds),
+                List.copyOf(summonerSpellIds)
         );
     }
 
@@ -91,7 +103,7 @@ public record BuildSignature(
         String raw = BuildUtils.joinInts(starter) + "|" + boots + "|" + suppItem + "|"
                 + BuildUtils.joinInts(core) + "|" + BuildUtils.joinInts(fullBuild) + "|"
                 + BuildUtils.joinInts(spellOrder) + "|" + BuildUtils.joinInts(prismatics) + "|"
-                + BuildUtils.joinInts(augments);
+                + BuildUtils.joinInts(augments) + "|" + BuildUtils.joinInts(summonerSpells);
         return BuildUtils.toBase64(raw);
     }
 
@@ -107,7 +119,8 @@ public record BuildSignature(
                 p.length > 4 ? BuildUtils.parseDashList(p[4]) : List.of(),
                 p.length > 5 ? decodeSpellOrderSegment(p[5]) : defaultSpell,
                 p.length > 6 ? BuildUtils.parseDashList(p[6]) : List.of(),
-                p.length > 7 ? BuildUtils.parseDashList(p[7]) : List.of());
+                p.length > 7 ? BuildUtils.parseDashList(p[7]) : List.of(),
+                p.length > 8 ? BuildUtils.parseDashList(p[8]) : List.of());
     }
 
     private static int safeIntSeg(String[] p, int i) {
