@@ -37,15 +37,12 @@ public class ChampionBuildService {
     // -------------------------------------------------------------------------
 
     public List<ChampionBuild> getAll(BuildFilter filter) {
-        // ChampionBuild cached = LeagueDB.getChampionBuild(filter);
-        // if (cached != null) return Collections.singletonList(cached);
+        ChampionBuild cached = LeagueDB.getChampionBuild(filter);
+        if (cached != null) return Collections.singletonList(cached);
 
         List<ChampionBuild> computed = computeAll(filter);
         if (computed != null && !computed.isEmpty()) {
-            for (ChampionBuild build : computed) {
-                System.out.println(build.games() + " " + build.winrate());
-                //LeagueDB.saveChampionBuild(build);
-            }
+            computed.forEach(LeagueDB::saveChampionBuild);
         }
         return computed;
     }

@@ -340,6 +340,12 @@
       <artifactId>lombok</artifactId>
       <version>1.18.42</version>
     </dependency>
+    <dependency>
+        <groupId>com.esotericsoftware.kryo</groupId>
+        <artifactId>kryo5</artifactId>
+        <version>5.6.2</version>
+        <scope>compile</scope>
+    </dependency>
   </dependencies>
 
   <build>
