@@ -60,6 +60,7 @@ import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 
 
@@ -182,7 +183,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
     }
 
     public static String getSpellName(int id) {
-        return riotApi.getDDragonAPI().getSummonerSpell(id).getName();
+        return riotApi.getDDragonAPI().getSummonerSpell(LeagueMessageUtils.normalizeSpellId(id)).getName();
     }
 
 //   ▄█        ▄██████▄     ▄████████ ████████▄           ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄██████▄     ▄████████

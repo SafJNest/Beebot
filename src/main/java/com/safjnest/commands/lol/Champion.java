@@ -113,6 +113,7 @@ public class Champion extends SlashCommand {
         BuildFilter filter = new BuildFilter()
             .setChampion(champion.getId())
             .setLane(laneType)
+            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
             .setPatch("16.8");
 
         ChampionBuild build = new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(ChampionBuild::games).reversed()).findFirst().orElse(null);
@@ -154,18 +155,24 @@ public class Champion extends SlashCommand {
         else
             eb.addField("**Skill Order**", "—", false);
 
-        for (SlotOption opt : build.summonerSpells()) {
+        for (int index = 0; index < build.summonerSpells().size(); index++) {
+            var opt = build.summonerSpells().get(index);
+        
             int spell1 = opt.itemId() / 100;
             int spell2 = opt.itemId() % 100;
-
-            String spell1Name = spell1 + "";
-            String spell2Name = spell2 + "";
-            String summonerSpells = CustomEmojiHandler.getFormattedEmoji(spell1Name + "_") + " " + spell1Name + "\n" +
-            CustomEmojiHandler.getFormattedEmoji(spell2Name + "_") + " " + spell2Name + "\n";
-            eb.addField("**Summoner Spells**", summonerSpells, true);
+        
+            String spell1Name = LeagueHandler.getSpellName(spell1);
+            String spell2Name = LeagueHandler.getSpellName(spell2);
+        
+            String summonerSpells =
+                CustomEmojiHandler.getFormattedEmoji(spell1 + "_") + " " + spell1Name + "\n" +
+                CustomEmojiHandler.getFormattedEmoji(spell2 + "_") + " " + spell2Name + "\n" +
+                "`" + opt.matches() + " games`\n`" + String.format("%.2f", opt.winrate()) + "% WR`\n";
+        
+            String title = index == 0 ? "**Summoner Spells**" : " ";
+        
+            eb.addField(title, summonerSpells, true);
         }
-
-        //eb.addField("**Summoner Spells**", CustomEmojiHandler.getFormattedEmoji(build.getD() + "_") + " " + CustomEmojiHandler.getFormattedEmoji(build.getF() + "_") + "\n​\n", false);//DO NOT TOUCH \N\N THERE IS AN INVISIBLEAR CHARFATERT
 
         /*
         msg = "";

@@ -14,6 +14,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.build.BuildFilter;
 import com.safjnest.lol.build.ChampionBuild;
 import com.safjnest.lol.build.ChampionBuildService;
+import com.safjnest.lol.build.ChampionStatsService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.util.SafJNest;  
@@ -25,6 +26,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 
@@ -71,15 +73,17 @@ public class App {
         BuildFilter filter = new BuildFilter()
         .setChampion(27)
         .setLane(LaneType.TOP)
-        .setPatch("16.8");
+        .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+        .setRegion(LeagueShard.EUW1)
+        .setPatch("16.7");
 
 
-        //new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingInt(ChampionBuild::games).reversed()).limit(1).forEach(ChampionBuild::print);
+        new ChampionStatsService().get(filter).print();
 
 
 
-        bot = new Bot();
-        bot.il_risveglio_della_bestia();
+        //bot = new Bot();
+        //bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {
