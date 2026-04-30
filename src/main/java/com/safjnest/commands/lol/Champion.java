@@ -10,10 +10,10 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.ChampionFilter;
-import com.safjnest.lol.build.ChampionBuild;
-import com.safjnest.lol.build.ChampionBuild.SlotOption;
-import com.safjnest.lol.build.ChampionBuildService;
+import com.safjnest.lol.build.Filter;
+import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.Build.SlotOption;
+import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
@@ -110,13 +110,13 @@ public class Champion extends SlashCommand {
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
         HashMap<String, String> champInfo = Tracker.analyzeChampionData(champion.getId(), laneType);
 
-        ChampionFilter filter = new ChampionFilter()
+        Filter filter = new Filter()
             .setChampion(champion.getId())
             .setLane(laneType)
             .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
             .setPatch("16.8");
 
-        ChampionBuild build = new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(ChampionBuild::games).reversed()).findFirst().orElse(null);
+        Build build = new BuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(Build::games).reversed()).findFirst().orElse(null);
         if (build != null) build.print();
 
         eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + LeagueHandler.getVersion() + ")**");

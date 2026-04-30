@@ -1,13 +1,15 @@
-package com.safjnest.lol.build;
+package com.safjnest.lol.model;
 
+import com.safjnest.lol.build.Filter;
+import com.safjnest.lol.build.RuneSignature;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.util.KryoUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public record ChampionBuild(
-    ChampionFilter filter,
+public record Build(
+    Filter filter,
     List<Integer> starter,
     List<SlotOption> boots,
     List<SlotOption> suppItems,
@@ -28,8 +30,8 @@ public record ChampionBuild(
         return KryoUtils.encode(this);
     }
 
-    public static ChampionBuild decode(String b64, ChampionFilter filter) {
-        return KryoUtils.decode(b64, ChampionBuild.class);
+    public static Build decode(String b64) {
+        return KryoUtils.decode(b64, Build.class);
     }
 
     public void print() {

@@ -1,9 +1,13 @@
-package com.safjnest.lol.build;
+package com.safjnest.lol.service;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.safjnest.lol.build.ChampionBuild.SlotOption;
+import com.safjnest.lol.build.BuildSignature;
+import com.safjnest.lol.build.Filter;
+import com.safjnest.lol.build.RuneSignature;
+import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.Build.SlotOption;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
@@ -12,7 +16,7 @@ import com.safjnest.sql.database.LeagueDB;
 import java.util.*;
 import java.util.function.Function;
 
-public class ChampionBuildService {
+public class BuildService {
 
     private static final int MIN_GAMES    = 5;
     private static final int SLOT_OPTIONS = 3;
@@ -36,11 +40,11 @@ public class ChampionBuildService {
 
     // -------------------------------------------------------------------------
 
-    public List<ChampionBuild> getAll(ChampionFilter filter) {
-        ChampionBuild cached = LeagueDB.getChampionBuild(filter);
+    public List<Build> getAll(Filter filter) {
+        Build cached = LeagueDB.getChampionBuild(filter);
         if (cached != null) return Collections.singletonList(cached);
 
-        List<ChampionBuild> computed = computeAll(filter);
+        List<Build> computed = computeAll(filter);
         if (computed != null && !computed.isEmpty()) {
             computed.forEach(LeagueDB::saveChampionBuild);
         }
@@ -49,7 +53,7 @@ public class ChampionBuildService {
 
     // -------------------------------------------------------------------------
 
-    private List<ChampionBuild> computeAll(ChampionFilter filter) {
+    private List<Build> computeAll(Filter filter) {
         QueryResult result = LeagueDB.getChampionBuildsRaw(filter);
         StatsResult buildSr = computeBuildStats(filter, result);
         StatsResult runeSr  = computeRuneStats(result);
@@ -63,8 +67,8 @@ public class ChampionBuildService {
                 .toList();
     }
 
-    private ChampionBuild buildFromGroup(String groupKey, int[] groupStats, StatsResult buildSr,
-                                          RuneSignature runes, ChampionFilter filter) {
+    private Build buildFromGroup(String groupKey, int[] groupStats, StatsResult buildSr,
+                                          RuneSignature runes, Filter filter) {
         String repKey = buildSr.representativeByGroup().get(groupKey);
         if (repKey == null) return null;
 
@@ -73,13 +77,13 @@ public class ChampionBuildService {
 
         Map<Integer, Map<Integer, int[]>> slotStats = buildSr.slotStatsByGroup().getOrDefault(groupKey, Collections.emptyMap());
 
-        List<List<ChampionBuild.SlotOption>> slots = new ArrayList<>();
+        List<List<Build.SlotOption>> slots = new ArrayList<>();
         for (int slot = 4; slot < 8; slot++) {
             Map<Integer, int[]> itemStats = slotStats.getOrDefault(slot, Collections.emptyMap());
-            List<ChampionBuild.SlotOption> options = itemStats.entrySet().stream()
+            List<Build.SlotOption> options = itemStats.entrySet().stream()
                     .sorted(Comparator.comparingInt(e -> -e.getValue()[0]))
                     .limit(SLOT_OPTIONS)
-                    .map(e -> new ChampionBuild.SlotOption(
+                    .map(e -> new Build.SlotOption(
                             e.getKey(), e.getValue()[0],
                             e.getValue()[0] > 0 ? (double) e.getValue()[1] / e.getValue()[0] : 0))
                     .toList();
@@ -123,14 +127,14 @@ public class ChampionBuildService {
             .limit(SUMMONER_SPELLS_OPTIONS)
             .toList();
 
-        return new ChampionBuild(filter, base.starter(), boots, suppItem,
+        return new Build(filter, base.starter(), boots, suppItem,
                 base.core(), slots, prismatics, summonerSpells, augments, spellOrder, runes, groupStats[0],
                 groupStats[0] > 0 ? (double) groupStats[1] / groupStats[0] : 0);
     }
 
     // -------------------------------------------------------------------------
 
-    private StatsResult computeBuildStats(ChampionFilter filter, QueryResult result) {
+    private StatsResult computeBuildStats(Filter filter, QueryResult result) {
         Map<String, int[]> stats                             = new LinkedHashMap<>();
         Map<String, Map<String, Integer>> variantsByGroup    = new HashMap<>();
         Map<String, Map<Integer, Integer>> itemFreqByGroup   = new HashMap<>();

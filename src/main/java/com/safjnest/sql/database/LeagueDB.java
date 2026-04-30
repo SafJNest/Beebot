@@ -33,14 +33,15 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.ChampionFilter;
-import com.safjnest.lol.build.ChampionBuild;
-import com.safjnest.lol.build.ChampionStats;
-import com.safjnest.lol.build.ChampionStatsService;
+import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
-import com.safjnest.lol.model.MatchData;
-import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.ChampionStats;
+import com.safjnest.lol.model.Match;
+import com.safjnest.lol.model.Participant;
+import com.safjnest.lol.utils.ParticipantBuildCodec;
+import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
@@ -401,8 +402,8 @@ public class LeagueDB extends AbstractDB {
         return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';");
     }
 
-    public static int setMatchData(LOLMatch match) {
-        return setMatchData(match, false);
+    public static int saveMatch(LOLMatch match) {
+        return saveMatch(match, false);
     }
 
     public static boolean setMatchEvent(int matchId, String json) {
@@ -413,7 +414,7 @@ public class LeagueDB extends AbstractDB {
         return instance.defaultQuery("UPDATE `match` SET rank = '" + rank + "' WHERE id = " + matchId + ";");
     }
 
-    public static int setMatchData(LOLMatch match, boolean emptyIfExist) {
+    public static int saveMatch(LOLMatch match, boolean emptyIfExist) {
         int id = 0;
 
         Connection c = instance.getConnection();
@@ -697,9 +698,9 @@ public class LeagueDB extends AbstractDB {
     }
 
 
-    public static List<MatchData> getMatchHistory(int summonerId, LeagueMessageParameter parameter) throws SQLException {
-        List<MatchData> result = new ArrayList<>();
-        Map<Integer, MatchData> matchMap = new LinkedHashMap<>();
+    public static List<Match> getMatchHistory(int summonerId, LeagueMessageParameter parameter) throws SQLException {
+        List<Match> result = new ArrayList<>();
+        Map<Integer, Match> matchMap = new LinkedHashMap<>();
 
         try (Connection c = instance.getConnection()) {
             if (c == null) return result;
@@ -709,11 +710,11 @@ public class LeagueDB extends AbstractDB {
             List<Integer> matchIds = new ArrayList<>();
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q1)) {
                 while (rs.next()) {
-                    MatchData match = new MatchData();
+                    Match match = new Match();
                     match.id = rs.getInt("id");
                     match.gameId = rs.getString("game_id");
                     match.leagueShard = LeagueShard.valueOf(rs.getString("region"));
-                    match.gameType = GameQueueType.valueOf(rs.getString("queue"));
+                    match.queue = GameQueueType.valueOf(rs.getString("queue"));
                     match.timeStart = rs.getTimestamp("time_start").getTime();
                     match.timeEnd = rs.getTimestamp("time_end").getTime();
                     match.patch = rs.getString("patch");
@@ -752,7 +753,7 @@ public class LeagueDB extends AbstractDB {
 
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q2)) {
                 while (rs.next()) {
-                    ParticipantData p = new ParticipantData();
+                    Participant p = new Participant();
                     p.id = rs.getInt("id");
                     p.summonerId = rs.getInt("summoner_id");
                     p.matchId = rs.getInt("match_id");
@@ -788,16 +789,15 @@ public class LeagueDB extends AbstractDB {
 
                     try {
                         JSONObject pingsJson = new JSONObject(rs.getString("pings"));
-                        p.pings = new HashMap<>();
                         for(String key : pingsJson.keySet()) {
                             p.pings.put(key, pingsJson.getInt(key));
                         }   
                     } catch (Exception e) {}
  
 
-                    p.setBuild(rs.getString("build"));
+                    ParticipantBuildCodec.apply(p, rs.getString("build"));
 
-                    MatchData match = matchMap.get(p.matchId);
+                    Match match = matchMap.get(p.matchId);
                     if (match != null) {
                         match.participants.add(p);
                     }
@@ -810,12 +810,12 @@ public class LeagueDB extends AbstractDB {
     }
 
 
-    public static ChampionBuild getChampionBuild(ChampionFilter filter) {
+    public static Build getChampionBuild(Filter filter) {
         QueryRecord result = instance.lineQuery("SELECT data FROM champion_builds WHERE filter = '" + filter.toKey() + "' order by games desc limit 1");
-        return result.isEmpty() ? null : ChampionBuild.decode(result.get("data"), filter);
+        return result.isEmpty() ? null : Build.decode(result.get("data"));
     }
 
-    public static void saveChampionBuild(ChampionBuild build) {
+    public static void saveChampionBuild(Build build) {
         String sql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?) "
             + "ON DUPLICATE KEY UPDATE data = VALUES(data)";
         try (Connection conn = instance.getConnection();
@@ -831,7 +831,7 @@ public class LeagueDB extends AbstractDB {
         }
     }
 
-    public static QueryResult getChampionBuildsRaw(ChampionFilter filter) {
+    public static QueryResult getChampionBuildsRaw(Filter filter) {
         String query = "SELECT m.game_id, p.win, p.build, p.summoner_id FROM participant p JOIN `match` m ON m.id = p.match_id " + filter.sql();
         return instance.query(query);
     }
@@ -851,7 +851,7 @@ public class LeagueDB extends AbstractDB {
         }
     }
     
-    public static ChampionStats getChampionStats(ChampionFilter filter, int champion) {
+    public static ChampionStats getChampionStats(Filter filter, int champion) {
         QueryResult result = instance.query(
             "SELECT data FROM champion_stats WHERE filter = '" +
             filter.genericKey() + "' AND champion = '" + champion + "'"
@@ -860,7 +860,7 @@ public class LeagueDB extends AbstractDB {
         return ChampionStats.decode(result.get(0).get("data"));
     }
     
-    public static Map<Integer, ChampionStats> getChampionStats(ChampionFilter filter) {
+    public static Map<Integer, ChampionStats> getChampionStats(Filter filter) {
         QueryResult result = instance.query(
             "SELECT champion, data FROM champion_stats WHERE filter = '" +
             filter.genericKey() + "'"

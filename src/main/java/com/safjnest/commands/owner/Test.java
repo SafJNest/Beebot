@@ -28,9 +28,9 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
-import com.safjnest.lol.model.MatchData;
-import com.safjnest.lol.model.ParticipantChampionStat;
-import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.model.Match;
+import com.safjnest.lol.model.PlayerChampionStats;
+import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
@@ -1009,7 +1009,7 @@ public class Test extends Command{
                         System.out.println("Match not found");
                         continue;
                     }
-                    System.out.println(LeagueDB.setMatchData(m));
+                    System.out.println(LeagueDB.saveMatch(m));
                 }
                 break;
             case "pushbuild":
@@ -1026,7 +1026,7 @@ public class Test extends Command{
                         System.out.println("Match not found");
                         continue;
                     }
-                    System.out.println(LeagueDB.setMatchData(m));
+                    System.out.println(LeagueDB.saveMatch(m));
                 }
                 break;
             case "trackoldgames":
@@ -1047,7 +1047,7 @@ public class Test extends Command{
                     String summoner_id = row.get("summoner_id");
                     LOLMatch m = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.values()[row.getAsInt("league_shard")].toRegionShard(), game_id);
                     String puuid = "";
-                    int summoner_match_id = LeagueDB.setMatchData(m);
+                    int summoner_match_id = LeagueDB.saveMatch(m);
 
                     HashMap<String, HashMap<String, String>> matchData = Tracker.analyzeMatchBuild(m, m.getParticipants());
 
@@ -1310,16 +1310,16 @@ public class Test extends Command{
                     param.setQueueType(GameQueueType.TEAM_BUILDER_RANKED_SOLO);
                     for (QueryRecord row : res) {
                         try {
-                            List<MatchData> ms = LeagueDB.getMatchHistory(row.getAsInt("id"), param);
-                            HashMap<Integer, ParticipantChampionStat> championStats = new HashMap<>();
+                            List<Match> ms = LeagueDB.getMatchHistory(row.getAsInt("id"), param);
+                            HashMap<Integer, PlayerChampionStats> championStats = new HashMap<>();
     
                             HashMap<String, Set<Integer>> unique = new HashMap<>();
     
                             unique.put("champion", new HashSet<>());
     
     
-                            for (MatchData m : ms) {
-                                for (ParticipantData participant : m.participants) {
+                            for (Match m : ms) {
+                                for (Participant participant : m.participants) {
                                     if (participant.summonerId != row.getAsInt("id")) continue;
     
                                         unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
@@ -1327,7 +1327,7 @@ public class Test extends Command{
                                         int kills = Integer.parseInt(kda.split("/")[0]);
                                         int deaths = Integer.parseInt(kda.split("/")[1]);
                                         int assists = Integer.parseInt(kda.split("/")[2]);
-                                        championStats.computeIfAbsent(participant.champion, p -> new ParticipantChampionStat(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
+                                        championStats.computeIfAbsent(participant.champion, p -> new PlayerChampionStats(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
                                 }
                             }
                             if (!championStats.isEmpty()) {
@@ -1335,15 +1335,15 @@ public class Test extends Command{
                                 try (Connection c = LeagueDB.get().getConnection();
                                      PreparedStatement pstmt = c.prepareStatement(q)) {
 
-                                    for (ParticipantChampionStat stat : championStats.values()) {
+                                    for (PlayerChampionStats stat : championStats.values()) {
                                         pstmt.setInt(1, row.getAsInt("id"));
                                         pstmt.setInt(2, stat.getChampion());
                                         pstmt.setInt(3, stat.getGames());
                                         pstmt.setInt(4, stat.getWins());
-                                        pstmt.setInt(5, stat.getLossess());
+                                        pstmt.setInt(5, stat.getLosses());
                                         pstmt.setInt(6, stat.getKills());
                                         pstmt.setInt(7, stat.getDeaths());
-                                        pstmt.setInt(8, stat.getAssist());
+                                        pstmt.setInt(8, stat.getAssists());
                                         pstmt.setInt(9, stat.getLp());
                                         pstmt.setInt(10, stat.getScore());
                                         pstmt.addBatch();

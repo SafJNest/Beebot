@@ -12,11 +12,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.ChampionFilter;
-import com.safjnest.lol.build.ChampionBuild;
-import com.safjnest.lol.build.ChampionBuildService;
-import com.safjnest.lol.build.ChampionStats;
-import com.safjnest.lol.build.ChampionStatsService;
+import com.safjnest.lol.build.Filter;
+import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.ChampionStats;
+import com.safjnest.lol.service.BuildService;
+import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.BotSettings.Settings;
@@ -76,14 +76,14 @@ public class App {
 
         for (String patch : Arrays.asList("16.7", "16.8", "16.9")) {
             for (LeagueShard region : LeagueShardUtils.getActives()) {  
-                ChampionFilter filter = new ChampionFilter()
+                Filter filter = new Filter()
                 .setChampion(27)
                 .setLane(LaneType.TOP)
                 .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
                 .setRegion(region)
                 .setPatch(patch);
 
-                ChampionBuild build = new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(ChampionBuild::games).reversed()).findFirst().orElse(null);
+                Build build = new BuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(Build::games).reversed()).findFirst().orElse(null);
         
                 System.out.println(filter.toKey());
         

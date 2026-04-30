@@ -4,7 +4,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.AugmentData;
+import com.safjnest.lol.model.Augment;
 
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 
@@ -54,7 +54,6 @@ public class BuildUtils {
         return list;
     }
 
-    /** Parses JSON array elements with {@link #parseAnyInt} (numbers or strings). */
     public static List<Integer> jsonArrayToIntList(JSONArray arr) {
         if (arr == null) return List.of();
         List<Integer> list = new ArrayList<>(arr.length());
@@ -84,8 +83,8 @@ public class BuildUtils {
 
     public static String toAugmentName(int id) {
         String name = "";
-        AugmentData item = LeagueHandler.getAugments().stream().filter(a -> a.getId().equals(String.valueOf(id))).findFirst().orElse(null);
-        if (item != null) name += item.getName() + ", ";
+        Augment item = LeagueHandler.getAugments().stream().filter(a -> a.id().equals(String.valueOf(id))).findFirst().orElse(null);
+        if (item != null) name += item.name() + ", ";
         else name += "Unknown Augment (" + id + ")";
         return name;
     }

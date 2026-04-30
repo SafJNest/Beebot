@@ -1,8 +1,10 @@
-package com.safjnest.lol.build;
+package com.safjnest.lol.service;
 
-import com.safjnest.lol.build.ChampionStats.LaneStat;
-import com.safjnest.lol.build.ChampionStats.Matchup;
-import com.safjnest.lol.build.ChampionStats.MatchupKey;
+import com.safjnest.lol.build.Filter;
+import com.safjnest.lol.model.ChampionStats;
+import com.safjnest.lol.model.ChampionStats.LaneStat;
+import com.safjnest.lol.model.ChampionStats.Matchup;
+import com.safjnest.lol.model.ChampionStats.MatchupKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
@@ -21,7 +23,7 @@ public class ChampionStatsService {
 
     private record Row(int champion, LaneType lane, boolean win, TeamType team, String matchId, String bans) {}
 
-    public Map<Integer, ChampionStats> getAll(ChampionFilter filter) {
+    public Map<Integer, ChampionStats> getAll(Filter filter) {
         Map<Integer, ChampionStats> cached = LeagueDB.getChampionStats(filter);
         if (cached != null) return cached;
 
@@ -29,7 +31,7 @@ public class ChampionStatsService {
         return computed;
     }
 
-    public ChampionStats get(ChampionFilter filter) {
+    public ChampionStats get(Filter filter) {
         ChampionStats cached = LeagueDB.getChampionStats(filter, filter.champion());
         if (cached != null) return cached;
 
@@ -37,7 +39,7 @@ public class ChampionStatsService {
         return computed != null ? computed.get(filter.champion()) : null;
     }
 
-    private Map<Integer, ChampionStats> compute(ChampionFilter filter) {
+    private Map<Integer, ChampionStats> compute(Filter filter) {
         QueryResult result = LeagueDB.get().query(
             "SELECT p.champion, p.lane, p.win, p.team, m.id AS match_id, m.bans " +
             filter.sqlAllParticipants()
@@ -116,7 +118,7 @@ public class ChampionStatsService {
                     val[0] > 0 ? (double) val[1] / val[0] : 0))
             );
 
-            ChampionFilter champFilter = new ChampionFilter()
+            Filter champFilter = new Filter()
                 .setChampion(champ)
                 .setPatch(filter.patch())
                 .setQueue(filter.queue())

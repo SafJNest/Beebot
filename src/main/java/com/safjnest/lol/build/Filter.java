@@ -10,7 +10,7 @@ import java.util.Base64;
 
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 
-public class ChampionFilter {
+public class Filter {
 
     public enum RankBehavior {
         EXACT,
@@ -25,37 +25,37 @@ public class ChampionFilter {
     private String patch;
     private LeagueShard region;
 
-    public ChampionFilter setChampion(int champion) {
+    public Filter setChampion(int champion) {
         this.champion = champion;
         return this;
     }
 
-    public ChampionFilter setLane(LaneType lane) {
+    public Filter setLane(LaneType lane) {
         this.lane = lane;
         return this;
     }
 
-    public ChampionFilter setQueue(GameQueueType queue) {
+    public Filter setQueue(GameQueueType queue) {
         this.queue = queue;
         return this;
     }
 
-    public ChampionFilter setRank(TierType rank) {
+    public Filter setRank(TierType rank) {
         this.rank = rank;
         return this;
     }
 
-    public ChampionFilter setRankBehavior(RankBehavior b) {
+    public Filter setRankBehavior(RankBehavior b) {
         this.rankBehavior = b;
         return this;
     }
 
-    public ChampionFilter setPatch(String patch) {
+    public Filter setPatch(String patch) {
         this.patch = patch;
         return this;
     }
 
-    public ChampionFilter setRegion(LeagueShard region) {
+    public Filter setRegion(LeagueShard region) {
         this.region = region;
         return this;
     }

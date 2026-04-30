@@ -16,14 +16,14 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
-import com.safjnest.lol.build.ChampionFilter;
-import com.safjnest.lol.build.ChampionFilter.RankBehavior;
-import com.safjnest.lol.build.ChampionBuild;
-import com.safjnest.lol.build.ChampionBuild.SlotOption;
-import com.safjnest.lol.build.ChampionStats;
-import com.safjnest.lol.build.ChampionStats.LaneStat;
-import com.safjnest.lol.build.ChampionStats.Matchup;
-import com.safjnest.lol.build.ChampionStats.MatchupKey;
+import com.safjnest.lol.build.Filter;
+import com.safjnest.lol.build.Filter.RankBehavior;
+import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.Build.SlotOption;
+import com.safjnest.lol.model.ChampionStats;
+import com.safjnest.lol.model.ChampionStats.LaneStat;
+import com.safjnest.lol.model.ChampionStats.Matchup;
+import com.safjnest.lol.model.ChampionStats.MatchupKey;
 
 public class KryoUtils {
 
@@ -31,13 +31,13 @@ public class KryoUtils {
         Kryo kryo = new Kryo();
         kryo.setRegistrationRequired(false);
 
-        kryo.register(ChampionBuild.class);
+        kryo.register(Build.class);
         kryo.register(SlotOption.class);
         kryo.register(ChampionStats.class);
         kryo.register(LaneStat.class);
         kryo.register(MatchupKey.class);
         kryo.register(Matchup.class);
-        kryo.register(ChampionFilter.class);
+        kryo.register(Filter.class);
         kryo.register(RankBehavior.class);
         kryo.register(LaneType.class);
         kryo.register(GameQueueType.class);

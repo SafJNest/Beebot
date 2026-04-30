@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
-import com.safjnest.lol.model.ParticipantChampionStat;
+import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryRecord;
 
@@ -30,12 +30,12 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 public class LeagueMessageUtils {
 
 
-    public static String formatAdvancedData(ParticipantChampionStat championStats, ChampionMastery mastery) {
+    public static String formatAdvancedData(PlayerChampionStats championStats, ChampionMastery mastery) {
       StaticChampion champion = LeagueHandler.getChampionById(championStats.getChampion());
       if (champion == null) return championStats.getChampion() + "\n";
       int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
-      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLossess()) + " games (" + championStats.getWins() + "W/" + championStats.getLossess() + "L) | " + championStats.getLp() + "LP\n"
-          + "`Avg. KDA " + String.format("%.2f", championStats.avgKills()) + "/" + String.format("%.2f", championStats.avgDeaths()) + "/" + String.format("%.2f", championStats.avgAssist()) + "`";
+      return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLosses()) + " games (" + championStats.getWins() + "W/" + championStats.getLosses() + "L) | " + championStats.getLp() + "LP\n"
+          + "`Avg. KDA " + String.format("%.2f", championStats.avgKills()) + "/" + String.format("%.2f", championStats.avgDeaths()) + "/" + String.format("%.2f", championStats.avgAssists()) + "`";
     }
 
     public static String formatAdvancedData(QueryRecord data, ChampionMastery mastery) {

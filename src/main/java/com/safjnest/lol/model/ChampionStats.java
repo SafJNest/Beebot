@@ -1,5 +1,6 @@
-package com.safjnest.lol.build;
+package com.safjnest.lol.model;
 
+import com.safjnest.lol.build.Filter;
 import com.safjnest.util.KryoUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -8,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public record ChampionStats(
-    ChampionFilter filter,
+    Filter filter,
     int games,
     int picks,
     int bans,

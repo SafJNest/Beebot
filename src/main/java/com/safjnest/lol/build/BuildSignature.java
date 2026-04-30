@@ -29,7 +29,7 @@ public record BuildSignature(
     private static final Set<Integer> TRINKETS = Set.of(3340, 3364, 3363, 3465, 3348);
     private static final Set<Integer> CONSUMABLES = Set.of(2003, 2055, 2138, 2139, 2140, 2010);
 
-    public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson, JSONArray prismaticsJson, JSONArray augmentsJson, JSONArray summonerSpellsJson, ChampionFilter filter) {
+    public static BuildSignature from(JSONObject buildJson, JSONArray skillOrderJson, JSONArray prismaticsJson, JSONArray augmentsJson, JSONArray summonerSpellsJson, Filter filter) {
         JSONObject buildObj = buildJson.optJSONObject("build");
         if (buildObj == null || buildObj.optJSONArray("build") == null) return null;
 
@@ -150,7 +150,7 @@ public record BuildSignature(
 
     // -------------------------------------------------------------------------
 
-    private static List<Integer> extractStarter(ChampionFilter filter, JSONObject buildObj) {
+    private static List<Integer> extractStarter(Filter filter, JSONObject buildObj) {
         JSONArray arr = buildObj.optJSONArray("starter");
         if (arr == null) return Collections.emptyList();
 

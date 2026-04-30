@@ -200,7 +200,7 @@ public class Tracker {
             if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp()) && match.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return;
             if (isRemake(match)) return;
             
-            int summoner_match_id = LeagueDB.setMatchData(match);
+            int summoner_match_id = LeagueDB.saveMatch(match);
             LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
@@ -236,7 +236,7 @@ public class Tracker {
 
     public static ChronoTask analyzeMatchHistory(LOLMatch match) {
         return () -> {
-            int summoner_match_id = LeagueDB.setMatchData(match, true);
+            int summoner_match_id = LeagueDB.saveMatch(match, true);
             if (summoner_match_id == 0) {
                 BotLogger.info("[LPTracker] Match " + match.getGameId() + " already tracked");
                 return;

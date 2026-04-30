@@ -55,7 +55,7 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.model.AugmentData;
+import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
 import com.safjnest.lol.tracker.TrackerScheduler;
@@ -81,7 +81,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
     private static String[] champions;
 
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
-    private static ArrayList<AugmentData> augments = new ArrayList<>();
+    private static ArrayList<Augment> augments = new ArrayList<>();
     private static Map<Integer, StaticChampion> championsMap = new HashMap<>();
 
     static {
@@ -126,7 +126,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
         return runesHandler;
     }
 
-    public static ArrayList<AugmentData> getAugments() {
+    public static ArrayList<Augment> getAugments() {
         return augments;
     }
 
@@ -255,7 +255,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
                 for (Object key : spellData.keySet()) {
                     spellDataValues.put(String.valueOf(key), String.valueOf(spellData.get(key)));
                 }
-                augments.add(new AugmentData(
+                augments.add(new Augment(
                     String.valueOf(augment.get("id")),
                     String.valueOf(augment.get("name")),
                     String.valueOf(augment.get("tooltip")),

@@ -6,7 +6,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.AugmentData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -43,21 +42,21 @@ public class Augment extends SlashCommand {
     @Override
 	protected void execute(SlashCommandEvent event) {
         String aug = event.getOption("augment").getAsString();
-        AugmentData augment = null;
+        com.safjnest.lol.model.Augment augment = null;
         
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Bot.getColor());
         
-        for(AugmentData a : LeagueHandler.getAugments()){
-            if(a.getId().equalsIgnoreCase(aug)){
+        for(com.safjnest.lol.model.Augment a : LeagueHandler.getAugments()){
+            if(a.id().equalsIgnoreCase(aug)){
                     augment = a;
                     break;
             }
         }
         
-        RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji("a"+augment.getId());
-        eb.setTitle(augment.getName().toUpperCase() + " (" + augment.getId() + ")");
-        eb.setDescription(augment.getFormattedDesc());
+        RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji("a"+augment.id());
+        eb.setTitle(augment.name().toUpperCase() + " (" + augment.id() + ")");
+        eb.setDescription(augment.formattedTooltip());
         eb.setThumbnail(emoji.getImageUrl());
         event.replyEmbeds(eb.build()).queue();
     }

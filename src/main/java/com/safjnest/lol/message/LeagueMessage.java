@@ -22,10 +22,9 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.Accumulator;
-import com.safjnest.lol.model.MatchData;
-import com.safjnest.lol.model.ParticipantChampionStat;
-import com.safjnest.lol.model.ParticipantData;
+import com.safjnest.lol.model.Match;
+import com.safjnest.lol.model.PlayerChampionStats;
+import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
@@ -35,6 +34,7 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.util.Accumulator;
 import com.safjnest.util.DateHandler;
 import com.safjnest.util.SafJNest;
 
@@ -871,9 +871,9 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getOpggEmbedMatchData(EmbedBuilder eb, MatchData match, Summoner summoner) {
-        ParticipantData me = null;
-        for(ParticipantData mp : match.participants){
+    private static EmbedBuilder getOpggEmbedMatch(EmbedBuilder eb, Match match, Summoner summoner) {
+        Participant me = null;
+        for(Participant mp : match.participants){
             if(mp.puuid.equals(summoner.getPUUID())){
                 me = mp;
                 break;
@@ -882,7 +882,7 @@ public class LeagueMessage {
 
         ArrayList<String> blue = new ArrayList<>();
         ArrayList<String> red = new ArrayList<>();
-        for(ParticipantData searchMe : match.participants) {
+        for(Participant searchMe : match.participants) {
             String participantString = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(searchMe.champion).getName())
                                         + " "
                                         + searchMe.kda;
@@ -901,7 +901,7 @@ public class LeagueMessage {
         OffsetDateTime offsetDateTime = instant.atOffset(offset);
         String date = DateHandler.formatDate(offsetDateTime);
         date = "<t:" + ((match.timeStart/1000) + (match.getDuration()/1000)) + ":R>";
-        switch (match.gameType){
+        switch (match.queue){
             case STRAWBERRY:
                 content = CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.champion)) + " Level: " + 
                         (me.skillOrder.size() > 0 ? me.skillOrder.size() : 1) + 
@@ -918,7 +918,7 @@ public class LeagueMessage {
                 eb.addField("Swarm" + ": " + (me.win ? "WIN" : "LOSE"), content, true);
 
                 String swarmTeam = "";
-                for(ParticipantData mt : match.participants)
+                for(Participant mt : match.participants)
                     swarmTeam += CustomEmojiHandler.getFormattedEmoji(String.valueOf(mt.champion)) + " Level: " +  
                             (mt.skillOrder.size() > 0 ? mt.skillOrder.size() : 1) + 
                             " | " + CustomEmojiHandler.getFormattedEmoji("golds") + mt.goldEarned + "\n";
@@ -957,7 +957,7 @@ public class LeagueMessage {
 
                 HashMap<Integer, String> positions = new HashMap<>();
 
-                for(ParticipantData mt : match.participants){
+                for(Participant mt : match.participants){
                     String name = "";
                     String team = "";
                     switch (mt.subTeam) {
@@ -1007,7 +1007,7 @@ public class LeagueMessage {
                 break;
 
             default:
-                String matchTitle = GameQueueTypeUtils.prettyName(match.gameType) + ": " + (me.win ? "WIN" : "LOSE");
+                String matchTitle = GameQueueTypeUtils.prettyName(match.queue) + ": " + (me.win ? "WIN" : "LOSE");
                 content = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(me.champion).getName()) + kda + " | " + "**Vision: **" + me.visionScore + "\n"
                         + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
                         + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_") 
@@ -1036,7 +1036,7 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static String getFormattedPrimaryRunes(ParticipantData p) {
+    private static String getFormattedPrimaryRunes(Participant p) {
         StringBuilder sb = new StringBuilder();
         sb.append(CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getFatherRuneById(p.primaryRunes.get(0))));
         for (int i = 1; i < p.primaryRunes.size(); i++) {
@@ -1046,7 +1046,7 @@ public class LeagueMessage {
         return sb.toString();
     }
 
-    private static String getFormattedSecondaryRunes(ParticipantData p) {
+    private static String getFormattedSecondaryRunes(Participant p) {
         StringBuilder sb = new StringBuilder();
         sb.append(CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getFatherRuneById(p.secondaryRunes.get(0))));
         for (int i = 1; i < p.secondaryRunes.size(); i++) {
@@ -1253,7 +1253,7 @@ public class LeagueMessage {
 
     private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
-        List<MatchData> matches = null;
+        List<Match> matches = null;
         try {
             matches = LeagueDB.getMatchHistory(summonerId, parameter);
         } catch (SQLException e) {
@@ -1392,11 +1392,11 @@ public class LeagueMessage {
         return rows;
     }
 
-    private static EmbedBuilder getPings(EmbedBuilder eb, List<MatchData> matches, int summonerId) {
+    private static EmbedBuilder getPings(EmbedBuilder eb, List<Match> matches, int summonerId) {
         HashMap<String, Integer> pings = new HashMap<>();
 
-        for (MatchData match : matches) {
-            for (ParticipantData participant : match.participants) {
+        for (Match match : matches) {
+            for (Participant participant : match.participants) {
                 if (participant.summonerId != summonerId) continue;
                 for (String ping : participant.pings.keySet()) 
                     pings.put(ping, pings.getOrDefault(ping, 0) + participant.pings.get(ping));
@@ -1433,15 +1433,15 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<MatchData> matches, int summonerId, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<Match> matches, int summonerId, LeagueMessageParameter parameter) {
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
 
         HashMap<String, Set<Integer>> unique = new HashMap<>();
         unique.put("champion", new HashSet<>());
 
-        for (MatchData match : matches) {
-            for (ParticipantData participant : match.participants) {
+        for (Match match : matches) {
+            for (Participant participant : match.participants) {
                 if (participant.summonerId != summonerId) {
                     continue;
                 }
@@ -1496,7 +1496,7 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<Match> matches, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
 
         if (matches.size() == 0) {
             eb.setDescription("Not enough games");
@@ -1519,7 +1519,7 @@ public class LeagueMessage {
 
         HashMap<String, Set<Integer>> unique = new HashMap<>();
 
-        HashMap<Integer, ParticipantChampionStat> championStats = new HashMap<>();
+        HashMap<Integer, PlayerChampionStats> championStats = new HashMap<>();
         HashMap<Integer, ChampionMastery> masteries = LeagueHandler.getMastery(summoner);
 
         long timePlayed = 0;
@@ -1529,13 +1529,13 @@ public class LeagueMessage {
         unique.put("champion", new HashSet<>());
         unique.put("lane", new HashSet<>());
         unique.put("queue", new HashSet<>());
-        for (MatchData match : matches) {
+        for (Match match : matches) {
             if (match.getDuration() <= 330) continue;
             timePlayed += match.getDuration();
             if (oldest > match.timeStart) oldest = match.timeStart;
             if (newest < match.timeStart) newest = match.timeStart;
 
-            for (ParticipantData participant : match.participants) {
+            for (Participant participant : match.participants) {
                 if (participant.summonerId != summonerId) continue;
 
                 for (String ping : participant.pings.keySet()) 
@@ -1543,11 +1543,11 @@ public class LeagueMessage {
 
                 unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
                 unique.getOrDefault("lane", new HashSet<>()).add(participant.lane.ordinal());
-                unique.getOrDefault("queue", new HashSet<>()).add(match.gameType.ordinal());
+                unique.getOrDefault("queue", new HashSet<>()).add(match.queue.ordinal());
 
                 LaneType lane = participant.lane;
                 TeamType team = participant.team;
-                GameQueueType gameQueue = match.gameType;
+                GameQueueType gameQueue = match.queue;
                 boolean win = participant.win;
     
                 String kda = participant.kda;
@@ -1603,7 +1603,7 @@ public class LeagueMessage {
                 dSpells.merge(LeagueMessageUtils.normalizeSpellId(participant.summonerSpell1), participant.d, Integer::sum);
                 fSpells.merge(LeagueMessageUtils.normalizeSpellId(participant.summonerSpell2), participant.f, Integer::sum);
 
-                championStats.computeIfAbsent(participant.champion, p -> new ParticipantChampionStat(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
+                championStats.computeIfAbsent(participant.champion, p -> new PlayerChampionStats(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
 
                 if (isArena) {
                     int placement = participant.subTeamPlacement;
@@ -1821,7 +1821,7 @@ public class LeagueMessage {
                 .sorted((a, b) -> Integer.compare(b.getValue().getGames(), a.getValue().getGames()))
                 .limit(6)
                 .map(entry -> {
-                    ParticipantChampionStat stat = entry.getValue();
+                    PlayerChampionStats stat = entry.getValue();
                     ChampionMastery mastery = masteries.get(stat.getChampion());
                     return LeagueMessageUtils.formatAdvancedData(stat, mastery);
                 })
@@ -1913,14 +1913,14 @@ public class LeagueMessage {
 
     }
 
-    private static EmbedBuilder getAllChampions(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getAllChampions(EmbedBuilder eb, List<Match> matches, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
 
         if (matches.size() == 0) {
             eb.setDescription("Not enough games");
             return eb;
         }
 
-        HashMap<Integer, ParticipantChampionStat> championStats = new HashMap<>();
+        HashMap<Integer, PlayerChampionStats> championStats = new HashMap<>();
         HashMap<Integer, ChampionMastery> masteries = LeagueHandler.getMastery(summoner);
 
         HashMap<String, Set<Integer>> unique = new HashMap<>();
@@ -1928,8 +1928,8 @@ public class LeagueMessage {
         unique.put("champion", new HashSet<>());
 
 
-        for (MatchData match : matches) {
-            for (ParticipantData participant : match.participants) {
+        for (Match match : matches) {
+            for (Participant participant : match.participants) {
                 if (participant.summonerId != summonerId) continue;
 
                     unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
@@ -1937,7 +1937,7 @@ public class LeagueMessage {
                     int kills = Integer.parseInt(kda.split("/")[0]);
                     int deaths = Integer.parseInt(kda.split("/")[1]);
                     int assists = Integer.parseInt(kda.split("/")[2]);
-                    championStats.computeIfAbsent(participant.champion, p -> new ParticipantChampionStat(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
+                    championStats.computeIfAbsent(participant.champion, p -> new PlayerChampionStats(participant.champion)).add(kills, deaths, assists, participant.gain, participant.win);
             }
         }
         String champStats = championStats.entrySet().stream()
@@ -1945,7 +1945,7 @@ public class LeagueMessage {
             .skip(parameter.getOffset())
             .limit(10)
             .map(entry -> {
-                ParticipantChampionStat stat = entry.getValue();
+                PlayerChampionStats stat = entry.getValue();
                 ChampionMastery mastery = masteries.get(stat.getChampion());
                 return LeagueMessageUtils.formatAdvancedData(stat, mastery);
             })
@@ -1965,9 +1965,9 @@ public class LeagueMessage {
 
     }
 
-    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<MatchData> matches, Summoner s, int summonerId, LeagueMessageParameter parameter) {
-        for (MatchData match : matches) 
-            eb = getOpggEmbedMatchData(eb, match, s);
+    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<Match> matches, Summoner s, int summonerId, LeagueMessageParameter parameter) {
+        for (Match match : matches) 
+            eb = getOpggEmbedMatch(eb, match, s);
         
         int totalPages = LeagueDB.countMatchHistory(summonerId, parameter);
         int pages = (int) Math.ceil((double) totalPages / 5);
@@ -1977,7 +1977,7 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getObjectives(EmbedBuilder eb, List<MatchData> matches, Summoner summoner, int summonerId) {        
+    private static EmbedBuilder getObjectives(EmbedBuilder eb, List<Match> matches, Summoner summoner, int summonerId) {        
         HashMap<String, Integer> monsterKills = new HashMap<>();
         HashMap<String, Integer> monsterParticipation = new HashMap<>();
         HashMap<String, Integer> totalMonstersPerType = new HashMap<>();
@@ -1988,8 +1988,8 @@ public class LeagueMessage {
         
         int totalGames = 0;
         
-        for (MatchData match : matches) {
-            ParticipantData participant = match.participants.stream()
+        for (Match match : matches) {
+            Participant participant = match.participants.stream()
                     .filter(p -> p.summonerId == summonerId)
                     .findFirst()
                     .orElse(null);
