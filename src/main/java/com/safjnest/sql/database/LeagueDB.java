@@ -811,12 +811,24 @@ public class LeagueDB extends AbstractDB {
 
 
     public static ChampionBuild getChampionBuild(ChampionFilter filter) {
-        QueryRecord result = instance.lineQuery("SELECT build_data FROM champion_builds WHERE filter_key = '" + filter.toKey() + "' order by games desc limit 1");
-        return result.isEmpty() ? null : ChampionBuild.decode(result.get("build_data"), filter);
+        QueryRecord result = instance.lineQuery("SELECT data FROM champion_builds WHERE filter = '" + filter.toKey() + "' order by games desc limit 1");
+        return result.isEmpty() ? null : ChampionBuild.decode(result.get("data"), filter);
     }
 
     public static void saveChampionBuild(ChampionBuild build) {
-        instance.query("INSERT INTO champion_builds (games, winrate, filter_key, build_data) VALUES ('" + build.games() + "', '" + build.winrate() + "', '" + build.filter().toKey() + "', '" + build.encode() + "')");
+        String sql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE data = VALUES(data)";
+        try (Connection conn = instance.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, build.games());
+            pstmt.setDouble(2, build.winrate());
+            pstmt.setString(3, build.filter().toKey());
+            pstmt.setString(4, build.encode());
+            pstmt.executeUpdate();
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static QueryResult getChampionBuildsRaw(ChampionFilter filter) {
@@ -825,33 +837,39 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static void saveChampionStats(ChampionStats stats) {
-        String encoded = stats.encode();
-        instance.query(
-            "INSERT INTO champion_stats (filter_key, champion, stats_data) VALUES ('" +
-            stats.filter().toKey() + "', '" + stats.filter().champion() + "', '" + encoded +
-            "') ON DUPLICATE KEY UPDATE stats_data = VALUES(stats_data)"
-        );
+        String sql = "INSERT INTO champion_stats (filter, champion, data) VALUES (?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE data = VALUES(data)";
+        try (Connection conn = instance.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, stats.filter().genericKey());
+            pstmt.setInt(2, stats.filter().champion());
+            pstmt.setString(3, stats.encode());
+            pstmt.executeUpdate();
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
     
     public static ChampionStats getChampionStats(ChampionFilter filter, int champion) {
         QueryResult result = instance.query(
-            "SELECT stats_data FROM champion_stats WHERE filter_key = '" +
-            filter.toKey() + "' AND champion = '" + champion + "'"
+            "SELECT data FROM champion_stats WHERE filter = '" +
+            filter.genericKey() + "' AND champion = '" + champion + "'"
         );
         if (result.isEmpty()) return null;
-        return ChampionStats.decode(result.get(0).get("stats_data"));
+        return ChampionStats.decode(result.get(0).get("data"));
     }
     
     public static Map<Integer, ChampionStats> getChampionStats(ChampionFilter filter) {
         QueryResult result = instance.query(
-            "SELECT champion, stats_data FROM champion_stats WHERE filter_key = '" +
-            filter.toKey() + "'"
+            "SELECT champion, data FROM champion_stats WHERE filter = '" +
+            filter.genericKey() + "'"
         );
         if (result.isEmpty()) return null;
         Map<Integer, ChampionStats> map = new HashMap<>();
         for (QueryRecord r : result) {
             int champion = r.getAsInt("champion");
-            map.put(champion, ChampionStats.decode(r.get("stats_data")));
+            map.put(champion, ChampionStats.decode(r.get("data")));
         }
         return map;
     }

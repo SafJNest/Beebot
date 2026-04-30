@@ -3,6 +3,7 @@ package com.safjnest;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Properties;
 
@@ -17,6 +18,7 @@ import com.safjnest.lol.build.ChampionBuildService;
 import com.safjnest.lol.build.ChampionStats;
 import com.safjnest.lol.build.ChampionStatsService;
 import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.util.KryoUtils;
 import com.safjnest.util.SafJNest;  
@@ -71,17 +73,27 @@ public class App {
 
         // LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.SG2.toRegionShard(), "SG2_145570341");
         // Tracker.analyzeMatchHistory(match).complete();
-        System.out.println(LeagueHandler.getVersion());
-        ChampionFilter filter = new ChampionFilter()
-        .setChampion(27)
-        .setLane(LaneType.TOP)
-        .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-        .setRegion(LeagueShard.EUW1)
-        .setPatch("16.8");
+
+        for (String patch : Arrays.asList("16.7", "16.8", "16.9")) {
+            for (LeagueShard region : LeagueShardUtils.getActives()) {  
+                ChampionFilter filter = new ChampionFilter()
+                .setChampion(27)
+                .setLane(LaneType.TOP)
+                .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                .setRegion(region)
+                .setPatch(patch);
+
+                ChampionBuild build = new ChampionBuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(ChampionBuild::games).reversed()).findFirst().orElse(null);
+        
+                System.out.println(filter.toKey());
+        
+        
+                ChampionStats stats = new ChampionStatsService().get(filter);
+                stats.print();
+            }
+        }
 
 
-        ChampionStats stats = new ChampionStatsService().get(filter);
-        System.out.println(KryoUtils.encode(stats));
 
 
 

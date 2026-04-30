@@ -26,9 +26,6 @@ public class ChampionStatsService {
         if (cached != null) return cached;
 
         Map<Integer, ChampionStats> computed = compute(filter);
-        if (computed != null && !computed.isEmpty()) {
-            computed.values().forEach(LeagueDB::saveChampionStats);
-        }
         return computed;
     }
 
@@ -37,9 +34,6 @@ public class ChampionStatsService {
         if (cached != null) return cached;
 
         Map<Integer, ChampionStats> computed = compute(filter);
-        if (computed != null && !computed.isEmpty()) {
-            computed.values().forEach(LeagueDB::saveChampionStats);
-        }
         return computed != null ? computed.get(filter.champion()) : null;
     }
 
@@ -135,6 +129,9 @@ public class ChampionStatsService {
             ));
         }
 
+        if (stats != null && !stats.isEmpty()) {
+            stats.values().forEach(LeagueDB::saveChampionStats);
+        }
         return stats;
     }
 

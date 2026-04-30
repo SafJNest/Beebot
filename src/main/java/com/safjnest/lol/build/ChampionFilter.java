@@ -133,6 +133,12 @@ public class ChampionFilter {
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
+    public String genericKey() {
+        String raw = val(queue) + "|" + val(rank) + "|"
+                + val(patch) + "|" + val(region);
+        return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    }
+
     private String rankSql() {
         if (rank == TierType.CHALLENGER)
             return " AND m.rank IN ('CHALLENGER', 'GRANDMASTER')";
