@@ -1,10 +1,16 @@
 package com.safjnest.lol.build;
 
-import com.safjnest.lol.build.ChampionBuild.SlotOption;
 import com.safjnest.lol.build.ChampionStats.LaneStat;
+import com.safjnest.lol.build.ChampionStats.Matchup;
+import com.safjnest.lol.build.ChampionStats.MatchupKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
+
+import com.safjnest.lol.utils.LaneTypeUtils;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -13,11 +19,31 @@ import java.util.*;
 
 public class ChampionStatsService {
 
-    private static final int MIN_GAMES     = 1;
+    private record Row(int champion, LaneType lane, boolean win, TeamType team, String matchId, String bans) {}
 
-    private record Row(int champion, String lane, boolean win, String team, String matchId, String bans) {}
+    public Map<Integer, ChampionStats> getAll(ChampionFilter filter) {
+        Map<Integer, ChampionStats> cached = LeagueDB.getChampionStats(filter);
+        if (cached != null) return cached;
 
-    public Map<Integer, ChampionStats> getAll(BuildFilter filter) {
+        Map<Integer, ChampionStats> computed = compute(filter);
+        if (computed != null && !computed.isEmpty()) {
+            computed.values().forEach(LeagueDB::saveChampionStats);
+        }
+        return computed;
+    }
+
+    public ChampionStats get(ChampionFilter filter) {
+        ChampionStats cached = LeagueDB.getChampionStats(filter, filter.champion());
+        if (cached != null) return cached;
+
+        Map<Integer, ChampionStats> computed = compute(filter);
+        if (computed != null && !computed.isEmpty()) {
+            computed.values().forEach(LeagueDB::saveChampionStats);
+        }
+        return computed != null ? computed.get(filter.champion()) : null;
+    }
+
+    private Map<Integer, ChampionStats> compute(ChampionFilter filter) {
         QueryResult result = LeagueDB.get().query(
             "SELECT p.champion, p.lane, p.win, p.team, m.id AS match_id, m.bans " +
             filter.sqlAllParticipants()
@@ -27,9 +53,9 @@ public class ChampionStatsService {
         for (QueryRecord r : result) {
             Row row = new Row(
                 Integer.parseInt(r.get("champion")),
-                r.get("lane"),
+                r.getAsLaneType("lane"),
                 r.getAsBoolean("win"),
-                r.get("team"),
+                r.getAsTeamType("team"),
                 r.get("match_id"),
                 r.get("bans")
             );
@@ -38,10 +64,10 @@ public class ChampionStatsService {
 
         int totalGames = byMatch.size();
 
-        Map<Integer, int[]>               pickWin      = new HashMap<>();
-        Map<Integer, int[]>               banCount     = new HashMap<>();
-        Map<Integer, Map<String, int[]>>  laneAccum    = new HashMap<>();
-        Map<Integer, Map<Integer, int[]>> matchupAccum = new HashMap<>();
+        Map<Integer, int[]>                  pickWin      = new HashMap<>();
+        Map<Integer, int[]>                  banCount     = new HashMap<>();
+        Map<Integer, Map<LaneType, int[]>>   laneAccum    = new HashMap<>();
+        Map<Integer, Map<MatchupKey, int[]>> matchupAccum = new HashMap<>();
 
         for (List<Row> match : byMatch.values()) {
             JSONObject bansObj = new JSONObject(match.get(0).bans());
@@ -52,7 +78,7 @@ public class ChampionStatsService {
                 }
             }
 
-            Map<String, List<Row>> byTeam = new HashMap<>();
+            Map<TeamType, List<Row>> byTeam = new HashMap<>();
             for (Row p : match) {
                 byTeam.computeIfAbsent(p.team(), k -> new ArrayList<>()).add(p);
 
@@ -90,14 +116,13 @@ public class ChampionStatsService {
                 .sorted(Comparator.comparingInt(LaneStat::games).reversed())
                 .toList();
 
-            List<SlotOption> matchups = matchupAccum.getOrDefault(champ, Map.of()).entrySet().stream()
-                .filter(e -> e.getValue()[0] >= MIN_GAMES)
-                .map(e -> new SlotOption(e.getKey(), e.getValue()[0],
-                    e.getValue()[0] > 0 ? (double) e.getValue()[1] / e.getValue()[0] : 0))
-                .sorted(Comparator.comparingDouble(SlotOption::winrate).reversed())
-                .toList();
+            Map<MatchupKey, Matchup> matchups = new LinkedHashMap<>();
+            matchupAccum.getOrDefault(champ, Map.of()).forEach((key, val) ->
+                matchups.put(key, new Matchup(val[0],
+                    val[0] > 0 ? (double) val[1] / val[0] : 0))
+            );
 
-            BuildFilter champFilter = new BuildFilter()
+            ChampionFilter champFilter = new ChampionFilter()
                 .setChampion(champ)
                 .setPatch(filter.patch())
                 .setQueue(filter.queue())
@@ -106,54 +131,26 @@ public class ChampionStatsService {
             stats.put(champ, new ChampionStats(
                 champFilter, totalGames, picks, bans, wins,
                 winrate, pickrate, banrate,
-                laneStats,
-                matchups.stream().toList(),
-                matchups.reversed().stream().toList()
+                laneStats, matchups
             ));
         }
 
         return stats;
     }
 
-    public ChampionStats get(BuildFilter filter) {
-        return getAll(filter).get(filter.champion());
-    }
-
     private void accumMatchups(List<Row> team, List<Row> enemies,
-            Map<Integer, Map<Integer, int[]>> accum) {
+            Map<Integer, Map<MatchupKey, int[]>> accum) {
         for (Row p : team) {
-            String oppLane = opponentLane(p.lane());
+            LaneType oppLane = LaneTypeUtils.opponentLane(p.lane());
             for (Row opp : enemies) {
                 if (oppLane != null && !oppLane.equals(opp.lane())) continue;
+                MatchupKey key = new MatchupKey(opp.champion(), opp.lane());
                 int[] mw = accum
                     .computeIfAbsent(p.champion(), k -> new HashMap<>())
-                    .computeIfAbsent(opp.champion(), k -> new int[2]);
+                    .computeIfAbsent(key, k -> new int[2]);
                 mw[0]++;
                 if (p.win()) mw[1]++;
             }
         }
-    }
-
-    private String opponentLane(String lane) {
-        if (lane == null) return null;
-        return switch (lane) {
-            case "UTILITY" -> "BOT";
-            case "BOT"     -> "UTILITY";
-            default        -> lane;
-        };
-    }
-
-    public void print(ChampionStats stats) {
-        System.out.println("Stats for " + stats.filter().champion() + " in " + stats.filter().lane());
-        System.out.println("Games: "    + stats.games());
-        System.out.println("Picks: "    + stats.picks());
-        System.out.println("Bans: "     + stats.bans());
-        System.out.println("Wins: "     + stats.wins());
-        System.out.println("Winrate: "  + stats.winrate()  * 100 + "%");
-        System.out.println("Pickrate: " + stats.pickrate() * 100 + "%");
-        System.out.println("Banrate: "  + stats.banrate()  * 100 + "%");
-        System.out.println("Lane stats: "     + stats.laneStats());
-        System.out.println("Best matchups: "  + stats.bestMatchups());
-        System.out.println("Worst matchups: " + stats.worstMatchups());
     }
 }

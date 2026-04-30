@@ -94,6 +94,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
         
         LeagueHandler.version = getVersion();
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
+        System.out.println(LeagueHandler.runesURL);
 
         championsMap = riotApi.getDDragonAPI().getChampions();
         loadChampions();

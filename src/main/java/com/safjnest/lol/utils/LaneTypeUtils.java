@@ -42,4 +42,13 @@ public class LaneTypeUtils {
           default -> type.name();
       };
   }
+
+  public static LaneType opponentLane(LaneType lane) {
+    if (lane == null) return null;
+    return switch (lane) {
+        case UTILITY -> LaneType.BOT;
+        case BOT     -> LaneType.UTILITY;
+        default        -> lane;
+    };
+  }
 }

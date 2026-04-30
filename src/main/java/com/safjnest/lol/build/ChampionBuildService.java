@@ -36,7 +36,7 @@ public class ChampionBuildService {
 
     // -------------------------------------------------------------------------
 
-    public List<ChampionBuild> getAll(BuildFilter filter) {
+    public List<ChampionBuild> getAll(ChampionFilter filter) {
         ChampionBuild cached = LeagueDB.getChampionBuild(filter);
         if (cached != null) return Collections.singletonList(cached);
 
@@ -49,7 +49,7 @@ public class ChampionBuildService {
 
     // -------------------------------------------------------------------------
 
-    private List<ChampionBuild> computeAll(BuildFilter filter) {
+    private List<ChampionBuild> computeAll(ChampionFilter filter) {
         QueryResult result = LeagueDB.getChampionBuildsRaw(filter);
         StatsResult buildSr = computeBuildStats(filter, result);
         StatsResult runeSr  = computeRuneStats(result);
@@ -64,7 +64,7 @@ public class ChampionBuildService {
     }
 
     private ChampionBuild buildFromGroup(String groupKey, int[] groupStats, StatsResult buildSr,
-                                          RuneSignature runes, BuildFilter filter) {
+                                          RuneSignature runes, ChampionFilter filter) {
         String repKey = buildSr.representativeByGroup().get(groupKey);
         if (repKey == null) return null;
 
@@ -130,7 +130,7 @@ public class ChampionBuildService {
 
     // -------------------------------------------------------------------------
 
-    private StatsResult computeBuildStats(BuildFilter filter, QueryResult result) {
+    private StatsResult computeBuildStats(ChampionFilter filter, QueryResult result) {
         Map<String, int[]> stats                             = new LinkedHashMap<>();
         Map<String, Map<String, Integer>> variantsByGroup    = new HashMap<>();
         Map<String, Map<Integer, Integer>> itemFreqByGroup   = new HashMap<>();

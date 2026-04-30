@@ -33,8 +33,10 @@ import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.BuildFilter;
+import com.safjnest.lol.build.ChampionFilter;
 import com.safjnest.lol.build.ChampionBuild;
+import com.safjnest.lol.build.ChampionStats;
+import com.safjnest.lol.build.ChampionStatsService;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.MatchData;
@@ -808,7 +810,7 @@ public class LeagueDB extends AbstractDB {
     }
 
 
-    public static ChampionBuild getChampionBuild(BuildFilter filter) {
+    public static ChampionBuild getChampionBuild(ChampionFilter filter) {
         QueryRecord result = instance.lineQuery("SELECT build_data FROM champion_builds WHERE filter_key = '" + filter.toKey() + "' order by games desc limit 1");
         return result.isEmpty() ? null : ChampionBuild.decode(result.get("build_data"), filter);
     }
@@ -817,9 +819,41 @@ public class LeagueDB extends AbstractDB {
         instance.query("INSERT INTO champion_builds (games, winrate, filter_key, build_data) VALUES ('" + build.games() + "', '" + build.winrate() + "', '" + build.filter().toKey() + "', '" + build.encode() + "')");
     }
 
-    public static QueryResult getChampionBuildsRaw(BuildFilter filter) {
+    public static QueryResult getChampionBuildsRaw(ChampionFilter filter) {
         String query = "SELECT m.game_id, p.win, p.build, p.summoner_id FROM participant p JOIN `match` m ON m.id = p.match_id " + filter.sql();
         return instance.query(query);
+    }
+
+    public static void saveChampionStats(ChampionStats stats) {
+        String encoded = stats.encode();
+        instance.query(
+            "INSERT INTO champion_stats (filter_key, champion, stats_data) VALUES ('" +
+            stats.filter().toKey() + "', '" + stats.filter().champion() + "', '" + encoded +
+            "') ON DUPLICATE KEY UPDATE stats_data = VALUES(stats_data)"
+        );
+    }
+    
+    public static ChampionStats getChampionStats(ChampionFilter filter, int champion) {
+        QueryResult result = instance.query(
+            "SELECT stats_data FROM champion_stats WHERE filter_key = '" +
+            filter.toKey() + "' AND champion = '" + champion + "'"
+        );
+        if (result.isEmpty()) return null;
+        return ChampionStats.decode(result.get(0).get("stats_data"));
+    }
+    
+    public static Map<Integer, ChampionStats> getChampionStats(ChampionFilter filter) {
+        QueryResult result = instance.query(
+            "SELECT champion, stats_data FROM champion_stats WHERE filter_key = '" +
+            filter.toKey() + "'"
+        );
+        if (result.isEmpty()) return null;
+        Map<Integer, ChampionStats> map = new HashMap<>();
+        for (QueryRecord r : result) {
+            int champion = r.getAsInt("champion");
+            map.put(champion, ChampionStats.decode(r.get("stats_data")));
+        }
+        return map;
     }
 
 

@@ -10,7 +10,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.BuildFilter;
+import com.safjnest.lol.build.ChampionFilter;
 import com.safjnest.lol.build.ChampionBuild;
 import com.safjnest.lol.build.ChampionBuild.SlotOption;
 import com.safjnest.lol.build.ChampionBuildService;
@@ -110,7 +110,7 @@ public class Champion extends SlashCommand {
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
         HashMap<String, String> champInfo = Tracker.analyzeChampionData(champion.getId(), laneType);
 
-        BuildFilter filter = new BuildFilter()
+        ChampionFilter filter = new ChampionFilter()
             .setChampion(champion.getId())
             .setLane(laneType)
             .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)

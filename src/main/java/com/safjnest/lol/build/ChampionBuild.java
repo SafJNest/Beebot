@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record ChampionBuild(
-    BuildFilter filter,
+    ChampionFilter filter,
     List<Integer> starter,
     List<SlotOption> boots,
     List<SlotOption> suppItems,
@@ -28,7 +28,7 @@ public record ChampionBuild(
         return KryoUtils.encode(this);
     }
 
-    public static ChampionBuild decode(String b64, BuildFilter filter) {
+    public static ChampionBuild decode(String b64, ChampionFilter filter) {
         return KryoUtils.decode(b64, ChampionBuild.class);
     }
 

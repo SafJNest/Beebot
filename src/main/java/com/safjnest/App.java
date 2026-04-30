@@ -11,12 +11,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.BuildFilter;
+import com.safjnest.lol.build.ChampionFilter;
 import com.safjnest.lol.build.ChampionBuild;
 import com.safjnest.lol.build.ChampionBuildService;
+import com.safjnest.lol.build.ChampionStats;
 import com.safjnest.lol.build.ChampionStatsService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.BotSettings.Settings;
+import com.safjnest.util.KryoUtils;
 import com.safjnest.util.SafJNest;  
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
@@ -69,16 +71,17 @@ public class App {
 
         // LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.SG2.toRegionShard(), "SG2_145570341");
         // Tracker.analyzeMatchHistory(match).complete();
-
-        BuildFilter filter = new BuildFilter()
+        System.out.println(LeagueHandler.getVersion());
+        ChampionFilter filter = new ChampionFilter()
         .setChampion(27)
         .setLane(LaneType.TOP)
         .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
         .setRegion(LeagueShard.EUW1)
-        .setPatch("16.7");
+        .setPatch("16.8");
 
 
-        new ChampionStatsService().get(filter).print();
+        ChampionStats stats = new ChampionStatsService().get(filter);
+        System.out.println(KryoUtils.encode(stats));
 
 
 
