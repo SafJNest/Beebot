@@ -40,6 +40,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
+import com.safjnest.lol.service.LeagueService;
 
 /**
  * This class handles all events that could occur during the listening:
@@ -203,7 +204,7 @@ public class EventHandler extends ListenerAdapter {
             event.deferEdit().queue();
             String puuid = event.getValues().get(0).split("#")[0];
             String platform =  event.getValues().get(0).split("#")[1];
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
 
             LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event)).withComponents(EventUtils.getStringSelectMneu(event.getMessage().getComponents()));
             parameter.setMessageType(LeagueMessageType.PROFILE);
@@ -218,7 +219,7 @@ public class EventHandler extends ListenerAdapter {
             String platform =  event.getValues().get(0).split("_")[0];
             String puuid =  event.getValues().get(0).split("#")[1];
 
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
+            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
             
             LeagueShard shard = LeagueShard.valueOf(platform);
             LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);

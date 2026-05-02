@@ -76,47 +76,47 @@ public class App {
         // LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.SG2.toRegionShard(), "SG2_145570341");
         // Tracker.analyzeMatchHistory(match).complete();
 
-        for (String patch : Arrays.asList("16.7", "16.8", "16.9")) {
-            for (LeagueShard region : LeagueShardUtils.getActives()) {  
-                for (TierType rank : Arrays.asList(TierType.IRON, TierType.BRONZE, TierType.SILVER, TierType.GOLD, TierType.PLATINUM, TierType.DIAMOND, TierType.MASTER, TierType.GRANDMASTER, TierType.CHALLENGER)) {
-                Filter filter = new Filter()
-                .setChampion(27)
-                .setLane(LaneType.TOP)
-                .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-                .setRegion(region)
-                .setRank(rank)
-                .setPatch(patch);
+        // for (String patch : Arrays.asList("16.7", "16.8", "16.9")) {
+        //     for (LeagueShard region : LeagueShardUtils.getActives()) {  
+        //         for (TierType rank : Arrays.asList(TierType.IRON, TierType.BRONZE, TierType.SILVER, TierType.GOLD, TierType.PLATINUM, TierType.DIAMOND, TierType.MASTER, TierType.GRANDMASTER, TierType.CHALLENGER)) {
+        //         Filter filter = new Filter()
+        //         .setChampion(27)
+        //         .setLane(LaneType.TOP)
+        //         .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+        //         .setRegion(region)
+        //         .setRank(rank)
+        //         .setPatch(patch);
 
-                for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
-                        Filter championFilter = new Filter()
-                        .setChampion(champion.getId())
-                        .setLane(LaneType.TOP)
-                        .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-                        .setRegion(region)
-                        .setRank(rank)
-                        .setPatch(patch);
-                        Build build = new BuildService().getAll(championFilter).stream().sorted(Comparator.comparingDouble(Build::games).reversed()).findFirst().orElse(null);
+        //         for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
+        //                 Filter championFilter = new Filter()
+        //                 .setChampion(champion.getId())
+        //                 .setLane(LaneType.TOP)
+        //                 .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+        //                 .setRegion(region)
+        //                 .setRank(rank)
+        //                 .setPatch(patch);
+        //                 Build build = new BuildService().getAll(championFilter).stream().sorted(Comparator.comparingDouble(Build::games).reversed()).findFirst().orElse(null);
         
-                }
+        //         }
 
 
                 
-                ChampionStats stats = new ChampionStatsService().get(filter);
+        //         ChampionStats stats = new ChampionStatsService().get(filter);
         
-                //System.out.println(filter.toKey());
+        //         //System.out.println(filter.toKey());
         
 
-                }
-                //stats.print();
-            }
-        }
+        //         }
+        //         //stats.print();
+        //     }
+        // }
 
 
 
 
 
-        //bot = new Bot();
-        //bot.il_risveglio_della_bestia();
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {

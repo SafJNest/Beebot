@@ -58,6 +58,7 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
@@ -278,43 +279,10 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 //                                                                                              ███    ███
 
 
-
-    public static RiotAccount getRiotAccountFromPuuid(String puuid, LeagueShard shard){
-        try { return riotApi.getAccountAPI().getAccountByPUUID(LeagueShardUtils.getAccountRegion(shard), puuid); } 
-        catch (Exception e) { return null; }
-    }
-
-    public static RiotAccount getRiotAccountFromName(String name, String tag, LeagueShard shard){
-        try { return riotApi.getAccountAPI().getAccountByTag(LeagueShardUtils.getAccountRegion(shard), name, tag); } 
-        catch (Exception e) { return null; }
-
-    }
-
-    public static Summoner getSummonerByPuuid(String puuid, LeagueShard shard){
-        try { return riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid); } 
-        catch (Exception e) { return null; }
-    }
-
-    /**
-     * After like 2 years I realized that this method COULD save me a lot of time.
-     * <br>
-     * safj
-     */
-    public static RiotAccount getRiotAccountFromSummoner(Summoner s){
-        return getRiotAccountFromPuuid(s.getPUUID(), s.getPlatform());
-    }
-
-    public static Summoner getSummonerByName(String nameAccount, String tag, LeagueShard shard) {
-        RiotAccount account = getRiotAccountFromName(nameAccount, tag, shard);
-        return account != null 
-            ? getSummonerByPuuid(account.getPUUID(), shard) 
-            : null;
-    }
-
     public static String getFormattedSummonerName(Summoner s) {
         String dbName = LeagueDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
         if (dbName != null) return dbName;
-        RiotAccount account = getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
         if (account == null) return "";
         return account.getName() + "#" + account.getTag();
     }
@@ -331,7 +299,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
             String firstAccount = accounts.keySet().stream().findFirst().get();
             LeagueShard shard = LeagueShard.valueOf(accounts.get(firstAccount));
 
-            return getSummonerByPuuid(firstAccount, shard);
+            return LeagueService.getSummonerByPuuid(firstAccount, shard);
         } catch (Exception e) {return null;}
     }
 
@@ -368,7 +336,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
             name = args.split("#", 2)[0];
             tag = args.split("#", 2)[1];
         }
-        return getSummonerByName(name, tag, guild.getLeagueShard(event.getChannel().getId()));
+        return LeagueService.getSummonerByName(name, tag, guild.getLeagueShard(event.getChannel().getId()));
     }
 
     public static Summoner getSummonerByArgs(SlashCommandEvent event) {
@@ -391,7 +359,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
         LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
         if (event.getOption("summoner") != null) {
-            s = getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
+            s = LeagueService.getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
         }
 
         if (s != null) return s;
@@ -400,7 +368,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
         String tag = summoner.contains("#") ? summoner.split("#", 2)[1] : LeagueShardUtils.getRegionCode(shard);
         String name = summoner.contains("#") ? summoner.split("#", 2)[0] : summoner;
 
-        return getSummonerByName(name, tag, shard);
+        return LeagueService.getSummonerByName(name, tag, shard);
     }
 
     public static int updateSummonerDB(Summoner summoner) {

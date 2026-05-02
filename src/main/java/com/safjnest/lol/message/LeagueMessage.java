@@ -30,6 +30,7 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -164,7 +165,7 @@ public class LeagueMessage {
                 break;
         }
 
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
         Button center = Button.primary(BUTTON_ID_PREFIX + "-center-" + s.getPUUID() + "#" + s.getPlatform().name(), account.getName());
         center = center.asDisabled();
 
@@ -184,7 +185,7 @@ public class LeagueMessage {
 //                                                                                              ███    ███
 
     public static EmbedBuilder getSummonerEmbed(Summoner s, int summonerId, LeagueMessageParameter parameter) {
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
 
         EmbedBuilder builder = new EmbedBuilder();
         builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(s));
@@ -1060,7 +1061,7 @@ public class LeagueMessage {
         LeagueShard shard = s.getPlatform();
         RegionShard region = shard.toRegionShard();
 
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(s);
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
         EmbedBuilder eb = new EmbedBuilder();
         R4J r4j = LeagueHandler.getRiotApi();
 
@@ -1151,7 +1152,7 @@ public class LeagueMessage {
 //  ▀
 
     public static EmbedBuilder getLivegameEmbed(Summoner summoner, List<SpectatorParticipant> spectators) {
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
@@ -1166,7 +1167,7 @@ public class LeagueMessage {
                     int i = 0;
 
                     for (SpectatorParticipant partecipant : spectators) {
-                        Summoner s = LeagueHandler.getSummonerByPuuid(partecipant.getPuuid(), summoner.getPlatform());
+                        Summoner s = LeagueService.getSummonerByPuuid(partecipant.getPuuid(), summoner.getPlatform());
                         String mastery = LeagueHandler.getMasteryByChamp(s, partecipant.getChampionId());
                         String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
                         String sum = " **" + partecipant.getRiotId() + "**";
@@ -1252,7 +1253,7 @@ public class LeagueMessage {
     }
 
     private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
         List<Match> matches = null;
         try {
             matches = LeagueDB.getMatchHistory(summonerId, parameter);
@@ -1297,7 +1298,7 @@ public class LeagueMessage {
         Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary("lol-right", " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
         Button center = Button.primary("lol-center-" + summoner.getPUUID() + "#" + summoner.getPlatform().name(), account.getName());
         center = center.asDisabled();
 

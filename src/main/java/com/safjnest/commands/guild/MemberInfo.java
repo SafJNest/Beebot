@@ -10,7 +10,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.util.BotCommand;
@@ -69,8 +69,8 @@ public class MemberInfo extends SlashCommand {
         }
         else {
             for(String account : lolAccounts.keySet()) {
-                Summoner s = LeagueHandler.getSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
-                RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(s);
+                Summoner s = LeagueService.getSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
+                RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(s);
                 lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
             }
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);

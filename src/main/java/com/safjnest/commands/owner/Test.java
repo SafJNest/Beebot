@@ -30,6 +30,7 @@ import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.PlayerChampionStats;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
@@ -752,12 +753,12 @@ public class Test extends Command{
                 for(QueryRecord row : res){
                     String account_id = row.get("account_id");
                     int league_shard = row.getAsInt("league_shard");
-                    Summoner summoner = LeagueHandler.getSummonerByPuuid(account_id, LeagueShard.values()[league_shard]);
+                    Summoner summoner = LeagueService.getSummonerByPuuid(account_id, LeagueShard.values()[league_shard]);
                     if (summoner == null) {
                         System.out.println("Summoner not found");
                         continue;
                     }
-                    RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+                    RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
                     if (account == null) {
                         System.out.println("Account not found");
                         continue;
@@ -846,7 +847,7 @@ public class Test extends Command{
                     for (QueryRecord acc : r) {
                         String puuid = acc.get("puuid");
                         LeagueShard region = acc.getAsLeagueShard("region");
-                        Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, region);
+                        Summoner summoner = LeagueService.getSummonerByPuuid(puuid, region);
                         if (summoner == null) {
                             System.out.println("Summoner not found");
                             continue;
@@ -1031,7 +1032,7 @@ public class Test extends Command{
                 break;
             case "trackoldgames":
                 if (true) {
-                    Summoner sum = LeagueHandler.getSummonerByPuuid(args[1], LeagueShard.EUW1);
+                    Summoner sum = LeagueService.getSummonerByPuuid(args[1], LeagueShard.EUW1);
                     //MatchTracker.retriveOldGames(sum).queue();
                 }
             break;
@@ -1053,7 +1054,7 @@ public class Test extends Command{
 
                     System.out.println(row.get("id"));
                     for (MatchParticipant partecipant : m.getParticipants()) {
-                        Summoner toPush = LeagueHandler.getSummonerByPuuid(partecipant.getPuuid(), LeagueShard.values()[row.getAsInt("league_shard")]);
+                        Summoner toPush = LeagueService.getSummonerByPuuid(partecipant.getPuuid(), LeagueShard.values()[row.getAsInt("league_shard")]);
                         Tracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
                         try {
                             Thread.sleep(1000);
@@ -1116,7 +1117,7 @@ public class Test extends Command{
                         int n = 0;
                         for (QueryRecord sum : res) {
                             try {
-                                Summoner sssss = LeagueHandler.getSummonerByPuuid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
+                                Summoner sssss = LeagueService.getSummonerByPuuid(sum.get("puuid"), LeagueShard.values()[Integer.valueOf(sum.get("league_shard"))]);
                                 String fixQuery = "UPDATE summoner SET account_id = '" + sssss.getAccountId() + "' WHERE id=" + sum.get("id");
                                 LeagueDB.get().query(fixQuery);
                                 try {
@@ -1140,7 +1141,7 @@ public class Test extends Command{
                         int n = 0;
                         for (QueryRecord sum : res) {
                             try {
-                                Summoner sssss = LeagueHandler.getSummonerByPuuid(sum.get("puuid"), sum.getAsLeagueShard("region"));
+                                Summoner sssss = LeagueService.getSummonerByPuuid(sum.get("puuid"), sum.getAsLeagueShard("region"));
                                 int summonerId = LeagueHandler.updateSummonerDB(sssss);
                                 try {
                                     Thread.sleep(400);
@@ -1160,7 +1161,7 @@ public class Test extends Command{
                 case "retriveallgames":
                     ChronoTask retriveAllGames = () -> {
                         System.out.println(args[1]);
-                        Tracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()));
+                        Tracker.retriveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()));
                     };
                     retriveAllGames.queue();
                 break;
@@ -1168,7 +1169,7 @@ public class Test extends Command{
                     ChronoTask retriveAllGamesFast = () -> {
                         System.out.println(args[1]);
                         for (GameQueueType queueType : GameQueueType.values()) {
-                            Tracker.retriveMatchHistory(LeagueHandler.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()), queueType);
+                            Tracker.retriveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()), queueType);
                         }
                     };
                     retriveAllGamesFast.queue();

@@ -42,6 +42,7 @@ import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.lol.service.ChampionStatsService;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
@@ -171,7 +172,7 @@ public class LeagueDB extends AbstractDB {
         try {
             Thread.sleep(350);
         } catch (Exception e) { }
-        Summoner summoner = LeagueHandler.getSummonerByPuuid(entry.getPuuid(), shard);
+        Summoner summoner = LeagueService.getSummonerByPuuid(entry.getPuuid(), shard);
         if (summoner == null) {
             return 0;
         }
@@ -179,7 +180,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static int addLOLAccount(String user_id, Summoner summoner) {
-        RiotAccount account = LeagueHandler.getRiotAccountFromSummoner(summoner);
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
         String query = "INSERT INTO summoner(user_id, puuid, riot_id, region, icon, level) " +
                 "VALUES(?, ?, ?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE " +

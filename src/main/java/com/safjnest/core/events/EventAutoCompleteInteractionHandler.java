@@ -39,6 +39,7 @@ import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Augment;
+import com.safjnest.lol.service.LeagueService;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private boolean isFocused;
@@ -510,7 +511,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         HashMap<String, String> accountNames = new HashMap<>();
         for (String puuid : accounts.keySet()) {
             LeagueShard shard = LeagueShard.valueOf(accounts.get(puuid));
-            RiotAccount riotAccount = LeagueHandler.getRiotAccountFromPuuid(puuid, shard);
+            RiotAccount riotAccount = LeagueService.getRiotAccountByPuuid(puuid, shard);
             accountNames.put(puuid, riotAccount.getName() + "#" + riotAccount.getTag());
         }
 
@@ -543,8 +544,8 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             
             for (String puuid : accounts.keySet()) {    
                 shard = LeagueShard.valueOf(accounts.get(puuid));
-                Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
-                RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(summoner);
+                Summoner summoner = LeagueService.getSummonerByPuuid(puuid, shard);
+                RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(summoner);
                 choices.add(new Choice(
                     riotAccount.getName() + "#" + riotAccount.getTag(), 
                     riotAccount.getPUUID()

@@ -32,6 +32,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Sound;
@@ -1090,7 +1091,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 if ((index + 1) == accounts.size()) index = 0;
                 else index += 1;
                 puuid = (String) accounts.keySet().toArray()[index];
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(accounts.get(puuid)));
+                s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(accounts.get(puuid)));
 
                 break;
 
@@ -1157,7 +1158,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 parameter.setOffset(parameter.getOffset() + (parameter.getMessageType().getPageItem()));
                 break;
             case "refresh":
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+                s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
                 LeagueHandler.clearSummonerCache(s);
                 try { Thread.sleep(500); } 
                 catch (InterruptedException e) { }
@@ -1166,7 +1167,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         event.deferEdit().queue();
         if (EventUtils.getButtonById(event, LeagueMessage.BUTTON_ID_PREFIX + "-left") == null && !userIdFallback) user_id = "";
-        s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+        s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
         int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
         LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
