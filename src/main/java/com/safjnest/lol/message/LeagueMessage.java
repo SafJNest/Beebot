@@ -212,7 +212,7 @@ public class LeagueMessage {
         builder.addField("Highest Masteries", masteryString, false);
 
 
-        QueryResult advanceData = LeagueDB.getAdvancedLOLData(summonerId, parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
+        QueryResult advanceData = LeagueService.getAdvancedLOLData(summonerId, parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
 
         if (!advanceData.isEmpty()) {
             LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
@@ -262,6 +262,7 @@ public class LeagueMessage {
 
             if (parameter.getQueueType() == null) {
                 QueryResult gameData = LeagueDB.getAllGamesForAccount(summonerId, parameter.getTimeStart(), parameter.getTimeEnd());
+                long start = System.currentTimeMillis();
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
                     GameQueueType type = row.getAsGameQueueType("queue");
@@ -332,6 +333,8 @@ public class LeagueMessage {
                 }
                 builder.addField("Games", gameString, true);
                 builder.addField("Roles", laneString , true);
+                long end = System.currentTimeMillis();
+                System.out.println("Time taken to build message: " + (end - start) + "ms");
             }
             else {                
                 builder.addField("Games", laneString , false);

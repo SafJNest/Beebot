@@ -8,9 +8,11 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
+import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -24,13 +26,12 @@ public class LeagueService {
       riotApi = LeagueHandler.getRiotApi();
     }
 
-    private static final int TTL_SUMMONER = 3600;
-    private static final int TTL_ACCOUNT = 3600;
-    private static final int TTL_LEAGUE_ENTRIES = 600;
-    /** Champion mastery list changes slowly; keep cache long to spare Riot quota. */
+    private static final int TTL_SUMMONER = 0;
+    private static final int TTL_ACCOUNT = 0;
+    private static final int TTL_LEAGUE_ENTRIES = 7200;
     private static final int TTL_CHAMPION_MASTERIES = 43200;
-    /** Live game state; do not cache longer than 10 minutes. */
     private static final int TTL_SPECTATOR = 600;
+    private static final int TTL_ADVANCED_LOL_DATA = 0;
 
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
@@ -158,10 +159,6 @@ public class LeagueService {
         }
     }
 
-    /**
-     * Active spectator game for the PUUID, or {@code null} if not in game.
-     * Non-null responses are cached up to 10 minutes; misses are not cached.
-     */
     public static SpectatorGameInfo getSpectatorGame(String puuid, LeagueShard shard) {
         String key = RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid);
         SpectatorGameInfo cached = RedisClient.get(key, SpectatorGameInfo.class);
@@ -177,6 +174,19 @@ public class LeagueService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public static QueryResult getAdvancedLOLData(int summonerId, long time_start, long time_end, GameQueueType queue) {
+        String key = RedisKey.ADVANCED_LOL_DATA.of(summonerId, time_start, time_end, queue != null ? queue.name() : "null");
+        QueryResult cached = RedisClient.get(key, QueryResult.class);
+        if (cached != null) {
+            return cached;
+        }
+        QueryResult result = LeagueDB.getAdvancedLOLData(summonerId, time_start, time_end, queue);
+        if (result != null) {
+            RedisClient.set(key, result, TTL_ADVANCED_LOL_DATA);
+        }
+        return result;
     }
 
 }

@@ -36,7 +36,11 @@ public class RedisClient {
 
     public static <T> void set(String key, T value, int ttlSeconds) {
         try (Jedis jedis = pool.getResource()) {
-            jedis.setex(key, ttlSeconds, mapper.writeValueAsString(value));
+            if (ttlSeconds > 0) {
+                jedis.setex(key, ttlSeconds, mapper.writeValueAsString(value));
+            } else {
+                jedis.set(key, mapper.writeValueAsString(value));
+            }
         } catch (Exception ignored) {}
     }
 
