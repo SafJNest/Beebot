@@ -36,7 +36,7 @@ public class DatabaseHandler {
         config.setPassword(settings.getPassword());
         config.setAutoCommit(false);
 
-        config.setMaximumPoolSize(117);
+        config.setMaximumPoolSize(500);
         config.setMinimumIdle(2);
         config.setIdleTimeout(30000);
         config.setConnectionTimeout(10000);

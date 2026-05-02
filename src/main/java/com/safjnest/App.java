@@ -11,6 +11,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.model.Build;
@@ -32,6 +33,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.GameType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
 @SpringBootApplication
@@ -76,20 +78,36 @@ public class App {
 
         for (String patch : Arrays.asList("16.7", "16.8", "16.9")) {
             for (LeagueShard region : LeagueShardUtils.getActives()) {  
+                for (TierType rank : Arrays.asList(TierType.IRON, TierType.BRONZE, TierType.SILVER, TierType.GOLD, TierType.PLATINUM, TierType.DIAMOND, TierType.MASTER, TierType.GRANDMASTER, TierType.CHALLENGER)) {
                 Filter filter = new Filter()
                 .setChampion(27)
                 .setLane(LaneType.TOP)
                 .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
                 .setRegion(region)
+                .setRank(rank)
                 .setPatch(patch);
 
-                Build build = new BuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(Build::games).reversed()).findFirst().orElse(null);
+                for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
+                        Filter championFilter = new Filter()
+                        .setChampion(champion.getId())
+                        .setLane(LaneType.TOP)
+                        .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                        .setRegion(region)
+                        .setRank(rank)
+                        .setPatch(patch);
+                        Build build = new BuildService().getAll(championFilter).stream().sorted(Comparator.comparingDouble(Build::games).reversed()).findFirst().orElse(null);
         
-                System.out.println(filter.toKey());
-        
-        
+                }
+
+
+                
                 ChampionStats stats = new ChampionStatsService().get(filter);
-                stats.print();
+        
+                //System.out.println(filter.toKey());
+        
+
+                }
+                //stats.print();
             }
         }
 

@@ -1,5 +1,6 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.model.ChampionStats;
 import com.safjnest.lol.model.ChampionStats.LaneStat;
@@ -122,8 +123,9 @@ public class ChampionStatsService {
                 .setChampion(champ)
                 .setPatch(filter.patch())
                 .setQueue(filter.queue())
+                .setRank(filter.rank())
                 .setRegion(filter.region());
-
+            
             stats.put(champ, new ChampionStats(
                 champFilter, totalGames, picks, bans, wins,
                 winrate, pickrate, banrate,
@@ -132,7 +134,10 @@ public class ChampionStatsService {
         }
 
         if (stats != null && !stats.isEmpty()) {
-            stats.values().forEach(LeagueDB::saveChampionStats);
+            stats.values().forEach(stat -> {
+                ChronoTask a = () -> LeagueDB.saveChampionStats(stat);
+                a.queue();
+            });
         }
         return stats;
     }

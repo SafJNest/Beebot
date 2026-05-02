@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public class Chronos {
-    private static final int THREAD_POOL = 100; // insane beebot thread pool pls no one can stop us
+    private static final int THREAD_POOL = 200; // insane beebot thread pool pls no one can stop us
     private static ScheduledExecutorService executorService;
     public static final ChronoTask NULL = () -> {};
 

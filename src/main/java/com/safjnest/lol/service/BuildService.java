@@ -3,6 +3,7 @@ package com.safjnest.lol.service;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.build.BuildSignature;
 import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.build.RuneSignature;
@@ -18,7 +19,7 @@ import java.util.function.Function;
 
 public class BuildService {
 
-    private static final int MIN_GAMES    = 5;
+    private static final int MIN_GAMES    = 1;
     private static final int SLOT_OPTIONS = 3;
     private static final int AUGMENT_OPTIONS = 10;
     private static final int PRISMATIC_OPTIONS = 10;
@@ -46,7 +47,10 @@ public class BuildService {
 
         List<Build> computed = computeAll(filter);
         if (computed != null && !computed.isEmpty()) {
-            computed.forEach(LeagueDB::saveChampionBuild);
+            computed.forEach(build -> {
+                ChronoTask a = () -> LeagueDB.saveChampionBuild(build);
+                a.queue();
+            });
         }
         return computed;
     }
