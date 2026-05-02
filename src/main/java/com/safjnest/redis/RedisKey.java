@@ -5,7 +5,11 @@ public enum RedisKey {
     SUMMONER("summoner:%s:%s"),
     SUMMONER_ID("summoner_id:%s:%s"),
     ACCOUNT("riot_account:%s:%s"),
-    ACCOUNT_BY_NAME("riot_account_name:%s:%s:%s");
+    ACCOUNT_BY_NAME("riot_account_name:%s:%s:%s"),
+    USER_ID_BY_PUUID("user_id_by_puuid:%s:%s"),
+    LEAGUE_ENTRIES("league_entries:%s:%s"),
+    CHAMPION_MASTERIES("champion_masteries:%s:%s"),
+    SPECTATOR_CURRENT("spectator_current:%s:%s");
 
     private final String pattern;
 

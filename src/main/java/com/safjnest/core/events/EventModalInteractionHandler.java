@@ -25,7 +25,6 @@ import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.AlertMessage;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.twitch.TwitchClient;
@@ -274,11 +273,11 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         
         
         event.deferEdit().queue();
-        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = LeagueService.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
         if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) user_id = "";
         Summoner s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-        int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
+        int summonerId = LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
         LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
     }
 

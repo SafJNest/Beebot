@@ -419,73 +419,60 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 //    ██████████  ▀█   █▀     ▄████▀     ███    ███  ▀█████▀
 //                                       ███    ███
 
-    public static String getSoloQStats(Summoner s){
-        String stats = "";
-        for(int i = 0; i < 3; i++){
-            try {
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()).get(i);
-                if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
-                    stats = getStatsByEntry(entry);
+    private static final String QUEUE_COMMON_SOLO = "5v5 Ranked Solo";
+    private static final String QUEUE_COMMON_FLEX = "5v5 Ranked Flex Queue";
 
-            } catch (Exception e) {}
-        }
-        return (stats.equals("")) ? (CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked") : stats;
+    public static String getSoloQStats(Summoner s) {
+        LeagueEntry entry = LeagueService.getLeagueEntry(s.getPUUID(), s.getPlatform(), QUEUE_COMMON_SOLO);
+        String stats = entry != null ? formatStatsByEntry(entry) : "";
+        return stats.isEmpty()
+            ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
+            : stats;
     }
 
-    public static String getFlexStats(Summoner s){
-        String stats = "";
-        for(int i = 0; i < 3; i++){
-            try {
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()).get(i);
-                if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
-                    stats = getStatsByEntry(entry);
-            } catch (Exception e) { }
-        }
-        return (stats.equals("")) ? (CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked") : stats;
-    }  
-
-    private static String getStatsByEntry(LeagueEntry entry){
-        return CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank() + " " + entry.getLeaguePoints() + " LP\n"
-        + "`(" + entry.getWins() + "W/"+entry.getLosses()+"L) - " + Math.ceil((Double.valueOf(entry.getWins())/Double.valueOf(entry.getWins()+entry.getLosses()))*100) + "% WR`";
-
+    public static String getFlexStats(Summoner s) {
+        LeagueEntry entry = LeagueService.getLeagueEntry(s.getPUUID(), s.getPlatform(), QUEUE_COMMON_FLEX);
+        String stats = entry != null ? formatStatsByEntry(entry) : "";
+        return stats.isEmpty()
+            ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
+            : stats;
     }
 
-    public static LeagueEntry getRankEntry(String summonerId, LeagueShard shard) {
-        try {
-            for(int i = 0; i < 3; i++){
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, summonerId).get(i);
-                if(entry.getQueueType().commonName().equals("5v5 Ranked Solo"))
-                    return entry;
-            }
-        } catch (Exception e) { }
-        return null;
+    private static String formatStatsByEntry(LeagueEntry entry) {
+        int wins = entry.getWins();
+        int losses = entry.getLosses();
+        int games = wins + losses;
+        long wrPercent = games > 0 ? (long) Math.ceil((wins * 100.0) / games) : 0;
+        return CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()
+            + " " + entry.getLeaguePoints() + " LP\n"
+            + "`(" + wins + "W/" + losses + "L) - " + wrPercent + "% WR`";
     }
 
-    public static LeagueEntry getFlexEntry(String summonerId, LeagueShard shard) {
-        try {
-            for(int i = 0; i < 3; i++){
-                LeagueEntry entry = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, summonerId).get(i);
-                if(entry.getQueueType().commonName().equals("5v5 Ranked Flex Queue"))
-                    return entry;
-            }
-        } catch (Exception e) { }
-        return null;
+    public static LeagueEntry getRankEntry(String puuid, LeagueShard shard) {
+        return LeagueService.getLeagueEntry(puuid, shard, QUEUE_COMMON_SOLO);
     }
 
     public static LeagueEntry getRankEntry(Summoner s) {
         return getRankEntry(s.getPUUID(), s.getPlatform());
     }
 
+    public static LeagueEntry getFlexEntry(String puuid, LeagueShard shard) {
+        return LeagueService.getLeagueEntry(puuid, shard, QUEUE_COMMON_FLEX);
+    }
+
     public static LeagueEntry getEntry(GameQueueType type, String puuid, LeagueShard shard) {
-        if (GameQueueTypeUtils.isCherry(type)) type = GameQueueType.RANKED_SOLO_5X5;
+        if (GameQueueTypeUtils.isCherry(type)) {
+            type = GameQueueType.RANKED_SOLO_5X5;
+        }
         LeagueEntry def = null;
-        try {
-            List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
-            for (LeagueEntry entry : entries) {
-                if (entry.getQueueType().equals(type)) return entry;
-                if (entry.getQueueType() == GameQueueType.RANKED_SOLO_5X5) def = entry;
+        for (LeagueEntry entry : LeagueService.getLeagueEntries(puuid, shard)) {
+            if (entry.getQueueType().equals(type)) {
+                return entry;
             }
-        } catch (Exception e) { }
+            if (entry.getQueueType() == GameQueueType.RANKED_SOLO_5X5) {
+                def = entry;
+            }
+        }
         return def;
     }
 
@@ -494,66 +481,77 @@ import com.safjnest.lol.utils.LeagueShardUtils;
         return entry != null ? CustomEmojiHandler.getFormattedEmoji(entry.getTier()) : CustomEmojiHandler.getFormattedEmoji("unranked");
     }
 
-    public static String getMastery(Summoner s, int nChamp){
+    public static String getMastery(Summoner s, int nChamp) {
+        List<ChampionMastery> list = LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform());
+        if (nChamp < 1 || nChamp > list.size()) {
+            return "";
+        }
+        ChampionMastery mastery = list.get(nChamp - 1);
         DecimalFormat df = new DecimalFormat("#,##0", new DecimalFormatSymbols(Locale.US));
-        String masteryString = "";
-        int cont = 1;
         try {
-            for(ChampionMastery mastery : s.getChampionMasteries()){
-                if(cont == nChamp){
-                    int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
-                    masteryString += CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " ";
-                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
-                                    + " **[" + mastery.getChampionLevel()+ "]** "
-                                    + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()
-                                    + " " + df.format(mastery.getChampionPoints())
-                                    + " points";
-                    break;
-                }
-                cont++;
-            }
-
-        } catch (Exception e) { }
-        return masteryString;
+            int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+            return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
+                + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
+                + " **[" + mastery.getChampionLevel() + "]** "
+                + riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()
+                + " " + df.format(mastery.getChampionPoints())
+                + " points";
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     public static HashMap<Integer, ChampionMastery> getMastery(Summoner s) {
         HashMap<Integer, ChampionMastery> masteries = new HashMap<>();
-        for(ChampionMastery mastery : s.getChampionMasteries())
+        for (ChampionMastery mastery : LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform())) {
             masteries.put(mastery.getChampionId(), mastery);
+        }
         return masteries;
     }
 
     public static String getMasteryByChamp(Summoner s, int champId) {
-        String masteryString = "";
-        try {
-            for(ChampionMastery mastery : s.getChampionMasteries()){
-                if(mastery.getChampionId() == champId){
-                    int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
-                    masteryString += CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " ";
-                    masteryString +=  CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
-                                    + " **[" + mastery.getChampionLevel()+ "]** ";
-                    return masteryString;
+        for (ChampionMastery mastery : LeagueService.getChampionMasteries(s.getPUUID(), s.getPlatform())) {
+            if (mastery.getChampionId() == champId) {
+                try {
+                    return formatMasteryLine(mastery);
+                } catch (Exception e) {
+                    return "";
                 }
             }
-
-        } catch (Exception e) { }
-        return masteryString;
+        }
+        ChampionMastery direct = riotApi.getLoLAPI().getMasteryAPI().getChampionMastery(s.getPlatform(), s.getPUUID(), champId);
+        return direct != null ? formatMasteryLine(direct) : "";
     }
 
     public static String getMasteryByPuuid(String puuid, LeagueShard shard, int champion) {
-        ChampionMastery mastery = LeagueHandler.getRiotApi().getLoLAPI().getMasteryAPI().getChampionMastery(shard, puuid, champion);
-        if (mastery == null) return "";
-        int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
-        return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName()) + " **[" + mastery.getChampionLevel()+ "]** ";
+        for (ChampionMastery mastery : LeagueService.getChampionMasteries(puuid, shard)) {
+            if (mastery.getChampionId() == champion) {
+                return formatMasteryLine(mastery);
+            }
+        }
+        ChampionMastery mastery = riotApi.getLoLAPI().getMasteryAPI().getChampionMastery(shard, puuid, champion);
+        return mastery != null ? formatMasteryLine(mastery) : "";
     }
 
-    public static String getActivity(Summoner s){
+    private static String formatMasteryLine(ChampionMastery mastery) {
+        int level = mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel();
+        return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " "
+            + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(mastery.getChampionId()).getName())
+            + " **[" + mastery.getChampionLevel() + "]** ";
+    }
+
+    public static String getActivity(Summoner s) {
         try {
-            for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
-                if(partecipant.getPuuid().equals(s.getPUUID())) {
-                    String gameName = GameQueueTypeUtils.prettyName(s.getCurrentGame().getGameQueueConfig());
-                    return "Playing a " + gameName + " as " + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " " + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName();
+            SpectatorGameInfo game = LeagueService.getSpectatorGame(s.getPUUID(), s.getPlatform());
+            if (game == null) {
+                return "Not in a game";
+            }
+            for (SpectatorParticipant partecipant : game.getParticipants()) {
+                if (partecipant.getPuuid().equals(s.getPUUID())) {
+                    String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
+                    return "Playing a " + gameName + " as "
+                        + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " "
+                        + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName();
                 }
             }
         } catch (Exception e) {
@@ -562,13 +560,17 @@ import com.safjnest.lol.utils.LeagueShardUtils;
         return "Not in a game";
     }
 
-    public static EmbedBuilder getActivity(EmbedBuilder eb, Summoner s){
+    public static EmbedBuilder getActivity(EmbedBuilder eb, Summoner s) {
         try {
-            for(SpectatorParticipant partecipant : s.getCurrentGame().getParticipants()){
-                if(partecipant.getPuuid().equals(s.getPUUID())) {
-                    String gameName = GameQueueTypeUtils.prettyName(s.getCurrentGame().getGameQueueConfig());
-                    return eb.setFooter("Playing a " + gameName, 
-                    CustomEmojiHandler.getRichEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()).getImageUrl());
+            SpectatorGameInfo game = LeagueService.getSpectatorGame(s.getPUUID(), s.getPlatform());
+            if (game == null) {
+                return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
+            }
+            for (SpectatorParticipant partecipant : game.getParticipants()) {
+                if (partecipant.getPuuid().equals(s.getPUUID())) {
+                    String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
+                    return eb.setFooter("Playing a " + gameName,
+                        CustomEmojiHandler.getRichEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()).getImageUrl());
                 }
             }
         } catch (Exception e) {

@@ -65,6 +65,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
 import no.stelar7.api.r4j.pojo.lol.shared.BannedChampion;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
@@ -87,10 +88,11 @@ public class LeagueMessage {
                 components = getSummonerButtons(summoner, userId, parameter);
                 break;
             case LIVEGAME:
-                List<SpectatorParticipant> users = summoner.getCurrentGame() != null ? summoner.getCurrentGame().getParticipants() : null;
+                SpectatorGameInfo liveGame = LeagueService.getSpectatorGame(summoner.getPUUID(), summoner.getPlatform());
+                List<SpectatorParticipant> users = liveGame != null ? liveGame.getParticipants() : null;
                 StringSelectMenu menu = LeagueMessage.getLivegameMenu(summoner, users);
 
-                embed = LeagueMessage.getLivegameEmbed(summoner, users).build();
+                embed = LeagueMessage.getLivegameEmbed(summoner, liveGame, users).build();
                 components = new ArrayList<>(composeButtons(summoner, userId != null ? userId : null, new LeagueMessageParameter(LeagueMessageType.LIVEGAME)));
                 if (menu != null) 
                     components.add(0, ActionRow.of(menu));
@@ -200,8 +202,6 @@ public class LeagueMessage {
 
         ((ChronoTask) () -> {
             LeagueDB.addLOLAccount(s);
-            LeagueDB.updateSummonerMasteries(summonerId, s.getChampionMasteries());
-            LeagueDB.updateSummonerEntries(summonerId, LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(s.getPlatform(), s.getPUUID()));
         }).queue();
 
 
@@ -1151,16 +1151,24 @@ public class LeagueMessage {
 //  █████▄▄██ █▀    ▀██████▀    ██████████
 //  ▀
 
-    public static EmbedBuilder getLivegameEmbed(Summoner summoner, List<SpectatorParticipant> spectators) {
+    public static EmbedBuilder getLivegameEmbed(Summoner summoner, SpectatorGameInfo game, List<SpectatorParticipant> spectators) {
         RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
+        if (game == null || spectators == null || spectators.isEmpty()) {
+            EmbedBuilder empty = new EmbedBuilder();
+            empty.setTitle(account.getName() + "'s Game");
+            empty.setColor(Bot.getColor());
+            empty.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
+            empty.setDescription("This user is not in a game.");
+            return empty;
+        }
         try {
             EmbedBuilder builder = new EmbedBuilder();
             builder.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
-            builder.setDescription("Currently playing a **" + GameQueueTypeUtils.prettyName(summoner.getCurrentGame().getGameQueueConfig()) + "** started <t:" + ((summoner.getCurrentGame().getGameStart()/1000)) + ":R>");
+            builder.setDescription("Currently playing a **" + GameQueueTypeUtils.prettyName(game.getGameQueueConfig()) + "** started <t:" + ((game.getGameStart() / 1000)) + ":R>");
             builder.setColor(Bot.getColor());
             builder.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 
-            switch (summoner.getCurrentGame().getGameQueueConfig()) {
+            switch (game.getGameQueueConfig()) {
                 case CHERRY:
                     String field1 = "";
                     String field2 = "";
@@ -1185,18 +1193,20 @@ public class LeagueMessage {
                     String blueBans = "", redBans = "";
                     String entryName = "";
 
-                    for (BannedChampion bc : summoner.getCurrentGame().getBannedChampions()) {
-                        String bcIcon = LeagueHandler.getFormattedEmojiByChampion(bc.getChampionId());
+                    if (game.getBannedChampions() != null) {
+                        for (BannedChampion bc : game.getBannedChampions()) {
+                            String bcIcon = LeagueHandler.getFormattedEmojiByChampion(bc.getChampionId());
 
-                        if (bc.getTeamId() == TeamType.BLUE.getValue()) blueBans += bcIcon + " ";
-                        else redBans += bcIcon + " ";
+                            if (bc.getTeamId() == TeamType.BLUE.getValue()) blueBans += bcIcon + " ";
+                            else redBans += bcIcon + " ";
+                        }
                     }
 
                     for (SpectatorParticipant partecipant : spectators) {
                         String championIcon = LeagueHandler.getFormattedEmojiByChampion(partecipant.getChampionId());
 
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
-                        LeagueEntry entry = LeagueHandler.getEntry(summoner.getCurrentGame().getGameQueueConfig(), partecipant.getPuuid(), summoner.getPlatform());
+                        LeagueEntry entry = LeagueHandler.getEntry(game.getGameQueueConfig(), partecipant.getPuuid(), summoner.getPlatform());
                         if (entry != null) {
                             int wins = entry.getWins();
                             int losses = entry.getLosses();
@@ -1219,7 +1229,7 @@ public class LeagueMessage {
                     break;
             }
 
-            LeagueHandler.updateSummonerDB(summoner.getCurrentGame());
+            LeagueHandler.updateSummonerDB(game);
 
 
             builder.setFooter("For every gamemode would be use the SoloQ ranked data. Flex would be shown only if the game is a Flex game.");

@@ -1,12 +1,20 @@
 package com.safjnest.lol.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.database.LeagueDB;
+
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
+import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -18,6 +26,16 @@ public class LeagueService {
 
     private static final int TTL_SUMMONER = 3600;
     private static final int TTL_ACCOUNT = 3600;
+    private static final int TTL_LEAGUE_ENTRIES = 600;
+    /** Champion mastery list changes slowly; keep cache long to spare Riot quota. */
+    private static final int TTL_CHAMPION_MASTERIES = 43200;
+    /** Live game state; do not cache longer than 10 minutes. */
+    private static final int TTL_SPECTATOR = 600;
+
+    private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
+        new TypeReference<List<LeagueEntry>>() {};
+    private static final TypeReference<List<ChampionMastery>> CHAMPION_MASTERIES_TYPE =
+        new TypeReference<List<ChampionMastery>>() {};
 
     private static R4J riotApi;
 
@@ -40,6 +58,16 @@ public class LeagueService {
         id = LeagueDB.getSummonerIdByPuuid(puuid, shard);
         if (id != 0) RedisClient.set(key, id, TTL_SUMMONER);
         return id;
+    }
+
+    public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
+        String key = RedisKey.USER_ID_BY_PUUID.of(shard.name(), puuid);
+        String userId = RedisClient.get(key, String.class);
+        if (userId != null) return userId;
+
+        userId = LeagueDB.getUserIdByLOLAccountId(puuid, shard);
+        if (userId != null) RedisClient.set(key, userId, TTL_SUMMONER);
+        return userId;
     }
 
     public static RiotAccount getRiotAccountByPuuid(String puuid, LeagueShard shard) {
@@ -80,6 +108,75 @@ public class LeagueService {
     public static void invalidateSummoner(String puuid, LeagueShard shard) {
         RedisClient.delete(RedisKey.SUMMONER.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.ACCOUNT.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid));
+    }
+
+    public static List<LeagueEntry> getLeagueEntries(String puuid, LeagueShard shard) {
+        String key = RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid);
+        List<LeagueEntry> cached = RedisClient.get(key, LEAGUE_ENTRIES_TYPE);
+        if (cached != null) {
+            return cached;
+        }
+        try {
+            List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
+            if (entries == null) {
+                entries = new ArrayList<>();
+            }
+            RedisClient.set(key, entries, TTL_LEAGUE_ENTRIES);
+            return entries;
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    public static LeagueEntry getLeagueEntry(String puuid, LeagueShard shard, String queueCommonName) {
+        for (LeagueEntry entry : getLeagueEntries(puuid, shard)) {
+            if (entry.getQueueType().commonName().equals(queueCommonName)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    public static List<ChampionMastery> getChampionMasteries(String puuid, LeagueShard shard) {
+        String key = RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid);
+        List<ChampionMastery> cached = RedisClient.get(key, CHAMPION_MASTERIES_TYPE);
+        if (cached != null) {
+            return cached;
+        }
+        try {
+            List<ChampionMastery> list = riotApi.getLoLAPI().getMasteryAPI().getChampionMasteries(shard, puuid);
+            if (list == null) {
+                list = new ArrayList<>();
+            }
+            RedisClient.set(key, list, TTL_CHAMPION_MASTERIES);
+            return list;
+        } catch (Exception e) {
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Active spectator game for the PUUID, or {@code null} if not in game.
+     * Non-null responses are cached up to 10 minutes; misses are not cached.
+     */
+    public static SpectatorGameInfo getSpectatorGame(String puuid, LeagueShard shard) {
+        String key = RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid);
+        SpectatorGameInfo cached = RedisClient.get(key, SpectatorGameInfo.class);
+        if (cached != null) {
+            return cached;
+        }
+        try {
+            SpectatorGameInfo game = riotApi.getLoLAPI().getSpectatorAPI().getCurrentGame(shard, puuid);
+            if (game != null) {
+                RedisClient.set(key, game, TTL_SPECTATOR);
+            }
+            return game;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

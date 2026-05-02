@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 import com.safjnest.util.twitch.TwitchClient;
@@ -1070,7 +1069,7 @@ public class EventButtonHandler extends ListenerAdapter {
 
         LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event));
 
-        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = LeagueService.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
         if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
         HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
 
@@ -1169,7 +1168,7 @@ public class EventButtonHandler extends ListenerAdapter {
         if (EventUtils.getButtonById(event, LeagueMessage.BUTTON_ID_PREFIX + "-left") == null && !userIdFallback) user_id = "";
         s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-        int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
+        int summonerId = LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
         LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
     }
 }

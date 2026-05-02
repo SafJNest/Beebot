@@ -165,7 +165,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static int addLOLAccount(LeagueEntry entry, LeagueShard shard) {
-        int id = getSummonerIdByPuuid(entry.getPuuid(), shard);
+        int id = LeagueService.getSummonerIdByPuuid(entry.getPuuid(), shard);
         if (id != 0) {
             return id;
         }

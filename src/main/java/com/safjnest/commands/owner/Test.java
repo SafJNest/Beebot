@@ -698,7 +698,7 @@ public class Test extends Command{
                                     HashMap<String, HashMap<String, String>> matchData = Tracker.analyzeMatchBuild(match, match.getParticipants());
         
                                     for (MatchParticipant participant : match.getParticipants()) {    
-                                        int sumId = LeagueDB.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
+                                        int sumId = LeagueService.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
                                         String build = Tracker.createJSONBuild(matchData.get(participant.getPuuid()));
                                         String q1 = "UPDATE participant SET build = '" + build  + "' WHERE match_id = " + row.get("id") + " AND summoner_id = " + sumId + ";";
                                         LeagueDB.get().query(q1);

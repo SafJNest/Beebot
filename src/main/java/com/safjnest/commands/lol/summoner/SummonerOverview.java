@@ -11,7 +11,7 @@ import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.utils.LeagueShardUtils;
-import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
 
@@ -48,7 +48,7 @@ public class SummonerOverview extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
     event.deferReply().queue();
     no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
+    int summonerId = LeagueService.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
     String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
     LeagueMessage.send(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW));
@@ -57,7 +57,7 @@ public class SummonerOverview extends SlashCommand {
   @Override
 	protected void execute(CommandEvent event) {
     no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
+    int summonerId = LeagueService.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
     String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
     LeagueMessage.send(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW));

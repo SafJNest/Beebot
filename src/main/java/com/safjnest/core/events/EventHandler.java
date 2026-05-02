@@ -209,7 +209,7 @@ public class EventHandler extends ListenerAdapter {
             LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event)).withComponents(EventUtils.getStringSelectMneu(event.getMessage().getComponents()));
             parameter.setMessageType(LeagueMessageType.PROFILE);
             int summonerId = LeagueDB.addLOLAccount(s);
-            String userId = LeagueDB.getUserIdByLOLAccountId(puuid, s.getPlatform());
+            String userId = LeagueService.getUserIdByLOLAccountId(puuid, s.getPlatform());
             if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) userId = "";
             LeagueMessage.edit(event.getMessage(), userId, s, summonerId, parameter);
         }
@@ -229,7 +229,7 @@ public class EventHandler extends ListenerAdapter {
             
             int summonerId = LeagueDB.addLOLAccount(s);
 
-            String userId = LeagueDB.getUserIdByLOLAccountId(puuid, s.getPlatform());
+            String userId = LeagueService.getUserIdByLOLAccountId(puuid, s.getPlatform());
             if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) userId = "";
             LeagueMessage.edit(event.getMessage(), userId, s, summonerId, parameter);
         }
