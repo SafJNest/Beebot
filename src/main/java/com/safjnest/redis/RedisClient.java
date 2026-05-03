@@ -51,7 +51,11 @@ public class RedisClient {
 
     public static void set(String key, String value, int ttlSeconds) {
         try (Jedis jedis = pool.getResource()) {
-            jedis.setex(key, ttlSeconds, value);
+            if (ttlSeconds > 0) {
+                jedis.setex(key, ttlSeconds, value);
+            } else {
+                jedis.set(key, value);
+            }
         }
     }
 
