@@ -10,7 +10,11 @@ public enum RedisKey {
     LEAGUE_ENTRIES("league_entries:%s:%s"),
     CHAMPION_MASTERIES("champion_masteries:%s:%s"),
     SPECTATOR_CURRENT("spectator_current:%s:%s"),
-    ADVANCED_LOL_DATA("advanced_lol_data:%s:%s:%s:%s");
+    ADVANCED_LOL_DATA("advanced_lol_data:%s:%s:%s:%s"),
+    MATCH_LIST("match_list:%s:%s:%s:%s"),
+    MATCH("match:%s:%s"),
+    SUMMONER_DATA("summoner_data:%s:%s");
+
     private final String pattern;
 
     RedisKey(String pattern) {

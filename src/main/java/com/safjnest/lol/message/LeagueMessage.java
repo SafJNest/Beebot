@@ -118,28 +118,37 @@ public class LeagueMessage {
     
     @SuppressWarnings("unchecked")
     public static void send(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        long start = System.currentTimeMillis();
         Object[] built = build(userId, summoner, summonerId, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
         List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
 
+        long end = System.currentTimeMillis();
+        System.out.println("Time taken to send message: " + (end - start) + "ms");
         hook.editOriginalEmbeds(embed).setComponents(components).queue();
     }
 
     @SuppressWarnings("unchecked")
     public static void send(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        long start = System.currentTimeMillis();
         Object[] built = build(userId, summoner, summonerId, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
         List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
 
+        long end = System.currentTimeMillis();
+        System.out.println("Time taken to send message: " + (end - start) + "ms");
         event.getChannel().sendMessageEmbeds(embed).setComponents(components).queue();
     }
 
     @SuppressWarnings("unchecked")
     public static void edit(Message message, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+        long start = System.currentTimeMillis();
         Object[] built = build(userId, summoner, summonerId, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
         List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
 
+        long end = System.currentTimeMillis();
+        System.out.println("Time taken to edit message: " + (end - start) + "ms");
         message.editMessageEmbeds(embed).setComponents(components).queue();   
     }
 
@@ -429,7 +438,7 @@ public class LeagueMessage {
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
 
-                LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(summoner.getPlatform().toRegionShard(), gameIds.get(i));
+                LOLMatch match = LeagueService.getMatch(gameIds.get(i), summoner.getPlatform());
                 if (match.getParticipants().size() == 0) continue;
 
                 MatchParticipant me = null;
@@ -580,7 +589,7 @@ public class LeagueMessage {
                 String redSide = "";
 
                 String lpLabel = "";
-                QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
+                QueryResult result = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
                 for (int j = 0; j < result.size(); j ++) {
                     QueryRecord row = result.get(j);
                     QueryRecord previosRow = j > 0 ? result.get(j - 1) : null;
@@ -695,9 +704,8 @@ public class LeagueMessage {
 
     public static List<String> getMatchIds(Summoner s, GameQueueType queue, int index) {
         List<String> gameIds = new ArrayList<>();
-        MatchListBuilder builder = queue != null ? s.getLeagueGames().withCount(100).withBeginIndex(index).withQueue(queue).withPlatform(s.getPlatform()) : s.getLeagueGames().withCount(100).withBeginIndex(index).withPlatform(s.getPlatform());
 
-        for (String gameId : builder.get()) {
+        for (String gameId : LeagueService.getMatchList(s, queue, index)) {
             if (gameId.split("_")[0].equalsIgnoreCase(s.getPlatform().toString())) {
                 gameIds.add(gameId);
             }
@@ -705,7 +713,7 @@ public class LeagueMessage {
 
         if (gameIds.size() > 5) return gameIds;
 
-        for (String gameId : builder.get()) 
+        for (String gameId : LeagueService.getMatchList(s, queue, index)) 
             if (!gameIds.contains(gameId)) gameIds.add(gameId);
 
         return gameIds;
@@ -1074,20 +1082,31 @@ public class LeagueMessage {
 
         List<String> gameIds = getMatchIds(s, parameter.getQueueType(), parameter.getOffset());
 
-        QueryResult result = LeagueDB.getSummonerData(LeagueDB.addLOLAccount(s));
+        ChronoTask task = (() -> {
+            LeagueDB.addLOLAccount(s);
+        });
+        task.queue();
+
+        QueryResult result = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
 
         for(int i = 0; i < 5 && i < gameIds.size(); i++){
             try {
 
-                LOLMatch match = r4j.getLoLAPI().getMatchAPI().getMatch(region, gameIds.get(i));
+                LOLMatch match = LeagueService.getMatch(gameIds.get(i), s.getPlatform());
                 if (Tracker.isRemake(match))
                     continue;
                 Tracker.queueMatch(match);
                 if (match.getParticipants().size() == 0)
                     continue; //riot di merda che quando crasha il game lascia dati sporchi
 
-                LeagueHandler.updateSummonerDB(match);
+                ChronoTask MatchTask = (() -> {
+                    LeagueHandler.updateSummonerDB(match);
+                });
+                MatchTask.queue();
+                long start = System.currentTimeMillis();
                 eb = getOpggEmbedMatch(eb, match, s, result);
+                long end = System.currentTimeMillis();
+                System.out.println("Time taken to build OPGG: " + (end - start) + "ms");
             } catch (Exception e) {
                 e.printStackTrace();
                 continue;

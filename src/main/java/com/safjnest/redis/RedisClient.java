@@ -1,11 +1,13 @@
 package com.safjnest.redis;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -15,6 +17,8 @@ public class RedisClient {
     private static final JedisPool pool = new JedisPool(buildPoolConfig(), "localhost", 6379);
 
     private static final ObjectMapper mapper = JsonMapper.builder()
+        .addModule(new JavaTimeModule())
+        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         .configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, true)
         .visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
         .build();

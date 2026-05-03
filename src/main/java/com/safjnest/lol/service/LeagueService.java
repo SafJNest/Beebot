@@ -12,10 +12,12 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
@@ -32,6 +34,9 @@ public class LeagueService {
     private static final int TTL_CHAMPION_MASTERIES = 43200;
     private static final int TTL_SPECTATOR = 600;
     private static final int TTL_ADVANCED_LOL_DATA = 0;
+    private static final int TTL_MATCH_LIST = 3600;
+    private static final int TTL_MATCH = 10000;
+    private static final int TTL_SUMMONER_DATA = 0;
 
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
@@ -187,6 +192,47 @@ public class LeagueService {
             RedisClient.set(key, result, TTL_ADVANCED_LOL_DATA);
         }
         return result;
+    }
+
+    public static List<String> getMatchList(Summoner summoner, GameQueueType queue, int index) {
+      String queueKey = queue != null ? queue.name() : "null";
+      String key = RedisKey.MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), queueKey, index);
+      List<String> cached = RedisClient.get(key, new TypeReference<List<String>>() {});
+      if (cached != null) {
+        return cached;
+      }
+      List<String> matchList = summoner.getLeagueGames().withQueue(queue).withBeginIndex(index).get();
+      if (matchList != null) 
+        RedisClient.set(key, matchList, TTL_MATCH_LIST);
+
+      return matchList != null ? matchList : new ArrayList<>();
+    }
+
+    public static LOLMatch getMatch(String gameId, LeagueShard shard) {
+      RegionShard region = shard.toRegionShard();
+      String key = RedisKey.MATCH.of(region.name(), gameId);
+      LOLMatch cached = RedisClient.get(key, LOLMatch.class);
+      if (cached != null) {
+        return cached;
+      }
+      LOLMatch match = riotApi.getLoLAPI().getMatchAPI().getMatch(region, gameId);
+      if (match != null) {
+        RedisClient.set(key, match, TTL_MATCH);
+      }
+      return match;
+    }
+
+    public static QueryResult getSummonerData(String puuid, LeagueShard shard) {
+      String key = RedisKey.SUMMONER_DATA.of(puuid, shard.name());
+      QueryResult cached = RedisClient.get(key, QueryResult.class);
+      if (cached != null) {
+        return cached;
+      }
+      QueryResult result = LeagueDB.getSummonerData(puuid, shard);
+      if (result != null) {
+        RedisClient.set(key, result, TTL_MATCH);
+      }
+      return result;
     }
 
 }

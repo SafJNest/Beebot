@@ -385,12 +385,13 @@ public class LeagueDB extends AbstractDB {
         return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND region = '" + shard + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
-    public static QueryResult getSummonerData(int summoner_id) {
+    public static QueryResult getSummonerData(String puuid, LeagueShard shard) {
         return instance.query(
             "SELECT st.summoner_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
             "FROM participant st " +
             "JOIN `match` sm ON st.match_id = sm.id " +
-            "WHERE st.summoner_id = '" + summoner_id + "' AND sm.queue = 'TEAM_BUILDER_RANKED_SOLO' " +
+            "JOIN summoner s ON st.summoner_id = s.id " +
+            "WHERE s.puuid = '" + puuid + "' AND s.region = '" + shard + "' AND sm.queue = 'TEAM_BUILDER_RANKED_SOLO' " +
             "ORDER BY sm.game_id"
         );
     }

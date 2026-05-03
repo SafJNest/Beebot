@@ -3,6 +3,7 @@ package com.safjnest.lol.message;
 import java.util.List;
 
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 
 import net.dv8tion.jda.api.components.buttons.Button;
