@@ -12,9 +12,13 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
 public class RedisClient {
 
-    private static final JedisPool pool = new JedisPool(buildPoolConfig(), "localhost", 6379);
+    private static final JedisPool pool;
 
     private static final ObjectMapper mapper = JsonMapper.builder()
         .addModule(new JavaTimeModule())
@@ -23,13 +27,26 @@ public class RedisClient {
         .visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
         .build();
 
-    private static JedisPoolConfig buildPoolConfig() {
+    static {
         JedisPoolConfig config = new JedisPoolConfig();
-        config.setMaxTotal(16);
-        config.setMaxIdle(8);
-        config.setMinIdle(2);
-        config.setTestOnBorrow(true);
-        return config;
+        config.setMaxTotal(32);
+        config.setMaxIdle(32);
+        config.setMinIdle(8);
+        config.setTestOnBorrow(false);
+        config.setTestOnReturn(false);
+        config.setTestWhileIdle(true);
+        config.setMinEvictableIdleDuration(Duration.ofMinutes(1));
+        config.setTimeBetweenEvictionRuns(Duration.ofSeconds(30));
+        config.setNumTestsPerEvictionRun(-1);
+        config.setBlockWhenExhausted(true);
+
+        pool = new JedisPool(config, "localhost", 6379, 2000);
+
+        try {
+            List<Jedis> warmup = new ArrayList<>();
+            for (int i = 0; i < 8; i++) warmup.add(pool.getResource());
+            warmup.forEach(Jedis::close);
+        } catch (Exception ignored) {}
     }
 
     public static void set(String key, String value, int ttlSeconds) {
