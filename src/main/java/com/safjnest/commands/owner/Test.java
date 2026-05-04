@@ -1092,7 +1092,7 @@ public class Test extends Command{
                 }
                 break;
                 case "lolqueue":
-                    System.out.println(Tracker.getMatchQueueCopy().size());
+                    System.out.println(Tracker.copyQueue().size());
                 break;
                 case "pushlolqueue":
                     ChronoTask task =  () -> TrackerScheduler.popSet();

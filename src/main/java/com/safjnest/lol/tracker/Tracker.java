@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -17,6 +18,8 @@ import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.redis.RedisClient;
+import com.safjnest.redis.RedisKey;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
@@ -53,7 +56,6 @@ public class Tracker {
     private static long period = TimeConstant.MINUTE * 10;
 
     private static List<GameQueueType> toTrack = List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.CHERRY);
-    static Set<LOLMatch> matchQueue = ConcurrentHashMap.newKeySet();
 
 
     static void retriveSummoners() {
@@ -109,16 +111,10 @@ public class Tracker {
      * <p>
      * im lazy UwU
      */
-    public static void popSet() {
-        Set<LOLMatch> toAnalyze = null;
-        
-        synchronized (matchQueue) {
-            if (matchQueue.isEmpty()) return;
+    public static void analyzeQueue() {
+        Set<LOLMatch> toAnalyze = popQueue();
+        if (toAnalyze.isEmpty()) return;
 
-            toAnalyze = new HashSet<>(matchQueue);
-            matchQueue.clear();
-        }
-        
         BotLogger.info("[LPTracker] Analyzing " + toAnalyze.size() + " queued matches");
         int i = 0;
         for (LOLMatch match : toAnalyze) {
@@ -133,11 +129,34 @@ public class Tracker {
     }
 
     public static void queueMatch(LOLMatch match) {
-        matchQueue.add(match);
+        if (match == null) return;
+        RedisClient.sadd(RedisKey.TRACKER_PENDING_MATCH_LIST.of(), LeagueService.putMatch(match));
     }
-
-    public synchronized static Set<LOLMatch> getMatchQueueCopy() {
-        return new HashSet<>(matchQueue);
+    
+    private static Set<LOLMatch> resolveMatchIds(List<String> ids) {
+        return ids.stream()
+            .distinct()
+            .map(id -> {
+                try {
+                    LeagueShard shard = LeagueShard.valueOf(id.split("_")[0]);
+                    return LeagueService.getMatch(id, shard);
+                } catch (Exception e) {
+                    BotLogger.error("[LPTracker] Bad queued match id: " + id + " — " + e.getMessage());
+                    return null;
+                }
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+    
+    public static Set<LOLMatch> popQueue() {
+        List<String> ids = RedisClient.popList(RedisKey.TRACKER_PENDING_MATCH_LIST.of());
+        return ids.isEmpty() ? Set.of() : resolveMatchIds(ids);
+    }
+    
+    public static Set<LOLMatch> copyQueue() {
+        List<String> ids = RedisClient.lrangeAll(RedisKey.TRACKER_PENDING_MATCH_LIST.of());
+        return ids.isEmpty() ? Set.of() : resolveMatchIds(ids);
     }
 
     public static Summoner checkSummoner(MatchParticipant participant, Summoner summoner) {

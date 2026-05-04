@@ -16,6 +16,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
+
 public class RedisClient {
 
     private static final JedisPool pool;
@@ -102,6 +105,36 @@ public class RedisClient {
     public static boolean exists(String key) {
         try (Jedis jedis = pool.getResource()) {
             return jedis.exists(key);
+        }
+    }
+
+    public static long rpush(String key, String element) {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.rpush(key, element);
+        }
+    }
+
+    public static long sadd(String key, String element) {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.sadd(key, element);
+        }
+    }
+
+    public static List<String> lrangeAll(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            List<String> list = jedis.lrange(key, 0, -1);
+            return list != null && !list.isEmpty() ? new ArrayList<>(list) : new ArrayList<>();
+        }
+    }
+
+    public static List<String> popList(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            Transaction tx = jedis.multi();
+            Response<List<String>> range = tx.lrange(key, 0, -1);
+            tx.del(key);
+            tx.exec();
+            List<String> list = range.get();
+            return list != null && !list.isEmpty() ? new ArrayList<>(list) : new ArrayList<>();
         }
     }
 

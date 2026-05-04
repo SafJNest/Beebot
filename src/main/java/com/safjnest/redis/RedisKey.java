@@ -13,7 +13,9 @@ public enum RedisKey {
     ADVANCED_LOL_DATA("advanced_lol_data:%s:%s:%s:%s"),
     MATCH_LIST("match_list:%s:%s:%s:%s"),
     MATCH("match:%s:%s"),
-    SUMMONER_DATA("summoner_data:%s:%s");
+    SUMMONER_DATA("summoner_data:%s:%s"),
+    /** FIFO queue of Riot match ids ({@code PLATFORM_gameId}) for the LP tracker */
+    TRACKER_PENDING_MATCH_LIST("tracker:pending_match_queue");
 
     private final String pattern;
 

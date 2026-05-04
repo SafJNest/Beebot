@@ -222,6 +222,14 @@ public class LeagueService {
       return match;
     }
 
+    public static String putMatch(LOLMatch match) {
+      String gameId = match.getPlatform().name() + "_" + match.getGameId();
+      RegionShard region = match.getPlatform().toRegionShard();
+      String key = RedisKey.MATCH.of(region.name(), gameId);
+      RedisClient.set(key, match, TTL_MATCH);
+      return gameId;
+    }
+
     public static QueryResult getSummonerData(String puuid, LeagueShard shard) {
       String key = RedisKey.SUMMONER_DATA.of(puuid, shard.name());
       QueryResult cached = RedisClient.get(key, QueryResult.class);

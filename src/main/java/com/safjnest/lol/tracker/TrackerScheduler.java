@@ -1,6 +1,5 @@
 package com.safjnest.lol.tracker;
 
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -45,12 +44,8 @@ public class TrackerScheduler {
     public static void popSet() {
         TrackerState.awaitCondition(Priority.MID);
 
-        Set<LOLMatch> toAnalyze;
-        synchronized (Tracker.matchQueue) {
-            if (Tracker.matchQueue.isEmpty()) return;
-            toAnalyze = new HashSet<>(Tracker.matchQueue);
-            Tracker.matchQueue.clear();
-        }
+        Set<LOLMatch> toAnalyze = Tracker.popQueue();
+        if (toAnalyze.isEmpty()) return;
 
         TrackerState.acquire(Priority.MID);
         try {
