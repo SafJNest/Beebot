@@ -14,8 +14,10 @@ public enum RedisKey {
     MATCH_LIST("match_list:%s:%s:%s:%s"),
     MATCH("match:%s:%s"),
     SUMMONER_DATA("summoner_data:%s:%s"),
-    /** FIFO queue of Riot match ids ({@code PLATFORM_gameId}) for the LP tracker */
-    TRACKER_PENDING_MATCH_LIST("tracker:pending_match_queue");
+    TRACKER_PENDING_MATCH_LIST("tracker:pending_match_queue"),
+    MOST_USED_BUILD("most_used_build:%s"),
+    HIGH_WINRATE_BUILD("high_winrate_build:%s"),
+    CHAMPION_STATS("champion_stats:%s:%s");
 
     private final String pattern;
 

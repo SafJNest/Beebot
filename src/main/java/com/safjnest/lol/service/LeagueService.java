@@ -36,7 +36,6 @@ public class LeagueService {
     private static final int TTL_ADVANCED_LOL_DATA = 0;
     private static final int TTL_MATCH_LIST = 3600;
     private static final int TTL_MATCH = 10000;
-    private static final int TTL_SUMMONER_DATA = 0;
 
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};

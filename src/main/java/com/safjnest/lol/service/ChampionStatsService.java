@@ -14,6 +14,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 import com.safjnest.lol.utils.LaneTypeUtils;
+import com.safjnest.redis.RedisClient;
+import com.safjnest.redis.RedisKey;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -33,11 +35,20 @@ public class ChampionStatsService {
     }
 
     public ChampionStats get(Filter filter) {
-        ChampionStats cached = LeagueDB.getChampionStats(filter, filter.champion());
-        if (cached != null) return cached;
+        String key = RedisKey.CHAMPION_STATS.of(filter.genericKey(), filter.champion());
+        ChampionStats stats = RedisClient.get(key, ChampionStats.class);
+        if (stats != null) return stats;
+
+        stats = LeagueDB.getChampionStats(filter, filter.champion());
+        if (stats != null) {
+            RedisClient.set(key, stats, 0);
+            return stats;
+        }
 
         Map<Integer, ChampionStats> computed = compute(filter);
-        return computed != null ? computed.get(filter.champion()) : null;
+        stats = computed != null ? computed.get(filter.champion()) : null;
+        if (stats != null) RedisClient.set(key, stats, 0);
+        return stats;
     }
 
     private Map<Integer, ChampionStats> compute(Filter filter) {
@@ -136,6 +147,8 @@ public class ChampionStatsService {
         if (stats != null && !stats.isEmpty()) {
             stats.values().forEach(stat -> {
                 ChronoTask a = () -> LeagueDB.saveChampionStats(stat);
+                String key = RedisKey.CHAMPION_STATS.of(stat.filter().genericKey(), stat.filter().champion());
+                RedisClient.set(key, stat, 0);
                 a.queue();
             });
         }

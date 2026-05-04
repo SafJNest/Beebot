@@ -812,9 +812,9 @@ public class LeagueDB extends AbstractDB {
     }
 
 
-    public static Build getChampionBuild(Filter filter) {
-        QueryRecord result = instance.lineQuery("SELECT data FROM champion_builds WHERE filter = '" + filter.toKey() + "' order by games desc limit 1");
-        return result.isEmpty() ? null : Build.decode(result.get("data"));
+    public static List<Build> getChampionBuild(Filter filter) {
+        QueryResult result = instance.query("SELECT data FROM champion_builds WHERE filter = '" + filter.toKey() + "'");
+        return result.stream().map(r -> Build.decode(r.get("data"))).toList();
     }
 
     public static void saveChampionBuild(Build build) {

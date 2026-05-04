@@ -13,7 +13,9 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Build.SlotOption;
+import com.safjnest.lol.model.ChampionStats;
 import com.safjnest.lol.service.BuildService;
+import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
@@ -116,7 +118,9 @@ public class Champion extends SlashCommand {
             .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
             .setPatch("16.8");
 
-        Build build = new BuildService().getAll(filter).stream().sorted(Comparator.comparingDouble(Build::games).reversed()).findFirst().orElse(null);
+        
+        ChampionStats stats = new ChampionStatsService().get(filter);
+        Build build = new BuildService().getMostUsed(filter);
         if (build != null) build.print();
 
         eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + LeagueHandler.getVersion() + ")**");

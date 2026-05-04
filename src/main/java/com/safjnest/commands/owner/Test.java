@@ -26,16 +26,22 @@ import com.safjnest.core.audio.types.PlayTiming;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
+import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.ChampionStats;
 import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.PlayerChampionStats;
+import com.safjnest.lol.service.BuildService;
+import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
 import com.safjnest.lol.tracker.TrackerState.Priority;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -86,6 +92,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
+import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
@@ -1393,6 +1400,47 @@ public class Test extends Command{
                 break;
             case "resumetracker":
                 TrackerState.release(Priority.HIGH);
+                break;
+            case "champ":
+                ChronoTask champ = () -> {
+                    for (String patch : Arrays.asList("16.7", "16.8", "16.9")) {
+                        for (LeagueShard region : LeagueShardUtils.getActives()) {  
+                            for (TierType rank : Arrays.asList(TierType.IRON, TierType.BRONZE, TierType.SILVER, TierType.GOLD, TierType.PLATINUM, TierType.DIAMOND, TierType.MASTER, TierType.GRANDMASTER, TierType.CHALLENGER)) {
+                            Filter filter = new Filter()
+                            .setChampion(27)
+                            .setLane(LaneType.TOP)
+                            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                            .setRegion(region)
+                            .setRank(rank)
+                            .setPatch(patch);
+
+                            for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
+                                    Filter championFilter = new Filter()
+                                    .setChampion(champion.getId())
+                                    .setLane(LaneType.TOP)
+                                    .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
+                                    .setRegion(region)
+                                    .setRank(rank)
+                                    .setPatch(patch);
+                                    Build build = new BuildService().getMostUsed(championFilter);
+                                    Build buildHighWinrate = new BuildService().getHighWinrate(championFilter);
+                                    System.out.println("Region: " + region + " Rank: " + rank + " Patch: " + patch + " Champion: " + champion.getId());
+                            }
+
+
+                            
+                            ChampionStats stats = new ChampionStatsService().get(filter);
+                    
+                            //System.out.println(filter.toKey());
+                    
+
+                            }
+                            //stats.print();
+                        }
+                    }
+                    System.out.println("Done");
+                };
+                champ.queue();
                 break;
         }
     }  

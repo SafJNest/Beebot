@@ -10,14 +10,20 @@ import com.safjnest.lol.build.RuneSignature;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Build.SlotOption;
 import com.safjnest.lol.utils.BuildUtils;
+import com.safjnest.redis.RedisClient;
+import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.*;
 import java.util.function.Function;
 
 public class BuildService {
+
+    private static final TypeReference<List<Build>> BUILD_TYPE =
+    new TypeReference<List<Build>>() {};
 
     private static final int MIN_GAMES    = 1;
     private static final int SLOT_OPTIONS = 3;
@@ -42,17 +48,36 @@ public class BuildService {
     // -------------------------------------------------------------------------
 
     public List<Build> getAll(Filter filter) {
-        Build cached = LeagueDB.getChampionBuild(filter);
-        if (cached != null) return Collections.singletonList(cached);
+        List<Build> builds = LeagueDB.getChampionBuild(filter);
+        if (builds != null && !builds.isEmpty()) {
+            return builds;
+        }
 
         List<Build> computed = computeAll(filter);
         if (computed != null && !computed.isEmpty()) {
-            computed.forEach(build -> {
-                ChronoTask a = () -> LeagueDB.saveChampionBuild(build);
-                a.queue();
-            });
+            computed.forEach(LeagueDB::saveChampionBuild);
         }
         return computed;
+    }
+
+    public Build getMostUsed(Filter filter) {
+        String key = RedisKey.MOST_USED_BUILD.of(filter.toKey());
+        Build cached = RedisClient.get(key, Build.class);
+        if (cached != null) return cached;
+
+        Build build = getAll(filter).stream().max(Comparator.comparingInt(Build::games)).orElse(null);
+        if (build != null) RedisClient.set(key, build, 0);
+        return build;
+    }
+
+    public Build getHighWinrate(Filter filter) {
+        String key = RedisKey.HIGH_WINRATE_BUILD.of(filter.toKey());
+        Build cached = RedisClient.get(key, Build.class);
+        if (cached != null) return cached;
+
+        Build build = getAll(filter).stream().max(Comparator.comparingDouble(Build::winrate)).orElse(null);
+        if (build != null) RedisClient.set(key, build, 0);
+        return build;
     }
 
     // -------------------------------------------------------------------------
