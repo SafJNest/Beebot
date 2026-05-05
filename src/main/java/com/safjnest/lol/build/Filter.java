@@ -24,6 +24,8 @@ public class Filter {
     private RankBehavior rankBehavior = RankBehavior.GREATER_OR_EQUAL;
     private String patch;
     private LeagueShard region;
+    private int opponent;
+    private int duo;
 
     public Filter setChampion(int champion) {
         this.champion = champion;
@@ -82,6 +84,24 @@ public class Filter {
 
     public LeagueShard region() {
         return region;
+    }
+
+    public int opponent() {
+        return opponent;
+    }
+
+    public int duo() {
+        return duo;
+    }
+
+    public Filter setOpponent(int opponent) {
+        this.opponent = opponent;
+        return this;
+    }
+
+    public Filter setDuo(int duo) {
+        this.duo = duo;
+        return this;
     }
 
     public String sql() {

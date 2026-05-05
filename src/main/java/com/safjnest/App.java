@@ -2,39 +2,18 @@ package com.safjnest;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.io.IOException; 
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
-import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.Filter;
-import com.safjnest.lol.model.Build;
-import com.safjnest.lol.model.ChampionStats;
-import com.safjnest.lol.service.BuildService;
-import com.safjnest.lol.service.ChampionStatsService;
-import com.safjnest.lol.tracker.Tracker;
-import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.util.KryoUtils;
 import com.safjnest.util.SafJNest;  
 import com.safjnest.util.SettingsLoader;
 import com.safjnest.util.log.BotLogger;
 import com.safjnest.util.twitch.TwitchClient;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
-
 
 @SpringBootApplication
 public class App {
@@ -57,63 +36,6 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-        
-         /*
-        for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
-            for (LaneType lane : Arrays.asList(LaneType.TOP, LaneType.JUNGLE, LaneType.MID, LaneType.BOT, LaneType.UTILITY)) {
-                BuildFilter filter = new BuildFilter()
-                    .setChampion(champion.getId())
-                    .setLane(lane)
-                    .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-                    .setPatch("16.7");
-    
-                ChampionBuild cb = new ChampionBuildService().get(filter, ChampionBuildService.Strategy.MOST_USED);
-                if (cb != null) cb.print();
-            }
-        }
-        */
-
-        // LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(LeagueShard.SG2.toRegionShard(), "SG2_145570341");
-        // Tracker.analyzeMatchHistory(match).complete();
-
-        // for (String patch : Arrays.asList("16.7", "16.8", "16.9")) {
-        //     for (LeagueShard region : LeagueShardUtils.getActives()) {  
-        //         for (TierType rank : Arrays.asList(TierType.IRON, TierType.BRONZE, TierType.SILVER, TierType.GOLD, TierType.PLATINUM, TierType.DIAMOND, TierType.MASTER, TierType.GRANDMASTER, TierType.CHALLENGER)) {
-        //         Filter filter = new Filter()
-        //         .setChampion(27)
-        //         .setLane(LaneType.TOP)
-        //         .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-        //         .setRegion(region)
-        //         .setRank(rank)
-        //         .setPatch(patch);
-
-        //         for (StaticChampion champion : LeagueHandler.getRiotApi().getDDragonAPI().getChampions().values()) {
-        //                 Filter championFilter = new Filter()
-        //                 .setChampion(champion.getId())
-        //                 .setLane(LaneType.TOP)
-        //                 .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-        //                 .setRegion(region)
-        //                 .setRank(rank)
-        //                 .setPatch(patch);
-        //                 Build build = new BuildService().getAll(championFilter).stream().sorted(Comparator.comparingDouble(Build::games).reversed()).findFirst().orElse(null);
-        
-        //         }
-
-
-                
-        //         ChampionStats stats = new ChampionStatsService().get(filter);
-        
-        //         //System.out.println(filter.toKey());
-        
-
-        //         }
-        //         //stats.print();
-        //     }
-        // }
-
-
-
-
 
         bot = new Bot();
         bot.il_risveglio_della_bestia();

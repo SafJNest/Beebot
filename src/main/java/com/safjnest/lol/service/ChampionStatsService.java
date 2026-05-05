@@ -12,8 +12,6 @@ import com.safjnest.sql.database.LeagueDB;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
-
-import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 
@@ -126,7 +124,7 @@ public class ChampionStatsService {
 
             Map<MatchupKey, Matchup> matchups = new LinkedHashMap<>();
             matchupAccum.getOrDefault(champ, Map.of()).forEach((key, val) ->
-                matchups.put(key, new Matchup(val[0],
+                matchups.put(key, new Matchup(key.champion(), val[0],
                     val[0] > 0 ? (double) val[1] / val[0] : 0))
             );
 
@@ -158,9 +156,8 @@ public class ChampionStatsService {
     private void accumMatchups(List<Row> team, List<Row> enemies,
             Map<Integer, Map<MatchupKey, int[]>> accum) {
         for (Row p : team) {
-            LaneType oppLane = LaneTypeUtils.opponentLane(p.lane());
             for (Row opp : enemies) {
-                if (oppLane != null && !oppLane.equals(opp.lane())) continue;
+                if (p.lane() != opp.lane()) continue;
                 MatchupKey key = new MatchupKey(opp.champion(), opp.lane());
                 int[] mw = accum
                     .computeIfAbsent(p.champion(), k -> new HashMap<>())

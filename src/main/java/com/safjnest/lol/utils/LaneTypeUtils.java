@@ -43,7 +43,7 @@ public class LaneTypeUtils {
       };
   }
 
-  public static LaneType opponentLane(LaneType lane) {
+  public static LaneType oppositeLane(LaneType lane) {
     if (lane == null) return null;
     return switch (lane) {
         case UTILITY -> LaneType.BOT;

@@ -3,7 +3,6 @@ package com.safjnest.lol.service;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.build.BuildSignature;
 import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.build.RuneSignature;
@@ -16,14 +15,10 @@ import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.*;
 import java.util.function.Function;
 
 public class BuildService {
-
-    private static final TypeReference<List<Build>> BUILD_TYPE =
-    new TypeReference<List<Build>>() {};
 
     private static final int MIN_GAMES    = 1;
     private static final int SLOT_OPTIONS = 3;
@@ -55,7 +50,7 @@ public class BuildService {
 
         List<Build> computed = computeAll(filter);
         if (computed != null && !computed.isEmpty()) {
-            computed.forEach(LeagueDB::saveChampionBuild);
+           computed.forEach(LeagueDB::saveChampionBuild);
         }
         return computed;
     }

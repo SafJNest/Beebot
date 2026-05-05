@@ -2,8 +2,6 @@ package com.safjnest.commands.lol;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
@@ -14,9 +12,10 @@ import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Build.SlotOption;
 import com.safjnest.lol.model.ChampionStats;
+import com.safjnest.lol.model.ChampionStats.Matchup;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionStatsService;
-import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
 import com.safjnest.util.CommandsLoader;
@@ -26,8 +25,10 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 
@@ -55,12 +56,29 @@ public class Champion extends SlashCommand {
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "champion", "Champion Name", true).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "role", "Champion Role", true)
+            new OptionData(OptionType.STRING, "role", "Champion Role", false)
                 .addChoice("Top", "TOP")
                 .addChoice("Jungle", "JUNGLE")
                 .addChoice("Mid", "MID")
                 .addChoice("ADC", "ADC")
-                .addChoice("Support", "SUPPORT")
+                .addChoice("Support", "SUPPORT"),
+            new OptionData(OptionType.STRING, "opponent", "Opponent Champion", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "duo", "Duo Champion", false).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "patch", "Patch", false)
+                .addChoice("16.7", "16.7")
+                .addChoice("16.8", "16.8")
+                .addChoice("16.9", "16.9"),
+            LeagueShardUtils.getAsOptions(),
+            new OptionData(OptionType.STRING, "rank", "Rank (Empty for all)", false)
+                .addChoice("IRON", "IRON")
+                .addChoice("BRONZE", "BRONZE")
+                .addChoice("SILVER", "SILVER")
+                .addChoice("GOLD", "GOLD")
+                .addChoice("PLATINUM", "PLATINUM")
+                .addChoice("DIAMOND", "DIAMOND")
+                .addChoice("MASTER", "MASTER")
+                .addChoice("GRANDMASTER", "GRANDMASTER")
+                .addChoice("CHALLENGER", "CHALLENGER")
         );
 
         commandData.setThings(this);
@@ -110,21 +128,60 @@ public class Champion extends SlashCommand {
         eb = new EmbedBuilder(); 
         eb.setTitle(champName + " " + laneFormatName + " " + CustomEmojiHandler.getFormattedEmoji(laneFormatName)); 
         eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
-        HashMap<String, String> champInfo = Tracker.analyzeChampionData(champion.getId(), laneType);
 
         Filter filter = new Filter()
             .setChampion(champion.getId())
             .setLane(laneType)
-            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO)
-            .setPatch("16.8");
+            .setQueue(GameQueueType.TEAM_BUILDER_RANKED_SOLO);
 
+        if (event.getOption("rank") != null) {
+            String rank = event.getOption("rank").getAsString();
+            if (!rank.isEmpty()) filter.setRank(TierType.valueOf(rank));
+        }
+        if (event.getOption("region") != null) {
+            String region = event.getOption("region").getAsString();
+            if (!region.isEmpty()) filter.setRegion(LeagueShard.valueOf(region));
+        }
+        if (event.getOption("patch") != null) {
+            String patch = event.getOption("patch").getAsString();
+            if (!patch.isEmpty()) filter.setPatch(patch);
+        }
+        if (event.getOption("opponent") != null) {
+            int opponent = LeagueHandler.getChampionByName(event.getOption("opponent").getAsString()).getId();
+            if (opponent != 0) filter.setOpponent(opponent);
+        }
+        if (event.getOption("duo") != null) {
+            int duo = LeagueHandler.getChampionByName(event.getOption("duo").getAsString()).getId();
+            if (duo != 0) filter.setDuo(duo);
+        }
         
+
+
+
         ChampionStats stats = new ChampionStatsService().get(filter);
         Build build = new BuildService().getMostUsed(filter);
         if (build != null) build.print();
 
-        eb.setDescription("**" + champName + "** has a winrate of **" + champInfo.get("winrate") + "%** (**" + champInfo.get("pickrate") + "%** pickrate and **" + champInfo.get("banrate") + "%** banrate) over **" + champInfo.get("picks") + "** matches in **(" + LeagueHandler.getVersion() + ")**");
+        eb.setDescription("**" + champName + "** has a winrate of **" + stats.winrate() + "%** (**" + stats.pickrate() + "%** pickrate and **" + stats.banrate() + "%** banrate) over **" + stats.games() + "** matches in **(" + filter.patch() + ")**");
 
+        if (filter.opponent() != 0) {
+            StaticChampion opponent = LeagueHandler.getChampionById(filter.opponent());
+            Matchup matchup = stats.getOpponentMatchup(filter.opponent(), filter.lane());
+            String opponentString = "`" + matchup.matches() + " games`\n`" + String.format("%.2f", matchup.winrate()) + "% WR`\n";
+            eb.addField("Lane Against " + CustomEmojiHandler.getFormattedEmoji(opponent.getId()) + " " + opponent.getName(), opponentString, false);
+        }
+
+        String weakString = "";
+        for (Matchup matchup : stats.weakAgainst(filter.lane())) {
+            weakString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.matches() + " games " + String.format("%.2f", matchup.winrate()) + "% WR`\n";    
+        }
+        eb.addField("Weak Against", weakString, true);
+        String strongString = "";
+        for (Matchup matchup : stats.strongAgainst(filter.lane())) {
+            strongString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.matches() + " games " + String.format("%.2f", matchup.winrate()) + "% WR`\n";
+        }
+        eb.addField("Strong Against", strongString, true);
+        
         if (build == null) {
             eb.addField("Build", "No aggregated build data for this filter yet.", false);
             eb.setColor(Bot.getColor());
