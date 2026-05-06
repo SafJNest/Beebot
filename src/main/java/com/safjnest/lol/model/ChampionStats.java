@@ -21,9 +21,27 @@ public record ChampionStats(
     List<LaneStat> laneStats,
     Map<MatchupKey, Matchup> matchups
 ) {
-    public record LaneStat(LaneType lane, int games, double winrate) {}
+
+    private final static int EMBED_LIMIT = 3;
+    public record LaneStat(LaneType lane, int games, double winrate) {
+        public String prettyGames() {
+            return String.format("%d", games);
+        }
+
+        public String prettyWinrate() {
+            return String.format("%.2f", winrate * 100) + "%";
+        }
+    }
     public record MatchupKey(int champion, LaneType lane) {}
-    public record Matchup(int champion, int matches, double winrate) {}
+    public record Matchup(int champion, int matches, double winrate) {
+        public String prettyMatches() {
+            return String.format("%d", matches);
+        }
+
+        public String prettyWinrate() {
+            return String.format("%.2f", winrate * 100) + "%";
+        }
+    }
 
     public String encode() {
         return KryoUtils.encode(this);
@@ -37,34 +55,58 @@ public record ChampionStats(
         return matchups().get(new MatchupKey(opponent, lane));
     }
 
-    public List<Matchup> weakAgainst(LaneType lane) {
-        List<Map.Entry<MatchupKey, Matchup>> sameLane = matchups().entrySet().stream()
+    private List<Matchup> getMatchups(LaneType lane) {
+        return matchups().entrySet().stream()
             .filter(entry -> entry.getKey().lane() == lane)
+            .map(Map.Entry::getValue)
             .toList();
+    }
 
-        double avgGames = sameLane.stream().mapToInt(e -> e.getValue().matches()).average().orElse(0);
+    public List<Matchup> weakAgainst(LaneType lane) {
+        List<Matchup> sameLane = getMatchups(lane);
+
+        double avgGames = sameLane.stream().mapToInt(e -> e.matches()).average().orElse(0);
     
         return sameLane.stream()
-            .filter(entry -> entry.getValue().matches() > avgGames)
-            .sorted(Comparator.comparingDouble(entry -> entry.getValue().winrate()))
-            .map(Map.Entry::getValue)
-            .limit(6)
+            .filter(e -> e.matches() > avgGames)
+            .sorted(Comparator.comparingDouble(Matchup::winrate))
+            .limit(EMBED_LIMIT)
             .toList();
     }
     
     public List<Matchup> strongAgainst(LaneType lane) {
-        List<Map.Entry<MatchupKey, Matchup>> sameLane = matchups().entrySet().stream()
-            .filter(entry -> entry.getKey().lane() == lane)
-            .toList();
+        List<Matchup> sameLane = getMatchups(lane);
     
-        double avgGames = sameLane.stream().mapToInt(e -> e.getValue().matches()).average().orElse(0);
+        double avgGames = sameLane.stream().mapToInt(e -> e.matches()).average().orElse(0);
     
         return sameLane.stream()
-            .filter(entry -> entry.getValue().matches() > avgGames)
-            .sorted(Comparator.comparingDouble(entry -> -entry.getValue().winrate()))
-            .map(Map.Entry::getValue)
-            .limit(6)
+            .filter(e -> e.matches() > avgGames)
+            .sorted(Comparator.comparingDouble(Matchup::winrate).reversed())
+            .limit(EMBED_LIMIT)
             .toList();
+    }
+
+    public List<Matchup> popularMatchups(LaneType lane) {
+        return getMatchups(lane).stream()
+            .sorted(Comparator.comparingInt(Matchup::matches).reversed())
+            .limit(EMBED_LIMIT)
+            .toList();
+    }
+
+    public String prettyGames() {
+        return String.format("%d", games);
+    }
+
+    public String prettyWinrate() {
+        return String.format("%.2f", winrate * 100) + "%";
+    }
+
+    public String prettyPickrate() {
+        return String.format("%.2f", pickrate * 100) + "%";
+    }
+
+    public String prettyBanrate() {
+        return String.format("%.2f", banrate * 100) + "%";
     }
 
     public void print() {

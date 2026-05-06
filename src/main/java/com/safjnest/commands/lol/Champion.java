@@ -15,6 +15,7 @@ import com.safjnest.lol.model.ChampionStats;
 import com.safjnest.lol.model.ChampionStats.Matchup;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionStatsService;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.util.BotCommand;
@@ -125,9 +126,7 @@ public class Champion extends SlashCommand {
     
         
         EmbedBuilder eb = new EmbedBuilder(); 
-        eb = new EmbedBuilder(); 
-        eb.setTitle(champName + " " + laneFormatName + " " + CustomEmojiHandler.getFormattedEmoji(laneFormatName)); 
-        eb.setAuthor(event.getJDA().getSelfUser().getName(), "https://github.com/SafJNest",event.getJDA().getSelfUser().getAvatarUrl()); 
+        eb.setAuthor(champName + " " + laneFormatName, "https://github.com/SafJNest", LeagueHandler.getChampionProfilePic(champName)); 
 
         Filter filter = new Filter()
             .setChampion(champion.getId())
@@ -162,25 +161,39 @@ public class Champion extends SlashCommand {
         Build build = new BuildService().getMostUsed(filter);
         if (build != null) build.print();
 
-        eb.setDescription("**" + champName + "** has a winrate of **" + stats.winrate() + "%** (**" + stats.pickrate() + "%** pickrate and **" + stats.banrate() + "%** banrate) over **" + stats.games() + "** matches in **(" + filter.patch() + ")**");
-
+        StringBuilder desc = new StringBuilder();
+        desc.append("General overview:\n").append(stats.prettyWinrate()).append(" winrate over ").append(stats.prettyGames()).append(" matches\n")
+            .append(stats.prettyPickrate()).append(" pickrate and ").append(stats.prettyBanrate()).append(" banrate\n");
         if (filter.opponent() != 0) {
             StaticChampion opponent = LeagueHandler.getChampionById(filter.opponent());
             Matchup matchup = stats.getOpponentMatchup(filter.opponent(), filter.lane());
-            String opponentString = "`" + matchup.matches() + " games`\n`" + String.format("%.2f", matchup.winrate()) + "% WR`\n";
-            eb.addField("Lane Against " + CustomEmojiHandler.getFormattedEmoji(opponent.getId()) + " " + opponent.getName(), opponentString, false);
+            desc.append("Lane against ").append(CustomEmojiHandler.getFormattedEmoji(" " + opponent.getName())).append(" " + opponent.getName()).append(":\n")
+                .append(matchup.prettyWinrate()).append(" winrate over ").append(matchup.prettyMatches()).append(" matches\n\n");
         }
+
+        if (filter.patch() != null)  desc.append("Patch ").append(filter.patch()).append("\n");
+        if (filter.region() != null) desc.append(LeagueShardUtils.getRegionFlag(filter.region())).append(" " + filter.region()).append("\n");
+        if (filter.rank() != null)   desc.append(CustomEmojiHandler.getFormattedEmoji(filter.rank().toString())).append(" " + SafJNest.capitalize(filter.rank().toString())).append("\n");
+        if (filter.queue() != null)  desc.append(GameQueueTypeUtils.getMapEmoji(filter.queue())).append(" " + GameQueueTypeUtils.prettyName(filter.queue())).append("\n");
+        
+        eb.setDescription(desc.toString());
 
         String weakString = "";
         for (Matchup matchup : stats.weakAgainst(filter.lane())) {
-            weakString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.matches() + " games " + String.format("%.2f", matchup.winrate()) + "% WR`\n";    
+            weakString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";    
         }
         eb.addField("Weak Against", weakString, true);
         String strongString = "";
         for (Matchup matchup : stats.strongAgainst(filter.lane())) {
-            strongString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.matches() + " games " + String.format("%.2f", matchup.winrate()) + "% WR`\n";
+            strongString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";
         }
         eb.addField("Strong Against", strongString, true);
+
+        String popularString = "";
+        for (Matchup matchup : stats.popularMatchups(filter.lane())) {
+            popularString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";
+        }
+        eb.addField("Popular Matchups", popularString, true);
         
         if (build == null) {
             eb.addField("Build", "No aggregated build data for this filter yet.", false);
