@@ -24,7 +24,23 @@ public record Build(
     double winrate
 ) {
 
-    public record SlotOption(int itemId, int matches, double winrate) { }
+    public record SlotOption(int itemId, int matches, double winrate) { 
+        public int getSpell1() {
+            return itemId / 100;
+        }
+        public int getSpell2() {
+            return itemId % 100;
+        }
+
+        public String prettyWinrate() {
+            return String.format("%.2f", winrate * 100) + "%";
+        }
+
+        public String prettyMatches() {
+            return String.format("%d", matches);
+        }
+
+    }
 
     public String encode() {
         return KryoUtils.encode(this);
@@ -82,6 +98,42 @@ public record Build(
         }
         while (skillOrder.size() < 18) skillOrder.add("0");
         return skillOrder;
+    }
+
+    public int getKeystone() {
+        return runes.keystone();
+    }
+
+    public int getPrimaryTree() {
+        return runes.primaryTree();
+    }
+
+    public int getSecondaryTree() {
+        return runes.secondaryTree();
+    }
+
+    public List<Integer> getPrimaryRunes() {
+        return runes.primaryRunes();
+    }
+
+    public List<Integer> getSecondaryRunes() {
+        return runes.secondaryRunes();
+    }
+
+    public List<Integer> getStatShards() {
+        return runes.statShards();
+    }
+
+    public int getOffense() {
+        return runes.statShards().get(0);
+    }
+
+    public int getFlex() {
+        return runes.statShards().get(1);
+    }
+
+    public int getDefense() {
+        return runes.statShards().get(2);
     }
 
 }

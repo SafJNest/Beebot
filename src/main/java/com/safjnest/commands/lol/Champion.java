@@ -229,52 +229,63 @@ public class Champion extends SlashCommand {
         else
             eb.addField("**Skill Order**", "—", false);
 
+
+        String spellsList = "", spellsWinrate = "", spellsMatches = "";
         for (int index = 0; index < build.summonerSpells().size(); index++) {
             var opt = build.summonerSpells().get(index);
         
-            int spell1 = opt.itemId() / 100;
-            int spell2 = opt.itemId() % 100;
-        
-            String spell1Name = LeagueHandler.getSpellName(spell1);
-            String spell2Name = LeagueHandler.getSpellName(spell2);
-        
-            String summonerSpells =
-                CustomEmojiHandler.getFormattedEmoji(spell1 + "_") + " " + spell1Name + "\n" +
-                CustomEmojiHandler.getFormattedEmoji(spell2 + "_") + " " + spell2Name + "\n" +
-                "`" + opt.matches() + " games`\n`" + String.format("%.2f", opt.winrate()) + "% WR`\n";
-        
-            String title = index == 0 ? "**Summoner Spells**" : " ";
-        
-            eb.addField(title, summonerSpells, true);
-        }
+            int spell1 = opt.getSpell1();
+            int spell2 = opt.getSpell2();
 
-        /*
+            if (spell2 > spell1) {
+               int temp = spell1;
+               spell1 = spell2;
+               spell2 = temp;
+            }
+        
+            spellsList +=
+                CustomEmojiHandler.getFormattedEmoji(spell1 + "_") + " " + CustomEmojiHandler.getFormattedEmoji(spell2 + "_") + "\n";
+            spellsWinrate += opt.prettyWinrate() + " winrate\n";
+            spellsMatches += opt.prettyMatches() + " games\n";
+        
+        
+        }
+            
+        eb.addField("**Summoner Spells**", spellsList, true);
+        eb.addField(" ", spellsWinrate, true);
+        eb.addField(" ", spellsMatches, true);
+        
         msg = "";
-        List<String> runes = build.getPrimaryRunes();
+        List<Integer> runes = build.getPrimaryRunes();
+        String primaryTree = String.valueOf(build.getPrimaryTree());
+        String keystone = String.valueOf(build.getKeystone());
+        
+
+        msg += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRunesHandler().get(primaryTree).getName()) + " " + LeagueHandler.getRunesHandler().get(primaryTree).getName() + "\n";
+        msg += CustomEmojiHandler.getFormattedEmoji(keystone) + " " + LeagueHandler.getRunesHandler().get(primaryTree).getRune(keystone).getName() + "\n";
+
         for (int i = 1; i < runes.size(); i++) {
-            String rune = runes.get(i);
-            msg += CustomEmojiHandler.getFormattedEmoji(rune) + " " + LeagueHandler.getRunesHandler().get(build.getPrimaryRunesRoot()).getRune(rune).getName() + "\n";
+            String rune = String.valueOf(runes.get(i));
+            msg += CustomEmojiHandler.getFormattedEmoji(rune) + " " + LeagueHandler.getRunesHandler().get(primaryTree).getRune(rune).getName() + "\n";
         }
-        String support = LeagueHandler.getRunesHandler().get(build.getPrimaryRunesRoot()).getName();
-        eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
+        eb.addField("**Runes**", msg, true);
 
-
-        msg = "";
-        List<String> secondaryRunes = build.getSecondaryRunes();
-        for (int i = 1; i < secondaryRunes.size(); i++) {
-            String rune = secondaryRunes.get(i);
-            msg += CustomEmojiHandler.getFormattedEmoji(rune) + " " + LeagueHandler.getRunesHandler().get(build.getSecondaryRunesRoot()).getRune(rune).getName() + "\n";
+        String secondaryTree = String.valueOf(build.getSecondaryTree());
+        List<Integer> secondaryRunes = build.getSecondaryRunes();
+        msg = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getRunesHandler().get(secondaryTree).getName()) + " " + LeagueHandler.getRunesHandler().get(secondaryTree).getName() + "\n";
+        for (int i = 0; i < secondaryRunes.size(); i++) {
+            String rune = String.valueOf(secondaryRunes.get(i));
+            msg += CustomEmojiHandler.getFormattedEmoji(rune) + " " + LeagueHandler.getRunesHandler().get(secondaryTree).getRune(rune).getName() + "\n";
         }
-        support = LeagueHandler.getRunesHandler().get(build.getSecondaryRunesRoot()).getName();
-        eb.addField(CustomEmojiHandler.getFormattedEmoji(support) + " " + support, msg, true);
+        eb.addField(" ", msg, true);
         
 
         msg = "";
         msg += CustomEmojiHandler.getFormattedEmoji(build.getOffense()) + " Offense\n";
         msg += CustomEmojiHandler.getFormattedEmoji(build.getFlex()) + " Flex\n";
         msg += CustomEmojiHandler.getFormattedEmoji(build.getDefense()) + " Defense\n";
-        eb.addField("**Shard**", msg, true);
-        */
+        eb.addField(" ", msg, true);
+        
 
         String starters = "";
 
