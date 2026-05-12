@@ -15,6 +15,7 @@ import redis.clients.jedis.JedisPoolConfig;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
@@ -27,6 +28,8 @@ public class RedisClient {
         .addModule(new JavaTimeModule())
         .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
         .configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, true)
+        .visibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
+        .visibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
         .visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
         .build();
 
@@ -135,6 +138,17 @@ public class RedisClient {
             tx.exec();
             List<String> list = range.get();
             return list != null && !list.isEmpty() ? new ArrayList<>(list) : new ArrayList<>();
+        }
+    }
+
+    public static Set<String> smembers(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            Transaction tx = jedis.multi();
+            Response<Set<String>> members = tx.smembers(key);
+            tx.del(key);
+            tx.exec();
+            Set<String> set = members.get();
+            return set != null && !set.isEmpty() ? set : Set.of();
         }
     }
 

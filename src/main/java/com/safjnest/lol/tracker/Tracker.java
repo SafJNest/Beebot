@@ -90,7 +90,7 @@ public class Tracker {
                         continue;
                     }
 
-                    LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), matchId);
+                    LOLMatch match = LeagueService.getMatch(matchId, shard);
                     if (match.getQueue() != GameQueueType.TEAM_BUILDER_RANKED_SOLO) continue;
                     ChronoTask task = analyzeMatchHistory(match, summoner, account);
                     if (task != null) task.complete();
@@ -133,30 +133,14 @@ public class Tracker {
         RedisClient.sadd(RedisKey.TRACKER_PENDING_MATCH_LIST.of(), LeagueService.putMatch(match));
     }
     
-    private static Set<LOLMatch> resolveMatchIds(List<String> ids) {
-        return ids.stream()
-            .distinct()
-            .map(id -> {
-                try {
-                    LeagueShard shard = LeagueShard.valueOf(id.split("_")[0]);
-                    return LeagueService.getMatch(id, shard);
-                } catch (Exception e) {
-                    BotLogger.error("[LPTracker] Bad queued match id: " + id + " — " + e.getMessage());
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-    
     public static Set<LOLMatch> popQueue() {
-        List<String> ids = RedisClient.popList(RedisKey.TRACKER_PENDING_MATCH_LIST.of());
-        return ids.isEmpty() ? Set.of() : resolveMatchIds(ids);
+        Set<String> ids = RedisClient.smembers(RedisKey.TRACKER_PENDING_MATCH_LIST.of());
+        return ids.stream().map(id -> LeagueService.getMatch(id, LeagueShard.valueOf(id.split("_")[0]))).collect(Collectors.toSet());
     }
     
     public static Set<LOLMatch> copyQueue() {
         List<String> ids = RedisClient.lrangeAll(RedisKey.TRACKER_PENDING_MATCH_LIST.of());
-        return ids.isEmpty() ? Set.of() : resolveMatchIds(ids);
+        return ids.stream().map(id -> LeagueService.getMatch(id, LeagueShard.valueOf(id.split("_")[0]))).collect(Collectors.toSet());
     }
 
     public static Summoner checkSummoner(MatchParticipant participant, Summoner summoner) {
@@ -303,7 +287,7 @@ public class Tracker {
         if (match.getGameId() == dataGame.getAsLong("game_id")) return dataGame.getAsTier("rank");
         if (participant.getPuuid().equals("BOT")) return TierDivisionType.UNRANKED;
 
-        List<LeagueEntry> entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(summoner.getPlatform(), summoner.getPUUID());
+        List<LeagueEntry> entries = LeagueService.getLeagueEntries(summoner.getPUUID(), summoner.getPlatform());
         LeagueEntry league = entries.stream().filter(l -> l.getQueueType().commonName().equals("5v5 Ranked Solo")).findFirst().orElse(null);
 
         TierDivisionType oldDivision = dataGame.getAsTier("rank");
