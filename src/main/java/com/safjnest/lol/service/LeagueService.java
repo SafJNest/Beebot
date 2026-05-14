@@ -242,4 +242,10 @@ public class LeagueService {
       return result;
     }
 
+    public static void puWeaktLeagueEntry(LeagueShard shard, LeagueEntry entry) {
+        //TODO: implement weak key
+        String key = RedisKey.LEAGUE_ENTRIES.of(shard, entry.getPuuid());
+        RedisClient.set(key, List.of(entry), TTL_LEAGUE_ENTRIES);
+    }
+
 }
