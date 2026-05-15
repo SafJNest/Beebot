@@ -129,6 +129,23 @@ import com.safjnest.lol.tracker.TrackerScheduler;
         return version;
     }
 
+    public static String getPreviousVersion() {
+        try {
+            URI uri = new URI("https://ddragon.leagueoflegends.com/api/versions.json");
+            URL url = uri.toURL();
+            String json = IOUtils.toString(url, Charset.forName("UTF-8"));
+            JSONParser parser = new JSONParser();
+            JSONArray file = (JSONArray) parser.parse(json);
+
+            // Get the latest version (first element in the array)
+            version = (String) file.get(1);
+            return version;
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static HashMap<String, PageRunes> getRunesHandler() {
         return runesHandler;
     }

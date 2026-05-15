@@ -585,12 +585,13 @@ public class Tracker {
     public static void retriveSampleGames(GameQueueType queue) {
         BotLogger.info("[LPTracker] Pushing sample matches");
         String currentPatch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
+        String previousPatch = LeagueHandler.getPreviousVersion().split("\\.")[0] + "." + LeagueHandler.getPreviousVersion().split("\\.")[1];
     
         long[] splitRange = LeagueHandler.getCurrentSplitRange();
     
         for (LeagueShard shard : LeagueHandler.getActiveShards()) {
             ChronoTask shardTask = () -> {
-                long threshold = (splitRange != null) ? LeagueDB.get().query("SELECT game_id FROM `match` WHERE time_start >= '"+ new Timestamp(LeagueHandler.getCurrentSplitRange()[0]) + "' and region = '"+ shard + "' ORDER BY time_start ASC LIMIT 1").get(0).getAsLong("game_id") : 0;
+                long threshold = (splitRange != null) ? LeagueDB.get().query("SELECT time_start FROM `match` WHERE patch_major = '"+ previousPatch + "' and region = '"+ shard + "' ORDER BY time_start DESC LIMIT 1").get(0).getAsEpochSecond("time_start") : 0;
                 Map<String, Object> data = new LinkedHashMap<>();
                 data.put("platform", shard);
                 data.put("queue", GameQueueType.RANKED_SOLO_5X5);
@@ -613,14 +614,13 @@ public class Tracker {
                                 summoner.getLeagueGames()
                                     .withQueue(queue)
                                     .withCount(100)
-                                    .withStartTime(splitRange[0] / 1000L)
+                                    .withStartTime(threshold)
                                     .withBeginIndex(start)
                                     .get()
                             );
                             try { Thread.sleep(500); } catch (InterruptedException e) {}
                         }
                         for (String matchId : matchIds) {
-                            if (Long.parseLong(matchId.split("_")[1]) <= threshold) continue;
                             if (LeagueHandler.isMatchDBCached(matchId)) continue;
                             if (!seenMatchIds.add(matchId)) continue;
                             allMatches.add(new MatchEntry(entry, summoner, matchId));
