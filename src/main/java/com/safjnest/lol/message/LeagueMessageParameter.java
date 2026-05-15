@@ -3,6 +3,7 @@ package com.safjnest.lol.message;
 import java.util.List;
 
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -93,7 +94,7 @@ public class LeagueMessageParameter {
           
 
       if (b.getCustomId().startsWith(prefix + "-champion-")) {
-          this.champion = LeagueHandler.getChampionById(Integer.parseInt(buttonValue));
+          this.champion = ChampionUtils.getChampion(Integer.parseInt(buttonValue));
           this.showChampion = isActive;
       }
       
@@ -109,7 +110,7 @@ public class LeagueMessageParameter {
     }
 
     if (this.champion == null && fallbackChampion > 0) 
-      this.champion = LeagueHandler.getChampionById(fallbackChampion);
+      this.champion = ChampionUtils.getChampion(fallbackChampion);
     
     
     switch (timeString) {

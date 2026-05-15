@@ -3,7 +3,6 @@ package com.safjnest.core.events;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +39,7 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.utils.ChampionUtils;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private boolean isFocused;
@@ -259,7 +259,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     
     private ArrayList<Choice> champion(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
-        List<String> champions = Arrays.asList(LeagueHandler.getChampions());
+        List<String> champions = ChampionUtils.getChampionsNames();
 
         if (isFocused) {
             int max = 0;

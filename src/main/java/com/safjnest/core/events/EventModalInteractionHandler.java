@@ -14,7 +14,6 @@ import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.model.guild.ChannelData;
@@ -37,6 +36,7 @@ import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.utils.ChampionUtils;
 
 public class EventModalInteractionHandler extends ListenerAdapter {
 
@@ -244,11 +244,11 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         String champoString = event.getValue("champion-change").getAsString();
 
         ArrayList<String> championsName = new ArrayList<>();
-        for (String champion : LeagueHandler.getChampions()) {
+        for (String champion : ChampionUtils.getChampionsNames()) {
             championsName.add(champion);
         }
         champoString = SafJNest.findSimilarWord(champoString, championsName);
-        StaticChampion newChampion = LeagueHandler.getChampionByName(champoString);
+        StaticChampion newChampion = ChampionUtils.getChampion(champoString);
 
 
         if (newChampion == null) {

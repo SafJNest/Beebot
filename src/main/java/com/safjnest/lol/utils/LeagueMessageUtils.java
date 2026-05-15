@@ -31,7 +31,7 @@ public class LeagueMessageUtils {
 
 
     public static String formatAdvancedData(PlayerChampionStats championStats, ChampionMastery mastery) {
-      StaticChampion champion = LeagueHandler.getChampionById(championStats.getChampion());
+      StaticChampion champion = ChampionUtils.getChampion(championStats.getChampion());
       if (champion == null) return championStats.getChampion() + "\n";
       int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
       return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (championStats.getWins() + championStats.getLosses()) + " games (" + championStats.getWins() + "W/" + championStats.getLosses() + "L) | " + championStats.getLp() + "LP\n"
@@ -39,7 +39,7 @@ public class LeagueMessageUtils {
     }
 
     public static String formatAdvancedData(QueryRecord data, ChampionMastery mastery) {
-      StaticChampion champion = LeagueHandler.getChampionById(data.getAsInt("champion"));
+      StaticChampion champion = ChampionUtils.getChampion(data.getAsInt("champion"));
       int level = (mastery != null ? (mastery.getChampionLevel() >= 10 ? 10 : mastery.getChampionLevel()) : 0);
       return CustomEmojiHandler.getFormattedEmoji("mastery" + level) + " " + CustomEmojiHandler.getFormattedEmoji(champion.getName()) + " **[" + (mastery != null ? mastery.getChampionLevel() : 0) + "]**" + " " + champion.getName() + ": " + (data.getAsInt("wins") + data.getAsInt("losses")) + " games (" + data.get("wins") + "W/" + data.get("losses") + "L) | " + data.get("total_lp_gain") + "LP\n"
           + "`Avg. KDA " + String.format("%.2f", data.getAsDouble("avg_kills")) + "/" + String.format("%.2f", data.getAsDouble("avg_deaths")) + "/" + String.format("%.2f", data.getAsDouble("avg_assists")) + "`\n";
@@ -199,7 +199,7 @@ public class LeagueMessageUtils {
         int limit = 10;
         for (Map.Entry<Integer, int[]> entry : data) {
             if (limit-- == 0) break;
-            StaticChampion champ = LeagueHandler.getChampionById(entry.getKey());
+            StaticChampion champ = ChampionUtils.getChampion(entry.getKey());
             if (champ == null) continue;
             int[] val = entry.getValue();
             int totalGames = val[0] + val[1];

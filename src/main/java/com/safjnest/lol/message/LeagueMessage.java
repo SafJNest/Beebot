@@ -27,6 +27,7 @@ import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
@@ -447,7 +448,7 @@ public class LeagueMessage {
                     if (mp.getPuuid().equals(summoner.getPUUID()))
                         me = mp;
 
-                Emoji icon = LeagueHandler.getEmojiByChampion(me.getChampionId());
+                Emoji icon = ChampionUtils.getEmojiByChampion(me.getChampionId());
 
                 String label = match.getGameDurationAsDuration().toMinutes() + " minutes " + GameQueueTypeUtils.prettyName(match.getQueue());
                 String description = "As " + me.getChampionName() + " (" + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " " + me.getTotalMinionsKilled() + " CS)";
@@ -896,7 +897,7 @@ public class LeagueMessage {
         ArrayList<String> blue = new ArrayList<>();
         ArrayList<String> red = new ArrayList<>();
         for(Participant searchMe : match.participants) {
-            String participantString = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(searchMe.champion).getName())
+            String participantString = CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(searchMe.champion).getName())
                                         + " "
                                         + searchMe.kda;
 
@@ -941,7 +942,7 @@ public class LeagueMessage {
                 break;
 
             case CHERRY:
-                content = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(me.champion).getName()) + kda + "\n"
+                content = CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(me.champion).getName()) + kda + "\n"
                         + date + " | **" + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
                         + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_")
                         + CustomEmojiHandler.getFormattedEmoji("a" + (me.augments.size() > 0 ? me.augments.get(0) : "0")) + " " 
@@ -999,7 +1000,7 @@ public class LeagueMessage {
                             team = "teamgromps";
                         break;
                     }
-                    prova.get(team).add(CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(mt.champion).getName()) + name);
+                    prova.get(team).add(CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(mt.champion).getName()) + name);
                     positions.put(mt.subTeamPlacement, team);
                 }
                 
@@ -1021,7 +1022,7 @@ public class LeagueMessage {
 
             default:
                 String matchTitle = GameQueueTypeUtils.prettyName(match.queue) + ": " + (me.win ? "WIN" : "LOSE");
-                content = CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(me.champion).getName()) + kda + " | " + "**Vision: **" + me.visionScore + "\n"
+                content = CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(me.champion).getName()) + kda + " | " + "**Vision: **" + me.visionScore + "\n"
                         + date + " | ** " + LeagueMessageUtils.getFormattedDuration(match.getDuration()) + "**\n"
                         + CustomEmojiHandler.getFormattedEmoji(me.summonerSpell1 + "_") 
                         + getFormattedPrimaryRunes(me) + "\n"
@@ -1150,7 +1151,7 @@ public class LeagueMessage {
     public static StringSelectMenu getSelectedMatchMenu(LOLMatch match) {
         ArrayList<SelectOption> options = new ArrayList<>();
         for(MatchParticipant p : match.getParticipants()){
-            Emoji icon = LeagueHandler.getEmojiByChampion(p.getChampionId());
+            Emoji icon = ChampionUtils.getEmojiByChampion(p.getChampionId());
             options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getPuuid() + "#" + match.getPlatform().name()).withEmoji(icon));
         }
 
@@ -1215,7 +1216,7 @@ public class LeagueMessage {
 
                     if (game.getBannedChampions() != null) {
                         for (BannedChampion bc : game.getBannedChampions()) {
-                            String bcIcon = LeagueHandler.getFormattedEmojiByChampion(bc.getChampionId());
+                            String bcIcon = ChampionUtils.getFormattedEmojiByChampion(bc.getChampionId());
 
                             if (bc.getTeamId() == TeamType.BLUE.getValue()) blueBans += bcIcon + " ";
                             else redBans += bcIcon + " ";
@@ -1223,7 +1224,7 @@ public class LeagueMessage {
                     }
 
                     for (SpectatorParticipant partecipant : spectators) {
-                        String championIcon = LeagueHandler.getFormattedEmojiByChampion(partecipant.getChampionId());
+                        String championIcon = ChampionUtils.getFormattedEmojiByChampion(partecipant.getChampionId());
 
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
                         LeagueEntry entry = LeagueHandler.getEntry(game.getGameQueueConfig(), partecipant.getPuuid(), summoner.getPlatform());
@@ -1271,7 +1272,7 @@ public class LeagueMessage {
         ArrayList<SelectOption> options = new ArrayList<>();
         for(SpectatorParticipant p : spectators){
             if (p.getPuuid() == null) continue;
-            Emoji icon = LeagueHandler.getEmojiByChampion(p.getChampionId());
+            Emoji icon = ChampionUtils.getEmojiByChampion(p.getChampionId());
             options.add(SelectOption.of(p.getRiotId(), p.getPuuid() + "#" + summoner.getPlatform().name()).withEmoji(icon));
         }
 
@@ -1292,7 +1293,7 @@ public class LeagueMessage {
         }
         
         EmbedBuilder eb = new EmbedBuilder();
-        if (parameter.isShowChampion()) eb.setThumbnail(LeagueHandler.getChampionProfilePic(parameter.getChampion().getName()));
+        if (parameter.isShowChampion()) eb.setThumbnail(ChampionUtils.getChampionProfilePic(parameter.getChampion().getName()));
         else eb.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 
         eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));
@@ -1818,7 +1819,7 @@ public class LeagueMessage {
             championString = " with " + unique.get("champion").size() + " different champions";
         else {
             int champId = (int) unique.get("champion").toArray()[0];
-            championString = " with " + CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(champId).getName()) + " " + LeagueHandler.getChampionById(champId).getName();
+            championString = " with " + CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(champId).getName()) + " " + ChampionUtils.getChampion(champId).getName();
         }
 
         eb.setDescription(

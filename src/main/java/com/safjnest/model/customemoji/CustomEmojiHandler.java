@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.ChampionUtils;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
@@ -39,13 +39,13 @@ public class CustomEmojiHandler {
             return ":black_large_square:";
         }
 
-        name = LeagueHandler.transposeChampionNameForDataDragon(name);
+        name = ChampionUtils.sanitizeChampionName(name);
         CustomEmoji em = emoji.get(name.toLowerCase());     
         return em != null ? emoji.get(name.toLowerCase()).toString() : String.valueOf(name);
     }
 
     public static RichCustomEmoji getRichEmoji(String name){
-        name = LeagueHandler.transposeChampionNameForDataDragon(name);
+        name = ChampionUtils.sanitizeChampionName(name);
         return emoji.get(name.toLowerCase()).getObject();
        
     }
@@ -59,7 +59,7 @@ public class CustomEmojiHandler {
     }
 
     public static String getEmojiId(String name){
-        name = LeagueHandler.transposeChampionNameForDataDragon(name);
+        name = ChampionUtils.sanitizeChampionName(name);
         CustomEmoji em = emoji.get(name.toLowerCase());
         return em != null ? em.getId() : name;
     }

@@ -33,11 +33,9 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.util.SafJNest;
 import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
@@ -49,7 +47,6 @@ import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
-import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
@@ -60,6 +57,7 @@ import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.tracker.TrackerScheduler;
+import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
@@ -79,26 +77,15 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 
     private static String runesURL;
 
-    private static String[] champions;
-
     private static HashMap<String, PageRunes> runesHandler = new HashMap<String, PageRunes>();
     private static ArrayList<Augment> augments = new ArrayList<>();
-    private static Map<Integer, StaticChampion> championsMap = new HashMap<>();
 
     static {
-        try {
-            LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey()));
-            BotLogger.info("[R4J] Connection Successful!");
-        } catch (Exception e) {
-            BotLogger.error("[R4J] Annodam Not Successful!");
-        }
-        
+
+        LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey())); 
         LeagueHandler.version = getVersion();
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
-        System.out.println(LeagueHandler.runesURL);
 
-        championsMap = riotApi.getDDragonAPI().getChampions();
-        loadChampions();
         loadRunes();
         loadAguments();
         new TrackerScheduler();
@@ -401,14 +388,6 @@ import com.safjnest.lol.utils.LeagueShardUtils;
         return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/profileicon/"+id+".png";
     }
 
-    public static String getChampionProfilePic(String champ){
-        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/champion/"+ LeagueHandler.transposeChampionNameForDataDragon(champ) +".png";
-    }
-
-    public static String getChampionProfilePic(int champ, String skin){
-        return "https://cdn.communitydragon.org/"+version+"/champion/"+champ+"/tile/skin/" + skin;
-    }
-
 //     ▄████████ ███▄▄▄▄       ███        ▄████████ ▄██   ▄
 //    ███    ███ ███▀▀▀██▄ ▀█████████▄   ███    ███ ███   ██▄
 //    ███    █▀  ███   ███    ▀███▀▀██   ███    ███ ███▄▄▄███
@@ -683,71 +662,8 @@ import com.safjnest.lol.utils.LeagueShardUtils;
     public static String getBraveryBuildJSON() {
         int lvl = 20;
         String[] roles = {"0", "1", "2", "3", "4"};
-        String[] champs = championsMap.values().stream().map(champ -> String.valueOf(champ.getId())).toArray(String[]::new);
+        String[] champs = ChampionUtils.getChampionsNames().stream().toArray(String[]::new);
         return getBraveryBuildJSON(lvl, roles, champs);
-    }
-
-//   ▄████████    ▄█    █▄       ▄████████   ▄▄▄▄███▄▄▄▄      ▄███████▄  ▄█   ▄██████▄  ███▄▄▄▄
-//  ███    ███   ███    ███     ███    ███ ▄██▀▀▀███▀▀▀██▄   ███    ███ ███  ███    ███ ███▀▀▀██▄
-//  ███    █▀    ███    ███     ███    ███ ███   ███   ███   ███    ███ ███▌ ███    ███ ███   ███
-//  ███         ▄███▄▄▄▄███▄▄   ███    ███ ███   ███   ███   ███    ███ ███▌ ███    ███ ███   ███
-//  ███        ▀▀███▀▀▀▀███▀  ▀███████████ ███   ███   ███ ▀█████████▀  ███▌ ███    ███ ███   ███
-//  ███    █▄    ███    ███     ███    ███ ███   ███   ███   ███        ███  ███    ███ ███   ███
-//  ███    ███   ███    ███     ███    ███ ███   ███   ███   ███        ███  ███    ███ ███   ███
-//  ████████▀    ███    █▀      ███    █▀   ▀█   ███   █▀   ▄████▀      █▀    ▀██████▀   ▀█   █▀
-//
-
-    private static void loadChampions(){
-        champions = championsMap.values().stream().map(champ -> champ.getName()).toArray(String[]::new);
-    }
-
-    public static String[] getChampions(){
-        return champions;
-    }
-
-    /**
-     * Get the champion name that is more similar to the input such as "Kha'Zix" -> "Khazix"
-     * @param champName
-     * @return
-     */
-    public static String transposeChampionNameForDataDragon(String champName) {
-        champName = champName.replace(".", "");
-        champName = champName.replace("i'S", "is");
-        champName = champName.replace("a'Z", "az");
-        champName = champName.replace("l'K", "lk");
-        champName = champName.replace("o'G", "og");
-        champName = champName.replace("g'M", "gm");
-        champName = champName.replace("'", "");
-        champName = champName.replace(" & Willump", "");
-        champName = champName.replace(" ", "");
-        return champName;
-    }
-
-    public static StaticChampion getChampionByName(String name) {
-        StaticChampion champ = null;
-        for (StaticChampion c : championsMap.values()) {
-            if (c.getName().equalsIgnoreCase(name)) {
-                champ = c;
-                break;
-            }
-        }
-        return champ;
-
-    }
-
-    public static StaticChampion getChampionById(int id) {
-        return championsMap.get(id);
-    }
-
-    public static Emoji getEmojiByChampion(int champId) {
-        StaticChampion champion = riotApi.getDDragonAPI().getChampion(champId);
-        long emojiId = Long.parseLong(CustomEmojiHandler.getEmojiId(champion.getName()));
-        return Emoji.fromCustom(champion.getName(), emojiId, false);
-    }
-
-    public static String getFormattedEmojiByChampion(int champion) {
-        if (champion == -1) return CustomEmojiHandler.getFormattedEmoji("0");
-        return CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(champion).getName());
     }
 
 //   ▄████████    ▄████████  ▄████████    ▄█    █▄       ▄████████

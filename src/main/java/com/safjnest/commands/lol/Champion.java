@@ -15,6 +15,7 @@ import com.safjnest.lol.model.ChampionStats;
 import com.safjnest.lol.model.ChampionStats.Matchup;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionStatsService;
+import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -118,15 +119,15 @@ public class Champion extends SlashCommand {
         }
 
         ArrayList<String> championsName = new ArrayList<>();
-        for (String champion : LeagueHandler.getChampions()) {
+        for (String champion : ChampionUtils.getChampionsNames()) {
             championsName.add(champion);
         }
         champName = SafJNest.findSimilarWord(champName, championsName);
-        StaticChampion champion = LeagueHandler.getChampionByName(champName);
+        StaticChampion champion = ChampionUtils.getChampion(champName);
     
         
         EmbedBuilder eb = new EmbedBuilder(); 
-        eb.setAuthor(champName + " " + laneFormatName, "https://github.com/SafJNest", LeagueHandler.getChampionProfilePic(champName)); 
+        eb.setAuthor(champName + " " + laneFormatName, "https://github.com/SafJNest", ChampionUtils.getChampionProfilePic(champName)); 
 
         Filter filter = new Filter()
             .setChampion(champion.getId())
@@ -146,11 +147,11 @@ public class Champion extends SlashCommand {
             if (!patch.isEmpty()) filter.setPatch(patch);
         }
         if (event.getOption("opponent") != null) {
-            int opponent = LeagueHandler.getChampionByName(event.getOption("opponent").getAsString()).getId();
+            int opponent = ChampionUtils.getChampion(event.getOption("opponent").getAsString()).getId();
             if (opponent != 0) filter.setOpponent(opponent);
         }
         if (event.getOption("duo") != null) {
-            int duo = LeagueHandler.getChampionByName(event.getOption("duo").getAsString()).getId();
+            int duo = ChampionUtils.getChampion(event.getOption("duo").getAsString()).getId();
             if (duo != 0) filter.setDuo(duo);
         }
         
@@ -165,7 +166,7 @@ public class Champion extends SlashCommand {
         desc.append("General overview:\n").append(stats.prettyWinrate()).append(" winrate over ").append(stats.prettyGames()).append(" matches\n")
             .append(stats.prettyPickrate()).append(" pickrate and ").append(stats.prettyBanrate()).append(" banrate\n");
         if (filter.opponent() != 0) {
-            StaticChampion opponent = LeagueHandler.getChampionById(filter.opponent());
+            StaticChampion opponent = ChampionUtils.getChampion(filter.opponent());
             Matchup matchup = stats.getOpponentMatchup(filter.opponent(), filter.lane());
             desc.append("Lane against ").append(CustomEmojiHandler.getFormattedEmoji(" " + opponent.getName())).append(" " + opponent.getName()).append(":\n")
                 .append(matchup.prettyWinrate()).append(" winrate over ").append(matchup.prettyMatches()).append(" matches\n\n");
@@ -180,26 +181,26 @@ public class Champion extends SlashCommand {
 
         String weakString = "";
         for (Matchup matchup : stats.weakAgainst(filter.lane())) {
-            weakString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";    
+            weakString += CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(matchup.champion()).getName()) + " " + ChampionUtils.getChampion(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";    
         }
         eb.addField("Weak Against", weakString, true);
         String strongString = "";
         for (Matchup matchup : stats.strongAgainst(filter.lane())) {
-            strongString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";
+            strongString += CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(matchup.champion()).getName()) + " " + ChampionUtils.getChampion(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";
         }
         eb.addField("Strong Against", strongString, true);
 
         String popularString = "";
         for (Matchup matchup : stats.popularMatchups(filter.lane())) {
-            popularString += CustomEmojiHandler.getFormattedEmoji(LeagueHandler.getChampionById(matchup.champion()).getName()) + " " + LeagueHandler.getChampionById(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";
+            popularString += CustomEmojiHandler.getFormattedEmoji(ChampionUtils.getChampion(matchup.champion()).getName()) + " " + ChampionUtils.getChampion(matchup.champion()).getName() + "\n`" + matchup.prettyMatches() + " G " + matchup.prettyWinrate() + " WR`\n";
         }
         eb.addField("Popular Matchups", popularString, true);
         
         if (build == null) {
             eb.addField("Build", "No aggregated build data for this filter yet.", false);
             eb.setColor(Bot.getColor());
-            champName = LeagueHandler.transposeChampionNameForDataDragon(champName);
-            eb.setThumbnail(LeagueHandler.getChampionProfilePic(champName));
+            champName = ChampionUtils.sanitizeChampionName(champName);
+            eb.setThumbnail(ChampionUtils.getChampionProfilePic(champName));
             eb.setFooter("We are doing our best to analyze more game as possible everyday to suggest you the best builds!", "https://cdn.discordapp.com/emojis/776346468700389436.png");
             event.getHook().editOriginalEmbeds(eb.build()).queue();
             return;
@@ -323,8 +324,8 @@ public class Champion extends SlashCommand {
         eb.setColor(Bot.getColor());
         
         
-        champName = LeagueHandler.transposeChampionNameForDataDragon(champName);
-        eb.setThumbnail(LeagueHandler.getChampionProfilePic(champName));
+        champName = ChampionUtils.sanitizeChampionName(champName);
+        eb.setThumbnail(ChampionUtils.getChampionProfilePic(champName));
         eb.setFooter("We are doing our best to analyze more game as possible everyday to suggest you the best builds!", "https://cdn.discordapp.com/emojis/776346468700389436.png"); 
 
         event.getHook().editOriginalEmbeds(eb.build()).queue();
