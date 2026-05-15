@@ -57,7 +57,7 @@ public class Champion extends SlashCommand {
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "champion", "Champion Name", true).setAutoComplete(true),
-            new OptionData(OptionType.STRING, "role", "Champion Role", false)
+            new OptionData(OptionType.STRING, "role", "Champion Role", true)
                 .addChoice("Top", "TOP")
                 .addChoice("Jungle", "JUNGLE")
                 .addChoice("Mid", "MID")

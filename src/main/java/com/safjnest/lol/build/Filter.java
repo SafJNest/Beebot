@@ -8,6 +8,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 
 public class Filter {
@@ -15,6 +16,11 @@ public class Filter {
     public enum RankBehavior {
         EXACT,
         GREATER_OR_EQUAL
+    }
+
+    public Filter() {
+        this.patch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
+        this.rankBehavior = RankBehavior.EXACT;
     }
 
     private int champion;
