@@ -584,7 +584,7 @@ public class Tracker {
 
     public static void retriveSampleGames(GameQueueType queue) {
         BotLogger.info("[LPTracker] Pushing sample matches");
-        String currentPatch = LeagueHandler.getVersion().split("\\.")[0];
+        String currentPatch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
     
         long[] splitRange = LeagueHandler.getCurrentSplitRange();
     
