@@ -832,7 +832,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static QueryResult getChampionBuildsRaw(Filter filter) {
-        String query = "SELECT m.game_id, p.win, p.build, p.summoner_id FROM participant p JOIN `match` m ON m.id = p.match_id " + filter.sql();
+        String query = "SELECT m.game_id, p.win, p.build, p.summoner_id FROM `match` m STRAIGHT_JOIN participant p ON p.match_id = m.id " + filter.sql();
         return instance.query(query);
     }
 
