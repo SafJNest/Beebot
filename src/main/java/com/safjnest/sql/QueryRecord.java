@@ -5,6 +5,7 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
@@ -66,12 +67,16 @@ public class QueryRecord extends HashMap<String, String> {
      * @param columnName
      * @return
      */
-    public long getAsEpochSecond(String columnName){
+    public long getAsEpochSecond(String columnName) {
         try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+                .appendPattern("yyyy-MM-dd HH:mm:ss")
+                .optionalStart().appendFraction(ChronoField.MICRO_OF_SECOND, 1, 6, true).optionalEnd()
+                .toFormatter();
             LocalDateTime dateTime = LocalDateTime.parse(get(columnName), formatter);
-            return dateTime.toEpochSecond(java.time.ZoneOffset.UTC);
+            return dateTime.toEpochSecond(ZoneOffset.UTC);
         } catch (Exception e) {
+            e.printStackTrace();
             return 0;
         }
     }
