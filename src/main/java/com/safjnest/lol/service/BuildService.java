@@ -186,19 +186,10 @@ public class BuildService {
             if (buildObj == null || skillOrder == null || buildObj.optJSONArray("build") == null) continue;
 
             BuildSignature sig = BuildSignature.from(full, skillOrder, prismatics, augments, summonerSpells, filter);
-            System.out.println("--------------------------------");
-            System.out.println("sig: " + sig);
-            System.out.println("--------------------------------");
             if (sig == null) continue;
 
             String coreKey = sig.toCoreKey();
             
-
-            System.out.println("--------------------------------");
-            System.out.println("coreKey: " + coreKey);
-            System.out.println("sig.toKey(): " + sig.toKey());
-            System.out.println("--------------------------------");
-
             variantsByGroup.computeIfAbsent(coreKey, k -> new HashMap<>()).merge(sig.toKey(), 1, Integer::sum);
             itemFreqByGroup.computeIfAbsent(coreKey, k -> new HashMap<>());
             sig.fullBuild().forEach(id -> itemFreqByGroup.get(coreKey).merge(id, 1, Integer::sum));
@@ -256,10 +247,6 @@ public class BuildService {
                 if (win) summonerSpellsStatsByGroup.get(key)[1]++;
             }
 
-            System.out.println("--------------------------------");
-            System.out.println("game_id: " + record.get("game_id"));
-            System.out.println("core: " + BuildUtils.toItemName(sig.starter()));
-            System.out.println("--------------------------------");
         }
 
         return new StatsResult(stats, resolveRepresentatives(variantsByGroup), itemFreqByGroup,

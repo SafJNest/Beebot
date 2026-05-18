@@ -7,9 +7,11 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.stream.Collectors;
 
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 
 public class Filter {
 
@@ -20,7 +22,18 @@ public class Filter {
 
     public Filter() {
         this.patch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
-        this.rankBehavior = RankBehavior.EXACT;
+        this.rank = TierType.EMERALD;
+        this.rankBehavior = RankBehavior.GREATER_OR_EQUAL;
+    }
+
+    public static Filter fromGenericKey(String key) {
+      String raw = new String(Base64.getDecoder().decode(key), StandardCharsets.UTF_8);
+      String[] parts = raw.split("\\|");
+      return new Filter()
+        .setQueue(parts[0].equals("*") ? null : GameQueueType.valueOf(parts[0]))
+        .setRank(parts[1].equals("*") ? null : TierType.valueOf(parts[1]))
+        .setPatch(parts[2].equals("*") ? null : parts[2])
+        .setRegion(parts[3].equals("*") ? null : LeagueShard.valueOf(parts[3]));
     }
 
     private int champion;
@@ -112,8 +125,6 @@ public class Filter {
 
     public String sql() {
         StringBuilder sb = new StringBuilder("WHERE p.champion = ").append(champion);
-        if (lane != null && GameQueueTypeUtils.hasLane(queue))
-            sb.append(" AND p.lane = '").append(lane).append("'");
         if (queue != null)
             sb.append(" AND m.queue = '").append(queue).append("'");
         if (patch != null)
@@ -122,6 +133,8 @@ public class Filter {
             sb.append(rankSql());
         if (region != null)
             sb.append(" AND m.region = '").append(region).append("'");
+        if (lane != null && GameQueueTypeUtils.hasLane(queue))
+            sb.append(" AND p.lane = '").append(lane).append("'");
         return sb.toString();
     }
 
@@ -140,6 +153,7 @@ public class Filter {
 
     /** Tutti i participant dei match filtrati, senza filtrare per champion/lane. */
     public String sqlAllParticipants() {
+        System.out.println("sqlAllParticipants: " + patch);
         StringBuilder sb = new StringBuilder(
                 "FROM participant p JOIN `match` m ON p.match_id = m.id WHERE 1=1");
         if (patch != null)
@@ -170,7 +184,7 @@ public class Filter {
             return " AND m.rank IN ('CHALLENGER', 'GRANDMASTER')";
         if (rankBehavior == RankBehavior.EXACT)
             return " AND m.rank = '" + rank + "'";
-        return " AND m.rank = '" + rank + "'";
+        return " AND m.rank IN ('" + String.join("', '", TierDivisionUtils.getHigherTiers(rank).stream().map(TierType::name).collect(Collectors.toList())) + "')";
     }
 
     private static String val(Object o) {

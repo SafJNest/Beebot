@@ -57,7 +57,12 @@ public class TierDivisionUtils {
     }
 
     return tierDivisionMapReformed;
+  }
 
+  public static List<TierType> getHigherTiers(TierType tier) {
+    return Arrays.asList(TierType.values()).stream()
+      .filter(t -> t.ordinal() <= tier.ordinal())
+      .collect(Collectors.toList());
   }
   
 }
