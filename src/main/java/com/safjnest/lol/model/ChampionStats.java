@@ -93,6 +93,13 @@ public record ChampionStats(
             .toList();
     }
 
+    public LaneStat getLaneStat(LaneType lane) {
+        return laneStats().stream()
+            .filter(l -> l.lane() == lane)
+            .findFirst()
+            .orElse(null);
+    }
+
     public String prettyGames() {
         return String.format("%d", games);
     }

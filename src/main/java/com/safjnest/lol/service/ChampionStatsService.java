@@ -22,6 +22,9 @@ import java.util.*;
 
 public class ChampionStatsService {
 
+    public ChampionStatsService() {
+    }
+
     private record Row(int champion, LaneType lane, boolean win, TeamType team, String matchId, String bans) {}
 
     public Map<Integer, ChampionStats> getAll(Filter filter) {
@@ -49,7 +52,7 @@ public class ChampionStatsService {
         return stats;
     }
 
-    private Map<Integer, ChampionStats> compute(Filter filter) {
+    public Map<Integer, ChampionStats> compute(Filter filter) {
         QueryResult result = LeagueDB.get().query(
             "SELECT p.champion, p.lane, p.win, p.team, m.id AS match_id, m.bans " +
             filter.sqlAllParticipants()
