@@ -31,6 +31,15 @@ public record ChampionStats(
         public String prettyWinrate() {
             return String.format("%.2f", winrate * 100) + "%";
         }
+
+        public String prettyPickrate(int totalGames) {
+            return String.format("%.2f", getPickrate(totalGames)) + "%";
+        }
+
+        public double getPickrate(int totalGames) {
+            return (double) games / totalGames * 100;
+        }
+
     }
     public record MatchupKey(int champion, LaneType lane) {}
     public record Matchup(int champion, int matches, double winrate) {

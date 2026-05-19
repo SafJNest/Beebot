@@ -47,8 +47,6 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 import java.time.LocalDateTime;
 
-import java.sql.Timestamp;
-
 public class Tracker {
 
     private static long period = TimeConstant.MINUTE * 10;

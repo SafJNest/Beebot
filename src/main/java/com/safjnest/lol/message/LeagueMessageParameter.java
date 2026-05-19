@@ -86,7 +86,6 @@ public class LeagueMessageParameter {
     for (Button b : buttons) {
       boolean isActive = b.getStyle() == ButtonStyle.SUCCESS;
       String buttonValue = b.getCustomId().split("-").length == 2 ? b.getCustomId().split("-")[1] : b.getCustomId().split("-")[2];
-
       if (b.getCustomId().startsWith(prefix + "-queue-") && isActive) {
         try {
           this.queueType = GameQueueType.valueOf(buttonValue);

@@ -132,6 +132,8 @@ public class LeagueMessage {
 
     private static List<MessageTopLevelComponent> getChampionsButtons(LeagueMessageParameter parameter) {
 
+        List<MessageTopLevelComponent> rows = new ArrayList<>();
+
         Button winrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_WINRATE, "Winrate");
         Button pickrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_PICKRATE, "Pickrate");
         Button banrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_BANRATE, "Banrate");
@@ -147,23 +149,29 @@ public class LeagueMessage {
                 banrate = banrate.withStyle(ButtonStyle.SUCCESS);
                 break;
             default:
+                winrate = winrate.withStyle(ButtonStyle.SUCCESS);
                 break;
         }
+        rows.add(ActionRow.of(winrate, pickrate, banrate));
+
         Button left = Button.primary(BUTTON_ID_PREFIX + "-leftpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary(BUTTON_ID_PREFIX + "-rightpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
 
         Button settings = Button.primary(BUTTON_ID_PREFIX + "-settings-" + parameter.toFilter().genericKey(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
 
-        return List.of(ActionRow.of(winrate, pickrate, banrate), ActionRow.of(left, right, settings));
+        rows.add(ActionRow.of(left, right, settings));
+
+        rows.add(0, LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
+
+        return rows;
     }
 
     private static MessageEmbed buildEmbedChampions(LeagueMessageParameter parameter, List<ChampionStats> champions) {
-        System.out.println("parameter: " + parameter.getOffset());
         EmbedBuilder  eb   = new EmbedBuilder();
         StringBuilder desc = new StringBuilder();
     
-        int      PAGE_SIZE  = parameter.getMessageType().getPageItem();
-        LaneType lane       = parameter.getLaneType();
+        int pageSize  = parameter.getMessageType().getPageItem();
+        LaneType lane = parameter.getLaneType();
     
         if (parameter.getPatch()     != null) desc.append("Patch `").append(parameter.getPatch()).append("`\n");
         if (parameter.getRegion()    != null) desc.append(LeagueShardUtils.getRegionFlag(parameter.getRegion())).append(" ").append(parameter.getRegion()).append("\n");
@@ -174,43 +182,40 @@ public class LeagueMessage {
         desc.append("\n");
     
         Comparator<ChampionStats> comparator = switch (parameter.getMessageType()) {
-            case CHAMPIONS_BY_WINRATE  -> Comparator.comparingDouble((ChampionStats s) -> s.getLaneStat(lane) != null ? s.getLaneStat(lane).winrate() : s.winrate());
-            case CHAMPIONS_BY_PICKRATE -> Comparator.comparingDouble(s -> s.pickrate());
-            case CHAMPIONS_BY_BANRATE  -> Comparator.comparingDouble(s -> s.banrate());
-            default                    -> Comparator.comparingDouble((ChampionStats s) -> s.getLaneStat(lane) != null ? s.getLaneStat(lane).winrate() : s.winrate());
+            case CHAMPIONS_BY_WINRATE -> Comparator.comparingDouble((ChampionStats s) -> s.getLaneStat(lane).winrate());
+            case CHAMPIONS_BY_PICKRATE -> Comparator.comparingDouble(s -> s.getLaneStat(lane).getPickrate(s.games()));
+            case CHAMPIONS_BY_BANRATE -> Comparator.comparingDouble(s -> s.banrate());
+            default -> Comparator.comparingDouble((ChampionStats s) -> s.getLaneStat(lane).winrate());
         };
     
-        List<ChampionStats> sorted = new ArrayList<>(champions);
-        sorted.sort(comparator.reversed());
     
-        int from = parameter.getOffset();
-        int to   = Math.min(from + PAGE_SIZE, sorted.size());
-    
-        for (int i = from; i < to; i++) {
-            ChampionStats  s        = sorted.get(i);
-            StaticChampion champion = ChampionUtils.getChampion(s.filter().champion());
-    
-            if (champion == null) {
-                desc.append(s.filter().champion()).append("\n");
-                continue;
+        champions.stream()
+            .filter(s -> s.getLaneStat(lane) != null)
+            .sorted(comparator.reversed())
+            .skip(parameter.getOffset())
+            .limit(pageSize)
+            .forEach(s -> {
+                StaticChampion champion = ChampionUtils.getChampion(s.filter().champion());
+        
+                if (champion == null) {
+                    desc.append(s.filter().champion()).append("\n");
+                    return;
+                }
+                LaneStat ls      = lane != null ? s.getLaneStat(lane) : null;
+        
+                desc.append(CustomEmojiHandler.getFormattedEmoji(champion.getName()))
+                    .append(" **").append(champion.getName()).append("**: ")
+                    .append(ls.prettyGames()).append(" games\n")
+                    .append("`Winrate ").append(ls.prettyWinrate())
+                    .append(" | Pickrate ").append(ls.prettyPickrate(s.games()))
+                    .append(" | Banrate ").append(s.prettyBanrate())
+                    .append("`\n");
             }
-    
-            LaneStat ls      = lane != null ? s.getLaneStat(lane) : null;
-            double   winrate = ls   != null ? ls.winrate()        : s.winrate();
-            int      games   = ls   != null ? ls.games()          : s.games();
-    
-            desc.append(CustomEmojiHandler.getFormattedEmoji(champion.getName()))
-                .append(" **").append(champion.getName()).append("**: ")
-                .append(games).append(" games\n")
-                .append("`WR ").append(String.format("%.2f%%", winrate))
-                .append(" | PR ").append(String.format("%.2f%%", s.pickrate()))
-                .append(" | BR ").append(String.format("%.2f%%", s.banrate()))
-                .append("`\n");
-        }
-    
+        );
+        
         int total   = champions.size();
-        int pages   = Math.max(1, (int) Math.ceil((double) total / PAGE_SIZE));
-        int curPage = parameter.getOffset() / PAGE_SIZE + 1;
+        int pages   = Math.max(1, (int) Math.ceil((double) total / pageSize));
+        int curPage = parameter.getOffset() / pageSize + 1;
     
         eb.setColor(Bot.getColor());
         eb.setTitle("Champion Tier List");
