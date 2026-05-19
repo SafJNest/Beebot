@@ -1,5 +1,5 @@
 //THIS CLASS WAS JUST TOO INSANE TO BE USED.
-package com.safjnest.util;
+package com.safjnest.utils;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

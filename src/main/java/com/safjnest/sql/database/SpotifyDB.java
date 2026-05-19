@@ -20,8 +20,8 @@ import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.sql.AbstractDB;
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.spotify.type.SpotifyMessageType;
+import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.spotify.type.SpotifyMessageType;
 
 public class SpotifyDB extends AbstractDB {
 

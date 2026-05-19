@@ -6,9 +6,9 @@ import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.util.AlertMessage;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.AlertMessage;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 public class LevelUp extends SlashCommand {
 

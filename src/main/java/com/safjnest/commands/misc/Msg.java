@@ -6,8 +6,8 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;

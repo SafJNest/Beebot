@@ -1,4 +1,4 @@
-package com.safjnest.util.spotify;
+package com.safjnest.utils.spotify;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,9 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.safjnest.model.spotify.SpotifyTrackStreaming;
 import com.safjnest.sql.database.SpotifyDB;
 import com.safjnest.sql.database.WebsiteDB;
-import com.safjnest.util.HttpUtils;
-import com.safjnest.util.spotify.type.SpotifyMessageType;
-import com.safjnest.util.spotify.type.SpotifyTimeRange;
+import com.safjnest.utils.HttpUtils;
+import com.safjnest.utils.spotify.type.SpotifyMessageType;
+import com.safjnest.utils.spotify.type.SpotifyTimeRange;
 import com.safjnest.model.spotify.SpotifyAlbum;
 import com.safjnest.model.spotify.SpotifyArtist;
 import com.safjnest.model.spotify.SpotifyTrack;

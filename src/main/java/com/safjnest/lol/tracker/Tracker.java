@@ -25,9 +25,9 @@ import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.SafJNest;
-import com.safjnest.util.TimeConstant;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.SafJNest;
+import com.safjnest.utils.TimeConstant;
+import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;

@@ -1,4 +1,4 @@
-package com.safjnest.util.log;
+package com.safjnest.utils.log;
 
 import com.safjnest.core.Bot;
 

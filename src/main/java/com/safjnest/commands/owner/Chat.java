@@ -3,9 +3,9 @@ package com.safjnest.commands.owner;
 import java.util.*;
 
 import com.safjnest.core.chat.ChatHandler;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.PermissionHandler;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.PermissionHandler;
 
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 

@@ -44,8 +44,8 @@ import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
+import com.safjnest.utils.SettingsLoader;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.util.SettingsLoader;
 
 public class LeagueDB extends AbstractDB {
 

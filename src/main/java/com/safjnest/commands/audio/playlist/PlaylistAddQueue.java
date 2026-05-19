@@ -7,10 +7,10 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.PermissionHandler;
-import com.safjnest.util.SettingsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.PermissionHandler;
+import com.safjnest.utils.SettingsLoader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;

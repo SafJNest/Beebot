@@ -41,9 +41,9 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.Accumulator;
-import com.safjnest.util.DateHandler;
-import com.safjnest.util.SafJNest;
+import com.safjnest.utils.Accumulator;
+import com.safjnest.utils.DateHandler;
+import com.safjnest.utils.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;

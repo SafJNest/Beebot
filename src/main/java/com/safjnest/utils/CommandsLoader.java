@@ -1,4 +1,4 @@
-package com.safjnest.util;
+package com.safjnest.utils;
 
 import java.io.File;
 import java.io.FileReader;

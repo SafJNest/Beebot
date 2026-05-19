@@ -20,8 +20,8 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.core.audio.types.ReplyType;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.util.PermissionHandler;
-import com.safjnest.util.SafJNest;
+import com.safjnest.utils.PermissionHandler;
+import com.safjnest.utils.SafJNest;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 

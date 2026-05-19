@@ -1,4 +1,4 @@
-package com.safjnest.util;
+package com.safjnest.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +45,7 @@ public class PermissionHandler {
     }
     
     /**
-     * Check if a discord user is in the list of {@link com.safjnest.util.PermissionHandler#untouchables untouchables}
+     * Check if a discord user is in the list of {@link com.safjnest.utils.PermissionHandler#untouchables untouchables}
      * 
      * @param id Discord id of the user
      * @return True if the member is in the list, false otherwise
@@ -112,7 +112,7 @@ public class PermissionHandler {
 
     /**
     * Get the filtered permissions of a member in the guild that the command is executed in.
-    * <p>Only takes the permissions that are returned from {@link com.safjnest.util.PermissionHandler#getImportantPermissionsValue getImportantPermissionsValue}
+    * <p>Only takes the permissions that are returned from {@link com.safjnest.utils.PermissionHandler#getImportantPermissionsValue getImportantPermissionsValue}
     * @param member Member to check
     * @return List of permission names
     */

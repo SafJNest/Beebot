@@ -1,8 +1,5 @@
 package com.safjnest.commands.settings;
 
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
@@ -12,6 +9,8 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
 import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 /**
  * @author <a href="https://github.com/NeuntronSun">NeutronSun</a>

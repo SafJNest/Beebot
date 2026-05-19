@@ -1,4 +1,4 @@
-package com.safjnest.util.spotify;
+package com.safjnest.utils.spotify;
 
 import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
@@ -6,7 +6,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.safjnest.sql.database.WebsiteDB;
-import com.safjnest.util.SettingsLoader;
+import com.safjnest.utils.SettingsLoader;
 
 import org.springframework.http.*;
 import org.springframework.http.client.ClientHttpResponse;

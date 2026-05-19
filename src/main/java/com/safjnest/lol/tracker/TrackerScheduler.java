@@ -7,8 +7,8 @@ import java.util.concurrent.TimeUnit;
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.tracker.TrackerState.Priority;
-import com.safjnest.util.TimeConstant;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.TimeConstant;
+import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;

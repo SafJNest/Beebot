@@ -1,4 +1,4 @@
-package com.safjnest.util;
+package com.safjnest.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

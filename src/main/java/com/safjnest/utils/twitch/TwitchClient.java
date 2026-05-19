@@ -1,4 +1,4 @@
-package com.safjnest.util.twitch;
+package com.safjnest.utils.twitch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,8 +18,8 @@ import com.github.twitch4j.helix.domain.EventSubSubscriptionList;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.Stream;
 import com.safjnest.core.cache.managers.GenericCache;
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.log.BotLogger;
 
 public class TwitchClient {
     private static String clientId;

@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.log.BotLogger;
 
 public class TrackerState {
 

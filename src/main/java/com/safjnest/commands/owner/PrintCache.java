@@ -19,9 +19,9 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.sound.Sound;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;

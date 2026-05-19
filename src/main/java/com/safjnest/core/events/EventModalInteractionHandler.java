@@ -24,9 +24,9 @@ import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.util.AlertMessage;
-import com.safjnest.util.SafJNest;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.AlertMessage;
+import com.safjnest.utils.SafJNest;
+import com.safjnest.utils.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.buttons.Button;

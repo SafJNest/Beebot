@@ -31,8 +31,8 @@ import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.SafJNest;
-import com.safjnest.util.SettingsLoader;
+import com.safjnest.utils.SafJNest;
+import com.safjnest.utils.SettingsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;

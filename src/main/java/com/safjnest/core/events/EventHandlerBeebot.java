@@ -11,7 +11,7 @@ import com.safjnest.model.guild.AutomatedAction;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.MemberData;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.AutomatedActionTimer;
+import com.safjnest.utils.AutomatedActionTimer;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;

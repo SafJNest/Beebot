@@ -1,4 +1,4 @@
-package com.safjnest.util.log;
+package com.safjnest.utils.log;
 
 import ch.qos.logback.classic.pattern.LevelConverter;
 import ch.qos.logback.classic.spi.ILoggingEvent;

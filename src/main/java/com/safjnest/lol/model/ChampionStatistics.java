@@ -1,12 +1,12 @@
 package com.safjnest.lol.model;
 
-import com.safjnest.util.KryoUtils;
-
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
+import com.safjnest.utils.KryoUtils;
 
 public record ChampionStatistics(
     Filter filter,

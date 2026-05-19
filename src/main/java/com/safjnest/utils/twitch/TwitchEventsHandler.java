@@ -1,4 +1,4 @@
-package com.safjnest.util.twitch;
+package com.safjnest.utils.twitch;
 
 import java.time.Instant;
 
@@ -11,7 +11,7 @@ import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.log.BotLogger;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Guild;

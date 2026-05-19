@@ -19,7 +19,7 @@ import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.SafJNest;
+import com.safjnest.utils.SafJNest;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;

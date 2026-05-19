@@ -18,13 +18,11 @@ import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.model.sound.Sound;  
-import com.safjnest.util.AlertMessage;
-
-
-import com.safjnest.util.spotify.SpotifyMessage;
-import com.safjnest.util.spotify.type.SpotifyMessageType;
-import com.safjnest.util.spotify.type.SpotifyTimeRange;
+import com.safjnest.model.sound.Sound;
+import com.safjnest.utils.AlertMessage;
+import com.safjnest.utils.spotify.SpotifyMessage;
+import com.safjnest.utils.spotify.type.SpotifyMessageType;
+import com.safjnest.utils.spotify.type.SpotifyTimeRange;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;

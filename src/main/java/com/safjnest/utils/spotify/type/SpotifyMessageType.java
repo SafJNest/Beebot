@@ -1,4 +1,4 @@
-package com.safjnest.util.spotify.type;
+package com.safjnest.utils.spotify.type;
 
 public enum SpotifyMessageType {
   ALBUMS("albums"),

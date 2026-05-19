@@ -11,8 +11,8 @@ import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 

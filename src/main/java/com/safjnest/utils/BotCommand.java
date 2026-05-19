@@ -1,4 +1,4 @@
-package com.safjnest.util;
+package com.safjnest.utils;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

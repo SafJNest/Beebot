@@ -64,9 +64,9 @@ import com.safjnest.core.events.*;
 import com.safjnest.model.BotSettings.BotSettings;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.util.AutomatedActionTimer;
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.AutomatedActionTimer;
+import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.log.BotLogger;
 
 import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 

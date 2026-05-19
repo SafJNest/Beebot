@@ -3,8 +3,8 @@ package com.safjnest.commands.owner;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.App;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>

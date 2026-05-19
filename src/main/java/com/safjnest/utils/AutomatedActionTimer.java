@@ -1,4 +1,4 @@
-package com.safjnest.util;
+package com.safjnest.utils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -18,7 +18,7 @@ import com.safjnest.model.guild.AutomatedAction;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.log.BotLogger;
 import com.safjnest.core.cache.managers.GuildCache;
 
 public class AutomatedActionTimer {

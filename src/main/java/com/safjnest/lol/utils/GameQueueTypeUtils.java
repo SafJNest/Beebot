@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.util.SafJNest;
+import com.safjnest.utils.SafJNest;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 

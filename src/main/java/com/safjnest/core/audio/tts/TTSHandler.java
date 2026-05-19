@@ -5,7 +5,7 @@ import org.voicerss.tts.Audio.AudioFormat;
 import org.voicerss.tts.Voice.VoiceParameters;
 import org.voicerss.tts.Voice.VoiceProvider;
 
-import com.safjnest.util.SettingsLoader;
+import com.safjnest.utils.SettingsLoader;
 
 /**
  * Class that provides to generate {@code .mp3} files using TTS

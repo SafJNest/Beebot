@@ -17,10 +17,10 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.util.SafJNest;  
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.SafJNest;
+import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.log.BotLogger;
+import com.safjnest.utils.twitch.TwitchClient;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;

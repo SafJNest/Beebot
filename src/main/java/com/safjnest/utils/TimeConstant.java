@@ -1,4 +1,4 @@
-package com.safjnest.util;
+package com.safjnest.utils;
 
 public class TimeConstant {
     public static final long SECOND = 1000;

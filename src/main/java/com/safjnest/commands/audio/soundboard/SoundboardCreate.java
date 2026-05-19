@@ -11,8 +11,8 @@ import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Message.Attachment;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;

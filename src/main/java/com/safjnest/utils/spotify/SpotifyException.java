@@ -1,4 +1,4 @@
-package com.safjnest.util.spotify;
+package com.safjnest.utils.spotify;
 
 public class SpotifyException extends IllegalArgumentException {
     public enum ErrorType { NOT_LINKED, HISTORY_MISSING, NOT_SUPPORTED, API_ERROR, ERROR_PARSING, INVALID_TIME_RANGE, NO_AUTH }

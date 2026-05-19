@@ -7,12 +7,13 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;
 
 import com.safjnest.sql.*;
 import com.safjnest.sql.database.BotDB;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 import com.safjnest.core.audio.*;
 import com.safjnest.core.audio.types.*;
 
