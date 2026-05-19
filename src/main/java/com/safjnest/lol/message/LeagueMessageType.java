@@ -9,7 +9,10 @@ public enum LeagueMessageType {
   OVERVIEW_PING("Pings", false),
   OVERVIEW_OBJECTIVES("Objectives", false),
   OVERVIEW_CHAMPIONS("Champions", true, 10),
-  OVERVIEW_OPGG("OPgg", true, 5);
+  OVERVIEW_OPGG("OPgg", true, 5),
+  CHAMPIONS_BY_WINRATE("Champions by Winrate", true, 10),
+  CHAMPIONS_BY_PICKRATE("Champions by Pickrate", true, 10),
+  CHAMPIONS_BY_BANRATE("Champions by Banrate", true, 10);
 
   private String label;
   private boolean hasPageButton;

@@ -47,43 +47,10 @@ public class App {
             //runSpring();
         }
 
-        Filter filter = new Filter().setRank(TierType.CHALLENGER).setPatch("16.8");
-        Map<Integer, ChampionStats> stats = new ChampionStatsService().getAll(filter);
-        
-        List<ChampionStats> topChamps = stats.values().stream()
-            .filter(s -> s.laneStats().stream().anyMatch(l -> l.lane() == LaneType.TOP))
-            .toList();
-        
-        double avgGames = topChamps.stream()
-            .mapToInt(s -> s.getLaneStat(LaneType.TOP).games())
-            .average()
-            .orElse(0);
-        
-        topChamps.stream()
-            .filter(s -> s.getLaneStat(LaneType.TOP).games() > avgGames)
-            .sorted(Comparator.comparingDouble((ChampionStats s) ->
-                s.getLaneStat(LaneType.TOP).winrate()
-            ).reversed())
-            .forEach(s -> {
-                System.out.println(ChampionUtils.getChampion(s.filter().champion()).getName() + " - " + s.getLaneStat(LaneType.TOP).lane() + " - " + s.getLaneStat(LaneType.TOP).winrate());
-            });
 
-            List<ChampionStats> allChamps = stats.values().stream().toList();
 
-double avgBans = allChamps.stream()
-    .mapToInt(ChampionStats::bans)
-    .average()
-    .orElse(0);
-
-allChamps.stream()
-    .filter(s -> s.bans() > avgBans)
-    .sorted(Comparator.comparingDouble(ChampionStats::banrate).reversed())
-    .forEach(s -> {
-        System.out.println(ChampionUtils.getChampion(s.filter().champion()).getName() + " - " + s.prettyBanrate());
-    });
-
-        //bot = new Bot();
-        //bot.il_risveglio_della_bestia();
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {

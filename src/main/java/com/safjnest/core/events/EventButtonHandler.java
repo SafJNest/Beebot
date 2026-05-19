@@ -1062,6 +1062,9 @@ public class EventButtonHandler extends ListenerAdapter {
         boolean active = getButtonData(event.getButton()).active();
 
         ButtonData lolCenterData = getButtonData(event, LeagueMessage.BUTTON_ID_PREFIX + "-center-", 3);
+        if (lolCenterData.value2().isEmpty()) {
+            lolCenterData = new ButtonData("#", "1#EUW1", false);
+        }
         String puuid = lolCenterData.value2().trim().split("#")[0];
         String region = lolCenterData.value2().trim().split("#")[1];
 
@@ -1168,7 +1171,7 @@ public class EventButtonHandler extends ListenerAdapter {
         if (EventUtils.getButtonById(event, LeagueMessage.BUTTON_ID_PREFIX + "-left") == null && !userIdFallback) user_id = "";
         s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-        int summonerId = LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
+        int summonerId = s != null ? LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform()) : 0;
         LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
     }
 }

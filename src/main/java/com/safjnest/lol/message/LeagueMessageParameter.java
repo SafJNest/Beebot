@@ -3,6 +3,7 @@ package com.safjnest.lol.message;
 import java.util.List;
 
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 
@@ -13,6 +14,7 @@ import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
@@ -34,6 +36,8 @@ public class LeagueMessageParameter {
   private StringSelectMenu livegameMenu;
   private StringSelectMenu opggMenu;
 
+  private Filter filter;
+
   public LeagueMessageParameter(LeagueMessageType messageType) {
     this.messageType = messageType;
 
@@ -47,6 +51,12 @@ public class LeagueMessageParameter {
 
     this.offset = 0;
 
+    this.filter = new Filter();
+  }
+
+  public LeagueMessageParameter(LeagueMessageType messageType, Filter filter) {
+    this.messageType = messageType;
+    this.filter = filter;
   }
 
   public LeagueMessageParameter(LeagueMessageType messageType, long[] period, GameQueueType queueType, LaneType laneType, StaticChampion champion, boolean showChampion, int offset) {
@@ -106,6 +116,9 @@ public class LeagueMessageParameter {
 
       if (b.getCustomId().startsWith(prefix + "-change")) 
         fallbackChampion = Integer.parseInt(buttonValue);
+
+      if (b.getCustomId().startsWith(prefix + "-settings-")) 
+        this.filter = Filter.fromGenericKey(buttonValue);
       
     }
 
@@ -236,5 +249,33 @@ public class LeagueMessageParameter {
 
   public StringSelectMenu getOpggMenu() {
     return this.opggMenu;
+  }
+
+  public String getPatch() {
+    return this.filter.patch();
+  }
+
+  public void setPatch(String patch) {
+    this.filter.setPatch(patch);
+  }
+
+  public TierType getRank() {
+    return this.filter.rank();
+  }
+
+  public void setRank(TierType rank) {
+    this.filter.setRank(rank);
+  }
+
+  public LeagueShard getRegion() {
+    return this.filter.region();
+  }
+
+  public void setRegion(LeagueShard region) {
+    this.filter.setRegion(region);
+  }
+
+  public Filter toFilter() {
+    return this.filter;
   }
 }

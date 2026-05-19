@@ -198,7 +198,7 @@ public class Bot {
             new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
             new Permissions(), new Nickname(), new Welcome(), new Leave(), new Boost(), 
             new Blacklist(), new Twitch(), new Omegle(),new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), 
-            new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode()
+            new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode(), new Champions()
         );
 
         
