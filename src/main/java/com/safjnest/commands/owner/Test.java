@@ -26,11 +26,11 @@ import com.safjnest.core.audio.types.PlayTiming;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.Build;
-import com.safjnest.lol.model.ChampionStats;
+import com.safjnest.lol.model.ChampionStatistics;
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.lol.service.BuildService;
@@ -1433,7 +1433,7 @@ public class Test extends Command{
 
 
                             
-                            ChampionStats stats = new ChampionStatsService().get(filter);
+                            ChampionStatistics stats = new ChampionStatsService().get(filter);
                     
                             //System.out.println(filter.toKey());
                     

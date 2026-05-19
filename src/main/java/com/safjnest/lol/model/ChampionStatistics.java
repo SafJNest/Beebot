@@ -1,6 +1,5 @@
 package com.safjnest.lol.model;
 
-import com.safjnest.lol.build.Filter;
 import com.safjnest.util.KryoUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -9,7 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-public record ChampionStats(
+public record ChampionStatistics(
     Filter filter,
     int games,
     int picks,
@@ -56,8 +55,8 @@ public record ChampionStats(
         return KryoUtils.encode(this);
     }
 
-    public static ChampionStats decode(String b64) {
-        return KryoUtils.decode(b64, ChampionStats.class);
+    public static ChampionStatistics decode(String b64) {
+        return KryoUtils.decode(b64, ChampionStatistics.class);
     }
 
     public Matchup getOpponentMatchup(int opponent, LaneType lane) {

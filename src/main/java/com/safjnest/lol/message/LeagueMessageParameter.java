@@ -3,7 +3,7 @@ package com.safjnest.lol.message;
 import java.util.List;
 
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.Filter;
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 

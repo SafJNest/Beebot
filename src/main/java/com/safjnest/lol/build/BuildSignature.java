@@ -1,5 +1,6 @@
 package com.safjnest.lol.build;
 
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.ItemUtils;

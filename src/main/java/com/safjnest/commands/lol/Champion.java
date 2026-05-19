@@ -8,11 +8,11 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Build.SlotOption;
-import com.safjnest.lol.model.ChampionStats;
-import com.safjnest.lol.model.ChampionStats.Matchup;
+import com.safjnest.lol.model.ChampionStatistics;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.utils.ChampionUtils;
@@ -158,7 +158,7 @@ public class Champion extends SlashCommand {
 
 
 
-        ChampionStats stats = new ChampionStatsService().get(filter);
+        ChampionStatistics stats = new ChampionStatsService().get(filter);
         Build build = new BuildService().getMostUsed(filter);
         if (build != null) build.print();
 

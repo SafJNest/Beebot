@@ -4,9 +4,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.safjnest.lol.build.BuildSignature;
-import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.build.RuneSignature;
 import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.Build.SlotOption;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.redis.RedisClient;

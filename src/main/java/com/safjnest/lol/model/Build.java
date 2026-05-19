@@ -1,6 +1,5 @@
 package com.safjnest.lol.model;
 
-import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.build.RuneSignature;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.util.KryoUtils;

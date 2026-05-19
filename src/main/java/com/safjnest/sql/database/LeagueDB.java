@@ -32,11 +32,11 @@ import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
-import com.safjnest.lol.build.Filter;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.Build;
-import com.safjnest.lol.model.ChampionStats;
+import com.safjnest.lol.model.ChampionStatistics;
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
@@ -836,7 +836,7 @@ public class LeagueDB extends AbstractDB {
         return instance.query(query);
     }
 
-    public static void saveChampionStats(ChampionStats stats) {
+    public static void saveChampionStats(ChampionStatistics stats) {
         String sql = "INSERT INTO champion_stats (filter, champion, data) VALUES (?, ?, ?) "
             + "ON DUPLICATE KEY UPDATE data = VALUES(data)";
         try (Connection conn = instance.getConnection();
@@ -851,25 +851,25 @@ public class LeagueDB extends AbstractDB {
         }
     }
     
-    public static ChampionStats getChampionStats(Filter filter, int champion) {
+    public static ChampionStatistics getChampionStats(Filter filter, int champion) {
         QueryResult result = instance.query(
             "SELECT data FROM champion_stats WHERE filter = '" +
             filter.genericKey() + "' AND champion = '" + champion + "'"
         );
         if (result.isEmpty()) return null;
-        return ChampionStats.decode(result.get(0).get("data"));
+        return ChampionStatistics.decode(result.get(0).get("data"));
     }
     
-    public static Map<Integer, ChampionStats> getChampionStats(Filter filter) {
+    public static Map<Integer, ChampionStatistics> getChampionStats(Filter filter) {
         QueryResult result = instance.query(
             "SELECT champion, data FROM champion_stats WHERE filter = '" +
             filter.genericKey() + "'"
         );
         if (result.isEmpty()) return null;
-        Map<Integer, ChampionStats> map = new HashMap<>();
+        Map<Integer, ChampionStatistics> map = new HashMap<>();
         for (QueryRecord r : result) {
             int champion = r.getAsInt("champion");
-            map.put(champion, ChampionStats.decode(r.get("data")));
+            map.put(champion, ChampionStatistics.decode(r.get("data")));
         }
         return map;
     }

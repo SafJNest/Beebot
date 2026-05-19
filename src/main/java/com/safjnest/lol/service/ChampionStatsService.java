@@ -1,11 +1,11 @@
 package com.safjnest.lol.service;
 
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.lol.build.Filter;
-import com.safjnest.lol.model.ChampionStats;
-import com.safjnest.lol.model.ChampionStats.LaneStat;
-import com.safjnest.lol.model.ChampionStats.Matchup;
-import com.safjnest.lol.model.ChampionStats.MatchupKey;
+import com.safjnest.lol.model.ChampionStatistics;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.ChampionStatistics.LaneStat;
+import com.safjnest.lol.model.ChampionStatistics.Matchup;
+import com.safjnest.lol.model.ChampionStatistics.MatchupKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
@@ -27,17 +27,17 @@ public class ChampionStatsService {
 
     private record Row(int champion, LaneType lane, boolean win, TeamType team, String matchId, String bans) {}
 
-    public Map<Integer, ChampionStats> getAll(Filter filter) {
-        Map<Integer, ChampionStats> cached = LeagueDB.getChampionStats(filter);
+    public Map<Integer, ChampionStatistics> getAll(Filter filter) {
+        Map<Integer, ChampionStatistics> cached = LeagueDB.getChampionStats(filter);
         if (cached != null) return cached;
 
-        Map<Integer, ChampionStats> computed = compute(filter);
+        Map<Integer, ChampionStatistics> computed = compute(filter);
         return computed;
     }
 
-    public ChampionStats get(Filter filter) {
+    public ChampionStatistics get(Filter filter) {
         String key = RedisKey.CHAMPION_STATS.of(filter.genericKey(), filter.champion());
-        ChampionStats stats = RedisClient.get(key, ChampionStats.class);
+        ChampionStatistics stats = RedisClient.get(key, ChampionStatistics.class);
         if (stats != null) return stats;
 
         stats = LeagueDB.getChampionStats(filter, filter.champion());
@@ -46,13 +46,13 @@ public class ChampionStatsService {
             return stats;
         }
 
-        Map<Integer, ChampionStats> computed = compute(filter);
+        Map<Integer, ChampionStatistics> computed = compute(filter);
         stats = computed != null ? computed.get(filter.champion()) : null;
         if (stats != null) RedisClient.set(key, stats, 0);
         return stats;
     }
 
-    public Map<Integer, ChampionStats> compute(Filter filter) {
+    public Map<Integer, ChampionStatistics> compute(Filter filter) {
         QueryResult result = LeagueDB.get().query(
             "SELECT p.champion, p.lane, p.win, p.team, m.id AS match_id, m.bans " +
             filter.sqlAllParticipants()
@@ -109,7 +109,7 @@ public class ChampionStatsService {
             }
         }
 
-        Map<Integer, ChampionStats> stats = new HashMap<>();
+        Map<Integer, ChampionStatistics> stats = new HashMap<>();
         for (int champ : pickWin.keySet()) {
             int[] pw  = pickWin.get(champ);
             int[] bc  = banCount.getOrDefault(champ, new int[1]);
@@ -138,7 +138,7 @@ public class ChampionStatsService {
                 .setRank(filter.rank())
                 .setRegion(filter.region());
             
-            stats.put(champ, new ChampionStats(
+            stats.put(champ, new ChampionStatistics(
                 champFilter, totalGames, picks, bans, wins,
                 winrate, pickrate, banrate,
                 laneStats, matchups

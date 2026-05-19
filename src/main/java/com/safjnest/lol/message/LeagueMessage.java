@@ -24,8 +24,8 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.ChampionStats;
-import com.safjnest.lol.model.ChampionStats.LaneStat;
+import com.safjnest.lol.model.ChampionStatistics;
+import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.lol.model.Participant;
@@ -120,7 +120,7 @@ public class LeagueMessage {
             case CHAMPIONS_BY_WINRATE:
             case CHAMPIONS_BY_PICKRATE:
             case CHAMPIONS_BY_BANRATE:
-                List<ChampionStats> champions = new ChampionStatsService().getAll(parameter.toFilter()).values().stream().toList();
+                List<ChampionStatistics> champions = new ChampionStatsService().getAll(parameter.toFilter()).values().stream().toList();
                 embed = buildEmbedChampions(parameter, champions);
                 components = getChampionsButtons(parameter);
                 break;
@@ -166,7 +166,7 @@ public class LeagueMessage {
         return rows;
     }
 
-    private static MessageEmbed buildEmbedChampions(LeagueMessageParameter parameter, List<ChampionStats> champions) {
+    private static MessageEmbed buildEmbedChampions(LeagueMessageParameter parameter, List<ChampionStatistics> champions) {
         EmbedBuilder  eb   = new EmbedBuilder();
         StringBuilder desc = new StringBuilder();
     
@@ -181,11 +181,11 @@ public class LeagueMessage {
     
         desc.append("\n");
     
-        Comparator<ChampionStats> comparator = switch (parameter.getMessageType()) {
-            case CHAMPIONS_BY_WINRATE -> Comparator.comparingDouble((ChampionStats s) -> s.getLaneStat(lane).winrate());
+        Comparator<ChampionStatistics> comparator = switch (parameter.getMessageType()) {
+            case CHAMPIONS_BY_WINRATE -> Comparator.comparingDouble((ChampionStatistics s) -> s.getLaneStat(lane).winrate());
             case CHAMPIONS_BY_PICKRATE -> Comparator.comparingDouble(s -> s.getLaneStat(lane).getPickrate(s.games()));
             case CHAMPIONS_BY_BANRATE -> Comparator.comparingDouble(s -> s.banrate());
-            default -> Comparator.comparingDouble((ChampionStats s) -> s.getLaneStat(lane).winrate());
+            default -> Comparator.comparingDouble((ChampionStatistics s) -> s.getLaneStat(lane).winrate());
         };
     
     

@@ -1,4 +1,4 @@
-package com.safjnest.lol.build;
+package com.safjnest.lol.model;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;

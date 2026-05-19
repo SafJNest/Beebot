@@ -12,8 +12,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.build.Filter;
-import com.safjnest.lol.model.ChampionStats;
+import com.safjnest.lol.model.ChampionStatistics;
+import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.model.BotSettings.Settings;
