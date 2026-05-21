@@ -55,12 +55,14 @@ import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.entities.emoji.RichCustomEmoji;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
@@ -131,38 +133,56 @@ public class LeagueMessage {
     }
 
     private static List<MessageTopLevelComponent> getChampionsButtons(LeagueMessageParameter parameter) {
-
         List<MessageTopLevelComponent> rows = new ArrayList<>();
-
-        Button winrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_WINRATE, "Winrate");
+    
+        Button winrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_WINRATE,  "Winrate");
         Button pickrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_PICKRATE, "Pickrate");
-        Button banrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_BANRATE, "Banrate");
-
-        switch (parameter.getMessageType()) {
-            case CHAMPIONS_BY_WINRATE:
-                winrate = winrate.withStyle(ButtonStyle.SUCCESS);
-                break;
-            case CHAMPIONS_BY_PICKRATE:
-                pickrate = pickrate.withStyle(ButtonStyle.SUCCESS);
-                break;
-            case CHAMPIONS_BY_BANRATE:
-                banrate = banrate.withStyle(ButtonStyle.SUCCESS);
-                break;
-            default:
-                winrate = winrate.withStyle(ButtonStyle.SUCCESS);
-                break;
-        }
-        rows.add(ActionRow.of(winrate, pickrate, banrate));
-
-        Button left = Button.primary(BUTTON_ID_PREFIX + "-leftpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button banrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_BANRATE,  "Banrate");
+    
+        Button left = Button.primary(BUTTON_ID_PREFIX + "-leftpage-"  + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
         Button right = Button.primary(BUTTON_ID_PREFIX + "-rightpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
-
-        Button settings = Button.primary(BUTTON_ID_PREFIX + "-settings-" + parameter.toFilter().genericKey(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
-
-        rows.add(ActionRow.of(left, right, settings));
-
-        rows.add(0, LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
-
+        Button settings = Button.primary(BUTTON_ID_PREFIX + "-settings-"  + parameter.toFilter().genericKey(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+    
+        List<SelectOption> tierOptions = new ArrayList<>();
+        for (TierType tier : TierType.values()) {
+            tierOptions.add(SelectOption.of(tier.name(), tier.name())
+                .withEmoji(CustomEmojiHandler.getRichEmoji(tier.name()))
+                .withDefault(parameter.getRank() == tier));
+        }
+    
+        List<SelectOption> shardOptions = new ArrayList<>();
+        for (LeagueShard shard : LeagueShardUtils.getActives()) {
+            RichCustomEmoji emoji = CustomEmojiHandler.getRichEmoji(shard.getRealmValue().toUpperCase() + "_server");
+            SelectOption opt = SelectOption.of(shard.name(), shard.name()).withDefault(parameter.getRegion() == shard);
+            shardOptions.add(emoji != null ? opt.withEmoji(emoji) : opt);
+        }
+    
+        switch (parameter.getMessageType()) {
+            case CHAMPIONS_BY_PICKRATE -> pickrate = pickrate.withStyle(ButtonStyle.SUCCESS);
+            case CHAMPIONS_BY_BANRATE -> banrate = banrate.withStyle(ButtonStyle.SUCCESS);
+            default -> winrate = winrate.withStyle(ButtonStyle.SUCCESS);
+        }
+    
+        rows.add(LeagueMessageUtils.getOpggQueueTypeButtons(ButtonStyle.SECONDARY, parameter.getQueueType()));
+        rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
+        rows.add(ActionRow.of(
+            StringSelectMenu.create(BUTTON_ID_PREFIX + "-tier")
+                .setPlaceholder("Rank")
+                .setMaxValues(1)
+                .addOptions(tierOptions).build()
+            )
+        );
+        rows.add(ActionRow.of(
+            StringSelectMenu.create(BUTTON_ID_PREFIX + "-shard")
+                .setPlaceholder("Region")
+                .setMinValues(0)
+                .setMaxValues(1)
+                .addOptions(shardOptions)
+                .build()
+            )
+        );
+        rows.add(ActionRow.of(left, right, winrate, pickrate, banrate));
+    
         return rows;
     }
 
@@ -569,7 +589,7 @@ public class LeagueMessage {
 
         if (options.isEmpty()) return null;
 
-        return StringSelectMenu.create("opgg-select")
+        return StringSelectMenu.create(LeagueMessage.BUTTON_ID_PREFIX + "-opggselect")
                 .setPlaceholder("Select a game")
                 .setMaxValues(1)
                 .addOptions(options)
@@ -1262,7 +1282,7 @@ public class LeagueMessage {
             options.add(SelectOption.of(p.getRiotIdName() + "#" + p.getRiotIdTagline(), p.getPuuid() + "#" + match.getPlatform().name()).withEmoji(icon));
         }
 
-        return StringSelectMenu.create("rank-select")
+        return StringSelectMenu.create(LeagueMessage.BUTTON_ID_PREFIX + "-rankselect")
                 .setPlaceholder("Select a summoner")
                 .setMaxValues(1)
                 .addOptions(options)

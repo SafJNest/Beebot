@@ -46,7 +46,8 @@ public class CustomEmojiHandler {
 
     public static RichCustomEmoji getRichEmoji(String name){
         name = ChampionUtils.sanitizeChampionName(name);
-        return emoji.get(name.toLowerCase()).getObject();
+        CustomEmoji em = emoji.get(name.toLowerCase());
+        return em != null ? em.getObject() : null;
        
     }
 

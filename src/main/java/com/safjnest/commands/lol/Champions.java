@@ -7,7 +7,6 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
-import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;

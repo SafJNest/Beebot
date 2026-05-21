@@ -61,6 +61,7 @@ import com.safjnest.commands.queue.*;
 import com.safjnest.commands.settings.*;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.*;
+import com.safjnest.lol.message.LeagueEventHandler;
 import com.safjnest.model.BotSettings.BotSettings;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -225,6 +226,7 @@ public class Bot {
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
         jda.addEventListener(new EventComponentsHandler());
+        jda.addEventListener(new LeagueEventHandler());
     }
 
 

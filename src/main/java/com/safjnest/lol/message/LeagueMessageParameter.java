@@ -73,9 +73,11 @@ public class LeagueMessageParameter {
     this.offset = offset;
 
     this.match = null;
+    this.filter = new Filter();
   }
 
   public LeagueMessageParameter(List<Button> buttons) {
+    this.filter = new Filter();
     String prefix = LeagueMessage.BUTTON_ID_PREFIX;
     
     this.period = LeagueHandler.getCurrentSplitRange();
@@ -115,10 +117,6 @@ public class LeagueMessageParameter {
 
       if (b.getCustomId().startsWith(prefix + "-change")) 
         fallbackChampion = Integer.parseInt(buttonValue);
-
-      if (b.getCustomId().startsWith(prefix + "-settings-")) 
-        this.filter = Filter.fromGenericKey(buttonValue);
-      
     }
 
     if (this.champion == null && fallbackChampion > 0) 
@@ -140,18 +138,10 @@ public class LeagueMessageParameter {
 
   public LeagueMessageParameter withComponents(List<StringSelectMenu> menus) {
     for (StringSelectMenu menu : menus) {
-      if (menu.getCustomId().equals("opgg-select")) {
-        for (SelectOption option : menu.getOptions()) {
-          if (option.isDefault()) {
-            String gameId = option.getValue();
-            String platform =  option.getValue().split("_")[0];
-            LeagueShard shard = LeagueShard.valueOf(platform);
-            this.match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
-          }
-        }
+      if (menu.getCustomId().equals(LeagueMessage.BUTTON_ID_PREFIX + "-opggselect")) {
         this.opggMenu = menu;
       }
-      if (menu.getCustomId().equals("rank-select")) {
+      if (menu.getCustomId().equals(LeagueMessage.BUTTON_ID_PREFIX + "-rankselect")) {
         this.livegameMenu = menu;
       }
     }
@@ -275,6 +265,6 @@ public class LeagueMessageParameter {
   }
 
   public Filter toFilter() {
-    return this.filter;
+    return this.filter.setLane(laneType).setQueue(queueType);
   }
 }

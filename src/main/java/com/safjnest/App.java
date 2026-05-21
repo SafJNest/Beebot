@@ -3,27 +3,17 @@ package com.safjnest;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
-import com.safjnest.lol.model.ChampionStatistics;
-import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.service.ChampionStatsService;
-import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
 import com.safjnest.utils.twitch.TwitchClient;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 @SpringBootApplication
 public class App {
@@ -46,8 +36,6 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
-
-
 
         bot = new Bot();
         bot.il_risveglio_della_bestia();
