@@ -36,6 +36,18 @@ public class Filter {
         .setRegion(parts[3].equals("*") ? null : LeagueShard.valueOf(parts[3]));
     }
 
+    public static Filter fromKey(String key) {
+      String raw = new String(Base64.getDecoder().decode(key), StandardCharsets.UTF_8);
+      String[] parts = raw.split("\\|");
+      return new Filter()
+        .setChampion(Integer.parseInt(parts[0]))
+        .setLane(parts[1].equals("*") ? null : LaneType.valueOf(parts[1]))
+        .setQueue(parts[2].equals("*") ? null : GameQueueType.valueOf(parts[2]))
+        .setRank(parts[3].equals("*") ? null : TierType.valueOf(parts[3]))
+        .setPatch(parts[4].equals("*") ? null : parts[4])
+        .setRegion(parts[5].equals("*") ? null : LeagueShard.valueOf(parts[5]));
+    }
+
     private int champion;
     private LaneType lane;
     private GameQueueType queue;

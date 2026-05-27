@@ -75,6 +75,18 @@ public class BuildService {
         return build;
     }
 
+    public List<Build> recomputeAll(Filter filter) {
+        List<Build> computed = computeAll(filter);
+        if (computed != null && !computed.isEmpty()) {
+            LeagueDB.saveChampionBuilds(computed);
+            Build mostUsed = computed.stream().max(Comparator.comparingInt(Build::games)).orElse(null);
+            Build highWinrate = computed.stream().max(Comparator.comparingDouble(Build::winrate)).orElse(null);
+            if (mostUsed != null) RedisClient.set(RedisKey.MOST_USED_BUILD.of(filter.toKey()), mostUsed, 0);
+            if (highWinrate != null) RedisClient.set(RedisKey.HIGH_WINRATE_BUILD.of(filter.toKey()), highWinrate, 0);
+        }
+        return computed;
+    }
+
     // -------------------------------------------------------------------------
 
     private List<Build> computeAll(Filter filter) {

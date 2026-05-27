@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.lol.service.ChampionDataRefreshService;
 import com.safjnest.lol.tracker.TrackerState.Priority;
 import com.safjnest.utils.TimeConstant;
 import com.safjnest.utils.log.BotLogger;
@@ -30,6 +31,9 @@ public class TrackerScheduler {
 
             ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
             retriveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+
+            ChronoTask refreshChampionData = () -> refreshChampionData();
+            refreshChampionData.scheduleAtFixedTime(3, 0, 0);
 
             ChronoTask clearTimelineCache = () -> DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
             clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
@@ -75,5 +79,12 @@ public class TrackerScheduler {
     public static void retriveHighEloEntries() {
         TrackerState.awaitCondition(Priority.MID);
         Tracker.retriveHighEloEntries();
+    }
+
+    public static void refreshChampionData() {
+        TrackerState.awaitCondition(Priority.LOW);
+        TrackerState.acquire(Priority.LOW);
+        try { new ChampionDataRefreshService().refresh(); }
+        finally { TrackerState.release(Priority.LOW); }
     }
 }

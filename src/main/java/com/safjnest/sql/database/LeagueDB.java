@@ -831,6 +831,26 @@ public class LeagueDB extends AbstractDB {
         }
     }
 
+    public static void saveChampionBuilds(List<Build> builds) {
+        if (builds == null || builds.isEmpty()) return;
+        String sql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE games = VALUES(games), winrate = VALUES(winrate), data = VALUES(data)";
+        try (Connection conn = instance.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (Build build : builds) {
+                pstmt.setInt(1, build.games());
+                pstmt.setDouble(2, build.winrate());
+                pstmt.setString(3, build.filter().toKey());
+                pstmt.setString(4, build.encode());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static QueryResult getChampionBuildsRaw(Filter filter) {
         String query = "SELECT m.game_id, p.win, p.build, p.summoner_id FROM `match` m STRAIGHT_JOIN participant p ON p.match_id = m.id " + filter.sql();
         return instance.query(query);
@@ -850,7 +870,26 @@ public class LeagueDB extends AbstractDB {
             e.printStackTrace();
         }
     }
-    
+
+    public static void saveChampionStats(Map<Integer, ChampionStatistics> stats) {
+        if (stats == null || stats.isEmpty()) return;
+        String sql = "INSERT INTO champion_stats (filter, champion, data) VALUES (?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE data = VALUES(data)";
+        try (Connection conn = instance.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (ChampionStatistics stat : stats.values()) {
+                pstmt.setString(1, stat.filter().genericKey());
+                pstmt.setInt(2, stat.filter().champion());
+                pstmt.setString(3, stat.encode());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static ChampionStatistics getChampionStats(Filter filter, int champion) {
         QueryResult result = instance.query(
             "SELECT data FROM champion_stats WHERE filter = '" +
@@ -872,6 +911,70 @@ public class LeagueDB extends AbstractDB {
             map.put(champion, ChampionStatistics.decode(r.get("data")));
         }
         return map;
+    }
+
+    public static QueryResult getStoredChampionBuildFilters() {
+        return instance.query("SELECT DISTINCT filter FROM champion_builds;");
+    }
+
+    public static QueryResult getStoredChampionStatsFilters() {
+        return instance.query("SELECT DISTINCT filter FROM champion_stats;");
+    }
+
+    public static QueryResult getChampionBuildRefreshFilters(String patch) {
+        String sql = "SELECT DISTINCT p.champion, p.lane, m.queue, m.rank, m.region, m.patch_major AS patch "
+            + "FROM `match` m JOIN participant p ON p.match_id = m.id "
+            + "WHERE m.patch_major = ? AND p.build IS NOT NULL AND p.build <> '' AND p.champion IS NOT NULL";
+        QueryResult result = new QueryResult();
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, patch);
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    QueryRecord row = new QueryRecord();
+                    row.put("champion", rs.getString("champion"));
+                    row.put("lane", rs.getString("lane"));
+                    row.put("queue", rs.getString("queue"));
+                    row.put("rank", rs.getString("rank"));
+                    row.put("region", rs.getString("region"));
+                    row.put("patch", rs.getString("patch"));
+                    result.add(row);
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static QueryResult getChampionStatsRefreshFilters(String patch) {
+        String sql = "SELECT DISTINCT m.queue, m.rank, m.region, m.patch_major AS patch "
+            + "FROM `match` m JOIN participant p ON p.match_id = m.id "
+            + "WHERE m.patch_major = ?";
+        QueryResult result = new QueryResult();
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, patch);
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    QueryRecord row = new QueryRecord();
+                    row.put("queue", rs.getString("queue"));
+                    row.put("rank", rs.getString("rank"));
+                    row.put("region", rs.getString("region"));
+                    row.put("patch", rs.getString("patch"));
+                    result.add(row);
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
 

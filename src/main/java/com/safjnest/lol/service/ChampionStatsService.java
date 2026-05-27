@@ -53,6 +53,20 @@ public class ChampionStatsService {
     }
 
     public Map<Integer, ChampionStatistics> compute(Filter filter) {
+        return compute(filter, true);
+    }
+
+    public Map<Integer, ChampionStatistics> recomputeAll(Filter filter) {
+        Map<Integer, ChampionStatistics> computed = compute(filter, false);
+
+        if (computed != null && !computed.isEmpty()) {
+            LeagueDB.saveChampionStats(computed);
+            computed.values().forEach(stat -> RedisClient.set(RedisKey.CHAMPION_STATS.of(stat.filter().genericKey(), stat.filter().champion()), stat, 0));
+        }
+        return computed;
+    }
+
+    private Map<Integer, ChampionStatistics> compute(Filter filter, boolean save) {
         QueryResult result = LeagueDB.get().query(
             "SELECT p.champion, p.lane, p.win, p.team, m.id AS match_id, m.bans " +
             filter.sqlAllParticipants()
@@ -145,7 +159,7 @@ public class ChampionStatsService {
             ));
         }
 
-        if (stats != null && !stats.isEmpty()) {
+        if (save && stats != null && !stats.isEmpty()) {
             stats.values().forEach(stat -> {
                 ChronoTask a = () -> LeagueDB.saveChampionStats(stat);
                 String key = RedisKey.CHAMPION_STATS.of(stat.filter().genericKey(), stat.filter().champion());
