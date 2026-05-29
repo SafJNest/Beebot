@@ -748,14 +748,12 @@ public class LeagueMessage {
 
             case CHERRY:
 
-                content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda +"\n"
+            content = CustomEmojiHandler.getFormattedEmoji(me.getChampionName()) + kda +"\n"
                 + date + " | **"+ LeagueMessageUtils.getFormattedDuration((match.getGameDuration()))  + "**\n"
                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner1Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment1())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment2())) + "\n"
                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getSummoner2Id()) + "_") + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment3())) + " " + CustomEmojiHandler.getFormattedEmoji("a" + String.valueOf(me.getPlayerAugment4())) + "\n"
                 + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem0())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem1())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem2())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem3())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem4())) + " " + CustomEmojiHandler.getFormattedEmoji(String.valueOf(me.getItem5()));
 
-                eb.addField(
-                    "ARENA: " + (me.didWin() ? "WIN" : "LOSE") , content, true);
 
                 HashMap<String, ArrayList<String>> prova = new HashMap<>();
                 prova.put("teamscuttles", new ArrayList<>());
@@ -802,17 +800,32 @@ public class LeagueMessage {
                     prova.get(team).add(CustomEmojiHandler.getFormattedEmoji(mt.getChampionName()) + name);
                     positions.put(mt.getPlacement(), team);
                 }
+
+                boolean is3v3 = prova.get("teamporos").size() == 3;
+
+
+                int spacing = is3v3 ? 3 : 2;
+                int teamCount = is3v3 ? 3 : 4;
+                
+
                 String blueTeam = "";
                 String redTeam = "";
-                for (int j = 1; j <= 8; j++) {
+                for (int j = 1; j <= prova.keySet().size(); j++) {
                     String team = positions.get(j);
-                    String space = j % 2 == 0 ? "\n\n" : "\n";
-                    if (j <= 4)
-                        blueTeam += CustomEmojiHandler.getFormattedEmoji(team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
+                    if (!prova.containsKey(team)) continue;
+
+                    String space = is3v3 ? "\n" : (j % 2 == 0 ? "\n\n" : "\n");
+                    String champs = prova.get(team).subList(0, spacing).stream().collect(Collectors.joining(""));
+                    if (j <= teamCount)
+                        blueTeam += CustomEmojiHandler.getFormattedEmoji(team) + champs + space;
                     else
-                        redTeam += CustomEmojiHandler.getFormattedEmoji(team) + prova.get(team).get(0) + prova.get(team).get(1) + space;
+                        redTeam += CustomEmojiHandler.getFormattedEmoji(team) + champs + space; 
                 }
-                eb.addField("Top 4", blueTeam, true);
+                String cherryTitle = is3v3 ? "ARENA 3v3" : "ARENA";
+                eb.addField(
+                    cherryTitle + ": " + (me.didWin() ? "WIN" : "LOSE") , content, true);
+
+                eb.addField(is3v3 ? "Top 3" : "Top 4", blueTeam, true);
                 eb.addField("Others", redTeam, true);
             break;
 
