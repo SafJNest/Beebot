@@ -1,5 +1,7 @@
 package com.safjnest.redis;
 
+import com.safjnest.App;
+
 public enum RedisKey {
 
     SUMMONER("summoner:%s:%s"),
@@ -20,12 +22,14 @@ public enum RedisKey {
     CHAMPION_STATS("champion_stats:%s:%s");
 
     private final String pattern;
+    private final String database;
 
     RedisKey(String pattern) {
         this.pattern = pattern;
+        this.database = App.isTesting() ? "beebot_test" : "beebot";
     }
 
     public String of(Object... args) {
-        return String.format(pattern, args);
+        return String.format(database + ":" + pattern, args);
     }
 }
