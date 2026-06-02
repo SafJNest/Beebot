@@ -21,6 +21,7 @@ import com.safjnest.redis.RedisKey;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -588,8 +589,8 @@ public class Tracker {
 
     public static void retriveSampleGames(GameQueueType queue) {
         BotLogger.info("[LPTracker] Pushing sample matches");
-        String currentPatch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
-        String previousPatch = LeagueHandler.getPreviousVersion().split("\\.")[0] + "." + LeagueHandler.getPreviousVersion().split("\\.")[1];
+        String currentPatch = PatchUtils.getPatch();
+        String previousPatch = PatchUtils.getPreviousPatch();
     
         long[] splitRange = LeagueHandler.getCurrentSplitRange();
     
@@ -732,7 +733,7 @@ public class Tracker {
     }
 
     public static void retriveSampleGamesPatch() {
-        String currentPatch = LeagueHandler.getVersion().split("\\.")[0] + "." + LeagueHandler.getVersion().split("\\.")[1];
+        String currentPatch = PatchUtils.getPatch();
         BotLogger.info("[LPTracker] Pushing sample matches");
         List<LeagueShard> shards = List.of(LeagueShard.EUW1);
         for (LeagueShard shard : shards) {
@@ -775,7 +776,7 @@ public class Tracker {
      * @param lane
      */
     public static HashMap<String, String> analyzeChampionData(int champion, LaneType lane) {
-        String[] parts = LeagueHandler.getVersion().split("\\.", 3);
+        String[] parts = PatchUtils.getPatch().split("\\.", 3);
         String patch = parts[0] + "." + parts[1];
     
         QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE patch_major = '" + patch + "'");

@@ -9,7 +9,6 @@ import com.safjnest.lol.utils.GameQueueTypeUtils;
 
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -28,6 +27,8 @@ public class LeagueMessageParameter {
 
   private StaticChampion champion;
   private boolean showChampion;
+  private int opponent;
+  private int duo;
 
   private int offset;
 
@@ -48,6 +49,8 @@ public class LeagueMessageParameter {
 
     this.champion = null;
     this.showChampion = false;
+    this.opponent = 0;
+    this.duo = 0;
 
     this.offset = 0;
 
@@ -56,7 +59,11 @@ public class LeagueMessageParameter {
 
   public LeagueMessageParameter(LeagueMessageType messageType, Filter filter) {
     this.messageType = messageType;
-    this.filter = filter;
+    this.period = LeagueHandler.getCurrentSplitRange();
+    this.champion = null;
+    this.showChampion = false;
+    this.offset = 0;
+    applyFilter(filter);
   }
 
   public LeagueMessageParameter(LeagueMessageType messageType, long[] period, GameQueueType queueType, LaneType laneType, StaticChampion champion, boolean showChampion, int offset) {
@@ -69,6 +76,8 @@ public class LeagueMessageParameter {
 
     this.champion = champion;
     this.showChampion = showChampion;
+    this.opponent = 0;
+    this.duo = 0;
 
     this.offset = offset;
 
@@ -112,8 +121,14 @@ public class LeagueMessageParameter {
       if (b.getCustomId().startsWith(prefix + "-season-") && isActive)
           timeString = buttonValue;
 
-      if (b.getCustomId().startsWith(prefix + "-leftpage")) 
-          this.offset = Integer.parseInt(buttonValue);
+      if (b.getCustomId().startsWith(prefix + "-leftpage")) {
+        String[] parts = b.getCustomId().split("-", 4);
+        this.offset = Integer.parseInt(buttonValue);
+        if (parts.length == 4) {
+          try { applyFilter(Filter.fromStateKey(parts[3])); }
+          catch (Exception e) { }
+        }
+      }
 
       if (b.getCustomId().startsWith(prefix + "-change")) 
         fallbackChampion = Integer.parseInt(buttonValue);
@@ -146,6 +161,14 @@ public class LeagueMessageParameter {
       }
     }
     return this;
+  }
+
+  private void applyFilter(Filter filter) {
+    this.filter = filter;
+    this.queueType = filter.queue();
+    this.laneType = filter.lane();
+    this.opponent = filter.opponent();
+    this.duo = filter.duo();
   }
 
   public LeagueMessageType getMessageType() {
@@ -208,6 +231,24 @@ public class LeagueMessageParameter {
     return champion != null ? champion.getId() : 0;
   }
 
+  public int getOpponent() {
+    return opponent;
+  }
+
+  public void setOpponent(int opponent) {
+    this.opponent = opponent;
+    this.filter.setOpponent(opponent);
+  }
+
+  public int getDuo() {
+    return duo;
+  }
+
+  public void setDuo(int duo) {
+    this.duo = duo;
+    this.filter.setDuo(duo);
+  }
+
   public int getShowingChampion() {
     return this.showChampion ? getChampionId() : 0;
   }
@@ -265,6 +306,6 @@ public class LeagueMessageParameter {
   }
 
   public Filter toFilter() {
-    return this.filter.setLane(laneType).setQueue(queueType);
+    return this.filter.setLane(laneType).setQueue(queueType).setOpponent(opponent).setDuo(duo);
   }
 }

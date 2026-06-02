@@ -13,8 +13,8 @@ import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
@@ -117,7 +117,7 @@ public class PrintCache extends Command {
         String header = "**Tier god information about the insane beebots cache**```" + "Total Streamer: " + streamers.getSize() + " / " + streamers.getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + LeagueHandler.getVersion() + "```";
+            + "League Version: " + PatchUtils.getPatch() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -170,7 +170,7 @@ public class PrintCache extends Command {
             + "Total BlackList: " + totalBlackList + "\n\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + LeagueHandler.getVersion() + "```";
+            + "League Version: " + PatchUtils.getPatch() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -217,7 +217,7 @@ public class PrintCache extends Command {
             + "Total Users: " + UserCache.getInstance().getSize() + " / " + UserCache.getInstance().getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + LeagueHandler.getVersion() + "```";
+            + "League Version: " + PatchUtils.getPatch() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -255,7 +255,7 @@ public class PrintCache extends Command {
         + "Total Sounds: " + ss.getSize() + " / " + ss.getMaxSize() + "\n"
         + "Other bot information\n"
         + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-        + "League Version: " + LeagueHandler.getVersion() + "```";
+        + "League Version: " + PatchUtils.getPatch() + "```";
 
         cache.add(0, header);
 

@@ -61,6 +61,7 @@ import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.PatchUtils;
 
 
 /**
@@ -73,7 +74,7 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 
     private static R4J riotApi;
 
-    private static String version;
+    private static String patch;
 
     private static String runesURL;
 
@@ -83,48 +84,12 @@ import com.safjnest.lol.utils.LeagueShardUtils;
     static {
 
         LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey())); 
-        LeagueHandler.version = getVersion();
-        LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.version + "/data/en_US/runesReforged.json";
+        LeagueHandler.patch = PatchUtils.getPatch() + ".1";
+        LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";
 
         loadRunes();
         loadAguments();
         new TrackerScheduler();
-    }
-
-    public static String getVersion() {
-        if (version == null) {
-            try {
-                URI uri = new URI("https://ddragon.leagueoflegends.com/api/versions.json");
-                URL url = uri.toURL();
-                String json = IOUtils.toString(url, Charset.forName("UTF-8"));
-                JSONParser parser = new JSONParser();
-                JSONArray file = (JSONArray) parser.parse(json);
-
-                // Get the latest version (first element in the array)
-                version = (String) file.get(0);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return version;
-    }
-
-    public static String getPreviousVersion() {
-        try {
-            URI uri = new URI("https://ddragon.leagueoflegends.com/api/versions.json");
-            URL url = uri.toURL();
-            String json = IOUtils.toString(url, Charset.forName("UTF-8"));
-            JSONParser parser = new JSONParser();
-            JSONArray file = (JSONArray) parser.parse(json);
-
-            // Get the latest version (first element in the array)
-            version = (String) file.get(1);
-            return version;
-
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     public static HashMap<String, PageRunes> getRunesHandler() {
@@ -398,11 +363,11 @@ import com.safjnest.lol.utils.LeagueShardUtils;
 //
 
     public static String getSummonerProfilePic(Summoner s){
-        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/profileicon/"+s.getProfileIconId()+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+patch+"/img/profileicon/"+s.getProfileIconId()+".png";
     }
 
     public static String getSummonerProfilePic(int id){
-        return "https://ddragon.leagueoflegends.com/cdn/"+version+"/img/profileicon/"+id+".png";
+        return "https://ddragon.leagueoflegends.com/cdn/"+patch+"/img/profileicon/"+id+".png";
     }
 
 //     ▄████████ ███▄▄▄▄       ███        ▄████████ ▄██   ▄

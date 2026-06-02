@@ -70,10 +70,10 @@ public class ChampionUtils {
   }
 
   public static String getChampionProfilePic(String champ){
-    return "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.getVersion() + "/img/champion/"+ sanitizeChampionName(champ) +".png";
+    return "https://ddragon.leagueoflegends.com/cdn/" + PatchUtils.getPatch() + "/img/champion/"+ sanitizeChampionName(champ) +".png";
   }
 
   public static String getChampionProfilePic(int champ, String skin){
-      return "https://cdn.communitydragon.org/" + LeagueHandler.getVersion() + "/champion/"+champ+"/tile/skin/" + skin;
+      return "https://cdn.communitydragon.org/" + PatchUtils.getPatch() + "/champion/"+champ+"/tile/skin/" + skin;
   }
 }

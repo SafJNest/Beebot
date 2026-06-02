@@ -9,6 +9,7 @@ import com.safjnest.core.events.EventUtils;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.ChampionUtils;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.core.cache.managers.UserCache;
 
@@ -132,6 +133,8 @@ public class LeagueEventHandler extends EventButtonHandler {
             }
             case "queue" -> {
                 parameter.setQueueType(!active ? GameQueueType.valueOf(content) : null);
+                if (parameter.getQueueType() != null && !GameQueueTypeUtils.hasLane(parameter.getQueueType()))
+                    parameter.setLaneType(null);
                 parameter.setOffset(0);
             }
             case "lane" -> {
@@ -141,6 +144,7 @@ public class LeagueEventHandler extends EventButtonHandler {
             case "type" -> {
                 parameter.setMessageType(LeagueMessageType.valueOf(content.toUpperCase()));
                 if (parameter.getMessageType() == LeagueMessageType.OVERVIEW_CHAMPIONS) parameter.setShowChampion(false);
+                parameter.setOffset(0);
             }
             case "season" -> {
                 long[] time = switch (content) {
@@ -167,7 +171,7 @@ public class LeagueEventHandler extends EventButtonHandler {
                 ).queue();
                 return null;
             }
-            case "leftpage" -> parameter.setOffset(parameter.getOffset() - parameter.getMessageType().getPageItem());
+            case "leftpage" -> parameter.setOffset(Math.max(0, parameter.getOffset() - parameter.getMessageType().getPageItem()));
             case "rightpage" -> parameter.setOffset(parameter.getOffset() + parameter.getMessageType().getPageItem());
             case "refresh" -> {
                 LeagueHandler.clearSummonerCache(LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region)));
@@ -180,16 +184,16 @@ public class LeagueEventHandler extends EventButtonHandler {
 
     private LeagueContext stringSelect(StringSelectInteractionEvent event, List<Button> buttons, LeagueContext context) {
         String args = event.getComponentId().split("-")[1];
-        String value = event.getValues().get(0);
+        String value = event.getValues().isEmpty() ? null : event.getValues().get(0);
         LeagueMessageParameter parameter = context.parameter();
 
         switch (args) {
             case "shard" -> {
-                parameter.setRegion(LeagueShard.valueOf(value.toUpperCase()));
+                parameter.setRegion(value == null ? null : LeagueShard.valueOf(value.toUpperCase()));
                 parameter.setOffset(0);
             }
             case "tier" -> {
-                parameter.setRank(TierType.valueOf(value.toUpperCase()));
+                parameter.setRank(value == null || value.equals("ALL") ? null : TierType.valueOf(value.toUpperCase()));
                 parameter.setOffset(0);
             }
             case "opggselect" -> parameter.setMatch(

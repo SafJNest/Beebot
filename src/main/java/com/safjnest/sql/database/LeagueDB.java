@@ -817,7 +817,7 @@ public class LeagueDB extends AbstractDB {
 
     public static void saveChampionBuild(Build build) {
         String sql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?) "
-            + "ON DUPLICATE KEY UPDATE data = VALUES(data)";
+            + "ON DUPLICATE KEY UPDATE games = VALUES(games), winrate = VALUES(winrate), data = VALUES(data)";
         try (Connection conn = instance.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, build.games());

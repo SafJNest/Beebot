@@ -26,6 +26,7 @@ import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionStatistics.LaneStat;
+import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.lol.model.Participant;
@@ -139,11 +140,13 @@ public class LeagueMessage {
         Button pickrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_PICKRATE, "Pickrate");
         Button banrate = Button.primary("lol-type-" + LeagueMessageType.CHAMPIONS_BY_BANRATE,  "Banrate");
     
-        Button left = Button.primary(BUTTON_ID_PREFIX + "-leftpage-"  + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
-        Button right = Button.primary(BUTTON_ID_PREFIX + "-rightpage-" + parameter.getOffset(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
-        Button settings = Button.primary(BUTTON_ID_PREFIX + "-settings-"  + parameter.toFilter().genericKey(), " ").withEmoji(CustomEmojiHandler.getRichEmoji("shuffle"));
+        String stateKey = parameter.toFilter().toStateKey();
+        Button left = Button.primary(BUTTON_ID_PREFIX + "-leftpage-"  + parameter.getOffset() + "-" + stateKey, " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
+        Button right = Button.primary(BUTTON_ID_PREFIX + "-rightpage-" + parameter.getOffset() + "-" + stateKey, " ").withEmoji(CustomEmojiHandler.getRichEmoji("rightarrow"));
+        if (parameter.getOffset() <= 0) left = left.asDisabled();
     
         List<SelectOption> tierOptions = new ArrayList<>();
+        tierOptions.add(SelectOption.of("All", "ALL").withDefault(parameter.getRank() == null));
         for (TierType tier : TierType.values()) {
             tierOptions.add(SelectOption.of(tier.name(), tier.name())
                 .withEmoji(CustomEmojiHandler.getRichEmoji(tier.name()))
@@ -164,7 +167,8 @@ public class LeagueMessage {
         }
     
         rows.add(LeagueMessageUtils.getOpggQueueTypeButtons(ButtonStyle.SECONDARY, parameter.getQueueType()));
-        rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
+        if (parameter.getQueueType() == null || GameQueueTypeUtils.hasLane(parameter.getQueueType()))
+            rows.add(LeagueMessageUtils.getLaneComponents(parameter.getLaneType()));
         rows.add(ActionRow.of(
             StringSelectMenu.create(BUTTON_ID_PREFIX + "-tier")
                 .setPlaceholder("Rank")
@@ -192,27 +196,40 @@ public class LeagueMessage {
     
         int pageSize  = parameter.getMessageType().getPageItem();
         LaneType lane = parameter.getLaneType();
+        int opponent  = parameter.getOpponent();
     
         if (parameter.getPatch()     != null) desc.append("Patch `").append(parameter.getPatch()).append("`\n");
         if (parameter.getRegion()    != null) desc.append(LeagueShardUtils.getRegionFlag(parameter.getRegion())).append(" ").append(parameter.getRegion()).append("\n");
         if (parameter.getRank()      != null) desc.append(CustomEmojiHandler.getFormattedEmoji(parameter.getRank().toString())).append(" ").append(SafJNest.capitalize(parameter.getRank().toString())).append("\n");
         if (parameter.getQueueType() != null) desc.append(GameQueueTypeUtils.getMapEmoji(parameter.getQueueType())).append(" ").append(GameQueueTypeUtils.prettyName(parameter.getQueueType())).append("\n");
         if (parameter.getLaneType()  != null) desc.append(LaneTypeUtils.getLaneTypeEmoji(lane)).append(" ").append(LaneTypeUtils.getPrettyName(lane)).append("\n");
+        if (opponent != 0) {
+            StaticChampion opponentChampion = ChampionUtils.getChampion(opponent);
+            if (opponentChampion != null)
+                desc.append("Against ").append(CustomEmojiHandler.getFormattedEmoji(opponentChampion.getName())).append(" ").append(opponentChampion.getName()).append("\n");
+        }
     
         desc.append("\n");
     
         Comparator<ChampionStatistics> comparator = switch (parameter.getMessageType()) {
-            case CHAMPIONS_BY_WINRATE -> Comparator.comparingDouble((ChampionStatistics s) -> s.getLaneStat(lane).winrate());
-            case CHAMPIONS_BY_PICKRATE -> Comparator.comparingDouble(s -> s.getLaneStat(lane).getPickrate(s.games()));
+            case CHAMPIONS_BY_WINRATE -> Comparator.comparingDouble(s -> getChampionWinrate(s, lane, opponent));
+            case CHAMPIONS_BY_PICKRATE -> Comparator.comparingDouble(s -> getChampionPickrate(s, lane, opponent));
             case CHAMPIONS_BY_BANRATE -> Comparator.comparingDouble(s -> s.banrate());
-            default -> Comparator.comparingDouble((ChampionStatistics s) -> s.getLaneStat(lane).winrate());
+            default -> Comparator.comparingDouble(s -> getChampionWinrate(s, lane, opponent));
         };
     
-    
-        champions.stream()
-            .filter(s -> s.getLaneStat(lane) != null)
+        List<ChampionStatistics> filtered = champions.stream()
+            .filter(s -> canShowChampion(s, lane, opponent))
             .sorted(comparator.reversed())
-            .skip(parameter.getOffset())
+            .toList();
+
+        int offset = Math.max(0, parameter.getOffset());
+        if (offset >= filtered.size() && !filtered.isEmpty())
+            offset = ((filtered.size() - 1) / pageSize) * pageSize;
+        parameter.setOffset(offset);
+
+        filtered.stream()
+            .skip(offset)
             .limit(pageSize)
             .forEach(s -> {
                 StaticChampion champion = ChampionUtils.getChampion(s.filter().champion());
@@ -221,21 +238,42 @@ public class LeagueMessage {
                     desc.append(s.filter().champion()).append("\n");
                     return;
                 }
-                LaneStat ls      = lane != null ? s.getLaneStat(lane) : null;
+
+                Matchup matchup = opponent != 0 ? getOpponentMatchup(s, opponent, lane) : null;
+                LaneStat ls = lane != null ? s.getLaneStat(lane) : null;
         
                 desc.append(CustomEmojiHandler.getFormattedEmoji(champion.getName()))
-                    .append(" **").append(champion.getName()).append("**: ")
-                    .append(ls.prettyGames()).append(" games\n")
-                    .append("`Winrate ").append(ls.prettyWinrate())
-                    .append(" | Pickrate ").append(ls.prettyPickrate(s.games()))
-                    .append(" | Banrate ").append(s.prettyBanrate())
-                    .append("`\n");
+                    .append(" **").append(champion.getName()).append("**: ");
+
+                if (matchup != null) {
+                    desc.append(matchup.prettyMatches()).append(" games\n")
+                        .append("`Winrate ").append(matchup.prettyWinrate())
+                        .append(" | Banrate ").append(s.prettyBanrate())
+                        .append("`\n");
+                }
+                else if (ls != null) {
+                    desc.append(ls.prettyGames()).append(" games\n")
+                        .append("`Winrate ").append(ls.prettyWinrate())
+                        .append(" | Pickrate ").append(ls.prettyPickrate(s.games()))
+                        .append(" | Banrate ").append(s.prettyBanrate())
+                        .append("`\n");
+                }
+                else {
+                    desc.append(s.picks()).append(" games\n")
+                        .append("`Winrate ").append(s.prettyWinrate())
+                        .append(" | Pickrate ").append(s.prettyPickrate())
+                        .append(" | Banrate ").append(s.prettyBanrate())
+                        .append("`\n");
+                }
             }
         );
+
+        if (filtered.isEmpty())
+            desc.append("Not enough data for this filter.");
         
-        int total   = champions.size();
+        int total   = filtered.size();
         int pages   = Math.max(1, (int) Math.ceil((double) total / pageSize));
-        int curPage = parameter.getOffset() / pageSize + 1;
+        int curPage = offset / pageSize + 1;
     
         eb.setColor(Bot.getColor());
         eb.setTitle("Champion Tier List");
@@ -243,6 +281,44 @@ public class LeagueMessage {
         eb.setFooter("Page " + curPage + " / " + pages + " · " + total + " champions");
     
         return eb.build();
+    }
+
+    private static boolean canShowChampion(ChampionStatistics stats, LaneType lane, int opponent) {
+        if (opponent != 0)
+            return getOpponentMatchup(stats, opponent, lane) != null;
+        if (lane != null)
+            return stats.getLaneStat(lane) != null;
+        return stats.picks() > 0;
+    }
+
+    private static double getChampionWinrate(ChampionStatistics stats, LaneType lane, int opponent) {
+        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent, lane) : null;
+        if (matchup != null) return matchup.winrate();
+        LaneStat laneStat = lane != null ? stats.getLaneStat(lane) : null;
+        return laneStat != null ? laneStat.winrate() : stats.winrate();
+    }
+
+    private static double getChampionPickrate(ChampionStatistics stats, LaneType lane, int opponent) {
+        Matchup matchup = opponent != 0 ? getOpponentMatchup(stats, opponent, lane) : null;
+        if (matchup != null) return matchup.matches();
+        LaneStat laneStat = lane != null ? stats.getLaneStat(lane) : null;
+        return laneStat != null ? laneStat.getPickrate(stats.games()) : stats.pickrate();
+    }
+
+    private static Matchup getOpponentMatchup(ChampionStatistics stats, int opponent, LaneType lane) {
+        if (opponent == 0) return null;
+        Matchup matchup = stats.getOpponentMatchup(opponent, lane);
+        if (matchup != null || lane != null) return matchup;
+
+        int matches = 0;
+        double wins = 0;
+        for (Map.Entry<ChampionStatistics.MatchupKey, Matchup> entry : stats.matchups().entrySet()) {
+            if (entry.getKey().champion() != opponent) continue;
+            matches += entry.getValue().matches();
+            wins += entry.getValue().matches() * entry.getValue().winrate();
+        }
+        if (matches == 0) return null;
+        return new Matchup(opponent, matches, wins / matches);
     }
 
     private static List<LOLMatch> loadMatchesParallel(Summoner s, GameQueueType queue, int offset) {

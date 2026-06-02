@@ -11,6 +11,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
@@ -50,7 +51,7 @@ public class Item extends SlashCommand {
 
         eb.setColor(Bot.getColor());
         eb.setTitle(item.getName());
-        String url = "http://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.getVersion() +"/img/item/" + item.getId() + ".png";
+        String url = "http://ddragon.leagueoflegends.com/cdn/" + PatchUtils.getPatch() +"/img/item/" + item.getId() + ".png";
         eb.setThumbnail(url);
 
         eb.addField("Gold Cost", CustomEmojiHandler.getFormattedEmoji("golds") + " " + String.valueOf(item.getGold().getTotal()), true);

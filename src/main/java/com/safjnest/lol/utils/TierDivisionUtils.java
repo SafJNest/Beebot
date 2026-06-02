@@ -1,10 +1,14 @@
 package com.safjnest.lol.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import net.dv8tion.jda.api.interactions.commands.Command.Choice;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
@@ -63,6 +67,18 @@ public class TierDivisionUtils {
     return Arrays.asList(TierType.values()).stream()
       .filter(t -> t.ordinal() <= tier.ordinal())
       .collect(Collectors.toList());
+  }
+
+  public static OptionData getAsOptions(boolean required) {
+    List<Choice> choices = new ArrayList<>();
+    for (TierType tier : getHigherTiers(TierType.IRON)) {
+        choices.add(new Choice(tier.name(), tier.name()));
+    }
+    return new OptionData(OptionType.STRING, "rank", "Minimum rank (default Emerald+)", required).addChoices(choices);
+  }
+
+  public static OptionData getAsOptions() {
+      return getAsOptions(false);
   }
   
 }
