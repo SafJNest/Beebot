@@ -4,15 +4,10 @@ import java.util.Collections;
 
 import com.safjnest.App;
 import com.safjnest.core.chat.ChatHandler;
-import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.message.LeagueMessage;
-import com.safjnest.lol.message.LeagueMessageParameter;
-import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.model.UserData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.sql.database.LeagueDB;
 
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
@@ -31,12 +26,9 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateBoostTimeEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.role.RoleDeleteEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
@@ -173,64 +165,6 @@ public class EventHandler extends ListenerAdapter {
                 default:
                     break;
             }
-        }
-    }
-
-    @Override
-    public void onStringSelectInteraction(StringSelectInteractionEvent event) {
-        // if (event.getComponentId().equals("rank-select")) {
-        //     String summonerId = event.getValues().get(0).split("#")[0];
-        //     String platform =  event.getValues().get(0).split("#")[1];
-        //     no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(summonerId, LeagueShard.valueOf(platform));
-            
-        //     List<MessageTopLevelComponent> compontens = new ArrayList<>();
-        //     for (MessageTopLevelComponent component : event.getMessage().getComponents()) {
-        //         System.out.println(component.getType());
-        //         //ActionRow row = (ActionRow) component;
-        //         // for (ItemComponent component : MessageTopLevelComponent.getComponents()) {
-        //         //     if (component.getType() == Type.STRING_SELECT) {
-        //         //         compontens.add(ActionRow.of(component));   
-        //         //     }
-        //         // }
-        //     }
-        //     for (MessageTopLevelComponent MessageTopLevelComponent : LeagueMessage.getSummonerButtons(s, platform)) {
-        //         compontens.add(MessageTopLevelComponent);
-        //     }
-
-        //     event.deferEdit().setEmbeds(LeagueMessage.getSummonerEmbed(s).build()).setComponents(compontens).queue();
-        // }
-        if (event.getComponentId().startsWith("rank-select")) {
-            event.deferEdit().queue();
-            String puuid = event.getValues().get(0).split("#")[0];
-            String platform =  event.getValues().get(0).split("#")[1];
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
-
-            LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event)).withComponents(EventUtils.getStringSelectMneu(event.getMessage().getComponents()));
-            parameter.setMessageType(LeagueMessageType.PROFILE);
-            int summonerId = LeagueDB.addLOLAccount(s);
-            String userId = LeagueDB.getUserIdByLOLAccountId(puuid, s.getPlatform());
-            if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) userId = "";
-            LeagueMessage.edit(event.getMessage(), userId, s, summonerId, parameter);
-        }
-        if (event.getComponentId().equals("opgg-select")) {
-            event.deferEdit().queue();
-            String gameId = event.getValues().get(0);
-            String platform =  event.getValues().get(0).split("_")[0];
-            String puuid =  event.getValues().get(0).split("#")[1];
-
-            no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(platform));
-            
-            LeagueShard shard = LeagueShard.valueOf(platform);
-            LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
-            
-            LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event));
-            parameter.setMatch(match);
-            
-            int summonerId = LeagueDB.addLOLAccount(s);
-
-            String userId = LeagueDB.getUserIdByLOLAccountId(puuid, s.getPlatform());
-            if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) userId = "";
-            LeagueMessage.edit(event.getMessage(), userId, s, summonerId, parameter);
         }
     }
 }

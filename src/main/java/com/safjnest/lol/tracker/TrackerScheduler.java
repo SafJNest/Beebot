@@ -1,15 +1,15 @@
 package com.safjnest.lol.tracker;
 
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
+import com.safjnest.lol.service.ChampionDataRefreshService;
 import com.safjnest.lol.tracker.TrackerState.Priority;
-import com.safjnest.util.TimeConstant;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.TimeConstant;
+import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
@@ -18,7 +18,11 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public class TrackerScheduler {
 
+    private static final ChampionDataRefreshService championDataRefreshService;
+
     static {
+        championDataRefreshService = new ChampionDataRefreshService();
+        
         if (!App.isTesting()) {
             ChronoTask track = () -> retriveSummoners();
             track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
@@ -31,6 +35,9 @@ public class TrackerScheduler {
 
             ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
             retriveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+
+            ChronoTask refreshChampionData = () -> refreshChampionData();
+            refreshChampionData.scheduleAtFixedTime(3, 0, 0);
 
             ChronoTask clearTimelineCache = () -> DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
             clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
@@ -46,12 +53,8 @@ public class TrackerScheduler {
     public static void popSet() {
         TrackerState.awaitCondition(Priority.MID);
 
-        Set<LOLMatch> toAnalyze;
-        synchronized (Tracker.matchQueue) {
-            if (Tracker.matchQueue.isEmpty()) return;
-            toAnalyze = new HashSet<>(Tracker.matchQueue);
-            Tracker.matchQueue.clear();
-        }
+        Set<LOLMatch> toAnalyze = Tracker.popQueue();
+        if (toAnalyze.isEmpty()) return;
 
         TrackerState.acquire(Priority.MID);
         try {
@@ -80,5 +83,9 @@ public class TrackerScheduler {
     public static void retriveHighEloEntries() {
         TrackerState.awaitCondition(Priority.MID);
         Tracker.retriveHighEloEntries();
+    }
+
+    public static void refreshChampionData() {
+        championDataRefreshService.refresh();
     }
 }

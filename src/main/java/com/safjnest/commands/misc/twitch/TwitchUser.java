@@ -11,9 +11,9 @@ import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import com.safjnest.core.Bot;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.twitch.TwitchClient;
 import com.github.twitch4j.helix.domain.Stream;
 import com.github.twitch4j.helix.domain.User;
 

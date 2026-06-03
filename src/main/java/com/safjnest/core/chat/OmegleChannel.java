@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.ChampionUtils;
 
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.Webhook;
@@ -14,7 +14,7 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 public class OmegleChannel {
     @SuppressWarnings("unused")
     private static final int inactivityBeforeStoppingAutoreconnect = 2;
-    private static final List<String> staticNamePool = List.of(LeagueHandler.getChampions());
+    private static final List<String> staticNamePool = ChampionUtils.getChampionsNames();
     
     private String channel;
     private String connectedChannel;

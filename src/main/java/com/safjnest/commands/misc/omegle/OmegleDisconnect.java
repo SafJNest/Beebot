@@ -3,10 +3,9 @@ package com.safjnest.commands.misc.omegle;
 import com.jagrosh.jdautilities.command.CommandEvent;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-
 import com.safjnest.core.chat.ChatHandler;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 public class OmegleDisconnect extends SlashCommand{
 

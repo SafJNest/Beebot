@@ -9,9 +9,9 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.types.WarningEvent;
 import com.safjnest.model.guild.MemberData;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.PermissionHandler;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;

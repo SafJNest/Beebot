@@ -5,7 +5,7 @@
     <logger name="com.github.twitch4j" level="WARN"/>
 
     <!-- Ensure the custom converter class is correctly included in your project -->
-    <conversionRule conversionWord="colorLevel" converterClass="com.safjnest.util.log.BotLoggerColorConverter" />
+    <conversionRule conversionWord="colorLevel" converterClass="com.safjnest.utils.log.BotLoggerColorConverter" />
 
     <!-- Appender Configuration [Console] -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -36,7 +36,7 @@
     </appender>
 
     <!-- Configure BotLogger logger level -->
-    <logger name="com.safjnest.util.log.BotLogger" level="TRACE" additivity="false">
+    <logger name="com.safjnest.utils.log.BotLogger" level="TRACE" additivity="false">
         <appender-ref ref="BOTLOGGER"/>
     </logger>
 

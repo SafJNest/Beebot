@@ -863,8 +863,8 @@
         "arguments" : "[CommandName]"
     },
 
-    "build":{
-        "help"  : "Search for a build made by other user!",
+    "champions":{
+        "help"  : "Show a leaderboard of champions.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName]"
     },

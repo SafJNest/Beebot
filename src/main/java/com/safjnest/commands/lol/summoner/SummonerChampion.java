@@ -10,9 +10,10 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
-import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.lol.service.LeagueService;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -40,7 +41,7 @@ public class SummonerChampion extends SlashCommand {
 
       this.options = Arrays.asList(
           new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", false).setAutoComplete(true),
-          LeagueHandler.getLeagueShardOptions()
+          LeagueShardUtils.getAsOptions()
       );
       commandData.setThings(this);
     }
@@ -49,7 +50,7 @@ public class SummonerChampion extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
     event.deferReply().queue();
     no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
+    int summonerId = LeagueService.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
     String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
     LeagueMessage.send(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
@@ -58,7 +59,7 @@ public class SummonerChampion extends SlashCommand {
   @Override
 	protected void execute(CommandEvent event) {
     no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    int summonerId = LeagueDB.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
+    int summonerId = LeagueService.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
 
     String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
     LeagueMessage.send(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));

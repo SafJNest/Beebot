@@ -3,14 +3,17 @@ package com.safjnest.lol.message;
 import java.util.List;
 
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.utils.ChampionUtils;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
-import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
@@ -24,6 +27,8 @@ public class LeagueMessageParameter {
 
   private StaticChampion champion;
   private boolean showChampion;
+  private int opponent;
+  private int duo;
 
   private int offset;
 
@@ -31,6 +36,8 @@ public class LeagueMessageParameter {
 
   private StringSelectMenu livegameMenu;
   private StringSelectMenu opggMenu;
+
+  private Filter filter;
 
   public LeagueMessageParameter(LeagueMessageType messageType) {
     this.messageType = messageType;
@@ -42,9 +49,21 @@ public class LeagueMessageParameter {
 
     this.champion = null;
     this.showChampion = false;
+    this.opponent = 0;
+    this.duo = 0;
 
     this.offset = 0;
 
+    this.filter = new Filter();
+  }
+
+  public LeagueMessageParameter(LeagueMessageType messageType, Filter filter) {
+    this.messageType = messageType;
+    this.period = LeagueHandler.getCurrentSplitRange();
+    this.champion = null;
+    this.showChampion = false;
+    this.offset = 0;
+    applyFilter(filter);
   }
 
   public LeagueMessageParameter(LeagueMessageType messageType, long[] period, GameQueueType queueType, LaneType laneType, StaticChampion champion, boolean showChampion, int offset) {
@@ -57,13 +76,17 @@ public class LeagueMessageParameter {
 
     this.champion = champion;
     this.showChampion = showChampion;
+    this.opponent = 0;
+    this.duo = 0;
 
     this.offset = offset;
 
     this.match = null;
+    this.filter = new Filter();
   }
 
   public LeagueMessageParameter(List<Button> buttons) {
+    this.filter = new Filter();
     String prefix = LeagueMessage.BUTTON_ID_PREFIX;
     
     this.period = LeagueHandler.getCurrentSplitRange();
@@ -74,7 +97,6 @@ public class LeagueMessageParameter {
     for (Button b : buttons) {
       boolean isActive = b.getStyle() == ButtonStyle.SUCCESS;
       String buttonValue = b.getCustomId().split("-").length == 2 ? b.getCustomId().split("-")[1] : b.getCustomId().split("-")[2];
-
       if (b.getCustomId().startsWith(prefix + "-queue-") && isActive) {
         try {
           this.queueType = GameQueueType.valueOf(buttonValue);
@@ -92,23 +114,28 @@ public class LeagueMessageParameter {
           
 
       if (b.getCustomId().startsWith(prefix + "-champion-")) {
-          this.champion = LeagueHandler.getChampionById(Integer.parseInt(buttonValue));
+          this.champion = ChampionUtils.getChampion(Integer.parseInt(buttonValue));
           this.showChampion = isActive;
       }
       
       if (b.getCustomId().startsWith(prefix + "-season-") && isActive)
           timeString = buttonValue;
 
-      if (b.getCustomId().startsWith(prefix + "-leftpage")) 
-          this.offset = Integer.parseInt(buttonValue);
+      if (b.getCustomId().startsWith(prefix + "-leftpage")) {
+        String[] parts = b.getCustomId().split("-", 4);
+        this.offset = Integer.parseInt(buttonValue);
+        if (parts.length == 4) {
+          try { applyFilter(Filter.fromStateKey(parts[3])); }
+          catch (Exception e) { }
+        }
+      }
 
       if (b.getCustomId().startsWith(prefix + "-change")) 
         fallbackChampion = Integer.parseInt(buttonValue);
-      
     }
 
     if (this.champion == null && fallbackChampion > 0) 
-      this.champion = LeagueHandler.getChampionById(fallbackChampion);
+      this.champion = ChampionUtils.getChampion(fallbackChampion);
     
     
     switch (timeString) {
@@ -126,22 +153,22 @@ public class LeagueMessageParameter {
 
   public LeagueMessageParameter withComponents(List<StringSelectMenu> menus) {
     for (StringSelectMenu menu : menus) {
-      if (menu.getCustomId().equals("opgg-select")) {
-        for (SelectOption option : menu.getOptions()) {
-          if (option.isDefault()) {
-            String gameId = option.getValue();
-            String platform =  option.getValue().split("_")[0];
-            LeagueShard shard = LeagueShard.valueOf(platform);
-            this.match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI().getMatch(shard.toRegionShard(), gameId);
-          }
-        }
+      if (menu.getCustomId().equals(LeagueMessage.BUTTON_ID_PREFIX + "-opggselect")) {
         this.opggMenu = menu;
       }
-      if (menu.getCustomId().equals("rank-select")) {
+      if (menu.getCustomId().equals(LeagueMessage.BUTTON_ID_PREFIX + "-rankselect")) {
         this.livegameMenu = menu;
       }
     }
     return this;
+  }
+
+  private void applyFilter(Filter filter) {
+    this.filter = filter;
+    this.queueType = filter.queue();
+    this.laneType = filter.lane();
+    this.opponent = filter.opponent();
+    this.duo = filter.duo();
   }
 
   public LeagueMessageType getMessageType() {
@@ -204,12 +231,30 @@ public class LeagueMessageParameter {
     return champion != null ? champion.getId() : 0;
   }
 
+  public int getOpponent() {
+    return opponent;
+  }
+
+  public void setOpponent(int opponent) {
+    this.opponent = opponent;
+    this.filter.setOpponent(opponent);
+  }
+
+  public int getDuo() {
+    return duo;
+  }
+
+  public void setDuo(int duo) {
+    this.duo = duo;
+    this.filter.setDuo(duo);
+  }
+
   public int getShowingChampion() {
     return this.showChampion ? getChampionId() : 0;
   }
 
   public boolean isDuo() {
-    return laneType == LaneType.BOT || laneType == LaneType.UTILITY || queueType == GameQueueType.CHERRY;
+    return laneType == LaneType.BOT || laneType == LaneType.UTILITY || GameQueueTypeUtils.isCherry(queueType);
   }
 
   public long getTimeStart() {
@@ -234,5 +279,33 @@ public class LeagueMessageParameter {
 
   public StringSelectMenu getOpggMenu() {
     return this.opggMenu;
+  }
+
+  public String getPatch() {
+    return this.filter.patch();
+  }
+
+  public void setPatch(String patch) {
+    this.filter.setPatch(patch);
+  }
+
+  public TierType getRank() {
+    return this.filter.rank();
+  }
+
+  public void setRank(TierType rank) {
+    this.filter.setRank(rank);
+  }
+
+  public LeagueShard getRegion() {
+    return this.filter.region();
+  }
+
+  public void setRegion(LeagueShard region) {
+    this.filter.setRegion(region);
+  }
+
+  public Filter toFilter() {
+    return this.filter.setLane(laneType).setQueue(queueType).setOpponent(opponent).setDuo(duo);
   }
 }

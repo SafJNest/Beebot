@@ -8,8 +8,8 @@ import java.util.Optional;
 import com.safjnest.spring.api.model.ApiKey;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.spotify.SpotifyTokenManager;
+import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.spotify.SpotifyTokenManager;
 
 public class WebsiteDB extends AbstractDB {
 

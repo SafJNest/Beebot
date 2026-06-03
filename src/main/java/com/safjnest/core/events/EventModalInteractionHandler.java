@@ -14,7 +14,6 @@ import com.safjnest.commands.misc.twitch.TwitchMenu;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.model.guild.ChannelData;
@@ -25,10 +24,9 @@ import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.guild.alert.TwitchData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.AlertMessage;
-import com.safjnest.util.SafJNest;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.AlertMessage;
+import com.safjnest.utils.SafJNest;
+import com.safjnest.utils.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.buttons.Button;
@@ -37,6 +35,8 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import com.safjnest.core.cache.managers.GuildCache;
+import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.utils.ChampionUtils;
 
 public class EventModalInteractionHandler extends ListenerAdapter {
 
@@ -244,11 +244,11 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         String champoString = event.getValue("champion-change").getAsString();
 
         ArrayList<String> championsName = new ArrayList<>();
-        for (String champion : LeagueHandler.getChampions()) {
+        for (String champion : ChampionUtils.getChampionsNames()) {
             championsName.add(champion);
         }
         champoString = SafJNest.findSimilarWord(champoString, championsName);
-        StaticChampion newChampion = LeagueHandler.getChampionByName(champoString);
+        StaticChampion newChampion = ChampionUtils.getChampion(champoString);
 
 
         if (newChampion == null) {
@@ -273,11 +273,11 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         
         
         event.deferEdit().queue();
-        String user_id = LeagueDB.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
+        String user_id = LeagueService.getUserIdByLOLAccountId(puuid, LeagueShard.valueOf(region));
         if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) user_id = "";
-        Summoner s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
+        Summoner s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-        int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
+        int summonerId = LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
         LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
     }
 

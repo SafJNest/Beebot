@@ -5,10 +5,10 @@ import java.util.Arrays;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -28,7 +28,7 @@ public class Region extends SlashCommand {
         this.category = commandData.getCategory();
 
         this.options = Arrays.asList(
-            LeagueHandler.getLeagueShardOptions(true),
+            LeagueShardUtils.getAsOptions(true),
             new OptionData(OptionType.CHANNEL, "channel", "If empty the region will be use in the guild, select to override for the channel",false)
                 .setChannelTypes(ChannelType.TEXT));
 
@@ -49,7 +49,7 @@ public class Region extends SlashCommand {
                 event.getHook().sendMessage("Something went wrong.").queue();
                 return;
             }
-            event.getHook().sendMessage("Region set for " + channel.getAsMention() + " to " + LeagueHandler.getShardFlag(shard) + shard.getRealmValue().toUpperCase()).queue();
+            event.getHook().sendMessage("Region set for " + channel.getAsMention() + " to " + LeagueShardUtils.getRegionFlag(shard) + shard.getRealmValue().toUpperCase()).queue();
             return;
         }
         else if(!gs.setLeagueShard(shard)) {
@@ -57,7 +57,7 @@ public class Region extends SlashCommand {
             return;
         }
 
-        event.getHook().sendMessage("Region set to " + LeagueHandler.getShardFlag(shard) + shard.getRealmValue().toUpperCase()).queue();
+        event.getHook().sendMessage("Region set to " + LeagueShardUtils.getRegionFlag(shard) + shard.getRealmValue().toUpperCase()).queue();
 	}
 
 }

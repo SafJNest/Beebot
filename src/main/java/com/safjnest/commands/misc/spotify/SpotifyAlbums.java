@@ -2,11 +2,11 @@ package com.safjnest.commands.misc.spotify;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.spotify.SpotifyMessage;
-import com.safjnest.util.spotify.type.SpotifyMessageType;
-import com.safjnest.util.spotify.type.SpotifyTimeRange;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.spotify.SpotifyMessage;
+import com.safjnest.utils.spotify.type.SpotifyMessageType;
+import com.safjnest.utils.spotify.type.SpotifyTimeRange;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 

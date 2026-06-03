@@ -6,8 +6,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.QueueHandler;
 import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.core.audio.types.ReplyType;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 public class Queue extends SlashCommand {
     

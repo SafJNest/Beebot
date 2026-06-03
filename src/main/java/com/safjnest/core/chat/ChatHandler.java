@@ -9,8 +9,6 @@ import java.util.stream.Collectors;
 import com.safjnest.commands.misc.Help;
 import com.safjnest.core.Bot;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.TimeConstant;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Icon;
@@ -26,7 +24,9 @@ import net.dv8tion.jda.api.components.buttons.Button;
 import rx.internal.util.SynchronizedQueue;
 
 import com.safjnest.core.cache.managers.GuildCache;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.ChampionUtils;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.TimeConstant;
 
 public class ChatHandler {
     private static final long connectTimeoutDelay = TimeConstant.MINUTE * 3;
@@ -250,7 +250,7 @@ public class ChatHandler {
                     if(!otherOmegle.getWebhook().getName().equals(name)) {
                         otherOmegle.getWebhook().getManager()
                             .setName(name)
-                            .setAvatar(Icon.from(new URL(LeagueHandler.getChampionProfilePic(name)).openStream()))
+                            .setAvatar(Icon.from(new URL(ChampionUtils.getChampionProfilePic(name)).openStream()))
                         .complete();
                     }
                 }

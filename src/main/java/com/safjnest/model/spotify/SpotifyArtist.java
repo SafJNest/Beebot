@@ -2,9 +2,9 @@ package com.safjnest.model.spotify;
 
 import org.json.JSONObject;
 
-import com.safjnest.util.HttpUtils;
-import com.safjnest.util.spotify.SpotifyHandler;
-import com.safjnest.util.spotify.SpotifyTokenManager;
+import com.safjnest.utils.HttpUtils;
+import com.safjnest.utils.spotify.SpotifyHandler;
+import com.safjnest.utils.spotify.SpotifyTokenManager;
 
 import lombok.Data;
 

@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.log.LoggerIDpair;
+import com.safjnest.utils.log.BotLogger;
+import com.safjnest.utils.log.LoggerIDpair;
 
 public class MemberData {
     private String ID;

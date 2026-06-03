@@ -10,11 +10,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.safjnest.core.Bot;
 import com.safjnest.model.BotSettings.Settings;
-import com.safjnest.util.SafJNest;  
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.twitch.TwitchClient;
-
+import com.safjnest.utils.SafJNest;
+import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.log.BotLogger;
+import com.safjnest.utils.twitch.TwitchClient;
 
 @SpringBootApplication
 public class App {
@@ -37,6 +36,7 @@ public class App {
             TwitchClient.init();
             //runSpring();
         }
+
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }

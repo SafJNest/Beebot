@@ -3,8 +3,8 @@ package com.safjnest.commands.members;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;

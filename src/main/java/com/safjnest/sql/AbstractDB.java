@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 import com.safjnest.App;
 import com.safjnest.core.Chronos.ChronoTask;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.log.BotLogger;
 
 public abstract class AbstractDB {
     protected abstract String getDatabase();

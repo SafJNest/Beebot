@@ -61,12 +61,13 @@ import com.safjnest.commands.queue.*;
 import com.safjnest.commands.settings.*;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.*;
+import com.safjnest.lol.message.LeagueEventHandler;
 import com.safjnest.model.BotSettings.BotSettings;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.util.AutomatedActionTimer;
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.AutomatedActionTimer;
+import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.log.BotLogger;
 
 import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 
@@ -198,14 +199,14 @@ public class Bot {
             new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
             new Permissions(), new Nickname(), new Welcome(), new Leave(), new Boost(), 
             new Blacklist(), new Twitch(), new Omegle(),new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), 
-            new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode()
+            new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode(), new Champions()
         );
 
         
         Collections.addAll(slashCommandsList, new Disconnect(), 
             new List(), new Play(), new Playlist(), new TTS(), new Stop(), new Sound(),
             new Voice(), new Soundboard(), new Greet(), new Pause(), new Resume(),
-            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn(), new Build()
+            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn()
         );
 
         Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());
@@ -225,6 +226,7 @@ public class Bot {
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
         jda.addEventListener(new EventComponentsHandler());
+        jda.addEventListener(new LeagueEventHandler());
     }
 
 

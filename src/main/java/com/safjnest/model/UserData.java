@@ -8,8 +8,8 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.log.LoggerIDpair;
+import com.safjnest.utils.log.BotLogger;
+import com.safjnest.utils.log.LoggerIDpair;
 
 import net.dv8tion.jda.api.entities.User;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;

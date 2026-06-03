@@ -2,8 +2,8 @@ package com.safjnest.model.guild;
 
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.log.LoggerIDpair;
+import com.safjnest.utils.log.BotLogger;
+import com.safjnest.utils.log.LoggerIDpair;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 

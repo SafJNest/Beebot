@@ -3,7 +3,6 @@ package com.safjnest.core.events;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -12,9 +11,9 @@ import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
 import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.PermissionHandler;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.PermissionHandler;
+import com.safjnest.utils.twitch.TwitchClient;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.TrackData;
@@ -38,7 +37,9 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.AugmentData;
+import com.safjnest.lol.model.Augment;
+import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.utils.ChampionUtils;
 
 public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private boolean isFocused;
@@ -258,7 +259,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     
     private ArrayList<Choice> champion(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
-        List<String> champions = Arrays.asList(LeagueHandler.getChampions());
+        List<String> champions = ChampionUtils.getChampionsNames();
 
         if (isFocused) {
             int max = 0;
@@ -280,23 +281,23 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
 
     private ArrayList<Choice> augment(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
-        List<AugmentData> augments = LeagueHandler.getAugments();
+        List<Augment> augments = LeagueHandler.getAugments();
 
         if (isFocused) {
             int max = 0;
             for (int i = 0; i < augments.size() && max < MAX_CHOICES; i++) {
-                String augmentName = augments.get(i).getName().toLowerCase();
-                String augmentId = augments.get(i).getId();
+                String augmentName = augments.get(i).name().toLowerCase();
+                String augmentId = augments.get(i).id();
 
                 if (augmentName.startsWith(value.toLowerCase()) || augmentId.startsWith(value)){
-                    choices.add(new Choice(augments.get(i).getId() + " . " + augments.get(i).getName(), augments.get(i).getId()));
+                    choices.add(new Choice(augments.get(i).id() + " . " + augments.get(i).name(), augments.get(i).id()));
                     max++;
                 }
             }
         } else {
             Collections.shuffle(augments);
             for (int i = 0; i < MAX_CHOICES; i++)
-                choices.add(new Choice(augments.get(i).getId() + " . " + augments.get(i).getName(), augments.get(i).getId()));
+                choices.add(new Choice(augments.get(i).id() + " . " + augments.get(i).name(), augments.get(i).id()));
         }
 
         return choices;
@@ -510,7 +511,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         HashMap<String, String> accountNames = new HashMap<>();
         for (String puuid : accounts.keySet()) {
             LeagueShard shard = LeagueShard.valueOf(accounts.get(puuid));
-            RiotAccount riotAccount = LeagueHandler.getRiotAccountFromPuuid(puuid, shard);
+            RiotAccount riotAccount = LeagueService.getRiotAccountByPuuid(puuid, shard);
             accountNames.put(puuid, riotAccount.getName() + "#" + riotAccount.getTag());
         }
 
@@ -543,8 +544,8 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             
             for (String puuid : accounts.keySet()) {    
                 shard = LeagueShard.valueOf(accounts.get(puuid));
-                Summoner summoner = LeagueHandler.getSummonerByPuuid(puuid, shard);
-                RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(summoner);
+                Summoner summoner = LeagueService.getSummonerByPuuid(puuid, shard);
+                RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(summoner);
                 choices.add(new Choice(
                     riotAccount.getName() + "#" + riotAccount.getTag(), 
                     riotAccount.getPUUID()

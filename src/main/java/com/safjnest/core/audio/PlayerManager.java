@@ -23,7 +23,7 @@ import com.safjnest.App;
 import com.safjnest.model.BotSettings.LavalinkSettings;
 import com.safjnest.model.BotSettings.PoTokenSettings;
 import com.safjnest.model.BotSettings.SpotifySettings;
-import com.safjnest.util.SettingsLoader;
+import com.safjnest.utils.SettingsLoader;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetection;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerDetectionResult;
 import com.sedmelluq.discord.lavaplayer.container.MediaContainerHints;

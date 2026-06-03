@@ -3,9 +3,9 @@ package com.safjnest.commands.misc;
 import java.util.Arrays;
 
 import com.safjnest.core.Bot;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.PermissionHandler;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.PermissionHandler;
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 
@@ -14,7 +14,7 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 
 /**
- * This command let the user send a message to the {@link com.safjnest.util.PermissionHandler#untouchables developers}
+ * This command let the user send a message to the {@link com.safjnest.utils.PermissionHandler#untouchables developers}
  * about a bug that occurs with a command.
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>
  * 
