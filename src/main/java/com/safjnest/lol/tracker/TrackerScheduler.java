@@ -18,7 +18,11 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public class TrackerScheduler {
 
+    private static final ChampionDataRefreshService championDataRefreshService;
+
     static {
+        championDataRefreshService = new ChampionDataRefreshService();
+        
         if (!App.isTesting()) {
             ChronoTask track = () -> retriveSummoners();
             track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
@@ -82,9 +86,6 @@ public class TrackerScheduler {
     }
 
     public static void refreshChampionData() {
-        TrackerState.awaitCondition(Priority.LOW);
-        TrackerState.acquire(Priority.LOW);
-        try { new ChampionDataRefreshService().refresh(); }
-        finally { TrackerState.release(Priority.LOW); }
+        championDataRefreshService.refresh();
     }
 }

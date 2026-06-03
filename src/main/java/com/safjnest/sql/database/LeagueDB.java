@@ -833,18 +833,33 @@ public class LeagueDB extends AbstractDB {
 
     public static void saveChampionBuilds(List<Build> builds) {
         if (builds == null || builds.isEmpty()) return;
-        String sql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?) "
-            + "ON DUPLICATE KEY UPDATE games = VALUES(games), winrate = VALUES(winrate), data = VALUES(data)";
+    
+        String deleteSql = "DELETE FROM champion_builds WHERE filter = ?";
+        String insertSql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?)";
+    
         try (Connection conn = instance.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
+             PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+    
+            conn.setAutoCommit(false);
+    
             for (Build build : builds) {
-                pstmt.setInt(1, build.games());
-                pstmt.setDouble(2, build.winrate());
-                pstmt.setString(3, build.filter().toKey());
-                pstmt.setString(4, build.encode());
-                pstmt.addBatch();
+                deleteStmt.setString(1, build.filter().toKey());
+                deleteStmt.addBatch();
             }
-            pstmt.executeBatch();
+    
+            deleteStmt.executeBatch();
+    
+            for (Build build : builds) {
+                insertStmt.setInt(1, build.games());
+                insertStmt.setDouble(2, build.winrate());
+                insertStmt.setString(3, build.filter().toKey());
+                insertStmt.setString(4, build.encode());
+                insertStmt.addBatch();
+            }
+    
+            insertStmt.executeBatch();
+    
             conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
