@@ -30,6 +30,8 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
+import com.safjnest.redis.RedisClient;
+import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
@@ -691,6 +693,7 @@ import com.safjnest.lol.utils.PatchUtils;
             case V4_LEAGUE_ENTRY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());
                 data.put("id", summoner.getPUUID());
+                RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(summoner.getPlatform().name(), summoner.getPUUID()));
                 break;
             case V4_MASTERY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());

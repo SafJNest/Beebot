@@ -40,6 +40,8 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
+import com.safjnest.redis.RedisClient;
+import com.safjnest.redis.RedisKey;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.sql.AbstractDB;
@@ -605,6 +607,7 @@ public class LeagueDB extends AbstractDB {
                     pstmt.setInt(5, entry.getWins());
                     pstmt.setInt(6, entry.getLosses());
                     pstmt.addBatch();
+                    LeagueService.putLeagueEntry(shard, entry);
                 }
                 pstmt.executeBatch();
                 conn.commit();

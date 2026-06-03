@@ -30,12 +30,12 @@ public class LeagueService {
 
     private static final int TTL_SUMMONER = 0;
     private static final int TTL_ACCOUNT = 0;
-    private static final int TTL_LEAGUE_ENTRIES = 7200;
-    private static final int TTL_CHAMPION_MASTERIES = 43200;
+    private static final int TTL_LEAGUE_ENTRIES = 60 * 60 * 24; // 24 hours
+    private static final int TTL_CHAMPION_MASTERIES = 60 * 60 * 24; // 24 hours
     private static final int TTL_SPECTATOR = 600;
     private static final int TTL_ADVANCED_LOL_DATA = 0;
-    private static final int TTL_MATCH_LIST = 3600;
-    private static final int TTL_MATCH = 10000;
+    private static final int TTL_MATCH_LIST = 60 * 60 * 12; // 24 hours
+    private static final int TTL_MATCH = 0; // never expire
 
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
@@ -240,6 +240,29 @@ public class LeagueService {
         RedisClient.set(key, result, TTL_MATCH);
       }
       return result;
+    }
+
+    public static void putLeagueEntry(LeagueShard shard, LeagueEntry entry) {
+        String key = RedisKey.LEAGUE_ENTRIES.of(shard.name(), entry.getPuuid());
+    
+        List<LeagueEntry> entries = RedisClient.get(key, LEAGUE_ENTRIES_TYPE);
+        if (entries == null) {
+            entries = new ArrayList<>();
+        }
+        boolean updated = false;
+        for (int i = 0; i < entries.size(); i++) {
+            LeagueEntry current = entries.get(i);
+    
+            if (current.getQueueType() == entry.getQueueType()) {
+                entries.set(i, entry);
+                updated = true;
+                break;
+            }
+        }
+        if (!updated) {
+            entries.add(entry);
+        }
+        RedisClient.set(key, entries, TTL_LEAGUE_ENTRIES);
     }
 
     public static void puWeaktLeagueEntry(LeagueShard shard, LeagueEntry entry) {

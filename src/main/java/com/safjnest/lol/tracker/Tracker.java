@@ -640,8 +640,7 @@ public class Tracker {
                 for (MatchEntry me : allMatches) {
                     TrackerState.awaitCondition(TrackerState.Priority.LOW);
                     try {
-                        LOLMatch match = LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI()
-                            .getMatch(shard.toRegionShard(), me.matchId());
+                        LOLMatch match = LeagueService.getMatch(me.matchId(), me.summoner().getPlatform());
                         if (!match.getGameVersion().startsWith(currentPatch)) continue;
                         i++;
                         BotLogger.info("[LPTracker] [" + i + "/" + allMatches.size() + "] Pushing " + me.entry().getTier() + " match " + shard + " - " + LeagueHandler.getFormattedSummonerName(me.summoner()) + " -> " + me.matchId());
