@@ -1117,6 +1117,10 @@ public class Test extends Command{
                     ChronoTask sampleTaskCherry =  () -> TrackerScheduler.retriveSampleGames(GameQueueType.CHERRY);
                     sampleTaskCherry.queue();
                 break;
+                case "pushsamplegamearam":
+                    ChronoTask sampleTaskAram =  () -> TrackerScheduler.retriveSampleGames(GameQueueType.ARAM);
+                    sampleTaskAram.queue();
+                break;
                 case "pushhighelo":
                     ChronoTask master =  () -> TrackerScheduler.retriveHighEloEntries();
                     master.queue();
