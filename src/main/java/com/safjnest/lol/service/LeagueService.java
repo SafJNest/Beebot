@@ -8,9 +8,11 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
+import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
 
+import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
@@ -24,6 +26,8 @@ import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
 public class LeagueService {
 
+    private record SummonerAutocompleteChoice(String riotId, String puuid) {}
+
     static {
       riotApi = LeagueHandler.getRiotApi();
     }
@@ -36,11 +40,14 @@ public class LeagueService {
     private static final int TTL_ADVANCED_LOL_DATA = 0;
     private static final int TTL_MATCH_LIST = 60 * 60 * 12; // 24 hours
     private static final int TTL_MATCH = 0; // never expire
+    private static final int TTL_SUMMONER_AUTOCOMPLETE = 60 * 60 * 24; // 24 hours
 
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
     private static final TypeReference<List<ChampionMastery>> CHAMPION_MASTERIES_TYPE =
         new TypeReference<List<ChampionMastery>>() {};
+
+    private static final TypeReference<List<SummonerAutocompleteChoice>> SUMMONER_AUTOCOMPLETE_TYPE = new TypeReference<>() {};
 
     private static R4J riotApi;
 
@@ -271,4 +278,41 @@ public class LeagueService {
         RedisClient.set(key, List.of(entry), TTL_LEAGUE_ENTRIES);
     }
 
+    public static List<Choice> getSummonerAutocomplete(String query, LeagueShard shard) {
+        if (query == null || query.isBlank()) {
+            return new ArrayList<>();
+        }
+    
+        String normalizedQuery = query.trim().toLowerCase();
+        String key = RedisKey.SUMMONER_AUTOCOMPLETE.of(shard.name(), normalizedQuery);
+    
+        List<SummonerAutocompleteChoice> cached = RedisClient.get(key, SUMMONER_AUTOCOMPLETE_TYPE);
+        if (cached != null) {
+            return toChoices(cached);
+        }
+    
+        List<SummonerAutocompleteChoice> autocompleteChoices = new ArrayList<>();
+        QueryResult summoners = LeagueDB.getFocusedSummoners(normalizedQuery, shard);
+    
+        for (QueryRecord summoner : summoners) {
+            autocompleteChoices.add(new SummonerAutocompleteChoice(
+                summoner.get("riot_id"),
+                summoner.get("puuid")
+            ));
+        }
+    
+        RedisClient.set(key, autocompleteChoices, TTL_SUMMONER_AUTOCOMPLETE);
+    
+        return toChoices(autocompleteChoices);
+    }
+    
+    private static List<Choice> toChoices(List<SummonerAutocompleteChoice> autocompleteChoices) {
+        List<Choice> choices = new ArrayList<>();
+    
+        for (SummonerAutocompleteChoice choice : autocompleteChoices) {
+            choices.add(new Choice(choice.riotId(), choice.puuid()));
+        }
+    
+        return choices;
+    }
 }

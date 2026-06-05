@@ -19,7 +19,8 @@ public enum RedisKey {
     TRACKER_PENDING_MATCH_LIST("queue:tracker:pending-matches"),
     MOST_USED_BUILD("stats:build:most-used:%s"),
     HIGH_WINRATE_BUILD("stats:build:high-winrate:%s"),
-    CHAMPION_STATS("stats:champion:%s:%s");
+    CHAMPION_STATS("stats:champion:%s:%s"),
+    SUMMONER_AUTOCOMPLETE("summoner:autocomplete:%s:%s");
 
     private final String pattern;
     private final String database;

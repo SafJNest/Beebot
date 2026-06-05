@@ -555,13 +555,8 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             return choices;
         }
         
-        summoners = LeagueDB.getFocusedSummoners(value, shard);
+        choices = new ArrayList<>(LeagueService.getSummonerAutocomplete(value, shard));
         
-
-        for (QueryRecord summoner : summoners) {
-            choices.add(new Choice(summoner.get("riot_id"), summoner.get("puuid")));
-        }
-
         return choices;
 
     }
