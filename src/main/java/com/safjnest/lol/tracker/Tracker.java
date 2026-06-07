@@ -696,13 +696,7 @@ public class Tracker {
 
     public static void retriveAllEntries() {
         BotLogger.info("[LPTracker] Pushing all entries");
-        List<LeagueShard> activeShards = List.of(
-            LeagueShard.EUW1,
-            LeagueShard.NA1,
-            LeagueShard.KR,
-            LeagueShard.EUN1
-        );
-        for (LeagueShard shard : activeShards) {
+        for (LeagueShard shard : LeagueShardUtils.getActives()) {
             ChronoTask task = () -> {
                     for (TierDivisionType tier : TierDivisionType.values()) {
                         int page = 1;
