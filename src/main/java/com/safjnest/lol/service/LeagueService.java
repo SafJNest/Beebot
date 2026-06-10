@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.model.SummonerDTO;
+import com.safjnest.mongo.LeagueMongo;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
@@ -16,50 +16,62 @@ import net.dv8tion.jda.api.interactions.commands.Command.Choice;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
+import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
-public class LeagueService {
+public final class LeagueService {
 
     private record SummonerAutocompleteChoice(String riotId, String puuid) {}
 
-    static {
-      riotApi = LeagueHandler.getRiotApi();
+    private static final int TTL_SUMMONER_DTO = 600;
+    private static final int TTL_DB_LOOKUP = 0;
+    private static final int TTL_SUMMONER_AUTOCOMPLETE = 86_400;
+
+    private static final TypeReference<List<SummonerAutocompleteChoice>> SUMMONER_AUTOCOMPLETE_TYPE =
+        new TypeReference<>() {};
+
+    private LeagueService() {}
+
+    public static SummonerDTO getSummonerByPuuid(String puuid, LeagueShard shard) {
+        String key = RedisKey.SUMMONER_DTO.of(shard.name(), puuid);
+        SummonerDTO cached = RedisClient.getSerializable(key, SummonerDTO.class);
+        if (cached != null) return cached;
+
+        try {
+            cached = LeagueMongo.getSummoner(puuid, shard);
+            if (cached != null) {
+                cacheSummoner(cached);
+                return cached;
+            }
+        } catch (RuntimeException ignored) {}
+
+        Summoner summoner = LeagueR4J.getSummonerByPuuid(puuid, shard);
+        if (summoner == null) return null;
+
+        RiotAccount account = LeagueR4J.getAccountByPuuid(puuid, shard);
+        List<LeagueEntry> ranks = LeagueR4J.getLeagueEntries(puuid, shard);
+        SummonerDTO result = SummonerDTO.from(summoner, account, ranks);
+
+        try {
+            LeagueMongo.saveSummoner(result);
+        } catch (RuntimeException ignored) {}
+        cacheSummoner(result);
+        return result;
     }
 
-    private static final int TTL_SUMMONER = 0;
-    private static final int TTL_ACCOUNT = 0;
-    private static final int TTL_LEAGUE_ENTRIES = 60 * 60 * 24; // 24 hours
-    private static final int TTL_CHAMPION_MASTERIES = 60 * 60 * 24; // 24 hours
-    private static final int TTL_SPECTATOR = 600;
-    private static final int TTL_ADVANCED_LOL_DATA = 0;
-    private static final int TTL_MATCH_LIST = 60 * 60 * 12; // 24 hours
-    private static final int TTL_MATCH = 0; // never expire
-    private static final int TTL_SUMMONER_AUTOCOMPLETE = 60 * 60 * 24; // 24 hours
+    public static Summoner getR4JSummonerByPuuid(String puuid, LeagueShard shard) {
+        return LeagueR4J.getSummonerByPuuid(puuid, shard);
+    }
 
-    private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
-        new TypeReference<List<LeagueEntry>>() {};
-    private static final TypeReference<List<ChampionMastery>> CHAMPION_MASTERIES_TYPE =
-        new TypeReference<List<ChampionMastery>>() {};
-
-    private static final TypeReference<List<SummonerAutocompleteChoice>> SUMMONER_AUTOCOMPLETE_TYPE = new TypeReference<>() {};
-
-    private static R4J riotApi;
-
-    public static Summoner getSummonerByPuuid(String puuid, LeagueShard shard) {
-        String key = RedisKey.SUMMONER.of(shard.name(), puuid);
-        Summoner summoner = RedisClient.get(key, Summoner.class);
-        if (summoner != null) return summoner;
-
-        try { summoner = riotApi.getLoLAPI().getSummonerAPI().getSummonerByPUUID(shard, puuid); } 
-        catch (Exception e) { return null; }
-        if (summoner != null) RedisClient.set(key, summoner, TTL_SUMMONER);
-        return summoner;
+    public static Summoner getSummonerByName(String name, String tag, LeagueShard shard) {
+        RiotAccount account = getRiotAccountByName(name, tag, shard);
+        return account != null ? getR4JSummonerByPuuid(account.getPUUID(), shard) : null;
     }
 
     public static int getSummonerIdByPuuid(String puuid, LeagueShard shard) {
@@ -68,7 +80,7 @@ public class LeagueService {
         if (id != null) return id;
 
         id = LeagueDB.getSummonerIdByPuuid(puuid, shard);
-        if (id != 0) RedisClient.set(key, id, TTL_SUMMONER);
+        if (id != 0) RedisClient.set(key, id, TTL_DB_LOOKUP);
         return id;
     }
 
@@ -78,241 +90,178 @@ public class LeagueService {
         if (userId != null) return userId;
 
         userId = LeagueDB.getUserIdByLOLAccountId(puuid, shard);
-        if (userId != null) RedisClient.set(key, userId, TTL_SUMMONER);
+        if (userId != null) RedisClient.set(key, userId, TTL_DB_LOOKUP);
         return userId;
     }
 
     public static RiotAccount getRiotAccountByPuuid(String puuid, LeagueShard shard) {
-        String key = RedisKey.ACCOUNT.of(shard.name(), puuid);
-        RiotAccount account = RedisClient.get(key, RiotAccount.class);
-        if (account != null) return account;
-
-        try { account = riotApi.getAccountAPI().getAccountByPUUID(LeagueShardUtils.getAccountRegion(shard), puuid); } 
-        catch (Exception e) { return null; }
-
-        if (account != null) RedisClient.set(key, account, TTL_ACCOUNT);
-        return account;
+        return LeagueR4J.getAccountByPuuid(puuid, shard);
     }
 
     public static RiotAccount getRiotAccountByName(String name, String tag, LeagueShard shard) {
-        String key = RedisKey.ACCOUNT_BY_NAME.of(shard.name(), name, tag);
-        RiotAccount account = RedisClient.get(key, RiotAccount.class);
-        if (account != null) return account;
-
-        try { account = riotApi.getAccountAPI().getAccountByTag(LeagueShardUtils.getAccountRegion(shard), name, tag); } 
-        catch (Exception e) { return null; }
-
-        if (account != null) RedisClient.set(key, account, TTL_ACCOUNT);
-        return account;
+        return LeagueR4J.getAccountByName(name, tag, shard);
     }
 
-    public static RiotAccount getRiotAccountFromSummoner(Summoner s) {
-        return getRiotAccountByPuuid(s.getPUUID(), s.getPlatform());
-    }
-
-    public static Summoner getSummonerByName(String name, String tag, LeagueShard shard) {
-        RiotAccount account = getRiotAccountByName(name, tag, shard);
-        return account != null 
-            ? getSummonerByPuuid(account.getPUUID(), shard) 
-            : null;
-    }
-
-    public static void invalidateSummoner(String puuid, LeagueShard shard) {
-        RedisClient.delete(RedisKey.SUMMONER.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.ACCOUNT.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid));
+    public static RiotAccount getRiotAccountFromSummoner(Summoner summoner) {
+        return getRiotAccountByPuuid(summoner.getPUUID(), summoner.getPlatform());
     }
 
     public static List<LeagueEntry> getLeagueEntries(String puuid, LeagueShard shard) {
-        String key = RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid);
-        List<LeagueEntry> cached = RedisClient.get(key, LEAGUE_ENTRIES_TYPE);
-        if (cached != null) {
-            return cached;
-        }
-        try {
-            List<LeagueEntry> entries = riotApi.getLoLAPI().getLeagueAPI().getLeagueEntriesByPUUID(shard, puuid);
-            if (entries == null) {
-                entries = new ArrayList<>();
-            }
-            RedisClient.set(key, entries, TTL_LEAGUE_ENTRIES);
-            return entries;
-        } catch (Exception e) {
-            return new ArrayList<>();
-        }
+        return LeagueR4J.getLeagueEntries(puuid, shard);
     }
 
-    public static LeagueEntry getLeagueEntry(String puuid, LeagueShard shard, String queueCommonName) {
+    public static LeagueEntry getLeagueEntry(
+        String puuid,
+        LeagueShard shard,
+        String queueCommonName
+    ) {
         for (LeagueEntry entry : getLeagueEntries(puuid, shard)) {
-            if (entry.getQueueType().commonName().equals(queueCommonName)) {
-                return entry;
-            }
+            if (entry.getQueueType().commonName().equals(queueCommonName)) return entry;
         }
         return null;
     }
 
     public static List<ChampionMastery> getChampionMasteries(String puuid, LeagueShard shard) {
-        String key = RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid);
-        List<ChampionMastery> cached = RedisClient.get(key, CHAMPION_MASTERIES_TYPE);
-        if (cached != null) {
-            return cached;
-        }
-        try {
-            List<ChampionMastery> list = riotApi.getLoLAPI().getMasteryAPI().getChampionMasteries(shard, puuid);
-            if (list == null) {
-                list = new ArrayList<>();
-            }
-            RedisClient.set(key, list, TTL_CHAMPION_MASTERIES);
-            return list;
-        } catch (Exception e) {
-            return new ArrayList<>();
-        }
+        return LeagueR4J.getMasteries(puuid, shard);
+    }
+
+    public static ChampionMastery getChampionMastery(
+        String puuid,
+        LeagueShard shard,
+        int championId
+    ) {
+        return LeagueR4J.getMastery(puuid, shard, championId);
     }
 
     public static SpectatorGameInfo getSpectatorGame(String puuid, LeagueShard shard) {
-        String key = RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid);
-        SpectatorGameInfo cached = RedisClient.get(key, SpectatorGameInfo.class);
-        if (cached != null) {
-            return cached;
-        }
-        try {
-            SpectatorGameInfo game = riotApi.getLoLAPI().getSpectatorAPI().getCurrentGame(shard, puuid);
-            if (game != null) {
-                RedisClient.set(key, game, TTL_SPECTATOR);
-            }
-            return game;
-        } catch (Exception e) {
-            return null;
-        }
+        return LeagueR4J.getSpectatorGame(puuid, shard);
     }
 
-    public static QueryResult getAdvancedLOLData(int summonerId, long time_start, long time_end, GameQueueType queue) {
-        String key = RedisKey.ADVANCED_LOL_DATA.of(summonerId, time_start, time_end, queue != null ? queue.name() : "null");
-        QueryResult cached = RedisClient.get(key, QueryResult.class);
-        if (cached != null) {
-            return cached;
-        }
-        QueryResult result = LeagueDB.getAdvancedLOLData(summonerId, time_start, time_end, queue);
-        if (result != null) {
-            RedisClient.set(key, result, TTL_ADVANCED_LOL_DATA);
-        }
-        return result;
-    }
-
-    public static List<String> getMatchList(Summoner summoner, GameQueueType queue, int index) {
-      String queueKey = queue != null ? queue.name() : "null";
-      String key = RedisKey.MATCH_LIST.of(summoner.getPlatform().name(), summoner.getPUUID(), queueKey, index);
-      List<String> cached = RedisClient.get(key, new TypeReference<List<String>>() {});
-      if (cached != null) {
-        return cached;
-      }
-      List<String> matchList = summoner.getLeagueGames().withQueue(queue).withBeginIndex(index).get();
-      if (matchList != null) 
-        RedisClient.set(key, matchList, TTL_MATCH_LIST);
-
-      return matchList != null ? matchList : new ArrayList<>();
+    public static List<String> getMatchList(
+        Summoner summoner,
+        GameQueueType queue,
+        int index
+    ) {
+        List<String> matches = summoner.getLeagueGames()
+            .withQueue(queue)
+            .withBeginIndex(index)
+            .get();
+        return matches != null ? matches : new ArrayList<>();
     }
 
     public static LOLMatch getMatch(String gameId, LeagueShard shard) {
-      RegionShard region = shard.toRegionShard();
-      String key = RedisKey.MATCH.of(region.name(), gameId);
-      LOLMatch cached = RedisClient.get(key, LOLMatch.class);
-      if (cached != null) {
-        return cached;
-      }
-      LOLMatch match = riotApi.getLoLAPI().getMatchAPI().getMatch(region, gameId);
-      if (match != null) {
-        RedisClient.set(key, match, TTL_MATCH);
-      }
-      return match;
+        return LeagueR4J.getMatch(gameId, shard);
+    }
+
+    public static LOLMatch getMatch(String gameId, RegionShard region) {
+        return LeagueR4J.getMatch(gameId, region);
+    }
+
+    public static LOLTimeline getTimeline(String gameId, LeagueShard shard) {
+        return LeagueR4J.getTimeline(gameId, shard);
+    }
+
+    public static LOLTimeline getTimeline(String gameId, RegionShard region) {
+        return LeagueR4J.getTimeline(gameId, region);
     }
 
     public static String putMatch(LOLMatch match) {
-      String gameId = match.getPlatform().name() + "_" + match.getGameId();
-      RegionShard region = match.getPlatform().toRegionShard();
-      String key = RedisKey.MATCH.of(region.name(), gameId);
-      RedisClient.set(key, match, TTL_MATCH);
-      return gameId;
+        return match.getPlatform().name() + "_" + match.getGameId();
     }
 
-    public static QueryResult getSummonerData(String puuid, LeagueShard shard) {
-      String key = RedisKey.SUMMONER_DATA.of(puuid, shard.name());
-      QueryResult cached = RedisClient.get(key, QueryResult.class);
-      if (cached != null) {
-        return cached;
-      }
-      QueryResult result = LeagueDB.getSummonerData(puuid, shard);
-      if (result != null) {
-        RedisClient.set(key, result, TTL_MATCH);
-      }
-      return result;
+    public static List<LeagueEntry> getLeagueByTierDivision(
+        LeagueShard shard,
+        GameQueueType queue,
+        TierDivisionType tier,
+        int page
+    ) {
+        return LeagueR4J.getLeagueByTierDivision(shard, queue, tier, page);
     }
 
     public static void putLeagueEntry(LeagueShard shard, LeagueEntry entry) {
-        String key = RedisKey.LEAGUE_ENTRIES.of(shard.name(), entry.getPuuid());
-    
-        List<LeagueEntry> entries = RedisClient.get(key, LEAGUE_ENTRIES_TYPE);
-        if (entries == null) {
-            entries = new ArrayList<>();
-        }
-        boolean updated = false;
-        for (int i = 0; i < entries.size(); i++) {
-            LeagueEntry current = entries.get(i);
-    
-            if (current.getQueueType() == entry.getQueueType()) {
-                entries.set(i, entry);
-                updated = true;
-                break;
-            }
-        }
-        if (!updated) {
-            entries.add(entry);
-        }
-        RedisClient.set(key, entries, TTL_LEAGUE_ENTRIES);
+        invalidateSummonerDTO(entry.getPuuid(), shard);
     }
 
     public static void puWeaktLeagueEntry(LeagueShard shard, LeagueEntry entry) {
-        //TODO: implement weak key
-        String key = RedisKey.LEAGUE_ENTRIES.of(shard, entry.getPuuid());
-        RedisClient.set(key, List.of(entry), TTL_LEAGUE_ENTRIES);
+        putLeagueEntry(shard, entry);
+    }
+
+    public static void invalidateSummonerDTO(String puuid, LeagueShard shard) {
+        RedisClient.delete(RedisKey.SUMMONER_DTO.of(shard.name(), puuid));
+        try {
+            LeagueMongo.deleteSummoner(puuid, shard);
+        } catch (RuntimeException ignored) {}
+    }
+
+    public static QueryResult getAdvancedLOLData(
+        int summonerId,
+        long timeStart,
+        long timeEnd,
+        GameQueueType queue
+    ) {
+        String key = RedisKey.ADVANCED_LOL_DATA.of(
+            summonerId,
+            timeStart,
+            timeEnd,
+            queue != null ? queue.name() : "null"
+        );
+        QueryResult cached = RedisClient.get(key, QueryResult.class);
+        if (cached != null) return cached;
+
+        QueryResult result = LeagueDB.getAdvancedLOLData(summonerId, timeStart, timeEnd, queue);
+        if (result != null) RedisClient.set(key, result, TTL_DB_LOOKUP);
+        return result;
+    }
+
+    public static QueryResult getSummonerData(String puuid, LeagueShard shard) {
+        String key = RedisKey.SUMMONER_DATA.of(puuid, shard.name());
+        QueryResult cached = RedisClient.get(key, QueryResult.class);
+        if (cached != null) return cached;
+
+        QueryResult result = LeagueDB.getSummonerData(puuid, shard);
+        if (result != null) RedisClient.set(key, result, TTL_DB_LOOKUP);
+        return result;
     }
 
     public static List<Choice> getSummonerAutocomplete(String query, LeagueShard shard) {
-        if (query == null || query.isBlank()) {
-            return new ArrayList<>();
-        }
-    
+        if (query == null || query.isBlank()) return new ArrayList<>();
+
         String normalizedQuery = query.trim().toLowerCase();
         String key = RedisKey.SUMMONER_AUTOCOMPLETE.of(shard.name(), normalizedQuery);
-    
-        List<SummonerAutocompleteChoice> cached = RedisClient.get(key, SUMMONER_AUTOCOMPLETE_TYPE);
-        if (cached != null) {
-            return toChoices(cached);
-        }
-    
+        List<SummonerAutocompleteChoice> cached = RedisClient.get(
+            key,
+            SUMMONER_AUTOCOMPLETE_TYPE
+        );
+        if (cached != null) return toChoices(cached);
+
         List<SummonerAutocompleteChoice> autocompleteChoices = new ArrayList<>();
         QueryResult summoners = LeagueDB.getFocusedSummoners(normalizedQuery, shard);
-    
         for (QueryRecord summoner : summoners) {
             autocompleteChoices.add(new SummonerAutocompleteChoice(
                 summoner.get("riot_id"),
                 summoner.get("puuid")
             ));
         }
-    
+
         RedisClient.set(key, autocompleteChoices, TTL_SUMMONER_AUTOCOMPLETE);
-    
         return toChoices(autocompleteChoices);
     }
-    
-    private static List<Choice> toChoices(List<SummonerAutocompleteChoice> autocompleteChoices) {
+
+    private static void cacheSummoner(SummonerDTO summoner) {
+        RedisClient.setSerializable(
+            RedisKey.SUMMONER_DTO.of(summoner.getRegion().name(), summoner.getPuuid()),
+            summoner,
+            TTL_SUMMONER_DTO
+        );
+    }
+
+    private static List<Choice> toChoices(
+        List<SummonerAutocompleteChoice> autocompleteChoices
+    ) {
         List<Choice> choices = new ArrayList<>();
-    
         for (SummonerAutocompleteChoice choice : autocompleteChoices) {
             choices.add(new Choice(choice.riotId(), choice.puuid()));
         }
-    
         return choices;
     }
 }

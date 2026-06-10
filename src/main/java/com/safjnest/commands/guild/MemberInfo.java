@@ -69,7 +69,7 @@ public class MemberInfo extends SlashCommand {
         }
         else {
             for(String account : lolAccounts.keySet()) {
-                Summoner s = LeagueService.getSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
+                Summoner s = LeagueService.getR4JSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
                 RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(s);
                 lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
             }

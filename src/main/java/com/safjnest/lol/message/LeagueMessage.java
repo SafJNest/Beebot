@@ -1412,7 +1412,7 @@ public class LeagueMessage {
                     int i = 0;
 
                     for (SpectatorParticipant partecipant : spectators) {
-                        Summoner s = LeagueService.getSummonerByPuuid(partecipant.getPuuid(), summoner.getPlatform());
+                        Summoner s = LeagueService.getR4JSummonerByPuuid(partecipant.getPuuid(), summoner.getPlatform());
                         String mastery = LeagueHandler.getMasteryByChamp(s, partecipant.getChampionId());
                         String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
                         String sum = " **" + partecipant.getRiotId() + "**";

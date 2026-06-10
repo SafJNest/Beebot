@@ -20,17 +20,27 @@ public enum RedisKey {
     MOST_USED_BUILD("stats:build:most-used:%s"),
     HIGH_WINRATE_BUILD("stats:build:high-winrate:%s"),
     CHAMPION_STATS("stats:champion:%s:%s"),
-    SUMMONER_AUTOCOMPLETE("summoner:autocomplete:%s:%s");
+    SUMMONER_AUTOCOMPLETE("summoner:autocomplete:%s:%s"),
+    SUMMONER_DTO("dto:summoner:%s:%s"),
+    R4J_CACHE("r4j:%s:%s");
 
     private final String pattern;
     private final String database;
 
     RedisKey(String pattern) {
         this.pattern = pattern;
-        this.database = App.isTesting() ? "beebot_test:lol" : "beebot:lol";
+        this.database = isTesting() ? "beebot_test:lol" : "beebot:lol";
     }
 
     public String of(Object... args) {
         return String.format(database + ":" + pattern, args);
+    }
+
+    private static boolean isTesting() {
+        try {
+            return App.isTesting();
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 }

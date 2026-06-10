@@ -11,7 +11,16 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,15 +108,90 @@ public class RedisClient {
         }
     }
 
+    public static void setBytes(String key, byte[] value, int ttlSeconds) {
+        try (Jedis jedis = pool.getResource()) {
+            byte[] redisKey = key.getBytes(StandardCharsets.UTF_8);
+            if (ttlSeconds > 0) {
+                jedis.setex(redisKey, ttlSeconds, value);
+            } else {
+                jedis.set(redisKey, value);
+            }
+        }
+    }
+
+    public static byte[] getBytes(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.get(key.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    public static void setSerializable(
+        String key,
+        Serializable value,
+        int ttlSeconds
+    ) {
+        try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+             ObjectOutputStream output = new ObjectOutputStream(bytes)) {
+            output.writeObject(value);
+            output.flush();
+            setBytes(key, bytes.toByteArray(), ttlSeconds);
+        } catch (IOException ignored) {}
+    }
+
+    public static <T> T getSerializable(String key, Class<T> type) {
+        byte[] payload = getBytes(key);
+        if (payload == null) return null;
+
+        try (ByteArrayInputStream bytes = new ByteArrayInputStream(payload);
+             ObjectInputStream input = new ObjectInputStream(bytes)) {
+            Object value = input.readObject();
+            if (type.isInstance(value)) return type.cast(value);
+        } catch (IOException | ClassNotFoundException ignored) {}
+
+        delete(key);
+        return null;
+    }
+
     public static void delete(String key) {
         try (Jedis jedis = pool.getResource()) {
             jedis.del(key);
         }
     }
 
+    public static long deleteByPattern(String pattern) {
+        try (Jedis jedis = pool.getResource()) {
+            String cursor = ScanParams.SCAN_POINTER_START;
+            ScanParams params = new ScanParams().match(pattern).count(500);
+            long deleted = 0;
+
+            do {
+                ScanResult<String> result = jedis.scan(cursor, params);
+                List<String> keys = result.getResult();
+                if (!keys.isEmpty()) deleted += jedis.del(keys.toArray(String[]::new));
+                cursor = result.getCursor();
+            } while (!ScanParams.SCAN_POINTER_START.equals(cursor));
+
+            return deleted;
+        }
+    }
+
+    public static long strlen(String key) {
+        try (Jedis jedis = pool.getResource()) {
+            return jedis.strlen(key.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
     public static boolean exists(String key) {
         try (Jedis jedis = pool.getResource()) {
             return jedis.exists(key);
+        }
+    }
+
+    public static boolean isAvailable() {
+        try (Jedis jedis = pool.getResource()) {
+            return "PONG".equals(jedis.ping());
+        } catch (Exception e) {
+            return false;
         }
     }
 

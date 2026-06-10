@@ -544,7 +544,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             
             for (String puuid : accounts.keySet()) {    
                 shard = LeagueShard.valueOf(accounts.get(puuid));
-                Summoner summoner = LeagueService.getSummonerByPuuid(puuid, shard);
+                Summoner summoner = LeagueService.getR4JSummonerByPuuid(puuid, shard);
                 RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(summoner);
                 choices.add(new Choice(
                     riotAccount.getName() + "#" + riotAccount.getTag(), 

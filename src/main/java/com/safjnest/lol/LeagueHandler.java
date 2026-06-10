@@ -30,15 +30,11 @@ import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.redis.RedisClient;
-import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.SafJNest;
-import com.safjnest.utils.SettingsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.User;
-import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.calling.DataCall;
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -57,6 +53,7 @@ import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
+import com.safjnest.lol.service.LeagueR4J;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.ChampionUtils;
@@ -85,7 +82,7 @@ import com.safjnest.lol.utils.PatchUtils;
 
     static {
 
-        LeagueHandler.riotApi = new R4J(new APICredentials(SettingsLoader.getSettings().getJsonSettings().getRiot().getKey())); 
+        LeagueHandler.riotApi = LeagueR4J.getApi();
         LeagueHandler.patch = PatchUtils.getPatch() + ".1";
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";
 
@@ -270,7 +267,7 @@ import com.safjnest.lol.utils.PatchUtils;
             String firstAccount = accounts.keySet().stream().findFirst().get();
             LeagueShard shard = LeagueShard.valueOf(accounts.get(firstAccount));
 
-            return LeagueService.getSummonerByPuuid(firstAccount, shard);
+            return LeagueService.getR4JSummonerByPuuid(firstAccount, shard);
         } catch (Exception e) {return null;}
     }
 
@@ -330,7 +327,7 @@ import com.safjnest.lol.utils.PatchUtils;
         LeagueShard shard = event.getOption("region") != null ? LeagueShard.valueOf(event.getOption("region").getAsString()) : guildShard;
 
         if (event.getOption("summoner") != null) {
-            s = LeagueService.getSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
+            s = LeagueService.getR4JSummonerByPuuid(event.getOption("summoner").getAsString(), shard);
         }
 
         if (s != null) return s;
@@ -482,7 +479,11 @@ import com.safjnest.lol.utils.PatchUtils;
                 }
             }
         }
-        ChampionMastery direct = riotApi.getLoLAPI().getMasteryAPI().getChampionMastery(s.getPlatform(), s.getPUUID(), champId);
+        ChampionMastery direct = LeagueService.getChampionMastery(
+            s.getPUUID(),
+            s.getPlatform(),
+            champId
+        );
         return direct != null ? formatMasteryLine(direct) : "";
     }
 
@@ -492,7 +493,7 @@ import com.safjnest.lol.utils.PatchUtils;
                 return formatMasteryLine(mastery);
             }
         }
-        ChampionMastery mastery = riotApi.getLoLAPI().getMasteryAPI().getChampionMastery(shard, puuid, champion);
+        ChampionMastery mastery = LeagueService.getChampionMastery(puuid, shard, champion);
         return mastery != null ? formatMasteryLine(mastery) : "";
     }
 
@@ -693,7 +694,6 @@ import com.safjnest.lol.utils.PatchUtils;
             case V4_LEAGUE_ENTRY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());
                 data.put("id", summoner.getPUUID());
-                RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(summoner.getPlatform().name(), summoner.getPUUID()));
                 break;
             case V4_MASTERY_BY_PUUID:
                 data.put("platform", summoner.getPlatform());
@@ -704,7 +704,7 @@ import com.safjnest.lol.utils.PatchUtils;
                 break;
         }
 
-        DataCall.getCacheProvider().clear(endpoint, data);
+        clearCache(endpoint, data);
     }
 
     public static void clearSummonerCache(Summoner summoner) {
@@ -713,6 +713,7 @@ import com.safjnest.lol.utils.PatchUtils;
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner, null);
         clearCache(URLEndpoint.V4_MASTERY_BY_PUUID, summoner, null);
+        LeagueService.invalidateSummonerDTO(summoner.getPUUID(), summoner.getPlatform());
     }
 
     public static boolean isMatchLocallyCached(String gameId, LeagueShard shard) {
@@ -724,7 +725,8 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static boolean isMatchDBCached(String gameId) {
-        return LeagueDB.getMatchIdByGameId(gameId.split("_")[1]) != 0;
+        String legacyGameId = gameId.contains("_") ? gameId.split("_", 2)[1] : gameId;
+        return LeagueDB.getMatchIdByGameId(legacyGameId) != 0;
     }
 
     public static boolean isMatchSomewhereCached(String gameId, LeagueShard shard) {
@@ -735,8 +737,8 @@ import com.safjnest.lol.utils.PatchUtils;
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("platform", shard.toRegionShard());
         data.put("gameid", gameId);   
-        DataCall.getCacheProvider().clear(URLEndpoint.V5_MATCH, data);
-        DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, data);
+        clearCache(URLEndpoint.V5_MATCH, data);
+        clearCache(URLEndpoint.V5_TIMELINE, data);
     }
 
 //     ▄████████    ▄███████▄  ▄█        ▄█      ███

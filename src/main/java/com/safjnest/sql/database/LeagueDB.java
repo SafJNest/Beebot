@@ -172,7 +172,7 @@ public class LeagueDB extends AbstractDB {
         try {
             Thread.sleep(350);
         } catch (Exception e) { }
-        Summoner summoner = LeagueService.getSummonerByPuuid(entry.getPuuid(), shard);
+        Summoner summoner = LeagueService.getR4JSummonerByPuuid(entry.getPuuid(), shard);
         if (summoner == null) {
             return 0;
         }

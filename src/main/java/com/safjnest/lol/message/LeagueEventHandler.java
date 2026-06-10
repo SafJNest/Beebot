@@ -97,7 +97,7 @@ public class LeagueEventHandler extends EventButtonHandler {
     private void dispatch(InteractionHook hook, List<Button> buttons, LeagueContext context) {
         boolean hasLeft = buttons.stream().anyMatch(b -> (LeagueMessage.BUTTON_ID_PREFIX + "-left").equals(b.getCustomId()));
         String user_id = (hasLeft || context.userIdFallback()) ? context.user_id() : "";
-        Summoner s = LeagueService.getSummonerByPuuid(context.puuid(), LeagueShard.valueOf(context.region()));
+        Summoner s = LeagueService.getR4JSummonerByPuuid(context.puuid(), LeagueShard.valueOf(context.region()));
         int summonerId = s != null ? LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform()) : 0;
         LeagueMessage.send(hook, user_id, s, summonerId, context.parameter());
     }
@@ -174,7 +174,7 @@ public class LeagueEventHandler extends EventButtonHandler {
             case "leftpage" -> parameter.setOffset(Math.max(0, parameter.getOffset() - parameter.getMessageType().getPageItem()));
             case "rightpage" -> parameter.setOffset(parameter.getOffset() + parameter.getMessageType().getPageItem());
             case "refresh" -> {
-                LeagueHandler.clearSummonerCache(LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region)));
+                LeagueHandler.clearSummonerCache(LeagueService.getR4JSummonerByPuuid(puuid, LeagueShard.valueOf(region)));
                 try { Thread.sleep(500); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
             }
         }
@@ -196,10 +196,10 @@ public class LeagueEventHandler extends EventButtonHandler {
                 parameter.setRank(value == null || value.equals("ALL") ? null : TierType.valueOf(value.toUpperCase()));
                 parameter.setOffset(0);
             }
-            case "opggselect" -> parameter.setMatch(
-                LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI()
-                    .getMatch(LeagueShard.valueOf(context.region()).toRegionShard(), value)
-            );
+            case "opggselect" -> parameter.setMatch(LeagueService.getMatch(
+                value,
+                LeagueShard.valueOf(context.region())
+            ));
             case "rankselect" -> {
                 context = context.with(value.split("#")[0], value.split("#")[1]);
                 context.parameter().setMessageType(LeagueMessageType.PROFILE);
