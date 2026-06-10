@@ -7,8 +7,8 @@ import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.QueueHandler;
 import com.safjnest.core.audio.TrackScheduler;
 import com.safjnest.core.audio.types.ReplyType;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Guild;
 

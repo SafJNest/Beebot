@@ -8,8 +8,8 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.audio.SoundEmbed;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 /**
  * @author <a href="https://github.com/NeutronSun">NeutronSun</a>

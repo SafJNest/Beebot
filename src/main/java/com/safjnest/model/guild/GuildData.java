@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.log.BotLogger;
-import com.safjnest.util.log.LoggerIDpair;
+import com.safjnest.utils.log.BotLogger;
+import com.safjnest.utils.log.LoggerIDpair;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.model.guild.alert.AlertData;
@@ -100,7 +100,6 @@ public class GuildData {
 
         this.voice = data.get("name_tts") != null ? data.get("name_tts") : "John";
         this.language = data.get("language_tts") != null ? data.get("language_tts") : "en-us";
-
         this.blacklistData = new BlacklistData(
             data.getAsInt("threshold"),
             data.get("blacklist_channel") != null ? data.get("blacklist_channel") : null,

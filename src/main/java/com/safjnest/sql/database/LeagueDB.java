@@ -21,24 +21,33 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.ChampionBan;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchTeam;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
+import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
+import no.stelar7.api.r4j.pojo.shared.RiotAccount;
 
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessageParameter;
 import com.safjnest.lol.message.LeagueMessageType;
-import com.safjnest.lol.model.MatchData;
-import com.safjnest.lol.model.ParticipantData;
-import com.safjnest.lol.model.build.CustomBuildData;
-import com.safjnest.mongodb.MongoLeague;
+import com.safjnest.lol.model.Build;
+import com.safjnest.lol.model.ChampionStatistics;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.Match;
+import com.safjnest.lol.model.Participant;
+import com.safjnest.lol.utils.ParticipantBuildCodec;
+import com.safjnest.redis.RedisClient;
+import com.safjnest.redis.RedisKey;
+import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
+import com.safjnest.utils.SettingsLoader;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.util.SettingsLoader;
 
 public class LeagueDB extends AbstractDB {
 
@@ -54,6 +63,19 @@ public class LeagueDB extends AbstractDB {
 
     public static LeagueDB get() {
         return instance;
+    }
+
+    public static QueryResult getLOLAccountsByUserId(String user_id){
+        String query = "SELECT puuid, region, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
+        return instance.query(query);
+    }
+
+    public static String getSummonerNameById(String puuid, LeagueShard shard) {
+        return instance.lineQuery("SELECT riot_id FROM summoner WHERE puuid = '" + puuid + "' AND region = '" + shard + "';").get("riot_id");
+    }
+
+    public static String getUserIdByLOLAccountId(String puuid, LeagueShard shard) {
+        return instance.lineQuery("SELECT user_id FROM summoner WHERE puuid = '" + puuid + "' AND region = '" + shard + "';").get("user_id");
     }
 
     public static QueryResult getAdvancedLOLData(String summonerId) {
@@ -139,23 +161,124 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static int addLOLAccount(Summoner summoner) {
-        MongoLeague.saveSummoner(summoner, null);
-        return 0;
+        return addLOLAccount(null, summoner);
     }
 
     public static int addLOLAccount(LeagueEntry entry, LeagueShard shard) {
-        int id = getSummonerIdByPuuid(entry.getPuuid(), shard);
+        int id = LeagueService.getSummonerIdByPuuid(entry.getPuuid(), shard);
         if (id != 0) {
             return id;
         }
         try {
             Thread.sleep(350);
         } catch (Exception e) { }
-        Summoner summoner = LeagueHandler.getSummonerByPuuid(entry.getPuuid(), shard);
+        Summoner summoner = LeagueService.getSummonerByPuuid(entry.getPuuid(), shard);
         if (summoner == null) {
             return 0;
         }
         return addLOLAccount(summoner);
+    }
+
+    public static int addLOLAccount(String user_id, Summoner summoner) {
+        RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
+        String query = "INSERT INTO summoner(user_id, puuid, riot_id, region, icon, level) " +
+                "VALUES(?, ?, ?, ?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE " +
+                "id = LAST_INSERT_ID(id), " +
+                "user_id = IF(VALUES(user_id) IS NOT NULL, VALUES(user_id), user_id), " +
+                "puuid = VALUES(puuid), " +
+                "riot_id = VALUES(riot_id), " +
+                "region = VALUES(region), " +
+                "icon = VALUES(icon), " +
+                "level = VALUES(level);";
+
+        try (Connection conn = instance.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+            if (user_id != null) 
+                pstmt.setString(1, user_id);
+            else 
+                pstmt.setNull(1, java.sql.Types.VARCHAR);
+            
+            pstmt.setString(2, summoner.getPUUID());
+            if (account != null) 
+                pstmt.setString(3, account.getName() + "#" + account.getTag());
+            else
+                pstmt.setNull(3, java.sql.Types.VARCHAR);
+            pstmt.setString(4, summoner.getPlatform().name());
+            pstmt.setInt(5, summoner.getProfileIconId());
+            pstmt.setInt(6, summoner.getSummonerLevel());
+
+            pstmt.executeUpdate();
+            
+            ResultSet rs = pstmt.getGeneratedKeys();
+            int id = 0;
+            if (rs.next()) {
+                id = rs.getInt(1);
+            }
+            
+            conn.commit();
+            return id;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    public static boolean addLOLAccount(SpectatorGameInfo info) {
+        String query = "INSERT INTO summoner(puuid, riot_id, region, icon) " +
+                       "VALUES(?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "puuid = VALUES(puuid), " +
+                       "riot_id = VALUES(riot_id), " +
+                       "region = VALUES(region), " +
+                       "icon = VALUES(icon);";
+
+        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            for (SpectatorParticipant summoner : info.getParticipants()) {
+                if (summoner.getPuuid() == null) continue;
+                pstmt.setString(1, summoner.getPuuid());
+                pstmt.setString(2, summoner.getRiotId());
+                pstmt.setString(3, info.getPlatform().name());
+                pstmt.setLong(4, summoner.getProfileIconId());
+                pstmt.addBatch();
+            }
+
+            int[] affectedRows = pstmt.executeBatch();
+            conn.commit();
+            return affectedRows.length == info.getParticipants().size();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean addLOLAccountFromMatch(LOLMatch match) {
+        String query = "INSERT INTO summoner(puuid, riot_id, region, icon, level) " +
+                       "VALUES(?, ?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "puuid = VALUES(puuid), " +
+                       "riot_id = VALUES(riot_id), " +
+                       "region = VALUES(region), " +
+                       "icon = VALUES(icon), " +
+                       "level = VALUES(level);";
+
+        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            for (MatchParticipant summoner : match.getParticipants()) {
+                pstmt.setString(1, summoner.getPuuid());
+                pstmt.setString(2, summoner.getRiotIdName() + "#" + summoner.getRiotIdTagline());
+                pstmt.setString(3, match.getPlatform().name());
+                pstmt.setInt(4, summoner.getProfileIcon());
+                pstmt.setInt(5, summoner.getSummonerLevel());
+                pstmt.addBatch();
+            }
+
+            int[] affectedRows = pstmt.executeBatch();
+            conn.commit();
+            return affectedRows.length == match.getParticipants().size();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static boolean deleteLOLaccount(String user_id, String puuid){
@@ -236,13 +359,21 @@ public class LeagueDB extends AbstractDB {
         pings.put("enemy_vision", participant.getEnemyVisionPings());
         pings.put("enemy_missing", participant.getEnemyMissingPings());
         pings.put("vision_cleared", participant.getVisionClearedPings());
+
+        int q = participant.getSpell1Casts();
+        int w = participant.getSpell2Casts();
+        int e = participant.getSpell3Casts();
+        int r = participant.getSpell4Casts();
+        int d = participant.getSummoner1Casts();
+        int f = participant.getSummoner2Casts();
         
-        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ");");
+        
+        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas, role_quest_id, q, w, e, r, d, f) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ", " + participant.getRoleBoundItem() + ", " + q + ", " + w + ", " + e + ", " + r + ", " + d + ", " + f + ");");
     }
 
 
     public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
-        return instance.query("SELECT riot_id, puuid FROM summoner WHERE MATCH(riot_id) AGAINST('+" + query + "*' IN BOOLEAN MODE) AND region = '" + shard + "' LIMIT 25;");
+        return instance.query("SELECT riot_id, puuid FROM summoner WHERE riot_search LIKE CONCAT(LOWER(REPLACE('" + query + "', ' ', '')), '%') AND region = '" + shard + "' LIMIT 25;");
     }
 
 
@@ -254,12 +385,13 @@ public class LeagueDB extends AbstractDB {
         return instance.query("SELECT summoner_id, game_id, rank, lp, gain, win, time_start, time_end, patch FROM participant WHERE summoner_id = '" + summoner_id + "' AND region = '" + shard + "' AND time_start >= '" + new Timestamp(time_start) + "' AND time_end <= '" + new Timestamp(time_end) + "';");
     }
 
-    public static QueryResult getSummonerData(int summoner_id) {
+    public static QueryResult getSummonerData(String puuid, LeagueShard shard) {
         return instance.query(
             "SELECT st.summoner_id, sm.game_id, st.rank, st.lp, st.gain, st.win, sm.time_start, sm.time_end, sm.patch " +
             "FROM participant st " +
             "JOIN `match` sm ON st.match_id = sm.id " +
-            "WHERE st.summoner_id = '" + summoner_id + "' AND sm.queue = 'TEAM_BUILDER_RANKED_SOLO' " +
+            "JOIN summoner s ON st.summoner_id = s.id " +
+            "WHERE s.puuid = '" + puuid + "' AND s.region = '" + shard + "' AND sm.queue = 'TEAM_BUILDER_RANKED_SOLO' " +
             "ORDER BY sm.game_id"
         );
     }
@@ -268,8 +400,12 @@ public class LeagueDB extends AbstractDB {
         return !instance.lineQuery("SELECT 1 from participant where summoner_id = '" + sumonerId + "';").isEmpty();
     }
 
-    public static int setMatchData(LOLMatch match) {
-        return setMatchData(match, false);
+    public static boolean trackSummoner(String user_id, String puuid, boolean track) {
+        return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';");
+    }
+
+    public static int saveMatch(LOLMatch match) {
+        return saveMatch(match, false);
     }
 
     public static boolean setMatchEvent(int matchId, String json) {
@@ -280,7 +416,7 @@ public class LeagueDB extends AbstractDB {
         return instance.defaultQuery("UPDATE `match` SET rank = '" + rank + "' WHERE id = " + matchId + ";");
     }
 
-    public static int setMatchData(LOLMatch match, boolean emptyIfExist) {
+    public static int saveMatch(LOLMatch match, boolean emptyIfExist) {
         int id = 0;
 
         Connection c = instance.getConnection();
@@ -364,12 +500,34 @@ public class LeagueDB extends AbstractDB {
         return instance.query("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
     }
 
-    public static CustomBuildData getCustomBuild(String id){
-        return new CustomBuildData(instance.lineQuery("SELECT id, name, skin, description, user_id, build, champion, lane, created_at FROM custom_build WHERE id = " + id + ""));
-    }
-
     public static QueryResult getCustomBuildByUser(String user_id){
         return instance.query("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
+    }
+
+    public static boolean updateSummonerMasteries(int summonerId, List<ChampionMastery> masteries) {
+        String query = "INSERT INTO masteries (summoner_id, champion_id, champion_level, champion_points, last_play_time) " +
+                       "VALUES (?, ?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "champion_level = VALUES(champion_level), " +
+                       "champion_points = VALUES(champion_points), " +
+                       "last_play_time = VALUES(last_play_time);";
+
+        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(query)) {
+            for (ChampionMastery mastery : masteries) {
+                pstmt.setInt(1, summonerId);
+                pstmt.setLong(2, mastery.getChampionId());
+                pstmt.setInt(3, mastery.getChampionLevel());
+                pstmt.setInt(4, mastery.getChampionPoints());
+                pstmt.setTimestamp(5, new Timestamp(mastery.getLastPlayTime()));
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public static int getSummonerIdByPuuid(String puuid, LeagueShard shard) {
@@ -377,6 +535,53 @@ public class LeagueDB extends AbstractDB {
             return instance.lineQuery("select id from summoner where puuid = '"+ puuid +"' and region = '" + shard + "'").getAsInt("id");  
         } catch (Exception e) {
            return 0;
+        }
+    }
+
+    public static boolean updateSummonerEntries(int summonerId, List<LeagueEntry> entries) {
+        String query = "INSERT INTO `rank` (summoner_id, queue, rank, lp, wins, losses) " +
+                       "VALUES (?, ?, ?, ?, ?, ?) " +
+                       "ON DUPLICATE KEY UPDATE " +
+                       "rank = VALUES(rank), " +
+                       "queue = VALUES(queue), " +
+                       "lp = VALUES(lp), " +
+                       "wins = VALUES(wins), " +
+                       "losses = VALUES(losses);";
+        Connection conn = null;
+        try {
+            conn = instance.getConnection();
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                for (LeagueEntry entry : entries) {
+                    pstmt.setInt(1, summonerId);
+                    pstmt.setString(2, entry.getQueueType().name());
+                    pstmt.setString(3, entry.getTierDivisionType().name());
+                    pstmt.setInt(4, entry.getLeaguePoints());
+                    pstmt.setInt(5, entry.getWins());
+                    pstmt.setInt(6, entry.getLosses());
+                    pstmt.addBatch();
+                }
+                pstmt.executeBatch();
+                conn.commit();
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -402,6 +607,7 @@ public class LeagueDB extends AbstractDB {
                     pstmt.setInt(5, entry.getWins());
                     pstmt.setInt(6, entry.getLosses());
                     pstmt.addBatch();
+                    LeagueService.putLeagueEntry(shard, entry);
                 }
                 pstmt.executeBatch();
                 conn.commit();
@@ -442,7 +648,7 @@ public class LeagueDB extends AbstractDB {
             ? "LIMIT " + limit + " OFFSET " + offset
             : "";
 
-        if (queue == GameQueueType.CHERRY)
+        if (GameQueueTypeUtils.isCherry(queue))
                 lane = null;
 
         String timeFilter = timeStart != 0
@@ -469,7 +675,7 @@ public class LeagueDB extends AbstractDB {
         GameQueueType queue = parameter.getQueueType();
         LaneType lane = parameter.getLaneType();
 
-        if (queue == GameQueueType.CHERRY)
+        if (GameQueueTypeUtils.isCherry(queue))
                 lane = null;
 
         String timeFilter = timeStart != 0
@@ -489,10 +695,15 @@ public class LeagueDB extends AbstractDB {
         return instance.query(q).size();
     }
 
+    public static int getMatchIdByGameId(String id) {
+        QueryResult result = LeagueDB.get().query("SELECT id FROM `match` WHERE game_id = '" + id + "'");
+        return result.isEmpty() ? 0 : result.get(0).getAsInt("id");
+    }
 
-    public static List<MatchData> getMatchHistory(int summonerId, LeagueMessageParameter parameter) throws SQLException {
-        List<MatchData> result = new ArrayList<>();
-        Map<Integer, MatchData> matchMap = new LinkedHashMap<>();
+
+    public static List<Match> getMatchHistory(int summonerId, LeagueMessageParameter parameter) throws SQLException {
+        List<Match> result = new ArrayList<>();
+        Map<Integer, Match> matchMap = new LinkedHashMap<>();
 
         try (Connection c = instance.getConnection()) {
             if (c == null) return result;
@@ -502,16 +713,27 @@ public class LeagueDB extends AbstractDB {
             List<Integer> matchIds = new ArrayList<>();
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q1)) {
                 while (rs.next()) {
-                    MatchData match = new MatchData();
+                    Match match = new Match();
                     match.id = rs.getInt("id");
                     match.gameId = rs.getString("game_id");
-                    match.region = LeagueShard.valueOf(rs.getString("region"));
+                    match.leagueShard = LeagueShard.valueOf(rs.getString("region"));
                     match.queue = GameQueueType.valueOf(rs.getString("queue"));
                     match.timeStart = rs.getTimestamp("time_start").getTime();
                     match.timeEnd = rs.getTimestamp("time_end").getTime();
                     match.patch = rs.getString("patch");
 
-                    match.bans = new HashMap<>();                    
+                    match.bans = new HashMap<>();
+                    JSONObject bansJson = new JSONObject(rs.getString("bans"));
+                    for(String key : bansJson.keySet()) {
+                        TeamType team = TeamType.values()[Integer.parseInt(key)];
+                        try {
+                            match.bans.put(team, bansJson.getJSONArray(key).getInt(0));    
+                        } catch (Exception e) {
+                            match.bans.put(team, null);
+                        }
+                        
+                    }
+                    
                     match.events = new JSONObject(rs.getString("events"));
                     match.participants = new ArrayList<>();
 
@@ -534,7 +756,7 @@ public class LeagueDB extends AbstractDB {
 
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q2)) {
                 while (rs.next()) {
-                    ParticipantData p = new ParticipantData();
+                    Participant p = new Participant();
                     p.id = rs.getInt("id");
                     p.summonerId = rs.getInt("summoner_id");
                     p.matchId = rs.getInt("match_id");
@@ -561,19 +783,24 @@ public class LeagueDB extends AbstractDB {
                     p.triples = rs.getInt("triples");
                     p.quadruples = rs.getInt("quadruples");
                     p.pentas = rs.getInt("pentas");
+                    p.q = rs.getInt("q");
+                    p.w = rs.getInt("w");
+                    p.e = rs.getInt("e");
+                    p.r = rs.getInt("r");
+                    p.d = rs.getInt("d");
+                    p.f = rs.getInt("f");
 
                     try {
                         JSONObject pingsJson = new JSONObject(rs.getString("pings"));
-                        p.pings = new HashMap<>();
                         for(String key : pingsJson.keySet()) {
                             p.pings.put(key, pingsJson.getInt(key));
                         }   
                     } catch (Exception e) {}
  
 
-                    p.setBuild(rs.getString("build"));
+                    ParticipantBuildCodec.apply(p, rs.getString("build"));
 
-                    MatchData match = matchMap.get(p.matchId);
+                    Match match = matchMap.get(p.matchId);
                     if (match != null) {
                         match.participants.add(p);
                     }
@@ -584,6 +811,190 @@ public class LeagueDB extends AbstractDB {
         }
         return result;
     }
+
+
+    public static List<Build> getChampionBuild(Filter filter) {
+        QueryResult result = instance.query("SELECT data FROM champion_builds WHERE filter = '" + filter.toKey() + "'");
+        return result.stream().map(r -> Build.decode(r.get("data"))).toList();
+    }
+
+    public static void saveChampionBuild(Build build) {
+        String sql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE games = VALUES(games), winrate = VALUES(winrate), data = VALUES(data)";
+        try (Connection conn = instance.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, build.games());
+            pstmt.setDouble(2, build.winrate());
+            pstmt.setString(3, build.filter().toKey());
+            pstmt.setString(4, build.encode());
+            pstmt.executeUpdate();
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void saveChampionBuilds(List<Build> builds) {
+        if (builds == null || builds.isEmpty()) return;
+    
+        String deleteSql = "DELETE FROM champion_builds WHERE filter = ?";
+        String insertSql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?)";
+    
+        try (Connection conn = instance.getConnection();
+             PreparedStatement deleteStmt = conn.prepareStatement(deleteSql);
+             PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+    
+            conn.setAutoCommit(false);
+    
+            for (Build build : builds) {
+                deleteStmt.setString(1, build.filter().toKey());
+                deleteStmt.addBatch();
+            }
+    
+            deleteStmt.executeBatch();
+    
+            for (Build build : builds) {
+                insertStmt.setInt(1, build.games());
+                insertStmt.setDouble(2, build.winrate());
+                insertStmt.setString(3, build.filter().toKey());
+                insertStmt.setString(4, build.encode());
+                insertStmt.addBatch();
+            }
+    
+            insertStmt.executeBatch();
+    
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static QueryResult getChampionBuildsRaw(Filter filter) {
+        String query = "SELECT m.game_id, p.win, p.build, p.summoner_id FROM `match` m STRAIGHT_JOIN participant p ON p.match_id = m.id " + filter.sql();
+        return instance.query(query);
+    }
+
+    public static void saveChampionStats(ChampionStatistics stats) {
+        String sql = "INSERT INTO champion_stats (filter, champion, data) VALUES (?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE data = VALUES(data)";
+        try (Connection conn = instance.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, stats.filter().genericKey());
+            pstmt.setInt(2, stats.filter().champion());
+            pstmt.setString(3, stats.encode());
+            pstmt.executeUpdate();
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void saveChampionStats(Map<Integer, ChampionStatistics> stats) {
+        if (stats == null || stats.isEmpty()) return;
+        String sql = "INSERT INTO champion_stats (filter, champion, data) VALUES (?, ?, ?) "
+            + "ON DUPLICATE KEY UPDATE data = VALUES(data)";
+        try (Connection conn = instance.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            for (ChampionStatistics stat : stats.values()) {
+                pstmt.setString(1, stat.filter().genericKey());
+                pstmt.setInt(2, stat.filter().champion());
+                pstmt.setString(3, stat.encode());
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static ChampionStatistics getChampionStats(Filter filter, int champion) {
+        QueryResult result = instance.query(
+            "SELECT data FROM champion_stats WHERE filter = '" +
+            filter.genericKey() + "' AND champion = '" + champion + "'"
+        );
+        if (result.isEmpty()) return null;
+        return ChampionStatistics.decode(result.get(0).get("data"));
+    }
+    
+    public static Map<Integer, ChampionStatistics> getChampionStats(Filter filter) {
+        QueryResult result = instance.query(
+            "SELECT champion, data FROM champion_stats WHERE filter = '" +
+            filter.genericKey() + "'"
+        );
+        if (result.isEmpty()) return null;
+        Map<Integer, ChampionStatistics> map = new HashMap<>();
+        for (QueryRecord r : result) {
+            int champion = r.getAsInt("champion");
+            map.put(champion, ChampionStatistics.decode(r.get("data")));
+        }
+        return map;
+    }
+
+    public static QueryResult getStoredChampionBuildFilters() {
+        return instance.query("SELECT DISTINCT filter FROM champion_builds;");
+    }
+
+    public static QueryResult getStoredChampionStatsFilters() {
+        return instance.query("SELECT DISTINCT filter FROM champion_stats;");
+    }
+
+    public static QueryResult getChampionBuildRefreshFilters(String patch) {
+        String sql = "SELECT DISTINCT p.champion, p.lane, m.queue, m.rank, m.region, m.patch_major AS patch "
+            + "FROM `match` m JOIN participant p ON p.match_id = m.id "
+            + "WHERE m.patch_major = ? AND p.build IS NOT NULL AND p.build <> '' AND p.champion IS NOT NULL";
+        QueryResult result = new QueryResult();
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, patch);
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    QueryRecord row = new QueryRecord();
+                    row.put("champion", rs.getString("champion"));
+                    row.put("lane", rs.getString("lane"));
+                    row.put("queue", rs.getString("queue"));
+                    row.put("rank", rs.getString("rank"));
+                    row.put("region", rs.getString("region"));
+                    row.put("patch", rs.getString("patch"));
+                    result.add(row);
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static QueryResult getChampionStatsRefreshFilters(String patch) {
+        String sql = "SELECT DISTINCT m.queue, m.rank, m.region, m.patch_major AS patch "
+            + "FROM `match` m JOIN participant p ON p.match_id = m.id "
+            + "WHERE m.patch_major = ?";
+        QueryResult result = new QueryResult();
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, patch);
+                ResultSet rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    QueryRecord row = new QueryRecord();
+                    row.put("queue", rs.getString("queue"));
+                    row.put("rank", rs.getString("rank"));
+                    row.put("region", rs.getString("region"));
+                    row.put("patch", rs.getString("patch"));
+                    result.add(row);
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
 
 
 

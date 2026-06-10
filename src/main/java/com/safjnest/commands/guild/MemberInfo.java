@@ -10,13 +10,13 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.service.LeagueService;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.ExperienceSystem;
-import com.safjnest.util.PermissionHandler;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.ExperienceSystem;
+import com.safjnest.utils.PermissionHandler;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -69,8 +69,8 @@ public class MemberInfo extends SlashCommand {
         }
         else {
             for(String account : lolAccounts.keySet()) {
-                Summoner s = LeagueHandler.getSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
-                RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(s);
+                Summoner s = LeagueService.getSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
+                RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(s);
                 lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
             }
             lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3);

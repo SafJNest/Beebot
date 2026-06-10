@@ -2,17 +2,15 @@ package com.safjnest.core.events;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.twitch.TwitchClient;
 import com.safjnest.commands.audio.playlist.PlaylistView;
 import com.safjnest.commands.audio.sound.SoundCustomize;
 import com.safjnest.commands.misc.Help;
@@ -28,16 +26,11 @@ import com.safjnest.core.audio.types.EmbedType;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.core.chat.ChatHandler;
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.message.LeagueMessage;
-import com.safjnest.lol.message.LeagueMessageParameter;
-import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.AlertType;
-import com.safjnest.model.guild.alert.RewardData;
 import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
-import com.safjnest.mongodb.MongoLeague;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
@@ -58,17 +51,41 @@ import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
 import net.dv8tion.jda.api.requests.ErrorResponse;
 import net.dv8tion.jda.api.utils.FileUpload;
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+
 import com.safjnest.core.cache.managers.GuildCache;
 
 
 public class EventButtonHandler extends ListenerAdapter {
+
+    public record ButtonData(String value1, String value2, boolean active) {}
+
+    public ButtonData getButtonData(ButtonInteractionEvent event, String prefix) {
+        return getButtonData(event, prefix, 4);
+    }
+
+    public ButtonData getButtonData(ButtonInteractionEvent event, String prefix, int limit) {
+        Button button = EventUtils.getButtonByPrefix(event, prefix);
+        if (button == null) return new ButtonData("", "", false);
+        return getButtonData(button, limit);
+    }
+
+    public ButtonData getButtonData(Button button) {
+        return getButtonData(button, 4);
+    }
+
+    public ButtonData getButtonData(Button button, int limit) {
+        String[] p = button.getCustomId().split("-", limit);
+    
+        String v1 = p.length >= 2 ? p[1] : "";
+        String v2 = p.length >= 3 ? p[2] : "";
+    
+        return new ButtonData(v1, v2, button.getStyle() == ButtonStyle.SUCCESS);
+    }
 
     @Override
     public void onButtonInteraction(ButtonInteractionEvent event) {
@@ -96,7 +113,6 @@ public class EventButtonHandler extends ListenerAdapter {
         }
 
         else if (buttonId.startsWith(LeagueMessage.BUTTON_ID_PREFIX + "-")) {
-            lol(event);
             return;
         }
 
@@ -135,9 +151,6 @@ public class EventButtonHandler extends ListenerAdapter {
         else if(buttonId.startsWith("queue-"))
             queue(event);
 
-        else if (buttonId.startsWith("reward-"))
-            reward(event);
-
         else if (buttonId.startsWith("player-"))
             player(event);
 
@@ -155,8 +168,8 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     private void greet(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 3)[1];
         Button clicked = event.getButton();
+        String args = getButtonData(clicked).value1().trim();
 
 
         // if (!soundData.getUserId().equals(event.getUser().getCustomId())) {
@@ -195,13 +208,13 @@ public class EventButtonHandler extends ListenerAdapter {
                 break;
             case "set":
                 type = clicked.getCustomId().split("-")[2];
-                TextInput subject = TextInput.create("greet-set", "Select your " + type +" greet!", TextInputStyle.SHORT)
+                TextInput subject = TextInput.create("greet-set", TextInputStyle.SHORT)
                     .setPlaceholder("Name or id of the sound")
                     .setMaxLength(100)
                     .build();
 
                 Modal modal = Modal.create("greet-" + type, "Select your " + type +" greet!")
-                        .addComponents(ActionRow.of(subject))
+                        .addComponents(Label.of("Select your " + type + " greet!", subject))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -223,37 +236,27 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     private void playlist(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 2)[1];
+        String args = getButtonData(event.getButton()).value1().trim();
 
-        int page = 0;
-        int playlistId = 0;
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getCustomId().startsWith("playlist-center")) {
-                playlistId = Integer.parseInt(b.getCustomId().split("-")[2]);
-                page = Integer.parseInt(b.getLabel().split(" ")[1].trim()) - 1;
-                break;
-            }
-        }
+
+        ButtonData buttonData = getButtonData(event, "playlist-center");
+        int page = Integer.parseInt(buttonData.value2().trim()) - 1;
+        int playlistId = Integer.parseInt(buttonData.value1().trim());
 
         QueryRecord playlist = BotDB.getPlaylistByIdWithSize(playlistId);
         switch (args) {
-            case "left":
-                page -= 1;
-                break;
-            case "right":
-                page += 1;
-                break;
+            case "left" -> page -= 1;
+            case "right" -> page += 1;
         }
 
         event.getMessage().editMessageEmbeds(PlaylistView.getTracksEmbed(playlist, event.getMember(), page).build())
                 .setComponents(PlaylistView.getTracksButton(playlist, page))
                 .queue();
-
-
     }
 
     public void help(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 2)[1];
+        ButtonData buttonData = getButtonData(event.getButton());
+        String args = buttonData.value1().trim();
 
 
         BotCommand command = Help.searchCommand(args, CommandsLoader.getCommandsData(event.getUser().getId()));
@@ -265,8 +268,8 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void twitch(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 3)[1];
-        String streamerId = event.getButton().getCustomId().split("-", 3).length > 2 ? event.getButton().getCustomId().split("-", 3)[2] : "0";
+        String args = getButtonData(event.getButton()).value1().trim();
+        String streamerId = getButtonData(event.getButton()).value2().trim();
 
 
         TextInput messageInput = null, privateInput = null, channelInput = null, roleInput = null;
@@ -279,43 +282,43 @@ public class EventButtonHandler extends ListenerAdapter {
                         .queue();
                 break;
             case "addSub":
-                TextInput streamerInput = TextInput.create("twitch-streamer", "Streamer name", TextInputStyle.SHORT)
+                TextInput streamerInput = TextInput.create("twitch-streamer", TextInputStyle.SHORT)
                     .setPlaceholder("sunny314_")
                     .setMinLength(4)
                     .setMaxLength(25)
                     .build();
 
-                messageInput = TextInput.create("twitch-changeMessage", "New Message", TextInputStyle.PARAGRAPH)
+                messageInput = TextInput.create("twitch-changeMessage", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("#streamer is now live!")
                     .setMaxLength(1000)
                     .build();
 
-                privateInput = TextInput.create("twitch-changePrivateMessage", "New Private Message", TextInputStyle.PARAGRAPH)
+                privateInput = TextInput.create("twitch-changePrivateMessage", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hello #streamer is now live! (not required)")
                     .setRequired(false)
                     .setMaxLength(1000)
                     .build();
 
-                channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
+                channelInput = TextInput.create("twitch-changeChannel", TextInputStyle.SHORT)
                     .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
                     .setMinLength(17)
                     .setMaxLength(100)
                     .build();
 
-                roleInput = TextInput.create("twitch-changeRole", "Role to ping", TextInputStyle.SHORT)
+                roleInput = TextInput.create("twitch-changeRole", TextInputStyle.SHORT)
                     .setPlaceholder("Name or id (better) of the role")
                     .setRequired(false)
                     .setMaxLength(100)
                     .build();
 
-
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
                         .addComponents(
-                                ActionRow.of(streamerInput),
-                                ActionRow.of(messageInput),
-                                ActionRow.of(privateInput),
-                                ActionRow.of(channelInput),
-                                ActionRow.of(roleInput))
+                            Label.of("Streamer", streamerInput),
+                            Label.of("Message", messageInput),
+                            Label.of("Private Message", privateInput),
+                            Label.of("Channel", channelInput),
+                            Label.of("Role", roleInput)
+                        )
                         .build();
 
                 event.replyModal(modal).queue();
@@ -327,44 +330,47 @@ public class EventButtonHandler extends ListenerAdapter {
                         .queue();
                 break;
             case "changeMessage":
-                messageInput = TextInput.create("twitch-changeMessage", "New Message", TextInputStyle.PARAGRAPH)
+                messageInput = TextInput.create("twitch-changeMessage", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hello #streamer is now live!")
                     .setMaxLength(1000)
                     .build();
 
-                privateInput = TextInput.create("twitch-changePrivateMessage", "New Private Message", TextInputStyle.PARAGRAPH)
+                privateInput = TextInput.create("twitch-changePrivateMessage", TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hello #streamer is now live!")
                     .setRequired(false)
                     .setMaxLength(1000)
                     .build();
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
-                        .addComponents(ActionRow.of(messageInput), ActionRow.of(privateInput))
+                        .addComponents(
+                            Label.of("Message", messageInput),
+                            Label.of("Private Message", privateInput)
+                        )
                         .build();
 
                 event.replyModal(modal).queue();
                 break;
             case "changeChannel":
-                channelInput = TextInput.create("twitch-changeChannel", "Channel Link/ID", TextInputStyle.SHORT)
+                channelInput = TextInput.create("twitch-changeChannel", TextInputStyle.SHORT)
                     .setPlaceholder("https://discord.com/channels/12345678912345678/123456789123456789")
                     .setMinLength(17)
                     .setMaxLength(100)
                     .build();
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
-                        .addComponents(ActionRow.of(channelInput))
+                        .addComponents(Label.of("Channel", channelInput))
                         .build();
 
                 event.replyModal(modal).queue();
                 break;
             case "changeRole":
-                roleInput = TextInput.create("twitch-changeRole", "Role to ping", TextInputStyle.SHORT)
+                roleInput = TextInput.create("twitch-changeRole", TextInputStyle.SHORT)
                     .setPlaceholder("Name or id (better) of the role")
                     .setMaxLength(100)
                     .build();
 
                 modal = Modal.create("twitch-" + streamerId, "Modify Streamer Alert message")
-                        .addComponents(ActionRow.of(roleInput))
+                        .addComponents(Label.of("Role", roleInput))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -387,8 +393,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
 
     public void soundplay (ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 3)[1];
-        String soundId = event.getButton().getCustomId().split("-", 3)[2];
+        String args = getButtonData(event.getButton()).value1().trim();
+        String soundId = getButtonData(event.getButton()).value2().trim();
 
         PlayerManager pm = PlayerManager.get();
         Guild guild = event.getGuild();
@@ -444,8 +450,8 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void tag(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 4)[1];
-        String soundId = event.getButton().getCustomId().split("-", 4)[2];
+        String args = getButtonData(event.getButton()).value1().trim();
+        String soundId = getButtonData(event.getButton()).value2().trim();
         String tagId = event.getButton().getCustomId().split("-", 4)[3];
         Sound soundData = SoundCache.getSoundById(soundId);
 
@@ -455,13 +461,13 @@ public class EventButtonHandler extends ListenerAdapter {
                 tagSwitch = false;
                 break;
             case "name":
-                TextInput subject = TextInput.create("tag-name", "Tag Name", TextInputStyle.SHORT)
+                TextInput subject = TextInput.create("tag-name", TextInputStyle.SHORT)
                 .setPlaceholder("Change Tag")
                 .setMaxLength(20)
                 .build();
 
                 Modal modal = Modal.create("tag-" + soundId + "-" + tagId, "Customize Your Sound")
-                        .addComponents(ActionRow.of(subject))
+                        .addComponents(Label.of("Tag Name", subject))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -490,14 +496,11 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void sound(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 3)[1];
-        String soundId = "";
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getLabel().startsWith("ID"))
-                soundId = b.getLabel().substring(b.getLabel().indexOf(":") + 2);
-        }
-
         Button clicked = event.getButton();
+        
+        String args = getButtonData(clicked).value1().trim();
+        String soundId = getButtonData(event, "sound-id").value2().trim();
+
 
         Sound soundData = SoundCache.getSoundById(soundId);
         int tagId = 0;
@@ -511,13 +514,13 @@ public class EventButtonHandler extends ListenerAdapter {
 
         switch (args) {
             case "name":
-                TextInput subject = TextInput.create("sound-name", "Sound Name ( " + soundData.getName() + " )", TextInputStyle.SHORT)
+                TextInput subject = TextInput.create("sound-name", TextInputStyle.SHORT)
                     .setPlaceholder("New Sound Name")
                     .setMaxLength(100)
                     .build();
 
                 Modal modal = Modal.create("sound-" + soundId, "Customize Your Sound")
-                        .addComponents(ActionRow.of(subject))
+                        .addComponents(Label.of("Sound Name ( " + soundData.getName() + " )", subject))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -549,64 +552,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
     }
 
-
-    public void reward(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-")[1];
-
-        Guild guild = event.getGuild();
-
-        Button left = Button.primary("reward-left", "<-");
-        Button right = Button.primary("reward-right", "->");
-        Button center = null;
-
-        String level = "";
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getLabel().startsWith("Level")) {
-                level = b.getLabel().substring(b.getLabel().indexOf(":") + 2);
-            }
-        }
-
-        switch (args) {
-            case "right":
-                RewardData nextReward = GuildCache.getGuildOrPut(guild.getId()).getHigherReward(Integer.parseInt(level));
-                RewardData nextNextReward = GuildCache.getGuildOrPut(guild.getId()).getHigherReward(nextReward.getLevel());
-
-                if (nextNextReward == null) {
-                    right = right.asDisabled();
-                    right = right.withStyle(ButtonStyle.DANGER);
-                }
-
-                center = Button.primary("center", "Level: " + nextReward.getLevel());
-                center = center.withStyle(ButtonStyle.SUCCESS);
-                center = center.asDisabled();
-                event.getMessage().editMessageEmbeds(nextReward.getSampleEmbed(guild).build())
-                        .setComponents(ActionRow.of(left, center, right))
-                        .queue();
-                break;
-
-            case "left":
-
-                RewardData previousRewardData = GuildCache.getGuildOrPut(guild.getId()).getLowerReward(Integer.parseInt(level));
-                RewardData previousPreviousRewardData = GuildCache.getGuildOrPut(guild.getId()).getLowerReward(previousRewardData.getLevel());
-                if (previousPreviousRewardData == null) {
-                    left = left.asDisabled();
-                    left = left.withStyle(ButtonStyle.DANGER);
-                }
-
-                center = Button.primary("center", "Level: " + previousRewardData.getLevel());
-                center = center.withStyle(ButtonStyle.SUCCESS);
-                center = center.asDisabled();
-                event.getMessage().editMessageEmbeds(previousRewardData.getSampleEmbed(guild).build())
-                        .setComponents(ActionRow.of(left, center, right))
-                        .queue();
-
-
-                break;
-        }
-    }
-
     public void queue(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-")[1];
+        String args = getButtonData(event.getButton()).value1().trim();
 
         Guild guild = event.getGuild();
 
@@ -628,7 +575,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 ts.setRepeat(!ts.isRepeat());
                 break;
             case "previouspage":
-                startIndex = Integer.parseInt(event.getButton().getCustomId().split("-", 3)[2]);
+                startIndex = Integer.parseInt(getButtonData(event.getButton()).value2().trim());
                 if (startIndex < 0)
                     startIndex = 0;
 
@@ -650,7 +597,7 @@ public class EventButtonHandler extends ListenerAdapter {
                 startIndex = ts.getIndex();
                 break;
             case "nextpage":
-                startIndex = Integer.parseInt(event.getButton().getCustomId().split("-")[2]);
+                startIndex = Integer.parseInt(getButtonData(event.getButton()).value2().trim());
                 nextIndex = startIndex + 11;
                 previousIndex = startIndex - 11;
                 break;
@@ -692,7 +639,7 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void player(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-")[1];
+        String args = getButtonData(event.getButton()).value1().trim();
 
         Guild guild = event.getGuild();
 
@@ -747,9 +694,10 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     private void chat(ButtonInteractionEvent event) {
-        String[] args = event.getButton().getCustomId().split("-");
+        String args = getButtonData(event.getButton()).value1().trim();
+        String content = getButtonData(event.getButton()).value2().trim();
 
-        TextChannel channel = Bot.getJDA().getTextChannelById(args[2]);
+        TextChannel channel = Bot.getJDA().getTextChannelById(content);
 
         EmbedBuilder ebRequester = new EmbedBuilder();
         ebRequester.setAuthor(event.getGuild().getName(), event.getGuildChannel().getJumpUrl(), event.getGuild().getIconUrl());
@@ -758,7 +706,7 @@ public class EventButtonHandler extends ListenerAdapter {
         //EmbedBuilder ebReceiver = new EmbedBuilder();
         //ebRequester.setAuthor(channel.getGuild().getName(), channel.getJumpUrl(), channel.getGuild().getIconUrl());
 
-        switch (args[1]) {
+        switch (args) {
             case "refuse":
                 ebRequester.setDescription("Channel connection refused");
                 break;
@@ -775,7 +723,7 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void listButtonEvent(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().substring(event.getButton().getCustomId().indexOf("-") + 1);
+        String args = getButtonData(event.getButton()).value1().trim();
 
         int page = 1;
         int cont = 0;
@@ -786,11 +734,8 @@ public class EventButtonHandler extends ListenerAdapter {
 
         Button center = null;
 
-        boolean timeOrder = false;
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getCustomId().startsWith("list-order"))
-                timeOrder = b.getStyle() == ButtonStyle.SUCCESS;
-        }
+        ButtonData listOrderData = getButtonData(event, "list-order");
+        boolean timeOrder = listOrderData.active();
         order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
 
         QueryResult sounds = BotDB.getlistGuildSounds(event.getGuild().getId(), timeOrder ? "time" : "name");
@@ -890,7 +835,7 @@ public class EventButtonHandler extends ListenerAdapter {
     }
 
     public void listUserButtonEvent(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().substring(event.getButton().getCustomId().indexOf("-") + 1);
+        String args = getButtonData(event.getButton()).value1().trim();
 
         int page = 1;
         int cont = 0;
@@ -901,11 +846,8 @@ public class EventButtonHandler extends ListenerAdapter {
         Button order = Button.secondary("listuser-order", " ").withEmoji(CustomEmojiHandler.getRichEmoji("clock"));
         Button center = null;
 
-        boolean timeOrder = false;
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getCustomId().startsWith("listuser-order"))
-                timeOrder = b.getStyle() == ButtonStyle.SUCCESS;
-        }
+        ButtonData listUserOrderData = getButtonData(event, "listuser-order");
+        boolean timeOrder = listUserOrderData.active();
         order = timeOrder ? order.withStyle(ButtonStyle.SUCCESS) : order.withStyle(ButtonStyle.SECONDARY);
 
         for (Button b : EventUtils.getButtons(event)) {
@@ -1030,7 +972,7 @@ public class EventButtonHandler extends ListenerAdapter {
             return;
         }
 
-        String args = event.getButton().getCustomId().substring(event.getButton().getCustomId().indexOf("-") + 1);
+        String args = getButtonData(event.getButton()).value1().trim();
         Member theGuy = event.getGuild().getMemberById(args);
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -1059,7 +1001,7 @@ public class EventButtonHandler extends ListenerAdapter {
             return;
         }
 
-        String args = event.getButton().getCustomId().substring(event.getButton().getCustomId().indexOf("-") + 1);
+        String args = getButtonData(event.getButton()).value1().trim();
         Member theGuy = event.getGuild().getMemberById(args);
 
         EmbedBuilder eb = new EmbedBuilder();
@@ -1103,140 +1045,5 @@ public class EventButtonHandler extends ListenerAdapter {
                 ErrorResponse.MISSING_PERMISSIONS,
                 (e) -> event.deferReply(true).addContent("Error. " + e.getMessage()).queue())
         );
-    }
-
-
-    private void lol(ButtonInteractionEvent event) {
-        String args = event.getButton().getCustomId().split("-", 3)[1];
-
-        String puuid = "";
-        String region = "";
-        int index = 0;
-
-
-        boolean userIdFallback = false;
-
-        for (Button b : EventUtils.getButtons(event)) {
-            if (b.getCustomId().startsWith(LeagueMessage.BUTTON_ID_PREFIX + "-center-")) {
-                puuid = b.getCustomId().split("-", 3)[2].substring(0, b.getCustomId().split("-", 3)[2].indexOf("#"));
-                region = b.getCustomId().split("-", 3)[2].substring(b.getCustomId().split("-", 3)[2].indexOf("#") + 1);
-                if (b.getStyle() == ButtonStyle.SUCCESS) userIdFallback = true;
-            }
-        }
-
-        LeagueMessageParameter parameter = new LeagueMessageParameter(EventUtils.getButtons(event));
-
-        String user_id = MongoLeague.getUserIdByPuuid(puuid, LeagueShard.valueOf(region));
-        if (user_id == null || user_id.isEmpty()) user_id = event.getUser().getId();
-        HashMap<String, String> accounts = UserCache.getUser(user_id).getRiotAccounts();
-
-        int i = 0;
-        for (String k : accounts.keySet()) {
-            if (k.equals(puuid)) {
-                puuid = k;
-                index = i;
-                break;
-            }
-            i++;
-        }
-
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner s = null;
-        switch (args) {
-            case "center":
-            case "right":
-
-                if ((index + 1) == accounts.size()) index = 0;
-                else index += 1;
-                puuid = (String) accounts.keySet().toArray()[index];
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(accounts.get(puuid)));
-
-                break;
-
-            case "left":
-                if (index == 0) index = accounts.size() - 1;
-                else index -= 1;
-
-                puuid = (String) accounts.keySet().toArray()[index];
-                region = accounts.get(puuid);
-                break;
-            case "queue":
-                for (Button b : EventUtils.getButtons(event)) {
-                    if (b.getCustomId().startsWith(LeagueMessage.BUTTON_ID_PREFIX + "-center-")) {
-                        String[] parts = b.getCustomId().split("-", 3);
-
-                        puuid = parts[2].substring(0, parts[2].indexOf("#"));
-                        region = parts[2].substring(parts[2].indexOf("#") + 1);
-                        break;
-                    }
-                }
-                parameter.setQueueType(event.getButton().getStyle() != ButtonStyle.SUCCESS ? GameQueueType.valueOf(event.getButton().getCustomId().split("-")[2]) : null);
-                parameter.setOffset(0);
-            break;
-            case "lane":
-                parameter.setLaneType(event.getButton().getStyle() != ButtonStyle.SUCCESS ? LaneType.valueOf(event.getButton().getCustomId().split("-")[2]) : null);
-                parameter.setOffset(0);
-                break;
-            case "type":
-                parameter.setMessageType(LeagueMessageType.valueOf(event.getButton().getCustomId().split("-")[2].toUpperCase()));
-                switch (parameter.getMessageType()) {
-                    case OVERVIEW_CHAMPIONS:
-                        parameter.setShowChampion(false);
-                    default:
-                        break;
-                }
-                break;
-            case "season":
-                String timeString = event.getButton().getCustomId().split("-", 3)[2];
-                long[] time = new long[] {0, 0};
-                switch (timeString) {
-                    case "all":
-                        time = new long[] {0, 0};
-                        break;
-                    case "current":
-                        time = LeagueHandler.getCurrentSplitRange();
-                        break;
-                    case "previous":
-                        time = LeagueHandler.getPreviousSplitRange();
-                        break;
-                }
-                parameter.setPeriod(time);
-                parameter.setOffset(0);
-                break;
-            case "champion":
-                 parameter.setShowChampion(event.getButton().getStyle() != ButtonStyle.SUCCESS);
-                 parameter.setOffset(0);
-                break;
-            case "change":
-                TextInput subject = TextInput.create("champion-change", "Select a champion", TextInputStyle.SHORT)
-                    .setPlaceholder("Champion name")
-                    .setMaxLength(100)
-                    .build();
-
-                Modal modal = Modal.create("champion-change", "Select a champion")
-                        .addComponents(ActionRow.of(subject))
-                        .build();
-
-                event.replyModal(modal).queue();
-                return;
-            case "leftpage":
-                parameter.setOffset(parameter.getOffset() - (parameter.getMessageType().getPageItem()));
-                break;
-            case "rightpage":
-                parameter.setOffset(parameter.getOffset() + (parameter.getMessageType().getPageItem()));
-                break;
-            case "refresh":
-                s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-                LeagueHandler.clearSummonerCache(s);
-                try { Thread.sleep(500); } 
-                catch (InterruptedException e) { }
-                break;
-        }
-
-        event.deferEdit().queue();
-        if (EventUtils.getButtonById(event, LeagueMessage.BUTTON_ID_PREFIX + "-left") == null && !userIdFallback) user_id = "";
-        s = LeagueHandler.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
-
-        int summonerId = LeagueDB.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-        LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
     }
 }

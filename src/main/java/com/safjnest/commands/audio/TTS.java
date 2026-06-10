@@ -15,9 +15,9 @@ import com.safjnest.core.audio.tts.TTSHandler;
 import com.safjnest.core.audio.tts.TTSVoices;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.SafJNest;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.SafJNest;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import net.dv8tion.jda.api.EmbedBuilder;

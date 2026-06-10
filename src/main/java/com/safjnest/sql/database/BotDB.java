@@ -26,8 +26,8 @@ import com.safjnest.model.sound.Sound;
 import com.safjnest.model.sound.Tag;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
+import com.safjnest.utils.SettingsLoader;
 import com.safjnest.sql.QueryRecord;
-import com.safjnest.util.SettingsLoader;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -447,7 +447,7 @@ public class BotDB extends AbstractDB {
     }
 
     public static boolean toggleBlacklist(String guild_id, boolean toggle) {
-        return instance.defaultQuery("UPDATE guild SET blacklist_enabled = '" + toggle + "' WHERE guild_id = '" + guild_id + "';");
+        return instance.defaultQuery("UPDATE guild SET blacklist_enabled = " + (toggle ? 1 : 0) + " WHERE guild_id = '" + guild_id + "';");
     }
 
 

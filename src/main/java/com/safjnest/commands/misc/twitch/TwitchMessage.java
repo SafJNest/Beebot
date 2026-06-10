@@ -8,9 +8,9 @@ import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.TwitchData;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;

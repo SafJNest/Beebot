@@ -4,9 +4,6 @@ import java.util.Arrays;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -16,6 +13,9 @@ import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.TwitchData;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.twitch.TwitchClient;
 
 public class TwitchLink extends SlashCommand{
 

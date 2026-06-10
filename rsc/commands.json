@@ -468,216 +468,39 @@
 
     "welcome": {
         "alias" : ["setwelcome", "welcome"],
-        "help"  : "json",
+        "help"  : "Create a welcome message for this guild.",
         "longhelp"  : "Allow to set a 'welcome message' that would be sent every time a user join the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the role write #role",
-        "category" : "Settings",
-        "children": {
-            "channel": {
-                "alias" : [],
-                "help"  : "Change the welcome channel."
-            }, 
-            "create": {
-                "alias" : [],
-                "help"  : "Create a welcome message for this guild.",
-                "longhelp"  : "Allow to set a 'welcome message' that would be sent every time a user join the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the role write #role"
-            },
-            "delete": {
-                "alias" : [],
-                "help"  : "Delete the welcome message for this guild."
-            },
-            "preview": {
-                "alias" : [],
-                "help"  : "Preview the welcome message.",
-                "arguments" : "[CommandName]"
-            },
-            "addrole": {
-                "alias" : [],
-                "help"  : "Change the role users will get when they enter this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "removerole": {
-                "alias" : [],
-                "help"  : "Change the role users will get when they enter this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "message": {
-                "alias" : [],
-                "help"  : "Change the welcome message's text.",
-                "longhelp"  : "Change the welcome message's text.\nTo mention the user write #user, the role write #role",
-                "arguments" : "[CommandName]"
-            },
-            "toggle": {
-                "alias" : [],
-                "help"  : "Toggle the welcome message on or off.",
-                "arguments" : "[CommandName]"
-            }
-        }
+        "category" : "Settings"
     },
 
     "reward": {
         "alias" : [],
-        "help" : "json",
+        "help" : "Create a reward for this guild.",
         "longhelp"  : "Allow to set a reward for the leveling up system. A message will be sent every time a user reach a certain level and one or more roles will be given.\nThe message will be sent in the current channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the level write #level, the role write #role.",
         "category" : "Settings",
-        "arguments" : "",
-        "children": {
-            "create": {
-                "alias" : [],
-                "help"  : "Create a reward for this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "delete": {
-                "alias" : [],
-                "help"  : "Delete the reward for this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "preview": {
-                "alias" : [],
-                "help"  : "Show all the rewards",
-                "arguments" : "[CommandName]"
-            },
-            "addrole": {
-                "alias" : [],
-                "help"  : "Add a role to a specific reward.",
-                "arguments" : "[CommandName]"
-            },
-            "removerole": {
-                "alias" : [],
-                "help"  : "Remove a role from a specific reward.",
-                "arguments" : "[CommandName]"
-            },
-            "message": {
-                "alias" : [],
-                "help"  : "Change the reward message's text.",
-                "longhelp"  : "Change the reward message's text.\nTo mention the user write #user, the level write ```#level```.",
-                "arguments" : "[CommandName]"
-            },
-            "toggle": {
-                "alias" : [],
-                "help"  : "Toggle the reward on or off.",
-                "arguments" : "[CommandName]"
-            }
-        }
+        "arguments" : ""
     },
 
     "leave": {
         "alias" : ["setleave", "leave"],
-        "help" : "json",
+        "help" : "Create a leave message for this guild.",
         "longhelp"  : "Allow to set a 'leave message' that would be sent every time a user leaves the server. Its necessary to set a channel, if not the system one would be used.\nThe bot allows you to choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user",
-        "category" : "Settings",
-        "arguments" : "[CommandName] (#channel) | [message]",
-        "children": {
-            "channel": {
-                "alias" : [],
-                "help"  : "Change the leave channel.",
-                "arguments" : "[CommandName]"
-            }, 
-            "create": {
-                "alias" : [],
-                "help"  : "Create a leave message for this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "delete": {
-                "alias" : [],
-                "help"  : "Delete the leave message for this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "preview": {
-                "alias" : [],
-                "help"  : "Preview the leave message.",
-                "arguments" : "[CommandName]"
-            },
-            "message": {
-                "alias" : [],
-                "help"  : "Change the leave message's text.",
-                "arguments" : "[CommandName]"
-            },
-            "toggle": {
-                "alias" : [],
-                "help"  : "Toggle the leave message on or off.",
-                "arguments" : "[CommandName]"
-            }
-        }
+        "category" : "Settings"
     },
 
     "levelup": {
         "alias" : ["setlevelup", "setlvl"],
-        "help" : "json",
+        "help" : "Change the level up message's text.",
         "longhelp"  : "These are the commands to manage the levelup system in your guild.\nYou can set a 'level up message' to be sent every time a user levels up.The message will be sent in the current channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user, the level write #level`.\n\n[The levelup system is enabled by default]",
-        "category" : "Settings",
-        "arguments" : "[CommandName] (#channel) | [messagge]",
-        "children": {
-            "channeltoggle": {
-                "alias" : [],
-                "help"  : "Toggle the exp system on and off for the specified channel.",
-                "arguments" : "[CommandName]"
-            }, 
-            "modifier": {
-                "alias" : [],
-                "help"  : "Change the exp modifier for the specified channel.",
-                "arguments" : "[CommandName]"
-            },
-            "preview": {
-                "alias" : [],
-                "help"  : "Preview the level up message.",
-                "arguments" : "[CommandName]"
-            },
-            "message": {
-                "alias" : [],
-                "help"  : "Change the level up message's text.",
-                "arguments" : "[CommandName]"
-            },
-            "toggle": {
-                "alias" : [],
-                "help"  : "Toggle the exp system on and off for the whole guild.",
-                "arguments" : "[CommandName]"
-            },
-            "updatetime": {
-                "alias" : [],
-                "help"  : "Change after how many second you will gain experience (default 60).",
-                "arguments" : "[CommandName]"
-            }
-        }
+        "category" : "Settings"
     },
 
     "boost": {
         "alias" : ["nitro", "setboost", "boosts"],
-        "help" : "json",
+        "help" : "Create a boost message for this guild.",
         "longhelp"  : "Allow to set a 'boost server message' to be sent every time a user boost the server.\nIts necessary to set also a channel otherwise will be used the default system channel.\nYou can also choose if the message will be sent in the channel, in the user's DM or both.\n\nTo mention the user write #user",
         "category" : "Settings",
-        "arguments" : "[CommandName] (#channel) | [messagge]",
-        "children": {
-            "channel": {
-                "alias" : [],
-                "help"  : "Change the boost channel.",
-                "arguments" : "[CommandName]"
-            }, 
-            "create": {
-                "alias" : [],
-                "help"  : "Create a boost message for this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "delete": {
-                "alias" : [],
-                "help"  : "Delete the boost message for this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "preview": {
-                "alias" : [],
-                "help"  : "Preview the boost message.",
-                "arguments" : "[CommandName]"
-            },
-            "message": {
-                "alias" : [],
-                "help"  : "Change the boost message's text.",
-                "arguments" : "[CommandName]"
-            },
-            "toggle": {
-                "alias" : [],
-                "help"  : "Toggle the boost message on or off.",
-                "arguments" : "[CommandName]"
-            }
-        }
+        "arguments" : "[CommandName] (#channel) | [messagge]"
     },
 
 
@@ -710,7 +533,7 @@
         "arguments" : "[kick] [@user]"
     },
 
-    "modifynickname":{
+    "nickname":{
         "alias" : ["modnick", "nick"],
         "help"  : "Change the nickname for a member.",
         "category" : "Member Management",
@@ -766,32 +589,9 @@
 
     "blacklist":{
         "alias" : ["blackbeard", "list of death"],
-        "help" : "json",
+        "help" : "Manage the blacklist for this guild.",
         "longhelp"  : "The 'Blacklist' feature in Discord enhances server security.\nIt keeps track of banned users across servers. Admins set a minimum ban count, and if it's exceeded, notifications alert the servers with the command enabled.\nThis helps ensure a safer and more secure server environment by identifying problematic users.",
-        "category" : "Member Management",
-        "arguments" : "",
-        "children": {
-            "channel": {
-                "alias" : [],
-                "help"  : "Change the boost channel.",
-                "arguments" : "[CommandName]"
-            }, 
-            "create": {
-                "alias" : [],
-                "help"  : "Create and set the blacklist for this guild.",
-                "arguments" : "[CommandName]"
-            },
-            "threshold": {
-                "alias" : [],
-                "help"  : "Change the threshold.",
-                "arguments" : "[CommandName]"
-            },
-            "toggle": {
-                "alias" : [],
-                "help"  : "Toggle the blacklist on or off.",
-                "arguments" : "[CommandName]"
-            }
-        }
+        "category" : "Member Management"
     },
 
 
@@ -1063,8 +863,8 @@
         "arguments" : "[CommandName]"
     },
 
-    "build":{
-        "help"  : "Search for a build made by other user!",
+    "champions":{
+        "help"  : "Show a leaderboard of champions.",
         "category" : "League Of Legends",
         "arguments" : "[CommandName]"
     },

@@ -2,9 +2,6 @@ package com.safjnest.commands.misc.twitch;
 
 import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.twitch.*;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.MessageTopLevelComponent;
@@ -15,6 +12,9 @@ import com.safjnest.core.Bot;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.alert.TwitchData;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.twitch.*;
 
 import java.util.List;
 import java.util.ArrayList;

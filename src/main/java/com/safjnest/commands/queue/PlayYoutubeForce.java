@@ -2,14 +2,12 @@ package com.safjnest.commands.queue;
 
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.ResultHandler;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
 import com.jagrosh.jdautilities.command.Command;
 import com.jagrosh.jdautilities.command.CommandEvent;
 
-import com.safjnest.core.audio.types.PlayTiming; 
-
-
+import com.safjnest.core.audio.types.PlayTiming;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.middleman.AudioChannel;

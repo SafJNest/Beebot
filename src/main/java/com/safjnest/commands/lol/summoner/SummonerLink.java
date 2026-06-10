@@ -6,10 +6,11 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.model.UserData;
-import com.safjnest.mongodb.MongoLeague;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.interactions.InteractionContextType;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -37,7 +38,7 @@ public class SummonerLink extends SlashCommand {
 
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "summoner", "Name and tag of the summoner you want to link", true).setAutoComplete(true),
-            LeagueHandler.getLeagueShardOptions()
+            LeagueShardUtils.getAsOptions()
         );
         commandData.setThings(this);
     }
@@ -62,7 +63,7 @@ public class SummonerLink extends SlashCommand {
             return;
         }
 
-        if (MongoLeague.getUserIdByPuuid(s.getPUUID(), s.getPlatform()) != null) {
+        if (LeagueService.getUserIdByLOLAccountId(s.getPUUID(), s.getPlatform()) != null) {
             event.getHook().editOriginal("This account is already connected to another profile.\nIf you think someone has linked your account please write to our discord server support or use /bug").queue();
             return;
         }

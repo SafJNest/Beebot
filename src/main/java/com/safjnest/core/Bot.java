@@ -9,9 +9,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.awt.Color;
 import java.text.MessageFormat;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.audio.AudioModuleConfig;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.GenericEvent;
@@ -29,7 +32,6 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 
 import com.safjnest.App;
 import com.safjnest.commands.audio.Connect;
-import com.safjnest.commands.audio.DeleteSound;
 import com.safjnest.commands.audio.Disconnect;
 import com.safjnest.commands.audio.Stop;
 import com.safjnest.commands.audio.TTS;
@@ -48,7 +50,6 @@ import com.safjnest.commands.lol.*;
 import com.safjnest.commands.lol.summoner.Summoner;
 import com.safjnest.commands.math.*;
 import com.safjnest.commands.members.*;
-import com.safjnest.commands.members.blacklist.Blacklist;
 import com.safjnest.commands.members.move.*;
 import com.safjnest.commands.misc.*;
 import com.safjnest.commands.misc.omegle.Omegle;
@@ -58,19 +59,17 @@ import com.safjnest.commands.owner.*;
 import com.safjnest.commands.owner.Shutdown;
 import com.safjnest.commands.queue.*;
 import com.safjnest.commands.settings.*;
-import com.safjnest.commands.settings.boost.Boost;
-import com.safjnest.commands.settings.leave.Leave;
-import com.safjnest.commands.settings.levelup.LevelUp;
-import com.safjnest.commands.settings.reward.Reward;
-import com.safjnest.commands.settings.welcome.Welcome;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.events.*;
+import com.safjnest.lol.message.LeagueEventHandler;
 import com.safjnest.model.BotSettings.BotSettings;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
-import com.safjnest.util.AutomatedActionTimer;
-import com.safjnest.util.SettingsLoader;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.AutomatedActionTimer;
+import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.log.BotLogger;
+
+import club.minnced.discord.jdave.interop.JDaveSessionFactory;
 
 /**
  * Main class of the bot.
@@ -85,6 +84,9 @@ import com.safjnest.util.log.BotLogger;
  * @version 4.0
  */
 public class Bot {
+
+    private static final ExecutorService JDA_EVENT_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
+    private static final ExecutorService JDA_CALLBACK_EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
     private static JDA jda;
     private static String botID;
@@ -115,6 +117,10 @@ public class Bot {
             .setMemberCachePolicy(MemberCachePolicy.ALL)
             .setChunkingFilter(ChunkingFilter.ALL)
             .enableCache(CacheFlag.VOICE_STATE, CacheFlag.EMOJI, CacheFlag.STICKER, CacheFlag.ACTIVITY)
+            .setEventPool(JDA_EVENT_EXECUTOR)
+            .setCallbackPool(JDA_CALLBACK_EXECUTOR)
+            .setAudioModuleConfig(new AudioModuleConfig()
+                .withDaveSessionFactory(new JDaveSessionFactory()))
             .build();
 
         botID = jda.getSelfUser().getId();
@@ -159,12 +165,12 @@ public class Bot {
         ArrayList<Command> commandsList = new ArrayList<Command>();
         Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix(), new Shutdown(), new Restart(), new Query());
 
-        Collections.addAll(commandsList, new Summoner(), new Augment(), new FreeChamp(), new Livegame(), 
+        Collections.addAll(commandsList, new Summoner(), new Augment(), new Livegame(), 
             new Opgg(), new UltimateBravery());
 
         Collections.addAll(commandsList, new ChannelInfo(), new Clear(), new ServerInfo(), new MemberInfo(), new EmojiInfo(), 
             new InviteBot(), new Ban(), new Unban(), new Kick(), new Mute(), new UnMute(), new Image(), 
-            new Permissions(), new ModifyNickname(), new RandomMove(), new Calculator(), new Dice(), new VandalizeServer(), new Jelly(), new Alias());
+            new Permissions(), new Nickname(), new RandomMove(), new Calculator(), new Dice(), new VandalizeServer(), new Jelly(), new Alias());
 
         
         Collections.addAll(commandsList, new Connect(), new Disconnect(), new List(), new ListUser(), 
@@ -181,7 +187,7 @@ public class Bot {
         Collections.addAll(slashCommandsList, new Ping(), new Bug(), new Help(), new Prefix());
 
 
-        Collections.addAll(slashCommandsList, new Summoner(), new Augment(), new FreeChamp(), 
+        Collections.addAll(slashCommandsList, new Summoner(), new Augment(), 
             new Livegame(),
             new Champion(), new Opgg(),
             new Region(), new UltimateBravery(), new Item()
@@ -191,16 +197,16 @@ public class Bot {
         Collections.addAll(slashCommandsList, new ChannelInfo(), new Clear(), new Msg(), 
             new ServerInfo(), new MemberInfo(), new EmojiInfo(), new InviteBot(), new Ban(), 
             new Unban(), new Kick(), new Move(),new Mute(), new UnMute(), new Image(), 
-            new Permissions(), new ModifyNickname(), new Welcome(), new Leave(), new Boost(), 
+            new Permissions(), new Nickname(), new Welcome(), new Leave(), new Boost(), 
             new Blacklist(), new Twitch(), new Omegle(),new Prime(settings.getMaxPrime()), new Calculator(), new Dice(), 
-            new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode()
+            new Weather(), new APOD(), new SpecialChar(), new Spotify(),new QRCode(), new Champions()
         );
 
         
-        Collections.addAll(slashCommandsList, new DeleteSound(), new Disconnect(), 
+        Collections.addAll(slashCommandsList, new Disconnect(), 
             new List(), new Play(), new Playlist(), new TTS(), new Stop(), new Sound(),
             new Voice(), new Soundboard(), new Greet(), new Pause(), new Resume(),
-            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn(), new Build()
+            new Player(), new Queue(), new Skip(), new Previous(), new JumpTo(), new Search(), new AutomatedAction(), new Warn()
         );
 
         Collections.addAll(slashCommandsList, new Reward(), new Leaderboard(), new LevelUp());
@@ -220,11 +226,19 @@ public class Bot {
         jda.addEventListener(new EventAutoCompleteInteractionHandler());
         jda.addEventListener(new EventModalInteractionHandler());
         jda.addEventListener(new EventComponentsHandler());
+        jda.addEventListener(new LeagueEventHandler());
     }
 
 
-    public void distruzione_demoniaca(){
+    public void distruzione_demoniaca() {
         jda.shutdown();
+        try {
+            jda.awaitShutdown();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        JDA_EVENT_EXECUTOR.close();
+        JDA_CALLBACK_EXECUTOR.close();
     }
 
     public static JDA getJDA() {

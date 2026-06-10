@@ -6,32 +6,34 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.safjnest.commands.members.Blacklist;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.TrackData;
 import com.safjnest.core.audio.types.AudioType;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
+import com.safjnest.model.guild.BlacklistData;
+import com.safjnest.model.guild.ChannelData;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.guild.alert.AlertData;
 import com.safjnest.model.guild.alert.AlertSendType;
 import com.safjnest.model.guild.alert.AlertType;
 import com.safjnest.model.sound.Sound;
-import com.safjnest.util.AlertMessage;
-
-
-import com.safjnest.util.spotify.SpotifyMessage;
-import com.safjnest.util.spotify.type.SpotifyMessageType;
-import com.safjnest.util.spotify.type.SpotifyTimeRange;
+import com.safjnest.utils.AlertMessage;
+import com.safjnest.utils.spotify.SpotifyMessage;
+import com.safjnest.utils.spotify.type.SpotifyMessageType;
+import com.safjnest.utils.spotify.type.SpotifyTimeRange;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.label.Label;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
 import net.dv8tion.jda.api.components.container.Container;
 import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
+import net.dv8tion.jda.api.components.selections.EntitySelectMenu;
 import net.dv8tion.jda.api.components.textdisplay.TextDisplay;
 import net.dv8tion.jda.api.components.textinput.TextInput;
 import net.dv8tion.jda.api.components.textinput.TextInputStyle;
@@ -52,16 +54,17 @@ import net.dv8tion.jda.api.modals.Modal;
     @Override
     public void onGenericComponentInteractionCreate(GenericComponentInteractionCreateEvent event) {
       if (!event.getMessage().isUsingComponentsV2()) return;
-      if (event.getComponent().isModalCompatible()) return;
 
       String type = event.getComponentId().split("-")[0];
       String innerType = event.getComponentId().split("-", 3)[1];
       String args = event.getComponentId().split("-", 3).length > 2 ? event.getComponentId().split("-", 3)[2] : "";
 
-
       switch (type) {
         case "alert":
           alert(event, innerType, args);
+          return;
+        case "blacklist":
+          blacklist(event, innerType, args);
           return;
         default:
           break;
@@ -133,6 +136,15 @@ import net.dv8tion.jda.api.modals.Modal;
       AlertData alert = guild.getAlertByID(alertId);
       AlertType type = alert != null ? alert.getType() : null;
 
+      ChannelData channelData = null;
+      for (EntitySelectMenu menu : EventUtils.getChannelMenu(event.getMessage().getComponents())) {
+        if (menu.getCustomId().startsWith("alert-levelchannel-") && menu.getDefaultValues().size() > 0) {
+          channelData = guild.getChannelData(menu.getDefaultValues().get(0).getId());
+        }
+      }
+
+
+
       EntitySelectInteractionEvent entityEvent;
       Modal modal;
       switch (innerType) {
@@ -154,14 +166,34 @@ import net.dv8tion.jda.api.modals.Modal;
           entityEvent = (EntitySelectInteractionEvent) event;
           alert.setAlertChannel(entityEvent.getChannelId());
           break;
+        case "levelchannel":
+          event.deferEdit().queue();
+          entityEvent = (EntitySelectInteractionEvent) event;
+          channelData = guild.getChannelData(entityEvent.getValues().get(0).getId());
+          break;
+        case "togglechannel":
+          event.deferEdit().queue();
+          channelData.enableExperience(!channelData.isExpSystemEnabled());
+          break;
+        case "modifier":
+          TextInput modifierInput = TextInput.create("alert-modifier", TextInputStyle.SHORT)
+          .setPlaceholder("1.2")
+          .setRequired(true)
+          .build();
+          modal = Modal.create("alert-" + alertId, "Modify Alert message")
+                  .addComponents(Label.of("Change how much exp its gained in the channel", modifierInput))
+                  .build();
+
+          event.replyModal(modal).queue();
+          break;
         case "modal":
-              TextInput messageInput = TextInput.create("alert-message-" + args, "Alert Message, leave blank to remove", TextInputStyle.PARAGRAPH)
+              TextInput messageInput = TextInput.create("alert-message-" + args, TextInputStyle.PARAGRAPH)
                     .setPlaceholder("Hi #user, welcome in #server")
                     .setRequired(false)
                     .setMaxLength(1500)
                     .build();
                 modal = Modal.create("alert-" + alertId, "Modify Alert message")
-                        .addComponents(ActionRow.of(messageInput))
+                        .addComponents(Label.of("Alert Message, leave blank to remove", messageInput))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -186,7 +218,10 @@ import net.dv8tion.jda.api.modals.Modal;
           break;
         case "delete":
           event.deferEdit().queue();
-          guild.deleteAlert(alert.getType());
+          if (alert.getType() == AlertType.REWARD)
+            guild.deleteAlert(AlertType.REWARD, alert.asReward().getLevel());
+          else guild.deleteAlert(alert.getType());
+          
           Container delete = Container.of(TextDisplay.of("Alert deleted correctly")).withAccentColor(Color.GREEN);
           event.getMessage().editMessageComponents(delete)
             .useComponentsV2()
@@ -205,13 +240,13 @@ import net.dv8tion.jda.api.modals.Modal;
           alert = guild.getHigherReward(rewardLevel);
           break;
         case "createReward":
-              TextInput rewardInputLevel = TextInput.create("reward-level", "Select a new reward level", TextInputStyle.SHORT)
+              TextInput rewardInputLevel = TextInput.create("reward-level", TextInputStyle.SHORT)
                     .setPlaceholder("117")
                     .setMinLength(1)
                     .setRequired(true)
                     .build();
                 modal = Modal.create("reward-" + alertId, "Modify Alert message")
-                        .addComponents(ActionRow.of(rewardInputLevel))
+                        .addComponents(Label.of("Select a new reward level", rewardInputLevel))
                         .build();
 
                 event.replyModal(modal).queue();
@@ -224,7 +259,7 @@ import net.dv8tion.jda.api.modals.Modal;
           break;
       }
 
-      event.getMessage().editMessageComponents(AlertMessage.build(guild, alert))
+      event.getMessage().editMessageComponents(AlertMessage.build(guild, alert, channelData))
           .useComponentsV2()
           .queue();
     }
@@ -293,6 +328,39 @@ import net.dv8tion.jda.api.modals.Modal;
                 System.out.println("error: " + throwable.getMessage());
             }
         });
+
+    }
+
+    private void blacklist(GenericComponentInteractionCreateEvent event, String innerType, String args) {
+      GuildData guild = GuildCache.getGuild(event.getGuild());
+      BlacklistData bl = guild.getBlacklistData();
+
+      switch (innerType) {
+        case "toggle":
+          bl.setBlacklistEnabled(!bl.isBlacklistEnabled());
+          break;
+        case "channel":
+          EntitySelectInteractionEvent entityEvent = (EntitySelectInteractionEvent) event;
+          bl.setBlackChannelId(entityEvent.getValues().get(0).getId());
+          break;
+        case "threshold":
+          TextInput input = TextInput.create("blacklist-threshold", TextInputStyle.SHORT)
+            .setPlaceholder("3")
+            .setMinLength(1)
+            .setRequired(true)
+            .build();
+          Modal modal = Modal.create("blacklist", "Modify Blacklist")
+            .addComponents(Label.of("Select a threshold", input))
+            .build();
+
+          event.replyModal(modal).queue();
+        return;
+      }
+
+      event.deferEdit().queue();
+      event.getMessage().editMessageComponents(Blacklist.getMessage(guild))
+          .useComponentsV2()
+          .queue();
 
     }
 

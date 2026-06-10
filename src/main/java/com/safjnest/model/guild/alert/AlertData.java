@@ -232,7 +232,7 @@ public class AlertData {
     }
 
     public String[] getRolesAsArray() {
-        return roles.values().toArray(new String[0]);
+        return roles != null ? roles.values().toArray(new String[0]) : new String[0];
     }
 
     public boolean isEnabled() {

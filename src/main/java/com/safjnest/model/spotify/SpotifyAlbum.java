@@ -2,7 +2,7 @@ package com.safjnest.model.spotify;
 
 import java.util.List;
 
-import com.safjnest.util.spotify.SpotifyHandler;
+import com.safjnest.utils.spotify.SpotifyHandler;
 
 import lombok.Data;
 

@@ -11,9 +11,10 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.interactions.InteractionContextType;
@@ -76,7 +77,7 @@ public class UltimateBravery extends SlashCommand {
         String[] roles = {"0", "1", "2", "3", "4"};
 
         if (event.getOption("champion") != null) {
-            StaticChampion champ = LeagueHandler.getChampionByName(event.getOption("champion").getAsString());
+            StaticChampion champ = ChampionUtils.getChampion(event.getOption("champion").getAsString());
             champions = new String[]{String.valueOf(champ.getId())};
         }
 
@@ -200,11 +201,11 @@ public class UltimateBravery extends SlashCommand {
                     break;
             }
             
-            StaticChampion champ = LeagueHandler.getChampionByName(champion);
+            StaticChampion champ = ChampionUtils.getChampion(champion);
             EmbedBuilder eb = new EmbedBuilder();
             eb.setColor(Bot.getColor());
-            champion = LeagueHandler.transposeChampionNameForDataDragon(champion);
-            eb.setThumbnail(LeagueHandler.getChampionProfilePic(champion));
+            champion = ChampionUtils.sanitizeChampionName(champion);
+            eb.setThumbnail(ChampionUtils.getChampionProfilePic(champion));
 
             eb.setTitle(":skull: Ultimate Bravery Build :skull:", "https://www.ultimate-bravery.net/Classic?s=" + seedID);
             eb.addField("**Title**", title, true);

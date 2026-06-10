@@ -2,11 +2,11 @@ package com.safjnest.commands.guild;
 
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.ExperienceSystem;
-import com.safjnest.util.SafJNest;
-import com.safjnest.util.TableHandler;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.ExperienceSystem;
+import com.safjnest.utils.SafJNest;
+import com.safjnest.utils.TableHandler;
 
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;

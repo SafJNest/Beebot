@@ -24,5 +24,4 @@ public class JsonSettings {
     private String weatherApiKey;
     private String nasaApiKey;
     private String waitingTime;
-    private String mongodb;
 }

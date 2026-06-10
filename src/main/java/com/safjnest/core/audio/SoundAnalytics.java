@@ -8,8 +8,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.TimeConstant;
-import com.safjnest.util.log.BotLogger;
+import com.safjnest.utils.TimeConstant;
+import com.safjnest.utils.log.BotLogger;
 
 public class SoundAnalytics extends Thread {
     private static final long INTERVAL = TimeConstant.HOUR;

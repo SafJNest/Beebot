@@ -8,7 +8,7 @@ import com.jagrosh.jdautilities.command.CommandEvent;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.util.ExperienceSystem;
+import com.safjnest.utils.ExperienceSystem;
 import com.safjnest.core.Bot;
 import com.safjnest.core.audio.PlayerManager;
 import com.safjnest.core.audio.TrackData;

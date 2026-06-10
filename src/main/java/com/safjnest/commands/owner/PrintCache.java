@@ -13,14 +13,15 @@ import com.safjnest.core.cache.managers.GenericCache;
 import com.safjnest.core.cache.managers.GuildCache;
 import com.safjnest.core.cache.managers.SoundCache;
 import com.safjnest.core.cache.managers.UserCache;
-import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.utils.PatchUtils;
 import com.safjnest.model.UserData;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.model.sound.Sound;
-import com.safjnest.util.BotCommand;
-import com.safjnest.util.CommandsLoader;
-import com.safjnest.util.twitch.TwitchClient;
+import com.safjnest.utils.BotCommand;
+import com.safjnest.utils.CommandsLoader;
+import com.safjnest.utils.twitch.TwitchClient;
 
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -116,7 +117,7 @@ public class PrintCache extends Command {
         String header = "**Tier god information about the insane beebots cache**```" + "Total Streamer: " + streamers.getSize() + " / " + streamers.getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + LeagueHandler.getVersion() + "```";
+            + "League Version: " + PatchUtils.getPatch() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -169,7 +170,7 @@ public class PrintCache extends Command {
             + "Total BlackList: " + totalBlackList + "\n\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + LeagueHandler.getVersion() + "```";
+            + "League Version: " + PatchUtils.getPatch() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -193,8 +194,8 @@ public class PrintCache extends Command {
             }
             else {
                 for(String account : lolAccounts.keySet()) {
-                    Summoner s = LeagueHandler.getSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
-                    RiotAccount riotAccount = LeagueHandler.getRiotAccountFromSummoner(s);
+                    Summoner s = LeagueService.getSummonerByPuuid(account, LeagueShard.valueOf(lolAccounts.get(account)));
+                    RiotAccount riotAccount = LeagueService.getRiotAccountFromSummoner(s);
                     lolAccountsString += riotAccount.getName() + "#" + riotAccount.getTag() + " - ";
                 }
                 lolAccountsString = lolAccountsString.substring(0, lolAccountsString.length() - 3) + "\n";
@@ -216,7 +217,7 @@ public class PrintCache extends Command {
             + "Total Users: " + UserCache.getInstance().getSize() + " / " + UserCache.getInstance().getMaxSize() + "\n"
             + "Other bot information\n"
             + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-            + "League Version: " + LeagueHandler.getVersion() + "```";
+            + "League Version: " + PatchUtils.getPatch() + "```";
         cache.add(0, header);
 
         MessageChannel channel = event.getChannel();
@@ -254,7 +255,7 @@ public class PrintCache extends Command {
         + "Total Sounds: " + ss.getSize() + " / " + ss.getMaxSize() + "\n"
         + "Other bot information\n"
         + "Total Emojis: " + CustomEmojiHandler.getEmojis().size() + "\n"
-        + "League Version: " + LeagueHandler.getVersion() + "```";
+        + "League Version: " + PatchUtils.getPatch() + "```";
 
         cache.add(0, header);
 
