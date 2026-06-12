@@ -88,4 +88,9 @@ public class TrackerScheduler {
     public static void refreshChampionData() {
         championDataRefreshService.refresh();
     }
+
+    public static void retriveAllEntries() {
+        TrackerState.awaitCondition(Priority.LOW);
+        Tracker.retriveAllEntries();
+    }
 }

@@ -708,8 +708,9 @@ public class Tracker {
                         try {
                             List<LeagueEntry> entries = new ArrayList<>();
                             do {
+                                TrackerState.awaitCondition(TrackerState.Priority.LOW);
                                 entries = LeagueHandler.getRiotApi().getLoLAPI().getLeagueAPI().getLeagueByTierDivision(shard, GameQueueType.RANKED_SOLO_5X5, tier, page);
-                                System.out.println("[LPTracker] Start analyzing page " + page + " of " + tier.name() + " for region " + shard + " | Entries: " + entries.size());
+                                BotLogger.info("[LPTracker] Start analyzing page " + page + " of " + tier.name() + " for region " + shard + " | Entries: " + entries.size());
                                 LeagueDB.updateSummonerEntries(entries, shard);
                                 page++;
                                 Thread.sleep(500);

@@ -1314,7 +1314,7 @@ public class Test extends Command{
                 fixRank.queue();
                 break;
             case "getallrank":
-                ChronoTask retriveAllEntries = () -> Tracker.retriveAllEntries();
+                ChronoTask retriveAllEntries = () -> TrackerScheduler.retriveAllEntries();
                 retriveAllEntries.queue();
             break;
             case "finalstats":
