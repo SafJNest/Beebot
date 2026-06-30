@@ -1176,7 +1176,9 @@ public class Test extends Command{
                 case "retriveallgames":
                     ChronoTask retriveAllGames = () -> {
                         System.out.println(args[1]);
-                        Tracker.retriveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()));
+                        try {
+                            Tracker.retriveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())));
+                        } catch (Exception eee) { eee.printStackTrace(); }
                     };
                     retriveAllGames.queue();
                 break;
@@ -1184,7 +1186,7 @@ public class Test extends Command{
                     ChronoTask retriveAllGamesFast = () -> {
                         System.out.println(args[1]);
                         for (GameQueueType queueType : GameQueueType.values()) {
-                            Tracker.retriveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getChannelData(e.getChannel().getId()).getLeagueShard()), queueType);
+                            Tracker.retriveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
                         }
                     };
                     retriveAllGamesFast.queue();
