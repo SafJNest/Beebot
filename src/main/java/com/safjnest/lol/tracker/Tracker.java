@@ -34,8 +34,10 @@ import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
+import no.stelar7.api.r4j.impl.lol.builders.matchv5.match.MatchListBuilder;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
@@ -616,14 +618,16 @@ public class Tracker {
                         Summoner summoner = LeagueService.getSummonerByPuuid(entry.getPuuid(), shard);
                         List<String> matchIds = new ArrayList<>();
                         for (int start = 0; matchIds.size() == start; start += 100) {
-                            matchIds.addAll(
-                                summoner.getLeagueGames()
-                                    .withQueue(queue)
-                                    .withCount(100)
-                                    .withStartTime(threshold)
-                                    .withBeginIndex(start)
-                                    .get()
-                            );
+                            MatchListBuilder builder = summoner.getLeagueGames()
+                                .withCount(100)
+                                .withStartTime(threshold)
+                                .withBeginIndex(start);
+                            if (queue == GameQueueType.CHERRY) {
+                                builder.withType(MatchlistMatchType.NORMAL);
+                            } else {
+                                builder.withQueue(queue);
+                            }
+                            matchIds.addAll(builder.get());
                             try { Thread.sleep(500); } catch (InterruptedException e) {}
                         }
                         for (String matchId : matchIds) {
