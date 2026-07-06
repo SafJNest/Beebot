@@ -260,7 +260,7 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> champion(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
         List<String> champions = ChampionUtils.getChampionsNames();
-
+        
         if (isFocused) {
             int max = 0;
             for (int i = 0; i < champions.size() && max < MAX_CHOICES; i++) {

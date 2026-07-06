@@ -84,7 +84,6 @@ public class LeagueMessage {
     private static Object[] build(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         MessageEmbed embed = null;
         List<MessageTopLevelComponent> components = new ArrayList<>();
-        System.out.println(parameter.getMessageType());
         switch (parameter.getMessageType()) {
             case PROFILE:
                 embed = getSummonerEmbed(summoner, summonerId, parameter).build();   
@@ -1509,7 +1508,7 @@ public class LeagueMessage {
         }
         
         EmbedBuilder eb = new EmbedBuilder();
-        if (parameter.isShowChampion()) eb.setThumbnail(ChampionUtils.getChampionProfilePic(parameter.getChampion().getName()));
+        if (parameter.isShowChampion()) eb.setThumbnail(ChampionUtils.getChampionProfilePic(parameter.getChampion().getId()));
         else eb.setThumbnail(LeagueHandler.getSummonerProfilePic(summoner));
 
         eb.setAuthor(account.getName() + "#" + account.getTag(), null, LeagueHandler.getSummonerProfilePic(summoner));

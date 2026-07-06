@@ -32,7 +32,6 @@ public class ChampionUtils {
   }
 
   public static StaticChampion getChampion(String name) {
-    name = sanitizeChampionName(name);
     return champions.get(championsNames.get(name));
   }
 
@@ -69,8 +68,12 @@ public class ChampionUtils {
       return CustomEmojiHandler.getFormattedEmoji(champions.get(champion).getName());
   }
 
+  public static String getChampionProfilePic(int championId) {
+    return getChampionProfilePic(String.valueOf(championId));
+  }
+
   public static String getChampionProfilePic(String champ){
-    return "https://ddragon.leagueoflegends.com/cdn/" + PatchUtils.getPatch() + "/img/champion/"+ sanitizeChampionName(champ) +".png";
+    return "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/"+ champ +".png";
   }
 
   public static String getChampionProfilePic(int champ, String skin){

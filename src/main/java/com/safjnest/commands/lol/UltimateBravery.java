@@ -205,7 +205,7 @@ public class UltimateBravery extends SlashCommand {
             EmbedBuilder eb = new EmbedBuilder();
             eb.setColor(Bot.getColor());
             champion = ChampionUtils.sanitizeChampionName(champion);
-            eb.setThumbnail(ChampionUtils.getChampionProfilePic(champion));
+            eb.setThumbnail(ChampionUtils.getChampionProfilePic(champ.getId()));
 
             eb.setTitle(":skull: Ultimate Bravery Build :skull:", "https://www.ultimate-bravery.net/Classic?s=" + seedID);
             eb.addField("**Title**", title, true);

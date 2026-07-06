@@ -37,8 +37,8 @@ public class LeagueService {
     private static final int TTL_LEAGUE_ENTRIES = 60 * 60 * 24; // 24 hours
     private static final int TTL_CHAMPION_MASTERIES = 60 * 60 * 24; // 24 hours
     private static final int TTL_SPECTATOR = 600;
-    private static final int TTL_ADVANCED_LOL_DATA = 0;
-    private static final int TTL_MATCH_LIST = 60 * 60 * 12; // 24 hours
+    private static final int TTL_ADVANCED_LOL_DATA = 60 * 60 * 24; // 24 hours
+    private static final int TTL_MATCH_LIST = 60 * 60 * 4; // 12 hours
     private static final int TTL_MATCH = 0; // never expire
     private static final int TTL_SUMMONER_AUTOCOMPLETE = 60 * 60 * 24; // 24 hours
 
@@ -123,6 +123,7 @@ public class LeagueService {
         RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.MATCH_LIST.of(shard.name(), puuid, "null", 0));
     }
 
     public static List<LeagueEntry> getLeagueEntries(String puuid, LeagueShard shard) {

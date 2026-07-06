@@ -58,18 +58,18 @@ public class Champion extends SlashCommand {
         
         this.options = Arrays.asList(
             new OptionData(OptionType.STRING, "champion", "Champion Name", true).setAutoComplete(true),
+            new OptionData(OptionType.STRING, "role", "Champion Role", true)
+                .addChoice("Top", LaneType.TOP.name())
+                .addChoice("Jungle", LaneType.JUNGLE.name())
+                .addChoice("Mid", LaneType.MID.name())
+                .addChoice("ADC", LaneType.BOT.name())
+                .addChoice("Support", LaneType.UTILITY.name()),
             new OptionData(OptionType.STRING, "queue", "Queue", false)
                 .addChoice("Ranked Solo/Duo", GameQueueType.TEAM_BUILDER_RANKED_SOLO.name())
                 .addChoice("Ranked Flex", GameQueueType.RANKED_FLEX_SR.name())
                 .addChoice("Draft Pick", GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5.name())
                 .addChoice("ARAM", GameQueueType.ARAM.name())
                 .addChoice("Arena", GameQueueType.CHERRY.name()),
-            new OptionData(OptionType.STRING, "role", "Champion Role", false)
-                .addChoice("Top", LaneType.TOP.name())
-                .addChoice("Jungle", LaneType.JUNGLE.name())
-                .addChoice("Mid", LaneType.MID.name())
-                .addChoice("ADC", LaneType.BOT.name())
-                .addChoice("Support", LaneType.UTILITY.name()),
             new OptionData(OptionType.STRING, "opponent", "Opponent Champion", false).setAutoComplete(true),
             new OptionData(OptionType.STRING, "duo", "Duo Champion", false).setAutoComplete(true),
             PatchUtils.getAsOptions(),
@@ -95,7 +95,7 @@ public class Champion extends SlashCommand {
         Build build = new BuildService().getMostUsed(filter);
 
         EmbedBuilder eb = new EmbedBuilder();
-        eb.setAuthor(getTitle(champion, filter), "https://github.com/SafJNest", ChampionUtils.getChampionProfilePic(champion.getName()));
+        eb.setAuthor(getTitle(champion, filter), "https://github.com/SafJNest", ChampionUtils.getChampionProfilePic(champion.getId()));
         eb.setDescription(buildDescription(stats, filter));
         addMatchups(eb, stats, filter);
         addBuild(eb, build, filter);
@@ -443,7 +443,7 @@ public class Champion extends SlashCommand {
 
     private void finishEmbed(EmbedBuilder eb, StaticChampion champion) {
         eb.setColor(Bot.getColor());
-        eb.setThumbnail(ChampionUtils.getChampionProfilePic(ChampionUtils.sanitizeChampionName(champion.getName())));
+        eb.setThumbnail(ChampionUtils.getChampionProfilePic(champion.getId()));
         eb.setFooter("We are doing our best to analyze more game as possible everyday to suggest you the best builds!", "https://cdn.discordapp.com/emojis/776346468700389436.png");
     }
 }

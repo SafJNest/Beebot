@@ -713,6 +713,7 @@ import com.safjnest.lol.utils.PatchUtils;
         clearCache(URLEndpoint.V1_SHARED_ACCOUNT_BY_PUUID, summoner, null);
         clearCache(URLEndpoint.V5_SPECTATOR_CURRENT, summoner, null);
         clearCache(URLEndpoint.V4_MASTERY_BY_PUUID, summoner, null);
+        LeagueService.invalidateSummoner(summoner.getPUUID(), summoner.getPlatform());
     }
 
     public static boolean isMatchLocallyCached(String gameId, LeagueShard shard) {
