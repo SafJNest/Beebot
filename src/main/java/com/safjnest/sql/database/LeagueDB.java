@@ -3,6 +3,7 @@ package com.safjnest.sql.database;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -374,6 +375,142 @@ public class LeagueDB extends AbstractDB {
 
     public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
         return instance.query("SELECT riot_id, puuid FROM summoner WHERE riot_search LIKE CONCAT(LOWER(REPLACE('" + query + "', ' ', '')), '%') AND region = '" + shard + "' LIMIT 25;");
+    }
+
+    public static QueryResult searchSummoners(String query, LeagueShard shard) {
+        String sql =
+            "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon " +
+            "FROM summoner s " +
+            "WHERE s.region = ? AND LOWER(REPLACE(COALESCE(s.riot_id, ''), ' ', '')) LIKE ? " +
+            "ORDER BY s.riot_id " +
+            "LIMIT 25";
+
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, shard.name());
+                pstmt.setString(2, "%" + normalizeSearch(query) + "%");
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static QueryRecord getProfileBase(String puuid, LeagueShard shard) {
+        String sql =
+            "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon " +
+            "FROM summoner s WHERE s.puuid = ? AND s.region = ? " +
+            "LIMIT 1";
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return new QueryRecord();
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, puuid);
+                pstmt.setString(2, shard.name());
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) return toRecord(rs);
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return new QueryRecord();
+    }
+
+    public static QueryRecord getProfileRank(int summonerId) {
+        String sql =
+            "SELECT COALESCE(r.rank, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
+            "COALESCE(r.wins, 0) AS wins, COALESCE(r.losses, 0) AS losses " +
+            "FROM `rank` r " +
+            "WHERE r.summoner_id = ? AND r.queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') " +
+            "ORDER BY FIELD(r.queue, 'TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') " +
+            "LIMIT 1";
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return new QueryRecord();
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, summonerId);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) return toRecord(rs);
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return new QueryRecord();
+    }
+
+    public static QueryResult getProfileTopChampions(int summonerId, int limit) {
+        String sql =
+            "SELECT p.champion, COUNT(*) AS games, SUM(p.win) AS wins, " +
+            "COUNT(*) - SUM(p.win) AS losses, " +
+            "AVG(CAST(SUBSTRING_INDEX(p.kda, '/', 1) AS DECIMAL(10, 2))) AS avg_kills, " +
+            "AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(p.kda, '/', 2), '/', -1) AS DECIMAL(10, 2))) AS avg_deaths, " +
+            "AVG(CAST(SUBSTRING_INDEX(p.kda, '/', -1) AS DECIMAL(10, 2))) AS avg_assists, " +
+            "AVG(p.cs) AS avg_cs, AVG(p.damage) AS avg_damage, " +
+            "COALESCE(ms.champion_level, 0) AS mastery_level, COALESCE(ms.champion_points, 0) AS mastery_points " +
+            "FROM participant p " +
+            "JOIN `match` m ON p.match_id = m.id " +
+            "LEFT JOIN masteries ms ON ms.summoner_id = p.summoner_id AND ms.champion_id = p.champion " +
+            "WHERE p.summoner_id = ? " +
+            "GROUP BY p.champion, ms.champion_level, ms.champion_points " +
+            "ORDER BY games DESC, wins DESC " +
+            "LIMIT ?";
+
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, summonerId);
+                pstmt.setInt(2, limit);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static QueryResult getProfileRecentMatches(int summonerId, int limit) {
+        String sql =
+            "SELECT m.game_id, m.queue, m.time_start, m.time_end, m.patch, " +
+            "p.win, p.kda, p.champion, p.lane, p.damage, p.cs, p.gold_earned, p.vision_score, " +
+            "p.build " +
+            "FROM participant p " +
+            "JOIN `match` m ON p.match_id = m.id " +
+            "WHERE p.summoner_id = ? " +
+            "ORDER BY m.time_start DESC " +
+            "LIMIT ?";
+
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, summonerId);
+                pstmt.setInt(2, limit);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
 
@@ -997,5 +1134,18 @@ public class LeagueDB extends AbstractDB {
 
 
 
+
+    private static String normalizeSearch(String query) {
+        return query == null ? "" : query.toLowerCase().replace(" ", "");
+    }
+
+    private static QueryRecord toRecord(ResultSet rs) throws SQLException {
+        QueryRecord record = new QueryRecord();
+        ResultSetMetaData metadata = rs.getMetaData();
+        for (int i = 1; i <= metadata.getColumnCount(); i++) {
+            record.put(metadata.getColumnLabel(i).toLowerCase(), rs.getString(i));
+        }
+        return record;
+    }
 
 }

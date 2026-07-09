@@ -20,7 +20,12 @@ public enum RedisKey {
     MOST_USED_BUILD("stats:build:most-used:%s"),
     HIGH_WINRATE_BUILD("stats:build:high-winrate:%s"),
     CHAMPION_STATS("stats:champion:%s:%s"),
-    SUMMONER_AUTOCOMPLETE("summoner:autocomplete:%s:%s");
+    SUMMONER_AUTOCOMPLETE("summoner:autocomplete:%s:%s"),
+    SUMMONER_SEARCH("summoner:search:%s:%s"),
+    PROFILE_BASE("profile:base:%s:%s"),
+    PROFILE_RANK("profile:rank:%s"),
+    PROFILE_RECENT_MATCHES("profile:recent-matches:%s:%s"),
+    PROFILE_TOP_CHAMPIONS("profile:top-champions:%s:%s");
 
     private final String pattern;
     private final String database;

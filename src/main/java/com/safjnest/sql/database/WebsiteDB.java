@@ -4,8 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Optional;
-import com.safjnest.spring.api.model.ApiKey;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.utils.SettingsLoader;
@@ -25,30 +23,6 @@ public class WebsiteDB extends AbstractDB {
 
     public static WebsiteDB get() {
         return instance;
-    }
-
-    public static Optional<ApiKey> getApiBySha256Hash(String sha256) {
-        QueryRecord res = instance.lineQuery("SELECT * FROM ApiKeys WHERE sha256_hash = " + sha256 + ";");
-
-        if (res == null || res.emptyValues()) 
-            return Optional.empty();
-        
-        ApiKey apiKey = new ApiKey();
-        apiKey.setId(res.getAsLong("id"));
-        apiKey.setHashedKey(res.get("hashed_key"));
-        apiKey.setSha256Hash(res.get("sha256_hash"));
-        apiKey.setOwner(res.get("user_id"));
-        apiKey.setCreatedAt(res.getAsLocalDateTime("created_at"));
-        apiKey.setActive(res.getAsBoolean("active"));
-
-        return Optional.of(apiKey);
-    }
-
-    public static boolean insertApiKey(ApiKey apiKey) {
-        return instance.defaultQuery("INSERT INTO ApiKeys (hashed_key, sha256_hash, user_id) VALUES (" +
-                apiKey.getHashedKey() + ", " +
-                apiKey.getSha256Hash() + ", " +
-                apiKey.getOwner() + ");");
     }
 
     public static String getSpotifyUserToken(String userId) {
