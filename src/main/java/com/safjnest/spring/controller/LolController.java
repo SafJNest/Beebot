@@ -28,7 +28,10 @@ public class LolController {
     }
 
     @GetMapping("/search")
-    public List<LolSearchResult> search(@PathVariable String region, @RequestParam String q) {
+    public List<LolSearchResult> search(
+            @PathVariable("region") String region,
+            @RequestParam("q") String q
+    ) {
         if (q == null || q.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing search query");
         }
@@ -38,16 +41,21 @@ public class LolController {
     }
 
     @GetMapping("/profile/{puuid}")
-    public LolProfileView profile(@PathVariable String region, @PathVariable String puuid) {
+    public LolProfileView profile(
+            @PathVariable("region") String region,
+            @PathVariable("puuid") String puuid
+    ) {
         if (puuid == null || puuid.trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing puuid");
         }
 
         LeagueShard shard = LolRegionParser.parse(region);
         LolProfileView profile = lolApiService.profile(shard, puuid);
+
         if (profile == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
         }
+
         return profile;
     }
 }
