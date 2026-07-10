@@ -381,7 +381,7 @@ public class LeagueDB extends AbstractDB {
         String sql =
             "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon " +
             "FROM summoner s " +
-            "WHERE s.region = ? AND LOWER(REPLACE(COALESCE(s.riot_id, ''), ' ', '')) LIKE ? " +
+            "WHERE s.region = ? AND s.riot_search LIKE CONCAT(?, '%') " +
             "ORDER BY s.riot_id " +
             "LIMIT 25";
 
@@ -390,7 +390,7 @@ public class LeagueDB extends AbstractDB {
             if (conn == null) return result;
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, shard.name());
-                pstmt.setString(2, "%" + normalizeSearch(query) + "%");
+                pstmt.setString(2, normalizeSearch(query));
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) result.add(toRecord(rs));
                 }
