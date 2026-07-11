@@ -374,7 +374,27 @@ public class LeagueDB extends AbstractDB {
 
 
     public static QueryResult getFocusedSummoners(String query, LeagueShard shard) {
-        return instance.query("SELECT riot_id, puuid FROM summoner WHERE riot_search LIKE CONCAT(LOWER(REPLACE('" + query + "', ' ', '')), '%') AND region = '" + shard + "' LIMIT 25;");
+        String sql =
+            "SELECT riot_id, puuid FROM summoner " +
+            "WHERE riot_search LIKE CONCAT(?, '%') AND region = ? " +
+            "LIMIT 25";
+
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, query);
+                pstmt.setString(2, shard.name());
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     public static QueryResult searchSummoners(String query, LeagueShard shard) {
@@ -390,7 +410,7 @@ public class LeagueDB extends AbstractDB {
             if (conn == null) return result;
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, shard.name());
-                pstmt.setString(2, normalizeSearch(query));
+                pstmt.setString(2, query);
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) result.add(toRecord(rs));
                 }
@@ -1131,14 +1151,6 @@ public class LeagueDB extends AbstractDB {
         }
         return result;
     }
-
-
-
-
-    private static String normalizeSearch(String query) {
-        return query == null ? "" : query.toLowerCase().replace(" ", "");
-    }
-
     private static QueryRecord toRecord(ResultSet rs) throws SQLException {
         QueryRecord record = new QueryRecord();
         ResultSetMetaData metadata = rs.getMetaData();

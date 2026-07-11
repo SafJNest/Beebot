@@ -2,6 +2,7 @@ package com.safjnest.lol.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
@@ -125,6 +126,11 @@ public class LeagueService {
 
         if (account != null) RedisClient.set(key, account, TTL_ACCOUNT);
         return account;
+    }
+
+    public static String getPuuidByRiotId(String name, String tag, LeagueShard shard) {
+        RiotAccount account = getRiotAccountByName(name, tag, shard);
+        return account != null ? account.getPUUID() : null;
     }
 
     public static RiotAccount getRiotAccountFromSummoner(Summoner s) {
@@ -390,7 +396,10 @@ public class LeagueService {
             return new ArrayList<>();
         }
     
-        String normalizedQuery = query.trim().toLowerCase();
+        String normalizedQuery = normalizeSearch(query);
+        if (normalizedQuery.isEmpty()) {
+            return new ArrayList<>();
+        }
         String key = RedisKey.SUMMONER_AUTOCOMPLETE.of(shard.name(), normalizedQuery);
     
         List<SummonerAutocompleteChoice> cached = RedisClient.get(key, SUMMONER_AUTOCOMPLETE_TYPE);
@@ -548,7 +557,17 @@ public class LeagueService {
         }
     }
 
-    private static String normalizeSearch(String query) {
-        return query == null ? "" : query.trim().toLowerCase().replace(" ", "");
+    public static String normalizeSearch(String query) {
+        if (query == null) return "";
+
+        String lowerCaseQuery = query.toLowerCase(Locale.ROOT);
+        StringBuilder normalizedQuery = new StringBuilder();
+        for (int i = 0; i < lowerCaseQuery.length(); i++) {
+            char character = lowerCaseQuery.charAt(i);
+            if (!Character.isWhitespace(character) && character != '-' && character != '#') {
+                normalizedQuery.append(character);
+            }
+        }
+        return normalizedQuery.toString();
     }
 }

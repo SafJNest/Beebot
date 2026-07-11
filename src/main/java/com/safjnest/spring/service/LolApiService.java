@@ -51,6 +51,11 @@ public class LolApiService {
         return data != null ? toProfileView(data) : null;
     }
 
+    public LolProfileView profileByName(LeagueShard shard, String gameName, String tagLine) {
+        String puuid = LeagueService.getPuuidByRiotId(gameName, tagLine, shard);
+        return puuid != null ? profile(shard, puuid) : null;
+    }
+
     private LolProfileView toProfileView(ProfilePageData data) {
         return new LolProfileView(
             toProfile(data.profile(), data.rank()),
