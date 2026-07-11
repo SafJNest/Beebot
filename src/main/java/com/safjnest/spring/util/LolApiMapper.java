@@ -4,9 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 
 import com.safjnest.lol.utils.ChampionUtils;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
-
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 
 public class LolApiMapper {
@@ -18,14 +15,6 @@ public class LolApiMapper {
 
     public static String championImage(int championId) {
         return ChampionUtils.getChampionProfilePic(championId);
-    }
-
-    public static String prettyQueue(String queue) {
-        try {
-            return GameQueueTypeUtils.prettyName(GameQueueType.valueOf(queue));
-        } catch (Exception e) {
-            return queue;
-        }
     }
 
     public static String duration(long milliseconds) {

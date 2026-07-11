@@ -142,7 +142,7 @@ public class LolApiService {
                 match.kda(),
                 kdaRatio(match.kda()),
                 match.cs(),
-                LolApiMapper.prettyQueue(match.queue()),
+                match.queue(),
                 durationMs(match),
                 LolApiMapper.duration(durationMs(match)),
                 match.timeStart(),
