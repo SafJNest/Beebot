@@ -6,6 +6,7 @@ public record LolProfileView(
     Profile profile,
     Summary summary,
     List<RoleStat> roles,
+    List<QueueStatistic> queueStatistics,
     List<TopChampion> topChampions,
     List<RecentMatch> recentMatches
 ) {
@@ -18,6 +19,11 @@ public record LolProfileView(
         int level,
         int icon,
         String iconUrl,
+        List<RankEntry> rank
+    ) {}
+
+    public record RankEntry(
+        String queue,
         String rank,
         int lp,
         int wins,
@@ -29,13 +35,39 @@ public record LolProfileView(
         String form,
         String mainRole,
         double avgKda,
-        int avgDamage
+        int avgDamage,
+        int trackedGames,
+        long trackedPlaytimeMs,
+        Long lastPlayedAt,
+        double avgVision,
+        Double avgKillParticipation
     ) {}
 
     public record RoleStat(
         String role,
         int games,
-        double rate
+        double rate,
+        int wins,
+        int losses,
+        double winrate,
+        double avgKda,
+        int avgDamage,
+        double avgVision,
+        double avgCs,
+        Double avgKillParticipation
+    ) {}
+
+    public record QueueStatistic(
+        String queue,
+        int games,
+        int wins,
+        int losses,
+        double winrate,
+        double avgKda,
+        int avgDamage,
+        double avgVision,
+        double avgCs,
+        Double avgKillParticipation
     ) {}
 
     public record TopChampion(
@@ -52,6 +84,8 @@ public record LolProfileView(
         double avgKda,
         double avgCs,
         int avgDamage,
+        double avgVision,
+        Double avgKillParticipation,
         int masteryLevel,
         int masteryPoints
     ) {}

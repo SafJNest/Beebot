@@ -24,8 +24,9 @@ public enum RedisKey {
     SUMMONER_SEARCH("summoner:search:%s:%s"),
     PROFILE_BASE("profile:base:%s:%s"),
     PROFILE_RANK("profile:rank:%s"),
-    PROFILE_RECENT_MATCHES("profile:recent-matches:%s:%s"),
-    PROFILE_TOP_CHAMPIONS("profile:top-champions:%s:%s");
+    PROFILE_RANKS("profile:ranks:%s"),
+    PROFILE_MASTERIES("profile:masteries:%s"),
+    PROFILE_STATISTICS("profile:statistics:%s:%s");
 
     private final String pattern;
     private final String database;

@@ -74,6 +74,8 @@ import com.safjnest.lol.utils.PatchUtils;
 
  public class LeagueHandler {
 
+    public record SeasonRange(int season, long start, long end) {}
+
     private static R4J riotApi;
 
     private static String patch;
@@ -786,6 +788,34 @@ import com.safjnest.lol.utils.PatchUtils;
         }
 
         return range;
+    }
+
+    /** Returns the complete configured season containing the current time. */
+    public static SeasonRange getCurrentSeasonRange() {
+        long now = System.currentTimeMillis();
+        try (FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "split.json")) {
+            JSONObject file = (JSONObject) new JSONParser().parse(reader);
+            JSONArray seasons = (JSONArray) file.get("seasons");
+            for (Object value : seasons) {
+                JSONObject season = (JSONObject) value;
+                JSONArray splits = (JSONArray) season.get("splits");
+                long start = Long.MAX_VALUE;
+                long end = Long.MIN_VALUE;
+                boolean current = false;
+                for (Object splitValue : splits) {
+                    JSONObject split = (JSONObject) splitValue;
+                    long splitStart = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(split.get("start_date").toString()).getTime();
+                    long splitEnd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(split.get("end_date").toString()).getTime();
+                    start = Math.min(start, splitStart);
+                    end = Math.max(end, splitEnd);
+                    current |= now >= splitStart && now <= splitEnd;
+                }
+                if (current) return new SeasonRange(Integer.parseInt(season.get("season").toString()), start, end);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static long[] getPreviousSplitRange() {

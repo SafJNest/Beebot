@@ -13,8 +13,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.spring.dto.LolProfileView;
 import com.safjnest.spring.dto.LolSearchResult;
-import com.safjnest.spring.service.LolApiService;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.ProfilePageService;
+import com.safjnest.lol.model.ProfilePageData;
+import com.safjnest.spring.util.LolApiMapper;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -22,10 +24,10 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 @RequestMapping("/api/lol/{shard}")
 public class LolController {
 
-    private final LolApiService lolApiService;
+    private final ProfilePageService profilePageService;
 
     public LolController() {
-        this.lolApiService = new LolApiService();
+        this.profilePageService = new ProfilePageService();
     }
 
     @GetMapping("/search")
@@ -41,7 +43,7 @@ public class LolController {
             );
         }
 
-        return lolApiService.search(parseShard(shardValue), query);
+        return LeagueService.searchSummoners(query, parseShard(shardValue)).stream().map(LolApiMapper::toSearchResult).toList();
     }
 
     @GetMapping("/profile/{puuid}")
@@ -49,16 +51,12 @@ public class LolController {
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid
     ) {
-        LolProfileView profile = lolApiService.profile(
-            parseShard(shardValue),
-            requireText(puuid, "puuid")
-        );
+        ProfilePageData page = profilePageService.get(parseShard(shardValue), requireText(puuid, "puuid"));
 
-        if (profile == null) {
+        if (page == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
         }
-
-        return profile;
+        return LolApiMapper.toProfileView(page);
     }
 
     @GetMapping("/profile-by-name/{gameName}/{tagLine}")
@@ -67,17 +65,12 @@ public class LolController {
             @PathVariable("gameName") String gameName,
             @PathVariable("tagLine") String tagLine
     ) {
-        LolProfileView profile = lolApiService.profileByName(
-            parseShard(shardValue),
-            requireText(gameName, "game name"),
-            requireText(tagLine, "tag line")
-        );
+        ProfilePageData page = profilePageService.get(parseShard(shardValue), requireText(gameName, "game name"), requireText(tagLine, "tag line"));
 
-        if (profile == null) {
+        if (page == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
         }
-
-        return profile;
+        return LolApiMapper.toProfileView(page);
     }
 
     static LeagueShard parseShard(String value) {

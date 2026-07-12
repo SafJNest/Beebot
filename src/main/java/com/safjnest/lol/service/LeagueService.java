@@ -1,12 +1,15 @@
 package com.safjnest.lol.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.ProfileChampionStats;
+import com.safjnest.lol.model.ProfileMastery;
 import com.safjnest.lol.model.ProfileMatch;
 import com.safjnest.lol.model.SummonerProfile;
 import com.safjnest.lol.model.SummonerRank;
@@ -25,6 +28,8 @@ import org.json.JSONObject;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -53,10 +58,7 @@ public class LeagueService {
     private static final int TTL_SUMMONER_SEARCH = 60 * 15;
     private static final int TTL_PROFILE_BASE = 60 * 60;
     private static final int TTL_PROFILE_RANK = 60 * 15;
-    private static final int TTL_PROFILE_RECENT_MATCHES = 60 * 5;
-    private static final int TTL_PROFILE_TOP_CHAMPIONS = 60 * 15;
-    private static final int PROFILE_DEFAULT_RECENT_LIMIT = 20;
-    private static final int PROFILE_DEFAULT_TOP_CHAMPIONS_LIMIT = 6;
+    private static final int TTL_PROFILE_MASTERIES = 60 * 60;
 
     private static final TypeReference<List<LeagueEntry>> LEAGUE_ENTRIES_TYPE =
         new TypeReference<List<LeagueEntry>>() {};
@@ -64,10 +66,10 @@ public class LeagueService {
         new TypeReference<List<ChampionMastery>>() {};
     private static final TypeReference<List<SummonerSearchResult>> SUMMONER_SEARCH_TYPE =
         new TypeReference<List<SummonerSearchResult>>() {};
-    private static final TypeReference<List<ProfileMatch>> PROFILE_MATCHES_TYPE =
-        new TypeReference<List<ProfileMatch>>() {};
-    private static final TypeReference<List<ProfileChampionStats>> PROFILE_CHAMPION_STATS_TYPE =
-        new TypeReference<List<ProfileChampionStats>>() {};
+    private static final TypeReference<List<SummonerRank>> PROFILE_RANKS_TYPE =
+        new TypeReference<List<SummonerRank>>() {};
+    private static final TypeReference<List<ProfileMastery>> PROFILE_MASTERIES_TYPE =
+        new TypeReference<List<ProfileMastery>>() {};
 
     private static final TypeReference<List<SummonerAutocompleteChoice>> SUMMONER_AUTOCOMPLETE_TYPE = new TypeReference<>() {};
 
@@ -156,8 +158,8 @@ public class LeagueService {
         int summonerId = getSummonerIdByPuuid(puuid, shard);
         if (summonerId != 0) {
             RedisClient.delete(RedisKey.PROFILE_RANK.of(summonerId));
-            RedisClient.delete(RedisKey.PROFILE_RECENT_MATCHES.of(summonerId, PROFILE_DEFAULT_RECENT_LIMIT));
-            RedisClient.delete(RedisKey.PROFILE_TOP_CHAMPIONS.of(summonerId, PROFILE_DEFAULT_TOP_CHAMPIONS_LIMIT));
+            RedisClient.delete(RedisKey.PROFILE_RANKS.of(summonerId));
+            RedisClient.delete(RedisKey.PROFILE_MASTERIES.of(summonerId));
         }
     }
 
@@ -206,36 +208,74 @@ public class LeagueService {
 
         LeagueEntry entry = getLeagueEntry(puuid, shard, "5v5 Ranked Solo");
         SummonerRank rank = entry != null
-            ? new SummonerRank(entry.getTierDivisionType().name(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses())
+            ? new SummonerRank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses())
             : SummonerRank.unranked();
         RedisClient.set(key, rank, TTL_PROFILE_RANK);
         return rank;
     }
 
-    public static List<ProfileMatch> getProfileRecentMatches(int summonerId, int limit) {
-        String key = RedisKey.PROFILE_RECENT_MATCHES.of(summonerId, limit);
-        List<ProfileMatch> cached = RedisClient.get(key, PROFILE_MATCHES_TYPE);
+    public static List<SummonerRank> getProfileRanks(int summonerId) {
+        String key = RedisKey.PROFILE_RANKS.of(summonerId);
+        List<SummonerRank> cached = RedisClient.get(key, PROFILE_RANKS_TYPE);
         if (cached != null) return cached;
 
-        List<ProfileMatch> matches = new ArrayList<>();
-        for (QueryRecord row : LeagueDB.getProfileRecentMatches(summonerId, limit)) {
-            matches.add(toProfileMatch(row));
-        }
-        RedisClient.set(key, matches, TTL_PROFILE_RECENT_MATCHES);
-        return matches;
+        List<SummonerRank> ranks = new ArrayList<>();
+        for (QueryRecord row : LeagueDB.getProfileRanks(summonerId)) ranks.add(toSummonerRank(row));
+        RedisClient.set(key, ranks, TTL_PROFILE_RANK);
+        return ranks;
     }
 
-    public static List<ProfileChampionStats> getProfileTopChampions(int summonerId, int limit) {
-        String key = RedisKey.PROFILE_TOP_CHAMPIONS.of(summonerId, limit);
-        List<ProfileChampionStats> cached = RedisClient.get(key, PROFILE_CHAMPION_STATS_TYPE);
+    public static List<SummonerRank> getProfileRanks(String puuid, LeagueShard shard) {
+        List<SummonerRank> ranks = new ArrayList<>();
+        for (LeagueEntry entry : getLeagueEntries(puuid, shard)) {
+            ranks.add(new SummonerRank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses()));
+        }
+        return ranks;
+    }
+
+    /** Mastery is fetched here so callers outside the data service never query LeagueDB directly. */
+    public static List<ProfileMastery> getProfileMasteries(int summonerId) {
+        String key = RedisKey.PROFILE_MASTERIES.of(summonerId);
+        List<ProfileMastery> cached = RedisClient.get(key, PROFILE_MASTERIES_TYPE);
         if (cached != null) return cached;
 
-        List<ProfileChampionStats> champions = new ArrayList<>();
-        for (QueryRecord row : LeagueDB.getProfileTopChampions(summonerId, limit)) {
-            champions.add(toProfileChampionStats(row));
+        List<ProfileMastery> masteries = new ArrayList<>();
+        for (QueryRecord row : LeagueDB.getProfileMasteries(summonerId)) {
+            masteries.add(new ProfileMastery(
+                row.getAsInt("champion_id"), row.getAsInt("champion_level"), row.getAsInt("champion_points")
+            ));
         }
-        RedisClient.set(key, champions, TTL_PROFILE_TOP_CHAMPIONS);
-        return champions;
+        RedisClient.set(key, masteries, TTL_PROFILE_MASTERIES);
+        return masteries;
+    }
+
+    public static List<String> getProfileSeasonPuuids(LeagueShard shard, long seasonStart, long seasonEnd) {
+        List<String> puuids = new ArrayList<>();
+        for (QueryRecord row : LeagueDB.getProfileSeasonSummoners(shard, seasonStart, seasonEnd)) {
+            String puuid = row.get("puuid");
+            if (puuid != null && !puuid.isBlank()) puuids.add(puuid);
+        }
+        return puuids;
+    }
+
+    public static List<ProfileMatch> getProfileMatchesAfter(int summonerId, long afterTimeEnd, long untilTimeEnd) {
+        Map<String, ProfileMatch> matches = new LinkedHashMap<>();
+        Map<String, Integer> teamKills = new HashMap<>();
+        for (QueryRecord row : LeagueDB.getProfileMatchesAfter(summonerId, afterTimeEnd, untilTimeEnd)) {
+            String gameId = row.get("game_id");
+            matches.putIfAbsent(gameId, toProfileMatch(row));
+            teamKills.merge(gameId, kills(row.get("team_member_kda")), Integer::sum);
+        }
+
+        List<ProfileMatch> result = new ArrayList<>();
+        for (ProfileMatch match : matches.values()) {
+            result.add(new ProfileMatch(
+                match.gameId(), match.queue(), match.timeStart(), match.timeEnd(), match.win(), match.kda(), match.championId(),
+                match.lane(), match.damage(), match.cs(), match.gold(), match.vision(), teamKills.getOrDefault(match.gameId(), 0),
+                match.items(), match.summonerSpells()
+            ));
+        }
+        return result;
     }
 
     public static List<LeagueEntry> getLeagueEntries(String puuid, LeagueShard shard) {
@@ -437,7 +477,7 @@ public class LeagueService {
             profile.puuid(),
             profile.riotId(),
             profile.region(),
-            rank.rank(),
+            rank.rank().name(),
             rank.lp(),
             rank.wins(),
             rank.losses()
@@ -472,43 +512,39 @@ public class LeagueService {
 
     private static SummonerRank toSummonerRank(QueryRecord row) {
         return new SummonerRank(
-            row.getOrDefault("rank", "UNRANKED"),
+            queue(row.getOrDefault("queue", "TEAM_BUILDER_RANKED_SOLO")),
+            tierDivision(row.getOrDefault("rank", "UNRANKED")),
             row.getAsInt("lp"),
             row.getAsInt("wins"),
             row.getAsInt("losses")
         );
     }
 
-    private static ProfileChampionStats toProfileChampionStats(QueryRecord row) {
-        return new ProfileChampionStats(
-            row.getAsInt("champion"),
-            row.getAsInt("games"),
-            row.getAsInt("wins"),
-            row.getAsInt("losses"),
-            row.getAsDouble("avg_kills"),
-            row.getAsDouble("avg_deaths"),
-            row.getAsDouble("avg_assists"),
-            row.getAsDouble("avg_cs"),
-            (int) Math.round(row.getAsDouble("avg_damage")),
-            row.getAsInt("mastery_level"),
-            row.getAsInt("mastery_points")
-        );
+    private static TierDivisionType tierDivision(String value) {
+        try { return TierDivisionType.valueOf(value); }
+        catch (Exception ignored) { return TierDivisionType.UNRANKED; }
+    }
+
+    private static GameQueueType queue(String value) {
+        try { return GameQueueType.valueOf(value); }
+        catch (Exception ignored) { return GameQueueType.TEAM_BUILDER_RANKED_SOLO; }
     }
 
     private static ProfileMatch toProfileMatch(QueryRecord row) {
         return new ProfileMatch(
             row.get("game_id"),
-            row.get("queue"),
+            queue(row.get("queue")),
             timeMs(row.get("time_start")),
             timeMs(row.get("time_end")),
             row.getAsBoolean("win"),
             row.get("kda"),
             row.getAsInt("champion"),
-            row.get("lane"),
+            lane(row.get("lane")),
             row.getAsInt("damage"),
             row.getAsInt("cs"),
             row.getAsInt("gold_earned"),
             row.getAsInt("vision_score"),
+            row.getAsInt("team_kills"),
             items(row),
             summonerSpells(row)
         );
@@ -516,9 +552,9 @@ public class LeagueService {
 
     private static List<Integer> items(QueryRecord row) {
         JSONObject items = build(row).optJSONObject("items");
-        if (items == null) return List.of();
+        if (items == null) return new ArrayList<>();
 
-        return List.of(
+        return new ArrayList<>(List.of(
             items.optInt("0", 0),
             items.optInt("1", 0),
             items.optInt("2", 0),
@@ -526,12 +562,23 @@ public class LeagueService {
             items.optInt("4", 0),
             items.optInt("5", 0),
             items.optInt("6", 0)
-        );
+        ));
+    }
+
+    private static int kills(String kda) {
+        if (kda == null) return 0;
+        try { return Integer.parseInt(kda.split("/", 2)[0]); }
+        catch (Exception ignored) { return 0; }
+    }
+
+    private static LaneType lane(String value) {
+        try { return LaneType.valueOf(value); }
+        catch (Exception ignored) { return null; }
     }
 
     private static List<Integer> summonerSpells(QueryRecord row) {
         JSONArray spells = build(row).optJSONArray("summoner_spells");
-        if (spells == null) return List.of();
+        if (spells == null) return new ArrayList<>();
 
         List<Integer> result = new ArrayList<>();
         for (int i = 0; i < spells.length(); i++) {

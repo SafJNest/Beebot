@@ -1,130 +1,93 @@
 package com.safjnest.lol.service;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.safjnest.lol.model.ProfileChampionStats;
-import com.safjnest.lol.model.ProfileMatch;
+import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.ProfileMastery;
+import com.safjnest.lol.model.ProfileChampion;
 import com.safjnest.lol.model.ProfilePageData;
+import com.safjnest.lol.model.ProfileStatistics;
 import com.safjnest.lol.model.SummonerProfile;
 import com.safjnest.lol.model.SummonerRank;
+import com.safjnest.lol.model.Stats;
+import com.safjnest.lol.utils.ChampionUtils;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
+/** Domain facade for a complete profile page. It never exposes partial profile helpers. */
 public class ProfilePageService {
 
-    private static final int TOP_CHAMPIONS_LIMIT = 6;
-    private static final int RECENT_MATCHES_LIMIT = 5;
-    private static final int ROLE_MATCHES_LIMIT = 20;
+    private static final AtomicBoolean ALL_PROFILE_STATS_REFRESH_RUNNING = new AtomicBoolean(false);
 
-    public ProfilePageData getProfile(String puuid, LeagueShard shard) {
+    private final ProfileStatisticsService statisticsService = new ProfileStatisticsService();
+
+    public ProfilePageData get(LeagueShard shard, String puuid) {
         SummonerProfile profile = LeagueService.getProfileBase(puuid, shard);
         if (profile == null) return null;
 
-        CompletableFuture<SummonerRank> rankFuture;
-        CompletableFuture<List<ProfileMatch>> recentFuture;
-        CompletableFuture<List<ProfileChampionStats>> topChampionsFuture;
+        LeagueHandler.SeasonRange season = LeagueHandler.getCurrentSeasonRange();
+        CompletableFuture<List<SummonerRank>> ranks = CompletableFuture.supplyAsync(() -> ranks(profile, shard));
+        CompletableFuture<List<ProfileMastery>> masteries = CompletableFuture.supplyAsync(() -> masteries(profile));
+        CompletableFuture<ProfileStatistics> statistics = CompletableFuture.supplyAsync(() -> statistics(profile, season));
 
-        if (profile.summonerId() != 0) {
-            int summonerId = profile.summonerId();
-            rankFuture = CompletableFuture.supplyAsync(() -> LeagueService.getProfileRank(summonerId));
-            recentFuture = CompletableFuture.supplyAsync(() -> LeagueService.getProfileRecentMatches(summonerId, ROLE_MATCHES_LIMIT));
-            topChampionsFuture = CompletableFuture.supplyAsync(() -> LeagueService.getProfileTopChampions(summonerId, TOP_CHAMPIONS_LIMIT));
-        } else {
-            rankFuture = CompletableFuture.supplyAsync(() -> LeagueService.getProfileRank(profile.puuid(), shard));
-            recentFuture = CompletableFuture.completedFuture(List.of());
-            topChampionsFuture = CompletableFuture.completedFuture(List.of());
-        }
-
-        List<ProfileMatch> recentSource = recentFuture.join();
-        List<ProfileMatch> recentMatches = limit(recentSource, RECENT_MATCHES_LIMIT);
-        List<ProfilePageData.RoleStat> roles = roles(recentSource);
-
-        return new ProfilePageData(
-            profile,
-            rankFuture.join(),
-            summary(recentMatches, roles),
-            roles,
-            topChampionsFuture.join(),
-            recentMatches
-        );
+        ProfileStatistics aggregate = statistics.join();
+        return new ProfilePageData(profile, ranks.join(), aggregate, masteries.join(), champions(aggregate));
     }
 
-    private List<ProfileMatch> limit(List<ProfileMatch> matches, int limit) {
-        List<ProfileMatch> result = new ArrayList<>();
-        for (int i = 0; i < matches.size() && i < limit; i++) {
-            result.add(matches.get(i));
-        }
-        return result;
+    public ProfilePageData get(LeagueShard shard, String gameName, String tagLine) {
+        String puuid = LeagueService.getPuuidByRiotId(gameName, tagLine, shard);
+        return puuid != null ? get(shard, puuid) : null;
     }
 
-    private ProfilePageData.Summary summary(List<ProfileMatch> matches, List<ProfilePageData.RoleStat> roles) {
-        StringBuilder form = new StringBuilder();
-        int damage = 0;
-        double kda = 0;
-
-        for (ProfileMatch match : matches) {
-            form.append(match.win() ? "W" : "L");
-            damage += match.damage();
-            kda += kdaRatio(match.kda());
-        }
-
-        return new ProfilePageData.Summary(
-            form.toString(),
-            roles.isEmpty() ? "" : roles.get(0).role(),
-            matches.isEmpty() ? 0 : rounded(kda / matches.size()),
-            matches.isEmpty() ? 0 : damage / matches.size()
-        );
+    public boolean refresh(LeagueShard shard, String puuid, boolean rebuild) {
+        SummonerProfile profile = LeagueService.getProfileBase(puuid, shard);
+        LeagueHandler.SeasonRange season = LeagueHandler.getCurrentSeasonRange();
+        return profile != null && profile.summonerId() != 0 && statisticsService.refresh(profile.summonerId(), season, rebuild);
     }
 
-    private List<ProfilePageData.RoleStat> roles(List<ProfileMatch> matches) {
-        Map<String, Integer> counts = new HashMap<>();
-        for (ProfileMatch match : matches) {
-            String lane = match.lane();
-            if (lane == null || lane.isBlank()) continue;
-            counts.merge(lane, 1, Integer::sum);
-        }
-
-        int total = 0;
-        for (int count : counts.values()) {
-            total += count;
-        }
-        List<Map.Entry<String, Integer>> entries = new ArrayList<>(counts.entrySet());
-        entries.sort(Map.Entry.<String, Integer>comparingByValue().reversed());
-
-        List<ProfilePageData.RoleStat> roles = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : entries) {
-            roles.add(new ProfilePageData.RoleStat(
-                entry.getKey(),
-                entry.getValue(),
-                total > 0 ? rounded((double) entry.getValue() / total * 100) : 0
-            ));
-        }
-        return roles;
-    }
-
-    private double kdaRatio(String kda) {
-        if (kda == null || kda.isBlank()) return 0;
-        String[] parts = kda.split("/");
-        if (parts.length != 3) return 0;
-        int kills = parseInt(parts[0]);
-        int deaths = parseInt(parts[1]);
-        int assists = parseInt(parts[2]);
-        return deaths > 0 ? rounded((double) (kills + assists) / deaths) : kills + assists;
-    }
-
-    private int parseInt(String value) {
+    public int refreshAll(LeagueShard shard, boolean rebuild) {
+        LeagueHandler.SeasonRange season = LeagueHandler.getCurrentSeasonRange();
+        if (season == null || !ALL_PROFILE_STATS_REFRESH_RUNNING.compareAndSet(false, true)) return -1;
         try {
-            return Integer.parseInt(value);
-        } catch (Exception e) {
-            return 0;
+            int refreshed = 0;
+            for (String puuid : LeagueService.getProfileSeasonPuuids(shard, season.start(), season.end())) {
+                if (refresh(shard, puuid, rebuild)) refreshed++;
+            }
+            return refreshed;
+        } finally {
+            ALL_PROFILE_STATS_REFRESH_RUNNING.set(false);
         }
     }
 
-    private double rounded(double value) {
-        return Math.round(value * 100.0) / 100.0;
+    private List<SummonerRank> ranks(SummonerProfile profile, LeagueShard shard) {
+        return profile.summonerId() != 0
+            ? LeagueService.getProfileRanks(profile.summonerId())
+            : LeagueService.getProfileRanks(profile.puuid(), shard);
+    }
+
+    private ProfileStatistics statistics(SummonerProfile profile, LeagueHandler.SeasonRange season) {
+        return profile.summonerId() == 0 || season == null
+            ? new ProfileStatistics(season != null ? season.start() : 0)
+            : statisticsService.get(profile.summonerId(), season);
+    }
+
+    private List<ProfileMastery> masteries(SummonerProfile profile) {
+        return profile.summonerId() == 0 ? List.of() : LeagueService.getProfileMasteries(profile.summonerId());
+    }
+
+    private Map<Integer, ProfileChampion> champions(ProfileStatistics statistics) {
+        Map<Integer, ProfileChampion> champions = new HashMap<>();
+        for (Stats<Integer> stat : statistics.championStats) champions.put(stat.reference, champion(stat.reference));
+        statistics.recentMatches.forEach(match -> champions.putIfAbsent(match.championId(), champion(match.championId())));
+        return champions;
+    }
+
+    private ProfileChampion champion(int championId) {
+        var champion = ChampionUtils.getChampion(championId);
+        return new ProfileChampion(champion != null ? champion.getName() : String.valueOf(championId), ChampionUtils.getChampionProfilePic(championId));
     }
 }

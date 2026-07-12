@@ -1,12 +1,15 @@
 package com.safjnest.sql.database;
 
 import java.sql.Connection;
+import java.sql.Blob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.Base64;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +43,7 @@ import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.Participant;
+import com.safjnest.lol.model.ProfileStatisticsRow;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -447,7 +451,7 @@ public class LeagueDB extends AbstractDB {
 
     public static QueryRecord getProfileRank(int summonerId) {
         String sql =
-            "SELECT COALESCE(r.rank, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
+            "SELECT r.queue, COALESCE(r.rank, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
             "COALESCE(r.wins, 0) AS wins, COALESCE(r.losses, 0) AS losses " +
             "FROM `rank` r " +
             "WHERE r.summoner_id = ? AND r.queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') " +
@@ -469,29 +473,15 @@ public class LeagueDB extends AbstractDB {
         return new QueryRecord();
     }
 
-    public static QueryResult getProfileTopChampions(int summonerId, int limit) {
-        String sql =
-            "SELECT p.champion, COUNT(*) AS games, SUM(p.win) AS wins, " +
-            "COUNT(*) - SUM(p.win) AS losses, " +
-            "AVG(CAST(SUBSTRING_INDEX(p.kda, '/', 1) AS DECIMAL(10, 2))) AS avg_kills, " +
-            "AVG(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(p.kda, '/', 2), '/', -1) AS DECIMAL(10, 2))) AS avg_deaths, " +
-            "AVG(CAST(SUBSTRING_INDEX(p.kda, '/', -1) AS DECIMAL(10, 2))) AS avg_assists, " +
-            "AVG(p.cs) AS avg_cs, AVG(p.damage) AS avg_damage, " +
-            "COALESCE(ms.champion_level, 0) AS mastery_level, COALESCE(ms.champion_points, 0) AS mastery_points " +
-            "FROM participant p " +
-            "JOIN `match` m ON p.match_id = m.id " +
-            "LEFT JOIN masteries ms ON ms.summoner_id = p.summoner_id AND ms.champion_id = p.champion " +
-            "WHERE p.summoner_id = ? " +
-            "GROUP BY p.champion, ms.champion_level, ms.champion_points " +
-            "ORDER BY games DESC, wins DESC " +
-            "LIMIT ?";
-
+    public static QueryResult getProfileRanks(int summonerId) {
+        String sql = "SELECT r.queue, COALESCE(r.rank, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
+            "COALESCE(r.wins, 0) AS wins, COALESCE(r.losses, 0) AS losses " +
+            "FROM `rank` r WHERE r.summoner_id = ? ORDER BY r.queue";
         QueryResult result = new QueryResult();
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return result;
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, summonerId);
-                pstmt.setInt(2, limit);
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) result.add(toRecord(rs));
                 }
@@ -504,23 +494,109 @@ public class LeagueDB extends AbstractDB {
         return result;
     }
 
-    public static QueryResult getProfileRecentMatches(int summonerId, int limit) {
-        String sql =
-            "SELECT m.game_id, m.queue, m.time_start, m.time_end, m.patch, " +
-            "p.win, p.kda, p.champion, p.lane, p.damage, p.cs, p.gold_earned, p.vision_score, " +
-            "p.build " +
-            "FROM participant p " +
-            "JOIN `match` m ON p.match_id = m.id " +
-            "WHERE p.summoner_id = ? " +
-            "ORDER BY m.time_start DESC " +
-            "LIMIT ?";
-
+    public static QueryResult getProfileMasteries(int summonerId) {
+        String sql = "SELECT champion_id, champion_level, champion_points FROM masteries WHERE summoner_id = ?";
         QueryResult result = new QueryResult();
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return result;
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, summonerId);
-                pstmt.setInt(2, limit);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static ProfileStatisticsRow getProfileStatistics(String key) {
+        String sql = "SELECT time_start, time_end, data FROM profile_statistics WHERE `key` = ?";
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return null;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, key);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        QueryRecord row = toRecord(rs);
+                        return new ProfileStatisticsRow(
+                            timeMs(row.get("time_start")), timeMs(row.get("time_end")), row.get("data")
+                        );
+                    }
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static boolean saveProfileStatistics(String key, int summonerId, long timeStart, long timeEnd, byte[] data) {
+        String sql = "INSERT INTO profile_statistics (`key`, summoner_id, time_start, time_end, data) VALUES (?, ?, ?, ?, ?) " +
+            "ON DUPLICATE KEY UPDATE time_end = VALUES(time_end), data = VALUES(data)";
+        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (conn == null) return false;
+            pstmt.setString(1, key);
+            pstmt.setInt(2, summonerId);
+            pstmt.setTimestamp(3, new Timestamp(timeStart));
+            pstmt.setTimestamp(4, new Timestamp(timeEnd));
+            pstmt.setBytes(5, data);
+            pstmt.executeUpdate();
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * One flat query. Team members are returned beside the tracked participant so
+     * kill participation can be calculated in Java without SQL aggregation.
+     */
+    public static QueryResult getProfileMatchesAfter(int summonerId, long afterTimeEnd, long untilTimeEnd) {
+        String sql =
+            "SELECT m.game_id, m.queue, m.time_start, m.time_end, " +
+            "p.win, p.kda, p.champion, p.lane, p.damage, p.cs, p.gold_earned, p.vision_score, p.build, " +
+            "team_member.kda AS team_member_kda " +
+            "FROM participant p " +
+            "JOIN `match` m ON m.id = p.match_id " +
+            "JOIN participant team_member ON team_member.match_id = p.match_id AND team_member.team = p.team " +
+            "WHERE p.summoner_id = ? AND m.time_end > ? AND m.time_end <= ? " +
+            "ORDER BY m.time_end ASC";
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, summonerId);
+                pstmt.setTimestamp(2, new Timestamp(afterTimeEnd));
+                pstmt.setTimestamp(3, new Timestamp(untilTimeEnd));
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static QueryResult getProfileSeasonSummoners(LeagueShard shard, long seasonStart, long seasonEnd) {
+        String sql = "SELECT DISTINCT s.puuid FROM summoner s JOIN participant p ON p.summoner_id = s.id " +
+            "JOIN `match` m ON m.id = p.match_id WHERE s.region = ? AND m.time_start >= ? AND m.time_start <= ?";
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, shard.name());
+                pstmt.setTimestamp(2, new Timestamp(seasonStart));
+                pstmt.setTimestamp(3, new Timestamp(seasonEnd));
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) result.add(toRecord(rs));
                 }
@@ -1155,9 +1231,23 @@ public class LeagueDB extends AbstractDB {
         QueryRecord record = new QueryRecord();
         ResultSetMetaData metadata = rs.getMetaData();
         for (int i = 1; i <= metadata.getColumnCount(); i++) {
-            record.put(metadata.getColumnLabel(i).toLowerCase(), rs.getString(i));
+            int type = metadata.getColumnType(i);
+            String typeName = metadata.getColumnTypeName(i);
+            boolean binary = type == Types.BLOB || type == Types.BINARY || type == Types.VARBINARY ||
+                type == Types.LONGVARBINARY || (typeName != null && typeName.toUpperCase().contains("BLOB"));
+            if (binary) {
+                byte[] bytes = rs.getBytes(i);
+                if (bytes != null) record.put(metadata.getColumnLabel(i).toLowerCase(), Base64.getEncoder().encodeToString(bytes));
+            } else {
+                record.put(metadata.getColumnLabel(i).toLowerCase(), rs.getString(i));
+            }
         }
         return record;
+    }
+
+    private static long timeMs(String value) {
+        try { return Timestamp.valueOf(value).getTime(); }
+        catch (Exception ignored) { return 0; }
     }
 
 }

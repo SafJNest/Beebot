@@ -36,6 +36,7 @@ import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.ProfilePageService;
 import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
@@ -160,7 +161,47 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | profile-stats");
+            break;
+            case "profile-stats":
+                if (args.length < 2) {
+                    e.reply("Usage: profile-stats <shard> <puuid|all> [rebuild]");
+                    break;
+                }
+                String[] profileStatsArgs = args[1].trim().split("\\s+");
+                if (profileStatsArgs.length < 2) {
+                    e.reply("Usage: profile-stats <shard> <puuid|all> [rebuild]");
+                    break;
+                }
+                LeagueShard profileStatsShard;
+                try {
+                    profileStatsShard = LeagueShard.valueOf(profileStatsArgs[0].toUpperCase(Locale.ROOT));
+                } catch (Exception exception) {
+                    e.reply("Invalid shard: " + profileStatsArgs[0]);
+                    break;
+                }
+                String profileStatsTarget = profileStatsArgs[1].trim();
+                boolean profileStatsRebuild = profileStatsArgs.length > 2 && "rebuild".equalsIgnoreCase(profileStatsArgs[2]);
+                e.reply("Profile statistics " + (profileStatsRebuild ? "rebuild" : "refresh") + " started for " + profileStatsTarget + ".");
+                LeagueShard targetShard = profileStatsShard;
+                new ChronoTask() {
+                    @Override
+                    public void run() {
+                        ProfilePageService service = new ProfilePageService();
+                        if ("all".equalsIgnoreCase(profileStatsTarget)) {
+                            int count = service.refreshAll(targetShard, profileStatsRebuild);
+                            String message = count < 0
+                                ? "A global profile statistics refresh is already running."
+                                : "Profile statistics refresh completed: " + count + " profiles.";
+                            e.getChannel().sendMessage(message).queue();
+                            return;
+                        }
+                        boolean saved = service.refresh(targetShard, profileStatsTarget, profileStatsRebuild);
+                        e.getChannel().sendMessage(saved
+                            ? "Profile statistics refresh completed for " + profileStatsTarget + "."
+                            : "Profile statistics refresh failed for " + profileStatsTarget + ".").queue();
+                    }
+                }.queue();
             break;
             case "timer":
                 Timer timer = new Timer();
