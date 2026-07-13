@@ -110,6 +110,13 @@ public record LolProfileView(
         int gold,
         int vision,
         List<Integer> items,
-        List<Integer> summonerSpells
+        List<Integer> summonerSpells,
+        List<MatchParticipant> participants
+    ) {}
+
+    public record MatchParticipant(
+        int championId,
+        String puuid,
+        String team
     ) {}
 }

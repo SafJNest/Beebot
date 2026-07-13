@@ -12,6 +12,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ProfileChampion;
 import com.safjnest.lol.model.ProfileMastery;
 import com.safjnest.lol.model.ProfileMatch;
+import com.safjnest.lol.model.ProfileMatchParticipant;
 import com.safjnest.lol.model.ProfilePageData;
 import com.safjnest.lol.model.ProfileStatistics;
 import com.safjnest.lol.model.Stats;
@@ -151,7 +152,18 @@ public class LolApiMapper {
             response.add(new LolProfileView.RecentMatch(match.gameId(), match.win(), match.win() ? "W" : "L", match.championId(),
                 champion.name(), champion.image(), LaneTypeUtils.apiName(match.lane()), match.kda(),
                 kdaRatio(match.kda()), match.cs(), match.queue() != null ? match.queue().name() : "UNKNOWN", duration, duration(duration),
-                match.timeStart(), ago(match.timeStart()), match.damage(), match.gold(), match.vision(), match.items(), match.summonerSpells()));
+                match.timeStart(), ago(match.timeStart()), match.damage(), match.gold(), match.vision(), match.items(), match.summonerSpells(),
+                participants(match.participants())));
+        }
+        return response;
+    }
+
+    private static List<LolProfileView.MatchParticipant> participants(List<ProfileMatchParticipant> participants) {
+        List<LolProfileView.MatchParticipant> response = new ArrayList<>();
+        for (ProfileMatchParticipant participant : participants) {
+            response.add(new LolProfileView.MatchParticipant(
+                participant.championId(), participant.puuid(), participant.team()
+            ));
         }
         return response;
     }

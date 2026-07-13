@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ProfileMatch;
+import com.safjnest.lol.model.ProfileMatchParticipant;
 import com.safjnest.lol.model.ProfilePageData;
 import com.safjnest.lol.model.ProfileStatistics;
 import com.safjnest.lol.model.SummonerProfile;
@@ -42,9 +43,13 @@ public class ProfilePageServiceTest {
         assertEquals(0, view.roles().stream().filter(role -> role.role().equals("SUPPORT")).findFirst().orElseThrow().games());
         assertEquals(GameQueueType.RANKED_FLEX_SR.name(), view.profile().rank().get(0).queue());
         assertEquals(LeagueHandler.getSummonerProfilePic(27), view.profile().iconUrl());
+        assertEquals("BLUE", view.recentMatches().get(0).participants().get(0).team());
     }
 
     private static ProfileMatch match(String id, LaneType lane) {
-        return new ProfileMatch(id, GameQueueType.ARAM, 1_000, 2_000, true, "2/1/3", 1, lane, 100, 10, 100, 10, 10, List.of(), List.of());
+        return new ProfileMatch(
+            id, GameQueueType.ARAM, 1_000, 2_000, true, "2/1/3", 1, lane, 100, 10, 100, 10, 10,
+            List.of(), List.of(), List.of(new ProfileMatchParticipant(2, "puuid", "BLUE"))
+        );
     }
 }

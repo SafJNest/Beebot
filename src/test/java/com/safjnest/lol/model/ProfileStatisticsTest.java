@@ -28,6 +28,7 @@ public class ProfileStatisticsTest {
         assertEquals(1, decoded.laneStats.size());
         assertEquals(LaneType.TOP, decoded.laneStats.get(0).reference);
         assertEquals(2, decoded.recentMatches.size());
+        assertEquals(1, decoded.recentMatches.get(0).participants().size());
     }
 
     @Test
@@ -43,6 +44,6 @@ public class ProfileStatisticsTest {
 
     private static ProfileMatch match(String id, long time, String kda, int teamKills) {
         return new ProfileMatch(id, GameQueueType.ARAM, time, time + 1, true, kda, 1, LaneType.TOP,
-            100, 10, 100, 10, teamKills, List.of(), List.of());
+            100, 10, 100, 10, teamKills, List.of(), List.of(), List.of(new ProfileMatchParticipant(2, "puuid", "BLUE")));
     }
 }

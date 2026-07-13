@@ -11,9 +11,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ProfileMastery;
 import com.safjnest.lol.model.ProfileMatch;
+import com.safjnest.lol.model.ProfileMatchParticipant;
 import com.safjnest.lol.model.SummonerProfile;
 import com.safjnest.lol.model.SummonerRank;
 import com.safjnest.lol.model.SummonerSearchResult;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -261,10 +263,16 @@ public class LeagueService {
     public static List<ProfileMatch> getProfileMatchesAfter(int summonerId, long afterTimeEnd, long untilTimeEnd) {
         Map<String, ProfileMatch> matches = new LinkedHashMap<>();
         Map<String, Integer> teamKills = new HashMap<>();
+        Map<String, List<ProfileMatchParticipant>> participants = new HashMap<>();
         for (QueryRecord row : LeagueDB.getProfileMatchesAfter(summonerId, afterTimeEnd, untilTimeEnd)) {
             String gameId = row.get("game_id");
-            matches.putIfAbsent(gameId, toProfileMatch(row));
-            teamKills.merge(gameId, kills(row.get("team_member_kda")), Integer::sum);
+            ProfileMatch match = matches.computeIfAbsent(gameId, ignored -> toProfileMatch(row));
+            boolean ally = isAlly(match.queue(), row);
+
+            if (ally) teamKills.merge(gameId, kills(row.get("participant_kda")), Integer::sum);
+            participants.computeIfAbsent(gameId, ignored -> new ArrayList<>()).add(new ProfileMatchParticipant(
+                row.getAsInt("participant_champion"), row.get("participant_puuid"), row.get("participant_team")
+            ));
         }
 
         List<ProfileMatch> result = new ArrayList<>();
@@ -272,7 +280,7 @@ public class LeagueService {
             result.add(new ProfileMatch(
                 match.gameId(), match.queue(), match.timeStart(), match.timeEnd(), match.win(), match.kda(), match.championId(),
                 match.lane(), match.damage(), match.cs(), match.gold(), match.vision(), teamKills.getOrDefault(match.gameId(), 0),
-                match.items(), match.summonerSpells()
+                match.items(), match.summonerSpells(), participants.getOrDefault(match.gameId(), List.of())
             ));
         }
         return result;
@@ -546,8 +554,19 @@ public class LeagueService {
             row.getAsInt("vision_score"),
             row.getAsInt("team_kills"),
             items(row),
-            summonerSpells(row)
+            summonerSpells(row),
+            List.of()
         );
+    }
+
+    private static boolean isAlly(GameQueueType queue, QueryRecord row) {
+        if (GameQueueTypeUtils.isCherry(queue)) {
+            return row.getAsInt("player_subteam") != 0 &&
+                row.getAsInt("player_subteam") == row.getAsInt("participant_subteam");
+        }
+
+        String team = row.get("player_team");
+        return team != null && team.equals(row.get("participant_team"));
     }
 
     private static List<Integer> items(QueryRecord row) {

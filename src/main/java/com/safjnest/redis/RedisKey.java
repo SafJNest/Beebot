@@ -26,7 +26,7 @@ public enum RedisKey {
     PROFILE_RANK("profile:rank:%s"),
     PROFILE_RANKS("profile:ranks:%s"),
     PROFILE_MASTERIES("profile:masteries:%s"),
-    PROFILE_STATISTICS("profile:statistics:%s:%s");
+    PROFILE_STATISTICS("profile:statistics:v2:%s:%s");
 
     private final String pattern;
     private final String database;

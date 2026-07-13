@@ -20,5 +20,6 @@ public record ProfileMatch(
     int vision,
     int teamKills,
     List<Integer> items,
-    List<Integer> summonerSpells
+    List<Integer> summonerSpells,
+    List<ProfileMatchParticipant> participants
 ) {}

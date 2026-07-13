@@ -101,7 +101,7 @@ public class ProfileStatisticsService {
     }
 
     private static String databaseKey(int summonerId, long timeStart) {
-        return Base64.getEncoder().encodeToString((summonerId + "|" + timeStart).getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString((summonerId + "|v2|" + timeStart).getBytes(StandardCharsets.UTF_8));
     }
 
     private static String redisKey(int summonerId, long timeStart) {

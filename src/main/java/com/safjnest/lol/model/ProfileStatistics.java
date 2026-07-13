@@ -48,7 +48,7 @@ public class ProfileStatistics {
         return new ProfileMatch(
             match.gameId(), match.queue(), match.timeStart(), match.timeEnd(), match.win(), match.kda(), match.championId(),
             match.lane(), match.damage(), match.cs(), match.gold(), match.vision(), match.teamKills(),
-            new ArrayList<>(match.items()), new ArrayList<>(match.summonerSpells())
+            new ArrayList<>(match.items()), new ArrayList<>(match.summonerSpells()), new ArrayList<>(match.participants())
         );
     }
 }

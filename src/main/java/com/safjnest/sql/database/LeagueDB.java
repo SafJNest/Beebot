@@ -554,20 +554,20 @@ public class LeagueDB extends AbstractDB {
         }
     }
 
-    /**
-     * One flat query. Team members are returned beside the tracked participant so
-     * kill participation can be calculated in Java without SQL aggregation.
-     */
+    /** One flat query for tracked matches, roster details, and kill participation. */
     public static QueryResult getProfileMatchesAfter(int summonerId, long afterTimeEnd, long untilTimeEnd) {
         String sql =
             "SELECT m.game_id, m.queue, m.time_start, m.time_end, " +
             "p.win, p.kda, p.champion, p.lane, p.damage, p.cs, p.gold_earned, p.vision_score, p.build, " +
-            "team_member.kda AS team_member_kda " +
+            "p.team AS player_team, p.subteam AS player_subteam, " +
+            "roster_member.champion AS participant_champion, roster_summoner.puuid AS participant_puuid, " +
+            "roster_member.kda AS participant_kda, roster_member.team AS participant_team, roster_member.subteam AS participant_subteam " +
             "FROM participant p " +
             "JOIN `match` m ON m.id = p.match_id " +
-            "JOIN participant team_member ON team_member.match_id = p.match_id AND team_member.team = p.team " +
+            "JOIN participant roster_member ON roster_member.match_id = p.match_id " +
+            "LEFT JOIN summoner roster_summoner ON roster_summoner.id = roster_member.summoner_id " +
             "WHERE p.summoner_id = ? AND m.time_end > ? AND m.time_end <= ? " +
-            "ORDER BY m.time_end ASC";
+            "ORDER BY m.time_end ASC, roster_member.id ASC";
         QueryResult result = new QueryResult();
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return result;
