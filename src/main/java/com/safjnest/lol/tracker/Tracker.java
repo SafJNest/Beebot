@@ -231,6 +231,7 @@ public class Tracker {
             TierType avgRank = TierDivisionUtils.getAvarageRank(ranks);
             LeagueDB.setMatchRank(summoner_match_id, avgRank);
             LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
+            LeagueService.invalidateMatchDetail(match.getPlatform(), String.valueOf(match.getGameId()));
             
             BotLogger.info("[LPTracker] Pushed match data for " + LeagueHandler.getFormattedSummonerName(summoner) + " (" + summoner.getAccountId() + ")");
         };
@@ -264,6 +265,7 @@ public class Tracker {
             TierType avgRank = TierDivisionUtils.getAvarageRank(ranks);
             LeagueDB.setMatchRank(summoner_match_id, avgRank);
             LeagueDB.setMatchEvent(summoner_match_id, createJSONEvents(matchData.get("match")));
+            LeagueService.invalidateMatchDetail(match.getPlatform(), String.valueOf(match.getGameId()));
         };
     }
 

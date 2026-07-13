@@ -15,6 +15,7 @@ public enum RedisKey {
     ADVANCED_LOL_DATA("user:advanced-lol-data:%s:%s:%s:%s"),
     MATCH_LIST("match:list:%s:%s:%s:%s"),
     MATCH("match:by-id:%s:%s"),
+    MATCH_DETAIL("match:detail:v2:%s:%s"),
     SUMMONER_DATA("user:summoner-data:%s:%s"),
     TRACKER_PENDING_MATCH_LIST("queue:tracker:pending-matches"),
     MOST_USED_BUILD("stats:build:most-used:%s"),

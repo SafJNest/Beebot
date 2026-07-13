@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -933,116 +934,178 @@ public class LeagueDB extends AbstractDB {
         return result.isEmpty() ? 0 : result.get(0).getAsInt("id");
     }
 
+    public static Match getMatch(LeagueShard shard, String gameId) {
+        String matchQuery = "SELECT * FROM `match` WHERE game_id = ? AND region = ? LIMIT 1";
+
+        try (Connection connection = instance.getConnection()) {
+            if (connection == null) return null;
+
+            try (PreparedStatement statement = connection.prepareStatement(matchQuery)) {
+                statement.setString(1, gameId);
+                statement.setString(2, shard.name());
+
+                try (ResultSet result = statement.executeQuery()) {
+                    Map<Integer, Match> matches = readMatches(result);
+                    loadParticipants(connection, matches);
+                    connection.commit();
+                    return matches.isEmpty() ? null : matches.values().iterator().next();
+                }
+            }
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+            return null;
+        }
+    }
+
 
     public static List<Match> getMatchHistory(int summonerId, LeagueMessageParameter parameter) throws SQLException {
         List<Match> result = new ArrayList<>();
-        Map<Integer, Match> matchMap = new LinkedHashMap<>();
 
         try (Connection c = instance.getConnection()) {
             if (c == null) return result;
 
             String q1 = buildMatchHistoryQuery(summonerId, parameter);
-
-            List<Integer> matchIds = new ArrayList<>();
             try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q1)) {
-                while (rs.next()) {
-                    Match match = new Match();
-                    match.id = rs.getInt("id");
-                    match.gameId = rs.getString("game_id");
-                    match.leagueShard = LeagueShard.valueOf(rs.getString("region"));
-                    match.queue = GameQueueType.valueOf(rs.getString("queue"));
-                    match.timeStart = rs.getTimestamp("time_start").getTime();
-                    match.timeEnd = rs.getTimestamp("time_end").getTime();
-                    match.patch = rs.getString("patch");
-
-                    match.bans = new HashMap<>();
-                    JSONObject bansJson = new JSONObject(rs.getString("bans"));
-                    for(String key : bansJson.keySet()) {
-                        TeamType team = TeamType.values()[Integer.parseInt(key)];
-                        try {
-                            match.bans.put(team, bansJson.getJSONArray(key).getInt(0));    
-                        } catch (Exception e) {
-                            match.bans.put(team, null);
-                        }
-                        
-                    }
-                    
-                    match.events = new JSONObject(rs.getString("events"));
-                    match.participants = new ArrayList<>();
-
-                    matchMap.put(match.id, match);
-                    matchIds.add(match.id);
-                }
-            }
-
-            if (matchIds.isEmpty()) {
-                c.commit();
-                return result;
-            }
-
-            String inClause = matchIds.toString().replace("[","(").replace("]",")");
-            String q2 = "SELECT st.*, sm.id AS match_id, su.puuid as puuid " +
-                        "FROM participant st " +
-                        "JOIN `match` sm ON st.match_id = sm.id " +
-                        "LEFT JOIN summoner su on su.id = st.summoner_id " +
-                        "WHERE st.match_id IN " + inClause + ";";
-
-            try (Statement stmt = c.createStatement(); ResultSet rs = stmt.executeQuery(q2)) {
-                while (rs.next()) {
-                    Participant p = new Participant();
-                    p.id = rs.getInt("id");
-                    p.summonerId = rs.getInt("summoner_id");
-                    p.matchId = rs.getInt("match_id");
-                    p.win = rs.getBoolean("win");
-                    p.kda = rs.getString("kda");
-                    p.champion = rs.getInt("champion");
-                    p.lane = LaneType.valueOf(rs.getString("lane"));
-                    p.team = TeamType.valueOf(rs.getString("team"));
-                    p.rank = TierDivisionType.valueOf(rs.getString("rank"));
-                    p.gain = rs.getInt("gain");
-                    p.damage = rs.getInt("damage");
-                    p.damageBuilding = rs.getInt("damage_building");
-                    p.healing = rs.getInt("healing");
-                    p.cs = rs.getInt("cs");
-                    p.goldEarned = rs.getInt("gold_earned");
-                    p.ward = rs.getInt("ward");
-                    p.wardKilled = rs.getInt("ward_killed");
-                    p.visionScore = rs.getInt("vision_score");
-                    p.subTeam = rs.getInt("subteam");
-                    p.subTeamPlacement = rs.getInt("subteam_placement");
-                    p.puuid = rs.getString("puuid");
-                    p.level = rs.getInt("level");
-                    p.doubles = rs.getInt("doubles");
-                    p.triples = rs.getInt("triples");
-                    p.quadruples = rs.getInt("quadruples");
-                    p.pentas = rs.getInt("pentas");
-                    p.q = rs.getInt("q");
-                    p.w = rs.getInt("w");
-                    p.e = rs.getInt("e");
-                    p.r = rs.getInt("r");
-                    p.d = rs.getInt("d");
-                    p.f = rs.getInt("f");
-
-                    try {
-                        JSONObject pingsJson = new JSONObject(rs.getString("pings"));
-                        for(String key : pingsJson.keySet()) {
-                            p.pings.put(key, pingsJson.getInt(key));
-                        }   
-                    } catch (Exception e) {}
- 
-
-                    ParticipantBuildCodec.apply(p, rs.getString("build"));
-
-                    Match match = matchMap.get(p.matchId);
-                    if (match != null) {
-                        match.participants.add(p);
-                    }
-                }
+                Map<Integer, Match> matches = readMatches(rs);
+                loadParticipants(c, matches);
+                result.addAll(matches.values());
             }
             c.commit();
-            result.addAll(matchMap.values());
         }
         return result;
+    }
+
+    private static Map<Integer, Match> readMatches(ResultSet result) throws SQLException {
+        Map<Integer, Match> matches = new LinkedHashMap<>();
+        while (result.next()) {
+            Match match = readMatch(result);
+            matches.put(match.id, match);
+        }
+        return matches;
+    }
+
+    private static void loadParticipants(Connection connection, Map<Integer, Match> matches) throws SQLException {
+        if (matches.isEmpty()) return;
+
+        String inClause = matches.keySet().toString().replace("[", "(").replace("]", ")");
+        String query = "SELECT st.*, sm.id AS match_id, su.puuid as puuid, su.riot_id as riot_id "
+            + "FROM participant st "
+            + "JOIN `match` sm ON st.match_id = sm.id "
+            + "LEFT JOIN summoner su on su.id = st.summoner_id "
+            + "WHERE st.match_id IN " + inClause + ";";
+
+        try (Statement statement = connection.createStatement(); ResultSet result = statement.executeQuery(query)) {
+            while (result.next()) {
+                Participant participant = readParticipant(result);
+                Match match = matches.get(participant.matchId);
+                if (match != null) match.participants.add(participant);
+            }
+        }
+    }
+
+    private static Match readMatch(ResultSet result) throws SQLException {
+        Match match = new Match();
+        match.id = result.getInt("id");
+        match.gameId = result.getString("game_id");
+        match.leagueShard = enumValue(LeagueShard.class, result.getString("region"));
+        match.queue = enumValue(GameQueueType.class, result.getString("queue"));
+        match.rank = enumValue(TierType.class, result.getString("rank"));
+        match.lastUpdate = timestamp(result, "last_update");
+        match.timeStart = timestamp(result, "time_start");
+        match.timeEnd = timestamp(result, "time_end");
+        match.patch = result.getString("patch");
+        match.events = jsonObject(result.getString("events"));
+        match.eventData = match.events.toMap();
+        match.participants = new ArrayList<>();
+
+        JSONObject bans = jsonObject(result.getString("bans"));
+        for (String key : bans.keySet()) {
+            int ordinal;
+            try {
+                ordinal = Integer.parseInt(key);
+            } catch (NumberFormatException ignored) {
+                continue;
+            }
+            if (ordinal < 0 || ordinal >= TeamType.values().length) continue;
+
+            List<Integer> championIds = new ArrayList<>();
+            JSONArray values = bans.optJSONArray(key);
+            if (values != null) {
+                for (int i = 0; i < values.length(); i++) championIds.add(values.optInt(i, 0));
+            }
+            match.bans.put(TeamType.values()[ordinal], championIds);
+        }
+        return match;
+    }
+
+    private static Participant readParticipant(ResultSet result) throws SQLException {
+        Participant participant = new Participant();
+        participant.id = result.getInt("id");
+        participant.summonerId = result.getInt("summoner_id");
+        participant.matchId = result.getInt("match_id");
+        participant.win = result.getBoolean("win");
+        participant.kda = result.getString("kda");
+        participant.champion = result.getInt("champion");
+        participant.level = result.getInt("level");
+        participant.team = enumValue(TeamType.class, result.getString("team"));
+        participant.lane = enumValue(LaneType.class, result.getString("lane"));
+        participant.roleQuestId = result.getInt("role_quest_id");
+        participant.subTeam = result.getInt("subteam");
+        participant.subTeamPlacement = result.getInt("subteam_placement");
+        participant.rank = enumValue(TierDivisionType.class, result.getString("rank"));
+        participant.lp = result.getInt("lp");
+        participant.gain = result.getInt("gain");
+        participant.damage = result.getInt("damage");
+        participant.damageBuilding = result.getInt("damage_building");
+        participant.healing = result.getInt("healing");
+        participant.cs = result.getInt("cs");
+        participant.goldEarned = result.getInt("gold_earned");
+        participant.ward = result.getInt("ward");
+        participant.wardKilled = result.getInt("ward_killed");
+        participant.visionScore = result.getInt("vision_score");
+        participant.doubles = result.getInt("doubles");
+        participant.triples = result.getInt("triples");
+        participant.quadruples = result.getInt("quadruples");
+        participant.pentas = result.getInt("pentas");
+        participant.q = result.getInt("q");
+        participant.w = result.getInt("w");
+        participant.e = result.getInt("e");
+        participant.r = result.getInt("r");
+        participant.d = result.getInt("d");
+        participant.f = result.getInt("f");
+        participant.puuid = result.getString("puuid");
+        applyRiotId(participant, result.getString("riot_id"));
+
+        JSONObject pings = jsonObject(result.getString("pings"));
+        for (String key : pings.keySet()) participant.pings.put(key, pings.optInt(key, 0));
+        ParticipantBuildCodec.apply(participant, result.getString("build"));
+        return participant;
+    }
+
+    private static <T extends Enum<T>> T enumValue(Class<T> enumType, String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Enum.valueOf(enumType, value);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private static long timestamp(ResultSet result, String column) throws SQLException {
+        Timestamp value = result.getTimestamp(column);
+        return value != null ? value.getTime() : 0;
+    }
+
+    private static JSONObject jsonObject(String value) {
+        return value == null || value.isBlank() ? new JSONObject() : new JSONObject(value);
+    }
+
+    private static void applyRiotId(Participant participant, String value) {
+        if (value == null || value.isBlank()) return;
+
+        String[] parts = value.split("#", 2);
+        participant.riotId = parts[0];
+        participant.riotTag = parts.length > 1 ? parts[1] : null;
     }
 
 

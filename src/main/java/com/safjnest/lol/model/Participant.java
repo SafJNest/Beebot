@@ -17,7 +17,9 @@ public class Participant {
     public int champion;
     public LaneType lane;
     public TeamType team;
+    public int roleQuestId;
     public TierDivisionType rank;
+    public int lp;
     public int gain;
     public int damage;
     public int damageBuilding;
@@ -31,6 +33,8 @@ public class Participant {
     public int subTeam;
     public int subTeamPlacement;
     public String puuid;
+    public String riotId;
+    public String riotTag;
 
     public int level;
 
@@ -68,4 +72,5 @@ public class Participant {
     public List<Integer> starterItems = new ArrayList<>();
     public List<Integer> buildPath    = new ArrayList<>();
     public int boots;
+    public int supportItem;
 }

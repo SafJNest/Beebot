@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +14,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.safjnest.spring.dto.LolProfileView;
 import com.safjnest.spring.dto.LolSearchResult;
+import com.safjnest.spring.dto.LolApiError;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.model.MatchLookup;
 import com.safjnest.lol.service.ProfilePageService;
 import com.safjnest.lol.model.ProfilePageData;
 import com.safjnest.spring.util.LolApiMapper;
@@ -71,6 +74,21 @@ public class LolController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
         }
         return LolApiMapper.toProfileView(page);
+    }
+
+    @GetMapping("/match/{gameId}")
+    public ResponseEntity<?> match(
+            @PathVariable("shard") String shardValue,
+            @PathVariable("gameId") String gameId
+    ) {
+        MatchLookup lookup = LeagueService.getMatchDetail(requireText(gameId, "match id"), parseShard(shardValue));
+
+        return switch (lookup.getStatus()) {
+            case READY -> ResponseEntity.ok(lookup.getMatch());
+            case PENDING -> ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(new LolApiError(HttpStatus.ACCEPTED.value(), "match_pending", "Match analysis is pending"));
+            case NOT_FOUND -> throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
+        };
     }
 
     static LeagueShard parseShard(String value) {

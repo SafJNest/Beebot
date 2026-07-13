@@ -12,11 +12,14 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ProfileMastery;
 import com.safjnest.lol.model.ProfileMatch;
 import com.safjnest.lol.model.ProfileMatchParticipant;
+import com.safjnest.lol.model.Match;
+import com.safjnest.lol.model.MatchLookup;
 import com.safjnest.lol.model.SummonerProfile;
 import com.safjnest.lol.model.SummonerRank;
 import com.safjnest.lol.model.SummonerSearchResult;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
@@ -56,6 +59,7 @@ public class LeagueService {
     private static final int TTL_ADVANCED_LOL_DATA = 60 * 60 * 24; // 24 hours
     private static final int TTL_MATCH_LIST = 60 * 60 * 4; // 12 hours
     private static final int TTL_MATCH = 0; // never expire
+    private static final int TTL_MATCH_DETAIL = 0;
     private static final int TTL_SUMMONER_AUTOCOMPLETE = 60 * 60 * 24; // 24 hours
     private static final int TTL_SUMMONER_SEARCH = 60 * 15;
     private static final int TTL_PROFILE_BASE = 60 * 60;
@@ -389,12 +393,47 @@ public class LeagueService {
       return match;
     }
 
+    public static MatchLookup getMatchDetail(String gameId, LeagueShard shard) {
+        String databaseGameId = databaseGameId(gameId);
+        String key = RedisKey.MATCH_DETAIL.of(shard.name(), databaseGameId);
+        Match cached = RedisClient.get(key, Match.class);
+        if (cached != null) {
+            cached.restoreEvents();
+            return MatchLookup.ready(cached);
+        }
+
+        Match match = LeagueDB.getMatch(shard, databaseGameId);
+        if (match != null) {
+            RedisClient.set(key, match, TTL_MATCH_DETAIL);
+            return MatchLookup.ready(match);
+        }
+
+        LOLMatch riotMatch = getMatch(riotGameId(shard, databaseGameId), shard);
+        if (riotMatch == null) return MatchLookup.notFound();
+
+        Tracker.queueMatch(riotMatch);
+        return MatchLookup.pending();
+    }
+
+    public static void invalidateMatchDetail(LeagueShard shard, String gameId) {
+        RedisClient.delete(RedisKey.MATCH_DETAIL.of(shard.name(), databaseGameId(gameId)));
+    }
+
     public static String putMatch(LOLMatch match) {
       String gameId = match.getPlatform().name() + "_" + match.getGameId();
       RegionShard region = match.getPlatform().toRegionShard();
       String key = RedisKey.MATCH.of(region.name(), gameId);
       RedisClient.set(key, match, TTL_MATCH);
       return gameId;
+    }
+
+    private static String databaseGameId(String gameId) {
+        int separator = gameId.indexOf('_');
+        return separator >= 0 ? gameId.substring(separator + 1) : gameId;
+    }
+
+    private static String riotGameId(LeagueShard shard, String gameId) {
+        return shard.name() + "_" + gameId;
     }
 
     public static QueryResult getSummonerData(String puuid, LeagueShard shard) {

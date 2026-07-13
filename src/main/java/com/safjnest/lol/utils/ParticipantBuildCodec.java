@@ -56,6 +56,7 @@ public final class ParticipantBuildCodec {
         buildPath.put("starter", new JSONArray(p.starterItems));
         buildPath.put("build",   new JSONArray(p.buildPath));
         buildPath.put("boots",   p.boots);
+        buildPath.put("support_item", p.supportItem);
         build.put("build", buildPath);
 
         return build;
@@ -124,6 +125,9 @@ public final class ParticipantBuildCodec {
         }
         if (buildObj.has("boots")) {
             p.boots = buildObj.optInt("boots", 0);
+        }
+        if (buildObj.has("support_item")) {
+            p.supportItem = buildObj.optInt("support_item", 0);
         }
     }
 }
