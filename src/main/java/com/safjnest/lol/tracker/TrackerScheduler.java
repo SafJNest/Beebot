@@ -46,6 +46,9 @@ public class TrackerScheduler {
         ChronoTask refreshQueuedChampionData = () -> Tracker.processChampionData();
         refreshQueuedChampionData.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
 
+        ChronoTask refreshMatchLookups = () -> Tracker.processMatchLookups();
+        refreshMatchLookups.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
+
         ChronoTask refreshLeaderboardDistribution = () -> LeaderboardService.rebuildDistribution();
         refreshLeaderboardDistribution.scheduleAtFixedRate(0, TimeConstant.DAY, TimeUnit.MILLISECONDS);
 

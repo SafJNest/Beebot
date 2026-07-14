@@ -85,9 +85,12 @@ public class BuildService {
         }
         if (cached != null) return cached;
 
-        Build build = loadBuilds(filter, allowCompute).stream()
-            .max(Comparator.comparingInt(Build::games))
-            .orElse(null);
+        Build build = LeagueDB.getMostUsedChampionBuild(filter);
+        if (build == null && allowCompute) {
+            build = loadBuilds(filter, true).stream()
+                .max(Comparator.comparingInt(Build::games))
+                .orElse(null);
+        }
         if (build != null) RedisClient.set(key, build, 0);
         return build;
     }

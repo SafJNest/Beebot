@@ -54,6 +54,7 @@ Spring owns controllers, configuration and HTTP error models. It must not own op
 - [ADR-0005: LoL API JSON contract](adr/0005-lol-api-json-contract.md)
 - [ADR-0006: Champion API contract](adr/0006-champion-api-contract.md)
 - [ADR-0007: Unified API result and parameter parsing](adr/0007-unified-api-result-and-parameters.md)
+- [ADR-0008: Component caches and asynchronous match lookups](adr/0008-endpoint-cache-and-async-lookups.md)
 
 ## Macro-task index
 

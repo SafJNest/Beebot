@@ -74,6 +74,12 @@ public class Tracker {
     private static final Set<String> CHAMPION_DATA_PENDING = ConcurrentHashMap.newKeySet();
     private static final Map<String, Integer> CHAMPION_DATA_RETRIES = new ConcurrentHashMap<>();
     private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
+    private static final int MATCH_LOOKUP_BATCH_SIZE = 5;
+    private static final int MATCH_LOOKUP_MAX_RETRIES = 3;
+    private static final int MATCH_LOOKUP_NOT_FOUND_TTL = 60 * 5;
+    private static final Queue<MatchLookupRequest> MATCH_LOOKUP_QUEUE = new ConcurrentLinkedQueue<>();
+    private static final Set<String> MATCH_LOOKUP_PENDING = ConcurrentHashMap.newKeySet();
+    private static final Map<String, Integer> MATCH_LOOKUP_RETRIES = new ConcurrentHashMap<>();
     private static final AtomicBoolean QUEUE_DRAIN_RUNNING = new AtomicBoolean();
 
     private static long period = TimeConstant.MINUTE * 10;
@@ -154,6 +160,39 @@ public class Tracker {
     public static void queueMatch(LOLMatch match) {
         if (match == null) return;
         RedisClient.sadd(RedisKey.TRACKER_PENDING_MATCH_LIST.of(), LeagueService.putMatch(match));
+    }
+
+    public static void enqueueMatchLookup(LeagueShard shard, String gameId) {
+        if (shard == null || gameId == null || gameId.isBlank()) return;
+
+        String key = shard.name() + ":" + gameId;
+        if (MATCH_LOOKUP_PENDING.add(key)) MATCH_LOOKUP_QUEUE.offer(new MatchLookupRequest(key, shard, gameId));
+    }
+
+    public static synchronized int processMatchLookups() {
+        int batchSize = Math.min(MATCH_LOOKUP_BATCH_SIZE, MATCH_LOOKUP_QUEUE.size());
+        int processed = 0;
+        for (int i = 0; i < batchSize; i++) {
+            MatchLookupRequest request = MATCH_LOOKUP_QUEUE.poll();
+            if (request == null) break;
+
+            try {
+                String riotGameId = request.shard().name() + "_" + request.gameId();
+                LOLMatch match = LeagueService.getMatch(riotGameId, request.shard());
+                if (match == null) {
+                    retryMatchLookup(request);
+                } else {
+                    queueMatch(match);
+                    completeMatchLookup(request);
+                }
+            } catch (Exception exception) {
+                BotLogger.error("Match lookup failed for game=" + request.key()
+                    + " message=" + exception.getMessage());
+                retryMatchLookup(request);
+            }
+            processed++;
+        }
+        return processed;
     }
     
     public static Set<LOLMatch> popQueue() {
@@ -259,6 +298,28 @@ public class Tracker {
     }
 
     private record ChampionDataRequest(String key, Filter filter) {}
+
+    private static void retryMatchLookup(MatchLookupRequest request) {
+        int retries = MATCH_LOOKUP_RETRIES.merge(request.key(), 1, Integer::sum);
+        if (retries < MATCH_LOOKUP_MAX_RETRIES) {
+            MATCH_LOOKUP_QUEUE.offer(request);
+            return;
+        }
+
+        RedisClient.set(
+            RedisKey.MATCH_NOT_FOUND.of(request.shard().name(), request.gameId()),
+            "1",
+            MATCH_LOOKUP_NOT_FOUND_TTL
+        );
+        completeMatchLookup(request);
+    }
+
+    private static void completeMatchLookup(MatchLookupRequest request) {
+        MATCH_LOOKUP_PENDING.remove(request.key());
+        MATCH_LOOKUP_RETRIES.remove(request.key());
+    }
+
+    private record MatchLookupRequest(String key, LeagueShard shard, String gameId) {}
 
     public record QueueStatus(int profileStatistics, int championData) {}
 

@@ -23,6 +23,7 @@ Esporre statistiche champion e most common build in una response HTTP unica, sen
 - comando owner `pushqueue` per il drain manuale in test;
 - avvio esplicito e idempotente di `TrackerScheduler`;
 - invalidazione cache dopo refresh;
+- direct persisted lookup for the most-used build before any computation;
 - test e documentazione del contratto;
 - rimozione dei log e commenti temporanei di debug.
 

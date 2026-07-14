@@ -14,6 +14,8 @@ Move profile and search endpoints to the canonical summoner models and remove Sp
 
 - update `ProfilePageService` to build `SummonerView`;
 - update search to use `Summoner` and `Rank`;
+- load search ranks with one Redis batch and one bounded DB query;
+- cache the complete profile view only after statistics are ready;
 - move overview and recent results to canonical models;
 - remove profile/search mapping duplication;
 - keep Spring errors and controller concerns only.
@@ -21,7 +23,7 @@ Move profile and search endpoints to the canonical summoner models and remove Sp
 ## Out of scope
 
 - leaderboard-specific cache behavior;
-- complete match endpoint migration.
+- asynchronous match lookup migration.
 
 ## Invariants
 

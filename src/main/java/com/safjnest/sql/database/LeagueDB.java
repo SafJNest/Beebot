@@ -766,6 +766,35 @@ public class LeagueDB extends AbstractDB {
         return result;
     }
 
+    public static Map<Integer, QueryRecord> getProfileRanks(List<Integer> summonerIds) {
+        Map<Integer, QueryRecord> result = new HashMap<>();
+        if (summonerIds == null || summonerIds.isEmpty()) return result;
+
+        String sql = "SELECT r.summoner_id, r.queue, COALESCE(r.`rank`, 'UNRANKED') AS rank, " +
+            "COALESCE(r.lp, 0) AS lp, COALESCE(r.wins, 0) AS wins, COALESCE(r.losses, 0) AS losses " +
+            "FROM `rank` r WHERE r.summoner_id IN (" + placeholders(summonerIds.size()) + ") " +
+            "AND r.queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') " +
+            "ORDER BY r.summoner_id, FIELD(r.queue, 'TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5')";
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                int parameter = 1;
+                for (int summonerId : summonerIds) pstmt.setInt(parameter++, summonerId);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        QueryRecord row = toRecord(rs);
+                        result.putIfAbsent(row.getAsInt("summoner_id"), row);
+                    }
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
     public static QueryResult getProfileMasteries(int summonerId) {
         String sql = "SELECT champion_id, champion_level, champion_points FROM masteries WHERE summoner_id = ?";
         QueryResult result = new QueryResult();
@@ -1409,6 +1438,31 @@ public class LeagueDB extends AbstractDB {
     public static List<Build> getChampionBuild(Filter filter) {
         QueryResult result = instance.query("SELECT data FROM champion_builds WHERE filter = '" + filter.toKey() + "'");
         return result.stream().map(r -> Build.decode(r.get("data"))).toList();
+    }
+
+    public static Build getMostUsedChampionBuild(Filter filter) {
+        if (filter == null) return null;
+
+        String sql = "SELECT data FROM champion_builds WHERE filter = ? ORDER BY games DESC LIMIT 1";
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return null;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, filter.toKey());
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    if (rs.next()) {
+                        try {
+                            return Build.decode(rs.getString("data"));
+                        } catch (RuntimeException ignored) {
+                            return null;
+                        }
+                    }
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static void saveChampionBuild(Build build) {

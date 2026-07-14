@@ -162,6 +162,7 @@ public class LeagueService {
         RedisClient.delete(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.MATCH_LIST.of(shard.name(), puuid, "null", 0));
         RedisClient.delete(RedisKey.PROFILE_BASE.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.PROFILE_PAGE.of(shard.name(), puuid));
 
         int summonerId = getSummonerIdByPuuid(puuid, shard);
         if (summonerId != 0) {
@@ -177,10 +178,15 @@ public class LeagueService {
         List<SummonerView> cached = RedisClient.get(key, SUMMONER_SEARCH_TYPE);
         if (cached != null) return cached;
 
+        QueryResult rows = LeagueDB.searchSummoners(normalizedQuery, shard);
+        List<Integer> summonerIds = new ArrayList<>();
+        for (QueryRecord row : rows) summonerIds.add(row.getAsInt("summoner_id"));
+        Map<Integer, Rank> ranks = getProfileRanks(summonerIds);
+
         List<SummonerView> summoners = new ArrayList<>();
-        for (QueryRecord row : LeagueDB.searchSummoners(normalizedQuery, shard)) {
+        for (QueryRecord row : rows) {
             Summoner summoner = toSummoner(row);
-            Rank rank = getProfileRank(summoner.summonerId());
+            Rank rank = ranks.getOrDefault(summoner.summonerId(), Rank.unranked());
             summoners.add(SummonerView.from(summoner, List.of(rank), new ProfileStatistics(), List.of()));
         }
         RedisClient.set(key, summoners, TTL_SUMMONER_SEARCH);
@@ -220,6 +226,38 @@ public class LeagueService {
             : Rank.unranked();
         RedisClient.set(key, rank, TTL_PROFILE_RANK);
         return rank;
+    }
+
+    public static Map<Integer, Rank> getProfileRanks(List<Integer> summonerIds) {
+        Map<Integer, Rank> result = new HashMap<>();
+        if (summonerIds == null || summonerIds.isEmpty()) return result;
+
+        Map<String, Integer> idsByKey = new LinkedHashMap<>();
+        for (int summonerId : summonerIds) {
+            if (summonerId != 0) idsByKey.put(RedisKey.PROFILE_RANK.of(summonerId), summonerId);
+        }
+        if (idsByKey.isEmpty()) return result;
+
+        Map<String, Rank> cached = RedisClient.get(new ArrayList<>(idsByKey.keySet()), Rank.class);
+        for (Map.Entry<String, Rank> entry : cached.entrySet()) {
+            Integer summonerId = idsByKey.get(entry.getKey());
+            if (summonerId != null) result.put(summonerId, entry.getValue());
+        }
+
+        List<Integer> missing = new ArrayList<>();
+        for (int summonerId : idsByKey.values()) {
+            if (!result.containsKey(summonerId)) missing.add(summonerId);
+        }
+        if (missing.isEmpty()) return result;
+
+        Map<Integer, QueryRecord> rows = LeagueDB.getProfileRanks(missing);
+        for (int summonerId : missing) {
+            QueryRecord row = rows.get(summonerId);
+            Rank rank = row != null ? toRank(row) : Rank.unranked();
+            result.put(summonerId, rank);
+            RedisClient.set(RedisKey.PROFILE_RANK.of(summonerId), rank, TTL_PROFILE_RANK);
+        }
+        return result;
     }
 
     public static List<Rank> getProfileRanks(int summonerId) {
@@ -405,19 +443,22 @@ public class LeagueService {
 
         Match match = LeagueDB.getMatch(shard, databaseGameId);
         if (match != null) {
+            RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(shard.name(), databaseGameId));
             RedisClient.set(key, match, TTL_MATCH_DETAIL);
             return ApiResult.ready(match);
         }
 
-        LOLMatch riotMatch = getMatch(riotGameId(shard, databaseGameId), shard);
-        if (riotMatch == null) return ApiResult.notFound();
+        String notFound = RedisClient.get(RedisKey.MATCH_NOT_FOUND.of(shard.name(), databaseGameId));
+        if ("1".equals(notFound)) return ApiResult.notFound();
 
-        Tracker.queueMatch(riotMatch);
+        Tracker.enqueueMatchLookup(shard, databaseGameId);
         return ApiResult.pending();
     }
 
     public static void invalidateMatchDetail(LeagueShard shard, String gameId) {
-        RedisClient.delete(RedisKey.MATCH_DETAIL.of(shard.name(), databaseGameId(gameId)));
+        String databaseGameId = databaseGameId(gameId);
+        RedisClient.delete(RedisKey.MATCH_DETAIL.of(shard.name(), databaseGameId));
+        RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(shard.name(), databaseGameId));
     }
 
     public static String putMatch(LOLMatch match) {
@@ -425,6 +466,7 @@ public class LeagueService {
       RegionShard region = match.getPlatform().toRegionShard();
       String key = RedisKey.MATCH.of(region.name(), gameId);
       RedisClient.set(key, match, TTL_MATCH);
+      RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(match.getPlatform().name(), String.valueOf(match.getGameId())));
       return gameId;
     }
 
@@ -520,10 +562,6 @@ public class LeagueService {
     private static String databaseGameId(String gameId) {
         int separator = gameId.indexOf('_');
         return separator >= 0 ? gameId.substring(separator + 1) : gameId;
-    }
-
-    private static String riotGameId(LeagueShard shard, String gameId) {
-        return shard.name() + "_" + gameId;
     }
 
     private static List<Choice> toChoices(List<SummonerAutocompleteChoice> autocompleteChoices) {

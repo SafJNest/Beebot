@@ -14,6 +14,8 @@ Finish the public match migration and remove obsolete DTO and mapper structures.
 ## Scope
 
 - update LoL controllers and match endpoint responses;
+- resolve missing match details through Tracker instead of Riot during the HTTP request;
+- keep unresolved match lookup requests separate from the existing fetched-match Redis queue;
 - return canonical `Match` or `MatchResult` according to endpoint size;
 - remove `LolApiMapper` after its last consumer migrates;
 - remove obsolete Spring success DTOs and unused imports;
@@ -21,8 +23,8 @@ Finish the public match migration and remove obsolete DTO and mapper structures.
 
 ## Out of scope
 
-- new match ingestion features;
-- changes to Riot API behavior;
+- unrelated match ingestion features;
+- changes to the stored match model;
 - unrelated Spring error handling.
 
 ## Invariants
@@ -31,6 +33,7 @@ Finish the public match migration and remove obsolete DTO and mapper structures.
 - full match and lightweight result remain distinct;
 - tracker-only Riot records are not exposed;
 - API JSON follows ADR-0005.
+- missing match details return `202` until the background lookup completes;
 
 ## Acceptance criteria
 

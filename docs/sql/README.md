@@ -84,9 +84,11 @@ Le colonne che rappresentano un campione o una regione restano valori applicativ
 
 ## Leaderboard
 
-`leaderboard_distribution` è una tabella derivata. La definizione contiene solo schema, chiavi e indice temporale. Il contenuto viene ricostruito da `rank` e `summoner` tramite `LeaderboardService.rebuildDistribution()` e aggiornato dal job giornaliero di `TrackerScheduler`.
+`leaderboard_distribution` è una tabella derivata. La definizione contiene solo schema, chiavi e indice temporale. Il contenuto viene ricostruito da `rank` e `summoner` tramite `LeaderboardService.rebuildDistribution()` e aggiornato dal job giornaliero di `TrackerScheduler`. Il rebuild inserisce anche le combinazioni senza player con conteggio `0` e sostituisce lo snapshot in una transazione.
 
 La migration per installazioni esistenti è in [`0001-leaderboard-distribution.sql`](../../database/league_of_legends/migrations/0001-leaderboard-distribution.sql). Va eseguita una volta su database già esistenti; le definizioni base descrivono invece lo schema risultante.
+
+L'indice per le query paginated della leaderboard è in [`0002-rank-leaderboard-filter.sql`](../../database/league_of_legends/migrations/0002-rank-leaderboard-filter.sql). Va applicato alle installazioni esistenti prima di usare la leaderboard in produzione.
 
 ## Regole operative
 
