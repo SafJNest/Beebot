@@ -430,21 +430,20 @@ public class LeagueDB extends AbstractDB {
 
     public static long countLeaderboard(String rankTier, List<String> queues, String region) {
         boolean soloAliases = queues.size() > 1;
+        List<String> ranks = rankValues(rankTier);
         String sql = "SELECT COUNT(DISTINCT s.id) AS total FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
             + "WHERE r.queue IN (" + placeholders(queues.size()) + ") "
-            + "AND (r.`rank` = ? OR r.`rank` LIKE ?)";
-        if (soloAliases) sql += preferredSoloQueueFilter();
+            + "AND r.`rank` IN (" + placeholders(ranks.size()) + ")";
+        if (soloAliases) sql += preferredSoloQueueFilter(ranks.size());
         if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
 
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return 0;
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 int parameter = bindQueues(pstmt, queues, 1);
-                pstmt.setString(parameter++, rankTier);
-                pstmt.setString(parameter++, rankTier + "_%");
+                parameter = bindValues(pstmt, ranks, parameter);
                 if (soloAliases) {
-                    pstmt.setString(parameter++, rankTier);
-                    pstmt.setString(parameter++, rankTier + "_%");
+                    parameter = bindValues(pstmt, ranks, parameter);
                 }
                 if (!"GLOBAL".equals(region)) pstmt.setString(parameter, region);
                 try (ResultSet rs = pstmt.executeQuery()) {
@@ -459,12 +458,13 @@ public class LeagueDB extends AbstractDB {
 
     public static QueryResult getLeaderboard(String rankTier, List<String> queues, String region, long offset, int limit) {
         boolean soloAliases = queues.size() > 1;
+        List<String> ranks = rankValues(rankTier);
         String sql = "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon, "
             + "r.`rank`, r.lp, r.wins, r.losses "
             + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
             + "WHERE r.queue IN (" + placeholders(queues.size()) + ") "
-            + "AND (r.`rank` = ? OR r.`rank` LIKE ?)";
-        if (soloAliases) sql += preferredSoloQueueFilter();
+            + "AND r.`rank` IN (" + placeholders(ranks.size()) + ")";
+        if (soloAliases) sql += preferredSoloQueueFilter(ranks.size());
         if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
         sql += " ORDER BY r.lp DESC, r.wins DESC, r.losses ASC, s.id ASC LIMIT ? OFFSET ?";
 
@@ -473,11 +473,9 @@ public class LeagueDB extends AbstractDB {
             if (conn == null) return result;
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 int parameter = bindQueues(pstmt, queues, 1);
-                pstmt.setString(parameter++, rankTier);
-                pstmt.setString(parameter++, rankTier + "_%");
+                parameter = bindValues(pstmt, ranks, parameter);
                 if (soloAliases) {
-                    pstmt.setString(parameter++, rankTier);
-                    pstmt.setString(parameter++, rankTier + "_%");
+                    parameter = bindValues(pstmt, ranks, parameter);
                 }
                 if (!"GLOBAL".equals(region)) pstmt.setString(parameter++, region);
                 pstmt.setInt(parameter++, limit);
@@ -580,15 +578,29 @@ public class LeagueDB extends AbstractDB {
         return parameter;
     }
 
+    private static int bindValues(PreparedStatement pstmt, List<String> values, int parameter) throws SQLException {
+        for (String value : values) pstmt.setString(parameter++, value);
+        return parameter;
+    }
+
     private static String placeholders(int count) {
         return String.join(", ", Collections.nCopies(count, "?"));
     }
 
-    private static String preferredSoloQueueFilter() {
+    private static String preferredSoloQueueFilter(int rankCount) {
         return " AND NOT (r.queue = 'RANKED_SOLO_5X5' AND EXISTS ("
             + "SELECT 1 FROM `rank` preferred WHERE preferred.summoner_id = r.summoner_id "
             + "AND preferred.queue = 'TEAM_BUILDER_RANKED_SOLO' "
-            + "AND (preferred.`rank` = ? OR preferred.`rank` LIKE ?)))";
+            + "AND preferred.`rank` IN (" + placeholders(rankCount) + ")))";
+    }
+
+    private static List<String> rankValues(String rankTier) {
+        List<String> values = new ArrayList<>();
+        values.add(rankTier);
+        for (TierDivisionType division : TierDivisionType.values()) {
+            if (rankTier.equals(division.getTier())) values.add(division.name());
+        }
+        return values;
     }
 
     public static QueryRecord getProfileBase(String puuid, LeagueShard shard) {
@@ -894,7 +906,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static QueryResult getFocusedCustomBuild(String name){
-        return instance.query("SELECT name, id FROM custom_build WHERE name LIKE '%" + name + "%' ORDER BY RAND() LIMIT 25;");
+        return instance.query("SELECT name, id FROM custom_build WHERE LOCATE('" + name + "', name) > 0 ORDER BY RAND() LIMIT 25;");
     }
 
     public static QueryResult getCustomBuildByUser(String user_id){

@@ -62,7 +62,7 @@ public class RedisClient {
             } else {
                 jedis.set(key, value);
             }
-        }
+        } catch (Exception ignored) {}
     }
 
     public static <T> void set(String key, T value, int ttlSeconds) {
@@ -105,7 +105,7 @@ public class RedisClient {
     public static void delete(String key) {
         try (Jedis jedis = pool.getResource()) {
             jedis.del(key);
-        }
+        } catch (Exception ignored) {}
     }
 
     public static boolean exists(String key) {
