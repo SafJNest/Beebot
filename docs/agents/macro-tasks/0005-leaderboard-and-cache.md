@@ -18,7 +18,9 @@ Simplify leaderboard assembly and reuse the complete canonical summoner view wit
 - wrap one canonical `SummonerView` in each `SummonerLeaderboard`;
 - remove `toSummoner`, `overview`, `mostPlayed`, `championName`, `ratio`, `rounded`, local Riot ID parsing and `distributionVersion`;
 - preserve fixed page size, defaults and distribution endpoints;
-- use deterministic cache keys and TTL without wildcard deletion.
+- cache total, offset-based base rows and complete pages with deterministic keys and TTL;
+- reuse the existing per-summoner Profile Statistics cache for overview data;
+- use deterministic invalidation without wildcard deletion.
 
 ## Out of scope
 
@@ -34,12 +36,17 @@ Simplify leaderboard assembly and reuse the complete canonical summoner view wit
 - page response contains `page`, `pageSize`, `total`, `pages` and rows;
 - missing profile statistics are queued and never rebuilt synchronously;
 - distribution rows remain keyed by queue, rank and region.
+- leaderboard rows contain canonical `Summoner` and `Rank` data, including PUUID;
+- total and base-row caches may live for 24 hours and are refreshed by the daily distribution rebuild;
+- a partial page caches its total and base rows but not the assembled full page.
 
 ## Acceptance criteria
 
 - `LeaderboardService` has one `LeaderboardPage` construction flow;
 - leaderboard rows use `SummonerLeaderboard` and `SummonerView`;
 - no sequential Riot fetch occurs for each row;
+- cache hits for total and offset-based rows avoid the leaderboard DB query;
+- overview cache hits are batch-loaded through Profile Statistics;
 - cache is refreshed through known deterministic keys and TTL;
 - pagination works for 0, 1, 50 and 51 results;
 - rank distribution and top-regions remain non-paginated.

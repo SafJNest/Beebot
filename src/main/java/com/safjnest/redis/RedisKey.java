@@ -28,7 +28,9 @@ public enum RedisKey {
     PROFILE_RANKS("profile:ranks:v2:%s"),
     PROFILE_MASTERIES("profile:masteries:v2:%s"),
     PROFILE_STATISTICS("profile:statistics:v3:%s:%s"),
-    LEADERBOARD_PAGE("leaderboard:page:v2:%s:%s:%s:%s"),
+    LEADERBOARD_PAGE("leaderboard:page:v3:%s:%s:%s:%s"),
+    LEADERBOARD_TOTAL("leaderboard:total:v1:%s:%s:%s"),
+    LEADERBOARD_ROWS("leaderboard:rows:v1:%s:%s:%s:%s:%s"),
     LEADERBOARD_RANK_DISTRIBUTION("leaderboard:rank-distribution:v2:%s:%s"),
     LEADERBOARD_TOP_REGIONS("leaderboard:top-regions:v2:%s:%s"),
     CHAMPION_PAGE("champion:page:v1:%s");

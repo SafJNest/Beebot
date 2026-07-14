@@ -44,9 +44,11 @@ import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.model.leaderboard.LeaderboardRow;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.statistics.ProfileStatisticsRow;
+import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -73,7 +75,12 @@ public class LeagueDB extends AbstractDB {
         return instance;
     }
 
-    public record LeaderboardData(long total, QueryResult rows) {}
+    public record LeaderboardData(long total, List<LeaderboardRow> rows, boolean success) {}
+
+    @FunctionalInterface
+    private interface LeaderboardQuery {
+        LeaderboardData execute(Connection conn) throws SQLException;
+    }
 
     public static QueryResult getLOLAccountsByUserId(String user_id){
         String query = "SELECT puuid, region, tracking FROM summoner WHERE user_id = '" + user_id + "' order by id;";
@@ -435,28 +442,55 @@ public class LeagueDB extends AbstractDB {
     public static LeaderboardData getLeaderboardData(
         String rankTier, String queue, List<String> queues, String region, long offset, int limit
     ) {
+        return executeLeaderboardQuery(conn -> {
+            long total = leaderboardDistributionTotal(conn, queue, rankTier, region);
+            List<LeaderboardRow> rows = total > offset
+                ? getLeaderboard(conn, queue, rankTier, queues, region, offset, limit)
+                : List.of();
+            return new LeaderboardData(total, rows, true);
+        });
+    }
+
+    public static LeaderboardData getLeaderboardTotal(String rankTier, String queue, String region) {
+        return executeLeaderboardQuery(conn -> new LeaderboardData(
+            leaderboardDistributionTotal(conn, queue, rankTier, region), List.of(), true
+        ));
+    }
+
+    public static LeaderboardData getLeaderboardRows(
+        String rankTier, String queue, List<String> queues, String region, long offset, int limit
+    ) {
+        return executeLeaderboardQuery(conn -> new LeaderboardData(
+            0, getLeaderboard(conn, queue, rankTier, queues, region, offset, limit), true
+        ));
+    }
+
+    private static LeaderboardData executeLeaderboardQuery(LeaderboardQuery query) {
         try (Connection conn = instance.getConnection()) {
-            if (conn == null) return new LeaderboardData(0, new QueryResult());
+            if (conn == null) return new LeaderboardData(0, List.of(), false);
             conn.setAutoCommit(false);
             try {
-                long total = leaderboardDistributionTotal(conn, queue, rankTier, region);
-                QueryResult rows = total > offset
-                    ? getLeaderboard(conn, rankTier, queues, region, offset, limit)
-                    : new QueryResult();
+                LeaderboardData result = query.execute(conn);
                 conn.commit();
-                return new LeaderboardData(total, rows);
+                return result;
             } catch (SQLException exception) {
-                conn.rollback();
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackException) {
+                    exception.addSuppressed(rollbackException);
+                }
                 exception.printStackTrace();
-                return new LeaderboardData(0, new QueryResult());
+                return new LeaderboardData(0, List.of(), false);
             }
         } catch (SQLException exception) {
             exception.printStackTrace();
-            return new LeaderboardData(0, new QueryResult());
+            return new LeaderboardData(0, List.of(), false);
         }
     }
 
-    private static QueryResult getLeaderboard(Connection conn, String rankTier, List<String> queues, String region, long offset, int limit) throws SQLException {
+    private static List<LeaderboardRow> getLeaderboard(
+        Connection conn, String queue, String rankTier, List<String> queues, String region, long offset, int limit
+    ) throws SQLException {
         boolean soloAliases = queues.size() > 1;
         List<String> ranks = rankValues(rankTier);
         String sql = "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon, "
@@ -468,7 +502,7 @@ public class LeagueDB extends AbstractDB {
         if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
         sql += " ORDER BY r.lp DESC, r.wins DESC, r.losses ASC, s.id ASC LIMIT ? OFFSET ?";
 
-        QueryResult result = new QueryResult();
+        List<LeaderboardRow> result = new ArrayList<>();
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int parameter = bindQueues(pstmt, queues, 1);
             parameter = bindValues(pstmt, ranks, parameter);
@@ -479,11 +513,22 @@ public class LeagueDB extends AbstractDB {
             pstmt.setInt(parameter++, limit);
             pstmt.setLong(parameter, offset);
             try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) result.add(toRecord(rs));
+                while (rs.next()) result.add(toLeaderboardRow(rs, queue));
             }
         }
-        result.setSuccess(true);
         return result;
+    }
+
+    private static LeaderboardRow toLeaderboardRow(ResultSet result, String queue) throws SQLException {
+        com.safjnest.lol.model.summoner.Summoner summoner = new com.safjnest.lol.model.summoner.Summoner(
+            result.getInt("summoner_id"), result.getString("puuid"), result.getString("riot_id"),
+            result.getString("region"), result.getInt("level"), result.getInt("icon")
+        );
+        Rank rank = new Rank(
+            enumValue(GameQueueType.class, queue), enumValue(TierDivisionType.class, result.getString("rank")),
+            result.getInt("lp"), result.getInt("wins"), result.getInt("losses")
+        );
+        return new LeaderboardRow(summoner, rank);
     }
 
     private static long leaderboardDistributionTotal(Connection conn, String queue, String rankTier, String region) throws SQLException {
