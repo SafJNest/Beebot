@@ -14,7 +14,9 @@ import redis.clients.jedis.JedisPoolConfig;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import redis.clients.jedis.Response;
@@ -22,7 +24,10 @@ import redis.clients.jedis.Transaction;
 
 public class RedisClient {
 
+    private static final int CONNECTION_TIMEOUT_MS = 500;
+    private static final long RETRY_AFTER_FAILURE_MS = 30_000;
     private static final JedisPool pool;
+    private static volatile long disabledUntil;
 
     private static final ObjectMapper mapper = JsonMapper.builder()
         .addModule(new JavaTimeModule())
@@ -46,7 +51,7 @@ public class RedisClient {
         config.setNumTestsPerEvictionRun(-1);
         config.setBlockWhenExhausted(true);
 
-        pool = new JedisPool(config, "localhost", 6379, 2000);
+        pool = new JedisPool(config, "localhost", 6379, CONNECTION_TIMEOUT_MS);
 
         try {
             List<Jedis> warmup = new ArrayList<>();
@@ -56,56 +61,94 @@ public class RedisClient {
     }
 
     public static void set(String key, String value, int ttlSeconds) {
+        if (!canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             if (ttlSeconds > 0) {
                 jedis.setex(key, ttlSeconds, value);
             } else {
                 jedis.set(key, value);
             }
-        } catch (Exception ignored) {}
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
     }
 
     public static <T> void set(String key, T value, int ttlSeconds) {
+        if (!canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             if (ttlSeconds > 0) {
                 jedis.setex(key, ttlSeconds, mapper.writeValueAsString(value));
             } else {
                 jedis.set(key, mapper.writeValueAsString(value));
             }
-        } catch (Exception ignored) {}
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
     }
 
     public static String get(String key) {
+        if (!canUseRedis()) return null;
         try (Jedis jedis = pool.getResource()) {
-            return jedis.get(key);
-        }
-        catch (Exception e) {
+            String value = jedis.get(key);
+            markAvailable();
+            return value;
+        } catch (Exception e) {
+            markUnavailable();
             return null;
         }
     }
 
     public static <T> T get(String key, Class<T> type) {
+        if (!canUseRedis()) return null;
         try (Jedis jedis = pool.getResource()) {
             String value = jedis.get(key);
+            markAvailable();
             return value != null ? mapper.readValue(value, type) : null;
         } catch (Exception e) {
+            markUnavailable();
             return null;
         }
     }
 
     public static <T> T get(String key, TypeReference<T> type) {
+        if (!canUseRedis()) return null;
         try (Jedis jedis = pool.getResource()) {
             String value = jedis.get(key);
+            markAvailable();
             return value != null ? mapper.readValue(value, type) : null;
         } catch (Exception e) {
+            markUnavailable();
             return null;
         }
     }
 
+    public static <T> Map<String, T> get(List<String> keys, Class<T> type) {
+        Map<String, T> result = new HashMap<>();
+        if (keys == null || keys.isEmpty() || !canUseRedis()) return result;
+
+        try (Jedis jedis = pool.getResource()) {
+            List<String> values = jedis.mget(keys.toArray(new String[0]));
+            for (int i = 0; i < keys.size(); i++) {
+                String value = values.get(i);
+                if (value != null) result.put(keys.get(i), mapper.readValue(value, type));
+            }
+            markAvailable();
+        } catch (Exception exception) {
+            markUnavailable();
+        }
+        return result;
+    }
+
     public static void delete(String key) {
+        if (!canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             jedis.del(key);
-        } catch (Exception ignored) {}
+            markAvailable();
+        } catch (Exception ignored) {
+            markUnavailable();
+        }
     }
 
     public static boolean exists(String key) {
@@ -157,5 +200,17 @@ public class RedisClient {
 
     public static void close() {
         pool.close();
+    }
+
+    private static boolean canUseRedis() {
+        return System.currentTimeMillis() >= disabledUntil;
+    }
+
+    private static void markUnavailable() {
+        disabledUntil = System.currentTimeMillis() + RETRY_AFTER_FAILURE_MS;
+    }
+
+    private static void markAvailable() {
+        disabledUntil = 0;
     }
 }

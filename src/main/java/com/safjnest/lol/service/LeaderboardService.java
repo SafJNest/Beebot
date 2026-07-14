@@ -57,6 +57,9 @@ public class LeaderboardService {
             : new QueryResult();
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
+        List<Integer> summonerIds = new ArrayList<>(rows.size());
+        for (QueryRecord row : rows) summonerIds.add(row.getAsInt("summoner_id"));
+        Map<Integer, ProfileStatistics> statisticsBySummoner = profileStatisticsService.get(summonerIds, season);
         List<SummonerLeaderboard> summoners = new ArrayList<>(rows.size());
         boolean cacheable = true;
         for (int i = 0; i < rows.size(); i++) {
@@ -69,7 +72,7 @@ public class LeaderboardService {
                 canonicalQueue(selectedQueue), row.getAsTier("rank"), row.getAsInt("lp"),
                 row.getAsInt("wins"), row.getAsInt("losses")
             );
-            ProfileStatistics statistics = profileStatisticsService.get(summoner.summonerId(), season);
+            ProfileStatistics statistics = statisticsBySummoner.get(summoner.summonerId());
             if (statistics == null) {
                 cacheable = false;
                 Tracker.enqueueProfileStatistics(summoner.summonerId(), season);

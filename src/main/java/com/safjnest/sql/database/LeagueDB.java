@@ -431,7 +431,7 @@ public class LeagueDB extends AbstractDB {
     public static long countLeaderboard(String rankTier, List<String> queues, String region) {
         boolean soloAliases = queues.size() > 1;
         List<String> ranks = rankValues(rankTier);
-        String sql = "SELECT COUNT(DISTINCT s.id) AS total FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
+        String sql = "SELECT COUNT(*) AS total FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
             + "WHERE r.queue IN (" + placeholders(queues.size()) + ") "
             + "AND r.`rank` IN (" + placeholders(ranks.size()) + ")";
         if (soloAliases) sql += preferredSoloQueueFilter(ranks.size());
@@ -709,6 +709,32 @@ public class LeagueDB extends AbstractDB {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static Map<String, ProfileStatisticsRow> getProfileStatistics(List<String> keys) {
+        if (keys == null || keys.isEmpty()) return Map.of();
+
+        String sql = "SELECT `key`, time_start, time_end, data FROM profile_statistics WHERE `key` IN ("
+            + placeholders(keys.size()) + ")";
+        Map<String, ProfileStatisticsRow> result = new HashMap<>();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                bindValues(pstmt, keys, 1);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        QueryRecord row = toRecord(rs);
+                        result.put(row.get("key"), new ProfileStatisticsRow(
+                            timeMs(row.get("time_start")), timeMs(row.get("time_end")), row.get("data")
+                        ));
+                    }
+                }
+            }
+            conn.commit();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     public static boolean saveProfileStatistics(String key, int summonerId, long timeStart, long timeEnd, byte[] data) {

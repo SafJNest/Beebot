@@ -2,7 +2,11 @@ package com.safjnest.lol.service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -21,6 +25,35 @@ public class ProfileStatisticsService {
 
     public ProfileStatistics get(int summonerId, SeasonUtils.SeasonRange season) {
         return season == null ? null : load(summonerId, season);
+    }
+
+    public Map<Integer, ProfileStatistics> get(List<Integer> summonerIds, SeasonUtils.SeasonRange season) {
+        Map<Integer, ProfileStatistics> result = new HashMap<>();
+        if (season == null || summonerIds == null || summonerIds.isEmpty()) return result;
+
+        Map<String, Integer> idsByRedisKey = new LinkedHashMap<>();
+        for (int summonerId : summonerIds) idsByRedisKey.put(redisKey(summonerId, season.start()), summonerId);
+        for (Map.Entry<String, ProfileStatistics> entry : RedisClient.get(
+            new ArrayList<>(idsByRedisKey.keySet()), ProfileStatistics.class).entrySet()) {
+            result.put(idsByRedisKey.get(entry.getKey()), entry.getValue());
+        }
+
+        Map<String, Integer> idsByKey = new LinkedHashMap<>();
+        for (int summonerId : summonerIds) {
+            if (result.containsKey(summonerId)) continue;
+            String key = databaseKey(summonerId, season.start());
+            idsByKey.put(key, summonerId);
+        }
+
+        if (idsByKey.isEmpty()) return result;
+        for (Map.Entry<String, ProfileStatisticsRow> entry : LeagueDB.getProfileStatistics(new ArrayList<>(idsByKey.keySet())).entrySet()) {
+            ProfileStatistics statistics = decode(entry.getValue());
+            if (statistics == null) continue;
+            int summonerId = idsByKey.get(entry.getKey());
+            result.put(summonerId, statistics);
+            cache(summonerId, season.start(), statistics);
+        }
+        return result;
     }
 
     public boolean refresh(int summonerId, SeasonUtils.SeasonRange season, boolean rebuild) {
@@ -42,7 +75,10 @@ public class ProfileStatisticsService {
     }
 
     private ProfileStatistics loadDatabase(int summonerId, long timeStart) {
-        ProfileStatisticsRow row = LeagueDB.getProfileStatistics(databaseKey(summonerId, timeStart));
+        return decode(LeagueDB.getProfileStatistics(databaseKey(summonerId, timeStart)));
+    }
+
+    private ProfileStatistics decode(ProfileStatisticsRow row) {
         if (row == null || row.data() == null) return null;
         try {
             ProfileStatistics statistics = KryoUtils.decode(row.data(), ProfileStatistics.class);
