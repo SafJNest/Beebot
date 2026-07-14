@@ -10,6 +10,7 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.core.cache.managers.UserCache;
 
@@ -148,8 +149,8 @@ public class LeagueEventHandler extends EventButtonHandler {
             }
             case "season" -> {
                 long[] time = switch (content) {
-                    case "current" -> LeagueHandler.getCurrentSplitRange();
-                    case "previous" -> LeagueHandler.getPreviousSplitRange();
+                    case "current" -> SeasonUtils.getCurrentSplitRange();
+                    case "previous" -> SeasonUtils.getPreviousSplitRange();
                     default -> new long[] {0, 0};
                 };
                 parameter.setPeriod(time);

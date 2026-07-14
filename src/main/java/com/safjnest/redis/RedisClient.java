@@ -79,6 +79,9 @@ public class RedisClient {
         try (Jedis jedis = pool.getResource()) {
             return jedis.get(key);
         }
+        catch (Exception e) {
+            return null;
+        }
     }
 
     public static <T> T get(String key, Class<T> type) {

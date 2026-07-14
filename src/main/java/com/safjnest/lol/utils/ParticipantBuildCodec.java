@@ -3,7 +3,7 @@ package com.safjnest.lol.utils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.safjnest.lol.model.Participant;
+import com.safjnest.lol.model.match.Participant;
 
 public final class ParticipantBuildCodec {
 

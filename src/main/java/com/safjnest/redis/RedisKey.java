@@ -22,12 +22,15 @@ public enum RedisKey {
     HIGH_WINRATE_BUILD("stats:build:high-winrate:%s"),
     CHAMPION_STATS("stats:champion:%s:%s"),
     SUMMONER_AUTOCOMPLETE("summoner:autocomplete:%s:%s"),
-    SUMMONER_SEARCH("summoner:search:%s:%s"),
-    PROFILE_BASE("profile:base:%s:%s"),
-    PROFILE_RANK("profile:rank:%s"),
-    PROFILE_RANKS("profile:ranks:%s"),
-    PROFILE_MASTERIES("profile:masteries:%s"),
-    PROFILE_STATISTICS("profile:statistics:v2:%s:%s");
+    SUMMONER_SEARCH("summoner:search:v2:%s:%s"),
+    PROFILE_BASE("profile:base:v2:%s:%s"),
+    PROFILE_RANK("profile:rank:v2:%s"),
+    PROFILE_RANKS("profile:ranks:v2:%s"),
+    PROFILE_MASTERIES("profile:masteries:v2:%s"),
+    PROFILE_STATISTICS("profile:statistics:v3:%s:%s"),
+    LEADERBOARD_PAGE("leaderboard:page:v2:%s:%s:%s:%s"),
+    LEADERBOARD_RANK_DISTRIBUTION("leaderboard:rank-distribution:v2:%s:%s"),
+    LEADERBOARD_TOP_REGIONS("leaderboard:top-regions:v2:%s:%s");
 
     private final String pattern;
     private final String database;

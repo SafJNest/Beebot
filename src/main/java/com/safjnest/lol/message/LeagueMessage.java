@@ -27,15 +27,16 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.ChampionStatistics.Matchup;
-import com.safjnest.lol.model.Match;
+import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.PlayerChampionStats;
-import com.safjnest.lol.model.Participant;
+import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LaneTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
+import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.model.customemoji.CustomEmojiHandler;
@@ -578,8 +579,8 @@ public class LeagueMessage {
             return buttons;
         }
 
-        long[] time = LeagueHandler.getCurrentSplitRange();
-        long[] previousTime = LeagueHandler.getPreviousSplitRange();
+        long[] time = SeasonUtils.getCurrentSplitRange();
+        long[] previousTime = SeasonUtils.getPreviousSplitRange();
 
         Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
         Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
@@ -1595,8 +1596,8 @@ public class LeagueMessage {
         Button currentSplit = Button.secondary("lol-season-current", "Current Split");
         Button previousSplit = Button.secondary("lol-season-previous", "Previous Split");
 
-        long[] time = LeagueHandler.getCurrentSplitRange();
-        long[] previousTime = LeagueHandler.getPreviousSplitRange();
+        long[] time = SeasonUtils.getCurrentSplitRange();
+        long[] previousTime = SeasonUtils.getPreviousSplitRange();
 
         if (parameter.getTimeStart() == 0) allSeason = allSeason.withStyle(ButtonStyle.SUCCESS);
         else if (parameter.getTimeStart() == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);

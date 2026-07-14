@@ -1,6 +1,7 @@
-package com.safjnest.lol.model;
+package com.safjnest.lol.model.statistics;
 
-/** Incrementally mergeable totals and their persisted derived averages. */
+import com.safjnest.lol.model.match.MatchResult;
+
 public class Stats<T> {
     public T reference;
     public long games;
@@ -33,7 +34,7 @@ public class Stats<T> {
         this.reference = reference;
     }
 
-    public void add(ProfileMatch match) {
+    public void add(MatchResult match) {
         int[] kdaValues = kda(match.kda());
         games++;
         if (match.win()) wins++;

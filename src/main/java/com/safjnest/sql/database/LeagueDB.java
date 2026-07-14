@@ -42,9 +42,9 @@ import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.Match;
-import com.safjnest.lol.model.Participant;
-import com.safjnest.lol.model.ProfileStatisticsRow;
+import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.ProfileStatisticsRow;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -428,6 +428,169 @@ public class LeagueDB extends AbstractDB {
         return result;
     }
 
+    public static long countLeaderboard(String rankTier, List<String> queues, String region) {
+        boolean soloAliases = queues.size() > 1;
+        String sql = "SELECT COUNT(DISTINCT s.id) AS total FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
+            + "WHERE r.queue IN (" + placeholders(queues.size()) + ") "
+            + "AND (r.`rank` = ? OR r.`rank` LIKE ?)";
+        if (soloAliases) sql += preferredSoloQueueFilter();
+        if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return 0;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                int parameter = bindQueues(pstmt, queues, 1);
+                pstmt.setString(parameter++, rankTier);
+                pstmt.setString(parameter++, rankTier + "_%");
+                if (soloAliases) {
+                    pstmt.setString(parameter++, rankTier);
+                    pstmt.setString(parameter++, rankTier + "_%");
+                }
+                if (!"GLOBAL".equals(region)) pstmt.setString(parameter, region);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    return rs.next() ? rs.getLong("total") : 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    public static QueryResult getLeaderboard(String rankTier, List<String> queues, String region, long offset, int limit) {
+        boolean soloAliases = queues.size() > 1;
+        String sql = "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon, "
+            + "r.`rank`, r.lp, r.wins, r.losses "
+            + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
+            + "WHERE r.queue IN (" + placeholders(queues.size()) + ") "
+            + "AND (r.`rank` = ? OR r.`rank` LIKE ?)";
+        if (soloAliases) sql += preferredSoloQueueFilter();
+        if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
+        sql += " ORDER BY r.lp DESC, r.wins DESC, r.losses ASC, s.id ASC LIMIT ? OFFSET ?";
+
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                int parameter = bindQueues(pstmt, queues, 1);
+                pstmt.setString(parameter++, rankTier);
+                pstmt.setString(parameter++, rankTier + "_%");
+                if (soloAliases) {
+                    pstmt.setString(parameter++, rankTier);
+                    pstmt.setString(parameter++, rankTier + "_%");
+                }
+                if (!"GLOBAL".equals(region)) pstmt.setString(parameter++, region);
+                pstmt.setInt(parameter++, limit);
+                pstmt.setLong(parameter, offset);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static QueryResult getLeaderboardDistribution(String queue, String region) {
+        String sql = "SELECT `rank`, SUM(players) AS players "
+            + "FROM leaderboard_distribution WHERE queue = ?";
+        if (!"GLOBAL".equals(region)) sql += " AND region = ?";
+        sql += " GROUP BY `rank` ORDER BY FIELD(`rank`, 'CHALLENGER', 'GRANDMASTER', 'MASTER', 'DIAMOND', "
+            + "'EMERALD', 'PLATINUM', 'GOLD', 'SILVER', 'BRONZE', 'IRON')";
+
+        return leaderboardDistributionQuery(sql, queue, "GLOBAL".equals(region) ? null : region);
+    }
+
+    public static QueryResult getLeaderboardTopRegions(String queue, String rankTier) {
+        String sql = "SELECT region, SUM(players) AS players FROM leaderboard_distribution "
+            + "WHERE queue = ? AND `rank` = ? GROUP BY region ORDER BY players DESC, region ASC";
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, queue);
+                pstmt.setString(2, rankTier);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    public static boolean rebuildLeaderboardDistribution() {
+        String deleteSql = "DELETE FROM leaderboard_distribution";
+        String insertSql = "INSERT INTO leaderboard_distribution (queue, `rank`, region, players, updated_at) "
+            + "SELECT CASE WHEN r.queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') "
+            + "THEN 'TEAM_BUILDER_RANKED_SOLO' ELSE r.queue END AS normalized_queue, "
+            + "CASE WHEN r.`rank` = 'UNRANKED' THEN 'UNRANKED' ELSE SUBSTRING_INDEX(r.`rank`, '_', 1) END AS normalized_rank, "
+            + "s.region, COUNT(DISTINCT r.summoner_id), CURRENT_TIMESTAMP(3) "
+            + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
+            + "WHERE r.`rank` IS NOT NULL AND s.region IS NOT NULL "
+            + "GROUP BY normalized_queue, normalized_rank, s.region";
+
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return false;
+            conn.setAutoCommit(false);
+            try (PreparedStatement delete = conn.prepareStatement(deleteSql);
+                 Statement insert = conn.createStatement()) {
+                delete.executeUpdate();
+                insert.executeUpdate(insertSql);
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                e.printStackTrace();
+                return false;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private static QueryResult leaderboardDistributionQuery(String sql, String queue, String region) {
+        QueryResult result = new QueryResult();
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return result;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, queue);
+                if (region != null) pstmt.setString(2, region);
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) result.add(toRecord(rs));
+                }
+            }
+            conn.commit();
+            result.setSuccess(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private static int bindQueues(PreparedStatement pstmt, List<String> queues, int parameter) throws SQLException {
+        for (String queue : queues) pstmt.setString(parameter++, queue);
+        return parameter;
+    }
+
+    private static String placeholders(int count) {
+        return String.join(", ", Collections.nCopies(count, "?"));
+    }
+
+    private static String preferredSoloQueueFilter() {
+        return " AND NOT (r.queue = 'RANKED_SOLO_5X5' AND EXISTS ("
+            + "SELECT 1 FROM `rank` preferred WHERE preferred.summoner_id = r.summoner_id "
+            + "AND preferred.queue = 'TEAM_BUILDER_RANKED_SOLO' "
+            + "AND (preferred.`rank` = ? OR preferred.`rank` LIKE ?)))";
+    }
+
     public static QueryRecord getProfileBase(String puuid, LeagueShard shard) {
         String sql =
             "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon " +
@@ -452,7 +615,7 @@ public class LeagueDB extends AbstractDB {
 
     public static QueryRecord getProfileRank(int summonerId) {
         String sql =
-            "SELECT r.queue, COALESCE(r.rank, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
+            "SELECT r.queue, COALESCE(r.`rank`, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
             "COALESCE(r.wins, 0) AS wins, COALESCE(r.losses, 0) AS losses " +
             "FROM `rank` r " +
             "WHERE r.summoner_id = ? AND r.queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') " +
@@ -475,7 +638,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static QueryResult getProfileRanks(int summonerId) {
-        String sql = "SELECT r.queue, COALESCE(r.rank, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
+        String sql = "SELECT r.queue, COALESCE(r.`rank`, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
             "COALESCE(r.wins, 0) AS wins, COALESCE(r.losses, 0) AS losses " +
             "FROM `rank` r WHERE r.summoner_id = ? ORDER BY r.queue";
         QueryResult result = new QueryResult();

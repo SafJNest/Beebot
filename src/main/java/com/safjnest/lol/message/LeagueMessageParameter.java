@@ -2,10 +2,10 @@ package com.safjnest.lol.message;
 
 import java.util.List;
 
-import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.SeasonUtils;
 
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
@@ -42,7 +42,7 @@ public class LeagueMessageParameter {
   public LeagueMessageParameter(LeagueMessageType messageType) {
     this.messageType = messageType;
 
-    this.period = LeagueHandler.getCurrentSplitRange();
+    this.period = SeasonUtils.getCurrentSplitRange();
 
     this.queueType = null;
     this.laneType = null;
@@ -59,7 +59,7 @@ public class LeagueMessageParameter {
 
   public LeagueMessageParameter(LeagueMessageType messageType, Filter filter) {
     this.messageType = messageType;
-    this.period = LeagueHandler.getCurrentSplitRange();
+    this.period = SeasonUtils.getCurrentSplitRange();
     this.champion = null;
     this.showChampion = false;
     this.offset = 0;
@@ -89,7 +89,7 @@ public class LeagueMessageParameter {
     this.filter = new Filter();
     String prefix = LeagueMessage.BUTTON_ID_PREFIX;
     
-    this.period = LeagueHandler.getCurrentSplitRange();
+    this.period = SeasonUtils.getCurrentSplitRange();
     String timeString = "current";
 
     int fallbackChampion = 0;
@@ -143,10 +143,10 @@ public class LeagueMessageParameter {
             this.period = new long[] {0, 0};
             break;
         case "current":
-            this.period = LeagueHandler.getCurrentSplitRange();
+            this.period = SeasonUtils.getCurrentSplitRange();
             break;
         case "previous":
-            this.period = LeagueHandler.getPreviousSplitRange();
+            this.period = SeasonUtils.getPreviousSplitRange();
             break;
     }
   }

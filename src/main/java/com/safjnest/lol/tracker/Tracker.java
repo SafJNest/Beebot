@@ -6,7 +6,11 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -15,13 +19,16 @@ import org.json.JSONObject;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.ProfileStatisticsService;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.ItemUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.PatchUtils;
+import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
@@ -52,6 +59,13 @@ import java.time.LocalDateTime;
 
 public class Tracker {
 
+    private static final int PROFILE_STATISTICS_BATCH_SIZE = 25;
+    private static final int PROFILE_STATISTICS_MAX_RETRIES = 3;
+    private static final Queue<ProfileStatisticsRequest> PROFILE_STATISTICS_QUEUE = new ConcurrentLinkedQueue<>();
+    private static final Set<ProfileStatisticsRequest> PROFILE_STATISTICS_PENDING = ConcurrentHashMap.newKeySet();
+    private static final Map<ProfileStatisticsRequest, Integer> PROFILE_STATISTICS_RETRIES = new ConcurrentHashMap<>();
+    private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
+
     private static long period = TimeConstant.MINUTE * 10;
 
     private static List<GameQueueType> toTrack = List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.CHERRY);
@@ -59,7 +73,7 @@ public class Tracker {
 
     static void retriveSummoners() {
         try {
-            QueryResult result = LeagueDB.getRegistredLolAccount(LeagueHandler.getCurrentSplitRange()[0]);
+            QueryResult result = LeagueDB.getRegistredLolAccount(SeasonUtils.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
             for (QueryRecord account : result) {
                 Summoner summoner = null;
@@ -142,6 +156,51 @@ public class Tracker {
         return ids.stream().map(id -> LeagueService.getMatch(id, LeagueShard.valueOf(id.split("_")[0]))).collect(Collectors.toSet());
     }
 
+    public static void enqueueProfileStatistics(int summonerId, SeasonUtils.SeasonRange season) {
+        if (summonerId == 0 || season == null) return;
+
+        ProfileStatisticsRequest request = new ProfileStatisticsRequest(summonerId, season);
+        if (PROFILE_STATISTICS_PENDING.add(request)) PROFILE_STATISTICS_QUEUE.offer(request);
+    }
+
+    public static int processProfileStatistics() {
+        int batchSize = Math.min(PROFILE_STATISTICS_BATCH_SIZE, PROFILE_STATISTICS_QUEUE.size());
+        int processed = 0;
+        for (int i = 0; i < batchSize; i++) {
+            ProfileStatisticsRequest request = PROFILE_STATISTICS_QUEUE.poll();
+            if (request == null) break;
+
+            try {
+                if (PROFILE_STATISTICS_SERVICE.refresh(request.summonerId(), request.season(), false)) {
+                    completeProfileStatistics(request);
+                } else {
+                    retryProfileStatistics(request);
+                }
+            } catch (Exception exception) {
+                exception.printStackTrace();
+                retryProfileStatistics(request);
+            }
+            processed++;
+        }
+        return processed;
+    }
+
+    private static void retryProfileStatistics(ProfileStatisticsRequest request) {
+        int retries = PROFILE_STATISTICS_RETRIES.merge(request, 1, Integer::sum);
+        if (retries < PROFILE_STATISTICS_MAX_RETRIES) {
+            PROFILE_STATISTICS_QUEUE.offer(request);
+            return;
+        }
+        completeProfileStatistics(request);
+    }
+
+    private static void completeProfileStatistics(ProfileStatisticsRequest request) {
+        PROFILE_STATISTICS_PENDING.remove(request);
+        PROFILE_STATISTICS_RETRIES.remove(request);
+    }
+
+    private record ProfileStatisticsRequest(int summonerId, SeasonUtils.SeasonRange season) {}
+
     public static Summoner checkSummoner(MatchParticipant participant, Summoner summoner) {
         if (summoner.getPUUID().equals(participant.getPuuid()))
             return summoner;
@@ -173,7 +232,7 @@ public class Tracker {
     public static ChronoTask analyzeMatchHistory(GameQueueType queue, Summoner summoner) {
         if (toTrack.indexOf(queue) == -1) return Chronos.NULL;
 
-        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
+        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), SeasonUtils.getCurrentSplitRange()[0]);
         //if (row.emptyValues() && queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return Chronos.NULL;
 
         try { Thread.sleep(350); }
@@ -200,7 +259,7 @@ public class Tracker {
 
     public static ChronoTask analyzeMatchHistory(LOLMatch match, Summoner summoner, QueryRecord dataGame) {
         ChronoTask task = () -> {
-            if (!LeagueHandler.isCurrentSplit(match.getGameStartTimestamp()) && match.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return;
+            if (!SeasonUtils.isCurrentSplit(match.getGameStartTimestamp()) && match.getQueue() == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return;
             if (isRemake(match)) return;
             
             int summoner_match_id = LeagueDB.saveMatch(match);
@@ -280,7 +339,7 @@ public class Tracker {
 //
 
     public static TierDivisionType pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant partecipant, HashMap<String, String> matchData) {
-        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), LeagueHandler.getCurrentSplitRange()[0]);
+        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), SeasonUtils.getCurrentSplitRange()[0]);
         return pushSummoner(match, summonerMatch, summoner, partecipant, row, matchData);
     }
 
@@ -596,7 +655,7 @@ public class Tracker {
         String currentPatch = PatchUtils.getPatch();
         String previousPatch = PatchUtils.getPreviousPatch();
     
-        long[] splitRange = LeagueHandler.getCurrentSplitRange();
+        long[] splitRange = SeasonUtils.getCurrentSplitRange();
     
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
             ChronoTask shardTask = () -> {
@@ -676,6 +735,7 @@ public class Tracker {
                 } catch (Exception e) { e.printStackTrace(); }
             }
         }  
+        LeaderboardService.rebuildDistribution();
     }
 
     public static void retriveHighEloEntries() {
@@ -698,10 +758,12 @@ public class Tracker {
                 }
             }  
         }
+        LeaderboardService.rebuildDistribution();
     }
 
     public static void retriveAllEntries() {
         BotLogger.info("[LPTracker] Pushing all entries");
+        List<CompletableFuture<Void>> shardTasks = new ArrayList<>();
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
             ChronoTask task = () -> {
                     for (TierDivisionType tier : TierDivisionType.values()) {
@@ -725,10 +787,11 @@ public class Tracker {
                             e.printStackTrace();
                         }
                     }
-
             };
-            task.queue();
+            shardTasks.add(task.queueFuture());
         }
+        if (!shardTasks.isEmpty()) CompletableFuture.allOf(shardTasks.toArray(new CompletableFuture[0]))
+            .thenRun(LeaderboardService::rebuildDistribution);
         
     }
 

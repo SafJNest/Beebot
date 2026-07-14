@@ -24,9 +24,11 @@ import com.safjnest.lol.model.ChampionStatistics.LaneStat;
 import com.safjnest.lol.model.ChampionStatistics.Matchup;
 import com.safjnest.lol.model.ChampionStatistics.MatchupKey;
 import com.safjnest.lol.model.Filter.RankBehavior;
-import com.safjnest.lol.model.ProfileMatch;
-import com.safjnest.lol.model.ProfileStatistics;
-import com.safjnest.lol.model.Stats;
+import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.lol.model.statistics.Stats;
+import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.match.MatchResult;
+import com.safjnest.lol.model.match.Participant;
 
 public class KryoUtils {
 
@@ -48,10 +50,12 @@ public class KryoUtils {
         kryo.register(LeagueShard.class);
         kryo.register(ProfileStatistics.class);
         kryo.register(Stats.class);
-        kryo.register(ProfileMatch.class);
         kryo.register(ArrayList.class);
         kryo.register(HashMap.class);
         kryo.register(LinkedHashMap.class);
+        kryo.register(Match.class);
+        kryo.register(Participant.class);
+        kryo.register(MatchResult.class);
 
         return kryo;
     });

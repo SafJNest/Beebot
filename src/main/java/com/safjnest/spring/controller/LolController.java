@@ -12,14 +12,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.spring.dto.LolProfileView;
-import com.safjnest.spring.dto.LolSearchResult;
 import com.safjnest.spring.dto.LolApiError;
 import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.model.MatchLookup;
+import com.safjnest.lol.model.match.MatchLookup;
+import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.service.ProfilePageService;
-import com.safjnest.lol.model.ProfilePageData;
-import com.safjnest.spring.util.LolApiMapper;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
@@ -34,7 +31,7 @@ public class LolController {
     }
 
     @GetMapping("/search")
-    public List<LolSearchResult> search(
+    public List<SummonerView> search(
             @PathVariable("shard") String shardValue,
             @RequestParam("q") String q
     ) {
@@ -46,34 +43,34 @@ public class LolController {
             );
         }
 
-        return LeagueService.searchSummoners(query, parseShard(shardValue)).stream().map(LolApiMapper::toSearchResult).toList();
+        return LeagueService.searchSummoners(query, parseShard(shardValue));
     }
 
     @GetMapping("/profile/{puuid}")
-    public LolProfileView profile(
+    public SummonerView profile(
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid
     ) {
-        ProfilePageData page = profilePageService.get(parseShard(shardValue), requireText(puuid, "puuid"));
+        SummonerView page = profilePageService.get(parseShard(shardValue), requireText(puuid, "puuid"));
 
         if (page == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
         }
-        return LolApiMapper.toProfileView(page);
+        return page;
     }
 
     @GetMapping("/profile-by-name/{gameName}/{tagLine}")
-    public LolProfileView profileByName(
+    public SummonerView profileByName(
             @PathVariable("shard") String shardValue,
             @PathVariable("gameName") String gameName,
             @PathVariable("tagLine") String tagLine
     ) {
-        ProfilePageData page = profilePageService.get(parseShard(shardValue), requireText(gameName, "game name"), requireText(tagLine, "tag line"));
+        SummonerView page = profilePageService.get(parseShard(shardValue), requireText(gameName, "game name"), requireText(tagLine, "tag line"));
 
         if (page == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
         }
-        return LolApiMapper.toProfileView(page);
+        return page;
     }
 
     @GetMapping("/match/{gameId}")

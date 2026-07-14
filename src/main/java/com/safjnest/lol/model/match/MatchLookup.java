@@ -1,4 +1,4 @@
-package com.safjnest.lol.model;
+package com.safjnest.lol.model.match;
 
 public class MatchLookup {
 

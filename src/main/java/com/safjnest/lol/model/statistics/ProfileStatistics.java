@@ -1,13 +1,14 @@
-package com.safjnest.lol.model;
+package com.safjnest.lol.model.statistics;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import com.safjnest.lol.model.match.MatchResult;
+
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
-/** Complete, single-row profile aggregate. All grouping references are R4J enums. */
 public class ProfileStatistics {
     public long timeStart;
     public long timeEnd;
@@ -15,7 +16,7 @@ public class ProfileStatistics {
     public List<Stats<GameQueueType>> queueStats = new ArrayList<>();
     public List<Stats<LaneType>> laneStats = new ArrayList<>();
     public List<Stats<Integer>> championStats = new ArrayList<>();
-    public List<ProfileMatch> recentMatches = new ArrayList<>();
+    public List<MatchResult> recentMatches = new ArrayList<>();
 
     public ProfileStatistics() {}
 
@@ -24,14 +25,14 @@ public class ProfileStatistics {
         this.timeEnd = timeStart;
     }
 
-    public void add(ProfileMatch match, GameQueueType queue, LaneType lane) {
+    public void add(MatchResult match, GameQueueType queue, LaneType lane) {
         total.add(match);
         stat(queueStats, queue).add(match);
         if (lane != null && lane != LaneType.NONE) stat(laneStats, lane).add(match);
         stat(championStats, match.championId()).add(match);
         timeEnd = Math.max(timeEnd, match.timeEnd());
         recentMatches.add(copy(match));
-        recentMatches.sort(Comparator.comparingLong(ProfileMatch::timeStart).reversed());
+        recentMatches.sort(Comparator.comparingLong(MatchResult::timeStart).reversed());
         if (recentMatches.size() > 5) recentMatches = new ArrayList<>(recentMatches.subList(0, 5));
     }
 
@@ -44,8 +45,8 @@ public class ProfileStatistics {
         return value;
     }
 
-    private static ProfileMatch copy(ProfileMatch match) {
-        return new ProfileMatch(
+    private static MatchResult copy(MatchResult match) {
+        return new MatchResult(
             match.gameId(), match.queue(), match.timeStart(), match.timeEnd(), match.win(), match.kda(), match.championId(),
             match.lane(), match.damage(), match.cs(), match.gold(), match.vision(), match.teamKills(),
             new ArrayList<>(match.items()), new ArrayList<>(match.summonerSpells()), new ArrayList<>(match.participants())

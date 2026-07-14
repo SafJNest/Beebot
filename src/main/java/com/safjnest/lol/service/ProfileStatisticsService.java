@@ -4,42 +4,26 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 
-import com.safjnest.lol.LeagueHandler;
-import com.safjnest.lol.model.ProfileMatch;
-import com.safjnest.lol.model.ProfileStatistics;
-import com.safjnest.lol.model.ProfileStatisticsRow;
+import com.safjnest.lol.model.match.MatchResult;
+import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.lol.model.statistics.ProfileStatisticsRow;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.KryoUtils;
+import com.safjnest.lol.utils.SeasonUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 
-/** Read-through and write-through owner of the single seasonal profile aggregate. */
 public class ProfileStatisticsService {
 
     private static final int TTL_PROFILE_STATISTICS = 60 * 60;
 
-    /** Redis -> database -> complete seasonal build. A fallback build is persisted in both stores. */
-    public ProfileStatistics get(int summonerId, LeagueHandler.SeasonRange season) {
-        if (season == null) return new ProfileStatistics(0);
-
-        ProfileStatistics statistics = loadRedis(summonerId, season.start());
-        if (statistics != null) return statistics;
-
-        statistics = loadDatabase(summonerId, season.start());
-        if (statistics != null) {
-            cache(summonerId, season.start(), statistics);
-            return statistics;
-        }
-
-        statistics = build(summonerId, season.start(), currentEnd(season));
-        persist(summonerId, season.start(), statistics);
-        return statistics;
+    public ProfileStatistics get(int summonerId, SeasonUtils.SeasonRange season) {
+        return season == null ? null : load(summonerId, season);
     }
 
-    /** Refreshes from the persisted watermark; rebuild starts again at the beginning of the season. */
-    public boolean refresh(int summonerId, LeagueHandler.SeasonRange season, boolean rebuild) {
+    public boolean refresh(int summonerId, SeasonUtils.SeasonRange season, boolean rebuild) {
         if (season == null) return false;
 
         ProfileStatistics statistics = rebuild ? null : loadDatabase(summonerId, season.start());
@@ -50,6 +34,8 @@ public class ProfileStatisticsService {
         }
         return persist(summonerId, season.start(), statistics);
     }
+
+    // ============================================================================
 
     private ProfileStatistics loadRedis(int summonerId, long timeStart) {
         return RedisClient.get(redisKey(summonerId, timeStart), ProfileStatistics.class);
@@ -68,20 +54,28 @@ public class ProfileStatisticsService {
         }
     }
 
+    private ProfileStatistics load(int summonerId, SeasonUtils.SeasonRange season) {
+        ProfileStatistics statistics = loadRedis(summonerId, season.start());
+        if (statistics != null) return statistics;
+
+        statistics = loadDatabase(summonerId, season.start());
+        if (statistics != null) cache(summonerId, season.start(), statistics);
+        return statistics;
+    }
+
     private ProfileStatistics build(int summonerId, long timeStart, long untilTimeEnd) {
         ProfileStatistics statistics = new ProfileStatistics(timeStart);
         merge(statistics, LeagueService.getProfileMatchesAfter(summonerId, Math.max(0, timeStart - 1), untilTimeEnd));
         return statistics;
     }
 
-    private void merge(ProfileStatistics statistics, List<ProfileMatch> matches) {
-        for (ProfileMatch match : matches) {
+    private void merge(ProfileStatistics statistics, List<MatchResult> matches) {
+        for (MatchResult match : matches) {
             GameQueueType queue = match.queue();
             if (queue != null) statistics.add(match, queue, match.lane());
         }
     }
 
-    /** DB is authoritative: cache only after the BLOB upsert succeeds. */
     private boolean persist(int summonerId, long timeStart, ProfileStatistics statistics) {
         String encoded = KryoUtils.encode(statistics);
         boolean saved = LeagueDB.saveProfileStatistics(
@@ -96,7 +90,7 @@ public class ProfileStatisticsService {
         RedisClient.set(redisKey(summonerId, timeStart), statistics, TTL_PROFILE_STATISTICS);
     }
 
-    private static long currentEnd(LeagueHandler.SeasonRange season) {
+    private static long currentEnd(SeasonUtils.SeasonRange season) {
         return Math.min(System.currentTimeMillis(), season.end());
     }
 

@@ -1,4 +1,4 @@
-package com.safjnest.lol.model;
+package com.safjnest.lol.model.match;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,16 +61,34 @@ public class Participant {
     public int summonerSpell1;
     public int summonerSpell2;
 
-    public List<Integer> primaryRunes   = new ArrayList<>();
+    public List<Integer> primaryRunes = new ArrayList<>();
     public List<Integer> secondaryRunes = new ArrayList<>();
-    public List<Integer> statsRunes     = new ArrayList<>();
+    public List<Integer> statsRunes = new ArrayList<>();
 
     public List<Integer> skillOrder = new ArrayList<>();
 
     public List<Integer> augments = new ArrayList<>();
 
     public List<Integer> starterItems = new ArrayList<>();
-    public List<Integer> buildPath    = new ArrayList<>();
+    public List<Integer> buildPath = new ArrayList<>();
     public int boots;
     public int supportItem;
+
+    public int championId() { return champion; }
+    public String puuid() { return puuid; }
+    public String team() { return team != null ? team.name() : null; }
+
+    public static Participant forMatchResult(int championId, String puuid, String team) {
+        Participant participant = new Participant();
+        participant.champion = championId;
+        participant.puuid = puuid;
+        participant.team = parseTeam(team);
+        return participant;
+    }
+
+    private static TeamType parseTeam(String value) {
+        if (value == null || value.isBlank()) return null;
+        try { return TeamType.valueOf(value); }
+        catch (IllegalArgumentException ignored) { return null; }
+    }
 }

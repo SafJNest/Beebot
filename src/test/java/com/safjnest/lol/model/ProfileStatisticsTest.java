@@ -8,6 +8,9 @@ import java.util.List;
 import org.junit.Test;
 
 import com.safjnest.utils.KryoUtils;
+import com.safjnest.lol.model.match.MatchResult;
+import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.ProfileStatistics;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
@@ -42,8 +45,8 @@ public class ProfileStatisticsTest {
         assertTrue(source.recentMatches.get(0).timeStart() > source.recentMatches.get(4).timeStart());
     }
 
-    private static ProfileMatch match(String id, long time, String kda, int teamKills) {
-        return new ProfileMatch(id, GameQueueType.ARAM, time, time + 1, true, kda, 1, LaneType.TOP,
-            100, 10, 100, 10, teamKills, List.of(), List.of(), List.of(new ProfileMatchParticipant(2, "puuid", "BLUE")));
+    private static MatchResult match(String id, long time, String kda, int teamKills) {
+        return new MatchResult(id, GameQueueType.ARAM, time, time + 1, true, kda, 1, LaneType.TOP,
+            100, 10, 100, 10, teamKills, List.of(), List.of(), List.of(Participant.forMatchResult(2, "puuid", "BLUE")));
     }
 }
