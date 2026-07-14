@@ -40,29 +40,12 @@ public class BuildService {
             Map<String, int[]> summonerSpellsStatsByGroup
     ) {}
 
-    // -------------------------------------------------------------------------
-
     public List<Build> getAll(Filter filter) {
-        List<Build> builds = LeagueDB.getChampionBuild(filter);
-        if (builds != null && !builds.isEmpty()) {
-            return builds;
-        }
-
-        List<Build> computed = computeAll(filter);
-        if (computed != null && !computed.isEmpty()) {
-           computed.forEach(LeagueDB::saveChampionBuild);
-        }
-        return computed;
+        return loadBuilds(filter, true);
     }
 
     public Build getMostUsed(Filter filter) {
-        String key = RedisKey.MOST_USED_BUILD.of(filter.toKey());
-        Build cached = RedisClient.get(key, Build.class);
-        if (cached != null) return cached;
-
-        Build build = getAll(filter).stream().max(Comparator.comparingInt(Build::games)).orElse(null);
-        if (build != null) RedisClient.set(key, build, 0);
-        return build;
+        return getMostUsed(filter, true);
     }
 
     public Build getHighWinrate(Filter filter) {
@@ -87,7 +70,43 @@ public class BuildService {
         return computed;
     }
 
-    // -------------------------------------------------------------------------
+    // ============================================================================
+
+    Build getMostUsed(Filter filter, boolean allowCompute) {
+        if (filter == null) return null;
+
+        String key = RedisKey.MOST_USED_BUILD.of(filter.toKey());
+        Build cached;
+        try {
+            cached = RedisClient.get(key, Build.class);
+        } catch (RuntimeException exception) {
+            RedisClient.delete(key);
+            cached = null;
+        }
+        if (cached != null) return cached;
+
+        Build build = loadBuilds(filter, allowCompute).stream()
+            .max(Comparator.comparingInt(Build::games))
+            .orElse(null);
+        if (build != null) RedisClient.set(key, build, 0);
+        return build;
+    }
+
+    private List<Build> loadBuilds(Filter filter, boolean allowCompute) {
+        List<Build> builds;
+        try {
+            builds = LeagueDB.getChampionBuild(filter);
+        } catch (RuntimeException exception) {
+            if (!allowCompute) return List.of();
+            throw exception;
+        }
+        if (builds != null && !builds.isEmpty()) return builds;
+        if (!allowCompute) return List.of();
+
+        List<Build> computed = computeAll(filter);
+        if (computed != null && !computed.isEmpty()) computed.forEach(LeagueDB::saveChampionBuild);
+        return computed == null ? List.of() : computed;
+    }
 
     private List<Build> computeAll(Filter filter) {
         QueryResult result = LeagueDB.getChampionBuildsRaw(filter);
@@ -167,8 +186,6 @@ public class BuildService {
                 base.core(), slots, prismatics, summonerSpells, augments, spellOrder, runes, groupStats[0],
                 groupStats[0] > 0 ? (double) groupStats[1] / groupStats[0] : 0);
     }
-
-    // -------------------------------------------------------------------------
 
     private StatsResult computeBuildStats(Filter filter, QueryResult result) {
         Map<String, int[]> stats                             = new LinkedHashMap<>();
@@ -299,8 +316,6 @@ public class BuildService {
                 Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(),
                 Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     }
-
-    // -------------------------------------------------------------------------
 
     private Map<String, String> resolveRepresentatives(Map<String, Map<String, Integer>> variantsByGroup) {
         Map<String, String> result = new HashMap<>();

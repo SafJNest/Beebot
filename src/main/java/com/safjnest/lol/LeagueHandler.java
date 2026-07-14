@@ -57,7 +57,6 @@ import com.safjnest.lol.model.Augment;
 import com.safjnest.lol.model.rune.PageRunes;
 import com.safjnest.lol.model.rune.Rune;
 import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.utils.ChampionUtils;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueMessageUtils;
@@ -90,7 +89,6 @@ import com.safjnest.lol.utils.PatchUtils;
 
         loadRunes();
         loadAguments();
-        new TrackerScheduler();
     }
 
     public static HashMap<String, PageRunes> getRunesHandler() {

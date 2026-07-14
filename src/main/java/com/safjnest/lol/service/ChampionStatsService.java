@@ -14,6 +14,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
+import com.safjnest.utils.log.BotLogger;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -28,32 +29,22 @@ public class ChampionStatsService {
     private record Row(int champion, LaneType lane, boolean win, TeamType team, String matchId, String bans) {}
 
     public Map<Integer, ChampionStatistics> getAll(Filter filter) {
-        Map<Integer, ChampionStatistics> cached = LeagueDB.getChampionStats(filter);
+        Map<Integer, ChampionStatistics> cached;
+        try {
+            cached = LeagueDB.getChampionStats(filter);
+        } catch (RuntimeException exception) {
+            BotLogger.warning("Invalid persisted champion stats for " + filter.genericKey()
+                + ": " + exception.getMessage());
+            cached = null;
+        }
         if (cached != null) return cached;
 
-        Map<Integer, ChampionStatistics> computed = compute(filter);
+        Map<Integer, ChampionStatistics> computed = compute(filter, true);
         return computed;
     }
 
     public ChampionStatistics get(Filter filter) {
-        String key = RedisKey.CHAMPION_STATS.of(filter.genericKey(), filter.champion());
-        ChampionStatistics stats = RedisClient.get(key, ChampionStatistics.class);
-        if (stats != null) return stats;
-
-        stats = LeagueDB.getChampionStats(filter, filter.champion());
-        if (stats != null) {
-            RedisClient.set(key, stats, 0);
-            return stats;
-        }
-
-        Map<Integer, ChampionStatistics> computed = compute(filter);
-        stats = computed != null ? computed.get(filter.champion()) : null;
-        if (stats != null) RedisClient.set(key, stats, 0);
-        return stats;
-    }
-
-    public Map<Integer, ChampionStatistics> compute(Filter filter) {
-        return compute(filter, true);
+        return get(filter, true);
     }
 
     public Map<Integer, ChampionStatistics> recomputeAll(Filter filter) {
@@ -64,6 +55,40 @@ public class ChampionStatsService {
             computed.values().forEach(stat -> RedisClient.set(RedisKey.CHAMPION_STATS.of(stat.filter().genericKey(), stat.filter().champion()), stat, 0));
         }
         return computed;
+    }
+
+    // ============================================================================
+
+    ChampionStatistics get(Filter filter, boolean allowCompute) {
+        if (filter == null) return null;
+
+        String key = RedisKey.CHAMPION_STATS.of(filter.genericKey(), filter.champion());
+        ChampionStatistics stats;
+        try {
+            stats = RedisClient.get(key, ChampionStatistics.class);
+        } catch (RuntimeException exception) {
+            RedisClient.delete(key);
+            stats = null;
+        }
+        if (stats != null) return stats;
+
+        try {
+            stats = LeagueDB.getChampionStats(filter, filter.champion());
+        } catch (RuntimeException exception) {
+            BotLogger.warning("Invalid persisted champion stats for " + filter.toKey()
+                + ": " + exception.getMessage());
+            return null;
+        }
+        if (stats != null) {
+            RedisClient.set(key, stats, 0);
+            return stats;
+        }
+
+        if (!allowCompute) return null;
+        Map<Integer, ChampionStatistics> computed = compute(filter, true);
+        stats = computed != null ? computed.get(filter.champion()) : null;
+        if (stats != null) RedisClient.set(key, stats, 0);
+        return stats;
     }
 
     private Map<Integer, ChampionStatistics> compute(Filter filter, boolean save) {

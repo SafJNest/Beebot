@@ -30,7 +30,8 @@ public enum RedisKey {
     PROFILE_STATISTICS("profile:statistics:v3:%s:%s"),
     LEADERBOARD_PAGE("leaderboard:page:v2:%s:%s:%s:%s"),
     LEADERBOARD_RANK_DISTRIBUTION("leaderboard:rank-distribution:v2:%s:%s"),
-    LEADERBOARD_TOP_REGIONS("leaderboard:top-regions:v2:%s:%s");
+    LEADERBOARD_TOP_REGIONS("leaderboard:top-regions:v2:%s:%s"),
+    CHAMPION_PAGE("champion:page:v1:%s");
 
     private final String pattern;
     private final String database;

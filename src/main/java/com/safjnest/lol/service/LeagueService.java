@@ -9,8 +9,8 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.MatchLookup;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.summoner.Mastery;
@@ -394,26 +394,26 @@ public class LeagueService {
       return match;
     }
 
-    public static MatchLookup getMatchDetail(String gameId, LeagueShard shard) {
+    public static ApiResult<Match> getMatchDetail(String gameId, LeagueShard shard) {
         String databaseGameId = databaseGameId(gameId);
         String key = RedisKey.MATCH_DETAIL.of(shard.name(), databaseGameId);
         Match cached = RedisClient.get(key, Match.class);
         if (cached != null) {
             cached.restoreEvents();
-            return MatchLookup.ready(cached);
+            return ApiResult.ready(cached);
         }
 
         Match match = LeagueDB.getMatch(shard, databaseGameId);
         if (match != null) {
             RedisClient.set(key, match, TTL_MATCH_DETAIL);
-            return MatchLookup.ready(match);
+            return ApiResult.ready(match);
         }
 
         LOLMatch riotMatch = getMatch(riotGameId(shard, databaseGameId), shard);
-        if (riotMatch == null) return MatchLookup.notFound();
+        if (riotMatch == null) return ApiResult.notFound();
 
         Tracker.queueMatch(riotMatch);
-        return MatchLookup.pending();
+        return ApiResult.pending();
     }
 
     public static void invalidateMatchDetail(LeagueShard shard, String gameId) {

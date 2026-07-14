@@ -1,7 +1,6 @@
 package com.safjnest.spring.controller;
 
 import java.util.List;
-import java.util.Locale;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,13 +11,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.safjnest.spring.dto.LolApiError;
+import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.model.match.MatchLookup;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.service.ProfilePageService;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 
 @RestController
 @RequestMapping("/api/lol/{shard}")
@@ -35,7 +31,7 @@ public class LolController {
             @PathVariable("shard") String shardValue,
             @RequestParam("q") String q
     ) {
-        String query = requireText(q, "search query");
+        String query = LolApiParameters.requiredText(q, "search query");
         if (LeagueService.normalizeSearch(query).isEmpty()) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
@@ -43,7 +39,7 @@ public class LolController {
             );
         }
 
-        return LeagueService.searchSummoners(query, parseShard(shardValue));
+        return LeagueService.searchSummoners(query, LolApiParameters.requiredShard(shardValue));
     }
 
     @GetMapping("/profile/{puuid}")
@@ -51,7 +47,10 @@ public class LolController {
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid
     ) {
-        SummonerView page = profilePageService.get(parseShard(shardValue), requireText(puuid, "puuid"));
+        SummonerView page = profilePageService.get(
+            LolApiParameters.requiredShard(shardValue),
+            LolApiParameters.requiredText(puuid, "puuid")
+        );
 
         if (page == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
@@ -65,7 +64,11 @@ public class LolController {
             @PathVariable("gameName") String gameName,
             @PathVariable("tagLine") String tagLine
     ) {
-        SummonerView page = profilePageService.get(parseShard(shardValue), requireText(gameName, "game name"), requireText(tagLine, "tag line"));
+        SummonerView page = profilePageService.get(
+            LolApiParameters.requiredShard(shardValue),
+            LolApiParameters.requiredText(gameName, "game name"),
+            LolApiParameters.requiredText(tagLine, "tag line")
+        );
 
         if (page == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
@@ -78,49 +81,15 @@ public class LolController {
             @PathVariable("shard") String shardValue,
             @PathVariable("gameId") String gameId
     ) {
-        MatchLookup lookup = LeagueService.getMatchDetail(requireText(gameId, "match id"), parseShard(shardValue));
-
-        return switch (lookup.getStatus()) {
-            case READY -> ResponseEntity.ok(lookup.getMatch());
-            case PENDING -> ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new LolApiError(HttpStatus.ACCEPTED.value(), "match_pending", "Match analysis is pending"));
-            case NOT_FOUND -> throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found");
-        };
-    }
-
-    static LeagueShard parseShard(String value) {
-        if (value == null || value.isBlank()) {
-            throw invalidShard(value);
-        }
-
-        try {
-            LeagueShard shard = LeagueShard.valueOf(value.trim().toUpperCase(Locale.ROOT));
-            if (shard == LeagueShard.UNKNOWN) {
-                throw invalidShard(value);
-            }
-            return shard;
-        } catch (IllegalArgumentException e) {
-            throw invalidShard(value);
-        }
-    }
-
-    private static String requireText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing " + fieldName);
-        }
-        return value.trim();
-    }
-
-    private static ResponseStatusException invalidShard(String value) {
-        StringBuilder validShards = new StringBuilder();
-        for (LeagueShard shard : LeagueShard.values()) {
-            if (shard == LeagueShard.UNKNOWN) continue;
-            if (validShards.length() > 0) validShards.append(", ");
-            validShards.append(shard.name());
-        }
-        return new ResponseStatusException(
-            HttpStatus.BAD_REQUEST,
-            "Invalid LeagueShard '" + value + "'. Expected one of: " + validShards
+        ApiResult<?> result = LeagueService.getMatchDetail(
+            LolApiParameters.requiredText(gameId, "match id"),
+            LolApiParameters.requiredShard(shardValue)
+        );
+        return LolApiResponses.from(
+            result,
+            "match_pending",
+            "Match analysis is pending",
+            "Match not found"
         );
     }
 }

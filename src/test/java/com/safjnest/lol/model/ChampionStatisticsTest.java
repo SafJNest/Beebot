@@ -1,0 +1,40 @@
+package com.safjnest.lol.model;
+
+import static org.junit.Assert.assertEquals;
+
+import java.util.List;
+import java.util.Map;
+
+import org.junit.Test;
+
+import com.safjnest.utils.KryoUtils;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+
+public class ChampionStatisticsTest {
+
+    private static final int THRESH_CHAMPION_ID = 412;
+
+    @Test
+    public void persistsMatchupsWithStableKryoRegistrations() {
+        ChampionStatistics source = new ChampionStatistics(
+            null,
+            100,
+            20,
+            5,
+            11,
+            0.55,
+            0.2,
+            0.05,
+            List.of(new ChampionStatistics.LaneStat(LaneType.UTILITY, 20, 0.55)),
+            Map.of(
+                new ChampionStatistics.MatchupKey(THRESH_CHAMPION_ID, LaneType.UTILITY),
+                new ChampionStatistics.Matchup(THRESH_CHAMPION_ID, 20, 0.55)
+            )
+        );
+
+        ChampionStatistics decoded = KryoUtils.decode(KryoUtils.encode(source), ChampionStatistics.class);
+
+        assertEquals(source, decoded);
+    }
+}

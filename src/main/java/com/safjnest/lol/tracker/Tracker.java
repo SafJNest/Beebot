@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -19,6 +20,8 @@ import org.json.JSONObject;
 import com.safjnest.core.Chronos;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.LeagueHandler;
+import com.safjnest.lol.model.Filter;
+import com.safjnest.lol.service.ChampionDataRefreshService;
 import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.service.ProfileStatisticsService;
@@ -65,6 +68,13 @@ public class Tracker {
     private static final Set<ProfileStatisticsRequest> PROFILE_STATISTICS_PENDING = ConcurrentHashMap.newKeySet();
     private static final Map<ProfileStatisticsRequest, Integer> PROFILE_STATISTICS_RETRIES = new ConcurrentHashMap<>();
     private static final ProfileStatisticsService PROFILE_STATISTICS_SERVICE = new ProfileStatisticsService();
+    private static final int CHAMPION_DATA_BATCH_SIZE = 5;
+    private static final int CHAMPION_DATA_MAX_RETRIES = 3;
+    private static final Queue<ChampionDataRequest> CHAMPION_DATA_QUEUE = new ConcurrentLinkedQueue<>();
+    private static final Set<String> CHAMPION_DATA_PENDING = ConcurrentHashMap.newKeySet();
+    private static final Map<String, Integer> CHAMPION_DATA_RETRIES = new ConcurrentHashMap<>();
+    private static final ChampionDataRefreshService CHAMPION_DATA_REFRESH_SERVICE = new ChampionDataRefreshService();
+    private static final AtomicBoolean QUEUE_DRAIN_RUNNING = new AtomicBoolean();
 
     private static long period = TimeConstant.MINUTE * 10;
 
@@ -163,7 +173,7 @@ public class Tracker {
         if (PROFILE_STATISTICS_PENDING.add(request)) PROFILE_STATISTICS_QUEUE.offer(request);
     }
 
-    public static int processProfileStatistics() {
+    public static synchronized int processProfileStatistics() {
         int batchSize = Math.min(PROFILE_STATISTICS_BATCH_SIZE, PROFILE_STATISTICS_QUEUE.size());
         int processed = 0;
         for (int i = 0; i < batchSize; i++) {
@@ -177,7 +187,8 @@ public class Tracker {
                     retryProfileStatistics(request);
                 }
             } catch (Exception exception) {
-                exception.printStackTrace();
+                BotLogger.error("Profile statistics refresh failed for summoner=" + request.summonerId()
+                    + " message=" + exception.getMessage());
                 retryProfileStatistics(request);
             }
             processed++;
@@ -191,6 +202,7 @@ public class Tracker {
             PROFILE_STATISTICS_QUEUE.offer(request);
             return;
         }
+        BotLogger.error("Profile statistics permanently failed for summoner=" + request.summonerId());
         completeProfileStatistics(request);
     }
 
@@ -200,6 +212,92 @@ public class Tracker {
     }
 
     private record ProfileStatisticsRequest(int summonerId, SeasonUtils.SeasonRange season) {}
+
+    public static void enqueueChampionData(Filter filter) {
+        if (filter == null || filter.champion() == 0) return;
+
+        String key = filter.toKey();
+        if (CHAMPION_DATA_PENDING.add(key)) CHAMPION_DATA_QUEUE.offer(new ChampionDataRequest(key, filter));
+    }
+
+    public static synchronized int processChampionData() {
+        int batchSize = Math.min(CHAMPION_DATA_BATCH_SIZE, CHAMPION_DATA_QUEUE.size());
+        int processed = 0;
+        for (int i = 0; i < batchSize; i++) {
+            ChampionDataRequest request = CHAMPION_DATA_QUEUE.poll();
+            if (request == null) break;
+
+            try {
+                if (CHAMPION_DATA_REFRESH_SERVICE.refresh(request.filter())) {
+                    completeChampionData(request);
+                } else {
+                    retryChampionData(request);
+                }
+            } catch (Exception exception) {
+                BotLogger.error("Champion data refresh failed for filter=" + request.key()
+                    + " message=" + exception.getMessage());
+                retryChampionData(request);
+            }
+            processed++;
+        }
+        return processed;
+    }
+
+    private static void retryChampionData(ChampionDataRequest request) {
+        int retries = CHAMPION_DATA_RETRIES.merge(request.key(), 1, Integer::sum);
+        if (retries < CHAMPION_DATA_MAX_RETRIES) {
+            CHAMPION_DATA_QUEUE.offer(request);
+            return;
+        }
+        BotLogger.error("Champion data permanently failed for filter=" + request.key());
+        completeChampionData(request);
+    }
+
+    private static void completeChampionData(ChampionDataRequest request) {
+        CHAMPION_DATA_PENDING.remove(request.key());
+        CHAMPION_DATA_RETRIES.remove(request.key());
+    }
+
+    private record ChampionDataRequest(String key, Filter filter) {}
+
+    public record QueueStatus(int profileStatistics, int championData) {}
+
+    public record QueueDrainResult(
+            boolean started,
+            int profileProcessed,
+            int championProcessed,
+            int profileRemaining,
+            int championRemaining
+    ) {}
+
+    public static QueueStatus getQueueStatus() {
+        return new QueueStatus(PROFILE_STATISTICS_QUEUE.size(), CHAMPION_DATA_QUEUE.size());
+    }
+
+    public static QueueDrainResult processAllQueues() {
+        if (!QUEUE_DRAIN_RUNNING.compareAndSet(false, true)) {
+            QueueStatus current = getQueueStatus();
+            return new QueueDrainResult(false, 0, 0, current.profileStatistics(), current.championData());
+        }
+
+        int profileProcessed = 0;
+        int championProcessed = 0;
+        try {
+            for (QueueStatus status = getQueueStatus(); status.profileStatistics() > 0 || status.championData() > 0; status = getQueueStatus()) {
+                int profileBatch = processProfileStatistics();
+                int championBatch = processChampionData();
+                profileProcessed += profileBatch;
+                championProcessed += championBatch;
+                if (profileBatch == 0 && championBatch == 0) break;
+            }
+        } finally {
+            QUEUE_DRAIN_RUNNING.set(false);
+        }
+
+        QueueStatus remaining = getQueueStatus();
+        return new QueueDrainResult(true, profileProcessed, championProcessed,
+            remaining.profileStatistics(), remaining.championData());
+    }
 
     public static Summoner checkSummoner(MatchParticipant participant, Summoner summoner) {
         if (summoner.getPUUID().equals(participant.getPuuid()))

@@ -37,6 +37,9 @@ lol/model/statistics/
   ProfileStatistics
   Stats
   ProfileStatisticsRow
+
+lol/model/
+  ChampionView
 ```
 
 Spring owns controllers, configuration and HTTP error models. It must not own operational LoL success DTOs.
@@ -48,6 +51,8 @@ Spring owns controllers, configuration and HTTP error models. It must not own op
 - [ADR-0003: Match and match result models](adr/0003-match-and-match-result-models.md)
 - [ADR-0004: Profile statistics refresh queue](adr/0004-profile-statistics-refresh-queue.md)
 - [ADR-0005: LoL API JSON contract](adr/0005-lol-api-json-contract.md)
+- [ADR-0006: Champion API contract](adr/0006-champion-api-contract.md)
+- [ADR-0007: Unified API result and parameter parsing](adr/0007-unified-api-result-and-parameters.md)
 
 ## Macro-task index
 

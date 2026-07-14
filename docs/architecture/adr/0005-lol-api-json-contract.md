@@ -30,6 +30,14 @@ summoners[]
 
 Rank distribution and top-regions remain non-paginated and continue using their persistent aggregate/cache flow.
 
+HTTP controllers unwrap the domain-level `ApiResult<T>` through one shared
+`LolApiResponses` mapper. `READY` and `PARTIAL` are successful JSON payloads;
+`PENDING` is returned as the standard `LolApiError` envelope with HTTP 202.
+
+`ChampionStatistics.filter` remains part of the canonical object used by Redis
+and Kryo, but the Spring mapper ignores it through a Jackson mixin because it
+is an internal storage key and not part of the HTTP contract.
+
 ## Compatibility
 
 This is an intentional public JSON change. No compatibility aliases for old DTO class names are introduced. Consumers must migrate to the canonical field structure.
@@ -39,3 +47,4 @@ This is an intentional public JSON change. No compatibility aliases for old DTO 
 - Profile, search, leaderboard and match success responses do not require Spring DTOs.
 - Profile and leaderboard share the same serialized summoner shape.
 - Pagination, default region, queue defaults and aggregate endpoints remain explicit and tested.
+- HTTP status mapping is centralized and storage-only fields are not exposed accidentally.

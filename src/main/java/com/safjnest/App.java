@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.safjnest.core.Bot;
+import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.spring.SpringServer;
+import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
@@ -34,7 +36,7 @@ public class App {
             TwitchClient.init();
             runSpring();
         }
-
+        TrackerScheduler.start();
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }

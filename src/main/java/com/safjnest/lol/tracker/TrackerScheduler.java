@@ -19,36 +19,41 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 
 public class TrackerScheduler {
 
-    private static final ChampionDataRefreshService championDataRefreshService;
+    private static final ChampionDataRefreshService championDataRefreshService = new ChampionDataRefreshService();
+    private static boolean started;
 
-    static {
-        championDataRefreshService = new ChampionDataRefreshService();
-        
-        if (!App.isTesting()) {
-            ChronoTask track = () -> retriveSummoners();
-            track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
+    public static synchronized void start() {
+        if (started) return;
+        started = true;
 
-            ChronoTask trackQueuedGames = () -> popSet();
-            trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
+        if (App.isTesting()) return;
 
-            //ChronoTask trackSampleGames = () -> retriveSampleGames();
-            //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
+        ChronoTask track = () -> retriveSummoners();
+        track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
 
-            ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
-            retriveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+        ChronoTask trackQueuedGames = () -> popSet();
+        trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
 
-            ChronoTask refreshProfileStatistics = () -> Tracker.processProfileStatistics();
-            refreshProfileStatistics.scheduleAtFixedRate(0, TimeConstant.MINUTE * 5, TimeUnit.MILLISECONDS);
+        //ChronoTask trackSampleGames = () -> retriveSampleGames();
+        //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
 
-            ChronoTask refreshLeaderboardDistribution = () -> LeaderboardService.rebuildDistribution();
-            refreshLeaderboardDistribution.scheduleAtFixedRate(0, TimeConstant.DAY, TimeUnit.MILLISECONDS);
+        ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
+        retriveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
-            ChronoTask refreshChampionData = () -> refreshChampionData();
-            refreshChampionData.scheduleAtFixedTime(3, 0, 0);
+        ChronoTask refreshProfileStatistics = () -> Tracker.processProfileStatistics();
+        refreshProfileStatistics.scheduleAtFixedRate(0, TimeConstant.MINUTE * 5, TimeUnit.MILLISECONDS);
 
-            ChronoTask clearTimelineCache = () -> DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
-            clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
-        }
+        ChronoTask refreshQueuedChampionData = () -> Tracker.processChampionData();
+        refreshQueuedChampionData.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
+
+        ChronoTask refreshLeaderboardDistribution = () -> LeaderboardService.rebuildDistribution();
+        refreshLeaderboardDistribution.scheduleAtFixedRate(0, TimeConstant.DAY, TimeUnit.MILLISECONDS);
+
+        ChronoTask refreshChampionData = () -> refreshChampionData();
+        refreshChampionData.scheduleAtFixedTime(3, 0, 0);
+
+        ChronoTask clearTimelineCache = () -> DataCall.getCacheProvider().clear(URLEndpoint.V5_TIMELINE, new LinkedHashMap<>());
+        clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
     }
 
     public static void retriveSummoners() {

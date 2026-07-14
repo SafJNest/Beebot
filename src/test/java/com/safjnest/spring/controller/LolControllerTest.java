@@ -15,7 +15,7 @@ public class LolControllerTest {
     public void shouldParseEveryOperationalR4jLeagueShard() {
         for (LeagueShard shard : LeagueShard.values()) {
             if (shard == LeagueShard.UNKNOWN) continue;
-            assertEquals(shard, LolController.parseShard(" " + shard.name().toLowerCase() + " "));
+            assertEquals(shard, LolApiParameters.requiredShard(" " + shard.name().toLowerCase() + " "));
         }
     }
 
@@ -33,7 +33,7 @@ public class LolControllerTest {
 
     private ResponseStatusException invalidShard(String value) {
         try {
-            LolController.parseShard(value);
+            LolApiParameters.requiredShard(value);
             throw new AssertionError("Expected an invalid LeagueShard");
         } catch (ResponseStatusException exception) {
             return exception;

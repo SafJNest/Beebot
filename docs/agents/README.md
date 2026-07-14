@@ -21,7 +21,7 @@ Only the main agent approves changes that alter an accepted ADR or cross task ow
 ## Execution order
 
 ```text
-0000 -> 0001 -> 0002 -> 0003 -> 0004 -> 0005 -> 0006
+0000 -> 0001 -> 0002 -> 0003 -> 0004 -> 0005 -> 0006 -> 0007
 ```
 
 The main agent may run independent read-only analysis in parallel, but implementation tasks with overlapping owners are sequential.

@@ -21,6 +21,22 @@ public class ChampionDataRefreshService {
     private final BuildService buildService = new BuildService();
     private final ChampionStatsService championStatsService = new ChampionStatsService();
 
+    public boolean refresh(Filter filter) {
+        if (filter == null || filter.champion() == 0) return false;
+
+        List<Build> builds = buildService.recomputeAll(filter);
+        Filter statsFilter = new Filter()
+            .setPatch(filter.patch())
+            .setQueue(filter.queue())
+            .setRank(filter.rank())
+            .setRegion(filter.region());
+        Map<Integer, ChampionStatistics> stats = championStatsService.recomputeAll(statsFilter);
+        boolean refreshed = builds != null && !builds.isEmpty()
+            && stats != null && stats.containsKey(filter.champion());
+        if (refreshed) ChampionPageService.invalidate(filter);
+        return refreshed;
+    }
+
     public void refresh() {
         String patch = new Filter().patch();
         List<Filter> buildFilters = getBuildFilters(patch);
@@ -56,6 +72,8 @@ public class ChampionDataRefreshService {
 
         BotLogger.info("[LPTracker] Refreshed champion data for patch " + patch + ": " + builds + " builds (" + emptyBuilds + " empty filters), " + stats + " champion stats (" + emptyStats + " empty filters)");
     }
+
+    // ============================================================================
 
     private List<Filter> getBuildFilters(String patch) {
         Map<String, Filter> filters = new LinkedHashMap<>();

@@ -3,9 +3,9 @@ package com.safjnest.lol.service;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
+import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.leaderboard.LeaderboardPage;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
@@ -27,7 +27,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class LeaderboardService {
 
-    public static final String GLOBAL_REGION = "GLOBAL";
+    private static final String GLOBAL_REGION = "GLOBAL";
     public static final int PAGE_SIZE = 50;
 
     private static final int TTL_LEADERBOARD = 60 * 5;
@@ -39,7 +39,7 @@ public class LeaderboardService {
 
     private final ProfileStatisticsService profileStatisticsService = new ProfileStatisticsService();
 
-    public LeaderboardPage getLeaderboard(TierType rank, GameQueueType queue, String region, int page) {
+    public ApiResult<LeaderboardPage> getLeaderboard(TierType rank, GameQueueType queue, LeagueShard region, int page) {
         requireRank(rank);
         if (page < 1) throw new IllegalArgumentException("page must be greater than 0");
 
@@ -47,7 +47,7 @@ public class LeaderboardService {
         String selectedRegion = defaultRegion(region);
         String key = RedisKey.LEADERBOARD_PAGE.of(rank.name(), canonicalQueue(selectedQueue).name(), selectedRegion, page);
         LeaderboardPage cached = RedisClient.get(key, LeaderboardPage.class);
-        if (cached != null) return cached;
+        if (cached != null) return ApiResult.ready(cached);
 
         long total = LeagueDB.countLeaderboard(rank.name(), queueValues(selectedQueue), selectedRegion);
         long pages = total == 0 ? 0 : (total + PAGE_SIZE - 1) / PAGE_SIZE;
@@ -79,11 +79,12 @@ public class LeaderboardService {
         }
 
         LeaderboardPage response = new LeaderboardPage(page, PAGE_SIZE, total, pages, summoners);
-        if (cacheable) RedisClient.set(key, response, TTL_LEADERBOARD);
-        return response;
+        if (!cacheable) return ApiResult.partial(response);
+        RedisClient.set(key, response, TTL_LEADERBOARD);
+        return ApiResult.ready(response);
     }
 
-    public LeaderboardDistribution getRankDistribution(GameQueueType queue, String region) {
+    public LeaderboardDistribution getRankDistribution(GameQueueType queue, LeagueShard region) {
         GameQueueType selectedQueue = canonicalQueue(defaultQueue(queue));
         String selectedRegion = defaultRegion(region);
         String key = RedisKey.LEADERBOARD_RANK_DISTRIBUTION.of(selectedQueue.name(), selectedRegion);
@@ -145,8 +146,8 @@ public class LeaderboardService {
         return queue == null ? GameQueueType.TEAM_BUILDER_RANKED_SOLO : queue;
     }
 
-    private static String defaultRegion(String region) {
-        return region == null || region.isBlank() ? GLOBAL_REGION : region.trim().toUpperCase(Locale.ROOT);
+    private static String defaultRegion(LeagueShard region) {
+        return region == null ? GLOBAL_REGION : region.name();
     }
 
     private static GameQueueType canonicalQueue(GameQueueType queue) {

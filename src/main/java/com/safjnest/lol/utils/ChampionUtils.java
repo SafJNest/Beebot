@@ -2,6 +2,7 @@ package com.safjnest.lol.utils;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -14,13 +15,9 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 public class ChampionUtils {
 
   private static Map<Integer, StaticChampion> champions = new HashMap<>();
-  private static Map<String, Integer> championsNames = new HashMap<>();
 
   static {
     champions = LeagueHandler.getRiotApi().getDDragonAPI().getChampions();
-    for (Map.Entry<Integer, StaticChampion> entry : champions.entrySet()) {
-      championsNames.put(entry.getValue().getName(), entry.getKey());
-    }
   }
 
   public static Map<Integer, StaticChampion> getChampions() {
@@ -32,7 +29,18 @@ public class ChampionUtils {
   }
 
   public static StaticChampion getChampion(String name) {
-    return champions.get(championsNames.get(name));
+    return findChampion(name);
+  }
+
+  public static StaticChampion findChampion(String name) {
+    if (name == null || name.isBlank()) return null;
+
+    String normalized = sanitizeChampionName(name).toLowerCase(Locale.ROOT);
+    for (StaticChampion champion : champions.values()) {
+      String championName = sanitizeChampionName(champion.getName()).toLowerCase(Locale.ROOT);
+      if (championName.equals(normalized)) return champion;
+    }
+    return null;
   }
 
   public static List<String> getChampionsNames() {

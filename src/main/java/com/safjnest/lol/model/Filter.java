@@ -209,7 +209,6 @@ public class Filter {
 
     /** Tutti i participant dei match filtrati, senza filtrare per champion/lane. */
     public String sqlAllParticipants() {
-        System.out.println("sqlAllParticipants: " + patch);
         StringBuilder sb = new StringBuilder(
                 "FROM participant p JOIN `match` m ON p.match_id = m.id WHERE 1=1");
         if (patch != null)
@@ -262,4 +261,5 @@ public class Filter {
     private static String ordinal(Enum<?> e) {
         return e != null ? String.valueOf(e.ordinal()) : "*";
     }
+
 }
