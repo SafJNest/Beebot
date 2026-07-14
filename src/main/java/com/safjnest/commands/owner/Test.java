@@ -36,6 +36,7 @@ import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.service.ProfilePageService;
 import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.tracker.Tracker;
@@ -161,7 +162,19 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | profile-stats");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | profile-stats | leaderboard-distribution");
+            break;
+            case "leaderboard-distribution":
+                e.reply("Leaderboard distribution refresh started.");
+                new ChronoTask() {
+                    @Override
+                    public void run() {
+                        boolean rebuilt = LeaderboardService.rebuildDistribution();
+                        e.getChannel().sendMessage(rebuilt
+                            ? "Leaderboard distribution refresh completed."
+                            : "Leaderboard distribution refresh failed.").queue();
+                    }
+                }.queue();
             break;
             case "profile-stats":
                 if (args.length < 2) {

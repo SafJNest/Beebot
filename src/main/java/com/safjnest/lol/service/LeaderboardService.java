@@ -49,12 +49,13 @@ public class LeaderboardService {
         LeaderboardPage cached = RedisClient.get(key, LeaderboardPage.class);
         if (cached != null) return ApiResult.ready(cached);
 
-        long total = LeagueDB.countLeaderboard(rank.name(), queueValues(selectedQueue), selectedRegion);
-        long pages = total == 0 ? 0 : (total + PAGE_SIZE - 1) / PAGE_SIZE;
         long offset = (long) (page - 1) * PAGE_SIZE;
-        QueryResult rows = total > 0 && page <= pages
-            ? LeagueDB.getLeaderboard(rank.name(), queueValues(selectedQueue), selectedRegion, offset, PAGE_SIZE)
-            : new QueryResult();
+        LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardData(
+            rank.name(), canonicalQueue(selectedQueue).name(), queueValues(selectedQueue), selectedRegion, offset, PAGE_SIZE
+        );
+        long total = data.total();
+        long pages = total == 0 ? 0 : (total + PAGE_SIZE - 1) / PAGE_SIZE;
+        QueryResult rows = data.rows();
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         List<Integer> summonerIds = new ArrayList<>(rows.size());
