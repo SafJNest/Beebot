@@ -11,6 +11,7 @@ import java.util.Map;
 import com.safjnest.lol.model.match.MatchResult;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.ProfileStatisticsRow;
+import com.safjnest.lol.model.statistics.Stats;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.database.LeagueDB;
@@ -82,10 +83,11 @@ public class ProfileStatisticsService {
         if (row == null || row.data() == null) return null;
         try {
             ProfileStatistics statistics = KryoUtils.decode(row.data(), ProfileStatistics.class);
+            if (!valid(statistics)) return null;
             statistics.timeStart = row.timeStart();
             statistics.timeEnd = row.timeEnd();
             return statistics;
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException | LinkageError ignored) {
             return null;
         }
     }
@@ -136,5 +138,19 @@ public class ProfileStatisticsService {
 
     private static String redisKey(int summonerId, long timeStart) {
         return RedisKey.PROFILE_STATISTICS.of(summonerId, timeStart);
+    }
+
+    private static boolean valid(ProfileStatistics statistics) {
+        if (statistics == null) return false;
+        Object total = statistics.total;
+        Object queueStats = statistics.queueStats;
+        Object laneStats = statistics.laneStats;
+        Object championStats = statistics.championStats;
+        Object recentMatches = statistics.recentMatches;
+        return total instanceof Stats<?>
+            && queueStats instanceof List<?>
+            && laneStats instanceof List<?>
+            && championStats instanceof List<?>
+            && recentMatches instanceof List<?>;
     }
 }

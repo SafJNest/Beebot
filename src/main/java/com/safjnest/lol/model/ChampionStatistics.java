@@ -56,7 +56,18 @@ public record ChampionStatistics(
     }
 
     public static ChampionStatistics decode(String b64) {
-        return KryoUtils.decode(b64, ChampionStatistics.class);
+        ChampionStatistics statistics = KryoUtils.decode(b64, ChampionStatistics.class);
+        if (statistics == null) return null;
+
+        Object filter = statistics.filter();
+        Object laneStats = statistics.laneStats();
+        Object matchups = statistics.matchups();
+        if (!(filter instanceof Filter)
+                || !(laneStats instanceof List<?>)
+                || !(matchups instanceof Map<?, ?>)) {
+            throw new IllegalStateException("Invalid persisted ChampionStatistics payload");
+        }
+        return statistics;
     }
 
     public Matchup getOpponentMatchup(int opponent, LaneType lane) {
