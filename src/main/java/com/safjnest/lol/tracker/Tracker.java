@@ -205,10 +205,13 @@ public class Tracker {
         return ids.stream().map(id -> LeagueService.getMatch(id, LeagueShard.valueOf(id.split("_")[0]))).collect(Collectors.toSet());
     }
 
-    public static void enqueueProfileStatistics(int summonerId, SeasonUtils.SeasonRange season) {
-        if (summonerId == 0 || season == null) return;
+    public static void enqueueProfileStatistics(
+        com.safjnest.lol.model.summoner.Summoner summoner,
+        SeasonUtils.SeasonRange season
+    ) {
+        if (summoner == null || summoner.summonerId() == 0 || season == null) return;
 
-        ProfileStatisticsRequest request = new ProfileStatisticsRequest(summonerId, season);
+        ProfileStatisticsRequest request = new ProfileStatisticsRequest(summoner, season);
         if (PROFILE_STATISTICS_PENDING.add(request)) PROFILE_STATISTICS_QUEUE.offer(request);
     }
 
@@ -220,13 +223,18 @@ public class Tracker {
             if (request == null) break;
 
             try {
-                if (PROFILE_STATISTICS_SERVICE.refresh(request.summonerId(), request.season(), false)) {
+                if (PROFILE_STATISTICS_SERVICE.refresh(request.summoner().summonerId(), request.season(), false)) {
+                    LeagueShard shard = LeagueShard.valueOf(request.summoner().region());
+                    LeagueService.invalidateProfilePage(request.summoner().puuid(), shard);
+                    BotLogger.info("[LPTracker] Updated summoner overview for "
+                        + request.summoner().riotId() + " (" + shard + ", id="
+                        + request.summoner().summonerId() + ") | profile statistics persisted, Redis profile page invalidated");
                     completeProfileStatistics(request);
                 } else {
                     retryProfileStatistics(request);
                 }
             } catch (Exception exception) {
-                BotLogger.error("Profile statistics refresh failed for summoner=" + request.summonerId()
+                BotLogger.error("Profile statistics refresh failed for summoner=" + request.summoner().summonerId()
                     + " message=" + exception.getMessage());
                 retryProfileStatistics(request);
             }
@@ -241,7 +249,7 @@ public class Tracker {
             PROFILE_STATISTICS_QUEUE.offer(request);
             return;
         }
-        BotLogger.error("Profile statistics permanently failed for summoner=" + request.summonerId());
+        BotLogger.error("Profile statistics permanently failed for summoner=" + request.summoner().summonerId());
         completeProfileStatistics(request);
     }
 
@@ -250,7 +258,10 @@ public class Tracker {
         PROFILE_STATISTICS_RETRIES.remove(request);
     }
 
-    private record ProfileStatisticsRequest(int summonerId, SeasonUtils.SeasonRange season) {}
+    private record ProfileStatisticsRequest(
+        com.safjnest.lol.model.summoner.Summoner summoner,
+        SeasonUtils.SeasonRange season
+    ) {}
 
     public static void enqueueChampionData(Filter filter) {
         if (filter == null || filter.champion() == 0) return;

@@ -46,7 +46,7 @@ public class ProfilePageService {
         ProfileStatistics aggregate = databaseStatistics != null
             ? databaseStatistics
             : statisticsService.getRedis(profile.summonerId(), season);
-        if (databaseStatistics == null) Tracker.enqueueProfileStatistics(profile.summonerId(), season);
+        if (databaseStatistics == null) Tracker.enqueueProfileStatistics(profile, season);
 
         SummonerView page = SummonerView.from(profile, profileRanks, aggregate, profileMasteries);
         if (databaseStatistics != null && !databaseRanks.isEmpty()) {
@@ -67,7 +67,7 @@ public class ProfilePageService {
         if (profile == null || profile.summonerId() == 0) return false;
 
         boolean refreshed = statisticsService.refresh(profile.summonerId(), season, rebuild);
-        if (refreshed) RedisClient.delete(RedisKey.PROFILE_PAGE.of(shard.name(), puuid));
+        if (refreshed) LeagueService.invalidateProfilePage(puuid, shard);
         return refreshed;
     }
 

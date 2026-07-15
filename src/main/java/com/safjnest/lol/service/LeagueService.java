@@ -163,7 +163,7 @@ public class LeagueService {
         RedisClient.delete(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.MATCH_LIST.of(shard.name(), puuid, "null", 0));
         RedisClient.delete(RedisKey.PROFILE_BASE.of(shard.name(), puuid));
-        RedisClient.delete(RedisKey.PROFILE_PAGE.of(shard.name(), puuid));
+        invalidateProfilePage(puuid, shard);
 
         int summonerId = getSummonerIdByPuuid(puuid, shard);
         if (summonerId != 0) {
@@ -171,6 +171,11 @@ public class LeagueService {
             RedisClient.delete(RedisKey.PROFILE_RANKS.of(summonerId));
             RedisClient.delete(RedisKey.PROFILE_MASTERIES.of(summonerId));
         }
+    }
+
+    public static void invalidateProfilePage(String puuid, LeagueShard shard) {
+        if (puuid == null || puuid.isBlank() || shard == null) return;
+        RedisClient.delete(RedisKey.PROFILE_PAGE.of(shard.name(), puuid));
     }
 
     public static List<SummonerView> searchSummoners(String query, LeagueShard shard) {

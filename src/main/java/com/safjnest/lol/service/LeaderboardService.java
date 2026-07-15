@@ -124,7 +124,7 @@ public class LeaderboardService {
             ProfileStatistics statistics = statisticsBySummoner.get(summoner.summonerId());
             if (statistics == null) {
                 cacheable = false;
-                Tracker.enqueueProfileStatistics(summoner.summonerId(), season);
+                Tracker.enqueueProfileStatistics(summoner, season);
             }
             SummonerView view = SummonerView.from(summoner, List.of(summonerRank), statistics, List.of());
             summoners.add(new SummonerLeaderboard(offset + i + 1, view));
