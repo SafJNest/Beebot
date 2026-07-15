@@ -37,6 +37,7 @@ import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
+import com.safjnest.lol.service.LeaderboardService;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
@@ -160,7 +161,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr");
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr | leaderboard-distribution");
             break;
             case "timer":
                 Timer timer = new Timer();
@@ -1325,6 +1326,16 @@ public class Test extends Command{
                 };
                 fixMmr.queue();
                 e.reply("fixmmr queued");
+                break;
+            case "leaderboard-distribution":
+                ChronoTask rebuildLeaderboardDistribution = () -> {
+                    long startedAt = System.currentTimeMillis();
+                    boolean rebuilt = LeaderboardService.rebuildDistribution();
+                    long duration = System.currentTimeMillis() - startedAt;
+                    System.out.println("leaderboard-distribution completed: rebuilt=" + rebuilt + " | duration=" + duration + "ms");
+                };
+                rebuildLeaderboardDistribution.queue();
+                e.reply("leaderboard-distribution queued");
                 break;
             case "getrank":
                 ChronoTask getRank = () -> {
