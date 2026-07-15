@@ -439,19 +439,19 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static LeaderboardData getLeaderboardData(
-        String rankTier, String queue, List<String> queues, String region, long offset, int limit
+        String rankTier, String queue, String region, long offset, int limit
     ) {
         return executeLeaderboardQuery(conn -> {
             long total = leaderboardDistributionTotal(conn, queue, rankTier, region);
             List<LeaderboardRow> rows = total > offset
-                ? getLeaderboard(conn, queue, rankTier, queues, region, offset, limit)
+                ? getLeaderboard(conn, queue, rankTier, region, offset, limit)
                 : List.of();
             return new LeaderboardData(total, rows, true);
         });
     }
 
     public static LeaderboardData getLeaderboardTotal(
-        String rankTier, String queue, List<String> queues, String region
+        String rankTier, String queue, String region
     ) {
         return executeLeaderboardQuery(conn -> new LeaderboardData(
             leaderboardDistributionTotal(conn, queue, rankTier, region),
@@ -461,10 +461,10 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static LeaderboardData getLeaderboardRows(
-        String rankTier, String queue, List<String> queues, String region, long offset, int limit
+        String rankTier, String queue, String region, long offset, int limit
     ) {
         return executeLeaderboardQuery(conn -> new LeaderboardData(
-            0, getLeaderboard(conn, queue, rankTier, queues, region, offset, limit), true
+            0, getLeaderboard(conn, queue, rankTier, region, offset, limit), true
         ));
     }
 
@@ -492,29 +492,23 @@ public class LeagueDB extends AbstractDB {
     }
 
     private static List<LeaderboardRow> getLeaderboard(
-        Connection conn, String queue, String rankTier, List<String> queues, String region, long offset, int limit
+        Connection conn, String queue, String rankTier, String region, long offset, int limit
     ) throws SQLException {
-        boolean soloAliases = queues.size() > 1;
         String sql = "SELECT r.summoner_id, r.region, r.`rank`, r.lp, r.wins, r.losses "
             + "FROM `rank` r "
-            + "WHERE r.queue IN (" + placeholders(queues.size()) + ") ";
+            + "WHERE r.queue = ? ";
         List<String> ranks = rankTier == null ? List.of() : rankValues(rankTier);
         if (rankTier != null) {
             sql += "AND r.`rank` IN (" + placeholders(ranks.size()) + ")";
         }
-        if (soloAliases) {
-            sql += rankTier == null ? preferredSoloQueueFilter() : preferredSoloQueueFilter(ranks.size());
-        }
         if (!"GLOBAL".equals(region)) sql += " AND r.region = ?";
-        sql += " ORDER BY r.mmr DESC, r.wins DESC, r.losses ASC, r.summoner_id ASC LIMIT ? OFFSET ?";
+        sql += " ORDER BY r.mmr DESC LIMIT ? OFFSET ?";
 
         List<QueryRecord> rankRows = new ArrayList<>();
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            int parameter = bindQueues(pstmt, queues, 1);
+            int parameter = 1;
+            pstmt.setString(parameter++, queue);
             if (rankTier != null) parameter = bindValues(pstmt, ranks, parameter);
-            if (soloAliases && rankTier != null) {
-                parameter = bindValues(pstmt, ranks, parameter);
-            }
             if (!"GLOBAL".equals(region)) pstmt.setString(parameter++, region);
             pstmt.setInt(parameter++, limit);
             pstmt.setLong(parameter, offset);
@@ -651,8 +645,8 @@ public class LeagueDB extends AbstractDB {
              ResultSet result = queuesQuery.executeQuery()) {
             while (result.next()) {
                 String value = result.getString("queue");
-                if ("RANKED_SOLO_5X5".equals(value)) value = GameQueueType.TEAM_BUILDER_RANKED_SOLO.name();
                 GameQueueType queue = enumValue(GameQueueType.class, value);
+                queue = GameQueueTypeUtils.canonicalQueue(queue);
                 if (queue != null && !queues.contains(queue)) queues.add(queue);
             }
         }
@@ -662,14 +656,11 @@ public class LeagueDB extends AbstractDB {
     private static void buildLeaderboardDistributionCombination(
         Connection conn, GameQueueType queue, TierType tier, LeagueShard region
     ) throws SQLException {
-        List<GameQueueType> sourceQueues = queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO
-            ? List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.RANKED_SOLO_5X5)
-            : List.of(queue);
         List<String> ranks = tierDivisionRanks(tier);
         String sql = "INSERT INTO leaderboard_distribution (queue, `rank`, region, players, updated_at) "
             + "SELECT ?, ?, ?, COUNT(DISTINCT r.summoner_id), CURRENT_TIMESTAMP(3) "
             + "FROM `rank` r "
-            + "WHERE r.region = ? AND r.queue IN (" + placeholders(sourceQueues.size()) + ") "
+            + "WHERE r.region = ? AND r.queue = ? "
             + "AND r.`rank` IN (" + placeholders(ranks.size()) + ") "
             + "ON DUPLICATE KEY UPDATE players = VALUES(players), updated_at = VALUES(updated_at)";
 
@@ -679,7 +670,7 @@ public class LeagueDB extends AbstractDB {
             statement.setString(parameter++, tier.name());
             statement.setString(parameter++, region.name());
             statement.setString(parameter++, region.name());
-            for (GameQueueType sourceQueue : sourceQueues) statement.setString(parameter++, sourceQueue.name());
+            statement.setString(parameter++, queue.name());
             for (String rank : ranks) statement.setString(parameter++, rank);
             statement.executeUpdate();
         }
@@ -720,11 +711,6 @@ public class LeagueDB extends AbstractDB {
         return result;
     }
 
-    private static int bindQueues(PreparedStatement pstmt, List<String> queues, int parameter) throws SQLException {
-        for (String queue : queues) pstmt.setString(parameter++, queue);
-        return parameter;
-    }
-
     private static int bindValues(PreparedStatement pstmt, List<String> values, int parameter) throws SQLException {
         for (String value : values) pstmt.setString(parameter++, value);
         return parameter;
@@ -732,19 +718,6 @@ public class LeagueDB extends AbstractDB {
 
     private static String placeholders(int count) {
         return String.join(", ", Collections.nCopies(count, "?"));
-    }
-
-    private static String preferredSoloQueueFilter(int rankCount) {
-        return " AND NOT (r.queue = 'RANKED_SOLO_5X5' AND EXISTS ("
-            + "SELECT 1 FROM `rank` preferred WHERE preferred.summoner_id = r.summoner_id "
-            + "AND preferred.queue = 'TEAM_BUILDER_RANKED_SOLO' "
-            + "AND preferred.`rank` IN (" + placeholders(rankCount) + ")))";
-    }
-
-    private static String preferredSoloQueueFilter() {
-        return " AND NOT (r.queue = 'RANKED_SOLO_5X5' AND EXISTS ("
-            + "SELECT 1 FROM `rank` preferred WHERE preferred.summoner_id = r.summoner_id "
-            + "AND preferred.queue = 'TEAM_BUILDER_RANKED_SOLO'))";
     }
 
     private static List<String> rankValues(String rankTier) {
@@ -783,14 +756,14 @@ public class LeagueDB extends AbstractDB {
             "SELECT r.queue, COALESCE(r.`rank`, 'UNRANKED') AS rank, COALESCE(r.lp, 0) AS lp, " +
             "COALESCE(r.wins, 0) AS wins, COALESCE(r.losses, 0) AS losses " +
             "FROM `rank` r " +
-            "WHERE r.summoner_id = ? AND r.queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') " +
-            "ORDER BY FIELD(r.queue, 'TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') " +
+            "WHERE r.summoner_id = ? AND r.queue = ? " +
             "LIMIT 1";
 
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return new QueryRecord();
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, summonerId);
+                pstmt.setString(2, GameQueueType.RANKED_SOLO_5X5.name());
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) return toRecord(rs);
                 }
@@ -830,14 +803,14 @@ public class LeagueDB extends AbstractDB {
         String sql = "SELECT r.summoner_id, r.queue, COALESCE(r.`rank`, 'UNRANKED') AS rank, " +
             "COALESCE(r.lp, 0) AS lp, COALESCE(r.wins, 0) AS wins, COALESCE(r.losses, 0) AS losses " +
             "FROM `rank` r WHERE r.summoner_id IN (" + placeholders(summonerIds.size()) + ") " +
-            "AND r.queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') " +
-            "ORDER BY r.summoner_id, FIELD(r.queue, 'TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5')";
+            "AND r.queue = ?";
 
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return result;
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 int parameter = 1;
                 for (int summonerId : summonerIds) pstmt.setInt(parameter++, summonerId);
+                pstmt.setString(parameter, GameQueueType.RANKED_SOLO_5X5.name());
                 try (ResultSet rs = pstmt.executeQuery()) {
                     while (rs.next()) {
                         QueryRecord row = toRecord(rs);
@@ -1187,7 +1160,7 @@ public class LeagueDB extends AbstractDB {
                 for (LeagueEntry entry : entries) {
                     pstmt.setInt(1, summonerId);
                     pstmt.setString(2, shard.name());
-                    pstmt.setString(3, entry.getQueueType().name());
+                    pstmt.setString(3, GameQueueTypeUtils.canonicalQueue(entry.getQueueType()).name());
                     pstmt.setString(4, entry.getTierDivisionType().name());
                     pstmt.setInt(5, entry.getLeaguePoints());
                     pstmt.setInt(6, TierDivisionUtils.getMmr(entry.getTierDivisionType(), entry.getLeaguePoints()));
@@ -1239,7 +1212,7 @@ public class LeagueDB extends AbstractDB {
                     int summonerId = addLOLAccount(entry, shard);
                     pstmt.setInt(1, summonerId);
                     pstmt.setString(2, shard.name());
-                    pstmt.setString(3, entry.getQueueType().name());
+                    pstmt.setString(3, GameQueueTypeUtils.canonicalQueue(entry.getQueueType()).name());
                     pstmt.setString(4, entry.getTierDivisionType().name());
                     pstmt.setInt(5, entry.getLeaguePoints());
                     pstmt.setInt(6, TierDivisionUtils.getMmr(entry.getTierDivisionType(), entry.getLeaguePoints()));

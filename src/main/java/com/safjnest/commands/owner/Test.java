@@ -42,6 +42,7 @@ import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
 import com.safjnest.lol.tracker.TrackerState.Priority;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.model.UserData;
@@ -1276,7 +1277,7 @@ public class Test extends Command{
                                 TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank_o")];
                                 GameQueueType gameType = GameQueueType.values()[row.getAsInt("game_type")];
                                 int mmr = TierDivisionUtils.getMmr(rank, row.getAsInt("lp"));
-                                String q = "UPDATE `rank` SET rank = '" + rank + "', queue = '" + gameType + "', mmr = " + mmr + " WHERE id = " + row.get("id");
+                                String q = "UPDATE `rank` SET rank = '" + rank + "', queue = '" + GameQueueTypeUtils.canonicalQueue(gameType) + "', mmr = " + mmr + " WHERE id = " + row.get("id");
                                 LeagueDB.get().query(q);
                             } catch (Exception eeee) {
                                 eeee.printStackTrace();

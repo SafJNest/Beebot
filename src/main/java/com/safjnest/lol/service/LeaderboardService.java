@@ -16,6 +16,7 @@ import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerLeaderboard;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.tracker.Tracker;
+import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
@@ -54,13 +55,13 @@ public class LeaderboardService {
         String selectedRegion = defaultRegion(region);
         String rankKey = rank == null ? ALL_RANKS : rank.name();
         String key = RedisKey.LEADERBOARD_PAGE.of(
-            rankKey, canonicalQueue(selectedQueue).name(), selectedRegion, page, limit
+            rankKey, GameQueueTypeUtils.canonicalQueue(selectedQueue).name(), selectedRegion, page, limit
         );
         LeaderboardPage cached = RedisClient.get(key, LeaderboardPage.class);
         if (cached != null) return ApiResult.ready(cached);
 
         long offset = (long) (page - 1) * limit;
-        String selectedQueueName = canonicalQueue(selectedQueue).name();
+        String selectedQueueName = GameQueueTypeUtils.canonicalQueue(selectedQueue).name();
         String totalKey = RedisKey.LEADERBOARD_TOTAL.of(rankKey, selectedQueueName, selectedRegion);
         String rowsKey = RedisKey.LEADERBOARD_ROWS.of(rankKey, selectedQueueName, selectedRegion, offset, limit);
 
@@ -75,7 +76,6 @@ public class LeaderboardService {
             LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardData(
                 rank != null ? rank.name() : null,
                 selectedQueueName,
-                queueValues(selectedQueue),
                 selectedRegion,
                 offset,
                 limit
@@ -88,7 +88,6 @@ public class LeaderboardService {
                 LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardTotal(
                     rank != null ? rank.name() : null,
                     selectedQueueName,
-                    queueValues(selectedQueue),
                     selectedRegion
                 );
                 total = data.total();
@@ -98,7 +97,6 @@ public class LeaderboardService {
                 LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardRows(
                     rank != null ? rank.name() : null,
                     selectedQueueName,
-                    queueValues(selectedQueue),
                     selectedRegion,
                     offset,
                     limit
@@ -137,7 +135,7 @@ public class LeaderboardService {
     }
 
     public LeaderboardDistribution getRankDistribution(GameQueueType queue, LeagueShard region) {
-        GameQueueType selectedQueue = canonicalQueue(defaultQueue(queue));
+        GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
         String selectedRegion = defaultRegion(region);
         String key = RedisKey.LEADERBOARD_RANK_DISTRIBUTION.of(selectedQueue.name(), selectedRegion);
         LeaderboardDistribution cached = RedisClient.get(key, LeaderboardDistribution.class);
@@ -160,7 +158,7 @@ public class LeaderboardService {
 
     public LeaderboardDistribution getTopRegions(GameQueueType queue, TierType rank) {
         requireRank(rank);
-        GameQueueType selectedQueue = canonicalQueue(defaultQueue(queue));
+        GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(defaultQueue(queue));
         String key = RedisKey.LEADERBOARD_TOP_REGIONS.of(selectedQueue.name(), rank.name());
         LeaderboardDistribution cached = RedisClient.get(key, LeaderboardDistribution.class);
         if (cached != null) return cached;
@@ -190,27 +188,16 @@ public class LeaderboardService {
         RedisClient.set(rowsKey, rows, TTL_LEADERBOARD_COMPONENTS);
     }
 
-    private static List<String> queueValues(GameQueueType queue) {
-        if (queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO || queue == GameQueueType.RANKED_SOLO_5X5) {
-            return List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO.name(), GameQueueType.RANKED_SOLO_5X5.name());
-        }
-        return List.of(queue.name());
-    }
-
     private static void requireRank(TierType rank) {
         if (rank == null) throw new IllegalArgumentException("rank is required");
     }
 
     private static GameQueueType defaultQueue(GameQueueType queue) {
-        return queue == null ? GameQueueType.TEAM_BUILDER_RANKED_SOLO : queue;
+        return queue == null ? GameQueueType.RANKED_SOLO_5X5 : queue;
     }
 
     private static String defaultRegion(LeagueShard region) {
         return region == null ? GLOBAL_REGION : region.name();
-    }
-
-    private static GameQueueType canonicalQueue(GameQueueType queue) {
-        return queue == GameQueueType.RANKED_SOLO_5X5 ? GameQueueType.TEAM_BUILDER_RANKED_SOLO : queue;
     }
 
     private static void clearDistributionCache() {
@@ -221,7 +208,7 @@ public class LeaderboardService {
         }
 
         for (GameQueueType queue : GameQueueType.values()) {
-            GameQueueType selectedQueue = canonicalQueue(queue);
+            GameQueueType selectedQueue = GameQueueTypeUtils.canonicalQueue(queue);
             if (selectedQueue != queue) continue;
             for (String region : regions) {
                 RedisClient.delete(RedisKey.LEADERBOARD_RANK_DISTRIBUTION.of(selectedQueue.name(), region));

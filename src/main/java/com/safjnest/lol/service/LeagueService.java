@@ -608,7 +608,7 @@ public class LeagueService {
 
     private static Rank toRank(QueryRecord row) {
         return new Rank(
-            queue(row.getOrDefault("queue", "TEAM_BUILDER_RANKED_SOLO")),
+            queue(row.getOrDefault("queue", "RANKED_SOLO_5X5")),
             tierDivision(row.getOrDefault("rank", "UNRANKED")),
             row.getAsInt("lp"),
             row.getAsInt("wins"),

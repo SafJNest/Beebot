@@ -88,7 +88,7 @@ Le colonne che rappresentano un campione o una regione restano valori applicativ
 
 La migration per installazioni esistenti è in [`0001-leaderboard-distribution.sql`](../../database/league_of_legends/migrations/0001-leaderboard-distribution.sql). Va eseguita una volta su database già esistenti; le definizioni base descrivono invece lo schema risultante.
 
-Le query paginated della leaderboard usano `rank.mmr` per l'ordinamento. La migration [`0002-rank-leaderboard-filter.sql`](../../database/league_of_legends/migrations/0002-rank-leaderboard-filter.sql) contiene l'indice precedente su rank e LP; [`0003-rank-mmr-filter.sql`](../../database/league_of_legends/migrations/0003-rank-mmr-filter.sql) lo sostituisce con l'indice basato su MMR. La migration [`0001-rank-mmr.sql`](../../database/league_of_legends/migrations/0001-rank-mmr.sql) aggiunge la colonna e gli indici globali/regionali.
+Le query paginated della leaderboard usano `rank.mmr` per l'ordinamento, senza tie-breaker aggiuntivi. La migration [`0002-rank-leaderboard-filter.sql`](../../database/league_of_legends/migrations/0002-rank-leaderboard-filter.sql) contiene l'indice precedente su rank e LP; [`0003-rank-mmr-filter.sql`](../../database/league_of_legends/migrations/0003-rank-mmr-filter.sql) lo sostituisce con l'indice basato su MMR. La migration [`0001-rank-mmr.sql`](../../database/league_of_legends/migrations/0001-rank-mmr.sql) aggiunge la colonna e gli indici globali/regionali. La migration [`0004-rank-canonical-mmr.sql`](../../database/league_of_legends/migrations/0004-rank-canonical-mmr.sql) normalizza la queue solo a `RANKED_SOLO_5X5`, rimuove i duplicati legacy e crea gli indici minimi per ogni combinazione di filtro.
 
 ## Regole operative
 

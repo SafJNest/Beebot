@@ -103,13 +103,14 @@ Il parametro `queue` è opzionale negli endpoint champion e leaderboard. Il defa
 TEAM_BUILDER_RANKED_SOLO
 ```
 
-Nel leaderboard `RANKED_SOLO_5X5` viene normalizzato allo stesso valore canonico `TEAM_BUILDER_RANKED_SOLO`. Negli endpoint champion il valore passato viene invece usato direttamente nel filtro.
+Nel leaderboard `TEAM_BUILDER_RANKED_SOLO` viene normalizzato al valore canonico `RANKED_SOLO_5X5`. Negli endpoint champion il valore passato viene invece usato direttamente nel filtro.
 
 Il parser non applica una whitelist locale: accetta ogni costante di `GameQueueType` dell'attuale versione R4J. Questo non significa che ogni queue abbia dati persistiti o sia semanticamente utile per tutti gli endpoint. Le queue più rilevanti per i dati attuali sono:
 
 | Queue | Uso |
 |---|---|
-| `TEAM_BUILDER_RANKED_SOLO` | Solo/Duo ranked; default API |
+| `RANKED_SOLO_5X5` | Solo/Duo ranked; queue canonica della leaderboard |
+| `TEAM_BUILDER_RANKED_SOLO` | Solo/Duo ranked; default API e dataset match |
 | `RANKED_FLEX_SR` | Ranked Flex |
 | `TEAM_BUILDER_DRAFT_UNRANKED_5X5` | Draft Pick |
 | `TEAM_BUILDER_DRAFT_RANKED_5X5` | Draft ranked legacy |

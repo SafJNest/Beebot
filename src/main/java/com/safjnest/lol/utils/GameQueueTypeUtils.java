@@ -31,6 +31,12 @@ public class GameQueueTypeUtils {
     return queue == GameQueueType.CHERRY;
   }
 
+  public static GameQueueType canonicalQueue(GameQueueType queue) {
+    return queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO
+        ? GameQueueType.RANKED_SOLO_5X5
+        : queue;
+  }
+
   public static String prettyName(GameQueueType queue) {
     String name = switch (queue) {
         case CHERRY          -> "Arena";
