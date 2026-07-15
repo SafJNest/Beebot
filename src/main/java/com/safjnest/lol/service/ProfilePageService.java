@@ -19,6 +19,7 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 public class ProfilePageService {
 
     private static final AtomicBoolean ALL_PROFILE_STATS_REFRESH_RUNNING = new AtomicBoolean(false);
+    private static final int MIN_PROFILE_GAMES = 5;
     private static final int TTL_PROFILE_PAGE = 60 * 5;
 
     private final ProfileStatisticsService statisticsService = new ProfileStatisticsService();
@@ -26,7 +27,7 @@ public class ProfilePageService {
     public ApiResult<SummonerView> get(LeagueShard shard, String puuid) {
         String key = RedisKey.PROFILE_PAGE.of(shard.name(), puuid);
         SummonerView cached = RedisClient.get(key, SummonerView.class);
-        if (cached != null) return ApiResult.ready(cached);
+        if (cached != null && isReady(cached)) return ApiResult.ready(cached);
 
         Summoner profile = LeagueService.getProfileBaseFromDatabase(puuid, shard);
         if (profile == null || profile.summonerId() == 0) {
@@ -94,5 +95,16 @@ public class ProfilePageService {
 
     private List<Mastery> masteries(Summoner profile) {
         return profile.summonerId() == 0 ? List.of() : LeagueService.getProfileMasteries(profile.summonerId());
+    }
+
+    private boolean isReady(SummonerView page) {
+        return page.summoner() != null
+            && page.summoner().summonerId() > 0
+            && page.ranks() != null
+            && !page.ranks().isEmpty()
+            && page.overview() != null
+            && page.overview().statistics() != null
+            && page.overview().statistics().total != null
+            && page.overview().statistics().total.games >= MIN_PROFILE_GAMES;
     }
 }
