@@ -660,11 +660,12 @@ public class LeagueDB extends AbstractDB {
         List<GameQueueType> sourceQueues = queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO
             ? List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.RANKED_SOLO_5X5)
             : List.of(queue);
+        List<String> ranks = tierDivisionRanks(tier);
         String sql = "INSERT INTO leaderboard_distribution (queue, `rank`, region, players, updated_at) "
             + "SELECT ?, ?, ?, COUNT(DISTINCT r.summoner_id), CURRENT_TIMESTAMP(3) "
             + "FROM summoner s JOIN `rank` r ON r.summoner_id = s.id "
             + "WHERE s.region = ? AND r.queue IN (" + placeholders(sourceQueues.size()) + ") "
-            + "AND r.`rank` LIKE CONCAT(?, '%') "
+            + "AND r.`rank` IN (" + placeholders(ranks.size()) + ") "
             + "ON DUPLICATE KEY UPDATE players = VALUES(players), updated_at = VALUES(updated_at)";
 
         try (PreparedStatement statement = conn.prepareStatement(sql)) {
@@ -674,9 +675,17 @@ public class LeagueDB extends AbstractDB {
             statement.setString(parameter++, region.name());
             statement.setString(parameter++, region.name());
             for (GameQueueType sourceQueue : sourceQueues) statement.setString(parameter++, sourceQueue.name());
-            statement.setString(parameter, tier.name());
+            for (String rank : ranks) statement.setString(parameter++, rank);
             statement.executeUpdate();
         }
+    }
+
+    private static List<String> tierDivisionRanks(TierType tier) {
+        List<String> ranks = new ArrayList<>();
+        for (TierDivisionType division : TierDivisionType.values()) {
+            if (tier.name().equals(division.getTier())) ranks.add(division.name());
+        }
+        return ranks;
     }
 
     private static List<TierType> competitiveTiers() {
