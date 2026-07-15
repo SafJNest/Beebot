@@ -52,6 +52,7 @@ import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.utils.SettingsLoader;
@@ -1180,13 +1181,14 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static boolean updateSummonerEntries(int summonerId, List<LeagueEntry> entries, LeagueShard shard) {
-        String query = "INSERT INTO `rank` (summoner_id, region, queue, rank, lp, wins, losses) " +
-                       "VALUES (?, ?, ?, ?, ?, ?, ?) " +
+        String query = "INSERT INTO `rank` (summoner_id, region, queue, rank, lp, mmr, wins, losses) " +
+                       "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
                        "ON DUPLICATE KEY UPDATE " +
                        "region = VALUES(region), " +
                        "rank = VALUES(rank), " +
                        "queue = VALUES(queue), " +
                        "lp = VALUES(lp), " +
+                       "mmr = VALUES(mmr), " +
                        "wins = VALUES(wins), " +
                        "losses = VALUES(losses);";
         Connection conn = null;
@@ -1199,8 +1201,9 @@ public class LeagueDB extends AbstractDB {
                     pstmt.setString(3, entry.getQueueType().name());
                     pstmt.setString(4, entry.getTierDivisionType().name());
                     pstmt.setInt(5, entry.getLeaguePoints());
-                    pstmt.setInt(6, entry.getWins());
-                    pstmt.setInt(7, entry.getLosses());
+                    pstmt.setInt(6, TierDivisionUtils.getMmr(entry.getTierDivisionType(), entry.getLeaguePoints()));
+                    pstmt.setInt(7, entry.getWins());
+                    pstmt.setInt(8, entry.getLosses());
                     pstmt.addBatch();
                 }
                 pstmt.executeBatch();
@@ -1229,13 +1232,14 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static boolean updateSummonerEntries(List<LeagueEntry> entries, LeagueShard shard) {
-        String query = "INSERT INTO `rank` (summoner_id, region, queue, rank, lp, wins, losses) " +
-                       "VALUES (?, ?, ?, ?, ?, ?, ?) " +
+        String query = "INSERT INTO `rank` (summoner_id, region, queue, rank, lp, mmr, wins, losses) " +
+                       "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
                        "ON DUPLICATE KEY UPDATE " +
                        "region = VALUES(region), " +
                        "rank = VALUES(rank), " +
                        "queue = VALUES(queue), " +
                        "lp = VALUES(lp), " +
+                       "mmr = VALUES(mmr), " +
                        "wins = VALUES(wins), " +
                        "losses = VALUES(losses);";
         Connection conn = null;
@@ -1249,8 +1253,9 @@ public class LeagueDB extends AbstractDB {
                     pstmt.setString(3, entry.getQueueType().name());
                     pstmt.setString(4, entry.getTierDivisionType().name());
                     pstmt.setInt(5, entry.getLeaguePoints());
-                    pstmt.setInt(6, entry.getWins());
-                    pstmt.setInt(7, entry.getLosses());
+                    pstmt.setInt(6, TierDivisionUtils.getMmr(entry.getTierDivisionType(), entry.getLeaguePoints()));
+                    pstmt.setInt(7, entry.getWins());
+                    pstmt.setInt(8, entry.getLosses());
                     pstmt.addBatch();
                     LeagueService.putLeagueEntry(shard, entry);
                 }

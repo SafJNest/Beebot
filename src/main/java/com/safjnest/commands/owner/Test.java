@@ -31,14 +31,12 @@ import com.safjnest.lol.message.LeagueMessageType;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.match.Match;
+import com.safjnest.lol.model.Match;
 import com.safjnest.lol.model.PlayerChampionStats;
 import com.safjnest.lol.service.BuildService;
 import com.safjnest.lol.service.ChampionStatsService;
 import com.safjnest.lol.service.LeagueService;
-import com.safjnest.lol.service.LeaderboardService;
-import com.safjnest.lol.service.ProfilePageService;
-import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.Participant;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.lol.tracker.TrackerState;
@@ -162,59 +160,7 @@ public class Test extends Command{
             case "list":
                 e.reply("timer | chart | members | prime | getInvites | createInvite | getGuildsWithInvites | getLolItems " 
                     + "| renameFile | renameFiles | closeDatabase | getBlacklist | printJson | cacheThings | getServer | stats"
-                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | profile-stats | leaderboard-distribution");
-            break;
-            case "leaderboard-distribution":
-                e.reply("Leaderboard distribution refresh started.");
-                new ChronoTask() {
-                    @Override
-                    public void run() {
-                        boolean rebuilt = LeaderboardService.rebuildDistribution();
-                        e.getChannel().sendMessage(rebuilt
-                            ? "Leaderboard distribution refresh completed."
-                            : "Leaderboard distribution refresh failed.").queue();
-                    }
-                }.queue();
-            break;
-            case "profile-stats":
-                if (args.length < 2) {
-                    e.reply("Usage: profile-stats <shard> <puuid|all> [rebuild]");
-                    break;
-                }
-                String[] profileStatsArgs = args[1].trim().split("\\s+");
-                if (profileStatsArgs.length < 2) {
-                    e.reply("Usage: profile-stats <shard> <puuid|all> [rebuild]");
-                    break;
-                }
-                LeagueShard profileStatsShard;
-                try {
-                    profileStatsShard = LeagueShard.valueOf(profileStatsArgs[0].toUpperCase(Locale.ROOT));
-                } catch (Exception exception) {
-                    e.reply("Invalid shard: " + profileStatsArgs[0]);
-                    break;
-                }
-                String profileStatsTarget = profileStatsArgs[1].trim();
-                boolean profileStatsRebuild = profileStatsArgs.length > 2 && "rebuild".equalsIgnoreCase(profileStatsArgs[2]);
-                e.reply("Profile statistics " + (profileStatsRebuild ? "rebuild" : "refresh") + " started for " + profileStatsTarget + ".");
-                LeagueShard targetShard = profileStatsShard;
-                new ChronoTask() {
-                    @Override
-                    public void run() {
-                        ProfilePageService service = new ProfilePageService();
-                        if ("all".equalsIgnoreCase(profileStatsTarget)) {
-                            int count = service.refreshAll(targetShard, profileStatsRebuild);
-                            String message = count < 0
-                                ? "A global profile statistics refresh is already running."
-                                : "Profile statistics refresh completed: " + count + " profiles.";
-                            e.getChannel().sendMessage(message).queue();
-                            return;
-                        }
-                        boolean saved = service.refresh(targetShard, profileStatsTarget, profileStatsRebuild);
-                        e.getChannel().sendMessage(saved
-                            ? "Profile statistics refresh completed for " + profileStatsTarget + "."
-                            : "Profile statistics refresh failed for " + profileStatsTarget + ".").queue();
-                    }
-                }.queue();
+                    + "| insertEpriaInBlacklist | insertAlert | insertUser | trackScheduler | playPlaylist | fixmmr");
             break;
             case "timer":
                 Timer timer = new Timer();
@@ -1275,7 +1221,7 @@ public class Test extends Command{
                     String queryMatch = "SELECT id, league_shard, game_type FROM `match` ORDER BY id DESC";
                     String querySum = "select id, league_shard from summoner ORDER BY id DESC";
                     String queryPart = "select id, lane_o, team_o, rank_o from participant order by id desc";
-                    String queryRank = "select id, rank_o, game_type from rank order by id desc";
+                    String queryRank = "select id, rank_o, game_type, lp from `rank` order by id desc";
                     QueryResult matches = LeagueDB.get().query(queryMatch);
                     QueryResult summoners = LeagueDB.get().query(querySum);
                     QueryResult participants = LeagueDB.get().query(queryPart);
@@ -1328,7 +1274,8 @@ public class Test extends Command{
                             try {
                                 TierDivisionType rank = TierDivisionType.values()[row.getAsInt("rank_o")];
                                 GameQueueType gameType = GameQueueType.values()[row.getAsInt("game_type")];
-                                String q = "UPDATE rank SET rank = '" + rank + "', queue = '" + gameType + "' WHERE id = " + row.get("id");
+                                int mmr = TierDivisionUtils.getMmr(rank, row.getAsInt("lp"));
+                                String q = "UPDATE `rank` SET rank = '" + rank + "', queue = '" + gameType + "', mmr = " + mmr + " WHERE id = " + row.get("id");
                                 LeagueDB.get().query(q);
                             } catch (Exception eeee) {
                                 eeee.printStackTrace();
@@ -1341,6 +1288,43 @@ public class Test extends Command{
                     fixOrdinalParticipant.queue();
                     fixOrdinalSummoner.queue();
                     fixOrdinalMatch.queue();
+                break;
+            case "fixmmr":
+                ChronoTask fixMmr = () -> {
+                    QueryResult ranks2 = LeagueDB.get().query("SELECT id, `rank`, lp FROM `rank` ORDER BY id");
+                    int total = ranks2.size();
+                    int processed = 0;
+                    int failed = 0;
+                    System.out.println("fixmmr total: " + total);
+                    for (QueryRecord row : ranks2) {
+                        try {
+                            TierDivisionType division = TierDivisionType.UNRANKED;
+                            String rankValue = row.get("rank");
+                            if (rankValue != null && !rankValue.isBlank()) {
+                                try {
+                                    division = TierDivisionType.valueOf(rankValue);
+                                } catch (IllegalArgumentException ignored) { }
+                            }
+
+                            int mmr = TierDivisionUtils.getMmr(division, row.getAsInt("lp"));
+                            String update = "UPDATE `rank` SET mmr = " + mmr + " WHERE id = " + row.getAsInt("id");
+                            LeagueDB.get().query(update);
+                            processed++;
+                        } catch (Exception exception) {
+                            failed++;
+                            exception.printStackTrace();
+                        }
+
+                        int current = processed + failed;
+                        System.out.println("fixmmr row: " + current + "/" + total
+                            + " | remaining: " + (total - current)
+                            + " | id: " + row.get("id"));
+                    }
+                    System.out.println("fixmmr completed: total=" + total
+                        + " | updated=" + processed + " | failed=" + failed);
+                };
+                fixMmr.queue();
+                e.reply("fixmmr queued");
                 break;
             case "getrank":
                 ChronoTask getRank = () -> {
