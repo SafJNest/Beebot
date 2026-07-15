@@ -498,9 +498,8 @@ public class LeagueDB extends AbstractDB {
         Connection conn, String queue, String rankTier, List<String> queues, String region, long offset, int limit
     ) throws SQLException {
         boolean soloAliases = queues.size() > 1;
-        String sql = "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon, "
-            + "r.`rank`, r.lp, r.wins, r.losses "
-            + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
+        String sql = "SELECT r.summoner_id, r.region, r.`rank`, r.lp, r.wins, r.losses "
+            + "FROM `rank` r "
             + "WHERE r.queue IN (" + placeholders(queues.size()) + ") ";
         List<String> ranks = rankTier == null ? List.of() : rankValues(rankTier);
         if (rankTier != null) {
@@ -509,10 +508,10 @@ public class LeagueDB extends AbstractDB {
         if (soloAliases) {
             sql += rankTier == null ? preferredSoloQueueFilter() : preferredSoloQueueFilter(ranks.size());
         }
-        if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
-        sql += " ORDER BY r.lp DESC, r.wins DESC, r.losses ASC, s.id ASC LIMIT ? OFFSET ?";
+        if (!"GLOBAL".equals(region)) sql += " AND r.region = ?";
+        sql += " ORDER BY r.lp DESC, r.wins DESC, r.losses ASC, r.summoner_id ASC LIMIT ? OFFSET ?";
 
-        List<LeaderboardRow> result = new ArrayList<>();
+        List<QueryRecord> rankRows = new ArrayList<>();
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int parameter = bindQueues(pstmt, queues, 1);
             if (rankTier != null) parameter = bindValues(pstmt, ranks, parameter);
@@ -523,20 +522,45 @@ public class LeagueDB extends AbstractDB {
             pstmt.setInt(parameter++, limit);
             pstmt.setLong(parameter, offset);
             try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) result.add(toLeaderboardRow(rs, queue));
+                while (rs.next()) rankRows.add(toRecord(rs));
             }
+        }
+
+        if (rankRows.isEmpty()) return List.of();
+
+        List<Integer> summonerIds = new ArrayList<>(rankRows.size());
+        for (QueryRecord rankRow : rankRows) summonerIds.add(rankRow.getAsInt("summoner_id"));
+        String summonerSql = "SELECT id AS summoner_id, puuid, riot_id, region, level, icon "
+            + "FROM summoner WHERE id IN (" + placeholders(summonerIds.size()) + ")";
+        Map<Integer, QueryRecord> summonerRows = new HashMap<>();
+        try (PreparedStatement pstmt = conn.prepareStatement(summonerSql)) {
+            int parameter = 1;
+            for (int summonerId : summonerIds) pstmt.setInt(parameter++, summonerId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    QueryRecord row = toRecord(rs);
+                    summonerRows.put(row.getAsInt("summoner_id"), row);
+                }
+            }
+        }
+
+        List<LeaderboardRow> result = new ArrayList<>(rankRows.size());
+        for (QueryRecord rankRow : rankRows) {
+            QueryRecord summonerRow = summonerRows.get(rankRow.getAsInt("summoner_id"));
+            if (summonerRow == null) continue;
+            result.add(toLeaderboardRow(rankRow, summonerRow, queue));
         }
         return result;
     }
 
-    private static LeaderboardRow toLeaderboardRow(ResultSet result, String queue) throws SQLException {
+    private static LeaderboardRow toLeaderboardRow(QueryRecord rankRow, QueryRecord summonerRow, String queue) {
         com.safjnest.lol.model.summoner.Summoner summoner = new com.safjnest.lol.model.summoner.Summoner(
-            result.getInt("summoner_id"), result.getString("puuid"), result.getString("riot_id"),
-            result.getString("region"), result.getInt("level"), result.getInt("icon")
+            summonerRow.getAsInt("summoner_id"), summonerRow.get("puuid"), summonerRow.get("riot_id"),
+            summonerRow.get("region"), summonerRow.getAsInt("level"), summonerRow.getAsInt("icon")
         );
         Rank rank = new Rank(
-            enumValue(GameQueueType.class, queue), enumValue(TierDivisionType.class, result.getString("rank")),
-            result.getInt("lp"), result.getInt("wins"), result.getInt("losses")
+            enumValue(GameQueueType.class, queue), enumValue(TierDivisionType.class, rankRow.get("rank")),
+            rankRow.getAsInt("lp"), rankRow.getAsInt("wins"), rankRow.getAsInt("losses")
         );
         return new LeaderboardRow(summoner, rank);
     }
@@ -560,10 +584,10 @@ public class LeagueDB extends AbstractDB {
 
     private static long leaderboardTotal(Connection conn, List<String> queues, String region) throws SQLException {
         String sql = "SELECT COUNT(*) AS total "
-            + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
+            + "FROM `rank` r "
             + "WHERE r.queue IN (" + placeholders(queues.size()) + ")";
         if (queues.size() > 1) sql += preferredSoloQueueFilter();
-        if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
+        if (!"GLOBAL".equals(region)) sql += " AND r.region = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int parameter = bindQueues(pstmt, queues, 1);
@@ -663,8 +687,8 @@ public class LeagueDB extends AbstractDB {
         List<String> ranks = tierDivisionRanks(tier);
         String sql = "INSERT INTO leaderboard_distribution (queue, `rank`, region, players, updated_at) "
             + "SELECT ?, ?, ?, COUNT(DISTINCT r.summoner_id), CURRENT_TIMESTAMP(3) "
-            + "FROM summoner s JOIN `rank` r ON r.summoner_id = s.id "
-            + "WHERE s.region = ? AND r.queue IN (" + placeholders(sourceQueues.size()) + ") "
+            + "FROM `rank` r "
+            + "WHERE r.region = ? AND r.queue IN (" + placeholders(sourceQueues.size()) + ") "
             + "AND r.`rank` IN (" + placeholders(ranks.size()) + ") "
             + "ON DUPLICATE KEY UPDATE players = VALUES(players), updated_at = VALUES(updated_at)";
 
