@@ -30,7 +30,7 @@ public enum RedisKey {
     PROFILE_RANKS("profile:ranks:%s"),
     PROFILE_MASTERIES("profile:masteries:%s"),
     PROFILE_STATISTICS("profile:statistics:%s:%s"),
-    LEADERBOARD_PAGE("leaderboard:page:%s:%s:%s:%s"),
+    LEADERBOARD_PAGE("leaderboard:page:%s:%s:%s:%s:%s"),
     LEADERBOARD_TOTAL("leaderboard:total:%s:%s:%s"),
     LEADERBOARD_ROWS("leaderboard:rows:%s:%s:%s:%s:%s"),
     LEADERBOARD_RANK_DISTRIBUTION("leaderboard:rank-distribution:%s:%s"),

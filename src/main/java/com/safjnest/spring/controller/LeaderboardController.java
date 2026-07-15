@@ -23,14 +23,16 @@ public class LeaderboardController {
             @RequestParam(value = "rank", required = false) String rankValue,
             @RequestParam(value = "region", required = false) String regionValue,
             @RequestParam(value = "queue", required = false) String queueValue,
-            @RequestParam(value = "page", defaultValue = "1") int page
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "limit", defaultValue = "50") int limit
     ) {
         return LolApiResponses.from(
             leaderboardService.getLeaderboard(
                 LolApiParameters.rank(rankValue),
                 LolApiParameters.queue(queueValue),
                 LolApiParameters.region(regionValue),
-                LolApiParameters.page(page)
+                LolApiParameters.page(page),
+                LolApiParameters.limit(limit)
             ),
             "leaderboard_pending",
             "Leaderboard data is being prepared",

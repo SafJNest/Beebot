@@ -17,6 +17,8 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 public final class LolApiParameters {
 
     private static final GameQueueType DEFAULT_QUEUE = GameQueueType.TEAM_BUILDER_RANKED_SOLO;
+    private static final int MIN_LEADERBOARD_LIMIT = 1;
+    private static final int MAX_LEADERBOARD_LIMIT = 50;
 
     private LolApiParameters() {}
 
@@ -66,6 +68,13 @@ public final class LolApiParameters {
     public static int page(int page) {
         if (page < 1) throw invalid("page", "must be greater than 0");
         return page;
+    }
+
+    public static int limit(int limit) {
+        if (limit < MIN_LEADERBOARD_LIMIT || limit > MAX_LEADERBOARD_LIMIT) {
+            throw invalid("limit", "must be between 1 and 50");
+        }
+        return limit;
     }
 
     public static String requiredText(String value, String fieldName) {

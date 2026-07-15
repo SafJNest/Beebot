@@ -30,7 +30,8 @@ public class LeaderboardService {
 
     private static final String GLOBAL_REGION = "GLOBAL";
     private static final String ALL_RANKS = "ALL";
-    public static final int PAGE_SIZE = 50;
+    public static final int DEFAULT_PAGE_SIZE = 50;
+    private static final int MAX_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
     private static final int TTL_LEADERBOARD = 60 * 5;
     private static final int TTL_LEADERBOARD_COMPONENTS = 60 * 60 * 24;
@@ -43,20 +44,25 @@ public class LeaderboardService {
 
     private final ProfileStatisticsService profileStatisticsService = new ProfileStatisticsService();
 
-    public ApiResult<LeaderboardPage> getLeaderboard(TierType rank, GameQueueType queue, LeagueShard region, int page) {
+    public ApiResult<LeaderboardPage> getLeaderboard(
+        TierType rank, GameQueueType queue, LeagueShard region, int page, int limit
+    ) {
         if (page < 1) throw new IllegalArgumentException("page must be greater than 0");
+        if (limit < 1 || limit > MAX_PAGE_SIZE) throw new IllegalArgumentException("limit must be between 1 and 50");
 
         GameQueueType selectedQueue = defaultQueue(queue);
         String selectedRegion = defaultRegion(region);
         String rankKey = rank == null ? ALL_RANKS : rank.name();
-        String key = RedisKey.LEADERBOARD_PAGE.of(rankKey, canonicalQueue(selectedQueue).name(), selectedRegion, page);
+        String key = RedisKey.LEADERBOARD_PAGE.of(
+            rankKey, canonicalQueue(selectedQueue).name(), selectedRegion, page, limit
+        );
         LeaderboardPage cached = RedisClient.get(key, LeaderboardPage.class);
         if (cached != null) return ApiResult.ready(cached);
 
-        long offset = (long) (page - 1) * PAGE_SIZE;
+        long offset = (long) (page - 1) * limit;
         String selectedQueueName = canonicalQueue(selectedQueue).name();
         String totalKey = RedisKey.LEADERBOARD_TOTAL.of(rankKey, selectedQueueName, selectedRegion);
-        String rowsKey = RedisKey.LEADERBOARD_ROWS.of(rankKey, selectedQueueName, selectedRegion, offset, PAGE_SIZE);
+        String rowsKey = RedisKey.LEADERBOARD_ROWS.of(rankKey, selectedQueueName, selectedRegion, offset, limit);
 
         Long cachedTotal = RedisClient.get(totalKey, Long.class);
         List<LeaderboardRow> cachedRows = RedisClient.get(rowsKey, LEADERBOARD_ROWS_TYPE);
@@ -72,7 +78,7 @@ public class LeaderboardService {
                 queueValues(selectedQueue),
                 selectedRegion,
                 offset,
-                PAGE_SIZE
+                limit
             );
             total = data.total();
             rows = data.rows();
@@ -95,7 +101,7 @@ public class LeaderboardService {
                     queueValues(selectedQueue),
                     selectedRegion,
                     offset,
-                    PAGE_SIZE
+                    limit
                 );
                 rows = data.rows();
                 if (data.success()) RedisClient.set(rowsKey, rows, TTL_LEADERBOARD_COMPONENTS);
@@ -103,7 +109,7 @@ public class LeaderboardService {
             if (total <= offset) rows = List.of();
         }
 
-        long pages = total == 0 ? 0 : (total + PAGE_SIZE - 1) / PAGE_SIZE;
+        long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         List<Integer> summonerIds = new ArrayList<>(rows.size());
@@ -124,7 +130,7 @@ public class LeaderboardService {
             summoners.add(new SummonerLeaderboard(offset + i + 1, view));
         }
 
-        LeaderboardPage response = new LeaderboardPage(page, PAGE_SIZE, total, pages, summoners);
+        LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, summoners);
         if (!cacheable) return ApiResult.partial(response);
         RedisClient.set(key, response, TTL_LEADERBOARD);
         return ApiResult.ready(response);

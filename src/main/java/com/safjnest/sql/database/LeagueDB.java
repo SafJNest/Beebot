@@ -509,7 +509,9 @@ public class LeagueDB extends AbstractDB {
             sql += rankTier == null ? preferredSoloQueueFilter() : preferredSoloQueueFilter(ranks.size());
         }
         if (!"GLOBAL".equals(region)) sql += " AND r.region = ?";
-        sql += " ORDER BY r.lp DESC, r.wins DESC, r.losses ASC, r.summoner_id ASC LIMIT ? OFFSET ?";
+        List<String> orderRanks = leaderboardOrderRanks(rankTier);
+        sql += " ORDER BY FIELD(COALESCE(r.`rank`, 'UNRANKED'), " + placeholders(orderRanks.size()) + ")"
+            + ", r.lp DESC, r.wins DESC, r.losses ASC, r.summoner_id ASC LIMIT ? OFFSET ?";
 
         List<QueryRecord> rankRows = new ArrayList<>();
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -519,6 +521,7 @@ public class LeagueDB extends AbstractDB {
                 parameter = bindValues(pstmt, ranks, parameter);
             }
             if (!"GLOBAL".equals(region)) pstmt.setString(parameter++, region);
+            parameter = bindValues(pstmt, orderRanks, parameter);
             pstmt.setInt(parameter++, limit);
             pstmt.setLong(parameter, offset);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -772,6 +775,14 @@ public class LeagueDB extends AbstractDB {
         for (TierDivisionType division : TierDivisionType.values()) {
             if (rankTier.equals(division.getTier())) values.add(division.name());
         }
+        return values;
+    }
+
+    private static List<String> leaderboardOrderRanks(String rankTier) {
+        if (rankTier != null) return rankValues(rankTier);
+
+        List<String> values = new ArrayList<>();
+        for (TierDivisionType division : TierDivisionType.values()) values.add(division.name());
         return values;
     }
 

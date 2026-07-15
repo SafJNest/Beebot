@@ -344,7 +344,7 @@ Risposte aggiuntive:
 ### 6. Leaderboard paginata
 
 ```http
-GET /api/lol/leaderboard?rank={rank}&region={region}&queue={queue}&page={page}
+GET /api/lol/leaderboard?rank={rank}&region={region}&queue={queue}&page={page}&limit={limit}
 ```
 
 | Parametro | Obbligatorio | Default | Descrizione |
@@ -353,8 +353,9 @@ GET /api/lol/leaderboard?rank={rank}&region={region}&queue={queue}&page={page}
 | `region` | no | `GLOBAL` interno | Shard da filtrare. |
 | `queue` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue da filtrare. |
 | `page` | no | `1` | Pagina 1-based, deve essere `>= 1`. |
+| `limit` | no | `50` | Righe per pagina, intero tra `1` e `50`. |
 
-La dimensione pagina è fissa a 50. Risposta `200`:
+La dimensione pagina è controllata da `limit`. Risposta `200`:
 
 ```text
 page, pageSize, total, pages,
@@ -363,7 +364,7 @@ summoners[] -> position, summoner
 
 Ogni `summoner` è lo stesso `SummonerView` usato dal profilo. Se mancano statistiche per una o più righe, la risposta rimane `200` e viene marcata internamente `PARTIAL`: i dati disponibili vengono restituiti e il refresh viene messo in coda.
 
-Se `rank` e `region` sono omessi, la leaderboard restituisce tutti gli utenti in ordine di LP decrescente, con paginazione da 50 righe. Il totale e le righe vengono calcolati lato database, quindi il dataset può contenere anche milioni di utenti senza costruire una risposta unica.
+Se `rank` e `region` sono omessi, la leaderboard restituisce tutti gli utenti in ordine di divisione e LP, con paginazione da 50 righe oppure dal valore di `limit`. Il totale e le righe vengono calcolati lato database, quindi il dataset può contenere anche milioni di utenti senza costruire una risposta unica.
 
 ### 7. Distribuzione dei rank
 
