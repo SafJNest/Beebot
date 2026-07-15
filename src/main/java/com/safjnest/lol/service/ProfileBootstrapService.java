@@ -46,7 +46,7 @@ public final class ProfileBootstrapService {
             if (summonerId == 0) return;
 
             List<LeagueEntry> entries = LeagueService.getLeagueEntries(puuid, shard);
-            LeagueDB.updateSummonerEntries(summonerId, entries);
+            LeagueDB.updateSummonerEntries(summonerId, entries, shard);
             LeagueService.invalidateSummoner(puuid, shard);
         } catch (Exception exception) {
             BotLogger.error("Profile bootstrap failed for " + key + ": " + exception.getMessage());
