@@ -253,7 +253,7 @@
     <dependency>
       <groupId>com.github.stelar7</groupId>
       <artifactId>R4J</artifactId>
-      <version>fcd8dbd83163ea2fc7d36cb6a3d378e7c5365aa4</version>
+      <version>175e671faa72b51796b9706d393042b5b29b4ba4</version>
     </dependency>
     <dependency>
       <groupId>io.quickchart</groupId>
