@@ -19,8 +19,7 @@ Esporre statistiche champion e most common build in una response HTTP unica, sen
 - un solo `ChampionPageService.get` con `compute` interno per l’API;
 - `ApiResult` e `LolApiResponses` condivisi con match e leaderboard;
 - parsing dei parametri centralizzato in `LolApiParameters`;
-- code Profile Statistics e Champion Data in `Tracker`;
-- comando owner `pushqueue` per il drain manuale in test;
+- avvio immediato dei refresh Profile Statistics e Champion Data in `Tracker`;
 - avvio esplicito e idempotente di `TrackerScheduler`;
 - invalidazione cache dopo refresh;
 - direct persisted lookup for the most-used build before any computation;
@@ -40,17 +39,16 @@ Esporre statistiche champion e most common build in una response HTTP unica, sen
 - region assente significa tutte le regioni;
 - queue assente significa Solo/Duo ranked;
 - role incompatibile con la queue significa 400;
-- dati mancanti significano 202 e enqueue;
+- dati mancanti significano 202 e avvio immediato del refresh;
 - nessuna computazione raw durante la request.
 - in test lo scheduler non parte automaticamente;
-- `pushqueue` non elabora la coda Redis dei match.
+- la coda Redis dei match resta separata e invariata;
 
 ## Acceptance criteria
 
 - response pronta con stats e build;
 - `ChampionStatistics.filter` escluso dal JSON Spring ma mantenuto per Redis/Kryo;
 - cache hit funzionante;
-- enqueue deduplicato;
-- refresh asincrono e drain manuale funzionanti;
-- retry, conteggi e concorrenza delle code verificabili tramite `QueueStatus` e `QueueDrainResult`;
+- refresh asincrono deduplicato e avvio immediato funzionanti;
+- fallimenti che liberano il marker per un nuovo tentativo;
 - test, build e `git diff --check` completati.

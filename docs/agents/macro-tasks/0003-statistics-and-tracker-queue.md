@@ -1,8 +1,8 @@
-# Macro-task 0003: statistics and Tracker queue
+# Macro-task 0003: statistics and Tracker asynchronous generation
 
 ## Objective
 
-Separate statistics persistence from asynchronous refresh and prevent request-time aggregate construction.
+Separate statistics persistence from request handling and prevent request-time aggregate construction.
 
 ## Dependencies
 
@@ -12,31 +12,32 @@ Separate statistics persistence from asynchronous refresh and prevent request-ti
 ## Scope
 
 - reduce `ProfileStatisticsService` to read and refresh methods;
-- remove `ProfileStatisticsQueue`;
-- move queue, deduplication, bounded batch processing and retry into `Tracker`;
-- update `TrackerScheduler`.
+- move immediate API-triggered generation and in-flight deduplication into `Tracker`;
+- keep the existing match queues separate and unchanged;
+- remove profile-statistics queue processing from `TrackerScheduler`.
 
 ## Out of scope
 
 - generic Tracker refactor;
-- Redis queueing;
-- leaderboard response redesign.
+- Redis match queue behavior;
+- leaderboard response redesign outside the missing-statistics status change.
 
 ## Invariants
 
-- queue is process-local and not Redis-backed;
-- missing aggregates return without synchronous rebuild;
-- one failed item does not stop a batch;
-- repeated enqueue requests are deduplicated;
-- scheduler remains the periodic orchestrator.
+- API-triggered generation starts immediately on a virtual thread;
+- no Profile Statistics application queue or retry queue exists;
+- repeated requests for the same summoner and season are deduplicated while running;
+- one failed generation does not stop another generation;
+- failed in-flight markers are removed so a later request can retry;
+- match lookup and match analysis queues remain process-owned and unchanged.
 
 ## Acceptance criteria
 
-- `ProfileStatisticsQueue` is deleted;
-- request paths only read ready data and enqueue missing work;
-- processing uses a bounded `for` loop and per-item failure handling;
-- scheduler still processes the queue periodically.
+- profile-statistics queue fields and processor methods are removed;
+- request paths only read ready aggregates and start missing work asynchronously;
+- scheduler no longer processes Profile Statistics;
+- match queue processing remains available.
 
 ## Handoff
 
-Report queue ownership, retry behavior, batch limits, scheduler changes and verification results.
+Report executor ownership, deduplication keys, failure cleanup, scheduler changes and verification results.

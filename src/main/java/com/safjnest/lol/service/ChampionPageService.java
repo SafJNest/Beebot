@@ -68,7 +68,7 @@ public class ChampionPageService {
         ChampionStatistics stats = championStatsService.get(filter, false);
         Build build = buildService.getMostUsed(filter, false);
         if (stats == null || build == null) {
-            Tracker.enqueueChampionData(filter);
+            Tracker.startChampionData(filter);
             return ApiResult.pending();
         }
 

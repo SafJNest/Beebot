@@ -745,13 +745,6 @@
         "arguments" : "[prefixlist]"
     },
 
-    "pushqueue":{
-        "alias" : [],
-        "help"  : "Force processing of pending application queues.",
-        "category" : "Owner",
-        "arguments" : "[pushqueue]"
-    },
-
     "listguild":{
         "alias" : ["lg", "guilds"],
         "help"  : "List the guilds the bot is in.",

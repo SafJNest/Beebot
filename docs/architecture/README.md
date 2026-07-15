@@ -50,7 +50,7 @@ Spring owns controllers, configuration and HTTP error models. It must not own op
 - [ADR-0001: Canonical LoL model boundaries](adr/0001-canonical-lol-model-boundaries.md)
 - [ADR-0002: Summoner view and leaderboard contract](adr/0002-summoner-view-and-leaderboard-contract.md)
 - [ADR-0003: Match and match result models](adr/0003-match-and-match-result-models.md)
-- [ADR-0004: Profile statistics refresh queue](adr/0004-profile-statistics-refresh-queue.md)
+- [ADR-0004: Profile statistics asynchronous generation](adr/0004-profile-statistics-refresh-queue.md)
 - [ADR-0005: LoL API JSON contract](adr/0005-lol-api-json-contract.md)
 - [ADR-0006: Champion API contract](adr/0006-champion-api-contract.md)
 - [ADR-0007: Unified API result and parameter parsing](adr/0007-unified-api-result-and-parameters.md)

@@ -28,7 +28,7 @@ Coordinate macro-task agents and guarantee that the implementation follows `AGEN
 - Is `riotId` still a `String`?
 - Are profile and leaderboard using the same `SummonerView`?
 - Does `LeaderboardService` only own pagination, cache, filters and distributions?
-- Is missing profile work queued instead of rebuilt during the request?
+- Does missing profile work start immediately in the background instead of being rebuilt during the request, while the match queues remain intact?
 - Are Spring success DTOs and duplicate mappers removed?
 - Are API defaults and pagination unchanged where required?
 - Are Redis and DB changes idempotent and scoped?

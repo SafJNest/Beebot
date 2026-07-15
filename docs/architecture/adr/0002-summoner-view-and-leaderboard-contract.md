@@ -20,7 +20,7 @@ Summoner -> SummonerView -> SummonerLeaderboard
 
 `SummonerView.from(...)` is the single factory for assembling profile data. Overview parsing is centralized in `SummonerOverview.from(...)` or `LeaderboardSummonerOverview.from(...)`, according to the existing data contract. The factory consumes existing `ProfileStatistics`, `Rank`, mastery and champion data.
 
-The leaderboard reuses the complete view in the first phase. If a view section is not ready, the request uses already available data and queues the missing statistics through `Tracker`; it does not perform sequential Riot fetches.
+The leaderboard reuses the complete view in the first phase. If a view section is not ready, `Tracker` starts the missing statistics refresh immediately in a background thread; the leaderboard request returns `PENDING` until the complete page can be assembled. The profile request keeps the available view as `PARTIAL`; neither flow performs sequential Riot fetches during the request.
 
 ## Data rules
 
@@ -43,4 +43,4 @@ Profile and leaderboard expose the same nested `summoner` representation. The le
 
 - One summoner identity structure is serialized in profile and leaderboard responses.
 - One page construction path exists in `LeaderboardService`.
-- Missing statistics are queued, never synchronously rebuilt by the request.
+- Missing statistics are refreshed immediately in the background, never synchronously rebuilt by the request.

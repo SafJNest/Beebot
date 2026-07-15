@@ -25,7 +25,7 @@ Gli errori HTTP usano sempre questo envelope:
 | Status | Significato |
 |---|---|
 | `200` | Risposta pronta; vale anche per una risposta `PARTIAL`. |
-| `202` | Il dato manca, è stato messo in coda e va richiesto di nuovo. |
+| `202` | Il dato manca, la generazione è stata avviata in background e va richiesto di nuovo. |
 | `400` | Path/query parameter mancante, enum non valido o combinazione non supportata. |
 | `404` | Risorsa o endpoint inesistente. |
 | `405` | Metodo HTTP non supportato. |
@@ -41,7 +41,7 @@ Gli errori HTTP usano sempre questo envelope:
 }
 ```
 
-Il flusso dei dati LoL resta centralizzato nei service: Redis, database e lavoro asincrono tramite `ProfileBootstrapService` o `Tracker`. Le request HTTP non eseguono calcoli pesanti né fetch Riot sincroni per i profili mancanti.
+Il flusso dei dati LoL resta centralizzato nei service: Redis, database e lavoro asincrono tramite `ProfileBootstrapService` o `Tracker`. Le request HTTP non eseguono calcoli pesanti né fetch Riot sincroni per i profili mancanti. La sola coda applicativa mantenuta è quella del flusso match.
 
 ## Superficie disponibile
 
@@ -245,7 +245,7 @@ ranks      -> queue, tier, lp, wins, losses
 overview   -> statistics, masteries, champions, form, mostPlayed, recentMatches
 ```
 
-`recentMatches` contiene i `MatchResult` leggeri, mentre `Match` completo è riservato al dettaglio match. Se il summoner esiste nel DB ma le statistiche aggregate non sono ancora disponibili, il profilo resta `200` con i dati disponibili e il refresh viene accodato.
+`recentMatches` contiene i `MatchResult` leggeri, mentre `Match` completo è riservato al dettaglio match. Se il summoner esiste nel DB ma le statistiche aggregate non sono ancora disponibili, il profilo resta `200` con i dati disponibili e il refresh viene avviato immediatamente in background.
 
 Risposta `202`: `LolApiError` con codice `profile_pending` quando il summoner non è ancora presente nella tabella `summoner`. Il bootstrap Riot → DB viene avviato in background.
 
@@ -338,7 +338,7 @@ Il campo interno `filter` di `ChampionStatistics` e `Build` non viene serializza
 
 Risposte aggiuntive:
 
-- `202 champion_data_pending` se statistiche o build non sono ancora persistite; la richiesta viene accodata e non calcolata nella request;
+- `202 champion_data_pending` se statistiche o build non sono ancora persistite; il refresh viene avviato immediatamente e non calcolato nella request;
 - `400` per rank, region, queue o role non validi, o role incompatibile con la queue;
 - `404` per champion sconosciuto.
 
@@ -363,7 +363,7 @@ page, pageSize, total, pages,
 summoners[] -> position, summoner
 ```
 
-Ogni `summoner` è lo stesso `SummonerView` usato dal profilo. Se mancano statistiche per una o più righe, la risposta rimane `200` e viene marcata internamente `PARTIAL`: i dati disponibili vengono restituiti e il refresh viene messo in coda.
+Ogni `summoner` è lo stesso `SummonerView` usato dal profilo. Se mancano statistiche per una o più righe, il refresh viene avviato immediatamente e l'endpoint restituisce `202 leaderboard_pending`; la pagina completa viene restituita con `200` al retry successivo.
 
 Se `rank` e `region` sono omessi, la leaderboard restituisce tutti gli utenti in ordine decrescente di `mmr`, con paginazione da 50 righe oppure dal valore di `limit`. Per filtrare uno shard si aggiunge `&region={region}`. Il totale e le righe vengono calcolati lato database, quindi il dataset può contenere anche milioni di utenti senza costruire una risposta unica.
 

@@ -20,7 +20,7 @@ Consolidate complete matches and lightweight match results into one consistent m
 ## Out of scope
 
 - leaderboard pagination and cache;
-- statistics queue scheduling;
+- statistics asynchronous generation scheduling;
 - unrelated match ingestion changes.
 
 ## Invariants

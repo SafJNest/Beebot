@@ -40,12 +40,6 @@ public class TrackerScheduler {
         ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
         retriveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
-        ChronoTask refreshProfileStatistics = () -> Tracker.processProfileStatistics();
-        refreshProfileStatistics.scheduleAtFixedRate(0, TimeConstant.MINUTE * 5, TimeUnit.MILLISECONDS);
-
-        ChronoTask refreshQueuedChampionData = () -> Tracker.processChampionData();
-        refreshQueuedChampionData.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
-
         ChronoTask refreshMatchLookups = () -> Tracker.processMatchLookups();
         refreshMatchLookups.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
 

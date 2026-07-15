@@ -34,11 +34,11 @@ Simplify leaderboard assembly and reuse the complete canonical summoner view wit
 - queue default remains the existing solo ranked queue;
 - page size is 50;
 - page response contains `page`, `pageSize`, `total`, `pages` and rows;
-- missing profile statistics are queued and never rebuilt synchronously;
+- missing profile statistics start immediately in the background and are never rebuilt synchronously;
 - distribution rows remain keyed by queue, rank and region.
 - leaderboard rows contain canonical `Summoner` and `Rank` data, including PUUID;
 - total and base-row caches may live for 24 hours and are refreshed by the daily distribution rebuild;
-- a partial page caches its total and base rows but not the assembled full page.
+- an incomplete page never caches the assembled full page; total and base rows remain cacheable.
 
 ## Acceptance criteria
 

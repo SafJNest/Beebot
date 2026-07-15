@@ -16,12 +16,12 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - If the summoner is absent from the database, the profile endpoint returns `202 profile_pending` and `ProfileBootstrapService` deduplicates the Riot-to-database summoner/rank bootstrap by `shard:puuid`.
 - Champion most-used build reads the single persisted winner before allowing command/refresh computation.
 - Match detail follows `Redis -> DB -> Tracker lookup queue -> Riot -> existing match analysis queue`.
-- The match lookup queue is separate from `pushqueue`; `pushqueue` continues to drain only Profile Statistics and Champion Data.
+- The match lookup and match analysis queues are the only asynchronous queues retained by the LoL flow.
 
 ## Invariants
 
 - Canonical models remain the only success payloads.
-- Missing profile statistics are still enqueued through `Tracker`.
+- Missing profile statistics start immediately through the `Tracker` virtual-thread executor.
 - A missing summoner is bootstrapped asynchronously without using the `TrackerScheduler`.
 - Profile component lists are cached only after a successful database query; database failures do not cache empty lists.
 - No Riot request is made by the match HTTP endpoint when the detail is missing.

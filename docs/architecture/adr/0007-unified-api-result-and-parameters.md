@@ -17,7 +17,7 @@ endpoints. It has four states:
 
 - `READY`: complete payload, HTTP 200;
 - `PARTIAL`: usable partial payload, HTTP 200;
-- `PENDING`: asynchronous work was queued, HTTP 202;
+- `PENDING`: asynchronous work was started in the background, HTTP 202;
 - `NOT_FOUND`: no resource, HTTP 404.
 
 `LolApiResponses` is the only HTTP mapping owner for these states. Controllers
@@ -64,7 +64,8 @@ states are meaningful.
 - No controller contains a duplicate READY/PARTIAL/PENDING/NOT_FOUND switch.
 - No public `read`, `getLazy`, `getStored` or `getMostUsedLazy` method remains in
   the Champion/Build storage flow.
-- Missing Champion data returns 202 and queues work.
-- Missing leaderboard overview returns 200 with a partial page.
+- Missing Champion data returns 202 and starts work immediately.
+- Missing leaderboard overview returns 202 while the missing profile statistics are generated.
+- Missing profile statistics return the available profile as 200 `PARTIAL` while generation runs immediately.
 - `ChampionStatistics.filter` is absent from HTTP JSON and remains available to
   Redis/Kryo.

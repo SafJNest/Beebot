@@ -34,7 +34,7 @@ Controllers return canonical models directly. A new DTO is allowed only when an 
 - `LeagueService` owns construction of base summoner data from service/database records.
 - Canonical model factories own projection and field assembly.
 - `ProfileStatisticsService` owns statistics persistence and refresh.
-- `Tracker` temporarily owns asynchronous statistics queueing.
+- `Tracker` owns asynchronous API refresh dispatch and in-flight deduplication; only match lookup and match analysis queues remain.
 - `LeaderboardService` owns filtering, pagination, cache and distribution access.
 
 ## Rejected alternatives

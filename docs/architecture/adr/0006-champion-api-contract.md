@@ -16,9 +16,9 @@ The request accepts optional `rank`, `region`, `queue` and `role` parameters. Mi
 
 The success model is `ChampionView`, containing champion identity, the existing `ChampionStatistics` aggregate and the existing `Build` aggregate selected by games.
 
-The HTTP request is orchestrated by one `ChampionPageService.get` flow. It first reads the complete page from Redis. On a miss, its internal `compute` reads the persisted stats and build components from Redis/DB without calculating match data. If either component is missing, the filter is deduplicated in `Tracker` and the request returns HTTP 202 until the scheduled refresh or the owner `pushqueue` drain produces both components. When both components are available, the service builds `ChampionView` and caches the complete page.
+The HTTP request is orchestrated by one `ChampionPageService.get` flow. It first reads the complete page from Redis. On a miss, its internal `compute` reads the persisted stats and build components from Redis/DB without calculating match data. If either component is missing, the filter is deduplicated in `Tracker`, a refresh starts immediately on a virtual thread and the request returns HTTP 202. When both components are available, the service builds `ChampionView` and caches the complete page.
 
-The scheduler is started explicitly and idempotently by the application. In testing mode it does not register periodic jobs; `pushqueue` is the manual processor for the Profile Statistics and Champion Data queues.
+The scheduler is started explicitly and idempotently by the application. It does not register processors for API-triggered profile or champion work; the scheduled full champion refresh remains independent of the request path.
 
 Champion statistics, builds and profile statistics use one Kryo configuration for the current model classes. The decoder keeps read-only fallbacks for the stable and legacy registrations already used by persisted data. If a persisted payload cannot be decoded or validated, the data is treated as missing so the existing refresh flow can recreate it; the database blob is preserved.
 
@@ -29,8 +29,8 @@ Champion statistics, builds and profile statistics use one Kryo configuration fo
 - `ChampionUtils` owns champion name and image resolution.
 - `ChampionStatsService` owns champion statistics persistence, command fallback and rebuild operations; its internal API read is storage-only.
 - `BuildService` owns build persistence, command fallback and rebuild operations; its internal API read is storage-only.
-- `Tracker` owns asynchronous champion data requests.
-- `PushQueue` owns only the owner-command trigger for draining the application queues; it does not process the Redis match queue.
+- `Tracker` owns asynchronous champion data requests and in-flight deduplication.
+- Match queue ownership remains in the existing match tracker flow.
 
 ## Invariants
 
@@ -38,7 +38,7 @@ Champion statistics, builds and profile statistics use one Kryo configuration fo
 - No second public DTO is created for build or champion statistics.
 - Role is rejected when the selected queue does not support lanes.
 - The page cache is written only when both aggregates are ready.
-- Missing data is deduplicated by the complete `Filter.toKey()` value.
+- Missing data is deduplicated by the complete `Filter.toKey()` value and starts immediately in the background.
 - API page reads do not call the synchronous command fallback methods.
 - `getStored`, `getLazy` and `getMostUsedLazy` are not part of the service contract.
 
@@ -58,6 +58,6 @@ Champion statistics, builds and profile statistics use one Kryo configuration fo
 ## Acceptance criteria
 
 - The endpoint returns stats and the most used build in one response.
-- Missing data is queued and never computed synchronously by the controller.
+- Missing data starts immediately in the background and is never computed synchronously by the controller.
 - A ready response is cached for five minutes.
 - Rank, region, queue and role are represented by the existing typed domain values.

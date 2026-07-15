@@ -46,7 +46,7 @@ public class ProfilePageService {
         ProfileStatistics aggregate = databaseStatistics != null
             ? databaseStatistics
             : statisticsService.getRedis(profile.summonerId(), season);
-        if (databaseStatistics == null) Tracker.enqueueProfileStatistics(profile, season);
+        if (databaseStatistics == null) Tracker.startProfileStatistics(profile, season);
 
         SummonerView page = SummonerView.from(profile, profileRanks, aggregate, profileMasteries);
         if (databaseStatistics != null && !databaseRanks.isEmpty()) {

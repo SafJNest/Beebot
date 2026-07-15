@@ -163,7 +163,7 @@ public class Bot {
         }
 
         ArrayList<Command> commandsList = new ArrayList<Command>();
-        Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix(), new Shutdown(), new Restart(), new Query(), new PushQueue());
+        Collections.addAll(commandsList, new PrintCache(), new Ping(), new Ram(), new Help(), new Prefix(), new Shutdown(), new Restart(), new Query());
 
         Collections.addAll(commandsList, new Summoner(), new Augment(), new Livegame(), 
             new Opgg(), new UltimateBravery());

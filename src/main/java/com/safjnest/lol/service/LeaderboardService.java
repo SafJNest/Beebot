@@ -118,18 +118,24 @@ public class LeaderboardService {
         for (int i = 0; i < rows.size(); i++) {
             LeaderboardRow row = rows.get(i);
             Summoner summoner = row.summoner();
-            Rank summonerRank = row.rank();
             ProfileStatistics statistics = statisticsBySummoner.get(summoner.summonerId());
             if (statistics == null) {
                 cacheable = false;
-                Tracker.enqueueProfileStatistics(summoner, season);
+                Tracker.startProfileStatistics(summoner, season);
             }
-            SummonerView view = SummonerView.from(summoner, List.of(summonerRank), statistics, List.of());
+        }
+
+        if (!cacheable) return ApiResult.pending();
+
+        for (int i = 0; i < rows.size(); i++) {
+            LeaderboardRow row = rows.get(i);
+            SummonerView view = SummonerView.from(
+                row.summoner(), List.of(row.rank()), statisticsBySummoner.get(row.summoner().summonerId()), List.of()
+            );
             summoners.add(new SummonerLeaderboard(offset + i + 1, view));
         }
 
         LeaderboardPage response = new LeaderboardPage(page, limit, total, pages, summoners);
-        if (!cacheable) return ApiResult.partial(response);
         RedisClient.set(key, response, TTL_LEADERBOARD);
         return ApiResult.ready(response);
     }
