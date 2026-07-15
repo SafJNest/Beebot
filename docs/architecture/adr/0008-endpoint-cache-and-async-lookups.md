@@ -12,7 +12,8 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 
 - Redis keys do not contain cache schema version tokens; test data is reset manually with `FLUSHALL`.
 - Search loads ranks in one Redis batch and one bounded SQL `IN` query for misses.
-- Profile caches the complete `SummonerView` only when profile statistics are available.
+- Profile misses read the summoner base from the database. A database profile with valid statistics and at least one rank produces and caches the complete `SummonerView`; otherwise the service resolves Redis components before database components and returns the available base as `PARTIAL`.
+- If the summoner is absent from the database, the profile endpoint returns `202 profile_pending` and `ProfileBootstrapService` deduplicates the Riot-to-database summoner/rank bootstrap by `shard:puuid`.
 - Champion most-used build reads the single persisted winner before allowing command/refresh computation.
 - Match detail follows `Redis -> DB -> Tracker lookup queue -> Riot -> existing match analysis queue`.
 - The match lookup queue is separate from `pushqueue`; `pushqueue` continues to drain only Profile Statistics and Champion Data.
@@ -21,6 +22,8 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 
 - Canonical models remain the only success payloads.
 - Missing profile statistics are still enqueued through `Tracker`.
+- A missing summoner is bootstrapped asynchronously without using the `TrackerScheduler`.
+- Profile component lists are cached only after a successful database query; database failures do not cache empty lists.
 - No Riot request is made by the match HTTP endpoint when the detail is missing.
 - The existing Redis queue stores only matches already fetched from Riot.
 - The `profile_statistics` database key format remains unchanged.

@@ -157,6 +157,7 @@ public class LeagueService {
     public static void invalidateSummoner(String puuid, LeagueShard shard) {
         RedisClient.delete(RedisKey.SUMMONER.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.ACCOUNT.of(shard.name(), puuid));
+        RedisClient.delete(RedisKey.SUMMONER_ID.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.LEAGUE_ENTRIES.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.CHAMPION_MASTERIES.of(shard.name(), puuid));
         RedisClient.delete(RedisKey.SPECTATOR_CURRENT.of(shard.name(), puuid));
@@ -198,8 +199,13 @@ public class LeagueService {
         Summoner cached = RedisClient.get(key, Summoner.class);
         if (cached != null) return cached;
 
+        return getProfileBaseFromDatabase(puuid, shard);
+    }
+
+    public static Summoner getProfileBaseFromDatabase(String puuid, LeagueShard shard) {
+        String key = RedisKey.PROFILE_BASE.of(shard.name(), puuid);
         QueryRecord row = LeagueDB.getProfileBase(puuid, shard);
-        Summoner profile = !row.isEmpty() ? toSummoner(row) : getProfileBaseFromRiot(puuid, shard);
+        Summoner profile = !row.isEmpty() ? toSummoner(row) : null;
         if (profile != null) RedisClient.set(key, profile, TTL_PROFILE_BASE);
         return profile;
     }
@@ -265,9 +271,18 @@ public class LeagueService {
         List<Rank> cached = RedisClient.get(key, PROFILE_RANKS_TYPE);
         if (cached != null) return cached;
 
+        QueryResult rows = LeagueDB.getProfileRanks(summonerId);
         List<Rank> ranks = new ArrayList<>();
-        for (QueryRecord row : LeagueDB.getProfileRanks(summonerId)) ranks.add(toRank(row));
-        RedisClient.set(key, ranks, TTL_PROFILE_RANK);
+        for (QueryRecord row : rows) ranks.add(toRank(row));
+        if (rows.isSuccess()) RedisClient.set(key, ranks, TTL_PROFILE_RANK);
+        return ranks;
+    }
+
+    public static List<Rank> getProfileRanksFromDatabase(int summonerId) {
+        QueryResult rows = LeagueDB.getProfileRanks(summonerId);
+        List<Rank> ranks = new ArrayList<>();
+        for (QueryRecord row : rows) ranks.add(toRank(row));
+        if (rows.isSuccess()) RedisClient.set(RedisKey.PROFILE_RANKS.of(summonerId), ranks, TTL_PROFILE_RANK);
         return ranks;
     }
 
@@ -284,13 +299,14 @@ public class LeagueService {
         List<Mastery> cached = RedisClient.get(key, PROFILE_MASTERIES_TYPE);
         if (cached != null) return cached;
 
+        QueryResult rows = LeagueDB.getProfileMasteries(summonerId);
         List<Mastery> masteries = new ArrayList<>();
-        for (QueryRecord row : LeagueDB.getProfileMasteries(summonerId)) {
+        for (QueryRecord row : rows) {
             masteries.add(new Mastery(
                 row.getAsInt("champion_id"), row.getAsInt("champion_level"), row.getAsInt("champion_points")
             ));
         }
-        RedisClient.set(key, masteries, TTL_PROFILE_MASTERIES);
+        if (rows.isSuccess()) RedisClient.set(key, masteries, TTL_PROFILE_MASTERIES);
         return masteries;
     }
 
@@ -582,21 +598,6 @@ public class LeagueService {
             row.get("region"),
             row.getAsInt("level"),
             row.getAsInt("icon")
-        );
-    }
-
-    private static Summoner getProfileBaseFromRiot(String puuid, LeagueShard shard) {
-        no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = getSummonerByPuuid(puuid, shard);
-        if (summoner == null) return null;
-
-        RiotAccount account = getRiotAccountByPuuid(puuid, shard);
-        return new Summoner(
-            0,
-            puuid,
-            account != null ? account.getName() + "#" + account.getTag() : "",
-            shard.name(),
-            summoner.getSummonerLevel(),
-            summoner.getProfileIconId()
         );
     }
 

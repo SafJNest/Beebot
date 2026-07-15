@@ -41,15 +41,15 @@ Gli errori HTTP usano sempre questo envelope:
 }
 ```
 
-Il flusso dei dati LoL resta centralizzato in `LeagueService`: Redis, database e infine lavoro asincrono tramite `Tracker`. Le request HTTP non eseguono calcoli pesanti né fetch Riot sincroni per i match mancanti.
+Il flusso dei dati LoL resta centralizzato nei service: Redis, database e lavoro asincrono tramite `ProfileBootstrapService` o `Tracker`. Le request HTTP non eseguono calcoli pesanti né fetch Riot sincroni per i profili mancanti.
 
 ## Superficie disponibile
 
 | Metodo | Endpoint | Controller | Risposta principale |
 |---|---|---|---|
 | `GET` | `/api/lol/{shard}/search` | `LolController` | `List<SummonerView>` |
-| `GET` | `/api/lol/{shard}/profile/{puuid}` | `LolController` | `SummonerView` |
-| `GET` | `/api/lol/{shard}/profile-by-name/{gameName}/{tagLine}` | `LolController` | `SummonerView` |
+| `GET` | `/api/lol/{shard}/profile/{puuid}` | `LolController` | `SummonerView` oppure `202` |
+| `GET` | `/api/lol/{shard}/profile-by-name/{gameName}/{tagLine}` | `LolController` | `SummonerView` oppure `202` |
 | `GET` | `/api/lol/{shard}/match/{gameId}` | `LolController` | `Match` oppure `202` |
 | `GET` | `/api/lol/champion/{champion}` | `ChampionController` | `ChampionView` oppure `202` |
 | `GET` | `/api/lol/leaderboard` | `LeaderboardController` | `LeaderboardPage` |
@@ -244,7 +244,9 @@ ranks      -> queue, tier, lp, wins, losses
 overview   -> statistics, masteries, champions, form, mostPlayed, recentMatches
 ```
 
-`recentMatches` contiene i `MatchResult` leggeri, mentre `Match` completo è riservato al dettaglio match. Se le statistiche aggregate non sono ancora disponibili, il profilo resta `200` con statistiche vuote e il refresh viene accodato.
+`recentMatches` contiene i `MatchResult` leggeri, mentre `Match` completo è riservato al dettaglio match. Se il summoner esiste nel DB ma le statistiche aggregate non sono ancora disponibili, il profilo resta `200` con i dati disponibili e il refresh viene accodato.
+
+Risposta `202`: `LolApiError` con codice `profile_pending` quando il summoner non è ancora presente nella tabella `summoner`. Il bootstrap Riot → DB viene avviato in background.
 
 Risposta `404`: profilo non trovato.
 
@@ -263,6 +265,8 @@ GET /api/lol/{shard}/profile-by-name/{gameName}/{tagLine}
 Il servizio risolve prima il Riot ID in PUUID e poi usa lo stesso flusso di `/profile/{puuid}`. I valori sono segmenti di path: caratteri riservati devono essere URL-encoded.
 
 Risposta `200`: stesso `SummonerView` del profilo per PUUID.
+
+Risposta `202`: stesso `profile_pending` del profilo per PUUID quando il summoner non è ancora presente nella tabella `summoner`.
 
 Risposta `404`: Riot ID non risolto o profilo non trovato.
 

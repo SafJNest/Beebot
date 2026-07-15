@@ -1,9 +1,9 @@
 package com.safjnest.lol.service;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
@@ -23,32 +23,45 @@ public class ProfilePageService {
 
     private final ProfileStatisticsService statisticsService = new ProfileStatisticsService();
 
-    public SummonerView get(LeagueShard shard, String puuid) {
+    public ApiResult<SummonerView> get(LeagueShard shard, String puuid) {
         String key = RedisKey.PROFILE_PAGE.of(shard.name(), puuid);
         SummonerView cached = RedisClient.get(key, SummonerView.class);
-        if (cached != null) return cached;
+        if (cached != null) return ApiResult.ready(cached);
 
-        Summoner profile = LeagueService.getProfileBase(puuid, shard);
-        if (profile == null) return null;
+        Summoner profile = LeagueService.getProfileBaseFromDatabase(puuid, shard);
+        if (profile == null || profile.summonerId() == 0) {
+            ProfileBootstrapService.enqueue(shard, puuid);
+            return ApiResult.pending();
+        }
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        CompletableFuture<List<Rank>> ranks = CompletableFuture.supplyAsync(() -> ranks(profile, shard));
-        CompletableFuture<List<Mastery>> masteries = CompletableFuture.supplyAsync(() -> masteries(profile));
-        CompletableFuture<ProfileStatistics> statistics = CompletableFuture.supplyAsync(() -> statistics(profile, season));
+        ProfileStatistics databaseStatistics = statisticsService.getDatabase(profile.summonerId(), season);
+        List<Rank> databaseRanks = databaseStatistics != null
+            ? LeagueService.getProfileRanksFromDatabase(profile.summonerId())
+            : List.of();
 
-        ProfileStatistics aggregate = statistics.join();
-        SummonerView page = SummonerView.from(profile, ranks.join(), aggregate, masteries.join());
-        if (aggregate != null) RedisClient.set(key, page, TTL_PROFILE_PAGE);
-        return page;
+        List<Rank> profileRanks = !databaseRanks.isEmpty() ? databaseRanks : ranks(profile, shard);
+        List<Mastery> profileMasteries = masteries(profile);
+        ProfileStatistics aggregate = databaseStatistics != null
+            ? databaseStatistics
+            : statisticsService.getRedis(profile.summonerId(), season);
+        if (databaseStatistics == null) Tracker.enqueueProfileStatistics(profile.summonerId(), season);
+
+        SummonerView page = SummonerView.from(profile, profileRanks, aggregate, profileMasteries);
+        if (databaseStatistics != null && !databaseRanks.isEmpty()) {
+            RedisClient.set(key, page, TTL_PROFILE_PAGE);
+            return ApiResult.ready(page);
+        }
+        return ApiResult.partial(page);
     }
 
-    public SummonerView get(LeagueShard shard, String gameName, String tagLine) {
+    public ApiResult<SummonerView> get(LeagueShard shard, String gameName, String tagLine) {
         String puuid = LeagueService.getPuuidByRiotId(gameName, tagLine, shard);
-        return puuid != null ? get(shard, puuid) : null;
+        return puuid != null ? get(shard, puuid) : ApiResult.notFound();
     }
 
     public boolean refresh(LeagueShard shard, String puuid, boolean rebuild) {
-        Summoner profile = LeagueService.getProfileBase(puuid, shard);
+        Summoner profile = LeagueService.getProfileBaseFromDatabase(puuid, shard);
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         if (profile == null || profile.summonerId() == 0) return false;
 
@@ -77,14 +90,6 @@ public class ProfilePageService {
         return profile.summonerId() != 0
             ? LeagueService.getProfileRanks(profile.summonerId())
             : LeagueService.getProfileRanks(profile.puuid(), shard);
-    }
-
-    private ProfileStatistics statistics(Summoner profile, SeasonUtils.SeasonRange season) {
-        if (profile.summonerId() == 0 || season == null) return null;
-
-        ProfileStatistics statistics = statisticsService.get(profile.summonerId(), season);
-        if (statistics == null) Tracker.enqueueProfileStatistics(profile.summonerId(), season);
-        return statistics;
     }
 
     private List<Mastery> masteries(Summoner profile) {

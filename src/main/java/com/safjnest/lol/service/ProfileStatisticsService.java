@@ -23,10 +23,19 @@ import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public class ProfileStatisticsService {
 
+    private static final int MIN_PROFILE_GAMES = 5;
     private static final int TTL_PROFILE_STATISTICS = 60 * 60;
 
     public ProfileStatistics get(int summonerId, SeasonUtils.SeasonRange season) {
         return season == null ? null : load(summonerId, season);
+    }
+
+    public ProfileStatistics getDatabase(int summonerId, SeasonUtils.SeasonRange season) {
+        return season == null ? null : loadDatabase(summonerId, season.start());
+    }
+
+    public ProfileStatistics getRedis(int summonerId, SeasonUtils.SeasonRange season) {
+        return season == null ? null : loadRedis(summonerId, season.start());
     }
 
     public Map<Integer, ProfileStatistics> get(List<Integer> summonerIds, SeasonUtils.SeasonRange season) {
@@ -50,10 +59,7 @@ public class ProfileStatisticsService {
         if (idsByKey.isEmpty()) return result;
         for (Map.Entry<String, ProfileStatisticsRow> entry : LeagueDB.getProfileStatistics(new ArrayList<>(idsByKey.keySet())).entrySet()) {
             ProfileStatistics statistics = decode(entry.getValue());
-            if (statistics == null) {
-                LeagueDB.deleteProfileStatistics(entry.getKey());
-                continue;
-            }
+            if (statistics == null) continue;
             int summonerId = idsByKey.get(entry.getKey());
             result.put(summonerId, statistics);
             cache(summonerId, season.start(), statistics);
@@ -82,9 +88,7 @@ public class ProfileStatisticsService {
     private ProfileStatistics loadDatabase(int summonerId, long timeStart) {
         String key = databaseKey(summonerId, timeStart);
         ProfileStatisticsRow row = LeagueDB.getProfileStatistics(key);
-        ProfileStatistics statistics = decode(row);
-        if (row != null && statistics == null) LeagueDB.deleteProfileStatistics(key);
-        return statistics;
+        return decode(row);
     }
 
     private ProfileStatistics decode(ProfileStatisticsRow row) {
@@ -151,7 +155,8 @@ public class ProfileStatisticsService {
     private static boolean valid(ProfileStatistics statistics) {
         try {
             if (statistics == null || !(statistics.total instanceof Stats<?>)) return false;
-            return validStats(statistics.queueStats, GameQueueType.class)
+            return statistics.total.games >= MIN_PROFILE_GAMES
+                && validStats(statistics.queueStats, GameQueueType.class)
                 && validStats(statistics.laneStats, LaneType.class)
                 && validStats(statistics.championStats, Integer.class)
                 && validMatches(statistics.recentMatches);

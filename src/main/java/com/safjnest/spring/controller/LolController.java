@@ -43,37 +43,29 @@ public class LolController {
     }
 
     @GetMapping("/profile/{puuid}")
-    public SummonerView profile(
+    public ResponseEntity<?> profile(
             @PathVariable("shard") String shardValue,
             @PathVariable("puuid") String puuid
     ) {
-        SummonerView page = profilePageService.get(
+        ApiResult<SummonerView> result = profilePageService.get(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(puuid, "puuid")
         );
-
-        if (page == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
-        }
-        return page;
+        return LolApiResponses.from(result, "profile_pending", "Profile initialization is pending", "Profile not found");
     }
 
     @GetMapping("/profile-by-name/{gameName}/{tagLine}")
-    public SummonerView profileByName(
+    public ResponseEntity<?> profileByName(
             @PathVariable("shard") String shardValue,
             @PathVariable("gameName") String gameName,
             @PathVariable("tagLine") String tagLine
     ) {
-        SummonerView page = profilePageService.get(
+        ApiResult<SummonerView> result = profilePageService.get(
             LolApiParameters.requiredShard(shardValue),
             LolApiParameters.requiredText(gameName, "game name"),
             LolApiParameters.requiredText(tagLine, "tag line")
         );
-
-        if (page == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found");
-        }
-        return page;
+        return LolApiResponses.from(result, "profile_pending", "Profile initialization is pending", "Profile not found");
     }
 
     @GetMapping("/match/{gameId}")
