@@ -14,10 +14,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -609,27 +607,25 @@ public class LeagueDB extends AbstractDB {
 
     public static boolean rebuildLeaderboardDistribution() {
         String deleteSql = "DELETE FROM leaderboard_distribution";
-        String seedSql = "INSERT IGNORE INTO leaderboard_distribution (queue, `rank`, region, players, updated_at) VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP(3))";
-        String insertSql = "INSERT INTO leaderboard_distribution (queue, `rank`, region, players, updated_at) "
-            + "SELECT CASE WHEN r.queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') "
-            + "THEN 'TEAM_BUILDER_RANKED_SOLO' ELSE r.queue END AS normalized_queue, "
-            + "CASE WHEN r.`rank` = 'UNRANKED' THEN 'UNRANKED' ELSE SUBSTRING_INDEX(r.`rank`, '_', 1) END AS normalized_rank, "
-            + "s.region, COUNT(DISTINCT r.summoner_id), CURRENT_TIMESTAMP(3) "
-            + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
-            + "WHERE r.`rank` IS NOT NULL AND s.region IS NOT NULL "
-            + "GROUP BY normalized_queue, normalized_rank, s.region "
-            + "ON DUPLICATE KEY UPDATE players = VALUES(players), updated_at = VALUES(updated_at)";
 
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return false;
             conn.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
             conn.setAutoCommit(false);
-            try (PreparedStatement delete = conn.prepareStatement(deleteSql);
-                 PreparedStatement seed = conn.prepareStatement(seedSql);
-                 Statement insert = conn.createStatement()) {
+            try (PreparedStatement delete = conn.prepareStatement(deleteSql)) {
+                List<GameQueueType> queues = leaderboardQueues(conn);
+                if (queues.isEmpty()) return false;
+                List<TierType> tiers = competitiveTiers();
                 delete.executeUpdate();
-                seedDistributionCombinations(conn, seed);
-                insert.executeUpdate(insertSql);
+                for (GameQueueType queue : queues) {
+                    for (TierType tier : tiers) {
+                        for (LeagueShard region : LeagueShard.values()) {
+                            if (region != LeagueShard.UNKNOWN) {
+                                buildLeaderboardDistributionCombination(conn, queue, tier, region);
+                            }
+                        }
+                    }
+                }
                 conn.commit();
                 return true;
             } catch (SQLException e) {
@@ -643,34 +639,44 @@ public class LeagueDB extends AbstractDB {
         }
     }
 
-    private static void seedDistributionCombinations(Connection conn, PreparedStatement seed) throws SQLException {
-        Set<String> queues = new LinkedHashSet<>();
-        queues.add(GameQueueType.TEAM_BUILDER_RANKED_SOLO.name());
-        queues.add(GameQueueType.RANKED_FLEX_SR.name());
-
-        String queueSql = "SELECT DISTINCT CASE WHEN queue IN ('TEAM_BUILDER_RANKED_SOLO', 'RANKED_SOLO_5X5') "
-            + "THEN 'TEAM_BUILDER_RANKED_SOLO' ELSE queue END AS queue FROM `rank` WHERE queue IS NOT NULL";
+    private static List<GameQueueType> leaderboardQueues(Connection conn) throws SQLException {
+        List<GameQueueType> queues = new ArrayList<>();
+        String queueSql = "SELECT DISTINCT queue FROM `rank` WHERE queue IS NOT NULL";
         try (PreparedStatement queuesQuery = conn.prepareStatement(queueSql);
              ResultSet result = queuesQuery.executeQuery()) {
-            while (result.next()) queues.add(result.getString("queue"));
-        }
-
-        List<String> regions = new ArrayList<>();
-        for (LeagueShard shard : LeagueShard.values()) {
-            if (shard != LeagueShard.UNKNOWN) regions.add(shard.name());
-        }
-
-        for (String queue : queues) {
-            for (TierType rank : competitiveTiers()) {
-                for (String region : regions) {
-                    seed.setString(1, queue);
-                    seed.setString(2, rank.name());
-                    seed.setString(3, region);
-                    seed.addBatch();
-                }
+            while (result.next()) {
+                String value = result.getString("queue");
+                if ("RANKED_SOLO_5X5".equals(value)) value = GameQueueType.TEAM_BUILDER_RANKED_SOLO.name();
+                GameQueueType queue = enumValue(GameQueueType.class, value);
+                if (queue != null && !queues.contains(queue)) queues.add(queue);
             }
         }
-        seed.executeBatch();
+        return queues;
+    }
+
+    private static void buildLeaderboardDistributionCombination(
+        Connection conn, GameQueueType queue, TierType tier, LeagueShard region
+    ) throws SQLException {
+        List<GameQueueType> sourceQueues = queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO
+            ? List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.RANKED_SOLO_5X5)
+            : List.of(queue);
+        String sql = "INSERT INTO leaderboard_distribution (queue, `rank`, region, players, updated_at) "
+            + "SELECT ?, ?, ?, COUNT(DISTINCT r.summoner_id), CURRENT_TIMESTAMP(3) "
+            + "FROM summoner s JOIN `rank` r ON r.summoner_id = s.id "
+            + "WHERE s.region = ? AND r.queue IN (" + placeholders(sourceQueues.size()) + ") "
+            + "AND r.`rank` LIKE CONCAT(?, '%') "
+            + "ON DUPLICATE KEY UPDATE players = VALUES(players), updated_at = VALUES(updated_at)";
+
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
+            int parameter = 1;
+            statement.setString(parameter++, queue.name());
+            statement.setString(parameter++, tier.name());
+            statement.setString(parameter++, region.name());
+            statement.setString(parameter++, region.name());
+            for (GameQueueType sourceQueue : sourceQueues) statement.setString(parameter++, sourceQueue.name());
+            statement.setString(parameter, tier.name());
+            statement.executeUpdate();
+        }
     }
 
     private static List<TierType> competitiveTiers() {
