@@ -443,7 +443,9 @@ public class LeagueDB extends AbstractDB {
         String rankTier, String queue, List<String> queues, String region, long offset, int limit
     ) {
         return executeLeaderboardQuery(conn -> {
-            long total = leaderboardDistributionTotal(conn, queue, rankTier, region);
+            long total = rankTier == null
+                ? leaderboardTotal(conn, queues, region)
+                : leaderboardDistributionTotal(conn, queue, rankTier, region);
             List<LeaderboardRow> rows = total > offset
                 ? getLeaderboard(conn, queue, rankTier, queues, region, offset, limit)
                 : List.of();
@@ -451,9 +453,15 @@ public class LeagueDB extends AbstractDB {
         });
     }
 
-    public static LeaderboardData getLeaderboardTotal(String rankTier, String queue, String region) {
+    public static LeaderboardData getLeaderboardTotal(
+        String rankTier, String queue, List<String> queues, String region
+    ) {
         return executeLeaderboardQuery(conn -> new LeaderboardData(
-            leaderboardDistributionTotal(conn, queue, rankTier, region), List.of(), true
+            rankTier == null
+                ? leaderboardTotal(conn, queues, region)
+                : leaderboardDistributionTotal(conn, queue, rankTier, region),
+            List.of(),
+            true
         ));
     }
 
@@ -492,21 +500,25 @@ public class LeagueDB extends AbstractDB {
         Connection conn, String queue, String rankTier, List<String> queues, String region, long offset, int limit
     ) throws SQLException {
         boolean soloAliases = queues.size() > 1;
-        List<String> ranks = rankValues(rankTier);
         String sql = "SELECT s.id AS summoner_id, s.puuid, s.riot_id, s.region, s.level, s.icon, "
             + "r.`rank`, r.lp, r.wins, r.losses "
             + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
-            + "WHERE r.queue IN (" + placeholders(queues.size()) + ") "
-            + "AND r.`rank` IN (" + placeholders(ranks.size()) + ")";
-        if (soloAliases) sql += preferredSoloQueueFilter(ranks.size());
+            + "WHERE r.queue IN (" + placeholders(queues.size()) + ") ";
+        List<String> ranks = rankTier == null ? List.of() : rankValues(rankTier);
+        if (rankTier != null) {
+            sql += "AND r.`rank` IN (" + placeholders(ranks.size()) + ")";
+        }
+        if (soloAliases) {
+            sql += rankTier == null ? preferredSoloQueueFilter() : preferredSoloQueueFilter(ranks.size());
+        }
         if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
         sql += " ORDER BY r.lp DESC, r.wins DESC, r.losses ASC, s.id ASC LIMIT ? OFFSET ?";
 
         List<LeaderboardRow> result = new ArrayList<>();
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             int parameter = bindQueues(pstmt, queues, 1);
-            parameter = bindValues(pstmt, ranks, parameter);
-            if (soloAliases) {
+            if (rankTier != null) parameter = bindValues(pstmt, ranks, parameter);
+            if (soloAliases && rankTier != null) {
                 parameter = bindValues(pstmt, ranks, parameter);
             }
             if (!"GLOBAL".equals(region)) pstmt.setString(parameter++, region);
@@ -533,13 +545,31 @@ public class LeagueDB extends AbstractDB {
 
     private static long leaderboardDistributionTotal(Connection conn, String queue, String rankTier, String region) throws SQLException {
         String sql = "SELECT COALESCE(SUM(players), 0) AS total "
-            + "FROM leaderboard_distribution WHERE queue = ? AND `rank` = ?";
+            + "FROM leaderboard_distribution WHERE queue = ?";
+        if (rankTier != null) sql += " AND `rank` = ?";
         if (!"GLOBAL".equals(region)) sql += " AND region = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, queue);
-            pstmt.setString(2, rankTier);
-            if (!"GLOBAL".equals(region)) pstmt.setString(3, region);
+            int parameter = 1;
+            pstmt.setString(parameter++, queue);
+            if (rankTier != null) pstmt.setString(parameter++, rankTier);
+            if (!"GLOBAL".equals(region)) pstmt.setString(parameter, region);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                return rs.next() ? rs.getLong("total") : 0;
+            }
+        }
+    }
+
+    private static long leaderboardTotal(Connection conn, List<String> queues, String region) throws SQLException {
+        String sql = "SELECT COUNT(*) AS total "
+            + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id "
+            + "WHERE r.queue IN (" + placeholders(queues.size()) + ")";
+        if (queues.size() > 1) sql += preferredSoloQueueFilter();
+        if (!"GLOBAL".equals(region)) sql += " AND s.region = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            int parameter = bindQueues(pstmt, queues, 1);
+            if (!"GLOBAL".equals(region)) pstmt.setString(parameter, region);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return rs.next() ? rs.getLong("total") : 0;
             }
@@ -688,6 +718,12 @@ public class LeagueDB extends AbstractDB {
             + "SELECT 1 FROM `rank` preferred WHERE preferred.summoner_id = r.summoner_id "
             + "AND preferred.queue = 'TEAM_BUILDER_RANKED_SOLO' "
             + "AND preferred.`rank` IN (" + placeholders(rankCount) + ")))";
+    }
+
+    private static String preferredSoloQueueFilter() {
+        return " AND NOT (r.queue = 'RANKED_SOLO_5X5' AND EXISTS ("
+            + "SELECT 1 FROM `rank` preferred WHERE preferred.summoner_id = r.summoner_id "
+            + "AND preferred.queue = 'TEAM_BUILDER_RANKED_SOLO'))";
     }
 
     private static List<String> rankValues(String rankTier) {
@@ -860,6 +896,20 @@ public class LeagueDB extends AbstractDB {
             e.printStackTrace();
         }
         return result;
+    }
+
+    public static void deleteProfileStatistics(String key) {
+        if (key == null || key.isBlank()) return;
+
+        String sql = "DELETE FROM profile_statistics WHERE `key` = ?";
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, key);
+                pstmt.executeUpdate();
+            }
+            conn.commit();
+        } catch (SQLException ignored) {}
     }
 
     public static boolean saveProfileStatistics(String key, int summonerId, long timeStart, long timeEnd, byte[] data) {
@@ -1436,25 +1486,35 @@ public class LeagueDB extends AbstractDB {
 
 
     public static List<Build> getChampionBuild(Filter filter) {
-        QueryResult result = instance.query("SELECT data FROM champion_builds WHERE filter = '" + filter.toKey() + "'");
-        return result.stream().map(r -> Build.decode(r.get("data"))).toList();
+        if (filter == null) return List.of();
+
+        QueryResult result = instance.query("SELECT id, data FROM champion_builds WHERE filter = '" + filter.toKey() + "'");
+        List<Build> builds = new ArrayList<>();
+        List<Integer> invalidIds = new ArrayList<>();
+        for (QueryRecord row : result) {
+            Build build = Build.decode(row.get("data"));
+            if (build == null) invalidIds.add(row.getAsInt("id"));
+            else builds.add(build);
+        }
+        deleteChampionBuilds(invalidIds);
+        return builds;
     }
 
     public static Build getMostUsedChampionBuild(Filter filter) {
         if (filter == null) return null;
 
-        String sql = "SELECT data FROM champion_builds WHERE filter = ? ORDER BY games DESC LIMIT 1";
+        String sql = "SELECT id, data FROM champion_builds WHERE filter = ? ORDER BY games DESC LIMIT 1";
+        int invalidId = 0;
+        Build build = null;
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return null;
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, filter.toKey());
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) {
-                        try {
-                            return Build.decode(rs.getString("data"));
-                        } catch (RuntimeException ignored) {
-                            return null;
-                        }
+                        int id = rs.getInt("id");
+                        build = Build.decode(rs.getString("data"));
+                        if (build == null) invalidId = id;
                     }
                 }
             }
@@ -1462,7 +1522,8 @@ public class LeagueDB extends AbstractDB {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        if (invalidId != 0) deleteChampionBuilds(List.of(invalidId));
+        return build;
     }
 
     public static void saveChampionBuild(Build build) {
@@ -1561,7 +1622,9 @@ public class LeagueDB extends AbstractDB {
             filter.genericKey() + "' AND champion = '" + champion + "'"
         );
         if (result.isEmpty()) return null;
-        return ChampionStatistics.decode(result.get(0).get("data"));
+        ChampionStatistics statistics = ChampionStatistics.decode(result.get(0).get("data"));
+        if (statistics == null) deleteChampionStats(filter.genericKey(), champion);
+        return statistics;
     }
     
     public static Map<Integer, ChampionStatistics> getChampionStats(Filter filter) {
@@ -1571,11 +1634,42 @@ public class LeagueDB extends AbstractDB {
         );
         if (result.isEmpty()) return null;
         Map<Integer, ChampionStatistics> map = new HashMap<>();
+        List<Integer> invalidChampions = new ArrayList<>();
         for (QueryRecord r : result) {
             int champion = r.getAsInt("champion");
-            map.put(champion, ChampionStatistics.decode(r.get("data")));
+            ChampionStatistics statistics = ChampionStatistics.decode(r.get("data"));
+            if (statistics == null) invalidChampions.add(champion);
+            else map.put(champion, statistics);
         }
-        return map;
+        for (int champion : invalidChampions) deleteChampionStats(filter.genericKey(), champion);
+        return map.isEmpty() ? null : map;
+    }
+
+    private static void deleteChampionStats(String filter, int champion) {
+        String sql = "DELETE FROM champion_stats WHERE filter = ? AND champion = ?";
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, filter);
+                pstmt.setInt(2, champion);
+                pstmt.executeUpdate();
+            }
+            conn.commit();
+        } catch (SQLException ignored) {}
+    }
+
+    private static void deleteChampionBuilds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return;
+
+        String sql = "DELETE FROM champion_builds WHERE id IN (" + placeholders(ids.size()) + ")";
+        try (Connection conn = instance.getConnection()) {
+            if (conn == null) return;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                for (int i = 0; i < ids.size(); i++) pstmt.setInt(i + 1, ids.get(i));
+                pstmt.executeUpdate();
+            }
+            conn.commit();
+        } catch (SQLException ignored) {}
     }
 
     public static QueryResult getStoredChampionBuildFilters() {

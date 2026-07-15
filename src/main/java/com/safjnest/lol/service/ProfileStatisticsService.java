@@ -19,6 +19,7 @@ import com.safjnest.utils.KryoUtils;
 import com.safjnest.lol.utils.SeasonUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
 public class ProfileStatisticsService {
 
@@ -49,7 +50,10 @@ public class ProfileStatisticsService {
         if (idsByKey.isEmpty()) return result;
         for (Map.Entry<String, ProfileStatisticsRow> entry : LeagueDB.getProfileStatistics(new ArrayList<>(idsByKey.keySet())).entrySet()) {
             ProfileStatistics statistics = decode(entry.getValue());
-            if (statistics == null) continue;
+            if (statistics == null) {
+                LeagueDB.deleteProfileStatistics(entry.getKey());
+                continue;
+            }
             int summonerId = idsByKey.get(entry.getKey());
             result.put(summonerId, statistics);
             cache(summonerId, season.start(), statistics);
@@ -76,7 +80,11 @@ public class ProfileStatisticsService {
     }
 
     private ProfileStatistics loadDatabase(int summonerId, long timeStart) {
-        return decode(LeagueDB.getProfileStatistics(databaseKey(summonerId, timeStart)));
+        String key = databaseKey(summonerId, timeStart);
+        ProfileStatisticsRow row = LeagueDB.getProfileStatistics(key);
+        ProfileStatistics statistics = decode(row);
+        if (row != null && statistics == null) LeagueDB.deleteProfileStatistics(key);
+        return statistics;
     }
 
     private ProfileStatistics decode(ProfileStatisticsRow row) {
@@ -133,7 +141,7 @@ public class ProfileStatisticsService {
     }
 
     private static String databaseKey(int summonerId, long timeStart) {
-        return Base64.getEncoder().encodeToString((summonerId + "|v2|" + timeStart).getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString((summonerId + "|" + timeStart).getBytes(StandardCharsets.UTF_8));
     }
 
     private static String redisKey(int summonerId, long timeStart) {
@@ -141,16 +149,31 @@ public class ProfileStatisticsService {
     }
 
     private static boolean valid(ProfileStatistics statistics) {
-        if (statistics == null) return false;
-        Object total = statistics.total;
-        Object queueStats = statistics.queueStats;
-        Object laneStats = statistics.laneStats;
-        Object championStats = statistics.championStats;
-        Object recentMatches = statistics.recentMatches;
-        return total instanceof Stats<?>
-            && queueStats instanceof List<?>
-            && laneStats instanceof List<?>
-            && championStats instanceof List<?>
-            && recentMatches instanceof List<?>;
+        try {
+            if (statistics == null || !(statistics.total instanceof Stats<?>)) return false;
+            return validStats(statistics.queueStats, GameQueueType.class)
+                && validStats(statistics.laneStats, LaneType.class)
+                && validStats(statistics.championStats, Integer.class)
+                && validMatches(statistics.recentMatches);
+        } catch (RuntimeException | LinkageError ignored) {
+            return false;
+        }
+    }
+
+    private static boolean validStats(List<?> values, Class<?> referenceType) {
+        if (values == null) return false;
+        for (Object value : values) {
+            if (!(value instanceof Stats<?> stats)) return false;
+            if (stats.reference != null && !referenceType.isInstance(stats.reference)) return false;
+        }
+        return true;
+    }
+
+    private static boolean validMatches(List<?> values) {
+        if (values == null) return false;
+        for (Object value : values) {
+            if (!(value instanceof MatchResult)) return false;
+        }
+        return true;
     }
 }

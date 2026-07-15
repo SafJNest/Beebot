@@ -45,6 +45,16 @@ public class ProfileStatisticsTest {
         assertTrue(source.recentMatches.get(0).timeStart() > source.recentMatches.get(4).timeStart());
     }
 
+    @Test
+    public void persistsMatchResultAndParticipantThroughKryo() {
+        MatchResult source = match("game", 1, "2/1/3", 10);
+
+        MatchResult decoded = KryoUtils.decode(KryoUtils.encode(source), MatchResult.class);
+
+        assertEquals(source.gameId(), decoded.gameId());
+        assertEquals(source.participants().get(0).puuid(), decoded.participants().get(0).puuid());
+    }
+
     private static MatchResult match(String id, long time, String kda, int teamKills) {
         return new MatchResult(id, GameQueueType.ARAM, time, time + 1, true, kda, 1, LaneType.TOP,
             100, 10, 100, 10, teamKills, List.of(), List.of(), List.of(Participant.forMatchResult(2, "puuid", "BLUE")));

@@ -74,6 +74,12 @@ Use existing utilities before adding new mapping logic, especially `ChampionUtil
 - Do not create a second DTO for a concept already represented by a canonical model.
 - Controllers should return canonical models directly unless an accepted ADR documents an HTTP-only wrapper.
 
+## API synchronization rule
+
+- Every update to LoL models, services, persisted data, parameters or business behavior must include a review of the affected API endpoints.
+- When the change affects an exposed contract, update the controller, canonical response model and API documentation in the same task.
+- No LoL change is complete until the API surface and its documentation are synchronized with the new behavior; if the change is internal-only, explicitly verify that no API update is required.
+
 ## Agent workflow
 
 Read these files before changing LoL architecture:

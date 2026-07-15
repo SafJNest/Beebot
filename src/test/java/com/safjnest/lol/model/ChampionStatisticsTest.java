@@ -16,7 +16,7 @@ public class ChampionStatisticsTest {
     private static final int THRESH_CHAMPION_ID = 412;
 
     @Test
-    public void persistsMatchupsWithStableKryoRegistrations() {
+    public void persistsMatchupsWithCurrentKryo() {
         ChampionStatistics source = new ChampionStatistics(
             null,
             100,

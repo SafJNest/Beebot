@@ -32,7 +32,7 @@ public class ChampionStatsService {
         Map<Integer, ChampionStatistics> cached;
         try {
             cached = LeagueDB.getChampionStats(filter);
-        } catch (RuntimeException | LinkageError exception) {
+        } catch (RuntimeException exception) {
             BotLogger.warning("Invalid persisted champion stats for " + filter.genericKey()
                 + ": " + exception.getMessage());
             cached = null;
@@ -66,7 +66,7 @@ public class ChampionStatsService {
         ChampionStatistics stats;
         try {
             stats = RedisClient.get(key, ChampionStatistics.class);
-        } catch (RuntimeException | LinkageError exception) {
+        } catch (RuntimeException exception) {
             RedisClient.delete(key);
             stats = null;
         }
@@ -74,7 +74,7 @@ public class ChampionStatsService {
 
         try {
             stats = LeagueDB.getChampionStats(filter, filter.champion());
-        } catch (RuntimeException | LinkageError exception) {
+        } catch (RuntimeException exception) {
             BotLogger.warning("Invalid persisted champion stats for " + filter.toKey()
                 + ": " + exception.getMessage());
             return null;

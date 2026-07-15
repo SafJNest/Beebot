@@ -20,14 +20,14 @@ public class LeaderboardController {
 
     @GetMapping("/leaderboard")
     public ResponseEntity<?> leaderboard(
-            @RequestParam("rank") String rankValue,
+            @RequestParam(value = "rank", required = false) String rankValue,
             @RequestParam(value = "region", required = false) String regionValue,
             @RequestParam(value = "queue", required = false) String queueValue,
             @RequestParam(value = "page", defaultValue = "1") int page
     ) {
         return LolApiResponses.from(
             leaderboardService.getLeaderboard(
-                LolApiParameters.requiredRank(rankValue),
+                LolApiParameters.rank(rankValue),
                 LolApiParameters.queue(queueValue),
                 LolApiParameters.region(regionValue),
                 LolApiParameters.page(page)

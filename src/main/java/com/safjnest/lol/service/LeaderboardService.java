@@ -29,6 +29,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 public class LeaderboardService {
 
     private static final String GLOBAL_REGION = "GLOBAL";
+    private static final String ALL_RANKS = "ALL";
     public static final int PAGE_SIZE = 50;
 
     private static final int TTL_LEADERBOARD = 60 * 5;
@@ -43,19 +44,19 @@ public class LeaderboardService {
     private final ProfileStatisticsService profileStatisticsService = new ProfileStatisticsService();
 
     public ApiResult<LeaderboardPage> getLeaderboard(TierType rank, GameQueueType queue, LeagueShard region, int page) {
-        requireRank(rank);
         if (page < 1) throw new IllegalArgumentException("page must be greater than 0");
 
         GameQueueType selectedQueue = defaultQueue(queue);
         String selectedRegion = defaultRegion(region);
-        String key = RedisKey.LEADERBOARD_PAGE.of(rank.name(), canonicalQueue(selectedQueue).name(), selectedRegion, page);
+        String rankKey = rank == null ? ALL_RANKS : rank.name();
+        String key = RedisKey.LEADERBOARD_PAGE.of(rankKey, canonicalQueue(selectedQueue).name(), selectedRegion, page);
         LeaderboardPage cached = RedisClient.get(key, LeaderboardPage.class);
         if (cached != null) return ApiResult.ready(cached);
 
         long offset = (long) (page - 1) * PAGE_SIZE;
         String selectedQueueName = canonicalQueue(selectedQueue).name();
-        String totalKey = RedisKey.LEADERBOARD_TOTAL.of(rank.name(), selectedQueueName, selectedRegion);
-        String rowsKey = RedisKey.LEADERBOARD_ROWS.of(rank.name(), selectedQueueName, selectedRegion, offset, PAGE_SIZE);
+        String totalKey = RedisKey.LEADERBOARD_TOTAL.of(rankKey, selectedQueueName, selectedRegion);
+        String rowsKey = RedisKey.LEADERBOARD_ROWS.of(rankKey, selectedQueueName, selectedRegion, offset, PAGE_SIZE);
 
         Long cachedTotal = RedisClient.get(totalKey, Long.class);
         List<LeaderboardRow> cachedRows = RedisClient.get(rowsKey, LEADERBOARD_ROWS_TYPE);
@@ -66,20 +67,35 @@ public class LeaderboardService {
         List<LeaderboardRow> rows = rowsReady ? cachedRows : List.of();
         if (!totalReady && !rowsReady) {
             LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardData(
-                rank.name(), selectedQueueName, queueValues(selectedQueue), selectedRegion, offset, PAGE_SIZE
+                rank != null ? rank.name() : null,
+                selectedQueueName,
+                queueValues(selectedQueue),
+                selectedRegion,
+                offset,
+                PAGE_SIZE
             );
             total = data.total();
             rows = data.rows();
             if (data.success()) cacheLeaderboardComponents(totalKey, rowsKey, total, rows);
         } else {
             if (!totalReady) {
-                LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardTotal(rank.name(), selectedQueueName, selectedRegion);
+                LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardTotal(
+                    rank != null ? rank.name() : null,
+                    selectedQueueName,
+                    queueValues(selectedQueue),
+                    selectedRegion
+                );
                 total = data.total();
                 if (data.success()) RedisClient.set(totalKey, total, TTL_LEADERBOARD_COMPONENTS);
             }
             if (!rowsReady && total > offset) {
                 LeagueDB.LeaderboardData data = LeagueDB.getLeaderboardRows(
-                    rank.name(), selectedQueueName, queueValues(selectedQueue), selectedRegion, offset, PAGE_SIZE
+                    rank != null ? rank.name() : null,
+                    selectedQueueName,
+                    queueValues(selectedQueue),
+                    selectedRegion,
+                    offset,
+                    PAGE_SIZE
                 );
                 rows = data.rows();
                 if (data.success()) RedisClient.set(rowsKey, rows, TTL_LEADERBOARD_COMPONENTS);
@@ -206,6 +222,7 @@ public class LeaderboardService {
                 for (TierType rank : COMPETITIVE_TIERS) {
                     RedisClient.delete(RedisKey.LEADERBOARD_TOTAL.of(rank.name(), selectedQueue.name(), region));
                 }
+                RedisClient.delete(RedisKey.LEADERBOARD_TOTAL.of(ALL_RANKS, selectedQueue.name(), region));
             }
             for (TierType rank : COMPETITIVE_TIERS) {
                 RedisClient.delete(RedisKey.LEADERBOARD_TOP_REGIONS.of(selectedQueue.name(), rank.name()));

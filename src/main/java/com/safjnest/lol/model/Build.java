@@ -46,7 +46,36 @@ public record Build(
     }
 
     public static Build decode(String b64) {
-        return KryoUtils.decode(b64, Build.class);
+        try {
+            Build build = KryoUtils.decode(b64, Build.class);
+            if (build == null) return null;
+
+            Object filter = build.filter();
+            Object starter = build.starter();
+            Object boots = build.boots();
+            Object suppItems = build.suppItems();
+            Object core = build.core();
+            Object slots = build.slots();
+            Object prismatics = build.prismatics();
+            Object summonerSpells = build.summonerSpells();
+            Object augments = build.augments();
+            Object spellOrder = build.spellOrder();
+            Object runes = build.runes();
+            return (filter == null || filter instanceof Filter)
+                && starter instanceof List<?>
+                && boots instanceof List<?>
+                && suppItems instanceof List<?>
+                && core instanceof List<?>
+                && slots instanceof List<?>
+                && prismatics instanceof List<?>
+                && summonerSpells instanceof List<?>
+                && augments instanceof List<?>
+                && spellOrder instanceof List<?>
+                && (runes == null || runes instanceof RuneSignature)
+                ? build : null;
+        } catch (RuntimeException | LinkageError ignored) {
+            return null;
+        }
     }
 
     public void print() {

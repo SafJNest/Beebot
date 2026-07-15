@@ -56,18 +56,28 @@ public record ChampionStatistics(
     }
 
     public static ChampionStatistics decode(String b64) {
-        ChampionStatistics statistics = KryoUtils.decode(b64, ChampionStatistics.class);
-        if (statistics == null) return null;
+        try {
+            ChampionStatistics statistics = KryoUtils.decode(b64, ChampionStatistics.class);
+            if (statistics == null) return null;
 
-        Object filter = statistics.filter();
-        Object laneStats = statistics.laneStats();
-        Object matchups = statistics.matchups();
-        if (!(filter instanceof Filter)
-                || !(laneStats instanceof List<?>)
-                || !(matchups instanceof Map<?, ?>)) {
-            throw new IllegalStateException("Invalid persisted ChampionStatistics payload");
+            Object filter = statistics.filter();
+            Object laneStats = statistics.laneStats();
+            Object matchups = statistics.matchups();
+            if ((filter != null && !(filter instanceof Filter))
+                    || !(laneStats instanceof List<?> lanes)
+                    || !(matchups instanceof Map<?, ?> matchupMap)) {
+                return null;
+            }
+            for (Object lane : lanes) {
+                if (!(lane instanceof LaneStat)) return null;
+            }
+            for (Map.Entry<?, ?> entry : matchupMap.entrySet()) {
+                if (!(entry.getKey() instanceof MatchupKey) || !(entry.getValue() instanceof Matchup)) return null;
+            }
+            return statistics;
+        } catch (RuntimeException | LinkageError ignored) {
+            return null;
         }
-        return statistics;
     }
 
     public Matchup getOpponentMatchup(int opponent, LaneType lane) {

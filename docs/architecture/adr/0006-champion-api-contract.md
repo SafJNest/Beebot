@@ -20,7 +20,7 @@ The HTTP request is orchestrated by one `ChampionPageService.get` flow. It first
 
 The scheduler is started explicitly and idempotently by the application. In testing mode it does not register periodic jobs; `pushqueue` is the manual processor for the Profile Statistics and Champion Data queues.
 
-Champion statistics persistence uses stable Kryo registration IDs. The decoder keeps compatibility fallbacks for the registration layouts written before the model refactor. A record that cannot be decoded is treated as missing data so the async refresh can replace it.
+Champion statistics, builds and profile statistics use one Kryo configuration for the current model classes. There is no legacy decoder or compatibility fallback. If a persisted payload cannot be decoded or validated, its row is deleted and the data is treated as missing so the existing refresh flow can recreate it.
 
 ## Ownership
 
