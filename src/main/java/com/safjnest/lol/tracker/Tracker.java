@@ -527,7 +527,7 @@ public class Tracker {
         }
         int summonerId = LeagueDB.addLOLAccount(summoner);
         ((ChronoTask) () -> {
-            LeagueDB.updateSummonerEntries(summonerId, entries);
+            LeagueDB.updateSummonerEntries(summonerId, entries, summoner.getPlatform());
             //LeagueDB.updateSummonerMasteries(summonerId, summoner.getChampionMasteries());
         }).queue();
 
