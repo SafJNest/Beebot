@@ -344,13 +344,13 @@ Risposte aggiuntive:
 ### 6. Leaderboard paginata
 
 ```http
-GET /api/lol/leaderboard?rank={rank}&region={region}&queue={queue}&page={page}&limit={limit}
+GET /api/lol/leaderboard?rank={rank}&queue={queue}&page={page}&limit={limit}
 ```
 
 | Parametro | Obbligatorio | Default | Descrizione |
 |---|---:|---|---|
 | `rank` | no | tutti gli utenti | Tier richiesto, con tutte le divisioni del tier. Se omesso, include tutti gli utenti della leaderboard. |
-| `region` | no | `GLOBAL` interno | Shard da filtrare. |
+| `region` | no | tutti gli shard | Shard da filtrare; per tutti gli shard il parametro viene omesso. |
 | `queue` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue da filtrare. |
 | `page` | no | `1` | Pagina 1-based, deve essere `>= 1`. |
 | `limit` | no | `50` | Righe per pagina, intero tra `1` e `50`. |
@@ -364,17 +364,17 @@ summoners[] -> position, summoner
 
 Ogni `summoner` è lo stesso `SummonerView` usato dal profilo. Se mancano statistiche per una o più righe, la risposta rimane `200` e viene marcata internamente `PARTIAL`: i dati disponibili vengono restituiti e il refresh viene messo in coda.
 
-Se `rank` e `region` sono omessi, la leaderboard restituisce tutti gli utenti in ordine di divisione e LP, con paginazione da 50 righe oppure dal valore di `limit`. Il totale e le righe vengono calcolati lato database, quindi il dataset può contenere anche milioni di utenti senza costruire una risposta unica.
+Se `rank` e `region` sono omessi, la leaderboard restituisce tutti gli utenti in ordine decrescente di `mmr`, con paginazione da 50 righe oppure dal valore di `limit`. Per filtrare uno shard si aggiunge `&region={region}`. Il totale e le righe vengono calcolati lato database, quindi il dataset può contenere anche milioni di utenti senza costruire una risposta unica.
 
 ### 7. Distribuzione dei rank
 
 ```http
-GET /api/lol/leaderboard/rank-distribution?region={region}&queue={queue}
+GET /api/lol/leaderboard/rank-distribution?queue={queue}
 ```
 
 | Parametro | Obbligatorio | Default | Descrizione |
 |---|---:|---|---|
-| `region` | no | `GLOBAL` interno | Shard da aggregare. |
+| `region` | no | tutti gli shard | Shard da aggregare; per tutti gli shard il parametro viene omesso. |
 | `queue` | no | `TEAM_BUILDER_RANKED_SOLO` | Queue da aggregare. |
 
 Risposta `200`: `LeaderboardDistribution` con `entries[]`, dove ogni entry ha:
