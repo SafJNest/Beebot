@@ -441,9 +441,7 @@ public class LeagueDB extends AbstractDB {
         String rankTier, String queue, List<String> queues, String region, long offset, int limit
     ) {
         return executeLeaderboardQuery(conn -> {
-            long total = rankTier == null
-                ? leaderboardTotal(conn, queues, region)
-                : leaderboardDistributionTotal(conn, queue, rankTier, region);
+            long total = leaderboardDistributionTotal(conn, queue, rankTier, region);
             List<LeaderboardRow> rows = total > offset
                 ? getLeaderboard(conn, queue, rankTier, queues, region, offset, limit)
                 : List.of();
@@ -455,9 +453,7 @@ public class LeagueDB extends AbstractDB {
         String rankTier, String queue, List<String> queues, String region
     ) {
         return executeLeaderboardQuery(conn -> new LeaderboardData(
-            rankTier == null
-                ? leaderboardTotal(conn, queues, region)
-                : leaderboardDistributionTotal(conn, queue, rankTier, region),
+            leaderboardDistributionTotal(conn, queue, rankTier, region),
             List.of(),
             true
         ));
@@ -578,22 +574,6 @@ public class LeagueDB extends AbstractDB {
             int parameter = 1;
             pstmt.setString(parameter++, queue);
             if (rankTier != null) pstmt.setString(parameter++, rankTier);
-            if (!"GLOBAL".equals(region)) pstmt.setString(parameter, region);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next() ? rs.getLong("total") : 0;
-            }
-        }
-    }
-
-    private static long leaderboardTotal(Connection conn, List<String> queues, String region) throws SQLException {
-        String sql = "SELECT COUNT(*) AS total "
-            + "FROM `rank` r "
-            + "WHERE r.queue IN (" + placeholders(queues.size()) + ")";
-        if (queues.size() > 1) sql += preferredSoloQueueFilter();
-        if (!"GLOBAL".equals(region)) sql += " AND r.region = ?";
-
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            int parameter = bindQueues(pstmt, queues, 1);
             if (!"GLOBAL".equals(region)) pstmt.setString(parameter, region);
             try (ResultSet rs = pstmt.executeQuery()) {
                 return rs.next() ? rs.getLong("total") : 0;
