@@ -622,6 +622,7 @@ public class LeagueDB extends AbstractDB {
 
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return false;
+            conn.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
             conn.setAutoCommit(false);
             try (PreparedStatement delete = conn.prepareStatement(deleteSql);
                  PreparedStatement seed = conn.prepareStatement(seedSql);
