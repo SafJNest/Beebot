@@ -51,28 +51,33 @@ public class KryoUtils {
 
     public static <T> T decode(String encoded, Class<T> type) {
         byte[] bytes = Base64.getDecoder().decode(encoded);
-        RuntimeException stableException;
+        Throwable stableException;
         try {
             return read(get(), bytes, type);
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException | LinkageError exception) {
             stableException = exception;
+            KRYO.remove();
         }
 
         try {
             return read(LEGACY_KRYO.get(), bytes, type);
-        } catch (RuntimeException legacyException) {
+        } catch (RuntimeException | LinkageError legacyException) {
             stableException.addSuppressed(legacyException);
+            LEGACY_KRYO.remove();
         }
 
         if (type == ChampionStatistics.class) {
             try {
                 return read(LEGACY_PROFILE_KRYO.get(), bytes, type);
-            } catch (RuntimeException legacyProfileException) {
+            } catch (RuntimeException | LinkageError legacyProfileException) {
                 stableException.addSuppressed(legacyProfileException);
+                LEGACY_PROFILE_KRYO.remove();
             }
         }
 
-        throw stableException;
+        if (stableException instanceof RuntimeException exception) throw exception;
+        if (stableException instanceof Error error) throw error;
+        throw new IllegalStateException(stableException);
     }
 
     private static Kryo createStableKryo() {
