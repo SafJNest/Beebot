@@ -819,7 +819,7 @@ public class ChampionStatsService {
         String value = record.get(column);
         if (value == null || value.isBlank()) return 0;
         try {
-            return Timestamp.valueOf(record.getAsLocalDateTime(column)).getTime();
+            return Timestamp.valueOf(record.getAsLocalDateTime(value)).getTime();
         } catch (RuntimeException ignored) {
             return 0;
         }
