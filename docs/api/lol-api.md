@@ -337,7 +337,7 @@ build          -> coreBuilds, coreItems, starters, boots,
                   skillOrders, prismatics, augments
 ```
 
-Ogni opzione build espone il proprio `id`/configurazione, `matches`, `wins`, `winrate` e `pickrate`. Le categorie build hanno massimo tre opzioni; con pochi dati ne possono avere una e senza dati sono liste vuote. `augments` è indicizzato per slot (`augment 1` ... `augment 4`) e non è una lista piatta. Il primo elemento non ha significato implicito.
+Ogni opzione build espone il proprio `id`/configurazione, `matches`, `wins`, `winrate` e `pickrate`. Le categorie build hanno massimo tre opzioni; con pochi dati ne possono avere una e senza dati sono liste vuote. Gli starter sono aggregati per configurazione completa, quindi la stessa pozione ripetuta più volte mantiene la propria cardinalità nella chiave. `augments` è indicizzato per slot (`augment 1` ... `augment 4`) e non è una lista piatta. Il primo elemento non ha significato implicito.
 
 `matchups` contiene tutti i matchup validi con champion avversario, lane, matches, wins, winrate, deltaWinrate, goldDiffAt15, csDiffAt15, soloKillRate, killParticipation, opponentBanRate e metricGames. `laneSynergies` contiene tutte le synergy valide con champion/lane alleato, matches, wins, winrate e pickrate. Metriche non disponibili restano `null`.
 

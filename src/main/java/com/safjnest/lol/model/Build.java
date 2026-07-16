@@ -32,6 +32,12 @@ public record Build(
 ) {
 
     public record Option(String id, int matches, int wins, double winrate, double pickrate) {
+        @JsonIgnore
+        public List<Integer> itemIds() {
+            try { return BuildUtils.parseDashList(id); }
+            catch (RuntimeException ignored) { return List.of(); }
+        }
+
         public int itemId() {
             try { return Integer.parseInt(id); }
             catch (Exception ignored) {
@@ -152,7 +158,9 @@ public record Build(
 
     @JsonIgnore
     public List<Integer> starter() {
-        return ids(starterOptions);
+        List<Integer> result = new ArrayList<>();
+        for (Option option : starterOptions) result.addAll(option.itemIds());
+        return result;
     }
 
     @JsonIgnore

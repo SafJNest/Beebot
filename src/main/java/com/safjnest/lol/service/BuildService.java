@@ -31,7 +31,7 @@ public class BuildService {
         Map<String, int[]> coreBuilds,
         Map<String, List<Integer>> coreBuildItems,
         Map<Integer, int[]> coreItems,
-        Map<Integer, int[]> starters,
+        Map<String, int[]> starters,
         Map<Integer, int[]> boots,
         Map<Integer, int[]> supportItems,
         Map<Integer, Map<Integer, int[]>> slots,
@@ -96,7 +96,7 @@ public class BuildService {
             rate(stats.wins(), stats.games()),
             toCoreBuilds(stats.coreBuilds(), stats.coreBuildItems(), stats.games()),
             toOptions(stats.coreItems(), stats.games()),
-            toOptions(stats.starters(), stats.games()),
+            toConfigOptions(stats.starters(), stats.games()),
             toOptions(stats.boots(), stats.games()),
             toOptions(stats.supportItems(), stats.games()),
             toSlots(stats.slots(), SLOT_COUNT, stats.games()),
@@ -115,7 +115,7 @@ public class BuildService {
         Map<String, int[]> coreBuilds = new LinkedHashMap<>();
         Map<String, List<Integer>> coreBuildItems = new LinkedHashMap<>();
         Map<Integer, int[]> coreItems = new LinkedHashMap<>();
-        Map<Integer, int[]> starters = new LinkedHashMap<>();
+        Map<String, int[]> starters = new LinkedHashMap<>();
         Map<Integer, int[]> boots = new LinkedHashMap<>();
         Map<Integer, int[]> supportItems = new LinkedHashMap<>();
         Map<Integer, Map<Integer, int[]>> slots = new LinkedHashMap<>();
@@ -151,7 +151,7 @@ public class BuildService {
             add(coreBuilds, coreBuildKey, win);
             coreBuildItems.putIfAbsent(coreBuildKey, signature.core());
             for (Integer id : signature.core()) add(coreItems, id, win);
-            for (Integer id : signature.starter()) add(starters, id, win);
+            add(starters, BuildUtils.joinInts(signature.starter()), win);
             if (signature.boots() != 0) add(boots, signature.boots(), win);
             if (signature.suppItem() != 0) add(supportItems, signature.suppItem(), win);
 
