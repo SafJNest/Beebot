@@ -43,6 +43,7 @@ import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.api.URLEndpoint;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
+import no.stelar7.api.r4j.basic.constants.types.KillType;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 import no.stelar7.api.r4j.basic.constants.types.lol.MatchlistMatchType;
@@ -54,7 +55,9 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.LOLTimeline;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.match.v5.PerkSelection;
+import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrame;
 import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineFrameEvent;
+import no.stelar7.api.r4j.pojo.lol.match.v5.TimelineParticipantFrame;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import no.stelar7.api.r4j.pojo.shared.RiotAccount;
@@ -78,6 +81,7 @@ public class Tracker {
     private static final Map<String, Integer> MATCH_LOOKUP_RETRIES = new ConcurrentHashMap<>();
 
     private static long period = TimeConstant.MINUTE * 10;
+    private static final long timelineSnapshotInterval = TimeConstant.MINUTE * 5;
 
     private static List<GameQueueType> toTrack = List.of(GameQueueType.TEAM_BUILDER_RANKED_SOLO, GameQueueType.CHERRY);
 
@@ -529,28 +533,134 @@ public class Tracker {
     public static String createJSONEvents(HashMap<String, String> matchData) {
         JSONObject json = new JSONObject();
 
-        for (String key : new String[]{"monster_events", "building_events", "participants"}) {
+        for (String key : new String[]{"monster_events", "building_events", "champion_kills", "ward_events", "turret_plate_events", "item_events", "skill_events", "level_events", "objective_events", "game_events", "snapshots"}) {
             String raw = matchData.getOrDefault(key, "").trim();
-            if (raw.isEmpty()) {
+            if (raw.isEmpty() || raw.equals("null")) {
                 json.put(key, new JSONArray());
                 continue;
             }
 
-            if (key.equals("participants")) {
-                try {
-                    JSONObject parsed = new JSONObject(raw);
-                    json.put(key, parsed);
-                    continue;
-                } catch (Exception e) { }
-            }
-            
             try {
-                JSONArray parsed = new JSONArray("[" + raw + "]");
+                JSONArray parsed = raw.startsWith("[") ? new JSONArray(raw) : new JSONArray("[" + raw + "]");
                 json.put(key, parsed);
-            } catch (Exception e) { }
+            } catch (Exception e) {
+                json.put(key, new JSONArray());
+            }
+        }
+
+        String participants = matchData.getOrDefault("participants", "").trim();
+        if (participants.isEmpty()) {
+            json.put("participants", new JSONObject());
+        } else {
+            try {
+                json.put("participants", new JSONObject(participants));
+            } catch (Exception e) {
+                json.put("participants", new JSONObject());
+            }
+        }
+
+        String dragonSoul = matchData.getOrDefault("dragon_soul", "").trim();
+        if (dragonSoul.isEmpty() || dragonSoul.equals("null")) {
+            json.put("dragon_soul", JSONObject.NULL);
+        } else {
+            try {
+                json.put("dragon_soul", new JSONObject(dragonSoul));
+            } catch (Exception e) {
+                json.put("dragon_soul", JSONObject.NULL);
+            }
         }
 
         return json.toString();
+    }
+
+    private static JSONObject createTimelineEvent(TimelineFrameEvent event) {
+        JSONObject json = new JSONObject();
+        json.put("timestamp", event.getTimestamp());
+        return json;
+    }
+
+    private static JSONArray createAssists(List<Integer> assistingParticipantIds) {
+        JSONArray assists = new JSONArray();
+        if (assistingParticipantIds == null) return assists;
+
+        for (Integer participantId : assistingParticipantIds) {
+            if (participantId != null && participantId != 0) assists.put(participantId);
+        }
+        return assists;
+    }
+
+    private static String getParticipantTeam(List<MatchParticipant> participants, int participantId) {
+        for (MatchParticipant participant : participants) {
+            if (participant.getParticipantId() == participantId && participant.getTeam() != null) {
+                return participant.getTeam().name();
+            }
+        }
+        return null;
+    }
+
+    private static void addChampionKill(JSONArray championKills, Map<String, JSONObject> indexedKills, TimelineFrameEvent event, String killerTeam, boolean firstBlood) {
+        String key = event.getTimestamp() + "-" + event.getKillerId();
+        JSONObject kill = indexedKills.get(key);
+        if (kill == null) {
+            kill = createTimelineEvent(event);
+            kill.put("killer", event.getKillerId());
+            indexedKills.put(key, kill);
+            championKills.put(kill);
+        }
+
+        if (killerTeam != null) kill.put("killer_team", killerTeam);
+        if (firstBlood) {
+            kill.put("kill_type", "first_blood");
+            if (!kill.has("assists")) kill.put("assists", new JSONArray());
+            return;
+        }
+
+        kill.put("victim", event.getVictimId());
+        kill.put("assists", createAssists(event.getAssistingParticipantIds()));
+        kill.put("bounty", event.getBounty());
+        kill.put("shutdown_bounty", event.getShutdownBounty());
+
+        int multiKillLength = event.getMultiKillLength();
+        if (multiKillLength > 1 && !kill.has("kill_type")) {
+            kill.put("kill_type", "multi_" + multiKillLength);
+        }
+    }
+
+    private static JSONObject createSnapshot(TimelineFrame frame, boolean finalSnapshot) {
+        JSONObject snapshot = new JSONObject();
+        snapshot.put("timestamp", frame.getTimestamp());
+        if (finalSnapshot) snapshot.put("final", true);
+
+        JSONObject participants = new JSONObject();
+        Map<String, TimelineParticipantFrame> participantFrames = frame.getParticipantFrames();
+        if (participantFrames != null) {
+            for (Map.Entry<String, TimelineParticipantFrame> entry : participantFrames.entrySet()) {
+                TimelineParticipantFrame participantFrame = entry.getValue();
+                if (participantFrame == null) continue;
+
+                String participantId = participantFrame.getParticipantId() > 0 ? String.valueOf(participantFrame.getParticipantId()) : entry.getKey();
+                JSONObject stats = new JSONObject();
+                stats.put("total_gold", participantFrame.getTotalGold());
+                stats.put("current_gold", participantFrame.getCurrentGold());
+                stats.put("cs", participantFrame.getMinionsKilled() + participantFrame.getJungleMinionsKilled());
+                participants.put(participantId, stats);
+            }
+        }
+        snapshot.put("participants", participants);
+        return snapshot;
+    }
+
+    private static void addSnapshot(JSONArray snapshots, TimelineFrame frame, boolean finalSnapshot) {
+        if (frame == null) return;
+
+        for (int i = 0; i < snapshots.length(); i++) {
+            JSONObject existing = snapshots.getJSONObject(i);
+            if (existing.getLong("timestamp") == frame.getTimestamp()) {
+                if (finalSnapshot) existing.put("final", true);
+                return;
+            }
+        }
+        snapshots.put(createSnapshot(frame, finalSnapshot));
     }
 
 
@@ -631,8 +741,30 @@ public class Tracker {
         });
         matchData.put("match", new HashMap<>());
 
+        JSONArray monsterEvents = new JSONArray();
+        JSONArray buildingEvents = new JSONArray();
+        JSONArray championKills = new JSONArray();
+        JSONArray wardEvents = new JSONArray();
+        JSONArray turretPlateEvents = new JSONArray();
+        JSONArray itemEvents = new JSONArray();
+        JSONArray skillEvents = new JSONArray();
+        JSONArray levelEvents = new JSONArray();
+        JSONArray objectiveEvents = new JSONArray();
+        JSONArray gameEvents = new JSONArray();
+        JSONArray snapshots = new JSONArray();
+        Map<String, JSONObject> indexedChampionKills = new HashMap<>();
+        JSONObject dragonSoul = null;
+        long dragonSoulTimestamp = -1;
+        long gameDuration = match.getGameDuration() == null ? Long.MAX_VALUE : match.getGameDuration().longValue() * 1000L;
+        long nextSnapshotTimestamp = timelineSnapshotInterval;
+        TimelineFrame previousFrame = null;
+        TimelineFrame finalFrame = null;
+
         for (int i = 0; i < timeline.getFrames().size(); i++) {
-            for (TimelineFrameEvent event : timeline.getFrames().get(i).getEvents()) {
+            TimelineFrame frame = timeline.getFrames().get(i);
+            for (TimelineFrameEvent event : frame.getEvents()) {
+                if (event == null || event.getType() == null) continue;
+
                 Item item;
                 String participantId = String.valueOf(event.getParticipantId());
                 String itemType = i == 1 ? "starter" : "items";
@@ -640,86 +772,186 @@ public class Tracker {
                 try {
                     switch (event.getType()) {
                         case ITEM_PURCHASED:
-                            item = items.get(event.getItemId());
-                            if (item == null) continue;
-                            
-                            if (ItemUtils.isBoots(item)) {
-                                matchData.get(participantId).put("boots", item.getId() + "");
-                                continue;
-                            }
-
-                            if (i != 1 && item.getDepth() != 3) continue;
-
-                            List<String> itemList = matchItemData.computeIfAbsent(participantId + "-" + itemType, k -> new ArrayList<>());
-                            itemList.add(item.getId() + "");
-                            matchItemData.put(participantId + "-" + itemType, itemList);
-                            matchData.get(participantId).put(itemType, String.join(",", itemList));
-                    
-                            break;
-                        case ITEM_UNDO:
                         case ITEM_SOLD:
-                            item = items.get(event.getBeforeId());
-                            if (item == null) continue;
-                            if (i != 1 && item.getDepth() != 3) continue;
-                    
-                            List<String> currentList = matchItemData.get(participantId + "-" + itemType);
-                            if (currentList != null) {
-                                currentList.remove(item.getId() + "");
+                        case ITEM_UNDO:
+                        case ITEM_DESTROYED: {
+                            JSONObject itemEvent = createTimelineEvent(event);
+                            itemEvent.put("event", event.getType().name());
+                            itemEvent.put("participant", event.getParticipantId());
+                            itemEvent.put("item", event.getItemId());
+                            itemEvent.put("before", event.getBeforeId());
+                            itemEvent.put("after", event.getAfterId());
+                            itemEvent.put("gold_gain", event.getGoldGain());
+                            itemEvents.put(itemEvent);
+                            if (event.getType().name().equals("ITEM_DESTROYED")) break;
+
+                            int itemId = event.getType().name().equals("ITEM_PURCHASED") ? event.getItemId() : event.getBeforeId();
+                            item = items.get(itemId);
+                            if (item == null) break;
+
+                            if (event.getType().name().equals("ITEM_PURCHASED")) {
+                                if (ItemUtils.isBoots(item)) {
+                                    if (matchData.get(participantId) != null) matchData.get(participantId).put("boots", item.getId() + "");
+                                    break;
+                                }
+
+                                if (i != 1 && item.getDepth() != 3) break;
+
+                                List<String> itemList = matchItemData.computeIfAbsent(participantId + "-" + itemType, k -> new ArrayList<>());
+                                itemList.add(item.getId() + "");
+                                if (matchData.get(participantId) != null) matchData.get(participantId).put(itemType, String.join(",", itemList));
+                            } else {
+                                if (i != 1 && item.getDepth() != 3) break;
+
+                                List<String> currentList = matchItemData.get(participantId + "-" + itemType);
+                                if (currentList != null) {
+                                    currentList.remove(item.getId() + "");
+                                    if (matchData.get(participantId) != null) matchData.get(participantId).put(itemType, String.join(",", currentList));
+                                }
                             }
-                            matchData.get(participantId).put(itemType, String.join(",", currentList));
-                    
                             break;
-                        case SKILL_LEVEL_UP:
+                        }
+                        case SKILL_LEVEL_UP: {
+                            JSONObject skillEvent = createTimelineEvent(event);
+                            skillEvent.put("participant", event.getParticipantId());
+                            skillEvent.put("skill_slot", event.getSkillSlot());
+                            skillEvents.put(skillEvent);
+
+                            if (matchData.get(participantId) == null) break;
                             String skillList = matchData.get(participantId).getOrDefault("skill_order", "");
                             if (skillList.isEmpty()) skillList = event.getSkillSlot() + "";
                             else skillList += "," + event.getSkillSlot();
                             matchData.get(participantId).put("skill_order", skillList);
                             break;
-                        case ELITE_MONSTER_KILL:    
-                            if (event.getMonsterType() == null) continue;
-                            String monsterEvents = matchData.get("match").getOrDefault("monster_events", "");
+                        }
+                        case LEVEL_UP: {
+                            JSONObject levelEvent = createTimelineEvent(event);
+                            levelEvent.put("participant", event.getParticipantId());
+                            levelEvent.put("level", event.getLevel());
+                            levelEvents.put(levelEvent);
+                            break;
+                        }
+                        case CHAMPION_KILL: {
+                            String killerTeam = event.getKillerTeamId() != null ? event.getKillerTeamId().name() : getParticipantTeam(partecipants, event.getKillerId());
+                            addChampionKill(championKills, indexedChampionKills, event, killerTeam, false);
+                            break;
+                        }
+                        case CHAMPION_SPECIAL_KILL: {
+                            if (event.getKillType() != KillType.KILL_FIRST_BLOOD) break;
+                            String killerTeam = event.getKillerTeamId() != null ? event.getKillerTeamId().name() : getParticipantTeam(partecipants, event.getKillerId());
+                            addChampionKill(championKills, indexedChampionKills, event, killerTeam, true);
+                            break;
+                        }
+                        case ELITE_MONSTER_KILL: {
+                            if (event.getMonsterType() == null) break;
 
                             String monster = event.getMonsterType().name();
                             String subType = event.getMonsterSubType() != null ? event.getMonsterSubType().name() : "";
-                            int killerId = event.getKillerId();
-                            List<Integer> assistIds = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
+                            String killerTeam = event.getKillerTeamId() != null ? event.getKillerTeamId().name() : getParticipantTeam(partecipants, event.getKillerId());
 
-                            String eventJson = "{\"monster\":\"" + monster + "\",\"subtype\":\"" + subType + "\",\"killer\":" + killerId + ",\"assists\":[";
-                            for (int assistId : assistIds) {
-                                if (assistId == 0) continue;
-                                if (eventJson.endsWith("[")) eventJson += assistId;
-                                else eventJson += "," + assistId;
+                            JSONObject monsterEvent = createTimelineEvent(event);
+                            monsterEvent.put("subtype", subType);
+                            monsterEvent.put("assists", createAssists(event.getAssistingParticipantIds()));
+                            monsterEvent.put("killer", event.getKillerId());
+                            monsterEvent.put("monster", monster);
+                            if (killerTeam != null) monsterEvent.put("killer_team", killerTeam);
+                            monsterEvents.put(monsterEvent);
+
+                            if (monster.equals("DRAGON") && !subType.isEmpty() && !subType.equals("UNKNOWN") && !subType.equals("ELDER_DRAGON") && event.getTimestamp() >= dragonSoulTimestamp) {
+                                dragonSoulTimestamp = event.getTimestamp();
+                                dragonSoul = createTimelineEvent(event);
+                                dragonSoul.put("subtype", subType);
+                                dragonSoul.put("team", killerTeam == null ? JSONObject.NULL : killerTeam);
+                                dragonSoul.put("source", "last_non_elder_dragon");
                             }
-                            eventJson += "]}";
-                            if (monsterEvents.isEmpty()) monsterEvents = eventJson;
-                            else monsterEvents += "," + eventJson;
-                            matchData.get("match").put("monster_events", monsterEvents);
                             break;
-                        case BUILDING_KILL:
-                            String buildingEvents = matchData.get("match").getOrDefault("building_events", "");
-                            String building = event.getBuildingType() != null ? event.getBuildingType().name() : "";
-                            int killerIdBuilding = event.getKillerId();
-                            List<Integer> assistIdsBuilding = event.getAssistingParticipantIds() != null ? event.getAssistingParticipantIds() : new ArrayList<>();
-                            String eventJsonBuilding = "{\"building\":\"" + building + "\",\"killer\":" + killerIdBuilding + ",\"assists\":[";
-                            for (int assistId : assistIdsBuilding) {
-                                if (assistId == 0) continue;
-                                if (eventJsonBuilding.endsWith("[")) eventJsonBuilding += assistId;
-                                else eventJsonBuilding += "," + assistId;
-                            }
-                            eventJsonBuilding += "]}";
-                            if (buildingEvents.isEmpty()) buildingEvents = eventJsonBuilding;
-                            else buildingEvents += "," + eventJsonBuilding;
-                            matchData.get("match").put("building_events", buildingEvents);
+                        }
+                        case BUILDING_KILL: {
+                            JSONObject buildingEvent = createTimelineEvent(event);
+                            buildingEvent.put("assists", createAssists(event.getAssistingParticipantIds()));
+                            buildingEvent.put("killer", event.getKillerId());
+                            buildingEvent.put("building", event.getBuildingType() != null ? event.getBuildingType().name() : "");
+                            if (event.getTowerType() != null) buildingEvent.put("tower", event.getTowerType().name());
+                            if (event.getLaneType() != null) buildingEvent.put("lane", event.getLaneType().name());
+                            if (event.getTeamId() != null) buildingEvent.put("team", event.getTeamId().name());
+                            buildingEvents.put(buildingEvent);
                             break;
+                        }
+                        case WARD_PLACED:
+                        case WARD_KILL: {
+                            JSONObject wardEvent = createTimelineEvent(event);
+                            wardEvent.put("event", event.getType().name());
+                            wardEvent.put("participant", event.getParticipantId());
+                            wardEvent.put("creator", event.getCreatorId());
+                            if (event.getWardType() != null) wardEvent.put("ward", event.getWardType().name());
+                            wardEvents.put(wardEvent);
+                            break;
+                        }
+                        case TURRET_PLATE_DESTROYED: {
+                            JSONObject turretPlateEvent = createTimelineEvent(event);
+                            turretPlateEvent.put("killer", event.getKillerId());
+                            if (event.getTeamId() != null) turretPlateEvent.put("team", event.getTeamId().name());
+                            if (event.getLaneType() != null) turretPlateEvent.put("lane", event.getLaneType().name());
+                            turretPlateEvents.put(turretPlateEvent);
+                            break;
+                        }
+                        case DRAGON_SOUL_GIVEN:
+                        case OBJECTIVE_BOUNTY_PRESTART:
+                        case OBJECTIVE_BOUNTY_FINISH: {
+                            JSONObject objectiveEvent = createTimelineEvent(event);
+                            objectiveEvent.put("type", event.getType().name());
+                            if (event.getTeamId() != null) objectiveEvent.put("team", event.getTeamId().name());
+                            objectiveEvents.put(objectiveEvent);
+                            break;
+                        }
+                        case ASCENDED_EVENT:
+                        case CAPTURE_POINT:
+                        case PORO_KING_SUMMON:
+                        case PAUSE_START:
+                        case PAUSE_END:
+                        case GAME_END:
+                        case CHAMPION_TRANSFORM:
+                        case FEAT_UPDATE: {
+                            JSONObject gameEvent = createTimelineEvent(event);
+                            gameEvent.put("type", event.getType().name());
+                            if (event.getParticipantId() != 0) gameEvent.put("participant", event.getParticipantId());
+                            if (event.getTeamId() != null) gameEvent.put("team", event.getTeamId().name());
+                            if (event.getWinningTeam() != null) gameEvent.put("winning_team", event.getWinningTeam().name());
+                            if (event.getTransformType() != null) gameEvent.put("transform_type", event.getTransformType().name());
+                            gameEvents.put(gameEvent);
+                            break;
+                        }
                         default:
                             break;
                     }
                 } catch (Exception e) {
-                    
                 }
-                
             }
+
+            long frameTimestamp = frame.getTimestamp();
+            while (frameTimestamp >= nextSnapshotTimestamp && nextSnapshotTimestamp <= gameDuration) {
+                TimelineFrame snapshotFrame = frameTimestamp == nextSnapshotTimestamp ? frame : previousFrame;
+                addSnapshot(snapshots, snapshotFrame, false);
+                nextSnapshotTimestamp += timelineSnapshotInterval;
+            }
+            if (frameTimestamp <= gameDuration) finalFrame = frame;
+            previousFrame = frame;
         }
+
+        addSnapshot(snapshots, finalFrame, true);
+
+        matchData.get("match").put("monster_events", monsterEvents.toString());
+        matchData.get("match").put("building_events", buildingEvents.toString());
+        matchData.get("match").put("champion_kills", championKills.toString());
+        matchData.get("match").put("ward_events", wardEvents.toString());
+        matchData.get("match").put("turret_plate_events", turretPlateEvents.toString());
+        matchData.get("match").put("item_events", itemEvents.toString());
+        matchData.get("match").put("skill_events", skillEvents.toString());
+        matchData.get("match").put("level_events", levelEvents.toString());
+        matchData.get("match").put("objective_events", objectiveEvents.toString());
+        matchData.get("match").put("game_events", gameEvents.toString());
+        matchData.get("match").put("snapshots", snapshots.toString());
+        matchData.get("match").put("dragon_soul", dragonSoul == null ? "null" : dragonSoul.toString());
 
         HashMap<String, String> matchParticipants = new HashMap<>();
         timeline.getParticipants().forEach(partecipant -> {
