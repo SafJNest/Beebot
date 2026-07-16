@@ -743,12 +743,25 @@ public class ChampionStatsService {
         Map<String, Snapshot> snapshots = new HashMap<>();
         JSONArray snapshotArray = events.optJSONArray("snapshots");
         if (snapshotArray != null && participantRefs != null) {
+            JSONObject nearestSnapshot = null;
+            long nearestTimestamp = -1;
+            long nearestDistance = Long.MAX_VALUE;
             for (int i = 0; i < snapshotArray.length(); i++) {
                 JSONObject snapshot = snapshotArray.optJSONObject(i);
-                if (snapshot == null || snapshot.optLong("timestamp", -1) != AT_15_MS) continue;
-                JSONObject participants = snapshot.optJSONObject("participants");
-                if (participants == null) continue;
-                for (String participantId : participants.keySet()) {
+                if (snapshot == null) continue;
+                long timestamp = snapshot.optLong("timestamp", -1);
+                if (timestamp < 0) continue;
+                long distance = Math.abs(timestamp - AT_15_MS);
+                if (distance < nearestDistance
+                        || distance == nearestDistance && (nearestTimestamp < 0 || timestamp < nearestTimestamp)) {
+                    nearestSnapshot = snapshot;
+                    nearestTimestamp = timestamp;
+                    nearestDistance = distance;
+                }
+            }
+            if (nearestSnapshot != null) {
+                JSONObject participants = nearestSnapshot.optJSONObject("participants");
+                if (participants != null) for (String participantId : participants.keySet()) {
                     String puuid = participantRefs.optString(participantId, null);
                     JSONObject values = participants.optJSONObject(participantId);
                     if (puuid != null && values != null)
