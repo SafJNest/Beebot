@@ -327,12 +327,19 @@ Risposta `200`: `ChampionView`:
 
 ```text
 champion       -> id, name, image
-stats          -> games, picks, bans, wins, winrate, pickrate,
-                  banrate, laneStats, matchups
-mostCommonBuild -> starter, boots, suppItems, core, slots,
-                   prismatics, summonerSpells, augments,
-                   spellOrder, runes, games, winrate
+stats          -> overview, laneStats, powerCurve, trend,
+                  matchups (tutti), laneSynergies (tutte)
+stats.overview -> games, picks, bans, wins, winrate, pickrate,
+                  banrate, kda, csPerMinute, goldPerMinute,
+                  damageProfile
+build          -> coreBuilds, coreItems, starters, boots,
+                  supportItems, slots, runes, summonerSpells,
+                  skillOrders, prismatics, augments
 ```
+
+Ogni opzione build espone il proprio `id`/configurazione, `matches`, `wins`, `winrate` e `pickrate`. Le categorie build hanno massimo tre opzioni; con pochi dati ne possono avere una e senza dati sono liste vuote. `augments` è indicizzato per slot (`augment 1` ... `augment 4`) e non è una lista piatta. Il primo elemento non ha significato implicito.
+
+`matchups` contiene tutti i matchup validi con champion avversario, lane, matches, wins, winrate, deltaWinrate, goldDiffAt15, csDiffAt15, soloKillRate, killParticipation, opponentBanRate e metricGames. `laneSynergies` contiene tutte le synergy valide con champion/lane alleato, matches, wins, winrate e pickrate. Metriche non disponibili restano `null`.
 
 Il campo interno `filter` di `ChampionStatistics` e `Build` non viene serializzato nell'HTTP JSON. Il valore di `champion` deve corrispondere al nome statico; un champion sconosciuto produce `404`.
 
@@ -411,7 +418,7 @@ Risposta `200`: `LeaderboardDistribution` con entry `{key, players}`, dove `key`
 | `SummonerView` | Profilo completo, condiviso con la leaderboard. |
 | `MatchResult` | Match leggero per liste e overview. |
 | `Match` | Match completo con eventi, ban e partecipanti. |
-| `ChampionView` | Champion, statistiche aggregate e build più usata. |
+| `ChampionView` | Champion, statistiche aggregate e unico aggregato build/options. |
 | `LeaderboardPage` | Metadati pagina e righe leaderboard. |
 | `LeaderboardDistribution` | Conteggi per rank o regione. |
 

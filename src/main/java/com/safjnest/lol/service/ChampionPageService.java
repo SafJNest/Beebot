@@ -66,7 +66,7 @@ public class ChampionPageService {
 
     private ApiResult<ChampionView> compute(StaticChampion champion, Filter filter, String key) {
         ChampionStatistics stats = championStatsService.get(filter, false);
-        Build build = buildService.getMostUsed(filter, false);
+        Build build = buildService.getAggregate(filter, false);
         if (stats == null || build == null) {
             Tracker.startChampionData(filter);
             return ApiResult.pending();

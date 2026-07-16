@@ -188,9 +188,8 @@ public record BuildSignature(
             genericItem = id;
         }
 
-        if (trinket == null && !GameQueueTypeUtils.isCherry(filter.queue())) {
+        if (trinket == null && (filter == null || !GameQueueTypeUtils.isCherry(filter.queue())))
             trinket = 3340;
-        }
 
         List<Integer> result = new ArrayList<>();
 

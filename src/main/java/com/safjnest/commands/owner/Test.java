@@ -1477,8 +1477,7 @@ public class Test extends Command{
                                     .setRegion(region)
                                     .setRank(rank)
                                     .setPatch(patch);
-                                    Build build = new BuildService().getMostUsed(championFilter);
-                                    Build buildHighWinrate = new BuildService().getHighWinrate(championFilter);
+                                    Build build = new BuildService().getAggregate(championFilter);
                                     System.out.println("Region: " + region + " Rank: " + rank + " Patch: " + patch + " Champion: " + champion.getId());
                             }
 

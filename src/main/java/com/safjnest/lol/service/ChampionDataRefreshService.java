@@ -29,7 +29,8 @@ public class ChampionDataRefreshService {
             .setPatch(filter.patch())
             .setQueue(filter.queue())
             .setRank(filter.rank())
-            .setRegion(filter.region());
+            .setRegion(filter.region())
+            .setLane(filter.lane());
         Map<Integer, ChampionStatistics> stats = championStatsService.recomputeAll(statsFilter);
         boolean refreshed = builds != null && !builds.isEmpty()
             && stats != null && stats.containsKey(filter.champion());
@@ -92,8 +93,12 @@ public class ChampionDataRefreshService {
     private List<Filter> getStatFilters(String patch) {
         Map<String, Filter> filters = new LinkedHashMap<>();
         QueryResult result = LeagueDB.getChampionStatsRefreshFilters(patch);
-        for (QueryRecord row : result)
-            addStatFilter(filters, getStatFilter(row), patch);
+        for (QueryRecord row : result) {
+            Filter statFilter = getStatFilter(row);
+            addStatFilter(filters, statFilter, patch);
+            if (GameQueueTypeUtils.hasLane(statFilter.queue()))
+                addStatFilter(filters, getStatFilter(row).setLane(null), patch);
+        }
 
         result = LeagueDB.getStoredChampionStatsFilters();
         for (QueryRecord row : result) {
@@ -114,11 +119,13 @@ public class ChampionDataRefreshService {
     }
 
     private Filter getStatFilter(QueryRecord row) {
-        return new Filter()
+        Filter filter = new Filter()
             .setPatch(row.get("patch"))
             .setQueue(row.getAsGameQueueType("queue"))
             .setRank(getRank(row.get("rank")))
             .setRegion(row.getAsLeagueShard("region"));
+        if (GameQueueTypeUtils.hasLane(filter.queue())) filter.setLane(row.getAsLaneType("lane"));
+        return filter;
     }
 
     private void addBuildFilter(Map<String, Filter> filters, Filter filter, String patch) {

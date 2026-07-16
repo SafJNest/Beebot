@@ -14,7 +14,7 @@ The LoL endpoints reuse the same profile and ranked data across requests. Search
 - Search loads ranks in one Redis batch and one bounded SQL `IN` query for misses.
 - Profile misses read the summoner base from the database. A database profile with valid statistics and at least one rank produces and caches the complete `SummonerView`; otherwise the service resolves Redis components before database components and returns the available base as `PARTIAL`.
 - If the summoner is absent from the database, the profile endpoint returns `202 profile_pending` and `ProfileBootstrapService` deduplicates the Riot-to-database summoner/rank bootstrap by `shard:puuid`.
-- Champion most-used build reads the single persisted winner before allowing command/refresh computation.
+- Champion build reads the single persisted aggregate before allowing command/refresh computation.
 - Match detail follows `Redis -> DB -> Tracker lookup queue -> Riot -> existing match analysis queue`.
 - The match lookup and match analysis queues are the only asynchronous queues retained by the LoL flow.
 

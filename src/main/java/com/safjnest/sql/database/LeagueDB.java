@@ -56,6 +56,7 @@ import com.safjnest.lol.utils.TierDivisionUtils;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.log.BotLogger;
 import com.safjnest.sql.QueryRecord;
 
 public class LeagueDB extends AbstractDB {
@@ -1502,33 +1503,8 @@ public class LeagueDB extends AbstractDB {
         return builds;
     }
 
-    public static Build getMostUsedChampionBuild(Filter filter) {
-        if (filter == null) return null;
-
-        String sql = "SELECT id, data FROM champion_builds WHERE filter = ? ORDER BY games DESC LIMIT 1";
-        int invalidId = 0;
-        Build build = null;
-        try (Connection conn = instance.getConnection()) {
-            if (conn == null) return null;
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setString(1, filter.toKey());
-                try (ResultSet rs = pstmt.executeQuery()) {
-                    if (rs.next()) {
-                        int id = rs.getInt("id");
-                        build = Build.decode(rs.getString("data"));
-                        if (build == null) invalidId = id;
-                    }
-                }
-            }
-            conn.commit();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        if (invalidId != 0) deleteChampionBuilds(List.of(invalidId));
-        return build;
-    }
-
     public static void saveChampionBuild(Build build) {
+        BotLogger.info("Saving champion build for " + build.filter().toKey());
         String sql = "INSERT INTO champion_builds (games, winrate, filter, data) VALUES (?, ?, ?, ?) "
             + "ON DUPLICATE KEY UPDATE games = VALUES(games), winrate = VALUES(winrate), data = VALUES(data)";
         try (Connection conn = instance.getConnection();
@@ -1712,7 +1688,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static QueryResult getChampionStatsRefreshFilters(String patch) {
-        String sql = "SELECT DISTINCT m.queue, m.rank, m.region, m.patch_major AS patch "
+        String sql = "SELECT DISTINCT p.lane, m.queue, m.rank, m.region, m.patch_major AS patch "
             + "FROM `match` m JOIN participant p ON p.match_id = m.id "
             + "WHERE m.patch_major = ?";
         QueryResult result = new QueryResult();
@@ -1724,6 +1700,7 @@ public class LeagueDB extends AbstractDB {
                 ResultSet rs = pstmt.executeQuery();
                 while (rs.next()) {
                     QueryRecord row = new QueryRecord();
+                    row.put("lane", rs.getString("lane"));
                     row.put("queue", rs.getString("queue"));
                     row.put("rank", rs.getString("rank"));
                     row.put("region", rs.getString("region"));

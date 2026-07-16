@@ -92,7 +92,7 @@ public class Champion extends SlashCommand {
 
         Filter filter = readFilter(event, champion);
         ChampionStatistics stats = new ChampionStatsService().get(filter);
-        Build build = new BuildService().getMostUsed(filter);
+        Build build = new BuildService().getAggregate(filter);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(getTitle(champion, filter), "https://github.com/SafJNest", ChampionUtils.getChampionProfilePic(champion.getId()));
@@ -217,8 +217,8 @@ public class Champion extends SlashCommand {
         addSummonerSpells(eb, build);
 
         if (GameQueueTypeUtils.isCherry(filter.queue())) {
-            eb.addField("Best Augments", formatAugments(build.augments()), true);
-            eb.addField("Best Prismatics", formatPrismatics(build.prismatics()), true);
+            eb.addField("Augment Options", formatAugments(build.augments()), true);
+            eb.addField("Prismatic Options", formatPrismatics(build.prismatics()), true);
             addItemFields(eb, build);
             return;
         }

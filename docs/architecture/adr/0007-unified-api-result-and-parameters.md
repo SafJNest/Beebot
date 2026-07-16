@@ -30,8 +30,8 @@ its internal global aggregate when it queries storage.
 
 Services expose one storage/compute flow. The public command method delegates
 to the same overload with `allowCompute=true`; API orchestration uses the
-overload with `allowCompute=false`. No public `read`, `getLazy`, `getStored` or
-`getMostUsedLazy` aliases are introduced.
+overload with `allowCompute=false`. No public read/lazy aliases or automatic
+build ranking selectors are introduced.
 
 ## Ownership and invariants
 
@@ -62,8 +62,8 @@ states are meaningful.
 
 - No local endpoint result or status enum remains.
 - No controller contains a duplicate READY/PARTIAL/PENDING/NOT_FOUND switch.
-- No public `read`, `getLazy`, `getStored` or `getMostUsedLazy` method remains in
-  the Champion/Build storage flow.
+- No public automatic build ranking selector remains in the Champion/Build
+  storage flow.
 - Missing Champion data returns 202 and starts work immediately.
 - Missing leaderboard overview returns 202 while the missing profile statistics are generated.
 - Missing profile statistics return the available profile as 200 `PARTIAL` while generation runs immediately.

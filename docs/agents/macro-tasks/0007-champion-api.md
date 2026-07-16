@@ -2,7 +2,7 @@
 
 ## Obiettivo
 
-Esporre statistiche champion e most common build in una response HTTP unica, senza calcoli pesanti durante la request.
+Esporre statistiche champion e un unico aggregato build/stats in una response HTTP unica, senza calcoli pesanti durante la request.
 
 ## Dipendenze
 
@@ -22,16 +22,22 @@ Esporre statistiche champion e most common build in una response HTTP unica, sen
 - avvio immediato dei refresh Profile Statistics e Champion Data in `Tracker`;
 - avvio esplicito e idempotente di `TrackerScheduler`;
 - invalidazione cache dopo refresh;
-- direct persisted lookup for the most-used build before any computation;
-- test e documentazione del contratto;
-- rimozione dei log e commenti temporanei di debug.
+- build aggregate persistito senza selezione automatica most-used/highest-winrate;
+- documentazione del contratto;
+- mantenimento temporaneo dei log diagnostici durante la verifica manuale; la rimozione resta manuale.
 
-## Fuori perimetro
+## Perimetro aggiuntivo del contratto aggregato
 
-- nuove metriche KDA, CS/min, danni o power curve;
-- nuove tabelle SQL;
-- modifiche al payload leaderboard;
-- redesign dei modelli `Build` o `ChampionStatistics`.
+- overview con KDA, CS/min, gold/min e damage profile nullable;
+- power curve e trend patch quando i dati sono disponibili;
+- tutti i matchup validi con metriche @15/eventi disponibili;
+- tutte le lane synergy valide;
+- caricamento keyset dei match in batch sequenziali da 1.000, con metadata/events, participant e summoner separati;
+- merge nel solo batch corrente e rilascio delle strutture raw dopo ogni game e dopo ogni batch;
+- liste build indipendenti con massimo tre opzioni per categoria;
+- augment aggregati per slot, con ordine conservato;
+- chiavi stats Redis/DB con lane quando il ruolo è specificato;
+- rigenerazione dei payload Kryo incompatibili.
 
 ## Invarianti
 
@@ -51,4 +57,4 @@ Esporre statistiche champion e most common build in una response HTTP unica, sen
 - cache hit funzionante;
 - refresh asincrono deduplicato e avvio immediato funzionanti;
 - fallimenti che liberano il marker per un nuovo tentativo;
-- test, build e `git diff --check` completati.
+- verifica manuale tramite request champion e controllo della response JSON; i test automatici restano fuori piano.

@@ -19,8 +19,6 @@ public enum RedisKey {
     MATCH_NOT_FOUND("match:not-found:%s:%s"),
     SUMMONER_DATA("user:summoner-data:%s:%s"),
     TRACKER_PENDING_MATCH_LIST("queue:tracker:pending-matches"),
-    MOST_USED_BUILD("stats:build:most-used:%s"),
-    HIGH_WINRATE_BUILD("stats:build:high-winrate:%s"),
     CHAMPION_STATS("stats:champion:%s:%s"),
     SUMMONER_AUTOCOMPLETE("summoner:autocomplete:%s:%s"),
     SUMMONER_SEARCH("summoner:search:%s:%s"),

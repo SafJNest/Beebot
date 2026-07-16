@@ -9,7 +9,6 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.StringJoiner;
@@ -21,8 +20,6 @@ import com.safjnest.utils.log.BotLogger;
 
 public abstract class AbstractDB {
     protected abstract String getDatabase();
-
-    public static HashMap<Long, List<String>> queryAnalytics = new HashMap<>();
 
     public Connection getConnection() {
         try { return DatabaseHandler.getConnection(getDatabase());} 
@@ -37,7 +34,6 @@ public abstract class AbstractDB {
         try {
             c = DatabaseHandler.getConnection(getDatabase());
             if (c == null) throw new SQLException("Connection to the database failed!");
-            insertAnalytics(query);
             stmt = c.createStatement();
             result = query(stmt, query);
             c.commit();
@@ -73,7 +69,6 @@ public abstract class AbstractDB {
      * @throws SQLException
      */
     public QueryResult query(Statement stmt, String query) throws SQLException {
-        insertAnalytics(query);
         if (App.isTesting()) BotLogger.trace(query);
         QueryResult result = new QueryResult();
         boolean hasResult = (stmt instanceof PreparedStatement pstmt)
@@ -88,8 +83,10 @@ public abstract class AbstractDB {
     private QueryResult elaborate(ResultSet set) throws SQLException {
         QueryResult result = new QueryResult();
         ResultSetMetaData rsmd = set.getMetaData();
+        System.out.println("elaborating result set");
         while (set.next()) {
             QueryRecord row = new QueryRecord();
+            System.out.println("elaborating row");
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                 String key = rsmd.getColumnLabel(i).toLowerCase();
                 if (isBinarySqlType(rsmd, i)) {
@@ -127,7 +124,6 @@ public abstract class AbstractDB {
             stmt = c.createStatement();
 
             for (String q : queries) {
-                insertAnalytics(q);
                 QueryResult result = query(stmt, q);
                 results.add(result);
             }
@@ -268,14 +264,6 @@ public abstract class AbstractDB {
         }
         return result;
     }
-
-        
-    private void insertAnalytics(String query) {
-        List<String> queries = queryAnalytics.getOrDefault(System.currentTimeMillis(), new ArrayList<>());
-        queries.add(query);
-        queryAnalytics.put(System.currentTimeMillis(), queries);
-    }
-    
 
     /**
      * @deprecated

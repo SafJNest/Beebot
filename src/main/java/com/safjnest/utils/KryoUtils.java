@@ -110,6 +110,7 @@ public class KryoUtils {
         kryo.register(Match.class, 27);
         kryo.register(Participant.class, 28);
         kryo.register(MatchResult.class, 29);
+        registerChampionAggregateTypes(kryo);
         return kryo;
     }
 
@@ -135,6 +136,7 @@ public class KryoUtils {
         kryo.register(Match.class);
         kryo.register(Participant.class);
         kryo.register(MatchResult.class);
+        registerChampionAggregateTypes(kryo);
         return kryo;
     }
 
@@ -186,7 +188,20 @@ public class KryoUtils {
         kryo.register(Match.class);
         kryo.register(Participant.class);
         kryo.register(MatchResult.class);
+        registerChampionAggregateTypes(kryo);
         return kryo;
+    }
+
+    private static void registerChampionAggregateTypes(Kryo kryo) {
+        kryo.register(Build.Option.class);
+        kryo.register(Build.CoreBuildOption.class);
+        kryo.register(Build.RuneOption.class);
+        kryo.register(Build.SkillOrderOption.class);
+        kryo.register(ChampionStatistics.Overview.class);
+        kryo.register(ChampionStatistics.DamageProfile.class);
+        kryo.register(ChampionStatistics.LaneSynergy.class);
+        kryo.register(ChampionStatistics.PowerCurvePoint.class);
+        kryo.register(ChampionStatistics.Trend.class);
     }
 
     private static Kryo createKryo() {

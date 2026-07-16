@@ -33,7 +33,8 @@ public class Filter {
         .setQueue(parts[0].equals("*") ? null : GameQueueType.valueOf(parts[0]))
         .setRank(parts[1].equals("*") ? null : TierType.valueOf(parts[1]))
         .setPatch(parts[2].equals("*") ? null : parts[2])
-        .setRegion(parts[3].equals("*") ? null : LeagueShard.valueOf(parts[3]));
+        .setRegion(parts[3].equals("*") ? null : LeagueShard.valueOf(parts[3]))
+        .setLane(parts.length > 4 && !parts[4].equals("*") ? LaneType.valueOf(parts[4]) : null);
     }
 
     public static Filter fromKey(String key) {
@@ -207,10 +208,11 @@ public class Filter {
         return sb.toString();
     }
 
-    /** Tutti i participant dei match filtrati, senza filtrare per champion/lane. */
+    /** Tutti i participant dei match filtrati; una lane seleziona i match compatibili. */
     public String sqlAllParticipants() {
         StringBuilder sb = new StringBuilder(
-                "FROM participant p JOIN `match` m ON p.match_id = m.id WHERE 1=1");
+                "FROM participant p JOIN `match` m ON p.match_id = m.id "
+                + "LEFT JOIN summoner s ON s.id = p.summoner_id WHERE 1=1");
         if (patch != null)
             sb.append(" AND m.patch_major = '").append(patch).append("'");
         if (queue != null)
@@ -219,6 +221,9 @@ public class Filter {
             sb.append(rankSql());
         if (region != null)
             sb.append(" AND m.region = '").append(region).append("'");
+        if (lane != null && GameQueueTypeUtils.hasLane(queue))
+            sb.append(" AND EXISTS (SELECT 1 FROM participant lane_filter WHERE lane_filter.match_id = p.match_id")
+              .append(" AND lane_filter.lane = '").append(lane).append("')");
         return sb.toString();
     }
 
@@ -238,7 +243,7 @@ public class Filter {
 
     public String genericKey() {
         String raw = val(queue) + "|" + val(rank) + "|"
-                + val(patch) + "|" + val(region);
+                + val(patch) + "|" + val(region) + "|" + val(lane);
         return Base64.getEncoder().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
