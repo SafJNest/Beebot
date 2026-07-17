@@ -83,10 +83,8 @@ public abstract class AbstractDB {
     private QueryResult elaborate(ResultSet set) throws SQLException {
         QueryResult result = new QueryResult();
         ResultSetMetaData rsmd = set.getMetaData();
-        System.out.println("elaborating result set");
         while (set.next()) {
             QueryRecord row = new QueryRecord();
-            System.out.println("elaborating row");
             for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                 String key = rsmd.getColumnLabel(i).toLowerCase();
                 if (isBinarySqlType(rsmd, i)) {
