@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.safjnest.lol.build.RuneSignature;
+import com.safjnest.lol.champion.RuneSignature;
 
 public class BuildTest {
 
