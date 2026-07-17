@@ -17,11 +17,11 @@ public class TierDivisionUtils {
     return Arrays.asList(TierDivisionType.MASTER_I, TierDivisionType.GRANDMASTER_I, TierDivisionType.CHALLENGER_I).contains(division);
   }
 
-  public static TierType getAvarageRank(List<TierDivisionType> divisions) {
+  public static TierType getAverageRank(List<TierDivisionType> divisions) {
     if (divisions == null || divisions.size() == 0) return TierType.UNRANKED; 
     
-    int avarage = 0;
-    TierDivisionType avarageRank = TierDivisionType.UNRANKED;
+    int average = 0;
+    TierDivisionType averageRank = TierDivisionType.UNRANKED;
 
     int unranked = 0;
     for (TierDivisionType division : divisions) {
@@ -30,20 +30,20 @@ public class TierDivisionUtils {
             continue;
         }
 
-        avarage += division.ordinal();
+        average += division.ordinal();
     }
-    avarage = (divisions.size() - unranked) > 0 ? Math.round(avarage / (divisions.size() - unranked)) : TierDivisionType.UNRANKED.ordinal();
+    average = (divisions.size() - unranked) > 0 ? Math.round(average / (divisions.size() - unranked)) : TierDivisionType.UNRANKED.ordinal();
 
-    if (avarage >= TierDivisionType.values().length) 
-        avarage = TierDivisionType.UNRANKED.ordinal();
+    if (average >= TierDivisionType.values().length)
+        average = TierDivisionType.UNRANKED.ordinal();
 
-    avarageRank = TierDivisionType.values()[avarage];
-    if (avarageRank.getDivision() != null && avarageRank.getDivision().equalsIgnoreCase("V")) {
-        if (avarage - 1 < TierDivisionType.values().length) {
-            avarageRank = TierDivisionType.values()[avarage - 1];
+    averageRank = TierDivisionType.values()[average];
+    if (averageRank.getDivision() != null && averageRank.getDivision().equalsIgnoreCase("V")) {
+        if (average - 1 < TierDivisionType.values().length) {
+            averageRank = TierDivisionType.values()[average - 1];
         }
     }
-    return avarageRank.getTier() != null ? TierType.valueOf(avarageRank.getTier().toUpperCase()) : TierType.UNRANKED;
+    return averageRank.getTier() != null ? TierType.valueOf(averageRank.getTier().toUpperCase()) : TierType.UNRANKED;
   }
 
   public static int getMmr(TierDivisionType division, int lp) {

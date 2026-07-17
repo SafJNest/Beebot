@@ -1,4 +1,4 @@
-package com.safjnest.lol.build;
+package com.safjnest.lol.champion;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -63,3 +63,4 @@ public record RuneSignature(
     }
 
 }
+

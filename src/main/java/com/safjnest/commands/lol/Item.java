@@ -51,7 +51,7 @@ public class Item extends SlashCommand {
 
         eb.setColor(Bot.getColor());
         eb.setTitle(item.getName());
-        String url = "http://ddragon.leagueoflegends.com/cdn/" + PatchUtils.getPatch() +"/img/item/" + item.getId() + ".png";
+        String url = "https://ddragon.leagueoflegends.com/cdn/" + PatchUtils.getPatch() +"/img/item/" + item.getId() + ".png";
         eb.setThumbnail(url);
 
         eb.addField("Gold Cost", CustomEmojiHandler.getFormattedEmoji("golds") + " " + String.valueOf(item.getGold().getTotal()), true);

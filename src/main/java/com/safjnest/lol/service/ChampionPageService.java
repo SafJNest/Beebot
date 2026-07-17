@@ -20,9 +20,6 @@ public class ChampionPageService {
 
     private static final int TTL_PAGE = 60 * 5;
 
-    private final ChampionStatsService championStatsService = new ChampionStatsService();
-    private final BuildService buildService = new BuildService();
-
     public ApiResult<ChampionView> get(
             String championValue,
             TierType rank,
@@ -65,8 +62,8 @@ public class ChampionPageService {
     }
 
     private ApiResult<ChampionView> compute(StaticChampion champion, Filter filter, String key) {
-        ChampionStatistics stats = championStatsService.get(filter, false);
-        Build build = buildService.getAggregate(filter, false);
+        ChampionStatistics stats = ChampionStatsService.get(filter, false);
+        Build build = BuildService.getAggregate(filter, false);
         if (stats == null || build == null) {
             Tracker.startChampionData(filter);
             return ApiResult.pending();

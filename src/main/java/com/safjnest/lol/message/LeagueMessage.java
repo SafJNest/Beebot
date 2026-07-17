@@ -123,7 +123,7 @@ public class LeagueMessage {
             case CHAMPIONS_BY_WINRATE:
             case CHAMPIONS_BY_PICKRATE:
             case CHAMPIONS_BY_BANRATE:
-                List<ChampionStatistics> champions = new ChampionStatsService().getAll(parameter.toFilter()).values().stream().toList();
+                List<ChampionStatistics> champions = ChampionStatsService.getAll(parameter.toFilter()).values().stream().toList();
                 embed = buildEmbedChampions(parameter, champions);
                 components = getChampionsButtons(parameter);
                 break;
@@ -585,7 +585,7 @@ public class LeagueMessage {
         Button soloQ = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_RANKED_SOLO, "Solo/Duo");
         Button flex = Button.secondary("lol-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex");
         Button draft = Button.secondary("lol-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft");
-        Button curretModeButton = Button.secondary("lol-queue-" + GameQueueType.CHERRY, "Arena");
+        Button currentModeButton = Button.secondary("lol-queue-" + GameQueueType.CHERRY, "Arena");
 
         if (parameter.getQueueType() != null) {
             switch (parameter.getQueueType()) {
@@ -601,7 +601,7 @@ public class LeagueMessage {
                 case CHERRY:
                 case ULTBOOK:
                 case SWIFTPLAY:
-                    curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
+                    currentModeButton = currentModeButton.withStyle(ButtonStyle.SUCCESS);
                     break;
                 default:
                     break;
@@ -616,7 +616,7 @@ public class LeagueMessage {
         else if (parameter.getTimeStart() == time[0]) currentSplit = currentSplit.withStyle(ButtonStyle.SUCCESS);
         else if (parameter.getTimeStart() == previousTime[0] && parameter.getTimeEnd() == previousTime[1]) previousSplit = previousSplit.withStyle(ButtonStyle.SUCCESS);
 
-        buttons.add(index, ActionRow.of(soloQ, flex, draft, curretModeButton));
+        buttons.add(index, ActionRow.of(soloQ, flex, draft, currentModeButton));
         index++;
         buttons.add(index, ActionRow.of(allSeason, currentSplit, previousSplit));
         index++;
@@ -695,7 +695,7 @@ public class LeagueMessage {
         double totalKill = 0;
         double totalCreeps = 0;
 
-        String killPartecipation = "";
+        String killParticipation = "";
         String csPerMin = "";
         String personalStatsTxt = "";
 
@@ -775,10 +775,10 @@ public class LeagueMessage {
                 }
 
                 totalKill = Double.valueOf(teamStats.get(me.getTeam()).get("kills")) == 0 ? 1 : Double.valueOf(teamStats.get(me.getTeam()).get("kills"));
-                killPartecipation = String.format("%.1f", (Double.valueOf(me.getKills()) + Double.valueOf(me.getAssists())) / totalKill * 100);
+                killParticipation = String.format("%.1f", (Double.valueOf(me.getKills()) + Double.valueOf(me.getAssists())) / totalKill * 100);
                 csPerMin = String.format("%.1f", totalCreeps / Double.valueOf(match.getGameDurationAsDuration().toMinutes()));
                 personalstats = totalStats.get(me);
-                personalStatsTxt = "**KDA**: " + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " (" +  killPartecipation + "% kill partecipation)\n"
+                personalStatsTxt = "**KDA**: " + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " (" +  killParticipation + "% kill participation)\n"
                                         + "**Damage Dealt to champion**: " + LeagueMessageUtils.formatNumber(personalstats.get("damageDealt")) + " (" + LeagueMessageUtils.getPosition(totalStats, personalstats, "damageDealt") + "th in the game)\n"
                                         + "**Damage Taken**: " + LeagueMessageUtils.formatNumber(personalstats.get("damageTaken")) + " (" + LeagueMessageUtils.getPosition(totalStats, personalstats, "damageTaken") + "th in the game)\n";
 
@@ -797,18 +797,18 @@ public class LeagueMessage {
                 QueryResult result = LeagueService.getSummonerData(s.getPUUID(), s.getPlatform());
                 for (int j = 0; j < result.size(); j ++) {
                     QueryRecord row = result.get(j);
-                    QueryRecord previosRow = j > 0 ? result.get(j - 1) : null;
+                    QueryRecord previousRow = j > 0 ? result.get(j - 1) : null;
 
                     if (row.getAsLong("game_id") != match.getGameId()) continue;
 
                     TierDivisionType rank = row.getAsTier("rank");
-                    TierDivisionType prevRank = previosRow != null ? row.getAsTier("rank") : null;
+                    TierDivisionType prevRank = previousRow != null ? row.getAsTier("rank") : null;
 
-                    String displayRank = LeagueMessageUtils.getFormatedRank(rank, true);
+                    String displayRank = LeagueMessageUtils.getFormattedRank(rank, true);
 
                     String gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") + " LP" : row.getAsInt("gain") + "";
                     if (prevRank != null) {
-                        lpLabel = LeagueMessageUtils.getFormatedRank(prevRank, true) + " " + previosRow.getAsInt("lp") + "LP to " + displayRank + " " + row.getAsInt("lp") + "LP (" + gain + ")";
+                        lpLabel = LeagueMessageUtils.getFormattedRank(prevRank, true) + " " + previousRow.getAsInt("lp") + "LP to " + displayRank + " " + row.getAsInt("lp") + "LP (" + gain + ")";
                     }
 
 
@@ -839,35 +839,35 @@ public class LeagueMessage {
                 }
 
 
-                for (MatchParticipant partecipant : match.getParticipants()) {
-                    int kills = partecipant.getKills();
-                    int tower = partecipant.getTurretKills();
-                    int gold = partecipant.getGoldEarned();
+                for (MatchParticipant participant : match.getParticipants()) {
+                    int kills = participant.getKills();
+                    int tower = participant.getTurretKills();
+                    int gold = participant.getGoldEarned();
 
-                    int totalKills = Integer.valueOf(teamStats.get(partecipant.getTeam()).getOrDefault("kills", "0")) + kills;
-                    int totalTowers = Integer.valueOf(teamStats.get(partecipant.getTeam()).getOrDefault("towers", "0")) + tower;
-                    int totalGold = Integer.valueOf(teamStats.get(partecipant.getTeam()).getOrDefault("gold", "0")) + gold;
+                    int totalKills = Integer.valueOf(teamStats.get(participant.getTeam()).getOrDefault("kills", "0")) + kills;
+                    int totalTowers = Integer.valueOf(teamStats.get(participant.getTeam()).getOrDefault("towers", "0")) + tower;
+                    int totalGold = Integer.valueOf(teamStats.get(participant.getTeam()).getOrDefault("gold", "0")) + gold;
 
-                    teamStats.get(partecipant.getTeam()).put("kills", String.valueOf(totalKills));
-                    teamStats.get(partecipant.getTeam()).put("towers", String.valueOf(totalTowers));
-                    teamStats.get(partecipant.getTeam()).put("gold", String.valueOf(totalGold));
+                    teamStats.get(participant.getTeam()).put("kills", String.valueOf(totalKills));
+                    teamStats.get(participant.getTeam()).put("towers", String.valueOf(totalTowers));
+                    teamStats.get(participant.getTeam()).put("gold", String.valueOf(totalGold));
 
-                    String championText = teamStats.get(partecipant.getTeam()).getOrDefault("champions", "**Picks**\n");
+                    String championText = teamStats.get(participant.getTeam()).getOrDefault("champions", "**Picks**\n");
 
-                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(partecipant.getPuuid(), match.getPlatform()));
-                    String name = CustomEmojiHandler.getFormattedEmoji(partecipant.getChampionName()) + " **" + partecipant.getRiotIdName() + "#" + partecipant.getRiotIdTagline() + "**";
-                    String kda = partecipant.getKills() + "/" + partecipant.getDeaths() + "/" + partecipant.getAssists() + "(" + (partecipant.getTotalMinionsKilled() + partecipant.getNeutralMinionsKilled()) + " CS)";
+                    String rank = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(participant.getPuuid(), match.getPlatform()));
+                    String name = CustomEmojiHandler.getFormattedEmoji(participant.getChampionName()) + " **" + participant.getRiotIdName() + "#" + participant.getRiotIdTagline() + "**";
+                    String kda = participant.getKills() + "/" + participant.getDeaths() + "/" + participant.getAssists() + "(" + (participant.getTotalMinionsKilled() + participant.getNeutralMinionsKilled()) + " CS)";
 
                     championText += name + rank + "\n`" + kda + "`\n";
-                    teamStats.get(partecipant.getTeam()).put("champions", championText);
+                    teamStats.get(participant.getTeam()).put("champions", championText);
 
                     HashMap<String, String> stats = new HashMap<>();
-                    stats.put("damageDealt", String.valueOf(partecipant.getTotalDamageDealtToChampions()));
-                    stats.put("damageTaken", String.valueOf(partecipant.getTotalDamageTaken()));
-                    stats.put("heal", String.valueOf(partecipant.getTotalHeal()));
-                    stats.put("vision", String.valueOf(partecipant.getVisionScore()));
+                    stats.put("damageDealt", String.valueOf(participant.getTotalDamageDealtToChampions()));
+                    stats.put("damageTaken", String.valueOf(participant.getTotalDamageTaken()));
+                    stats.put("heal", String.valueOf(participant.getTotalHeal()));
+                    stats.put("vision", String.valueOf(participant.getVisionScore()));
 
-                    totalStats.put(partecipant, stats);
+                    totalStats.put(participant, stats);
 
                 }
 
@@ -887,10 +887,10 @@ public class LeagueMessage {
 
                 totalCreeps = me.getTotalMinionsKilled() + me.getNeutralMinionsKilled();
                 totalKill = Double.valueOf(teamStats.get(me.getTeam()).get("kills")) == 0 ? 1 : Double.valueOf(teamStats.get(me.getTeam()).get("kills"));
-                killPartecipation = String.format("%.1f", (Double.valueOf(me.getKills()) + Double.valueOf(me.getAssists())) / totalKill * 100);
+                killParticipation = String.format("%.1f", (Double.valueOf(me.getKills()) + Double.valueOf(me.getAssists())) / totalKill * 100);
                 csPerMin = String.format("%.1f", totalCreeps / Double.valueOf(match.getGameDurationAsDuration().toMinutes()));
 
-                personalStatsTxt = "**KDA**: " + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " (" +  killPartecipation + "% kill partecipation)\n"
+                personalStatsTxt = "**KDA**: " + me.getKills() + "/" + me.getDeaths() + "/" + me.getAssists() + " (" +  killParticipation + "% kill participation)\n"
                                         + "**CS**: " + totalCreeps + " (" + csPerMin + " CS/min)\n"
                                         + "**Vision Score**: " + me.getVisionScore() + " (" + me.getWardsPlaced() + " wards placed)\n"
                                         + "**Damage Dealt to champion**: " + LeagueMessageUtils.formatNumber(personalstats.get("damageDealt")) + " (" + LeagueMessageUtils.getPosition(totalStats, personalstats, "damageDealt") + "th in the game)\n";
@@ -934,14 +934,14 @@ public class LeagueMessage {
         ArrayList<String> blue = new ArrayList<>();
         ArrayList<String> red = new ArrayList<>();
         for(MatchParticipant searchMe : match.getParticipants()){
-            String partecipantString = CustomEmojiHandler.getFormattedEmoji(searchMe.getChampionName())
+            String participantString = CustomEmojiHandler.getFormattedEmoji(searchMe.getChampionName())
                                         + " "
                                         + searchMe.getKills() + "/" + searchMe.getDeaths() + "/" + searchMe.getAssists();
 
             if(searchMe.getTeam() == TeamType.BLUE)
-                blue.add(partecipantString);
+                blue.add(participantString);
             else
-                red.add(partecipantString);
+                red.add(participantString);
         }
 
         String kda = me.getKills() + "/" + me.getDeaths()+ "/" + me.getAssists();
@@ -1058,7 +1058,7 @@ public class LeagueMessage {
 
                 TierDivisionType rank = row.getAsTier("rank");
 
-                String displayRank = LeagueMessageUtils.getFormatedRank(rank, true);
+                String displayRank = LeagueMessageUtils.getFormattedRank(rank, true);
 
                 String gain = row.getAsInt("gain") > 0 ? "+" + row.getAsInt("gain") + " LP" : row.getAsInt("gain") + " LP";
 
@@ -1411,11 +1411,11 @@ public class LeagueMessage {
                     String field2 = "";
                     int i = 0;
 
-                    for (SpectatorParticipant partecipant : spectators) {
-                        Summoner s = LeagueService.getSummonerByPuuid(partecipant.getPuuid(), summoner.getPlatform());
-                        String mastery = LeagueHandler.getMasteryByChamp(s, partecipant.getChampionId());
+                    for (SpectatorParticipant participant : spectators) {
+                        Summoner s = LeagueService.getSummonerByPuuid(participant.getPuuid(), summoner.getPlatform());
+                        String mastery = LeagueHandler.getMasteryByChamp(s, participant.getChampionId());
                         String stats = LeagueHandler.getRankIcon(LeagueHandler.getRankEntry(s));
-                        String sum = " **" + partecipant.getRiotId() + "**";
+                        String sum = " **" + participant.getRiotId() + "**";
 
                         if (i < 8) field1 += mastery + " " + sum + " " + stats + "\n";
                         else if (i < 16) field2 += mastery + " " + sum + " " + stats + "\n";
@@ -1439,22 +1439,22 @@ public class LeagueMessage {
                         }
                     }
 
-                    for (SpectatorParticipant partecipant : spectators) {
-                        String championIcon = ChampionUtils.getFormattedEmojiByChampion(partecipant.getChampionId());
+                    for (SpectatorParticipant participant : spectators) {
+                        String championIcon = ChampionUtils.getFormattedEmojiByChampion(participant.getChampionId());
 
                         String stats = CustomEmojiHandler.getFormattedEmoji("unranked") + "\n`Unranked`";
-                        LeagueEntry entry = LeagueHandler.getEntry(game.getGameQueueConfig(), partecipant.getPuuid(), summoner.getPlatform());
+                        LeagueEntry entry = LeagueHandler.getEntry(game.getGameQueueConfig(), participant.getPuuid(), summoner.getPlatform());
                         if (entry != null) {
                             int wins = entry.getWins();
                             int losses = entry.getLosses();
                             double winrate = (Double.valueOf(wins) / Double.valueOf(wins + losses)) * 100;
-                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + LeagueMessageUtils.getFormatedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP \n" + wins + "W/" + losses + "L " + "(" + Math.ceil(winrate) + " WR%)`";
+                            stats = CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + "\n`" + LeagueMessageUtils.getFormattedRank(entry.getTierDivisionType(), false) + " " + String.valueOf(entry.getLeaguePoints()) + "LP \n" + wins + "W/" + losses + "L " + "(" + Math.ceil(winrate) + " WR%)`";
                             entryName = GameQueueTypeUtils.prettyName(entry.getQueueType());
                         }
 
-                        String field = championIcon + "**" + partecipant.getRiotId() + "**" + stats + "\n";
+                        String field = championIcon + "**" + participant.getRiotId() + "**" + stats + "\n";
 
-                        if (partecipant.getTeam() == TeamType.BLUE) blueSide += field;
+                        if (participant.getTeam() == TeamType.BLUE) blueSide += field;
                         else redSide += field;
 
                     }
@@ -2019,7 +2019,7 @@ public class LeagueMessage {
 
         String streakString = streak.toString().trim();
 
-        String performace = 
+        String performance =
             (isArena ? "**Placement**\n`" + arenaPlacement + "`\n" : "") +
             "**KDA**\n`" + kda + 
             " (" + String.format("%.2f", overallStats.get("kill_participation").avg()) + "% kp & " +
@@ -2064,7 +2064,7 @@ public class LeagueMessage {
             eb.addField("Champions", champStats, false);
         }
 
-        eb.addField("Avarage Performace", performace, false);
+        eb.addField("Average Performance", performance, false);
 
         List<Map.Entry<String, Integer>> sortedPings = pings.entrySet()
             .stream()

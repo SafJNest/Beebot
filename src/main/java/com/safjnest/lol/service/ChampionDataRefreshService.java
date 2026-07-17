@@ -18,20 +18,17 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
 public class ChampionDataRefreshService {
 
-    private final BuildService buildService = new BuildService();
-    private final ChampionStatsService championStatsService = new ChampionStatsService();
-
     public boolean refresh(Filter filter) {
         if (filter == null || filter.champion() == 0) return false;
 
-        List<Build> builds = buildService.recomputeAll(filter);
+        List<Build> builds = BuildService.recomputeAll(filter);
         Filter statsFilter = new Filter()
             .setPatch(filter.patch())
             .setQueue(filter.queue())
             .setRank(filter.rank())
             .setRegion(filter.region())
             .setLane(filter.lane());
-        Map<Integer, ChampionStatistics> stats = championStatsService.recomputeAll(statsFilter);
+        Map<Integer, ChampionStatistics> stats = ChampionStatsService.recomputeAll(statsFilter);
         boolean refreshed = builds != null && !builds.isEmpty()
             && stats != null && stats.containsKey(filter.champion());
         if (refreshed) ChampionPageService.invalidate(filter);
@@ -49,7 +46,7 @@ public class ChampionDataRefreshService {
         int emptyBuilds = 0;
         for (Filter filter : buildFilters) {
             try {
-                List<Build> computed = buildService.recomputeAll(filter);
+                List<Build> computed = BuildService.recomputeAll(filter);
                 if (computed == null || computed.isEmpty()) emptyBuilds++;
                 else builds += computed.size();
             } catch (Exception e) {
@@ -62,7 +59,7 @@ public class ChampionDataRefreshService {
         int emptyStats = 0;
         for (Filter filter : statFilters) {
             try {
-                Map<Integer, ChampionStatistics> computed = championStatsService.recomputeAll(filter);
+                Map<Integer, ChampionStatistics> computed = ChampionStatsService.recomputeAll(filter);
                 if (computed == null || computed.isEmpty()) emptyStats++;
                 else stats += computed.size();
             } catch (Exception e) {

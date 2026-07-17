@@ -1037,7 +1037,7 @@ public class Test extends Command{
             case "trackoldgames":
                 if (true) {
                     Summoner sum = LeagueService.getSummonerByPuuid(args[1], LeagueShard.EUW1);
-                    //MatchTracker.retriveOldGames(sum).queue();
+                    //MatchTracker.retrieveOldGames(sum).queue();
                 }
             break;
             case "mergelol":
@@ -1057,9 +1057,9 @@ public class Test extends Command{
                     HashMap<String, HashMap<String, String>> matchData = Tracker.analyzeMatchBuild(m, m.getParticipants());
 
                     System.out.println(row.get("id"));
-                    for (MatchParticipant partecipant : m.getParticipants()) {
-                        Summoner toPush = LeagueService.getSummonerByPuuid(partecipant.getPuuid(), LeagueShard.values()[row.getAsInt("league_shard")]);
-                        Tracker.pushSummoner(m, summoner_match_id, toPush, partecipant, matchData.get(partecipant.getPuuid()));
+                    for (MatchParticipant participant : m.getParticipants()) {
+                        Summoner toPush = LeagueService.getSummonerByPuuid(participant.getPuuid(), LeagueShard.values()[row.getAsInt("league_shard")]);
+                        Tracker.pushSummoner(m, summoner_match_id, toPush, participant, matchData.get(participant.getPuuid()));
                         try {
                             Thread.sleep(1000);
                         } catch (Exception eee) { eee.printStackTrace(); }
@@ -1107,19 +1107,19 @@ public class Test extends Command{
                     a.get(0);
                 break;
                 case "pushsamplegame":
-                    ChronoTask sampleTask =  () -> TrackerScheduler.retriveSampleGames(GameQueueType.TEAM_BUILDER_RANKED_SOLO);
+                    ChronoTask sampleTask =  () -> TrackerScheduler.retrieveSampleGames(GameQueueType.TEAM_BUILDER_RANKED_SOLO);
                     sampleTask.queue();
                 break;
                 case "pushsamplegamecherry":
-                    ChronoTask sampleTaskCherry =  () -> TrackerScheduler.retriveSampleGames(GameQueueType.CHERRY);
+                    ChronoTask sampleTaskCherry =  () -> TrackerScheduler.retrieveSampleGames(GameQueueType.CHERRY);
                     sampleTaskCherry.queue();
                 break;
                 case "pushsamplegamearam":
-                    ChronoTask sampleTaskAram =  () -> TrackerScheduler.retriveSampleGames(GameQueueType.ARAM);
+                    ChronoTask sampleTaskAram =  () -> TrackerScheduler.retrieveSampleGames(GameQueueType.ARAM);
                     sampleTaskAram.queue();
                 break;
                 case "pushhighelo":
-                    ChronoTask master =  () -> TrackerScheduler.retriveHighEloEntries();
+                    ChronoTask master =  () -> TrackerScheduler.retrieveHighEloEntries();
                     master.queue();
                 break;
                 case "fixaccountid":
@@ -1170,23 +1170,23 @@ public class Test extends Command{
                     };
                     bullshit.queue();
                 break;
-                case "retriveallgames":
-                    ChronoTask retriveAllGames = () -> {
+                case "retrieveallgames":
+                    ChronoTask retrieveAllGames = () -> {
                         System.out.println(args[1]);
                         try {
-                            Tracker.retriveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())));
+                            Tracker.retrieveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())));
                         } catch (Exception eee) { eee.printStackTrace(); }
                     };
-                    retriveAllGames.queue();
+                    retrieveAllGames.queue();
                 break;
-                case "retriveallgamesfast":
-                    ChronoTask retriveAllGamesFast = () -> {
+                case "retrieveallgamesfast":
+                    ChronoTask retrieveAllGamesFast = () -> {
                         System.out.println(args[1]);
                         for (GameQueueType queueType : GameQueueType.values()) {
-                            Tracker.retriveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
+                            Tracker.retrieveMatchHistory(LeagueService.getSummonerByPuuid(args[1], GuildCache.getGuild(e.getGuild()).getLeagueShard(e.getChannel().getId())), queueType);
                         }
                     };
-                    retriveAllGamesFast.queue();
+                    retrieveAllGamesFast.queue();
                 break;
                 case "setmatchevent":
                     query = "SELECT id, game_id, league_shard FROM `match` WHERE events = '{}' ORDER BY id DESC";
@@ -1335,7 +1335,7 @@ public class Test extends Command{
                 break;
             case "getrank":
                 ChronoTask getRank = () -> {
-                    TrackerScheduler.retriveHighEloEntries();
+                    TrackerScheduler.retrieveHighEloEntries();
                 };
                 getRank.queue();
                 break;
@@ -1350,7 +1350,7 @@ public class Test extends Command{
                             for (String rank : ranksString) {
                                 ranksT.add(TierDivisionType.valueOf(rank));
                             }
-                            TierType newRank = TierDivisionUtils.getAvarageRank(ranksT);
+                            TierType newRank = TierDivisionUtils.getAverageRank(ranksT);
                             String updateQuery = "UPDATE `match` SET rank = '" + newRank + "' WHERE id = " + row.get("id");
                             LeagueDB.get().query(updateQuery);
                         } catch (Exception eeee) {
@@ -1361,8 +1361,8 @@ public class Test extends Command{
                 fixRank.queue();
                 break;
             case "getallrank":
-                ChronoTask retriveAllEntries = () -> TrackerScheduler.retriveAllEntries();
-                retriveAllEntries.queue();
+                ChronoTask retrieveAllEntries = () -> TrackerScheduler.retrieveAllEntries();
+                retrieveAllEntries.queue();
             break;
             case "finalstats":
                 query = "SELECT id from summoner ORDER BY id ASC";
@@ -1477,13 +1477,13 @@ public class Test extends Command{
                                     .setRegion(region)
                                     .setRank(rank)
                                     .setPatch(patch);
-                                    Build build = new BuildService().getAggregate(championFilter);
+                                    Build build = BuildService.getAggregate(championFilter);
                                     System.out.println("Region: " + region + " Rank: " + rank + " Patch: " + patch + " Champion: " + champion.getId());
                             }
 
 
                             
-                            ChampionStatistics stats = new ChampionStatsService().get(filter);
+                            ChampionStatistics stats = ChampionStatsService.get(filter);
                     
                             //System.out.println(filter.toKey());
                     

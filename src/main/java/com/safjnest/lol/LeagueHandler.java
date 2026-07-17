@@ -88,7 +88,7 @@ import com.safjnest.lol.utils.PatchUtils;
         LeagueHandler.runesURL = "https://ddragon.leagueoflegends.com/cdn/" + LeagueHandler.patch + "/data/en_US/runesReforged.json";
 
         loadRunes();
-        loadAguments();
+        loadAugments();
     }
 
     public static HashMap<String, PageRunes> getRunesHandler() {
@@ -209,7 +209,7 @@ import com.safjnest.lol.utils.PatchUtils;
         }
     }
 
-    private static void loadAguments() {
+    private static void loadAugments() {
         try {
             FileReader reader = new FileReader("rsc" + File.separator + "testing" + File.separator + "lol_testing" + File.separator + "augments.json");
             JSONParser parser = new JSONParser();
@@ -506,12 +506,12 @@ import com.safjnest.lol.utils.PatchUtils;
             if (game == null) {
                 return "Not in a game";
             }
-            for (SpectatorParticipant partecipant : game.getParticipants()) {
-                if (partecipant.getPuuid().equals(s.getPUUID())) {
+            for (SpectatorParticipant participant : game.getParticipants()) {
+                if (participant.getPuuid().equals(s.getPUUID())) {
                     String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
                     return "Playing a " + gameName + " as "
-                        + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()) + " "
-                        + riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName();
+                        + CustomEmojiHandler.getFormattedEmoji(riotApi.getDDragonAPI().getChampion(participant.getChampionId()).getName()) + " "
+                        + riotApi.getDDragonAPI().getChampion(participant.getChampionId()).getName();
                 }
             }
         } catch (Exception e) {
@@ -526,11 +526,11 @@ import com.safjnest.lol.utils.PatchUtils;
             if (game == null) {
                 return eb.setFooter("Currently not in a game", LeagueHandler.getSummonerProfilePic(s));
             }
-            for (SpectatorParticipant partecipant : game.getParticipants()) {
-                if (partecipant.getPuuid().equals(s.getPUUID())) {
+            for (SpectatorParticipant participant : game.getParticipants()) {
+                if (participant.getPuuid().equals(s.getPUUID())) {
                     String gameName = GameQueueTypeUtils.prettyName(game.getGameQueueConfig());
                     return eb.setFooter("Playing a " + gameName,
-                        CustomEmojiHandler.getRichEmoji(riotApi.getDDragonAPI().getChampion(partecipant.getChampionId()).getName()).getImageUrl());
+                        CustomEmojiHandler.getRichEmoji(riotApi.getDDragonAPI().getChampion(participant.getChampionId()).getName()).getImageUrl());
                 }
             }
         } catch (Exception e) {

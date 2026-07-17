@@ -28,17 +28,17 @@ public class TrackerScheduler {
 
         if (App.isTesting()) return;
 
-        ChronoTask track = () -> retriveSummoners();
+        ChronoTask track = () -> retrieveSummoners();
         track.scheduleAtFixedRate(0, TimeConstant.MINUTE * 10, TimeUnit.MILLISECONDS);
 
         ChronoTask trackQueuedGames = () -> popSet();
         trackQueuedGames.scheduleAtFixedTime(0, 0, 0);
 
-        //ChronoTask trackSampleGames = () -> retriveSampleGames();
+        //ChronoTask trackSampleGames = () -> retrieveSampleGames();
         //trackSampleGames.scheduleAtFixedTime(2, 0, 0);
 
-        ChronoTask retriveHighEloEntries = () -> retriveHighEloEntries();
-        retriveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
+        ChronoTask retrieveHighEloEntries = () -> retrieveHighEloEntries();
+        retrieveHighEloEntries.scheduleAtFixedRate(0, TimeConstant.HOUR, TimeUnit.MILLISECONDS);
 
         ChronoTask refreshMatchLookups = () -> Tracker.processMatchLookups();
         refreshMatchLookups.scheduleAtFixedRate(0, TimeConstant.SECOND * 10, TimeUnit.MILLISECONDS);
@@ -53,9 +53,9 @@ public class TrackerScheduler {
         clearTimelineCache.scheduleAtFixedRate(TimeConstant.HOUR * 12, TimeConstant.HOUR * 12, TimeUnit.MILLISECONDS);
     }
 
-    public static void retriveSummoners() {
+    public static void retrieveSummoners() {
         TrackerState.acquire(Priority.HIGH);
-        try { Tracker.retriveSummoners(); } 
+        try { Tracker.retrieveSummoners(); }
         finally { TrackerState.release(Priority.HIGH); }
     }
 
@@ -84,22 +84,22 @@ public class TrackerScheduler {
         }
     }
 
-    public static void retriveSampleGames(GameQueueType queue) {
+    public static void retrieveSampleGames(GameQueueType queue) {
         TrackerState.awaitCondition(Priority.LOW);
-        Tracker.retriveSampleGames(queue);
+        Tracker.retrieveSampleGames(queue);
     }
 
-    public static void retriveHighEloEntries() {
+    public static void retrieveHighEloEntries() {
         TrackerState.awaitCondition(Priority.MID);
-        Tracker.retriveHighEloEntries();
+        Tracker.retrieveHighEloEntries();
     }
 
     public static void refreshChampionData() {
         championDataRefreshService.refresh();
     }
 
-    public static void retriveAllEntries() {
+    public static void retrieveAllEntries() {
         TrackerState.awaitCondition(Priority.LOW);
-        Tracker.retriveAllEntries();
+        Tracker.retrieveAllEntries();
     }
 }

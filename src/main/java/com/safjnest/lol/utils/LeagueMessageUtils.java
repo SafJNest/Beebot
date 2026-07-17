@@ -73,7 +73,7 @@ public class LeagueMessageUtils {
         return String.valueOf(number);
     }
 
-    public static String getFormatedRank(TierDivisionType rank, boolean withEmoji) {
+    public static String getFormattedRank(TierDivisionType rank, boolean withEmoji) {
         if (rank == null) return "";
         String division = rank.getDivision() != null ? rank.getDivision().length() + "" : "";
 
@@ -222,9 +222,9 @@ public class LeagueMessageUtils {
         Button flex = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.RANKED_FLEX_SR, "Flex").withStyle(defaultStyle);
         Button draft = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.TEAM_BUILDER_DRAFT_UNRANKED_5X5, "Draft").withStyle(defaultStyle);
         Button aram = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + GameQueueType.ARAM, "ARAM").withStyle(defaultStyle);
-        Button curretModeButton = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + currentGameQueueType, GameQueueTypeUtils.prettyName(currentGameQueueType)).withStyle(defaultStyle);
+        Button currentModeButton = Button.primary(LeagueMessage.BUTTON_ID_PREFIX + "-queue-" + currentGameQueueType, GameQueueTypeUtils.prettyName(currentGameQueueType)).withStyle(defaultStyle);
 
-        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+        if (queue == null) return ActionRow.of(soloQ, flex, draft, aram, currentModeButton);
 
         switch (queue) {
             case TEAM_BUILDER_RANKED_SOLO:
@@ -242,13 +242,13 @@ public class LeagueMessageUtils {
             case CHERRY:
             case ULTBOOK:
             case SWIFTPLAY:
-                curretModeButton = curretModeButton.withStyle(ButtonStyle.SUCCESS);
+                currentModeButton = currentModeButton.withStyle(ButtonStyle.SUCCESS);
                 break;
             default:
                 break;
         }
 
-        return ActionRow.of(soloQ, flex, draft, aram, curretModeButton);
+        return ActionRow.of(soloQ, flex, draft, aram, currentModeButton);
     }
 
     public static String capitalizeFirstLetter(String text) {

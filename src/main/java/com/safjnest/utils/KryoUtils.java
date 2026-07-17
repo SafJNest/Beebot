@@ -20,7 +20,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 
-import com.safjnest.lol.build.RuneSignature;
+import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.Build.SlotOption;
 import com.safjnest.lol.model.ChampionStatistics;

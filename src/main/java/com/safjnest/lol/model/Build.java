@@ -2,7 +2,7 @@ package com.safjnest.lol.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.safjnest.lol.build.RuneSignature;
+import com.safjnest.lol.champion.RuneSignature;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.utils.KryoUtils;
 
@@ -158,9 +158,7 @@ public record Build(
 
     @JsonIgnore
     public List<Integer> starter() {
-        List<Integer> result = new ArrayList<>();
-        for (Option option : starterOptions) result.addAll(option.itemIds());
-        return result;
+        return starterIds(starterOptions);
     }
 
     @JsonIgnore
@@ -195,9 +193,7 @@ public record Build(
 
     @JsonIgnore
     public List<SlotOption> augments() {
-        List<SlotOption> result = new ArrayList<>();
-        for (List<Option> slot : augmentOptions) result.addAll(toLegacy(slot));
-        return result;
+        return flattenLegacySlots(augmentOptions);
     }
 
     @JsonIgnore
@@ -293,6 +289,12 @@ public record Build(
         return result;
     }
 
+    private static List<Integer> starterIds(List<Option> options) {
+        List<Integer> result = new ArrayList<>();
+        for (Option option : options) result.addAll(option.itemIds());
+        return result;
+    }
+
     private static List<Option> toSlotOptions(List<SlotOption> options, int fallbackMatches) {
         List<Option> result = new ArrayList<>();
         for (SlotOption option : options) {
@@ -333,7 +335,14 @@ public record Build(
         return result;
     }
 
+    private static List<SlotOption> flattenLegacySlots(List<List<Option>> slots) {
+        List<SlotOption> result = new ArrayList<>();
+        for (List<Option> slot : slots) result.addAll(toLegacy(slot));
+        return result;
+    }
+
     private static double rate(int wins, int matches) {
         return matches > 0 ? (double) wins / matches : 0;
     }
+
 }

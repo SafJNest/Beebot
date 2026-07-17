@@ -91,8 +91,8 @@ public class Champion extends SlashCommand {
         }
 
         Filter filter = readFilter(event, champion);
-        ChampionStatistics stats = new ChampionStatsService().get(filter);
-        Build build = new BuildService().getAggregate(filter);
+        ChampionStatistics stats = ChampionStatsService.get(filter);
+        Build build = BuildService.getAggregate(filter);
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setAuthor(getTitle(champion, filter), "https://github.com/SafJNest", ChampionUtils.getChampionProfilePic(champion.getId()));

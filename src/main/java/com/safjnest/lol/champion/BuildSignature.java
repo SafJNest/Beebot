@@ -1,4 +1,4 @@
-package com.safjnest.lol.build;
+package com.safjnest.lol.champion;
 
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
@@ -245,3 +245,4 @@ public record BuildSignature(
     }
 
 }
+
