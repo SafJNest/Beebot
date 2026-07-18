@@ -1,5 +1,6 @@
 package com.safjnest.lol.tracker;
 
+import com.safjnest.mongo.MongoDB;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -88,7 +89,7 @@ public class Tracker {
 
     static void retrieveSummoners() {
         try {
-            QueryResult result = LeagueDB.getRegistredLolAccount(SeasonUtils.getCurrentSplitRange()[0]);
+            QueryResult result = MongoDB.getRegisteredLolAccounts(SeasonUtils.getCurrentSplitRange()[0]);
             BotLogger.info("[LPTracker] Start tracking summoners (" + result.size() + " accounts)");
             for (QueryRecord account : result) {
                 Summoner summoner = null;
@@ -245,12 +246,12 @@ public class Tracker {
 
     private static void refreshProfileStatistics(ProfileStatisticsRequest request, String key) {
         try {
-            if (!PROFILE_STATISTICS_SERVICE.refresh(request.summoner().summonerId(), request.season(), false)) {
+            LeagueShard shard = LeagueShard.valueOf(request.summoner().region());
+            if (!PROFILE_STATISTICS_SERVICE.refresh(request.summoner().puuid(), shard, request.season(), false)) {
                 BotLogger.error("Profile statistics refresh failed for summoner=" + request.summoner().summonerId());
                 return;
             }
 
-            LeagueShard shard = LeagueShard.valueOf(request.summoner().region());
             LeagueService.invalidateProfilePage(request.summoner().puuid(), shard);
             BotLogger.info("[LPTracker] Updated summoner overview for "
                 + request.summoner().riotId() + " (" + shard + ", id="
@@ -329,7 +330,7 @@ public class Tracker {
     public static ChronoTask analyzeMatchHistory(GameQueueType queue, Summoner summoner) {
         if (toTrack.indexOf(queue) == -1) return Chronos.NULL;
 
-        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), SeasonUtils.getCurrentSplitRange()[0]);
+        QueryRecord row = MongoDB.getRegisteredLolAccount(LeagueDB.addLOLAccount(summoner), SeasonUtils.getCurrentSplitRange()[0]);
         //if (row.emptyValues() && queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return Chronos.NULL;
 
         try { Thread.sleep(350); }
@@ -436,7 +437,7 @@ public class Tracker {
 //
 
     public static TierDivisionType pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant participant, HashMap<String, String> matchData) {
-        QueryRecord row = LeagueDB.getRegistredLolAccount(LeagueDB.addLOLAccount(summoner), SeasonUtils.getCurrentSplitRange()[0]);
+        QueryRecord row = MongoDB.getRegisteredLolAccount(LeagueDB.addLOLAccount(summoner), SeasonUtils.getCurrentSplitRange()[0]);
         return pushSummoner(match, summonerMatch, summoner, participant, row, matchData);
     }
 
@@ -984,7 +985,7 @@ public class Tracker {
     
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
             ChronoTask shardTask = () -> {
-                long threshold = (splitRange != null) ? LeagueDB.get().query("SELECT time_start FROM `match` WHERE patch_major = '"+ previousPatch + "' and region = '"+ shard + "' ORDER BY time_start DESC LIMIT 1").get(0).getAsEpochSecond("time_start") : 0;
+                long threshold = splitRange != null ? MongoDB.findLatestMatchTime(previousPatch, shard) : 0;
                 Map<String, Object> data = new LinkedHashMap<>();
                 data.put("platform", shard);
                 data.put("queue", GameQueueType.RANKED_SOLO_5X5);
@@ -1167,8 +1168,8 @@ public class Tracker {
         String[] parts = PatchUtils.getPatch().split("\\.", 3);
         String patch = parts[0] + "." + parts[1];
     
-        QueryResult matchDatas = LeagueDB.get().query("SELECT bans FROM `match` WHERE patch_major = '" + patch + "'");
-        QueryResult championDatas = LeagueDB.get().query("SELECT win FROM participant p JOIN `match` m ON p.match_id = m.id WHERE m.patch_major = '" + patch + "' AND p.champion = " + champion + " AND p.lane = '" + lane + "'");
+        QueryResult matchDatas = MongoDB.findMatchBans(patch);
+        QueryResult championDatas = MongoDB.findChampionWins(patch, champion, lane);
     
         int totalGames = matchDatas.size();
         int totalBans = 0;

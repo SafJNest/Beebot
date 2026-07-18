@@ -1,5 +1,6 @@
 package com.safjnest.lol;
 
+import com.safjnest.mongo.MongoDB;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -248,7 +249,7 @@ import com.safjnest.lol.utils.PatchUtils;
 
 
     public static String getFormattedSummonerName(Summoner s) {
-        String dbName = LeagueDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
+        String dbName = MongoDB.getSummonerNameById(s.getPUUID(), s.getPlatform());
         if (dbName != null) return dbName;
         RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
         if (account == null) return "";
@@ -722,7 +723,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static boolean isMatchDBCached(String gameId) {
-        return LeagueDB.getMatchIdByGameId(gameId.split("_")[1]) != 0;
+        return MongoDB.getMatchIdByGameId(gameId.split("_")[1]) != 0;
     }
 
     public static boolean isMatchSomewhereCached(String gameId, LeagueShard shard) {

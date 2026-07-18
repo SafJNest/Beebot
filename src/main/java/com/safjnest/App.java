@@ -80,6 +80,9 @@ public class App {
     }
 
     public static boolean isTesting() {
+        if (settings == null) {
+            settings = SettingsLoader.getSettings();
+        }
         return settings.getConfig().isTesting();
     }
 

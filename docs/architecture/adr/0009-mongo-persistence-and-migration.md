@@ -1,8 +1,9 @@
 # ADR-0009: MongoDB persistence and LoL migration
 
-- Status: Proposed
+- Status: Accepted
 - Owner: Main agent
 - Date: 2026-07-17
+- Approved: 2026-07-18, main-agent approval after the full implementation request
 
 ## Context
 
@@ -17,25 +18,28 @@ La prima migrazione copre solo `league_of_legends`. Gli altri domini MariaDB ver
 La strategia operativa è:
 
 1. MariaDB primaria;
-2. dual-write verso Mongo;
-3. shadow-read e confronto dei modelli canonici;
-4. cutover progressivo per capability;
-5. rollback su MariaDB fino alla conclusione del periodo di osservazione.
+2. mirror immediato verso Mongo dopo il commit;
+3. letture applicative Mongo-only;
+4. migrazione batch con checkpoint e checksum;
+5. MariaDB resta writer compatibile finché il cutover non viene approvato.
+
+Il mirror fallito viene loggato e non modifica il risultato MariaDB. Non esistono fallback di lettura, outbox o proxy dual-write.
 
 Mongo userà:
 
 - `puuid` come `_id` di `lol_summoners`;
 - Riot match ID completo come `_id` di `lol_matches`;
-- rank, mastery e metriche champion incorporate nel summoner;
+- rank e mastery incorporate nel summoner;
+- champion statistics e build in collection aggregate separate;
 - participant incorporati nel match;
 - collection separate per dati derivati e aggregate;
 - `legacySummonerId` e `legacyMatchId` solo per backfill e riconciliazione.
 
 ## Boundary
 
-`LeagueService` resta il boundary LoL cache-aware. La persistenza viene esposta tramite `LeagueStore`, che nasconde MariaDB e Mongo e restituisce modelli canonici o risultati tipizzati.
+`LeagueService` resta il boundary LoL cache-aware. La persistenza Mongo viene esposta direttamente tramite `MongoDB`; `LeagueDB` resta il writer MariaDB compatibile e chiama `MongoDB` nello stesso metodo dopo il commit.
 
-Spring continua a possedere solo controller, configurazione HTTP ed error model. `MongoRecord` e i codec sono interni alla persistenza e non diventano success DTO pubblici. Gli oggetti complessi usano i modelli LoL già esistenti.
+Spring continua a possedere solo controller, configurazione HTTP ed error model. `MongoRecord` è interno alle projection; gli oggetti complessi usano i modelli LoL già esistenti. Non esiste un `MongoResult` generico.
 
 ## Regole di serializzazione
 
@@ -52,7 +56,7 @@ Ogni mutazione LoL che oggi scrive MariaDB deve passare da una funzione tipizzat
 
 1. aggiorna MariaDB;
 2. aggiorna Mongo con un'operazione idempotente;
-3. registra un retry durevole se il mirror fallisce;
+3. cattura e logga l'errore Mongo senza falsificare il risultato MariaDB;
 4. invalida le cache correlate.
 
 Nessun consumer può mantenere una `INSERT`, `UPDATE` o `DELETE` LoL indipendente.
@@ -88,11 +92,11 @@ Gli eventuali campi pubblici numerici legacy restano compatibili fino a una futu
 
 ### Negative
 
-- durante il dual-write esistono due storage da monitorare;
+- durante la transizione esistono due storage da monitorare;
 - alcune projection, come leaderboard, devono essere mantenute;
 - il backfill richiede checkpoint, checksum e gestione dei payload corrotti;
-- non esiste una transazione atomica MariaDB/Mongo e serve un outbox temporaneo.
+- non esiste una transazione atomica MariaDB/Mongo; il mirror è quindi best-effort e osservabile.
 
 ## Gate
 
-Questa ADR deve essere approvata prima dell'implementazione Java. Ogni conflitto con gli ADR LoL esistenti deve essere segnalato e non risolto implicitamente dal macro-task.
+Questa ADR è approvata per l'implementazione Java. Ogni conflitto con gli ADR LoL esistenti deve essere segnalato e non risolto implicitamente dal macro-task. Il vecchio `summoner.metrics` e le custom builds legacy restano fuori dal target corrente.

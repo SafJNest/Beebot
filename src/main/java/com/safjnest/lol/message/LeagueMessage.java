@@ -1,5 +1,6 @@
 package com.safjnest.lol.message;
 
+import com.safjnest.mongo.MongoDB;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -476,7 +477,7 @@ public class LeagueMessage {
             }
 
             if (parameter.getQueueType() == null) {
-                QueryResult gameData = LeagueDB.getAllGamesForAccount(summonerId, parameter.getTimeStart(), parameter.getTimeEnd());
+                QueryResult gameData = MongoDB.getAllGamesForAccount(summonerId, parameter.getTimeStart(), parameter.getTimeEnd());
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
                     GameQueueType type = row.getAsGameQueueType("queue");
@@ -1502,11 +1503,7 @@ public class LeagueMessage {
     private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
         RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
         List<Match> matches = null;
-        try {
-            matches = LeagueDB.getMatchHistory(summonerId, parameter);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        matches = MongoDB.getMatchHistory(summonerId, parameter);
         
         EmbedBuilder eb = new EmbedBuilder();
         if (parameter.isShowChampion()) eb.setThumbnail(ChampionUtils.getChampionProfilePic(parameter.getChampion().getId()));
@@ -2196,7 +2193,7 @@ public class LeagueMessage {
         for (Match match : matches) 
             eb = getOpggEmbedMatch(eb, match, s);
         
-        int totalPages = LeagueDB.countMatchHistory(summonerId, parameter);
+        int totalPages = MongoDB.countMatchHistory(summonerId, parameter);
         int pages = (int) Math.ceil((double) totalPages / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);

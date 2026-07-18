@@ -61,6 +61,7 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `champion` | `lol_champions` | `championId` | catalogo |
 | `champion_builds` | `lol_champion_builds` | `filterKey + buildKey` | aggregate |
 | `champion_stats` | `lol_champion_stats` | `filterKey + championId` | aggregate |
+| migration checkpoints | `lol_migration_runs` | `_id = runId` | operational state |
 
 ## `lol_summoners`
 
@@ -118,7 +119,8 @@ Esempio concettuale:
 {
   "_id": "EUW1_134131",
   "legacyMatchId": 1945327,
-  "gameId": "EUW1_134131",
+  "fullGameId": "EUW1_134131",
+  "gameId": "134131",
   "leagueShard": "EUW1",
   "queue": "TEAM_BUILDER_RANKED_SOLO",
   "rank": "EMERALD",
@@ -165,7 +167,7 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
   "win": true,
   "kda": "8/2/10",
   "champion": 157,
-  "lane": "MIDDLE",
+  "lane": "MID",
   "team": "BLUE",
   "rank": "EMERALD_II",
   "lp": 90,
@@ -242,7 +244,7 @@ Indici:
 
 ## Collection derivate e aggregate
 
-Le collection di statistiche, build, distribution e metriche hanno chiavi composte stabili e payload strutturati. Non devono contenere stringhe Kryo come unica forma di verità.
+Le collection di statistiche, build e distribution hanno chiavi composte stabili e payload strutturati: `statistics` per profile/champion statistics e `build` per le build. Le metriche champion appartengono a `lol_champion_stats`; non esiste un campo `metrics` nel documento summoner e non devono contenere stringhe Kryo come unica forma di verità.
 
 Per compatibilità, durante la migrazione possono contenere:
 
@@ -305,11 +307,11 @@ Il bootstrap previsto è:
 ```text
 MongoClient
   -> databaseName = App.isTesting() ? "beebot_test" : "beebot"
-  -> MongoSchemaInitializer.ensure(database)
-  -> LeagueStore/repository
+  -> MongoDB.ensureSchema(database)
+  -> MongoDB query/write methods
 ```
 
-`MongoSchemaInitializer` mantiene una definizione versionata per ogni collection con:
+`MongoDB` mantiene una definizione versionata per ogni collection con:
 
 - nome collection;
 - chiave `_id`;
@@ -332,12 +334,12 @@ Il codice è la fonte di verità operativa; questo documento descrive collection
 
 ## Acceptance criteria
 
-- ogni tabella LoL ha una destinazione documentata;
+- ogni tabella LoL in scope ha una destinazione documentata;
 - ogni collection ha `_id` e indici definiti;
 - ogni collection ha un owner nel registry dello schema applicativo;
 - il database testing è separato da quello production tramite `App.isTesting()`;
 - il bootstrap degli indici è idempotente e non distruttivo;
-- rank/mastery/metriche e participant hanno ownership esplicita;
+- rank/mastery, statistiche champion e participant hanno ownership esplicita;
 - nessun participant usa un mega-oggetto `build`;
 - nessun enum o team usa ordinali;
 - ban e match ID seguono il formato canonico;

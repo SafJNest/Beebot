@@ -1,5 +1,6 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.mongo.MongoDB;
 import com.safjnest.lol.champion.BuildSignature;
 import com.safjnest.lol.champion.ChampionBuildData;
 import com.safjnest.lol.champion.ChampionBuildProvider;
@@ -37,7 +38,7 @@ public final class BuildService {
 
     public static List<Build> recomputeAll(Filter filter) {
         List<Build> computed = computeAll(filter);
-        if (computed != null && !computed.isEmpty()) LeagueDB.saveChampionBuilds(computed);
+        if (computed != null && !computed.isEmpty()) MongoDB.upsertChampionBuilds(computed);
         return computed;
     }
 
@@ -54,7 +55,7 @@ public final class BuildService {
 
         List<Build> stored;
         try {
-            stored = LeagueDB.getChampionBuild(filter);
+            stored = MongoDB.findChampionBuilds(filter);
         } catch (RuntimeException exception) {
             if (!allowCompute) return List.of();
             throw exception;
@@ -63,7 +64,7 @@ public final class BuildService {
         if (!allowCompute) return List.of();
 
         List<Build> computed = computeAll(filter);
-        if (computed != null && !computed.isEmpty()) computed.forEach(LeagueDB::saveChampionBuild);
+        if (computed != null && !computed.isEmpty()) computed.forEach(MongoDB::upsertChampionBuild);
         return computed == null ? List.of() : computed;
     }
 

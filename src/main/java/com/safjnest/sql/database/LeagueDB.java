@@ -53,6 +53,7 @@ import com.safjnest.redis.RedisKey;
 import com.safjnest.lol.service.LeagueService;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;
+import com.safjnest.mongo.MongoDB;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.utils.SettingsLoader;
@@ -234,6 +235,7 @@ public class LeagueDB extends AbstractDB {
             }
             
             conn.commit();
+            MongoDB.mirrorSummoner(id);
             return id;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -262,6 +264,8 @@ public class LeagueDB extends AbstractDB {
 
             int[] affectedRows = pstmt.executeBatch();
             conn.commit();
+            for (SpectatorParticipant summoner : info.getParticipants())
+                MongoDB.mirrorSummoner(summoner.getPuuid(), info.getPlatform(), summoner.getRiotId(), 0, (int) summoner.getProfileIconId());
             return affectedRows.length == info.getParticipants().size();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -291,6 +295,8 @@ public class LeagueDB extends AbstractDB {
 
             int[] affectedRows = pstmt.executeBatch();
             conn.commit();
+            for (MatchParticipant summoner : match.getParticipants())
+                MongoDB.mirrorSummoner(summoner.getPuuid(), match.getPlatform(), summoner.getRiotIdName() + "#" + summoner.getRiotIdTagline(), summoner.getSummonerLevel(), summoner.getProfileIcon());
             return affectedRows.length == match.getParticipants().size();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -300,7 +306,9 @@ public class LeagueDB extends AbstractDB {
 
     public static boolean deleteLOLaccount(String user_id, String puuid){
         String query = "UPDATE summoner SET tracking = 0, user_id = NULL WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';";
-        return instance.defaultQuery(query);
+        boolean saved = instance.defaultQuery(query);
+        if (saved) MongoDB.detachSummoner(user_id, puuid);
+        return saved;
     }
 
      public static QueryResult getRegistredLolAccount(long time_start) {
@@ -385,7 +393,9 @@ public class LeagueDB extends AbstractDB {
         int f = participant.getSummoner2Casts();
         
         
-        return instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas, role_quest_id, q, w, e, r, d, f) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ", " + participant.getRoleBoundItem() + ", " + q + ", " + w + ", " + e + ", " + r + ", " + d + ", " + f + ");");
+        boolean saved = instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas, role_quest_id, q, w, e, r, d, f) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ", " + participant.getRoleBoundItem() + ", " + q + ", " + w + ", " + e + ", " + r + ", " + d + ", " + f + ");");
+        if (saved) MongoDB.mirrorParticipant(summonerId, summonerMatchId);
+        return saved;
     }
 
 
@@ -627,6 +637,7 @@ public class LeagueDB extends AbstractDB {
                     }
                 }
                 conn.commit();
+                MongoDB.rebuildLeaderboardDistribution();
                 return true;
             } catch (SQLException e) {
                 conn.rollback();
@@ -904,6 +915,7 @@ public class LeagueDB extends AbstractDB {
                 pstmt.executeUpdate();
             }
             conn.commit();
+            MongoDB.deleteProfileStatistics(key);
         } catch (SQLException ignored) {}
     }
 
@@ -919,6 +931,7 @@ public class LeagueDB extends AbstractDB {
             pstmt.setBytes(5, data);
             pstmt.executeUpdate();
             conn.commit();
+            MongoDB.saveProfileStatistics(key, summonerId, timeStart, timeEnd, data);
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1006,7 +1019,9 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static boolean trackSummoner(String user_id, String puuid, boolean track) {
-        return instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';");
+        boolean saved = instance.defaultQuery("UPDATE summoner SET tracking = '" + (track ? 1 : 0) + "' WHERE user_id = '" + user_id + "' AND puuid = '" + puuid + "';");
+        if (saved) MongoDB.mirrorTracking(user_id, puuid, track);
+        return saved;
     }
 
     public static int saveMatch(LOLMatch match) {
@@ -1014,11 +1029,15 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static boolean setMatchEvent(int matchId, String json) {
-        return instance.defaultQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
+        boolean saved = instance.defaultQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
+        if (saved) MongoDB.mirrorMatchEvents(matchId, new JSONObject(json == null ? "{}" : json).toMap());
+        return saved;
     }
 
     public static boolean setMatchRank(int matchId, TierType rank) {
-        return instance.defaultQuery("UPDATE `match` SET rank = '" + rank + "' WHERE id = " + matchId + ";");
+        boolean saved = instance.defaultQuery("UPDATE `match` SET rank = '" + rank + "' WHERE id = " + matchId + ";");
+        if (saved) MongoDB.mirrorMatchRank(matchId, rank);
+        return saved;
     }
 
     public static int saveMatch(LOLMatch match, boolean emptyIfExist) {
@@ -1077,6 +1096,7 @@ public class LeagueDB extends AbstractDB {
                 }
             }
         }
+        if (id != 0) MongoDB.mirrorMatch(id);
         return id;
     }
 
@@ -1128,6 +1148,10 @@ public class LeagueDB extends AbstractDB {
             }
             pstmt.executeBatch();
             conn.commit();
+            List<com.safjnest.lol.model.summoner.Mastery> mirroredMasteries = new ArrayList<>();
+            for (ChampionMastery mastery : masteries) mirroredMasteries.add(new com.safjnest.lol.model.summoner.Mastery(
+                    mastery.getChampionId(), mastery.getChampionLevel(), mastery.getChampionPoints()));
+            MongoDB.mirrorMasteries(summonerId, mirroredMasteries);
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1171,6 +1195,9 @@ public class LeagueDB extends AbstractDB {
                 }
                 pstmt.executeBatch();
                 conn.commit();
+                List<Rank> ranks = new ArrayList<>();
+                for (LeagueEntry entry : entries) ranks.add(new Rank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses()));
+                MongoDB.mirrorRanks(summonerId, shard, ranks);
                 return true;
             }
         } catch (SQLException e) {
@@ -1224,6 +1251,10 @@ public class LeagueDB extends AbstractDB {
                 }
                 pstmt.executeBatch();
                 conn.commit();
+                for (LeagueEntry entry : entries) {
+                    int legacyId = getSummonerIdByPuuid(entry.getPuuid(), shard);
+                    MongoDB.mirrorRanks(legacyId, shard, List.of(new Rank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses())));
+                }
                 return true;
             }
         } catch (SQLException e) {
@@ -1515,6 +1546,7 @@ public class LeagueDB extends AbstractDB {
             pstmt.setString(4, build.encode());
             pstmt.executeUpdate();
             conn.commit();
+            MongoDB.upsertChampionBuild(build);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1550,6 +1582,7 @@ public class LeagueDB extends AbstractDB {
             insertStmt.executeBatch();
     
             conn.commit();
+            MongoDB.upsertChampionBuilds(builds);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1570,6 +1603,7 @@ public class LeagueDB extends AbstractDB {
             pstmt.setString(3, stats.encode());
             pstmt.executeUpdate();
             conn.commit();
+            MongoDB.upsertChampionStatistics(stats);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1589,6 +1623,7 @@ public class LeagueDB extends AbstractDB {
             }
             pstmt.executeBatch();
             conn.commit();
+            MongoDB.upsertChampionStatistics(stats);
         } catch (SQLException e) {
             e.printStackTrace();
         }

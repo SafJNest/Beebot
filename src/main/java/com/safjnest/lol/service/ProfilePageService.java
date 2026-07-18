@@ -36,20 +36,16 @@ public class ProfilePageService {
         }
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        ProfileStatistics databaseStatistics = statisticsService.getDatabase(profile.summonerId(), season);
-        List<Rank> databaseRanks = databaseStatistics != null
-            ? LeagueService.getProfileRanksFromDatabase(profile.summonerId())
-            : List.of();
-
-        List<Rank> profileRanks = !databaseRanks.isEmpty() ? databaseRanks : ranks(profile, shard);
-        List<Mastery> profileMasteries = masteries(profile);
+        ProfileStatistics databaseStatistics = statisticsService.get(profile.puuid(), season);
+        List<Rank> profileRanks = ranks(profile, shard);
+        List<Mastery> profileMasteries = masteries(profile, shard);
         ProfileStatistics aggregate = databaseStatistics != null
             ? databaseStatistics
-            : statisticsService.getRedis(profile.summonerId(), season);
+            : statisticsService.get(profile.puuid(), season);
         if (databaseStatistics == null) Tracker.startProfileStatistics(profile, season);
 
         SummonerView page = SummonerView.from(profile, profileRanks, aggregate, profileMasteries);
-        if (databaseStatistics != null && !databaseRanks.isEmpty()) {
+        if (databaseStatistics != null && !profileRanks.isEmpty()) {
             RedisClient.set(key, page, TTL_PROFILE_PAGE);
             return ApiResult.ready(page);
         }
@@ -66,7 +62,7 @@ public class ProfilePageService {
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         if (profile == null || profile.summonerId() == 0) return false;
 
-        boolean refreshed = statisticsService.refresh(profile.summonerId(), season, rebuild);
+        boolean refreshed = statisticsService.refresh(puuid, shard, season, rebuild);
         if (refreshed) LeagueService.invalidateProfilePage(puuid, shard);
         return refreshed;
     }
@@ -88,13 +84,11 @@ public class ProfilePageService {
     // ============================================================================
 
     private List<Rank> ranks(Summoner profile, LeagueShard shard) {
-        return profile.summonerId() != 0
-            ? LeagueService.getProfileRanks(profile.summonerId())
-            : LeagueService.getProfileRanks(profile.puuid(), shard);
+        return LeagueService.getProfileRanks(profile.puuid(), shard);
     }
 
-    private List<Mastery> masteries(Summoner profile) {
-        return profile.summonerId() == 0 ? List.of() : LeagueService.getProfileMasteries(profile.summonerId());
+    private List<Mastery> masteries(Summoner profile, LeagueShard shard) {
+        return LeagueService.getProfileMasteries(profile.puuid(), shard);
     }
 
     private boolean isReady(SummonerView page) {

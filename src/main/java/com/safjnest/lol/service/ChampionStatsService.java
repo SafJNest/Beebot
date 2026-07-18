@@ -1,5 +1,6 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.mongo.MongoDB;
 import com.safjnest.core.Chronos.ChronoTask;
 import com.safjnest.lol.champion.ChampionStatsData;
 import com.safjnest.lol.champion.ChampionStatsProvider;
@@ -67,7 +68,7 @@ public final class ChampionStatsService {
     public static Map<Integer, ChampionStatistics> getAll(Filter filter) {
         Map<Integer, ChampionStatistics> cached;
         try {
-            cached = LeagueDB.getChampionStats(filter);
+            cached = MongoDB.findChampionStatistics(filter);
         } catch (RuntimeException exception) {
             BotLogger.warning("Invalid persisted champion stats for " + filter.genericKey()
                 + ": " + exception.getMessage());
@@ -84,7 +85,7 @@ public final class ChampionStatsService {
         Map<Integer, ChampionStatistics> computed = compute(filter, false);
         if (computed != null && !computed.isEmpty()) {
             BotLogger.info("Saving champion stats for " + filter.genericKey());
-            LeagueDB.saveChampionStats(computed);
+            MongoDB.upsertChampionStatistics(computed);
             for (ChampionStatistics statistic : computed.values()) RedisClient.set(
                 RedisKey.CHAMPION_STATS.of(statistic.filter().genericKey(), statistic.filter().champion()), statistic, 0);
         }
@@ -107,7 +108,7 @@ public final class ChampionStatsService {
         if (stats != null) return stats;
 
         try {
-            stats = LeagueDB.getChampionStats(filter, filter.champion());
+            stats = MongoDB.findChampionStatistics(filter, filter.champion());
         } catch (RuntimeException exception) {
             BotLogger.warning("Invalid persisted champion stats for " + filter.toKey()
                 + ": " + exception.getMessage());
@@ -626,7 +627,7 @@ public final class ChampionStatsService {
 
     private static void save(Map<Integer, ChampionStatistics> stats) {
         for (ChampionStatistics statistic : stats.values()) {
-            ChronoTask saveTask = () -> LeagueDB.saveChampionStats(statistic);
+            ChronoTask saveTask = () -> MongoDB.upsertChampionStatistics(statistic);
             RedisClient.set(RedisKey.CHAMPION_STATS.of(
                 statistic.filter().genericKey(), statistic.filter().champion()), statistic, 0);
             saveTask.queue();

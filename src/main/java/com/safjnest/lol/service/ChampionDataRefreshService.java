@@ -1,5 +1,6 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.mongo.MongoDB;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9,9 +10,6 @@ import com.safjnest.lol.model.Build;
 import com.safjnest.lol.model.ChampionStatistics;
 import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
-import com.safjnest.sql.QueryRecord;
-import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
@@ -75,54 +73,22 @@ public class ChampionDataRefreshService {
 
     private List<Filter> getBuildFilters(String patch) {
         Map<String, Filter> filters = new LinkedHashMap<>();
-        QueryResult result = LeagueDB.getChampionBuildRefreshFilters(patch);
-        for (QueryRecord row : result)
-            addBuildFilter(filters, getBuildFilter(row), patch);
-
-        result = LeagueDB.getStoredChampionBuildFilters();
-        for (QueryRecord row : result) {
-            try { addBuildFilter(filters, Filter.fromKey(row.get("filter")), patch); }
-            catch (Exception e) {}
-        }
+        for (Filter filter : MongoDB.findChampionBuildRefreshFilters(patch))
+            addBuildFilter(filters, filter, patch);
+        for (Filter filter : MongoDB.findStoredChampionBuildFilters())
+            addBuildFilter(filters, filter, patch);
         return new ArrayList<>(filters.values());
     }
 
     private List<Filter> getStatFilters(String patch) {
         Map<String, Filter> filters = new LinkedHashMap<>();
-        QueryResult result = LeagueDB.getChampionStatsRefreshFilters(patch);
-        for (QueryRecord row : result) {
-            Filter statFilter = getStatFilter(row);
+        for (Filter statFilter : MongoDB.findChampionStatisticsRefreshFilters(patch)) {
             addStatFilter(filters, statFilter, patch);
-            if (GameQueueTypeUtils.hasLane(statFilter.queue()))
-                addStatFilter(filters, getStatFilter(row).setLane(null), patch);
+            if (GameQueueTypeUtils.hasLane(statFilter.queue())) addStatFilter(filters, statFilter.setLane(null), patch);
         }
-
-        result = LeagueDB.getStoredChampionStatsFilters();
-        for (QueryRecord row : result) {
-            try { addStatFilter(filters, Filter.fromGenericKey(row.get("filter")), patch); }
-            catch (Exception e) {}
-        }
+        for (Filter statFilter : MongoDB.findStoredChampionStatisticsFilters())
+            addStatFilter(filters, statFilter, patch);
         return new ArrayList<>(filters.values());
-    }
-
-    private Filter getBuildFilter(QueryRecord row) {
-        Filter filter = getStatFilter(row)
-            .setChampion(row.getAsInt("champion"));
-        if (GameQueueTypeUtils.hasLane(filter.queue()))
-            filter.setLane(row.getAsLaneType("lane"));
-        else
-            filter.setLane(null);
-        return filter;
-    }
-
-    private Filter getStatFilter(QueryRecord row) {
-        Filter filter = new Filter()
-            .setPatch(row.get("patch"))
-            .setQueue(row.getAsGameQueueType("queue"))
-            .setRank(getRank(row.get("rank")))
-            .setRegion(row.getAsLeagueShard("region"));
-        if (GameQueueTypeUtils.hasLane(filter.queue())) filter.setLane(row.getAsLaneType("lane"));
-        return filter;
     }
 
     private void addBuildFilter(Map<String, Filter> filters, Filter filter, String patch) {
@@ -137,8 +103,4 @@ public class ChampionDataRefreshService {
         filters.put(filter.genericKey(), filter);
     }
 
-    private TierType getRank(String rank) {
-        try { return rank != null ? TierType.valueOf(rank) : null; }
-        catch (Exception e) { return null; }
-    }
 }

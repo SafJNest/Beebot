@@ -59,7 +59,7 @@ Spring owns controllers, configuration and HTTP error models. It must not own op
 
 ## MongoDB migration
 
-La documentazione operativa della migrazione LoL è in [`docs/mongo/`](../mongo/README.md). L'ADR-0009 è proposta e deve essere approvata prima dell'implementazione Java.
+La documentazione operativa della migrazione LoL è in [`docs/mongo/`](../mongo/README.md). L'ADR-0009 è accettata; i gate Guardian restano obbligatori per ogni capability.
 
 ## Macro-task index
 

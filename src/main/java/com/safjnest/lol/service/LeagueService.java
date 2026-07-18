@@ -1,5 +1,6 @@
 package com.safjnest.lol.service;
 
+import com.safjnest.mongo.MongoDB;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -12,30 +13,24 @@ import com.safjnest.lol.LeagueHandler;
 import com.safjnest.lol.model.ApiResult;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.MatchResult;
-import com.safjnest.lol.model.match.Participant;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.utils.GameQueueTypeUtils;
+import com.safjnest.mongo.MongoRecord;
 import com.safjnest.lol.utils.LeagueShardUtils;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.database.LeagueDB;
 
 import net.dv8tion.jda.api.interactions.commands.Command.Choice;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.api.regions.RegionShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.championmastery.ChampionMastery;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
@@ -80,7 +75,6 @@ public class LeagueService {
     private static final TypeReference<List<SummonerAutocompleteChoice>> SUMMONER_AUTOCOMPLETE_TYPE = new TypeReference<>() {};
 
     private static R4J riotApi;
-
     public static no.stelar7.api.r4j.pojo.lol.summoner.Summoner getSummonerByPuuid(String puuid, LeagueShard shard) {
         String key = RedisKey.SUMMONER.of(shard.name(), puuid);
         no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = RedisClient.get(
@@ -99,7 +93,8 @@ public class LeagueService {
         Integer id = RedisClient.get(key, Integer.class);
         if (id != null) return id;
 
-        id = LeagueDB.getSummonerIdByPuuid(puuid, shard);
+        Summoner profile = MongoDB.findSummoner(puuid, shard);
+        id = profile == null ? 0 : profile.summonerId();
         if (id != 0) RedisClient.set(key, id, TTL_SUMMONER);
         return id;
     }
@@ -109,7 +104,7 @@ public class LeagueService {
         String userId = RedisClient.get(key, String.class);
         if (userId != null) return userId;
 
-        userId = LeagueDB.getUserIdByLOLAccountId(puuid, shard);
+        userId = MongoDB.findUserIdByPuuid(puuid, shard);
         if (userId != null) RedisClient.set(key, userId, TTL_SUMMONER);
         return userId;
     }
@@ -184,15 +179,14 @@ public class LeagueService {
         List<SummonerView> cached = RedisClient.get(key, SUMMONER_SEARCH_TYPE);
         if (cached != null) return cached;
 
-        QueryResult rows = LeagueDB.searchSummoners(normalizedQuery, shard);
-        List<Integer> summonerIds = new ArrayList<>();
-        for (QueryRecord row : rows) summonerIds.add(row.getAsInt("summoner_id"));
-        Map<Integer, Rank> ranks = getProfileRanks(summonerIds);
+        List<Summoner> rows = MongoDB.findSummonersByRiotId(normalizedQuery, shard, 25);
+        List<String> puuids = new ArrayList<>();
+        for (Summoner summoner : rows) puuids.add(summoner.puuid());
+        Map<String, Rank> ranks = MongoDB.findSoloRanksByPuuid(puuids, shard);
 
         List<SummonerView> summoners = new ArrayList<>();
-        for (QueryRecord row : rows) {
-            Summoner summoner = toSummoner(row);
-            Rank rank = ranks.getOrDefault(summoner.summonerId(), Rank.unranked());
+        for (Summoner summoner : rows) {
+            Rank rank = ranks.getOrDefault(summoner.puuid(), Rank.unranked());
             summoners.add(SummonerView.from(summoner, List.of(rank), new ProfileStatistics(), List.of()));
         }
         RedisClient.set(key, summoners, TTL_SUMMONER_SEARCH);
@@ -209,8 +203,7 @@ public class LeagueService {
 
     public static Summoner getProfileBaseFromDatabase(String puuid, LeagueShard shard) {
         String key = RedisKey.PROFILE_BASE.of(shard.name(), puuid);
-        QueryRecord row = LeagueDB.getProfileBase(puuid, shard);
-        Summoner profile = !row.isEmpty() ? toSummoner(row) : null;
+        Summoner profile = MongoDB.findSummoner(puuid, shard);
         if (profile != null) RedisClient.set(key, profile, TTL_PROFILE_BASE);
         return profile;
     }
@@ -220,8 +213,10 @@ public class LeagueService {
         Rank cached = RedisClient.get(key, Rank.class);
         if (cached != null) return cached;
 
-        QueryRecord row = LeagueDB.getProfileRank(summonerId);
-        Rank rank = !row.isEmpty() ? toRank(row) : Rank.unranked();
+        Summoner profile = MongoDB.findSummonerByLegacyId(summonerId);
+        Rank rank = profile == null ? Rank.unranked() : MongoDB.findRank(
+                profile.puuid(), LeagueShard.valueOf(profile.region()), GameQueueType.RANKED_SOLO_5X5);
+        if (rank == null) rank = Rank.unranked();
         RedisClient.set(key, rank, TTL_PROFILE_RANK);
         return rank;
     }
@@ -261,10 +256,11 @@ public class LeagueService {
         }
         if (missing.isEmpty()) return result;
 
-        Map<Integer, QueryRecord> rows = LeagueDB.getProfileRanks(missing);
         for (int summonerId : missing) {
-            QueryRecord row = rows.get(summonerId);
-            Rank rank = row != null ? toRank(row) : Rank.unranked();
+            Summoner profile = MongoDB.findSummonerByLegacyId(summonerId);
+            Rank rank = profile == null ? Rank.unranked() : MongoDB.findRank(
+                    profile.puuid(), LeagueShard.valueOf(profile.region()), GameQueueType.RANKED_SOLO_5X5);
+            if (rank == null) rank = Rank.unranked();
             result.put(summonerId, rank);
             RedisClient.set(RedisKey.PROFILE_RANK.of(summonerId), rank, TTL_PROFILE_RANK);
         }
@@ -276,27 +272,27 @@ public class LeagueService {
         List<Rank> cached = RedisClient.get(key, PROFILE_RANKS_TYPE);
         if (cached != null) return cached;
 
-        QueryResult rows = LeagueDB.getProfileRanks(summonerId);
-        List<Rank> ranks = new ArrayList<>();
-        for (QueryRecord row : rows) ranks.add(toRank(row));
-        if (rows.isSuccess()) RedisClient.set(key, ranks, TTL_PROFILE_RANK);
+        Summoner profile = MongoDB.findSummonerByLegacyId(summonerId);
+        List<Rank> ranks = profile == null ? List.of() : MongoDB.findRanks(
+                profile.puuid(), LeagueShard.valueOf(profile.region()));
+        RedisClient.set(key, ranks, TTL_PROFILE_RANK);
         return ranks;
     }
 
     public static List<Rank> getProfileRanksFromDatabase(int summonerId) {
-        QueryResult rows = LeagueDB.getProfileRanks(summonerId);
-        List<Rank> ranks = new ArrayList<>();
-        for (QueryRecord row : rows) ranks.add(toRank(row));
-        if (rows.isSuccess()) RedisClient.set(RedisKey.PROFILE_RANKS.of(summonerId), ranks, TTL_PROFILE_RANK);
+        Summoner profile = MongoDB.findSummonerByLegacyId(summonerId);
+        List<Rank> ranks = profile == null ? List.of() : MongoDB.findRanks(
+                profile.puuid(), LeagueShard.valueOf(profile.region()));
+        RedisClient.set(RedisKey.PROFILE_RANKS.of(summonerId), ranks, TTL_PROFILE_RANK);
         return ranks;
     }
 
     public static List<Rank> getProfileRanks(String puuid, LeagueShard shard) {
-        List<Rank> ranks = new ArrayList<>();
-        for (LeagueEntry entry : getLeagueEntries(puuid, shard)) {
-            ranks.add(new Rank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses()));
-        }
-        return ranks;
+        return MongoDB.findRanks(puuid, shard);
+    }
+
+    public static List<Mastery> getProfileMasteries(String puuid, LeagueShard shard) {
+        return MongoDB.findMasteries(puuid, shard);
     }
 
     public static List<Mastery> getProfileMasteries(int summonerId) {
@@ -304,50 +300,30 @@ public class LeagueService {
         List<Mastery> cached = RedisClient.get(key, PROFILE_MASTERIES_TYPE);
         if (cached != null) return cached;
 
-        QueryResult rows = LeagueDB.getProfileMasteries(summonerId);
-        List<Mastery> masteries = new ArrayList<>();
-        for (QueryRecord row : rows) {
-            masteries.add(new Mastery(
-                row.getAsInt("champion_id"), row.getAsInt("champion_level"), row.getAsInt("champion_points")
-            ));
-        }
-        if (rows.isSuccess()) RedisClient.set(key, masteries, TTL_PROFILE_MASTERIES);
+        Summoner profile = MongoDB.findSummonerByLegacyId(summonerId);
+        List<Mastery> masteries = profile == null ? List.of() : MongoDB.findMasteries(
+                profile.puuid(), LeagueShard.valueOf(profile.region()));
+        RedisClient.set(key, masteries, TTL_PROFILE_MASTERIES);
         return masteries;
     }
 
     public static List<String> getProfileSeasonPuuids(LeagueShard shard, long seasonStart, long seasonEnd) {
-        List<String> puuids = new ArrayList<>();
-        for (QueryRecord row : LeagueDB.getProfileSeasonSummoners(shard, seasonStart, seasonEnd)) {
-            String puuid = row.get("puuid");
-            if (puuid != null && !puuid.isBlank()) puuids.add(puuid);
-        }
-        return puuids;
+        return MongoDB.findSeasonSummonerPuuids(shard, seasonStart, seasonEnd);
+    }
+
+    public static List<MatchResult> getProfileMatchesAfter(
+            String puuid,
+            LeagueShard shard,
+            long afterTimeEnd,
+            long untilTimeEnd,
+            GameQueueType queue) {
+        return MongoDB.findMatchResults(puuid, shard, afterTimeEnd, untilTimeEnd, queue, 0, 100);
     }
 
     public static List<MatchResult> getProfileMatchesAfter(int summonerId, long afterTimeEnd, long untilTimeEnd) {
-        Map<String, MatchResult> matches = new LinkedHashMap<>();
-        Map<String, Integer> teamKills = new HashMap<>();
-        Map<String, List<Participant>> participants = new HashMap<>();
-        for (QueryRecord row : LeagueDB.getProfileMatchesAfter(summonerId, afterTimeEnd, untilTimeEnd)) {
-            String gameId = row.get("game_id");
-            MatchResult match = matches.computeIfAbsent(gameId, ignored -> toMatchResult(row));
-            boolean ally = isAlly(match.queue(), row);
-
-            if (ally) teamKills.merge(gameId, kills(row.get("participant_kda")), Integer::sum);
-            participants.computeIfAbsent(gameId, ignored -> new ArrayList<>()).add(Participant.forMatchResult(
-                row.getAsInt("participant_champion"), row.get("participant_puuid"), row.get("participant_team")
-            ));
-        }
-
-        List<MatchResult> result = new ArrayList<>();
-        for (MatchResult match : matches.values()) {
-            result.add(new MatchResult(
-                match.gameId(), match.queue(), match.timeStart(), match.timeEnd(), match.win(), match.kda(), match.championId(),
-                match.lane(), match.damage(), match.cs(), match.gold(), match.vision(), teamKills.getOrDefault(match.gameId(), 0),
-                match.items(), match.summonerSpells(), participants.getOrDefault(match.gameId(), List.of())
-            ));
-        }
-        return result;
+        Summoner profile = MongoDB.findSummonerByLegacyId(summonerId);
+        return profile == null ? List.of() : getProfileMatchesAfter(profile.puuid(), LeagueShard.valueOf(profile.region()),
+                afterTimeEnd, untilTimeEnd, null);
     }
 
     public static List<LeagueEntry> getLeagueEntries(String puuid, LeagueShard shard) {
@@ -418,7 +394,9 @@ public class LeagueService {
         if (cached != null) {
             return cached;
         }
-        QueryResult result = LeagueDB.getAdvancedLOLData(summonerId, time_start, time_end, queue);
+        Summoner profile = MongoDB.findSummonerByLegacyId(summonerId);
+        QueryResult result = profile == null ? toQueryResult(List.of()) : toQueryResult(MongoDB.findAdvancedProfileProjections(
+                profile.puuid(), LeagueShard.valueOf(profile.region()), time_start, time_end, queue));
         if (result != null) {
             RedisClient.set(key, result, TTL_ADVANCED_LOL_DATA);
         }
@@ -462,7 +440,7 @@ public class LeagueService {
             return ApiResult.ready(cached);
         }
 
-        Match match = LeagueDB.getMatch(shard, databaseGameId);
+        Match match = MongoDB.findMatch(shard.name() + "_" + databaseGameId);
         if (match != null) {
             RedisClient.delete(RedisKey.MATCH_NOT_FOUND.of(shard.name(), databaseGameId));
             RedisClient.set(key, match, TTL_MATCH_DETAIL);
@@ -497,7 +475,8 @@ public class LeagueService {
       if (cached != null) {
         return cached;
       }
-      QueryResult result = LeagueDB.getSummonerData(puuid, shard);
+      QueryResult result = toQueryResult(MongoDB.findAdvancedProfileProjections(
+          puuid, shard, 0, Long.MAX_VALUE, GameQueueType.TEAM_BUILDER_RANKED_SOLO));
       if (result != null) {
         RedisClient.set(key, result, TTL_MATCH);
       }
@@ -550,12 +529,10 @@ public class LeagueService {
         }
 
         List<SummonerAutocompleteChoice> autocompleteChoices = new ArrayList<>();
-        QueryResult summoners = LeagueDB.getFocusedSummoners(normalizedQuery, shard);
-
-        for (QueryRecord summoner : summoners) {
+        for (MongoRecord summoner : MongoDB.findFocusedSummoners(normalizedQuery, shard, 25)) {
             autocompleteChoices.add(new SummonerAutocompleteChoice(
-                summoner.get("riot_id"),
-                summoner.get("puuid")
+                summoner.getAsString("riotId") != null ? summoner.getAsString("riotId") : summoner.getAsString("riot_id"),
+                summoner.getAsString("puuid")
             ));
         }
 
@@ -595,120 +572,21 @@ public class LeagueService {
         return choices;
     }
 
-    private static Summoner toSummoner(QueryRecord row) {
-        return new Summoner(
-            row.getAsInt("summoner_id"),
-            row.get("puuid"),
-            row.get("riot_id"),
-            row.get("region"),
-            row.getAsInt("level"),
-            row.getAsInt("icon")
-        );
-    }
-
-    private static Rank toRank(QueryRecord row) {
-        return new Rank(
-            queue(row.getOrDefault("queue", "RANKED_SOLO_5X5")),
-            tierDivision(row.getOrDefault("rank", "UNRANKED")),
-            row.getAsInt("lp"),
-            row.getAsInt("wins"),
-            row.getAsInt("losses")
-        );
-    }
-
-    private static TierDivisionType tierDivision(String value) {
-        try { return TierDivisionType.valueOf(value); }
-        catch (Exception ignored) { return TierDivisionType.UNRANKED; }
-    }
-
-    private static GameQueueType queue(String value) {
-        try { return GameQueueType.valueOf(value); }
-        catch (Exception ignored) { return GameQueueType.TEAM_BUILDER_RANKED_SOLO; }
-    }
-
-    private static MatchResult toMatchResult(QueryRecord row) {
-        return MatchResult.of(
-            row.get("game_id"),
-            queue(row.get("queue")),
-            timeMs(row.get("time_start")),
-            timeMs(row.get("time_end")),
-            row.getAsBoolean("win"),
-            row.get("kda"),
-            row.getAsInt("champion"),
-            lane(row.get("lane")),
-            row.getAsInt("damage"),
-            row.getAsInt("cs"),
-            row.getAsInt("gold_earned"),
-            row.getAsInt("vision_score"),
-            row.getAsInt("team_kills"),
-            items(row),
-            summonerSpells(row),
-            List.of()
-        );
-    }
-
-    private static boolean isAlly(GameQueueType queue, QueryRecord row) {
-        if (GameQueueTypeUtils.isCherry(queue)) {
-            return row.getAsInt("player_subteam") != 0 &&
-                row.getAsInt("player_subteam") == row.getAsInt("participant_subteam");
+    private static QueryResult toQueryResult(List<MongoRecord> records) {
+        QueryResult result = new QueryResult();
+        if (records == null) {
+            result.setSuccess(true);
+            return result;
         }
-
-        String team = row.get("player_team");
-        return team != null && team.equals(row.get("participant_team"));
-    }
-
-    private static List<Integer> items(QueryRecord row) {
-        JSONObject items = build(row).optJSONObject("items");
-        if (items == null) return new ArrayList<>();
-
-        return new ArrayList<>(List.of(
-            items.optInt("0", 0),
-            items.optInt("1", 0),
-            items.optInt("2", 0),
-            items.optInt("3", 0),
-            items.optInt("4", 0),
-            items.optInt("5", 0),
-            items.optInt("6", 0)
-        ));
-    }
-
-    private static int kills(String kda) {
-        if (kda == null) return 0;
-        try { return Integer.parseInt(kda.split("/", 2)[0]); }
-        catch (Exception ignored) { return 0; }
-    }
-
-    private static LaneType lane(String value) {
-        try { return LaneType.valueOf(value); }
-        catch (Exception ignored) { return null; }
-    }
-
-    private static List<Integer> summonerSpells(QueryRecord row) {
-        JSONArray spells = build(row).optJSONArray("summoner_spells");
-        if (spells == null) return new ArrayList<>();
-
-        List<Integer> result = new ArrayList<>();
-        for (int i = 0; i < spells.length(); i++) {
-            result.add(spells.optInt(i, 0));
+        for (MongoRecord record : records) {
+            QueryRecord row = new QueryRecord();
+            for (Map.Entry<String, Object> entry : record.toDocument().entrySet()) {
+                if (entry.getValue() != null) row.put(entry.getKey(), String.valueOf(entry.getValue()));
+            }
+            result.add(row);
         }
+        result.setSuccess(true);
         return result;
-    }
-
-    private static JSONObject build(QueryRecord row) {
-        try {
-            String build = row.get("build");
-            return build != null && !build.isBlank() ? new JSONObject(build) : new JSONObject();
-        } catch (Exception e) {
-            return new JSONObject();
-        }
-    }
-
-    private static long timeMs(String value) {
-        try {
-            return java.sql.Timestamp.valueOf(value).getTime();
-        } catch (Exception e) {
-            return 0;
-        }
     }
 
 }
