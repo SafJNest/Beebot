@@ -55,6 +55,11 @@ Spring owns controllers, configuration and HTTP error models. It must not own op
 - [ADR-0006: Champion API contract](adr/0006-champion-api-contract.md)
 - [ADR-0007: Unified API result and parameter parsing](adr/0007-unified-api-result-and-parameters.md)
 - [ADR-0008: Component caches and asynchronous match lookups](adr/0008-endpoint-cache-and-async-lookups.md)
+- [ADR-0009: MongoDB persistence and LoL migration](adr/0009-mongo-persistence-and-migration.md)
+
+## MongoDB migration
+
+La documentazione operativa della migrazione LoL è in [`docs/mongo/`](../mongo/README.md). L'ADR-0009 è proposta e deve essere approvata prima dell'implementazione Java.
 
 ## Macro-task index
 

@@ -25,3 +25,18 @@ Only the main agent approves changes that alter an accepted ADR or cross task ow
 ```
 
 The main agent may run independent read-only analysis in parallel, but implementation tasks with overlapping owners are sequential.
+
+## MongoDB LoL migration
+
+La strategia specifica per la migrazione Mongo è in [`docs/mongo/07-agent-strategy.md`](../mongo/07-agent-strategy.md).
+
+Il workflow Mongo aggiunge:
+
+- un audit read-only di tutte le query e scritture `LeagueDB` prima dell'implementazione;
+- agenti query separati per profile, match, statistiche/champion e leaderboard;
+- un agent per schema/index e uno per mapping verso i modelli esistenti;
+- un agent dedicato a dual-write/outbox;
+- un agent dedicato a backfill e uno a riconciliazione/cutover;
+- un guardian indipendente che approva i gate e un verifier finale.
+
+Gli agenti Mongo seguono lo stesso handoff del [`macro-task-template.md`](macro-task-template.md). Nessun implementatore può approvare il proprio lavoro o modificare l'ADR per sbloccare il proprio task.
