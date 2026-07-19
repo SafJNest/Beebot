@@ -2,11 +2,14 @@ package com.safjnest.mongo;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.bson.Document;
+import org.json.JSONObject;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.sql.QueryRecord;
@@ -16,13 +19,14 @@ import com.safjnest.sql.database.LeagueDB;
 public final class MongoMigration {
 
     private static final String CHECKPOINT_COLLECTION = "migration_runs";
-    private static final String MIGRATION_VERSION = "raw-v4-bulk-no-checksum";
+    private static final String MIGRATION_VERSION = "raw-v5-missing-only";
     private static final int DEFAULT_BATCH_SIZE = 125_000;
     private static final int MAX_BATCH_SIZE = 125_000;
     private static final int MAX_MATCH_BATCH_SIZE = 10_000;
+    private static final int EMBEDDED_BATCH_SIZE = 25_000;
     private static final int MONGO_WRITE_BATCH_SIZE = 2_000;
     private static final int MAX_REPORT_IDENTITIES = 100;
-    private static final List<String> PHASES = List.of("matches");
+    private static final List<String> PHASES = List.of("summoners", "matches");
 
     private MongoMigration() {
     }
@@ -51,40 +55,119 @@ public final class MongoMigration {
             migrateSummoners(options, report, checkpoint);
             return;
         }
+        migrateMatches(options, report, checkpoint);
+    }
+
+    private static void migrateMatches(Options options, MigrationReport report, Checkpoint checkpoint) {
         long highWaterMark = checkpoint.highWaterMark();
         long processed = checkpoint.processed();
         boolean completed = true;
 
         while (true) {
-            List<Match> matches = LeagueDB.get().getMatchesAfterId(asInt(highWaterMark), pageSize(phase, options.batchSize()));
-            if (matches.isEmpty()) break;
+            QueryResult keys = queryMatchKeyPage(highWaterMark, pageSize("matches", options.batchSize()));
+            if (keys.isEmpty()) break;
+            Map<Integer, String> identities = new LinkedHashMap<>();
+            long batchHighWaterMark = highWaterMark;
             boolean stopped = false;
             try {
-                for (Match match : matches) {
-                    if (match.id <= highWaterMark) continue;
-                    if (options.highWaterMark() > 0 && match.id > options.highWaterMark()) {
+                for (QueryRecord row : keys) {
+                    long rowHighWaterMark = row.getAsLong("id");
+                    if (rowHighWaterMark <= highWaterMark) continue;
+                    if (options.highWaterMark() > 0 && rowHighWaterMark > options.highWaterMark()) {
                         completed = false;
                         stopped = true;
                         break;
                     }
-                    String identity = matchIdentity(match);
-                    try {
-                        if (!options.dryRun()) MongoDB.upsertMatch(identity, match);
-                        highWaterMark = match.id;
-                        processed++;
-                        report.accept(phase, identity);
-                    } catch (RuntimeException exception) {
-                        throw migrationFailure(phase, identity, exception);
+                    identities.put((int) rowHighWaterMark, matchIdentity(row));
+                    batchHighWaterMark = rowHighWaterMark;
+                }
+                keys.clear();
+
+                if (identities.isEmpty()) {
+                    if (stopped) break;
+                    continue;
+                }
+
+                List<String> identityValues = new ArrayList<>(identities.values());
+                Set<String> existingMatches = MongoDB.findExistingIds("match", identityValues);
+                Set<String> existingEvents = MongoDB.findExistingIds("match_events", identityValues);
+                List<Integer> missingMatchIds = new ArrayList<>();
+                List<Integer> missingEventIds = new ArrayList<>();
+                Set<String> missingEventIdentities = new HashSet<>();
+                for (Map.Entry<Integer, String> entry : identities.entrySet()) {
+                    String identity = entry.getValue();
+                    if (!existingMatches.contains(identity)) {
+                        missingMatchIds.add(entry.getKey());
+                    } else if (!existingEvents.contains(identity)) {
+                        missingEventIds.add(entry.getKey());
+                        missingEventIdentities.add(identity);
                     }
                 }
-                if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, processed, stopped ? "PAUSED" : "RUNNING");
+
+                migrateMissingMatches(options, missingMatchIds, existingEvents);
+                migrateMissingEvents(options, missingEventIds, missingEventIdentities);
+                existingMatches.clear();
+                existingEvents.clear();
+                identityValues.clear();
+                missingMatchIds.clear();
+                missingEventIds.clear();
+                missingEventIdentities.clear();
+                processed += identities.size();
+                highWaterMark = batchHighWaterMark;
+                for (String identity : identities.values()) report.accept("matches", identity);
+                if (!options.dryRun()) writeCheckpoint(options, "matches", highWaterMark, processed, stopped ? "PAUSED" : "RUNNING");
+                if (stopped) break;
+            } finally {
+                keys.clear();
+                identities.clear();
+            }
+        }
+
+        if (!options.dryRun()) writeCheckpoint(options, "matches", highWaterMark, processed, completed ? "COMPLETED" : "PAUSED");
+    }
+
+    private static void migrateMissingMatches(Options options, List<Integer> missingMatchIds, Set<String> existingEvents) {
+        for (int start = 0; start < missingMatchIds.size(); start += MONGO_WRITE_BATCH_SIZE) {
+            int end = Math.min(missingMatchIds.size(), start + MONGO_WRITE_BATCH_SIZE);
+            List<Match> matches = LeagueDB.get().getMatchesByIds(missingMatchIds.subList(start, end));
+            try {
+                for (Match match : matches) {
+                    String identity = matchIdentity(match);
+                    try {
+                        if (!options.dryRun()) {
+                            MongoDB.upsertMatchDocument(identity, match);
+                            if (!existingEvents.contains(identity)) upsertMatchEvents(identity, match);
+                        }
+                    } catch (RuntimeException exception) {
+                        throw migrationFailure("matches", identity, exception);
+                    } finally {
+                        releaseMatch(match);
+                    }
+                }
             } finally {
                 matches.clear();
             }
-            if (stopped) break;
         }
+    }
 
-        if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, processed, completed ? "COMPLETED" : "PAUSED");
+    private static void migrateMissingEvents(Options options, List<Integer> missingEventIds, Set<String> missingEventIdentities) {
+        for (int start = 0; start < missingEventIds.size(); start += MONGO_WRITE_BATCH_SIZE) {
+            int end = Math.min(missingEventIds.size(), start + MONGO_WRITE_BATCH_SIZE);
+            QueryResult rows = queryMatchEventsByIds(missingEventIds.subList(start, end));
+            try {
+                for (QueryRecord row : rows) {
+                    String identity = matchIdentity(row);
+                    if (!missingEventIdentities.contains(identity)) continue;
+                    try {
+                        if (!options.dryRun()) upsertMatchEvents(identity, parseEvents(row.get("events")));
+                    } catch (RuntimeException exception) {
+                        throw migrationFailure("match_events", identity, exception);
+                    }
+                }
+            } finally {
+                rows.clear();
+            }
+        }
     }
 
     private static void migrateSummoners(Options options, MigrationReport report, Checkpoint checkpoint) {
@@ -93,9 +176,10 @@ public final class MongoMigration {
         boolean completed = true;
 
         while (true) {
-            QueryResult rows = querySummonerPage(highWaterMark, options.batchSize());
+            QueryResult rows = querySummonerKeyPage(highWaterMark, options.batchSize());
             if (rows.isEmpty()) break;
-            Map<String, Document> documents = new LinkedHashMap<>();
+            List<Long> sourceIds = new ArrayList<>();
+            List<String> sourcePuuids = new ArrayList<>();
             long batchHighWaterMark = highWaterMark;
             boolean stopped = false;
             try {
@@ -107,51 +191,103 @@ public final class MongoMigration {
                         stopped = true;
                         break;
                     }
-                    String puuid = required(row, "puuid");
-                    documents.put(puuid, convertSummoner(row));
+                    sourceIds.add(rowHighWaterMark);
+                    sourcePuuids.add(required(row, "puuid"));
                     batchHighWaterMark = rowHighWaterMark;
                 }
 
-                if (documents.isEmpty()) {
+                rows.clear();
+
+                if (sourceIds.isEmpty()) {
                     if (stopped) break;
                     continue;
                 }
 
-                loadEmbeddedRows("ranks", highWaterMark, batchHighWaterMark, documents);
-                loadEmbeddedRows("masteries", highWaterMark, batchHighWaterMark, documents);
-                if (!options.dryRun()) MongoDB.bulkUpsertDocuments("summoner", documents.values(), MONGO_WRITE_BATCH_SIZE);
-                for (String puuid : documents.keySet()) {
-                    processed++;
-                    report.accept("summoners", puuid);
+                Set<String> existing = MongoDB.findExistingIds("summoner", sourcePuuids);
+                List<Long> missingIds = new ArrayList<>();
+                for (int index = 0; index < sourceIds.size(); index++) {
+                    if (!existing.contains(sourcePuuids.get(index))) missingIds.add(sourceIds.get(index));
                 }
+                existing.clear();
+
+                migrateMissingSummoners(options, missingIds, report);
+                processed += sourceIds.size();
                 highWaterMark = batchHighWaterMark;
                 if (!options.dryRun()) writeCheckpoint(options, "summoners", highWaterMark, processed, stopped ? "PAUSED" : "RUNNING");
                 if (stopped) break;
             } finally {
                 rows.clear();
-                documents.clear();
+                sourceIds.clear();
+                sourcePuuids.clear();
             }
         }
 
         if (!options.dryRun()) writeCheckpoint(options, "summoners", highWaterMark, processed, completed ? "COMPLETED" : "PAUSED");
     }
 
-    private static QueryResult querySummonerPage(long highWaterMark, int pageSize) {
-        String query = "SELECT id, puuid, riot_id, region, level, icon, user_id, tracking, last_update FROM summoner WHERE id > "
+    private static void migrateMissingSummoners(Options options, List<Long> missingIds, MigrationReport report) {
+        for (int start = 0; start < missingIds.size(); start += MONGO_WRITE_BATCH_SIZE) {
+            int end = Math.min(missingIds.size(), start + MONGO_WRITE_BATCH_SIZE);
+            List<Long> batchIds = missingIds.subList(start, end);
+            QueryResult rows = querySummonerRowsByIds(batchIds);
+            Map<String, Document> documents = new LinkedHashMap<>();
+            try {
+                for (QueryRecord row : rows) {
+                    String puuid = required(row, "puuid");
+                    documents.put(puuid, convertSummoner(row));
+                }
+                loadEmbeddedRows("ranks", batchIds, documents);
+                loadEmbeddedRows("masteries", batchIds, documents);
+                if (!options.dryRun()) MongoDB.bulkUpsertDocuments("summoner", documents.values(), MONGO_WRITE_BATCH_SIZE);
+                for (String puuid : documents.keySet()) report.accept("summoners", puuid);
+            } finally {
+                rows.clear();
+                documents.clear();
+            }
+        }
+    }
+
+    private static QueryResult querySummonerKeyPage(long highWaterMark, int pageSize) {
+        String query = "SELECT id, puuid FROM summoner WHERE id > "
                 + highWaterMark + " ORDER BY id ASC LIMIT " + pageSize;
         QueryResult result = LeagueDB.get().query(query);
         if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=summoners");
         return result;
     }
 
-    private static QueryResult queryEmbeddedRange(String phase, long fromSummonerId, long toSummonerId) {
+    private static QueryResult queryMatchKeyPage(long highWaterMark, int pageSize) {
+        String query = "SELECT id, game_id, region FROM `match` WHERE id > "
+                + highWaterMark + " ORDER BY id ASC LIMIT " + pageSize;
+        QueryResult result = LeagueDB.get().query(query);
+        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=matches_keys");
+        return result;
+    }
+
+    private static QueryResult queryMatchEventsByIds(List<Integer> ids) {
+        String query = "SELECT id, game_id, region, events FROM `match` WHERE id IN " + sqlIds(ids) + " ORDER BY id ASC";
+        QueryResult result = LeagueDB.get().query(query);
+        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=match_events_missing");
+        return result;
+    }
+
+    private static QueryResult querySummonerRowsByIds(List<Long> ids) {
+        String query = "SELECT id, puuid, riot_id, region, level, icon, user_id, tracking, last_update FROM summoner WHERE id IN "
+                + sqlIds(ids) + " ORDER BY id ASC";
+        QueryResult result = LeagueDB.get().query(query);
+        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=summoners_missing");
+        return result;
+    }
+
+    private static QueryResult queryEmbeddedPage(String phase, List<Long> summonerIds, long afterId) {
         String query = switch (phase) {
             case "ranks" -> "SELECT r.id, r.summoner_id, s.puuid, r.region, r.queue, r.`rank`, r.lp, r.mmr, r.wins, r.losses, r.last_update "
-                    + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id WHERE s.id > " + fromSummonerId
-                    + " AND s.id <= " + toSummonerId + " ORDER BY r.id ASC";
+                    + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id WHERE r.id > " + afterId
+                    + " AND s.id IN " + sqlIds(summonerIds)
+                    + " ORDER BY r.id ASC LIMIT " + EMBEDDED_BATCH_SIZE;
             case "masteries" -> "SELECT m.id, m.summoner_id, s.puuid, m.champion_id, m.champion_level, m.champion_points, m.last_play_time "
-                    + "FROM masteries m JOIN summoner s ON s.id = m.summoner_id WHERE s.id > " + fromSummonerId
-                    + " AND s.id <= " + toSummonerId + " ORDER BY m.id ASC";
+                    + "FROM masteries m JOIN summoner s ON s.id = m.summoner_id WHERE m.id > " + afterId
+                    + " AND s.id IN " + sqlIds(summonerIds)
+                    + " ORDER BY m.id ASC LIMIT " + EMBEDDED_BATCH_SIZE;
             default -> throw new IllegalArgumentException("Unknown embedded migration phase " + phase);
         };
         QueryResult result = LeagueDB.get().query(query);
@@ -159,37 +295,61 @@ public final class MongoMigration {
         return result;
     }
 
-    private static void loadEmbeddedRows(String phase, long fromSummonerId, long toSummonerId, Map<String, Document> summoners) {
-        QueryResult rows = queryEmbeddedRange(phase, fromSummonerId, toSummonerId);
-        try {
-            for (QueryRecord row : rows) {
-                String puuid = required(row, "puuid");
-                Document summoner = summoners.get(puuid);
-                if (summoner == null) throw new IllegalStateException("Embedded row has no summoner in batch phase=" + phase + " puuid=" + puuid);
-                appendEmbedded(summoner, phase, convertEmbedded(phase, row));
+    private static String sqlIds(List<? extends Number> ids) {
+        if (ids == null || ids.isEmpty()) throw new IllegalArgumentException("Migration id batch cannot be empty");
+        StringBuilder result = new StringBuilder("(");
+        for (int index = 0; index < ids.size(); index++) {
+            if (index > 0) result.append(",");
+            result.append(ids.get(index));
+        }
+        return result.append(")").toString();
+    }
+
+    private static void loadEmbeddedRows(String phase, List<Long> summonerIds, Map<String, Document> summoners) {
+        long afterId = 0;
+        while (true) {
+            QueryResult rows = queryEmbeddedPage(phase, summonerIds, afterId);
+            if (rows.isEmpty()) return;
+            try {
+                for (QueryRecord row : rows) {
+                    long rowId = row.getAsLong("id");
+                    if (rowId <= afterId) throw new IllegalStateException("Embedded migration page did not advance phase=" + phase + " id=" + rowId);
+                    afterId = rowId;
+                    String puuid = required(row, "puuid");
+                    Document summoner = summoners.get(puuid);
+                    if (summoner == null) throw new IllegalStateException("Embedded row has no summoner in batch phase=" + phase + " puuid=" + puuid);
+                    appendEmbedded(summoner, phase, convertEmbedded(phase, row));
+                }
+            } finally {
+                rows.clear();
             }
-        } finally {
-            rows.clear();
         }
     }
 
     private static void appendEmbedded(Document summoner, String phase, Document value) {
         String field = "ranks".equals(phase) ? "ranks" : "masteries";
         String identityField = "ranks".equals(phase) ? "queue" : "championId";
-        List<Document> values = new ArrayList<>();
-        Object existing = summoner.get(field);
-        if (existing instanceof List<?> list) for (Object item : list) if (item instanceof Document document) values.add(new Document(document));
+        @SuppressWarnings("unchecked")
+        List<Document> values = (List<Document>) summoner.get(field);
+        if (values == null) {
+            values = new ArrayList<>();
+            summoner.put(field, values);
+        }
         String identity = String.valueOf(value.get(identityField));
-        boolean replaced = false;
         for (int index = 0; index < values.size(); index++) {
             if (identity.equals(String.valueOf(values.get(index).get(identityField)))) {
                 values.set(index, value);
-                replaced = true;
-                break;
+                return;
             }
         }
-        if (!replaced) values.add(value);
-        summoner.put(field, values);
+        values.add(value);
+    }
+
+    private static void releaseMatch(Match match) {
+        match.events = null;
+        match.eventData = null;
+        match.participants = null;
+        match.bans = null;
     }
 
     private static Document convertSummoner(QueryRecord row) {
@@ -269,6 +429,32 @@ public final class MongoMigration {
         return match.gameId != null && match.gameId.indexOf('_') > 0
                 ? match.gameId
                 : match.leagueShard + "_" + match.gameId;
+    }
+
+    private static String matchIdentity(QueryRecord row) {
+        return matchIdentity(required(row, "region"), required(row, "game_id"));
+    }
+
+    private static String matchIdentity(String region, String gameId) {
+        return gameId.indexOf('_') > 0 ? gameId : region + "_" + gameId;
+    }
+
+    private static void upsertMatchEvents(String identity, Match match) {
+        Map<String, Object> events = match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap();
+        upsertMatchEvents(identity, events);
+    }
+
+    private static void upsertMatchEvents(String identity, Map<String, Object> events) {
+        if (!MongoDB.upsertMatchEvents(identity, events)) throw new IllegalStateException("Mongo match event upsert failed id=" + identity);
+    }
+
+    private static Map<String, Object> parseEvents(String value) {
+        if (value == null || value.isBlank()) return Map.of();
+        try {
+            return new JSONObject(value).toMap();
+        } catch (RuntimeException exception) {
+            throw new IllegalArgumentException("Invalid MariaDB match events JSON", exception);
+        }
     }
 
     private static String required(QueryRecord row, String field) {

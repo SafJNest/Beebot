@@ -10,14 +10,15 @@ MongoMigration.migrateAll(new MongoMigration.Options(
         false, 125_000, "raw-2026-07", true, 0));
 ```
 
-La dimensione massima configurabile per `summoner` è 125.000 righe. Ogni batch summoner carica anche rank e masteries relativi all'intervallo di id e li scrive con bulk Mongo da 2.000 documenti. La fase `matches` usa pagine da massimo 10.000 match: ogni pagina carica i participant con una query MariaDB bounded e viene liberata prima del giro successivo.
+La dimensione massima configurabile per `summoner` è 125.000 righe. Ogni pagina prima legge solo `id, puuid` e verifica gli `_id` già presenti in Mongo; i dati completi vengono richiesti a MariaDB esclusivamente per i summoner mancanti, in sotto-batch da 2.000. Rank e masteries vengono letti solo per quei summoner, a pagine da 25.000 righe, e il `QueryResult` viene svuotato a ogni pagina. La fase `matches` usa pagine da massimo 10.000 identificativi: verifica separatamente `match` e `match_events`, carica match e participant solo per i match mancanti e legge solo la colonna `events` per gli eventi mancanti di match già presenti.
 
 ## Ordine e perimetro
 
 Le fasi sono eseguite in questo ordine:
 
 1. `summoners` → collection `summoner`, con `ranks[]` e `masteries[]` caricati nello stesso batch;
-2. `matches` → collection `match`, con `participants[]` flat nel documento.
+2. `matches` → collection `match`, con `participants[]` flat nel documento;
+3. `match_events` → payload eventi separato, solo quando il documento evento non esiste.
 
 Sono dati raw. Il documento `summoner` usa `_id = puuid`, mentre match, rank, mastery e participant non conservano identificativi numerici MariaDB. La migrazione viene eseguita su un database Mongo vuoto: non esiste una fase applicativa di cleanup o conversione in-place.
 
@@ -48,7 +49,7 @@ Non viene usato `OFFSET`, non viene materializzato il risultato completo e non v
 
 `migration_runs` contiene run, fase, high-water mark, numero di righe processate, batch size, stato e timestamp. Gli stati sono `RUNNING`, `PAUSED` e `COMPLETED`.
 
-Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato della versione `raw-v4-bulk-no-checksum`. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili. Un checkpoint di una versione precedente non viene riutilizzato.
+Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato della versione `raw-v5-missing-only`. Prima di ogni query pesante il runner ricontrolla gli `_id` presenti in Mongo, quindi un batch già completato non viene riletto da MariaDB. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili. Un checkpoint di una versione precedente non viene riutilizzato.
 
 `highWaterMark > 0` permette di fermare intenzionalmente il backfill a un id. In quel caso il checkpoint resta `PAUSED` e può essere ripreso senza perdere la pagina già completata.
 

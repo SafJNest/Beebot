@@ -75,7 +75,12 @@ public abstract class AbstractDB {
                 ? pstmt.execute()
                 : stmt.execute(query, Statement.RETURN_GENERATED_KEYS);
 
-        result = elaborate(hasResult ? stmt.getResultSet() : stmt.getGeneratedKeys());
+        ResultSet resultSet = hasResult ? stmt.getResultSet() : stmt.getGeneratedKeys();
+        try {
+            result = elaborate(resultSet);
+        } finally {
+            if (resultSet != null) resultSet.close();
+        }
         result.setAffectedRows(stmt.getUpdateCount());
         return result;
     }
@@ -179,11 +184,10 @@ public abstract class AbstractDB {
      * @param queries
      */
     public boolean defaultQuery(String... queries) {
-        List<QueryResult> results = new ArrayList<>();
-        for (String query : queries) {
-            results.add(query(query));
-        }
-        return !results.isEmpty() && results.stream().allMatch(QueryResult::isSuccess);
+        if (queries == null || queries.length == 0) return false;
+        boolean success = true;
+        for (String query : queries) success &= query(query).isSuccess();
+        return success;
     }
 
     public CompletableFuture<Void> runQueryAsync(String... queries) {

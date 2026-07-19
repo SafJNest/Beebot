@@ -1381,13 +1381,31 @@ public class LeagueDB extends AbstractDB {
             statement.setInt(1, afterId);
             statement.setInt(2, limit);
             try (ResultSet result = statement.executeQuery()) {
-                Map<Integer, Match> matches = readMatches(result);
+                Map<Integer, Match> matches = readMatches(result, false);
                 loadParticipants(connection, matches);
                 connection.commit();
                 return new ArrayList<>(matches.values());
             }
         } catch (SQLException exception) {
             throw new IllegalStateException("Unable to read MariaDB match migration batch after id=" + afterId, exception);
+        }
+    }
+
+    public static List<Match> getMatchesByIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        StringBuilder placeholders = new StringBuilder("?");
+        for (int index = 1; index < ids.size(); index++) placeholders.append(",?");
+        String query = "SELECT * FROM `match` WHERE id IN (" + placeholders + ") ORDER BY id ASC";
+        try (Connection connection = instance.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
+            for (int index = 0; index < ids.size(); index++) statement.setInt(index + 1, ids.get(index));
+            try (ResultSet result = statement.executeQuery()) {
+                Map<Integer, Match> matches = readMatches(result, false);
+                loadParticipants(connection, matches);
+                connection.commit();
+                return new ArrayList<>(matches.values());
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Unable to read MariaDB match migration ids=" + ids.size(), exception);
         }
     }
 
@@ -1410,9 +1428,13 @@ public class LeagueDB extends AbstractDB {
     }
 
     private static Map<Integer, Match> readMatches(ResultSet result) throws SQLException {
+        return readMatches(result, true);
+    }
+
+    private static Map<Integer, Match> readMatches(ResultSet result, boolean retainEvents) throws SQLException {
         Map<Integer, Match> matches = new LinkedHashMap<>();
         while (result.next()) {
-            Match match = readMatch(result);
+            Match match = readMatch(result, retainEvents);
             matches.put(match.id, match);
         }
         return matches;
@@ -1438,6 +1460,10 @@ public class LeagueDB extends AbstractDB {
     }
 
     private static Match readMatch(ResultSet result) throws SQLException {
+        return readMatch(result, true);
+    }
+
+    private static Match readMatch(ResultSet result, boolean retainEvents) throws SQLException {
         Match match = new Match();
         match.id = result.getInt("id");
         match.gameId = result.getString("game_id");
@@ -1448,8 +1474,9 @@ public class LeagueDB extends AbstractDB {
         match.timeStart = timestamp(result, "time_start");
         match.timeEnd = timestamp(result, "time_end");
         match.patch = result.getString("patch");
-        match.events = jsonObject(result.getString("events"));
-        match.eventData = match.events.toMap();
+        JSONObject events = jsonObject(result.getString("events"));
+        match.eventData = events.toMap();
+        if (retainEvents) match.events = events;
         match.participants = new ArrayList<>();
 
         JSONObject bans = jsonObject(result.getString("bans"));

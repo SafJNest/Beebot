@@ -39,8 +39,8 @@ public class App {
         }
         //TrackerScheduler.start();
         MongoMigration.migrateAll();
-        //bot = new Bot();
-        //bot.il_risveglio_della_bestia();
+        bot = new Bot();
+        bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {

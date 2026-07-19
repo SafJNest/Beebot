@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -67,6 +69,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 public final class MongoDB {
 
     private static final int MAX_SEARCH_RESULTS = 25;
+    private static final int EXISTS_QUERY_BATCH_SIZE = 2_000;
     private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -294,6 +297,20 @@ public final class MongoDB {
     public static MongoRecord findRecord(String collection, Object id) {
         Document document = database().getCollection(collection).find(Filters.eq("_id", id)).first();
         return document == null ? null : new MongoRecord(collection, id, document);
+    }
+
+    public static Set<String> findExistingIds(String collection, List<String> ids) {
+        Set<String> existing = new HashSet<>();
+        if (collection == null || collection.isBlank() || ids == null || ids.isEmpty()) return existing;
+        MongoCollection<Document> target = database().getCollection(collection);
+        for (int start = 0; start < ids.size(); start += EXISTS_QUERY_BATCH_SIZE) {
+            int end = Math.min(ids.size(), start + EXISTS_QUERY_BATCH_SIZE);
+            for (Document document : target.find(Filters.in("_id", ids.subList(start, end))).projection(Projections.include("_id"))) {
+                Object id = document.get("_id");
+                if (id != null) existing.add(String.valueOf(id));
+            }
+        }
+        return existing;
     }
 
     public static void upsertDocument(String collection, Document document) {
@@ -999,10 +1016,17 @@ public final class MongoDB {
     public static boolean upsertMatch(String fullGameId, Match match) {
         if (match == null) return false;
         String id = fullGameId(fullGameId, match.leagueShard);
+        upsertMatchDocument(id, match);
+        upsertMatchEvents(id, match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap());
+        return true;
+    }
+
+    public static boolean upsertMatchDocument(String fullGameId, Match match) {
+        if (match == null) return false;
+        String id = fullGameId(fullGameId, match.leagueShard);
         Document document = write(match).toDocument();
         document.put("_id", id);
         replace(matches(), document);
-        upsertMatchEvents(id, match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap());
         return true;
     }
 

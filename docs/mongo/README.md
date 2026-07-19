@@ -53,7 +53,7 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 
 ## Indici e spazio
 
-Durante il backfill le collection vengono create senza indici secondari. I summoner vengono inviati con bulk unordered da 2.000 documenti; al completamento di summoner e match vengono creati gli indici dichiarati nello schema.
+Durante il backfill le collection vengono create senza indici secondari. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 2.000 documenti; al completamento di summoner e match vengono creati gli indici dichiarati nello schema.
 
 L'inizializzazione crea in modo idempotente gli indici dichiarati nel codice. Su `summoner` sono previsti `_id`, `userId` sparse, `region + riotSearch`, `tracking + region` parziale, `ranks.rank + ranks.lp` e `masteries.level + masteries.points`. Poiché il target viene ricreato vuoto prima della migrazione, non servono drop o cleanup manuali. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
 
