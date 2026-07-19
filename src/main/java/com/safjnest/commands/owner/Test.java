@@ -702,7 +702,7 @@ public class Test extends Command{
                             HashMap<String, HashMap<String, String>> matchData = Tracker.analyzeMatchBuild(match, match.getParticipants());
                             for (MatchParticipant participant : match.getParticipants()) {
                                 HashMap<String, String> participantData = matchData.get(participant.getPuuid());
-                                int summonerId = LeagueService.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
+                                int summonerId = LeagueDB.getSummonerIdByPuuid(participant.getPuuid(), match.getPlatform());
                                 if (participantData == null || summonerId == 0) continue;
 
                                 String build = Tracker.createJSONBuild(participantData);
@@ -856,7 +856,7 @@ public class Test extends Command{
                             System.out.println("Summoner not found");
                             continue;
                         }
-                        LeagueDB.updateSummonerEntries(acc.getAsInt("id"), summoner.getLeagueEntry(), region);
+                        LeagueDB.updateSummonerEntries(acc.get("puuid"), acc.getAsInt("id"), summoner.getLeagueEntry(), region);
                         String query1 = "UPDATE summoner SET level = '" + summoner.getSummonerLevel() + "', icon = '" + summoner.getProfileIconId() + "' WHERE id = " + acc.get("id") + ";";
                         System.out.println("total summoner: " + bbb + " ( " + acc.get("id")  + ") / " + r.size());
                         bbb++;
@@ -1160,7 +1160,7 @@ public class Test extends Command{
                                 } catch (Exception ee) {
                                 ee.printStackTrace();
                                 }
-                                LeagueDB.updateSummonerMasteries(summonerId, sssss.getChampionMasteries());
+                                LeagueDB.updateSummonerMasteries(sssss.getPUUID(), summonerId, sssss.getChampionMasteries());
                             } catch (Exception eeee) {
                                 eeee.printStackTrace();
                             }

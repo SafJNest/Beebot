@@ -183,7 +183,7 @@ public class LeagueDB extends AbstractDB {
     }
 
     public static int addLOLAccount(LeagueEntry entry, LeagueShard shard) {
-        int id = LeagueService.getSummonerIdByPuuid(entry.getPuuid(), shard);
+        int id = getSummonerIdByPuuid(entry.getPuuid(), shard);
         if (id != 0) {
             return id;
         }
@@ -235,7 +235,7 @@ public class LeagueDB extends AbstractDB {
             }
             
             conn.commit();
-            MongoDB.mirrorSummoner(id);
+            MongoDB.mirrorSummoner(summoner.getPUUID(), summoner.getPlatform(), account == null ? null : account.getName() + "#" + account.getTag(), summoner.getSummonerLevel(), summoner.getProfileIconId());
             return id;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -354,7 +354,7 @@ public class LeagueDB extends AbstractDB {
 
 
 
-    public static boolean setSummonerData(int summonerId, int summonerMatchId, MatchParticipant participant, TierDivisionType rank, int lp, int gain, String build) {
+    public static boolean setSummonerData(String puuid, int summonerId, int summonerMatchId, MatchParticipant participant, TierDivisionType rank, int lp, int gain, String build) {
         boolean win = participant.didWin();
         int champion = participant.getChampionId();
         String kda = participant.getKills() + "/" + participant.getDeaths() + "/" + participant.getAssists();
@@ -396,7 +396,7 @@ public class LeagueDB extends AbstractDB {
         String insert = "INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas, role_quest_id, q, w, e, r, d, f) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ", " + participant.getRoleBoundItem() + ", " + q + ", " + w + ", " + e + ", " + r + ", " + d + ", " + f + ");";
         String update = "UPDATE participant SET rank = '" + rank + "', lp = '" + lp + "', gain = '" + gain + "' WHERE summoner_id = '" + summonerId + "' AND match_id = '" + summonerMatchId + "';";
         boolean saved = instance.defaultQuery(insert, update);
-        if (saved) MongoDB.mirrorParticipant(summonerId, summonerMatchId);
+        if (saved) MongoDB.mirrorParticipant(puuid, summonerMatchId);
         return saved;
     }
 
@@ -916,16 +916,17 @@ public class LeagueDB extends AbstractDB {
         String sql = "DELETE FROM profile_statistics WHERE `key` = ?";
         try (Connection conn = instance.getConnection()) {
             if (conn == null) return;
+            QueryRecord profile = instance.lineQuery("SELECT s.puuid, p.time_start FROM profile_statistics p JOIN summoner s ON s.id = p.summoner_id WHERE p.`key` = '" + key.replace("'", "''") + "' LIMIT 1");
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, key);
                 pstmt.executeUpdate();
             }
             conn.commit();
-            MongoDB.deleteProfileStatistics(key);
+            if (profile != null && profile.get("puuid") != null) MongoDB.deleteProfileStatistics(profile.get("puuid"), timeMs(profile.get("time_start")));
         } catch (SQLException ignored) {}
     }
 
-    public static boolean saveProfileStatistics(String key, int summonerId, long timeStart, long timeEnd, byte[] data) {
+    public static boolean saveProfileStatistics(String key, String puuid, int summonerId, long timeStart, long timeEnd, byte[] data) {
         String sql = "INSERT INTO profile_statistics (`key`, summoner_id, time_start, time_end, data) VALUES (?, ?, ?, ?, ?) " +
             "ON DUPLICATE KEY UPDATE time_end = VALUES(time_end), data = VALUES(data)";
         try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -937,7 +938,7 @@ public class LeagueDB extends AbstractDB {
             pstmt.setBytes(5, data);
             pstmt.executeUpdate();
             conn.commit();
-            MongoDB.saveProfileStatistics(key, summonerId, timeStart, timeEnd, data);
+            MongoDB.saveProfileStatistics(key, puuid, timeStart, timeEnd, data);
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1135,7 +1136,7 @@ public class LeagueDB extends AbstractDB {
         return instance.query("SELECT id, name, user_id, build, champion, lane, created_at FROM custom_build WHERE user_id = '" + user_id + "'");
     }
 
-    public static boolean updateSummonerMasteries(int summonerId, List<ChampionMastery> masteries) {
+    public static boolean updateSummonerMasteries(String puuid, int summonerId, List<ChampionMastery> masteries) {
         String query = "INSERT INTO masteries (summoner_id, champion_id, champion_level, champion_points, last_play_time) " +
                        "VALUES (?, ?, ?, ?, ?) " +
                        "ON DUPLICATE KEY UPDATE " +
@@ -1157,7 +1158,8 @@ public class LeagueDB extends AbstractDB {
             List<com.safjnest.lol.model.summoner.Mastery> mirroredMasteries = new ArrayList<>();
             for (ChampionMastery mastery : masteries) mirroredMasteries.add(new com.safjnest.lol.model.summoner.Mastery(
                     mastery.getChampionId(), mastery.getChampionLevel(), mastery.getChampionPoints()));
-            MongoDB.mirrorMasteries(summonerId, mirroredMasteries);
+            QueryRecord summoner = instance.lineQuery("SELECT region FROM summoner WHERE id = " + summonerId);
+            if (summoner != null) MongoDB.mirrorMasteries(puuid, summoner.getAsLeagueShard("region"), mirroredMasteries);
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1173,7 +1175,7 @@ public class LeagueDB extends AbstractDB {
         }
     }
 
-    public static boolean updateSummonerEntries(int summonerId, List<LeagueEntry> entries, LeagueShard shard) {
+    public static boolean updateSummonerEntries(String puuid, int summonerId, List<LeagueEntry> entries, LeagueShard shard) {
         String query = "INSERT INTO `rank` (summoner_id, region, queue, rank, lp, mmr, wins, losses) " +
                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
                        "ON DUPLICATE KEY UPDATE " +
@@ -1203,7 +1205,7 @@ public class LeagueDB extends AbstractDB {
                 conn.commit();
                 List<Rank> ranks = new ArrayList<>();
                 for (LeagueEntry entry : entries) ranks.add(new Rank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses()));
-                MongoDB.mirrorRanks(summonerId, shard, ranks);
+                MongoDB.mirrorRanks(puuid, shard, ranks);
                 return true;
             }
         } catch (SQLException e) {
@@ -1258,8 +1260,7 @@ public class LeagueDB extends AbstractDB {
                 pstmt.executeBatch();
                 conn.commit();
                 for (LeagueEntry entry : entries) {
-                    int legacyId = getSummonerIdByPuuid(entry.getPuuid(), shard);
-                    MongoDB.mirrorRanks(legacyId, shard, List.of(new Rank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses())));
+                    MongoDB.mirrorRanks(entry.getPuuid(), shard, List.of(new Rank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses())));
                 }
                 return true;
             }
@@ -1452,13 +1453,24 @@ public class LeagueDB extends AbstractDB {
         match.participants = new ArrayList<>();
 
         JSONObject bans = jsonObject(result.getString("bans"));
+        boolean legacyBlueRedOrdinals = bans.has("0") && !bans.has("2");
         for (String key : bans.keySet()) {
             int ordinal;
             try {
                 ordinal = Integer.parseInt(key);
             } catch (NumberFormatException ignored) {
+                try {
+                    TeamType team = TeamType.valueOf(key);
+                    JSONArray values = bans.optJSONArray(key);
+                    List<Integer> championIds = new ArrayList<>();
+                    if (values != null) for (int i = 0; i < values.length(); i++) championIds.add(values.optInt(i, 0));
+                    if (team == TeamType.BLUE || team == TeamType.RED) match.bans.put(team, championIds);
+                } catch (IllegalArgumentException ignoredName) {
+                    // Unsupported legacy team keys are not valid side bans.
+                }
                 continue;
             }
+            if (legacyBlueRedOrdinals) ordinal++;
             if (ordinal < 0 || ordinal >= TeamType.values().length) continue;
 
             List<Integer> championIds = new ArrayList<>();
@@ -1466,7 +1478,8 @@ public class LeagueDB extends AbstractDB {
             if (values != null) {
                 for (int i = 0; i < values.length(); i++) championIds.add(values.optInt(i, 0));
             }
-            match.bans.put(TeamType.values()[ordinal], championIds);
+            TeamType team = TeamType.values()[ordinal];
+            if (team == TeamType.BLUE || team == TeamType.RED) match.bans.put(team, championIds);
         }
         return match;
     }

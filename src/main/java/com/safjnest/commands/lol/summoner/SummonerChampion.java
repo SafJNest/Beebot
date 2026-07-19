@@ -50,19 +50,15 @@ public class SummonerChampion extends SlashCommand {
 	protected void execute(SlashCommandEvent event) {
     event.deferReply().queue();
     no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    int summonerId = LeagueService.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
-
     String userId = UserCache.getUser(event.getUser().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getUser().getId() : null;
-    LeagueMessage.send(event.getHook(), userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
+    LeagueMessage.send(event.getHook(), userId, summoner, summoner.getPUUID(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
 	}
 
   @Override
 	protected void execute(CommandEvent event) {
     no.stelar7.api.r4j.pojo.lol.summoner.Summoner summoner = LeagueHandler.getSummonerByArgs(event);
-    int summonerId = LeagueService.getSummonerIdByPuuid(summoner.getPUUID(), summoner.getPlatform());
-
     String userId = UserCache.getUser(event.getAuthor().getId()).getRiotAccounts().get(summoner.getPUUID()) != null ? event.getAuthor().getId() : null;
-    LeagueMessage.send(event, userId, summoner, summonerId, new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
+    LeagueMessage.send(event, userId, summoner, summoner.getPUUID(), new LeagueMessageParameter(LeagueMessageType.OVERVIEW_CHAMPIONS));
 	}
 
 }

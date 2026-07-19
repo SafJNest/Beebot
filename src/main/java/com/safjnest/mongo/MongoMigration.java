@@ -63,7 +63,9 @@ public final class MongoMigration {
                     try {
                         Document document = MongoDB.toDocument(match);
                         checksum = checksum(checksum, document);
-                        if (!options.dryRun()) MongoDB.upsertDocument(collection(phase), document);
+                        checksum = checksum(checksum, new Document("_id", identity)
+                                .append("events", match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap()));
+                        if (!options.dryRun()) MongoDB.upsertMatch(identity, match);
                         highWaterMark = match.id;
                         processed++;
                         report.accept(phase, identity);
@@ -135,23 +137,22 @@ public final class MongoMigration {
 
     private static Document convertSummoner(QueryRecord row) {
         String puuid = required(row, "puuid");
-        return new Document("_id", puuid)
-                .append("legacySummonerId", row.getAsInt("id"))
-                .append("puuid", puuid)
+        Document document = new Document("_id", puuid)
                 .append("riotId", row.get("riot_id"))
                 .append("region", row.get("region"))
                 .append("level", row.getAsInt("level"))
                 .append("icon", row.getAsInt("icon"))
-                .append("userId", row.get("user_id"))
-                .append("tracking", row.getAsBoolean("tracking"))
-                .append("lastUpdate", epochMillis(row, "last_update"))
                 .append("riotSearch", normalize(row.get("riot_id")));
+        if (row.get("user_id") != null && !row.get("user_id").isBlank()) document.put("userId", row.get("user_id"));
+        if (row.getAsBoolean("tracking")) document.put("tracking", true);
+        long lastUpdate = epochMillis(row, "last_update");
+        if (lastUpdate != 0) document.put("lastUpdate", lastUpdate);
+        return document;
     }
 
     private static Document convertEmbedded(String phase, QueryRecord row) {
         return switch (phase) {
             case "ranks" -> new Document("legacyRankId", row.getAsInt("id"))
-                    .append("legacySummonerId", row.getAsInt("summoner_id"))
                     .append("region", row.get("region"))
                     .append("queue", row.get("queue"))
                     .append("rank", row.get("rank"))
@@ -161,7 +162,6 @@ public final class MongoMigration {
                     .append("losses", row.getAsInt("losses"))
                     .append("lastUpdate", epochMillis(row, "last_update"));
             case "masteries" -> new Document("legacyMasteryId", row.getAsInt("id"))
-                    .append("legacySummonerId", row.getAsInt("summoner_id"))
                     .append("championId", row.getAsInt("champion_id"))
                     .append("level", row.getAsInt("champion_level"))
                     .append("points", row.getAsInt("champion_points"))

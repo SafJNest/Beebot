@@ -97,7 +97,7 @@ public class Champions extends SlashCommand {
         if (event.getOption("opponent") != null)
             parameter.setOpponent(getChampionId(event.getOption("opponent").getAsString()));
 
-        LeagueMessage.send(event.getHook(), null, null, 0, parameter);
+        LeagueMessage.send(event.getHook(), null, null, null, parameter);
     }
 
     private int getChampionId(String name) {

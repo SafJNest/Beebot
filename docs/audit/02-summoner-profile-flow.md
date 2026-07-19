@@ -12,7 +12,7 @@
   -> LeagueMessage.send
   -> LeagueMessage.getSummonerEmbed
   -> LeagueService.getAdvancedLOLData
-  -> MongoDB.findSummonerByLegacyId
+  -> MongoDB.findAdvancedProfileProjections(puuid, shard, ...)
   -> MongoDB.findAdvancedProfileProjections
   -> LeagueService.toQueryResult
   -> consumer lanes_played / champion aggregates
@@ -53,9 +53,9 @@ L’aggregazione ora produce `champion`, `games`, `wins`, `losses`, `avg_kills`,
 Il mirror dell’account è più lineare:
 
 1. `LeagueDB.addLOLAccount` esegue SQL e commit;
-2. recupera l’id legacy;
-3. `MongoDB.mirrorSummoner` rilegge la riga MariaDB;
-4. `MongoDB.upsertSummoner` usa `puuid` come `_id`.
+2. passa il PUUID già presente nel modello Riot;
+3. `MongoDB.mirrorSummoner` rilegge solo i campi compatibili della riga MariaDB;
+4. `MongoDB.upsertSummoner` usa `puuid` come `_id` e non scrive `legacySummonerId`.
 
 Il replace Mongo è ora verificato tramite `UpdateResult`; una riga MariaDB non riletta o un errore di conversione vengono registrati dal mirror.
 

@@ -33,7 +33,8 @@ Mongo userà:
 - champion statistics e build in collection aggregate separate;
 - participant incorporati nel match;
 - collection separate per dati derivati e aggregate;
-- `legacySummonerId` e `legacyMatchId` solo per backfill e riconciliazione.
+- `legacyMatchId` resta solo per backfill e riconciliazione; `legacySummonerId` non viene scritto nei nuovi documenti.
+- gli eventi match sono separati in `match_events` e compressi come Binary `zstd-json`; match e masteries restano BSON normale nella prima fase.
 
 ## Boundary
 
@@ -46,8 +47,8 @@ Spring continua a possedere solo controller, configurazione HTTP ed error model.
 - gli enum R4J vengono salvati come stringhe prodotte da `name()`;
 - i ban usano `BLUE` e `RED`, mai ordinali numerici;
 - i participant non hanno un mega-oggetto `build` annidato;
-- gli eventi JSON legacy vengono convertiti in BSON strutturato quando possibile;
-- un payload non convertibile viene conservato raw con versione e stato di conversione;
+- gli eventi JSON vengono serializzati e compressi in `match_events` con `uncompressedBytes`, `checksum` e `encoding`;
+- il reader carica gli eventi separatamente e la history usa una query batch, senza N+1;
 - `null` e `[]` mantengono semantiche distinte.
 
 ## Write path
@@ -71,7 +72,7 @@ La configurazione Mongo viene letta da `rsc/settings.json` come stringa URI di c
 
 `App.isTesting() == false` usa `beebot`; `App.isTesting() == true` usa `beebot_test`. Le collection usano gli stessi nomi delle tabelle MariaDB, senza prefisso `lol_`, in entrambi i database.
 
-Il codice possiede anche il bootstrap dello schema: ogni collection dichiara i propri indici con nomi e specifiche stabili, li crea se mancanti e fallisce su conflitti incompatibili. Il bootstrap è idempotente e non esegue drop automatici.
+Il codice possiede anche il bootstrap dello schema: ogni collection dichiara i propri indici con nomi e specifiche stabili, li crea se mancanti e fallisce su conflitti incompatibili. Il bootstrap è idempotente e non esegue drop automatici. `summoner` usa un indice `region + riotSearch` e un indice parziale `tracking=true`. La migrazione richiede un database target vuoto, quindi non esistono drop o cleanup manuali nel runbook.
 
 ## Compatibilità API
 

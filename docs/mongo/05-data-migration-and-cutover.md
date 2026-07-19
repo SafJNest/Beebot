@@ -21,7 +21,9 @@ Le fasi sono eseguite in questo ordine:
 3. `ranks` → `summoner.ranks[]`;
 4. `masteries` → `summoner.masteries[]`.
 
-Sono dati raw e vengono conservati i riferimenti legacy (`legacySummonerId`, `legacyMatchId`, gli id delle righe rank/mastery), oltre ai campi necessari alle letture Mongo.
+Sono dati raw. Il match conserva il riferimento `legacyMatchId` per riconciliazione. Il documento `summoner` usa `_id = puuid`, senza `legacySummonerId` e senza un secondo campo `puuid`. La migrazione viene eseguita su un database Mongo vuoto: non esiste una fase applicativa di cleanup o conversione in-place.
+
+Gli eventi eventualmente presenti nel JSON MariaDB vengono scritti separatamente in `match_events` tramite `MongoDB.upsertMatch()`: prima viene sostituito il documento `match`, poi il payload eventi viene serializzato, compresso e sostituito in `match_events`. Il documento `match` non contiene più `events`.
 
 Non vengono migrati:
 
@@ -56,10 +58,11 @@ Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato
 
 1. verificare `MONGO_TEST_URI`/la URI in `settings.json` e `App.isTesting()`;
 2. confermare che il database Mongo scelto sia `beebot_test`;
-3. eseguire un dry-run con un high-water mark piccolo;
-4. eseguire il backfill reale con batch 50.000;
-5. controllare `summoner`, `match`, `ranks[]`, `masteries[]`, `participants[]`;
-6. ripetere con `resume=true` per verificare idempotenza e checksum;
-7. costruire solo dopo build e profile statistics tramite i flussi applicativi.
+3. eliminare il database/collection target prima del run, così schema, indici e documenti partono puliti;
+4. eseguire un dry-run con un high-water mark piccolo;
+5. eseguire il backfill reale con batch 50.000;
+6. controllare `summoner`, `match`, `match_events`, `ranks[]`, `masteries[]`, `participants[]`;
+7. ripetere con `resume=true` per verificare idempotenza e checksum;
+8. costruire solo dopo build e profile statistics tramite i flussi applicativi.
 
 Gli errori del backfill interrompono il run con fase e id espliciti. Gli errori del mirror runtime restano loggati senza falsificare il risultato MariaDB.

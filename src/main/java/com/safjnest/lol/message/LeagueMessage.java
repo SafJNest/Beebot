@@ -83,12 +83,12 @@ public class LeagueMessage {
 
     public static final String BUTTON_ID_PREFIX = "lol";
 
-    private static Object[] build(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+    private static Object[] build(String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
         MessageEmbed embed = null;
         List<MessageTopLevelComponent> components = new ArrayList<>();
         switch (parameter.getMessageType()) {
             case PROFILE:
-                embed = getSummonerEmbed(summoner, summonerId, parameter).build();   
+                embed = getSummonerEmbed(summoner, parameter).build();
                 components = getSummonerButtons(summoner, userId, parameter);
                 break;
             case LIVEGAME:
@@ -118,8 +118,8 @@ public class LeagueMessage {
             case OVERVIEW_OBJECTIVES:
             case OVERVIEW_CHAMPIONS:
             case OVERVIEW_OPGG:
-                embed = buildEmbedChampion(userId, summoner, summonerId, parameter);
-                components = getChampionButtons(userId, summoner, summonerId, parameter);
+                embed = buildEmbedChampion(userId, summoner, puuid, parameter);
+                components = getChampionButtons(userId, summoner, parameter);
                 break;
             case CHAMPIONS_BY_WINRATE:
             case CHAMPIONS_BY_PICKRATE:
@@ -336,24 +336,24 @@ public class LeagueMessage {
     }
     
     @SuppressWarnings("unchecked")
-    public static void send(InteractionHook hook, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        Object[] built = build(userId, summoner, summonerId, parameter);
+    public static void send(InteractionHook hook, String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
+        Object[] built = build(userId, summoner, puuid, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
         List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
         hook.editOriginalEmbeds(embed).setComponents(components).queue();
     }
 
     @SuppressWarnings("unchecked")
-    public static void send(CommandEvent event, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        Object[] built = build(userId, summoner, summonerId, parameter);
+    public static void send(CommandEvent event, String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
+        Object[] built = build(userId, summoner, puuid, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
         List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
         event.getChannel().sendMessageEmbeds(embed).setComponents(components).queue();
     }
 
     @SuppressWarnings("unchecked")
-    public static void edit(Message message, String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
-        Object[] built = build(userId, summoner, summonerId, parameter);
+    public static void edit(Message message, String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
+        Object[] built = build(userId, summoner, puuid, parameter);
         MessageEmbed embed = (MessageEmbed) built[0];
         List<MessageTopLevelComponent> components = (List<MessageTopLevelComponent>) built[1];
         message.editMessageEmbeds(embed).setComponents(components).queue();   
@@ -402,7 +402,7 @@ public class LeagueMessage {
 //   ▄████████▀  ████████▀   ▀█   ███   █▀   ▀█   ███   █▀   ▀██████▀   ▀█   █▀    ██████████   ███    ███
 //                                                                                              ███    ███
 
-    public static EmbedBuilder getSummonerEmbed(Summoner s, int summonerId, LeagueMessageParameter parameter) {
+    public static EmbedBuilder getSummonerEmbed(Summoner s, LeagueMessageParameter parameter) {
         RiotAccount account = LeagueService.getRiotAccountFromSummoner(s);
 
         EmbedBuilder builder = new EmbedBuilder();
@@ -428,7 +428,7 @@ public class LeagueMessage {
         builder.addField("Highest Masteries", masteryString, false);
 
 
-        QueryResult advanceData = LeagueService.getAdvancedLOLData(summonerId, parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
+        QueryResult advanceData = LeagueService.getAdvancedLOLData(s.getPUUID(), s.getPlatform(), parameter.getTimeStart(), parameter.getTimeEnd(), parameter.getQueueType());
 
         if (!advanceData.isEmpty()) {
             LinkedHashMap<LaneType, String> laneStats = new LinkedHashMap<>();
@@ -477,7 +477,7 @@ public class LeagueMessage {
             }
 
             if (parameter.getQueueType() == null) {
-                QueryResult gameData = MongoDB.getAllGamesForAccount(summonerId, parameter.getTimeStart(), parameter.getTimeEnd());
+                QueryResult gameData = MongoDB.getAllGamesForAccount(s.getPUUID(), parameter.getTimeStart(), parameter.getTimeEnd());
                 LinkedHashMap<GameQueueType, String> gameTypeStats = new LinkedHashMap<>();
                 for (QueryRecord row : gameData) {
                     GameQueueType type = row.getAsGameQueueType("queue");
@@ -1500,10 +1500,10 @@ public class LeagueMessage {
                 .build();
     }
 
-    private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+    private static MessageEmbed buildEmbedChampion(String userId, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
         RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
         List<Match> matches = null;
-        matches = MongoDB.getMatchHistory(summonerId, parameter);
+        matches = MongoDB.getMatchHistory(puuid, parameter);
         
         EmbedBuilder eb = new EmbedBuilder();
         if (parameter.isShowChampion()) eb.setThumbnail(ChampionUtils.getChampionProfilePic(parameter.getChampion().getId()));
@@ -1513,22 +1513,22 @@ public class LeagueMessage {
         eb.setColor(Bot.getColor());
         switch (parameter.getMessageType()) {
             case OVERVIEW:
-                eb = getGenericStats(eb, matches, summoner, summonerId, parameter);                
+                eb = getGenericStats(eb, matches, summoner, puuid, parameter);
                 break;
             case MATCHUP:
-                eb = getMatchups(eb, matches, summonerId, parameter);
+                eb = getMatchups(eb, matches, puuid, parameter);
                 break;
             case OVERVIEW_PING:
-                eb = getPings(eb, matches, summonerId);
+                eb = getPings(eb, matches, puuid);
                 break;
             case OVERVIEW_OBJECTIVES:
-                eb = getObjectives(eb, matches, summoner, summonerId);
+                eb = getObjectives(eb, matches, summoner, puuid);
                 break;
             case OVERVIEW_CHAMPIONS:
-                eb = getAllChampions(eb, matches, summoner, summonerId, parameter);
+                eb = getAllChampions(eb, matches, summoner, puuid, parameter);
                 break;
             case OVERVIEW_OPGG:
-                eb = getChampionOPGG(eb, matches, summoner, summonerId, parameter);
+                eb = getChampionOPGG(eb, matches, summoner, puuid, parameter);
                 break;
             default:
                 break;
@@ -1536,7 +1536,7 @@ public class LeagueMessage {
         return eb.build();
     }
 
-    private static List<MessageTopLevelComponent> getChampionButtons(String userId, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+    private static List<MessageTopLevelComponent> getChampionButtons(String userId, Summoner summoner, LeagueMessageParameter parameter) {
         StaticChampion champion = parameter.getChampion();
         
         Button left = Button.primary("lol-left", " ").withEmoji(CustomEmojiHandler.getRichEmoji("leftarrow"));
@@ -1637,12 +1637,12 @@ public class LeagueMessage {
         return rows;
     }
 
-    private static EmbedBuilder getPings(EmbedBuilder eb, List<Match> matches, int summonerId) {
+    private static EmbedBuilder getPings(EmbedBuilder eb, List<Match> matches, String puuid) {
         HashMap<String, Integer> pings = new HashMap<>();
 
         for (Match match : matches) {
             for (Participant participant : match.participants) {
-                if (participant.summonerId != summonerId) continue;
+                if (!puuid.equals(participant.puuid)) continue;
                 for (String ping : participant.pings.keySet()) 
                     pings.put(ping, pings.getOrDefault(ping, 0) + participant.pings.get(ping));
             }
@@ -1678,7 +1678,7 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<Match> matches, int summonerId, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getMatchups(EmbedBuilder eb, List<Match> matches, String puuid, LeagueMessageParameter parameter) {
         HashMap<Integer, int[]> laneVsWinrate = new HashMap<>();
         HashMap<Integer, int[]> duoWinrate = new HashMap<>();
 
@@ -1687,7 +1687,7 @@ public class LeagueMessage {
 
         for (Match match : matches) {
             for (Participant participant : match.participants) {
-                if (participant.summonerId != summonerId) {
+                if (!puuid.equals(participant.puuid)) {
                     continue;
                 }
 
@@ -1735,7 +1735,7 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<Match> matches, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getGenericStats(EmbedBuilder eb, List<Match> matches, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
 
         if (matches.size() == 0) {
             eb.setDescription("Not enough games");
@@ -1774,7 +1774,7 @@ public class LeagueMessage {
             if (newest < match.timeStart) newest = match.timeStart;
 
             for (Participant participant : match.participants) {
-                if (participant.summonerId != summonerId) continue;
+                if (!puuid.equals(participant.puuid)) continue;
 
                 for (String ping : participant.pings.keySet()) 
                     pings.put(ping, pings.getOrDefault(ping, 0) + participant.pings.get(ping));
@@ -2141,7 +2141,7 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getAllChampions(EmbedBuilder eb, List<Match> matches, Summoner summoner, int summonerId, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getAllChampions(EmbedBuilder eb, List<Match> matches, Summoner summoner, String puuid, LeagueMessageParameter parameter) {
 
         if (matches.size() == 0) {
             eb.setDescription("Not enough games");
@@ -2156,7 +2156,7 @@ public class LeagueMessage {
 
         for (Match match : matches) {
             for (Participant participant : match.participants) {
-                if (participant.summonerId != summonerId) continue;
+                if (!puuid.equals(participant.puuid)) continue;
 
                     unique.getOrDefault("champion", new HashSet<>()).add(participant.champion);
                     String kda = participant.kda;
@@ -2189,11 +2189,11 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<Match> matches, Summoner s, int summonerId, LeagueMessageParameter parameter) {
+    private static EmbedBuilder getChampionOPGG(EmbedBuilder eb, List<Match> matches, Summoner s, String puuid, LeagueMessageParameter parameter) {
         for (Match match : matches) 
             eb = getOpggEmbedMatch(eb, match, s);
         
-        int totalPages = MongoDB.countMatchHistory(summonerId, parameter);
+        int totalPages = MongoDB.countMatchHistory(puuid, parameter);
         int pages = (int) Math.ceil((double) totalPages / 5);
         int currentPage = (parameter.getOffset() / 5) + 1;
         eb.setFooter("Page " + currentPage + " / " + pages);
@@ -2201,7 +2201,7 @@ public class LeagueMessage {
         return eb;
     }
 
-    private static EmbedBuilder getObjectives(EmbedBuilder eb, List<Match> matches, Summoner summoner, int summonerId) {        
+    private static EmbedBuilder getObjectives(EmbedBuilder eb, List<Match> matches, Summoner summoner, String puuid) {
         HashMap<String, Integer> monsterKills = new HashMap<>();
         HashMap<String, Integer> monsterParticipation = new HashMap<>();
         HashMap<String, Integer> totalMonstersPerType = new HashMap<>();
@@ -2214,13 +2214,13 @@ public class LeagueMessage {
         
         for (Match match : matches) {
             Participant participant = match.participants.stream()
-                    .filter(p -> p.summonerId == summonerId)
+                    .filter(p -> puuid.equals(p.puuid))
                     .findFirst()
                     .orElse(null);
             
             if (participant == null) continue;
             
-            String puuid = participant.puuid;
+            String participantPuuid = participant.puuid;
             
             if (!match.events.has("participants") || (!match.events.has("monster_events") && !match.events.has("building_events"))) {
                 continue;
@@ -2230,7 +2230,7 @@ public class LeagueMessage {
             Integer participantId = null;
             
             for (String key : participantsMap.keySet()) {
-                if (participantsMap.getString(key).equals(puuid)) {
+                if (participantsMap.getString(key).equals(participantPuuid)) {
                     participantId = Integer.parseInt(key);
                     break;
                 }

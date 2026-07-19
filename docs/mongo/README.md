@@ -13,6 +13,10 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - Il backfill iniziale migra solo dati raw: `summoner`, `match` con participant, `rank` e `masteries`.
 - `profile_statistics`, build e aggregate vengono costruiti successivamente dall'applicazione.
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
+- Il documento `summoner` usa `_id = puuid`; `legacySummonerId` e il campo duplicato `puuid` non vengono scritti.
+- La migrazione parte da un database Mongo vuoto: non esiste un cleanup applicativo di documenti legacy.
+- I reader usano `_id` come fallback solo per compatibilità difensiva con documenti esterni alla migrazione pulita.
+- Gli eventi non sono nel documento `match`: vivono in `match_events` come Binary `zstd-json`.
 
 ## Struttura del codice
 
@@ -34,7 +38,8 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 6. 06-result-policy.md
 7. 07-agent-strategy.md
 8. 08-query-inventory.md
-9. ADR-0009
+9. 09-space-optimization.md
+10. ADR-0009
 
 ## Regole BSON
 
@@ -43,8 +48,14 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 - Enum R4J: name().
 - Ban: bans.BLUE e bans.RED, sempre presenti anche se vuoti.
 - Participant: campi flat; nessun campo build mega-nested.
-- Eventi: BSON strutturato quando convertibile.
+- Eventi: collection `match_events`, Binary Zstandard con checksum e dimensione originale.
 - Payload legacy: solo compatibilità temporanea e mai unica sorgente valida.
+
+## Indici e spazio
+
+L'inizializzazione crea in modo idempotente gli indici dichiarati nel codice. Su `summoner` sono previsti `_id`, `userId` sparse, `region + riotSearch` e `tracking + region` parziale con filtro `tracking=true`. Poiché il target viene ricreato vuoto prima della migrazione, non servono drop o cleanup manuali. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
+
+La compressione applicativa è riservata agli eventi: match e summoner restano BSON normale. Anche `masteries` resta BSON normale nella prima migrazione e va misurato prima di qualunque compressione inline.
 
 ## Configurazione
 

@@ -66,8 +66,8 @@ public class Summoner extends SlashCommand {
             return;
         }
 
-        int summonerId = LeagueDB.addLOLAccount(s);
-        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.PROFILE));
+        LeagueDB.addLOLAccount(s);
+        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.PROFILE));
     }
 
 }

@@ -10,8 +10,8 @@
 | Comando | Entry point | Percorso dati | Esito statico |
 |---|---|---|---|
 | `/summoner profile` e `/summoner` prefix | `SummonerProfile`, `Summoner` | Riot summoner → `LeagueDB.addLOLAccount` → mirror Mongo → profile/advanced query Mongo → Redis | coerente dopo la separazione aggregate/participant |
-| `/summoner overview` | `SummonerOverview` | Riot identity → id Mongo → `LeagueMessage` overview → Mongo profile/ranks/masteries/statistics | rischio su summoner non trovato: manca guardia prima di usare `summoner.getPUUID()` |
-| `/summoner champion` | `SummonerChampion` | Riot identity → id Mongo → match history Mongo → statistiche champion | stesso rischio di overview su id `0` o summoner nullo |
+| `/summoner overview` | `SummonerOverview` | Riot identity → PUUID → `LeagueMessage` overview → Mongo profile/ranks/masteries/statistics | lettura senza lookup id numerico |
+| `/summoner champion` | `SummonerChampion` | Riot identity → PUUID → match history Mongo → statistiche champion | lettura senza lookup id numerico |
 | `/summoner link` | `SummonerLink` → `UserData.addRiotAccount` | MariaDB account/user → mirror summoner Mongo | coerente; verifica il risultato SQL prima di confermare il link |
 | `/summoner unlink` | `SummonerUnlink` → `UserData.deleteRiotAccount` | MariaDB detach → `MongoDB.detachSummoner` | coerente; dati match non vengono cancellati, come previsto |
 | `/summoner track` | `SummonerTrack` | MariaDB tracking update → mirror `tracking` Mongo → Tracker | **P1**: il comando non controlla il booleano restituito da `trackSummoner` |
@@ -37,7 +37,7 @@
 
 Il profile aggregate ora raggruppa i participant Mongo per `champion` e produce `games`, `wins`, `losses`, medie KDA, `total_lp_gain` e `lanes_played`, cioè le chiavi richieste dall’embed legacy.
 
-`SummonerOverview` e `SummonerChampion` non eseguono `LeagueDB.addLOLAccount`. Se l’identità Riot è valida ma non esiste ancora in Mongo, `getSummonerIdByPuuid` può restituire `0`; il comportamento deve essere verificato come risposta vuota/errore esplicito invece di proseguire con un id inesistente.
+`SummonerOverview` e `SummonerChampion` propagano direttamente il PUUID al flusso Mongo. Se l’identità Riot è valida ma il documento non esiste ancora, la query Mongo restituisce un risultato vuoto/esplicito senza tentare un mapping MariaDB.
 
 ### OP.GG
 
@@ -63,7 +63,7 @@ Riot match
   → LeagueDB.setSummonerData per participant
   → MongoDB.mirrorParticipant
   → LeagueDB.setMatchRank / setMatchEvent
-  → MongoDB.updateMatchRank / updateMatchEvents
+  → MongoDB.updateMatchRank / match_events zstd-json
 ```
 
 Il documento `match` ora contiene:

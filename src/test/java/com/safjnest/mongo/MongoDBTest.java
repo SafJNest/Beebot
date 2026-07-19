@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.bson.Document;
@@ -11,6 +12,7 @@ import org.junit.Test;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.summoner.Summoner;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
@@ -49,6 +51,22 @@ public class MongoDBTest {
     }
 
     @Test
+    public void legacyOrdinalBansBecomeBlueAndRed() {
+        Match match = new Match();
+        match.gameId = "EUW1_789";
+        match.leagueShard = LeagueShard.EUW1;
+        match.bans = new LinkedHashMap<>();
+        match.bans.put(TeamType.SUBTEAM, List.of());
+        match.bans.put(TeamType.BLUE, List.of(555, 420));
+
+        Document document = MongoDB.toDocument(match);
+        Document bans = (Document) document.get("bans");
+
+        assertEquals(List.of(), bans.get("BLUE"));
+        assertEquals(List.of(555, 420), bans.get("RED"));
+    }
+
+    @Test
     public void matchRoundTripPreservesEnumAndBans() {
         Match match = new Match();
         match.gameId = "EUW1_456";
@@ -61,5 +79,31 @@ public class MongoDBTest {
         assertEquals("456", decoded.gameId);
         assertEquals(List.of(), decoded.bans.get(TeamType.BLUE));
         assertEquals(List.of(), decoded.bans.get(TeamType.RED));
+    }
+
+    @Test
+    public void summonerUsesPuuidAsIdentityAndOmitsLegacyFields() {
+        Summoner summoner = new Summoner(42, "puuid-42", "Name#TAG", "EUW1", 500, 1234);
+
+        Document document = MongoDB.toDocument(summoner);
+
+        assertEquals("puuid-42", document.getString("_id"));
+        assertFalse(document.containsKey("legacySummonerId"));
+        assertFalse(document.containsKey("tracking"));
+        assertFalse(document.containsKey("userId"));
+
+        Summoner decoded = MongoDB.read(new MongoRecord("summoner", "puuid-42", document), Summoner.class);
+        assertEquals("puuid-42", decoded.puuid());
+        assertEquals(0, decoded.summonerId());
+    }
+
+    @Test
+    public void matchDoesNotEmbedEvents() {
+        Match match = new Match();
+        match.gameId = "EUW1_999";
+        match.leagueShard = LeagueShard.EUW1;
+        match.eventData = Map.of("champion_kills", List.of(Map.of("timestamp", 1000)));
+
+        assertFalse(MongoDB.toDocument(match).containsKey("events"));
     }
 }

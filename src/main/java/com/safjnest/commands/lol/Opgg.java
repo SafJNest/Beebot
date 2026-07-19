@@ -64,8 +64,8 @@ public class Opgg extends SlashCommand {
             event.reply("Couldn't find the specified summoner. Remember to use the tag or connect an account.");
             return;
         }
-        int summonerId = LeagueDB.addLOLAccount(s);
-        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.OPGG));
+        LeagueDB.addLOLAccount(s);
+        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.OPGG));
     }
 
     @Override
@@ -83,8 +83,8 @@ public class Opgg extends SlashCommand {
         if(event.getOption("summoner") == null && event.getOption("user") == null) theGuy = event.getUser();
         else if(event.getOption("user") != null) theGuy = event.getOption("user").getAsUser();
         
-        int summonerId = LeagueDB.addLOLAccount(s);
-        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.OPGG));
+        LeagueDB.addLOLAccount(s);
+        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.OPGG));
 	}
     
 }

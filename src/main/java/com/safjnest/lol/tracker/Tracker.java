@@ -330,7 +330,8 @@ public class Tracker {
     public static ChronoTask analyzeMatchHistory(GameQueueType queue, Summoner summoner) {
         if (toTrack.indexOf(queue) == -1) return Chronos.NULL;
 
-        QueryRecord row = MongoDB.getRegisteredLolAccount(LeagueDB.addLOLAccount(summoner), SeasonUtils.getCurrentSplitRange()[0]);
+        LeagueDB.addLOLAccount(summoner);
+        QueryRecord row = MongoDB.getRegisteredLolAccount(summoner.getPUUID(), SeasonUtils.getCurrentSplitRange()[0]);
         //if (row.emptyValues() && queue == GameQueueType.TEAM_BUILDER_RANKED_SOLO) return Chronos.NULL;
 
         try { Thread.sleep(350); }
@@ -437,7 +438,8 @@ public class Tracker {
 //
 
     public static TierDivisionType pushSummoner(LOLMatch match, int summonerMatch, Summoner summoner, MatchParticipant participant, HashMap<String, String> matchData) {
-        QueryRecord row = MongoDB.getRegisteredLolAccount(LeagueDB.addLOLAccount(summoner), SeasonUtils.getCurrentSplitRange()[0]);
+        LeagueDB.addLOLAccount(summoner);
+        QueryRecord row = MongoDB.getRegisteredLolAccount(summoner.getPUUID(), SeasonUtils.getCurrentSplitRange()[0]);
         return pushSummoner(match, summonerMatch, summoner, participant, row, matchData);
     }
 
@@ -466,11 +468,11 @@ public class Tracker {
         }
         int summonerId = LeagueDB.addLOLAccount(summoner);
         ((ChronoTask) () -> {
-            LeagueDB.updateSummonerEntries(summonerId, entries, summoner.getPlatform());
+            LeagueDB.updateSummonerEntries(summoner.getPUUID(), summonerId, entries, summoner.getPlatform());
             //LeagueDB.updateSummonerMasteries(summonerId, summoner.getChampionMasteries());
         }).queue();
 
-        LeagueDB.setSummonerData(summonerId, summonerMatch, participant, division, lp, gain, createJSONBuild(matchData));
+        LeagueDB.setSummonerData(summoner.getPUUID(), summonerId, summonerMatch, participant, division, lp, gain, createJSONBuild(matchData));
         return division;
     }
 

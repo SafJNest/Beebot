@@ -99,8 +99,7 @@ public class LeagueEventHandler extends EventButtonHandler {
         boolean hasLeft = buttons.stream().anyMatch(b -> (LeagueMessage.BUTTON_ID_PREFIX + "-left").equals(b.getCustomId()));
         String user_id = (hasLeft || context.userIdFallback()) ? context.user_id() : "";
         Summoner s = LeagueService.getSummonerByPuuid(context.puuid(), LeagueShard.valueOf(context.region()));
-        int summonerId = s != null ? LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform()) : 0;
-        LeagueMessage.send(hook, user_id, s, summonerId, context.parameter());
+        LeagueMessage.send(hook, user_id, s, s == null ? null : s.getPUUID(), context.parameter());
     }
 
     // ---- handlers ----

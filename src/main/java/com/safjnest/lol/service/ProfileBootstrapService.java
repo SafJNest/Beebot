@@ -54,7 +54,7 @@ public final class ProfileBootstrapService {
             if (profile != null) MongoDB.upsertSummoner(profile, null);
 
             List<LeagueEntry> entries = LeagueService.getLeagueEntries(puuid, shard);
-            LeagueDB.updateSummonerEntries(summonerId, entries, shard);
+            LeagueDB.updateSummonerEntries(puuid, summonerId, entries, shard);
             List<Rank> ranks = new java.util.ArrayList<>();
             java.util.Map<no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType, Long> mmr = new java.util.HashMap<>();
             for (LeagueEntry entry : entries) {

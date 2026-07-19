@@ -277,8 +277,7 @@ public class EventModalInteractionHandler extends ListenerAdapter {
         if (EventUtils.getButtonById(event.getMessage().getComponents(), LeagueMessage.BUTTON_ID_PREFIX + "-left") == null) user_id = "";
         Summoner s = LeagueService.getSummonerByPuuid(puuid, LeagueShard.valueOf(region));
 
-        int summonerId = LeagueService.getSummonerIdByPuuid(s.getPUUID(), s.getPlatform());
-        LeagueMessage.send(event.getHook(), user_id, s, summonerId, parameter); 
+        LeagueMessage.send(event.getHook(), user_id, s, s.getPUUID(), parameter);
     }
 
     private void blacklist(ModalInteractionEvent event) {

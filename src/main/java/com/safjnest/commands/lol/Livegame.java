@@ -67,7 +67,7 @@ public class Livegame extends SlashCommand {
         }
         
         int summonerId = LeagueDB.addLOLAccount(s);
-        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
+        LeagueMessage.send(event, theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
     }
 
     @Override
@@ -87,7 +87,7 @@ public class Livegame extends SlashCommand {
         }
 
         int summonerId = LeagueDB.addLOLAccount(s);
-        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, summonerId, new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
+        LeagueMessage.send(event.getHook(), theGuy != null ? theGuy.getId() : null, s, s.getPUUID(), new LeagueMessageParameter(LeagueMessageType.LIVEGAME));
 	}
 
 }
