@@ -19,9 +19,9 @@ import com.safjnest.sql.database.LeagueDB;
 public final class MongoMigration {
 
     private static final String CHECKPOINT_COLLECTION = "migration_runs";
-    private static final int DEFAULT_BATCH_SIZE = 500_000;
-    private static final int MAX_BATCH_SIZE = 500_000;
-    private static final int MAX_MATCH_BATCH_SIZE = 100_000;
+    private static final int DEFAULT_BATCH_SIZE = 100_000;
+    private static final int MAX_BATCH_SIZE = 100_000;
+    private static final int MAX_MATCH_BATCH_SIZE = 50_000;
     private static final int MAX_REPORT_IDENTITIES = 100;
     private static final List<String> PHASES = List.of("summoners", "matches");
 

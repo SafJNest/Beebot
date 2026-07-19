@@ -7,10 +7,10 @@ Le opzioni controllano dry-run, batch, run id, resume e high-water mark.
 
 ```java
 MongoMigration.migrateAll(new MongoMigration.Options(
-        false, 500_000, "raw-2026-07", true, 0));
+        false, 100_000, "raw-2026-07", true, 0));
 ```
 
-La dimensione massima configurabile per `summoner` è 500.000 righe. Ogni batch summoner carica anche rank e masteries relativi all'intervallo di id e li scrive nello stesso documento. La fase `matches` usa pagine da massimo 100.000 match: ogni pagina carica i participant con una query MariaDB bounded.
+La dimensione massima configurabile per `summoner` è 100.000 righe. Ogni batch summoner carica anche rank e masteries relativi all'intervallo di id e li scrive nello stesso documento. La fase `matches` usa pagine da massimo 50.000 match: ogni pagina carica i participant con una query MariaDB bounded.
 
 ## Ordine e perimetro
 
@@ -58,7 +58,7 @@ Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato
 2. confermare che il database Mongo scelto sia `beebot_test`;
 3. eliminare il database/collection target prima del run, così schema, indici e documenti partono puliti;
 4. eseguire un dry-run con un high-water mark piccolo;
-5. eseguire il backfill reale con batch 500.000 per `summoner` e 100.000 per `match`;
+5. eseguire il backfill reale con batch 100.000 per `summoner` e 50.000 per `match`;
 6. controllare `summoner`, `match`, `match_events`, `ranks[]`, `masteries[]`, `participants[]`;
 7. ripetere con `resume=true` per verificare idempotenza e checksum;
 8. costruire solo dopo build e profile statistics tramite i flussi applicativi.
