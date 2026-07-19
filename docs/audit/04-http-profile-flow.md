@@ -53,7 +53,7 @@ Per un `puuid` non presente in Mongo:
 2. verificare il primo `202 profile_pending`;
 3. osservare bootstrap, riga MariaDB e documento Mongo;
 4. verificare rank e mastery nel documento summoner;
-5. verificare la creazione di `lol_profile_statistics` dopo il refresh;
+5. verificare la creazione di `profile_statistics` dopo il refresh;
 6. verificare invalidazione di `PROFILE_PAGE` e risposta successiva `200`/`PARTIAL`.
 
 Il test deve separare chiaramente `documento assente`, `documento presente ma incompleto` e `errore Mongo`.

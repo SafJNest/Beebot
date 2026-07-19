@@ -55,7 +55,7 @@ public class MongoDBTest {
         match.leagueShard = LeagueShard.EUW1;
         match.bans = Map.of(TeamType.BLUE, List.of(), TeamType.RED, List.of());
 
-        Match decoded = MongoDB.read(new MongoRecord("lol_matches", "EUW1_456", MongoDB.toDocument(match)), Match.class);
+        Match decoded = MongoDB.read(new MongoRecord("match", "EUW1_456", MongoDB.toDocument(match)), Match.class);
 
         assertEquals(LeagueShard.EUW1, decoded.leagueShard);
         assertEquals("456", decoded.gameId);

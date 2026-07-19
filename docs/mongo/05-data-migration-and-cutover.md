@@ -1,29 +1,65 @@
-# Fase 5 — migrazione dati
+# Fase 5 — migrazione dati raw
 
 ## Runner
 
-Il runner unico è MongoMigration.migrateAll(), con MongoMigration.Options per dry-run, batch, run id, resume e high-water mark. Non parte automaticamente all'avvio.
+Il runner unico è `MongoMigration.migrateAll()`. Non parte automaticamente all'avvio.
+Le opzioni controllano dry-run, batch, run id, resume e high-water mark.
 
-MongoMigration legge MariaDB in batch e usa MongoDB.upsertDocument con chiavi deterministiche.
+```java
+MongoMigration.migrateAll(new MongoMigration.Options(
+        false, 50_000, "raw-2026-07", true, 0));
+```
 
-## Checkpoint
+La dimensione massima configurabile è 50.000 righe. La fase `matches` usa comunque pagine da massimo 5.000 match: ogni pagina carica i participant con una query MariaDB bounded, evitando una `SELECT` unica sull'intera tabella e limitando la memoria occupata dai documenti embedded.
 
-lol_migration_runs contiene run, fase, high-water mark, checksum, processed e timestamp. Un rerun con lo stesso runId e resume=true salta le righe già processate. Gli upsert sono idempotenti.
+## Ordine e perimetro
 
-## Fasi
+Le fasi sono eseguite in questo ordine:
 
-- summoner: puuid come _id, region e ricerca normalizzata;
-- match: Riot match ID completo, bans BLUE/RED, participant flat ed eventi strutturati;
-- profile statistics: decode Kryo, documento statistics strutturato e legacyPayload temporaneo.
+1. `summoners` → collection `summoner`;
+2. `matches` → collection `match`, con `participants[]` flat nel documento;
+3. `ranks` → `summoner.ranks[]`;
+4. `masteries` → `summoner.masteries[]`.
 
-Custom builds e summoner.metrics sono esclusi. Un payload non convertibile interrompe il run con fase e id espliciti; non viene marcato come documento Mongo valido.
+Sono dati raw e vengono conservati i riferimenti legacy (`legacySummonerId`, `legacyMatchId`, gli id delle righe rank/mastery), oltre ai campi necessari alle letture Mongo.
 
-## Runbook
+Non vengono migrati:
 
-1. verificare URI e database scelto da App.isTesting();
-2. eseguire un batch piccolo in dry-run;
-3. controllare checksum e high-water mark;
-4. eseguire il batch reale;
-5. ripetere con resume per verificare idempotenza.
+- `custom_build` e le collection/aggregate delle build;
+- `profile_statistics`;
+- `summoner_metric`, `metrics` e statistiche profilo/champion derivate;
+- qualunque DTO o payload Mongo di build ricostruito durante il backfill.
 
-Gli errori Mongo del mirror runtime non annullano MariaDB; il backfill invece fallisce esplicitamente per non nascondere conversioni incomplete.
+I dati di build e le statistiche derivate verranno rigenerati dall'applicazione dopo la verifica dei dati raw.
+
+## Paginazione
+
+Le tabelle SQL sono lette con keyset pagination:
+
+```sql
+WHERE id > <highWaterMark>
+ORDER BY id ASC
+LIMIT <batchSize>
+```
+
+Non viene usato `OFFSET`, non viene materializzato il risultato completo e non viene eseguita una query senza `LIMIT`. La fase match usa `LeagueDB.getMatchesAfterId`, che legge una pagina di match e i relativi participant in una seconda query limitata alla pagina.
+
+## Checkpoint e resume
+
+`migration_runs` contiene run, fase, high-water mark, checksum, numero di righe processate, batch size, stato e timestamp. Gli stati sono `RUNNING`, `PAUSED` e `COMPLETED`.
+
+Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili.
+
+`highWaterMark > 0` permette di fermare intenzionalmente il backfill a un id. In quel caso il checkpoint resta `PAUSED` e può essere ripreso senza perdere la pagina già completata.
+
+## Runbook ambiente test
+
+1. verificare `MONGO_TEST_URI`/la URI in `settings.json` e `App.isTesting()`;
+2. confermare che il database Mongo scelto sia `beebot_test`;
+3. eseguire un dry-run con un high-water mark piccolo;
+4. eseguire il backfill reale con batch 50.000;
+5. controllare `summoner`, `match`, `ranks[]`, `masteries[]`, `participants[]`;
+6. ripetere con `resume=true` per verificare idempotenza e checksum;
+7. costruire solo dopo build e profile statistics tramite i flussi applicativi.
+
+Gli errori del backfill interrompono il run con fase e id espliciti. Gli errori del mirror runtime restano loggati senza falsificare il risultato MariaDB.

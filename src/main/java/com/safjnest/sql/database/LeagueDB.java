@@ -642,7 +642,7 @@ public class LeagueDB extends AbstractDB {
                 try {
                     MongoDB.rebuildLeaderboardDistribution();
                 } catch (RuntimeException exception) {
-                    BotLogger.error("Mongo mirror failed operation=leaderboard.rebuild collection=lol_leaderboard_distribution id=all error=" + exception.getMessage());
+                    BotLogger.error("Mongo mirror failed operation=leaderboard.rebuild collection=leaderboard_distribution id=all error=" + exception.getMessage());
                 }
                 return true;
             } catch (SQLException e) {
@@ -1373,6 +1373,23 @@ public class LeagueDB extends AbstractDB {
         }
     }
 
+    public static List<Match> getMatchesAfterId(int afterId, int limit) {
+        if (limit < 1) throw new IllegalArgumentException("limit must be positive");
+        String query = "SELECT * FROM `match` WHERE id > ? ORDER BY id ASC LIMIT ?";
+        try (Connection connection = instance.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, afterId);
+            statement.setInt(2, limit);
+            try (ResultSet result = statement.executeQuery()) {
+                Map<Integer, Match> matches = readMatches(result);
+                loadParticipants(connection, matches);
+                connection.commit();
+                return new ArrayList<>(matches.values());
+            }
+        } catch (SQLException exception) {
+            throw new IllegalStateException("Unable to read MariaDB match migration batch after id=" + afterId, exception);
+        }
+    }
+
 
     public static List<Match> getMatchHistory(int summonerId, LeagueMessageParameter parameter) throws SQLException {
         List<Match> result = new ArrayList<>();
@@ -1555,7 +1572,7 @@ public class LeagueDB extends AbstractDB {
             try {
                 MongoDB.upsertChampionBuild(build);
             } catch (RuntimeException exception) {
-                BotLogger.error("Mongo mirror failed operation=champion.build collection=lol_champion_builds id=" + build.filter().toKey() + " error=" + exception.getMessage());
+                BotLogger.error("Mongo mirror failed operation=champion.build collection=champion_builds id=" + build.filter().toKey() + " error=" + exception.getMessage());
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1595,7 +1612,7 @@ public class LeagueDB extends AbstractDB {
             try {
                 MongoDB.upsertChampionBuilds(builds);
             } catch (RuntimeException exception) {
-                BotLogger.error("Mongo mirror failed operation=champion.builds collection=lol_champion_builds id=batch error=" + exception.getMessage());
+                BotLogger.error("Mongo mirror failed operation=champion.builds collection=champion_builds id=batch error=" + exception.getMessage());
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1620,7 +1637,7 @@ public class LeagueDB extends AbstractDB {
             try {
                 MongoDB.upsertChampionStatistics(stats);
             } catch (RuntimeException exception) {
-                BotLogger.error("Mongo mirror failed operation=champion.stats collection=lol_champion_stats id=" + stats.filter().genericKey() + " error=" + exception.getMessage());
+                BotLogger.error("Mongo mirror failed operation=champion.stats collection=champion_stats id=" + stats.filter().genericKey() + " error=" + exception.getMessage());
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1644,7 +1661,7 @@ public class LeagueDB extends AbstractDB {
             try {
                 MongoDB.upsertChampionStatistics(stats);
             } catch (RuntimeException exception) {
-                BotLogger.error("Mongo mirror failed operation=champion.stats collection=lol_champion_stats id=batch error=" + exception.getMessage());
+                BotLogger.error("Mongo mirror failed operation=champion.stats collection=champion_stats id=batch error=" + exception.getMessage());
             }
         } catch (SQLException e) {
             e.printStackTrace();

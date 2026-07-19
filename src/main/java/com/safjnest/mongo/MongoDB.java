@@ -65,29 +65,29 @@ public final class MongoDB {
 
     private static void ensureSchema(MongoDatabase database) {
         Map<String, List<IndexSpec>> schemas = new LinkedHashMap<>();
-        schemas.put("lol_summoners", List.of(
+        schemas.put("summoner", List.of(
                 index("summoners_riot_search_region", new Document("riotSearch", 1).append("region", 1), false, false),
                 index("summoners_user_id", new Document("userId", 1), false, true),
                 index("summoners_tracking_region", new Document("tracking", 1).append("region", 1), false, false)));
-        schemas.put("lol_matches", List.of(
+        schemas.put("match", List.of(
                 index("matches_participant_time", new Document("participants.puuid", 1).append("timeEnd", -1), false, false),
                 index("matches_shard_queue_start", new Document("leagueShard", 1).append("queue", 1).append("timeStart", -1), false, false),
                 index("matches_patch_queue", new Document("patch", 1).append("queue", 1), false, false),
                 index("matches_start", new Document("timeStart", -1), false, false)));
-        schemas.put("lol_match_events", List.of());
-        schemas.put("lol_profile_statistics", List.of(
+        schemas.put("match_events", List.of());
+        schemas.put("profile_statistics", List.of(
                 index("profile_statistics_puuid_season", new Document("puuid", 1).append("seasonStart", 1), true, false)));
-        schemas.put("lol_leaderboard_distribution", List.of(
+        schemas.put("leaderboard_distribution", List.of(
                 index("distribution_queue_rank_region", new Document("queue", 1).append("rank", 1).append("region", 1), true, false)));
-        schemas.put("lol_leaderboard_entries", List.of(
+        schemas.put("leaderboard_entries", List.of(
                 index("leaderboard_queue_region_rank_mmr", new Document("queue", 1).append("region", 1).append("rank", 1).append("mmr", -1), false, false),
                 index("leaderboard_queue_region_mmr", new Document("queue", 1).append("region", 1).append("mmr", -1), false, false),
                 index("leaderboard_queue_rank_mmr", new Document("queue", 1).append("rank", 1).append("mmr", -1), false, false),
                 index("leaderboard_queue_mmr", new Document("queue", 1).append("mmr", -1), false, false)));
-        schemas.put("lol_champions", List.of());
-        schemas.put("lol_champion_builds", List.of(index("champion_builds_filter", new Document("filterKey", 1), false, false)));
-        schemas.put("lol_champion_stats", List.of(index("champion_stats_filter_champion", new Document("filterKey", 1).append("championId", 1), true, false)));
-        schemas.put("lol_migration_runs", List.of(index("migration_runs_status_updated", new Document("status", 1).append("updatedAt", -1), false, false)));
+        schemas.put("champion", List.of());
+        schemas.put("champion_builds", List.of(index("champion_builds_filter", new Document("filterKey", 1), false, false)));
+        schemas.put("champion_stats", List.of(index("champion_stats_filter_champion", new Document("filterKey", 1).append("championId", 1), true, false)));
+        schemas.put("migration_runs", List.of(index("migration_runs_status_updated", new Document("status", 1).append("updatedAt", -1), false, false)));
 
         List<String> existing = database.listCollectionNames().into(new ArrayList<>());
         for (Map.Entry<String, List<IndexSpec>> schema : schemas.entrySet()) {
@@ -383,7 +383,7 @@ public final class MongoDB {
 
 
     private static MongoCollection<Document> summoners() {
-        return database().getCollection("lol_summoners");
+        return database().getCollection("summoner");
     }
 
         public static String findPuuid(String riotId, LeagueShard shard) {
@@ -595,7 +595,7 @@ public final class MongoDB {
                     .append("avg_assists", aggregate.average(aggregate.assists))
                     .append("total_lp_gain", aggregate.totalLpGain)
                     .append("lanes_played", aggregate.lanesPlayed());
-            result.add(new MongoRecord("lol_matches", "advanced:" + puuid + ":" + aggregate.champion, document));
+            result.add(new MongoRecord("match", "advanced:" + puuid + ":" + aggregate.champion, document));
         }
         return result;
     }
@@ -621,7 +621,7 @@ public final class MongoDB {
                         .append("time_start", document.get("timeStart", 0L))
                         .append("time_end", document.get("timeEnd", 0L))
                         .append("patch", document.get("patch"));
-                result.add(new MongoRecord("lol_matches", document.get("_id") + ":" + puuid, row));
+                result.add(new MongoRecord("match", document.get("_id") + ":" + puuid, row));
                 break;
             }
         }
@@ -834,12 +834,33 @@ public final class MongoDB {
         return true;
     }
 
-        public static boolean upsertMasteries(String puuid, LeagueShard shard, List<Mastery> masteries) {
+    public static boolean upsertMasteries(String puuid, LeagueShard shard, List<Mastery> masteries) {
         if (findDocument(puuid, shard) == null) return false;
         List<Document> values = new ArrayList<>();
         if (masteries != null) for (Mastery mastery : masteries) values.add(write(mastery).toDocument());
         UpdateResult update = summoners().updateOne(Filters.eq("_id", puuid), Updates.set("masteries", values));
         if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo masteries update was not acknowledged");
+        return true;
+    }
+
+    public static boolean mergeSummonerEmbedded(String puuid, String field, String identityField, List<Document> values) {
+        if (puuid == null || puuid.isBlank() || field == null || field.isBlank() || identityField == null || identityField.isBlank()) {
+            throw new IllegalArgumentException("Summoner embedded field parameters are required");
+        }
+        Document source = summoners().find(Filters.eq("_id", puuid)).first();
+        if (source == null) return false;
+        Map<String, Document> merged = new LinkedHashMap<>();
+        for (Document item : documents(source.get(field))) {
+            Object identity = item.get(identityField);
+            if (identity != null) merged.put(String.valueOf(identity), item);
+        }
+        if (values != null) for (Document item : values) {
+            Object identity = item == null ? null : item.get(identityField);
+            if (identity == null) throw new IllegalArgumentException("Missing embedded identity " + field + "." + identityField);
+            merged.put(String.valueOf(identity), new Document(item));
+        }
+        UpdateResult update = summoners().updateOne(Filters.eq("_id", puuid), Updates.set(field, new ArrayList<>(merged.values())));
+        if (!update.wasAcknowledged()) throw new IllegalStateException("Mongo embedded update was not acknowledged field=" + field + " puuid=" + puuid);
         return true;
     }
 
@@ -1022,21 +1043,21 @@ public final class MongoDB {
             document = new Document("_id", summoner.puuid()).append("legacySummonerId", summoner.summonerId())
                     .append("puuid", summoner.puuid()).append("level", summoner.level()).append("icon", summoner.icon());
             putIfNotNull(document, "riotId", summoner.riotId()); putIfNotNull(document, "region", summoner.region());
-            collection = "lol_summoners"; id = summoner.puuid();
+            collection = "summoner"; id = summoner.puuid();
         } else if (value instanceof Rank rank) {
             document = new Document("queue", rank.queue() == null ? null : rank.queue().name())
                     .append("rank", rank.tier() == null ? null : rank.tier().name()).append("lp", rank.lp())
                     .append("wins", rank.wins()).append("losses", rank.losses());
-            collection = "lol_summoners";
+            collection = "summoner";
         } else if (value instanceof Mastery mastery) {
             document = new Document("championId", mastery.championId()).append("level", mastery.level()).append("points", mastery.points());
-            collection = "lol_summoners";
+            collection = "summoner";
         } else if (value instanceof Participant participant) {
-            document = participantDocument(participant); collection = "lol_matches";
+            document = participantDocument(participant); collection = "match";
         } else if (value instanceof Match match) {
-            document = matchDocument(match); collection = "lol_matches"; id = document.get("_id");
+            document = matchDocument(match); collection = "match"; id = document.get("_id");
         } else if (value instanceof MatchResult matchResult) {
-            document = matchResultDocument(matchResult); collection = "lol_matches"; id = matchResult.gameId;
+            document = matchResultDocument(matchResult); collection = "match"; id = matchResult.gameId;
         } else {
             document = structured(value);
             if (document == null) throw new IllegalArgumentException("Unable to serialize " + value.getClass().getName());
@@ -1366,7 +1387,7 @@ public final class MongoDB {
     }
 
     public static void mirrorSummoner(int legacyId) {
-        mirror("summoner", "lol_summoners", legacyId, () -> {
+        mirror("summoner", "summoner", legacyId, () -> {
             QueryRecord row = LeagueDB.get().lineQuery("SELECT id, puuid, riot_id, region, level, icon, user_id, tracking FROM summoner WHERE id = " + legacyId);
             if (row != null && !row.isEmpty()) {
                 upsertSummoner(toSummoner(row), row.get("user_id"));
@@ -1376,7 +1397,7 @@ public final class MongoDB {
     }
 
     public static void mirrorSummoner(String puuid, LeagueShard shard, String riotId, int level, int icon) {
-        mirror("summoner", "lol_summoners", puuid, () -> {
+        mirror("summoner", "summoner", puuid, () -> {
             if (puuid == null || shard == null) return;
             QueryRecord row = LeagueDB.get().lineQuery("SELECT id, user_id, tracking FROM summoner WHERE puuid = '" + sql(puuid) + "' AND region = '" + shard.name() + "'");
             int id = row == null ? 0 : row.getAsInt("id");
@@ -1387,7 +1408,7 @@ public final class MongoDB {
     }
 
     public static void detachSummoner(String userId, String puuid) {
-        mirror("detachSummoner", "lol_summoners", puuid, () -> {
+        mirror("detachSummoner", "summoner", puuid, () -> {
             if (!summoners().updateOne(Filters.and(Filters.eq("_id", puuid), Filters.eq("userId", userId)), Updates.unset("userId")).wasAcknowledged()) {
                 throw new IllegalStateException("Mongo detach was not acknowledged");
             }
@@ -1395,7 +1416,7 @@ public final class MongoDB {
     }
 
     public static void mirrorParticipant(int legacySummonerId, int legacyMatchId) {
-        mirror("participant", "lol_matches", legacyMatchId, () -> {
+        mirror("participant", "match", legacyMatchId, () -> {
             QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + legacyMatchId);
             if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
             String fullGameId = row.get("region") + "_" + row.get("game_id");
@@ -1410,7 +1431,7 @@ public final class MongoDB {
     }
 
     public static void mirrorMatch(int legacyMatchId) {
-        mirror("match", "lol_matches", legacyMatchId, () -> {
+        mirror("match", "match", legacyMatchId, () -> {
             QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + legacyMatchId);
             if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
             Match match = LeagueDB.getMatch(LeagueShard.valueOf(row.get("region")), row.get("game_id"));
@@ -1420,7 +1441,7 @@ public final class MongoDB {
     }
 
     public static void mirrorMatchEvents(int legacyMatchId, Map<String, Object> events) {
-        mirror("match.events", "lol_matches", legacyMatchId, () -> {
+        mirror("match.events", "match", legacyMatchId, () -> {
             QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + legacyMatchId);
             if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
             if (!updateMatchEvents(row.get("region") + "_" + row.get("game_id"), events)) throw new IllegalStateException("Mongo match events update matched no match");
@@ -1428,7 +1449,7 @@ public final class MongoDB {
     }
 
     public static void mirrorMatchEvents(int legacyMatchId, String json) {
-        mirror("match.events", "lol_matches", legacyMatchId, () -> {
+        mirror("match.events", "match", legacyMatchId, () -> {
             Map<String, Object> events = new JSONObject(json == null ? "{}" : json).toMap();
             QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + legacyMatchId);
             if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
@@ -1437,7 +1458,7 @@ public final class MongoDB {
     }
 
     public static void mirrorMatchRank(int legacyMatchId, TierType rank) {
-        mirror("match.rank", "lol_matches", legacyMatchId, () -> {
+        mirror("match.rank", "match", legacyMatchId, () -> {
             QueryRecord row = LeagueDB.get().lineQuery("SELECT game_id, region FROM `match` WHERE id = " + legacyMatchId);
             if (row == null || row.isEmpty()) throw new IllegalStateException("MariaDB match row not found");
             if (!updateMatchRank(row.get("region") + "_" + row.get("game_id"), rank)) throw new IllegalStateException("Mongo match rank update matched no match");
@@ -1445,18 +1466,18 @@ public final class MongoDB {
     }
 
     public static void mirrorTracking(String userId, String puuid, boolean tracked) {
-        mirror("tracking", "lol_summoners", puuid, () -> setSummonerTracking(puuid, userId, tracked));
+        mirror("tracking", "summoner", puuid, () -> setSummonerTracking(puuid, userId, tracked));
     }
 
     public static void mirrorMasteries(int legacySummonerId, List<com.safjnest.lol.model.summoner.Mastery> masteries) {
-        mirror("masteries", "lol_summoners", legacySummonerId, () -> {
+        mirror("masteries", "summoner", legacySummonerId, () -> {
             Summoner summoner = findSummonerByLegacyId(legacySummonerId);
             if (summoner != null) upsertMasteries(summoner.puuid(), parseShard(summoner.region()), masteries);
         });
     }
 
     public static void mirrorRanks(int legacySummonerId, LeagueShard shard, List<Rank> ranks) {
-        mirror("ranks", "lol_summoners", legacySummonerId, () -> {
+        mirror("ranks", "summoner", legacySummonerId, () -> {
             Summoner summoner = findSummonerByLegacyId(legacySummonerId);
             if (summoner != null) {
                 upsertRanks(summoner.puuid(), shard, ranks, Map.of());
@@ -1469,7 +1490,7 @@ public final class MongoDB {
     }
 
     public static void saveProfileStatistics(String key, int legacySummonerId, long timeStart, long timeEnd, byte[] data) {
-        mirror("profile_statistics", "lol_profile_statistics", key, () -> {
+        mirror("profile_statistics", "profile_statistics", key, () -> {
             Summoner summoner = findSummonerByLegacyId(legacySummonerId);
             if (summoner == null || data == null) return;
             String encoded = Base64.getEncoder().encodeToString(data);
@@ -1481,7 +1502,7 @@ public final class MongoDB {
     }
 
     public static void deleteProfileStatistics(String key) {
-        mirror("deleteProfileStatistics", "lol_profile_statistics", key, () -> {
+        mirror("deleteProfileStatistics", "profile_statistics", key, () -> {
             long[] decoded = decodeStatisticsKey(key);
             if (decoded == null) return;
             Summoner summoner = findSummonerByLegacyId((int) decoded[0]);
@@ -1521,37 +1542,37 @@ public final class MongoDB {
     }
 
     private static MongoCollection<Document> matches() {
-        return database().getCollection("lol_matches");
+        return database().getCollection("match");
     }
 
     private static MongoCollection<Document> profileStatistics() {
-        return database().getCollection("lol_profile_statistics");
+        return database().getCollection("profile_statistics");
     }
 
     private static MongoCollection<Document> builds() {
-        return database().getCollection("lol_champion_builds");
+        return database().getCollection("champion_builds");
     }
 
     private static MongoCollection<Document> championStats() {
-        return database().getCollection("lol_champion_stats");
+        return database().getCollection("champion_stats");
     }
 
     private static MongoCollection<Document> leaderboard() {
-        return database().getCollection("lol_leaderboard_entries");
+        return database().getCollection("leaderboard_entries");
     }
 
     private static MongoCollection<Document> leaderboardDistribution() {
-        return database().getCollection("lol_leaderboard_distribution");
+        return database().getCollection("leaderboard_distribution");
     }
 
     private static MongoRecord matchRecord(Document document) {
         Object id = document.get("_id");
-        return new MongoRecord("lol_matches", id, document);
+        return new MongoRecord("match", id, document);
     }
 
     private static MongoRecord profileRecord(Document document) {
         Object id = document.get("_id");
-        return new MongoRecord("lol_profile_statistics", id, document);
+        return new MongoRecord("profile_statistics", id, document);
     }
 
     private static org.bson.conversions.Bson matchFilter(
@@ -1735,6 +1756,6 @@ public final class MongoDB {
 
     private static MongoRecord record(Document document) {
         Object id = document.get("_id");
-        return new MongoRecord("lol_summoners", id, document);
+        return new MongoRecord("summoner", id, document);
     }
 }

@@ -10,6 +10,9 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - Un errore del mirror Mongo viene loggato e non annulla il risultato MariaDB.
 - App.isTesting() seleziona beebot_test; altrimenti viene usato beebot.
 - Custom builds e summoner.metrics sono fuori scope.
+- Il backfill iniziale migra solo dati raw: `summoner`, `match` con participant, `rank` e `masteries`.
+- `profile_statistics`, build e aggregate vengono costruiti successivamente dall'applicazione.
+- Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
 
 ## Struttura del codice
 

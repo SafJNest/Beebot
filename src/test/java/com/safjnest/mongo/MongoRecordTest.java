@@ -15,7 +15,7 @@ public class MongoRecordTest {
 
     @Test
     public void missingValuesUseCompatibleDefaults() {
-        MongoRecord record = new MongoRecord("lol_summoners", "p1", new Document("enabled", true));
+        MongoRecord record = new MongoRecord("summoner", "p1", new Document("enabled", true));
 
         assertEquals(null, record.getAsString("missing"));
         assertEquals(0, record.getAsInt("missing"));
@@ -26,13 +26,13 @@ public class MongoRecordTest {
 
     @Test
     public void invalidTypesIncludeMongoContext() {
-        MongoRecord record = new MongoRecord("lol_matches", "EUW1_1", new Document("queue", 123));
+        MongoRecord record = new MongoRecord("match", "EUW1_1", new Document("queue", 123));
 
         MongoRecord.ConversionException exception = assertThrows(
                 MongoRecord.ConversionException.class,
                 () -> record.getAsEnum("queue", GameQueueType.class));
 
-        assertEquals("lol_matches", exception.getCollection());
+        assertEquals("match", exception.getCollection());
         assertEquals("EUW1_1", exception.getId());
         assertEquals("queue", exception.getField());
     }

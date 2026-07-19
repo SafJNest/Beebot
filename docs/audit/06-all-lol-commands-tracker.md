@@ -66,7 +66,7 @@ Riot match
   → MongoDB.updateMatchRank / updateMatchEvents
 ```
 
-Il documento `lol_matches` ora contiene:
+Il documento `match` ora contiene:
 
 ```json
 {

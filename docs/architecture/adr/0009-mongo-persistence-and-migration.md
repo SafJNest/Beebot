@@ -27,8 +27,8 @@ Il mirror fallito viene loggato e non modifica il risultato MariaDB. Non esiston
 
 Mongo userà:
 
-- `puuid` come `_id` di `lol_summoners`;
-- Riot match ID completo come `_id` di `lol_matches`;
+- `puuid` come `_id` di `summoner`;
+- Riot match ID completo come `_id` di `match`;
 - rank e mastery incorporate nel summoner;
 - champion statistics e build in collection aggregate separate;
 - participant incorporati nel match;
@@ -69,7 +69,7 @@ La configurazione Mongo viene letta da `rsc/settings.json` come stringa URI di c
 "mongo": "mongodb://<user>:<password>@safjnest.com:27017/"
 ```
 
-`App.isTesting() == false` usa `beebot`; `App.isTesting() == true` usa `beebot_test`. Le collection LoL usano lo stesso prefisso `lol_` in entrambi i database.
+`App.isTesting() == false` usa `beebot`; `App.isTesting() == true` usa `beebot_test`. Le collection usano gli stessi nomi delle tabelle MariaDB, senza prefisso `lol_`, in entrambi i database.
 
 Il codice possiede anche il bootstrap dello schema: ogni collection dichiara i propri indici con nomi e specifiche stabili, li crea se mancanti e fallisce su conflitti incompatibili. Il bootstrap è idempotente e non esegue drop automatici.
 

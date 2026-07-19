@@ -1,5 +1,6 @@
 package com.safjnest.mongo;
 
+import java.sql.Timestamp;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -11,23 +12,18 @@ import java.util.Map;
 import org.bson.Document;
 
 import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.statistics.ProfileStatistics;
-import com.safjnest.lol.model.summoner.Mastery;
-import com.safjnest.lol.model.summoner.Rank;
-import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.database.LeagueDB;
-import com.safjnest.utils.KryoUtils;
-
-import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
-import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
-import no.stelar7.api.r4j.basic.constants.types.lol.TierDivisionType;
 
 public final class MongoMigration {
 
-    private static final String CHECKPOINT_COLLECTION = "lol_migration_runs";
-    private static final List<String> PHASES = List.of("summoners", "matches", "profile_statistics");
+    private static final String CHECKPOINT_COLLECTION = "migration_runs";
+    private static final int DEFAULT_BATCH_SIZE = 50_000;
+    private static final int MAX_BATCH_SIZE = 50_000;
+    private static final int MAX_MATCH_BATCH_SIZE = 5_000;
+    private static final int MAX_REPORT_IDENTITIES = 100;
+    private static final List<String> PHASES = List.of("summoners", "matches", "ranks", "masteries");
 
     private MongoMigration() {
     }
@@ -45,116 +41,202 @@ public final class MongoMigration {
 
     private static void migratePhase(String phase, Options options, MigrationReport report) {
         Checkpoint checkpoint = options.resume() ? readCheckpoint(options.runId(), phase) : Checkpoint.empty();
-        QueryResult rows = switch (phase) {
-            case "summoners" -> LeagueDB.get().query("SELECT id, puuid, riot_id, region, level, icon, user_id, tracking FROM summoner ORDER BY id ASC");
-            case "matches" -> LeagueDB.get().query("SELECT id, game_id, region FROM `match` ORDER BY id ASC");
-            case "profile_statistics" -> LeagueDB.get().query("SELECT `key`, summoner_id, time_start, time_end, data FROM profile_statistics ORDER BY `key` ASC");
-            default -> throw new IllegalArgumentException("Unknown migration phase " + phase);
-        };
-
-        int batchCount = 0;
         long highWaterMark = checkpoint.highWaterMark();
+        long processed = checkpoint.processed();
         String checksum = checkpoint.checksum();
-        int processed = 0;
-        for (QueryRecord row : rows) {
-            String identity = identity(phase, row);
-            long rowHighWaterMark = highWaterMark(phase, row, processed);
-            if (rowHighWaterMark <= checkpoint.highWaterMark()) continue;
-            if (options.highWaterMark() > 0 && rowHighWaterMark > options.highWaterMark()) break;
-            try {
-                Document document = convert(phase, row);
-                checksum = checksum(checksum, document);
-                if (!options.dryRun()) MongoDB.upsertDocument(collection(phase), document);
-                highWaterMark = rowHighWaterMark;
-                processed++;
-                batchCount++;
-                report.accept(phase, identity);
-                if (batchCount >= options.batchSize()) {
-                    writeCheckpoint(options, phase, highWaterMark, checksum, processed);
-                    batchCount = 0;
+        boolean completed = true;
+
+        while (true) {
+            int pageSize = pageSize(phase, options.batchSize());
+            if ("matches".equals(phase)) {
+                List<Match> matches = LeagueDB.get().getMatchesAfterId(asInt(highWaterMark), pageSize);
+                if (matches.isEmpty()) break;
+                boolean stopped = false;
+                for (Match match : matches) {
+                    if (match.id <= highWaterMark) continue;
+                    if (options.highWaterMark() > 0 && match.id > options.highWaterMark()) {
+                        completed = false;
+                        stopped = true;
+                        break;
+                    }
+                    String identity = matchIdentity(match);
+                    try {
+                        Document document = MongoDB.toDocument(match);
+                        checksum = checksum(checksum, document);
+                        if (!options.dryRun()) MongoDB.upsertDocument(collection(phase), document);
+                        highWaterMark = match.id;
+                        processed++;
+                        report.accept(phase, identity);
+                    } catch (RuntimeException exception) {
+                        throw migrationFailure(phase, identity, exception);
+                    }
                 }
-            } catch (RuntimeException exception) {
-                throw new IllegalStateException("Mongo migration conversion failed phase=" + phase + " id=" + identity, exception);
+                if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, checksum, processed, stopped ? "PAUSED" : "RUNNING");
+                if (stopped) break;
+                continue;
+            }
+
+            QueryResult rows = queryPage(phase, highWaterMark, pageSize);
+            if (rows.isEmpty()) break;
+            Map<String, List<Document>> embedded = new LinkedHashMap<>();
+            boolean stopped = false;
+            for (QueryRecord row : rows) {
+                long rowHighWaterMark = row.getAsLong("id");
+                if (rowHighWaterMark <= highWaterMark) continue;
+                if (options.highWaterMark() > 0 && rowHighWaterMark > options.highWaterMark()) {
+                    completed = false;
+                    stopped = true;
+                    break;
+                }
+                String identity = identity(phase, row);
+                try {
+                    if ("summoners".equals(phase)) {
+                        Document document = convertSummoner(row);
+                        checksum = checksum(checksum, document);
+                        if (!options.dryRun()) MongoDB.upsertDocument(collection(phase), document);
+                    } else {
+                        String puuid = required(row, "puuid");
+                        embedded.computeIfAbsent(puuid, ignored -> new ArrayList<>()).add(convertEmbedded(phase, row));
+                        checksum = checksum(checksum, embedded.get(puuid).get(embedded.get(puuid).size() - 1));
+                    }
+                    highWaterMark = rowHighWaterMark;
+                    processed++;
+                    report.accept(phase, identity);
+                } catch (RuntimeException exception) {
+                    throw migrationFailure(phase, identity, exception);
+                }
+            }
+            if (!options.dryRun()) {
+                mergeEmbedded(phase, embedded);
+                writeCheckpoint(options, phase, highWaterMark, checksum, processed, stopped ? "PAUSED" : "RUNNING");
+            }
+            if (stopped) break;
+        }
+
+        if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, checksum, processed, completed ? "COMPLETED" : "PAUSED");
+    }
+
+    private static QueryResult queryPage(String phase, long highWaterMark, int pageSize) {
+        String query = switch (phase) {
+            case "summoners" -> "SELECT id, puuid, riot_id, region, level, icon, user_id, tracking, last_update FROM summoner WHERE id > "
+                    + highWaterMark + " ORDER BY id ASC LIMIT " + pageSize;
+            case "ranks" -> "SELECT r.id, r.summoner_id, s.puuid, r.region, r.queue, r.`rank`, r.lp, r.mmr, r.wins, r.losses, r.last_update "
+                    + "FROM `rank` r JOIN summoner s ON s.id = r.summoner_id WHERE r.id > " + highWaterMark
+                    + " ORDER BY r.id ASC LIMIT " + pageSize;
+            case "masteries" -> "SELECT m.id, m.summoner_id, s.puuid, m.champion_id, m.champion_level, m.champion_points, m.last_play_time "
+                    + "FROM masteries m JOIN summoner s ON s.id = m.summoner_id WHERE m.id > " + highWaterMark
+                    + " ORDER BY m.id ASC LIMIT " + pageSize;
+            default -> throw new IllegalArgumentException("Unknown migration query phase " + phase);
+        };
+        QueryResult result = LeagueDB.get().query(query);
+        if (!result.isSuccess()) throw new IllegalStateException("MariaDB migration query failed phase=" + phase);
+        return result;
+    }
+
+    private static Document convertSummoner(QueryRecord row) {
+        String puuid = required(row, "puuid");
+        return new Document("_id", puuid)
+                .append("legacySummonerId", row.getAsInt("id"))
+                .append("puuid", puuid)
+                .append("riotId", row.get("riot_id"))
+                .append("region", row.get("region"))
+                .append("level", row.getAsInt("level"))
+                .append("icon", row.getAsInt("icon"))
+                .append("userId", row.get("user_id"))
+                .append("tracking", row.getAsBoolean("tracking"))
+                .append("lastUpdate", epochMillis(row, "last_update"))
+                .append("riotSearch", normalize(row.get("riot_id")));
+    }
+
+    private static Document convertEmbedded(String phase, QueryRecord row) {
+        return switch (phase) {
+            case "ranks" -> new Document("legacyRankId", row.getAsInt("id"))
+                    .append("legacySummonerId", row.getAsInt("summoner_id"))
+                    .append("region", row.get("region"))
+                    .append("queue", row.get("queue"))
+                    .append("rank", row.get("rank"))
+                    .append("lp", row.getAsInt("lp"))
+                    .append("mmr", row.getAsInt("mmr"))
+                    .append("wins", row.getAsInt("wins"))
+                    .append("losses", row.getAsInt("losses"))
+                    .append("lastUpdate", epochMillis(row, "last_update"));
+            case "masteries" -> new Document("legacyMasteryId", row.getAsInt("id"))
+                    .append("legacySummonerId", row.getAsInt("summoner_id"))
+                    .append("championId", row.getAsInt("champion_id"))
+                    .append("level", row.getAsInt("champion_level"))
+                    .append("points", row.getAsInt("champion_points"))
+                    .append("lastPlayTime", epochMillis(row, "last_play_time"));
+            default -> throw new IllegalArgumentException("Unknown embedded migration phase " + phase);
+        };
+    }
+
+    private static void mergeEmbedded(String phase, Map<String, List<Document>> values) {
+        if (values.isEmpty()) return;
+        String field = "ranks".equals(phase) ? "ranks" : "masteries";
+        String identityField = "ranks".equals(phase) ? "queue" : "championId";
+        for (Map.Entry<String, List<Document>> entry : values.entrySet()) {
+            if (!MongoDB.mergeSummonerEmbedded(entry.getKey(), field, identityField, entry.getValue())) {
+                throw new IllegalStateException("Summoner document is missing before embedded phase=" + phase + " puuid=" + entry.getKey());
             }
         }
-        if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, checksum, processed);
     }
 
-    private static Document convert(String phase, QueryRecord row) {
-        return switch (phase) {
-            case "summoners" -> new Document("_id", required(row, "puuid"))
-                    .append("legacySummonerId", row.getAsInt("id"))
-                    .append("puuid", required(row, "puuid"))
-                    .append("riotId", row.get("riot_id"))
-                    .append("region", row.get("region"))
-                    .append("level", row.getAsInt("level"))
-                    .append("icon", row.getAsInt("icon"))
-                    .append("userId", row.get("user_id"))
-                    .append("tracking", row.getAsInt("tracking") != 0)
-                    .append("riotSearch", normalize(row.get("riot_id")));
-            case "matches" -> convertMatch(row);
-            case "profile_statistics" -> convertProfileStatistics(row);
-            default -> throw new IllegalArgumentException("Unknown migration phase " + phase);
-        };
+    private static int pageSize(String phase, int requested) {
+        return "matches".equals(phase) ? Math.min(requested, MAX_MATCH_BATCH_SIZE) : requested;
     }
 
-    private static Document convertMatch(QueryRecord row) {
-        String region = required(row, "region");
-        String gameId = required(row, "game_id");
-        Match match = LeagueDB.getMatch(LeagueShard.valueOf(region), gameId);
-        if (match == null) throw new IllegalStateException("MariaDB match is not readable");
-        return MongoDB.toDocument(match);
+    private static int asInt(long value) {
+        if (value > Integer.MAX_VALUE) throw new IllegalArgumentException("Migration high-water mark exceeds MariaDB integer id range");
+        return (int) Math.max(0, value);
     }
 
-    private static Document convertProfileStatistics(QueryRecord row) {
-        String data = required(row, "data");
-        ProfileStatistics statistics = KryoUtils.decode(data, ProfileStatistics.class);
-        if (statistics == null) throw new IllegalStateException("Profile statistics payload is not decodable");
-        statistics.timeStart = row.getAsTimestamp("time_start") == null ? row.getAsLong("time_start") : row.getAsTimestamp("time_start").getTime();
-        statistics.timeEnd = row.getAsTimestamp("time_end") == null ? row.getAsLong("time_end") : row.getAsTimestamp("time_end").getTime();
-        String key = required(row, "key");
-        int separator = key.indexOf('|');
-        if (separator < 1) throw new IllegalStateException("Profile statistics key must contain legacy summoner id and season start");
-        Summoner summoner = MongoDB.findSummonerByLegacyId(Integer.parseInt(key.substring(0, separator)));
-        if (summoner == null) throw new IllegalStateException("Profile statistics summoner is not migrated");
-        return new Document("_id", summoner.puuid() + ":" + key.substring(separator + 1))
-                .append("puuid", summoner.puuid()).append("seasonStart", Long.parseLong(key.substring(separator + 1)))
-                .append("timeStart", statistics.timeStart).append("timeEnd", statistics.timeEnd)
-                .append("legacyPayload", data).append("statistics", MongoDB.toDocument(statistics));
+    private static long epochMillis(QueryRecord row, String field) {
+        String value = row.get(field);
+        if (value == null || value.isBlank()) return 0;
+        try {
+            return Timestamp.valueOf(value).getTime();
+        } catch (IllegalArgumentException exception) {
+            try {
+                return Long.parseLong(value);
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        }
     }
 
     private static Checkpoint readCheckpoint(String runId, String phase) {
         MongoRecord record = MongoDB.findRecord(CHECKPOINT_COLLECTION, runId + ":" + phase);
         if (record == null) return Checkpoint.empty();
-        return new Checkpoint(record.getAsLong("highWaterMark"), record.getAsString("checksum"));
+        return new Checkpoint(record.getAsLong("highWaterMark"), record.getAsString("checksum"), record.getAsLong("processed"));
     }
 
-    private static void writeCheckpoint(Options options, String phase, long highWaterMark, String checksum, int processed) {
+    private static void writeCheckpoint(Options options, String phase, long highWaterMark, String checksum, long processed, String status) {
         MongoDB.upsertDocument(CHECKPOINT_COLLECTION, new Document("_id", options.runId() + ":" + phase)
-                .append("runId", options.runId()).append("phase", phase).append("status", "RUNNING")
+                .append("runId", options.runId()).append("phase", phase).append("status", status)
                 .append("highWaterMark", highWaterMark).append("checksum", checksum).append("processed", processed)
-                .append("updatedAt", System.currentTimeMillis()));
+                .append("batchSize", options.batchSize()).append("updatedAt", System.currentTimeMillis()));
     }
 
     private static String collection(String phase) {
         return switch (phase) {
-            case "summoners" -> "lol_summoners";
-            case "matches" -> "lol_matches";
-            case "profile_statistics" -> "lol_profile_statistics";
-            default -> throw new IllegalArgumentException("Unknown migration phase " + phase);
+            case "summoners" -> "summoner";
+            case "matches" -> "match";
+            default -> throw new IllegalArgumentException("Phase " + phase + " has no top-level collection");
         };
     }
 
-    private static long highWaterMark(String phase, QueryRecord row, int ordinal) {
-        return "summoners".equals(phase) || "matches".equals(phase) ? row.getAsLong("id") : ordinal + 1L;
+    private static String matchIdentity(Match match) {
+        return match.gameId != null && match.gameId.indexOf('_') > 0
+                ? match.gameId
+                : match.leagueShard + "_" + match.gameId;
     }
 
     private static String identity(String phase, QueryRecord row) {
         return switch (phase) {
             case "summoners" -> row.get("puuid");
-            case "matches" -> row.get("region") + "_" + row.get("game_id");
-            case "profile_statistics" -> row.get("key");
-            default -> phase;
+            case "ranks" -> row.get("puuid") + ":" + row.get("queue");
+            case "masteries" -> row.get("puuid") + ":" + row.get("champion_id");
+            default -> phase + ":" + row.get("id");
         };
     }
 
@@ -186,14 +268,18 @@ public final class MongoMigration {
         return value.toString();
     }
 
+    private static IllegalStateException migrationFailure(String phase, String identity, RuntimeException exception) {
+        return new IllegalStateException("Mongo migration conversion failed phase=" + phase + " id=" + identity, exception);
+    }
+
     public record Options(boolean dryRun, int batchSize, String runId, boolean resume, long highWaterMark) {
         public Options {
-            if (batchSize < 1) throw new IllegalArgumentException("batchSize must be positive");
+            if (batchSize < 1 || batchSize > MAX_BATCH_SIZE) throw new IllegalArgumentException("batchSize must be between 1 and " + MAX_BATCH_SIZE);
             if (runId == null || runId.isBlank()) runId = "default";
         }
 
         public static Options defaults() {
-            return new Options(false, 250, "default", true, 0);
+            return new Options(false, DEFAULT_BATCH_SIZE, "default", true, 0);
         }
     }
 
@@ -202,11 +288,13 @@ public final class MongoMigration {
         private final Map<String, Integer> processed = new LinkedHashMap<>();
         private final List<String> identities = new ArrayList<>();
 
-        private MigrationReport(boolean dryRun) { this.dryRun = dryRun; }
+        private MigrationReport(boolean dryRun) {
+            this.dryRun = dryRun;
+        }
 
         private void accept(String phase, String identity) {
             processed.merge(phase, 1, Integer::sum);
-            identities.add(phase + ":" + identity);
+            if (identities.size() < MAX_REPORT_IDENTITIES) identities.add(phase + ":" + identity);
         }
 
         public boolean dryRun() { return dryRun; }
@@ -214,7 +302,7 @@ public final class MongoMigration {
         public List<String> identities() { return List.copyOf(identities); }
     }
 
-    private record Checkpoint(long highWaterMark, String checksum) {
-        private static Checkpoint empty() { return new Checkpoint(0, ""); }
+    private record Checkpoint(long highWaterMark, String checksum, long processed) {
+        private static Checkpoint empty() { return new Checkpoint(0, "", 0); }
     }
 }

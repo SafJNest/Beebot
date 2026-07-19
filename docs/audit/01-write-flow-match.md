@@ -26,7 +26,7 @@ Evidenza: `Tracker` salva prima il match e poi aggiorna account e participant in
 
 Dopo il commit MariaDB devono esistere:
 
-- `lol_matches._id = REGION_gameId`;
+- `match._id = REGION_gameId`;
 - `region = REGION` e `game_id = gameId` derivati dal full Riot id;
 - `legacyMatchId` valorizzato;
 - `bans.BLUE` e `bans.RED` come array BSON;
@@ -77,7 +77,7 @@ WHERE match_id = <LEGACY_MATCH_ID>;
 E poi verificare in Mongo:
 
 ```javascript
-db.lol_matches.findOne({ _id: "<REGION>_<GAME_ID>" })
+db.match.findOne({ _id: "<REGION>_<GAME_ID>" })
 ```
 
 Il confronto deve controllare anche il numero dei participant e non solo l’esistenza del documento.

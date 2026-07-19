@@ -64,7 +64,7 @@ Durante un `/opgg` bisogna correlare:
 - id Riot visualizzato;
 - elemento Redis `TRACKER_PENDING_MATCH_LIST`;
 - riga MariaDB `match` dopo il worker;
-- documento Mongo `lol_matches`;
+- documento Mongo `match`;
 - `QueryResult` di `getSummonerData` e sue chiavi.
 
 Il test deve essere eseguito sia subito dopo il comando sia dopo il completamento del worker.
