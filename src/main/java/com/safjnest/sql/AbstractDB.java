@@ -37,10 +37,11 @@ public abstract class AbstractDB {
             stmt = c.createStatement();
             result = query(stmt, query);
             c.commit();
+            result.setSuccess(true);
         } catch (SQLException ex) {
             if (c != null) {
                 try {
-                    stmt.close();
+                    if (stmt != null) stmt.close();
                     c.rollback();
                 } catch (SQLException rollbackEx) {
                     System.out.println("Rollback failed: " + rollbackEx.getMessage());
@@ -50,8 +51,7 @@ public abstract class AbstractDB {
         } finally {
             if (c != null) {
                 try {
-                    result.setSuccess(true);
-                    stmt.close();
+                    if (stmt != null) stmt.close();
                     c.close();
                 } catch (SQLException closeEx) {
                     System.out.println("Failed to close connection: " + closeEx.getMessage());

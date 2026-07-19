@@ -46,7 +46,7 @@ public final class MongoMigration {
     private static void migratePhase(String phase, Options options, MigrationReport report) {
         Checkpoint checkpoint = options.resume() ? readCheckpoint(options.runId(), phase) : Checkpoint.empty();
         QueryResult rows = switch (phase) {
-            case "summoners" -> LeagueDB.get().query("SELECT id, puuid, riot_id, region, level, icon, user_id FROM summoner ORDER BY id ASC");
+            case "summoners" -> LeagueDB.get().query("SELECT id, puuid, riot_id, region, level, icon, user_id, tracking FROM summoner ORDER BY id ASC");
             case "matches" -> LeagueDB.get().query("SELECT id, game_id, region FROM `match` ORDER BY id ASC");
             case "profile_statistics" -> LeagueDB.get().query("SELECT `key`, summoner_id, time_start, time_end, data FROM profile_statistics ORDER BY `key` ASC");
             default -> throw new IllegalArgumentException("Unknown migration phase " + phase);
@@ -90,6 +90,7 @@ public final class MongoMigration {
                     .append("level", row.getAsInt("level"))
                     .append("icon", row.getAsInt("icon"))
                     .append("userId", row.get("user_id"))
+                    .append("tracking", row.getAsInt("tracking") != 0)
                     .append("riotSearch", normalize(row.get("riot_id")));
             case "matches" -> convertMatch(row);
             case "profile_statistics" -> convertProfileStatistics(row);

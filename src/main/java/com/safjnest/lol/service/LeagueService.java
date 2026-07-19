@@ -475,7 +475,7 @@ public class LeagueService {
       if (cached != null) {
         return cached;
       }
-      QueryResult result = toQueryResult(MongoDB.findAdvancedProfileProjections(
+      QueryResult result = toQueryResult(MongoDB.findSummonerData(
           puuid, shard, 0, Long.MAX_VALUE, GameQueueType.TEAM_BUILDER_RANKED_SOLO));
       if (result != null) {
         RedisClient.set(key, result, TTL_MATCH);

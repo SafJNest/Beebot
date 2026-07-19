@@ -393,7 +393,9 @@ public class LeagueDB extends AbstractDB {
         int f = participant.getSummoner2Casts();
         
         
-        boolean saved = instance.defaultQuery("INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas, role_quest_id, q, w, e, r, d, f) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ", " + participant.getRoleBoundItem() + ", " + q + ", " + w + ", " + e + ", " + r + ", " + d + ", " + f + ");");
+        String insert = "INSERT IGNORE INTO participant(summoner_id, match_id, win, kda, rank, lp, gain, champion, lane, team, build, damage, damage_building, healing, vision_score, cs, ward, pings, ward_killed, gold_earned, subteam, subteam_placement, level, doubles, triples, quadruples, pentas, role_quest_id, q, w, e, r, d, f) VALUES('" + summonerId + "', '" + summonerMatchId + "', '" + (win ? 1 : 0) + "', '" + kda + "', '" + rank + "', '" + lp + "', '" + gain + "', '" + champion + "', '" + lane + "', '" + side + "', '" + build + "', '" + totalDamage + "', '" + tower + "', '" + shield + "', '" + vision + "', '" + cs + "', '" + ward + "', '" + new JSONObject(pings).toString() + "', '" + participant.getWardsKilled() + "', '" + participant.getGoldEarned() + "', '" + participant.getPlayerSubteamId() + "', '" + participant.getSubteamPlacement() + "', " + participant.getChampionLevel() + ", " + participant.getDoubleKills() + ", " + participant.getTripleKills() + ", " + participant.getQuadraKills() + ", " + participant.getPentaKills() + ", " + participant.getRoleBoundItem() + ", " + q + ", " + w + ", " + e + ", " + r + ", " + d + ", " + f + ");";
+        String update = "UPDATE participant SET rank = '" + rank + "', lp = '" + lp + "', gain = '" + gain + "' WHERE summoner_id = '" + summonerId + "' AND match_id = '" + summonerMatchId + "';";
+        boolean saved = instance.defaultQuery(insert, update);
         if (saved) MongoDB.mirrorParticipant(summonerId, summonerMatchId);
         return saved;
     }
@@ -637,7 +639,11 @@ public class LeagueDB extends AbstractDB {
                     }
                 }
                 conn.commit();
-                MongoDB.rebuildLeaderboardDistribution();
+                try {
+                    MongoDB.rebuildLeaderboardDistribution();
+                } catch (RuntimeException exception) {
+                    BotLogger.error("Mongo mirror failed operation=leaderboard.rebuild collection=lol_leaderboard_distribution id=all error=" + exception.getMessage());
+                }
                 return true;
             } catch (SQLException e) {
                 conn.rollback();
@@ -1030,7 +1036,7 @@ public class LeagueDB extends AbstractDB {
 
     public static boolean setMatchEvent(int matchId, String json) {
         boolean saved = instance.defaultQuery("UPDATE `match` SET events = '" + json + "' WHERE id = " + matchId + ";");
-        if (saved) MongoDB.mirrorMatchEvents(matchId, new JSONObject(json == null ? "{}" : json).toMap());
+        if (saved) MongoDB.mirrorMatchEvents(matchId, json);
         return saved;
     }
 
@@ -1546,7 +1552,11 @@ public class LeagueDB extends AbstractDB {
             pstmt.setString(4, build.encode());
             pstmt.executeUpdate();
             conn.commit();
-            MongoDB.upsertChampionBuild(build);
+            try {
+                MongoDB.upsertChampionBuild(build);
+            } catch (RuntimeException exception) {
+                BotLogger.error("Mongo mirror failed operation=champion.build collection=lol_champion_builds id=" + build.filter().toKey() + " error=" + exception.getMessage());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1582,7 +1592,11 @@ public class LeagueDB extends AbstractDB {
             insertStmt.executeBatch();
     
             conn.commit();
-            MongoDB.upsertChampionBuilds(builds);
+            try {
+                MongoDB.upsertChampionBuilds(builds);
+            } catch (RuntimeException exception) {
+                BotLogger.error("Mongo mirror failed operation=champion.builds collection=lol_champion_builds id=batch error=" + exception.getMessage());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1603,7 +1617,11 @@ public class LeagueDB extends AbstractDB {
             pstmt.setString(3, stats.encode());
             pstmt.executeUpdate();
             conn.commit();
-            MongoDB.upsertChampionStatistics(stats);
+            try {
+                MongoDB.upsertChampionStatistics(stats);
+            } catch (RuntimeException exception) {
+                BotLogger.error("Mongo mirror failed operation=champion.stats collection=lol_champion_stats id=" + stats.filter().genericKey() + " error=" + exception.getMessage());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -1623,7 +1641,11 @@ public class LeagueDB extends AbstractDB {
             }
             pstmt.executeBatch();
             conn.commit();
-            MongoDB.upsertChampionStatistics(stats);
+            try {
+                MongoDB.upsertChampionStatistics(stats);
+            } catch (RuntimeException exception) {
+                BotLogger.error("Mongo mirror failed operation=champion.stats collection=lol_champion_stats id=batch error=" + exception.getMessage());
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

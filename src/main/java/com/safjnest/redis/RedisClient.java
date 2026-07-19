@@ -167,6 +167,9 @@ public class RedisClient {
         try (Jedis jedis = pool.getResource()) {
             return jedis.sadd(key, element);
         }
+        catch (Exception ignored) {
+            return 0;
+        }
     }
 
     public static List<String> lrangeAll(String key) {

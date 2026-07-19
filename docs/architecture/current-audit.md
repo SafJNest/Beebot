@@ -1,6 +1,6 @@
 # Current LoL persistence audit
 
-- Snapshot: 2026-07-18
+- Snapshot: 2026-07-19
 - Owner: main agent
 - Scope: MongoDB migration for the `league_of_legends` domain
 - Source files: `LeagueDB`, LoL services, tracker, message handlers and canonical models
@@ -10,7 +10,7 @@
 - MariaDB is the current primary store.
 - Redis owns cache and temporary asynchronous state.
 - `LeagueDB` still combines SQL execution, mapping and domain persistence methods.
-- No Mongo runtime implementation was present at the start of the migration.
+- Mongo runtime is now concentrated in `MongoDB`, `MongoRecord` and `MongoMigration`.
 - `QueryRecord` and `QueryResult` remain valid for MariaDB and are not new Mongo contracts.
 
 ## Canonical models
@@ -32,7 +32,7 @@ During transition MariaDB remains primary. Mongo writes are idempotent mirrors, 
 ## Evidence and remaining gate
 
 1. schema bootstrap, database suffix selection, query inventory and migration checkpoint behavior are covered by targeted tests;
-2. dual-write and migration runner have resumable failure handling; mirror failures are retained in `lol_mongo_outbox`;
-3. the local Java 25 validation passes, including 28 focused JUnit tests and the compile-only `LeagueStore` contract;
+2. static flow tracing found broken profile/OP.GG query contracts and mirror no-op paths; see [`docs/audit`](../audit/README.md);
+3. the local Java 25 validation covers the Mongo core and focused tests, but the full build still has the unrelated JDA `setAudioModuleConfig` error;
 4. a real Mongo integration run remains pending because this workspace has no `MONGO_TEST_URI` and no local `mongod`;
-5. final cutover remains blocked until the real Mongo bootstrap/index test and production-sized reconciliation are executed.
+5. final cutover remains blocked until query contracts, write acknowledgements and production-sized reconciliation are verified.
