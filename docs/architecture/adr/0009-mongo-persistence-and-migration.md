@@ -34,7 +34,7 @@ Mongo userà:
 - participant incorporati nel match;
 - collection separate per dati derivati e aggregate;
 - `legacyMatchId` resta solo per backfill e riconciliazione; `legacySummonerId` non viene scritto nei nuovi documenti.
-- gli eventi match sono separati in `match_events` e compressi come Binary `zstd-json`; match e masteries restano BSON normale nella prima fase.
+- gli eventi match sono separati in `match_events` e compressi da WiredTiger con Zstandard; match e masteries restano BSON normale.
 
 ## Boundary
 
@@ -47,7 +47,7 @@ Spring continua a possedere solo controller, configurazione HTTP ed error model.
 - gli enum R4J vengono salvati come stringhe prodotte da `name()`;
 - i ban usano `BLUE` e `RED`, mai ordinali numerici;
 - i participant non hanno un mega-oggetto `build` annidato;
-- gli eventi JSON vengono serializzati e compressi in `match_events` con `uncompressedBytes`, `checksum` e `encoding`;
+- gli eventi JSON vengono serializzati in `match_events` con `uncompressedBytes`, `checksum` e `encoding`; la compressione è nativa WiredTiger con livello server 9;
 - il reader carica gli eventi separatamente e la history usa una query batch, senza N+1;
 - `null` e `[]` mantengono semantiche distinte.
 

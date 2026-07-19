@@ -54,7 +54,7 @@ Un avvio in testing non deve mai aprire o scrivere `beebot`.
 | `rank` | `summoner.ranks[]` | `queue + region` | embedded |
 | `masteries` | `summoner.masteries[]` | `championId` | embedded |
 | `match` | `match` | `_id = fullGameId` | documento aggregato |
-| `match.events` | `match_events` | `_id = fullGameId` | Binary `zstd-json`, separato |
+| `match.events` | `match_events` | `_id = fullGameId` | JSON separato, WiredTiger Zstandard |
 | `participant` | `match.participants[]` | `puuid` dentro il match | embedded |
 | `profile_statistics` | `profile_statistics` | `puuid + seasonStart` | separato, non migrato |
 | `leaderboard_distribution` | `leaderboard_distribution` | `queue + rank + region` | aggregate |
@@ -143,7 +143,7 @@ Esempio concettuale:
 - il solo numero Riot può essere accettato in input e normalizzato prima del lookup;
 - `leagueShard`, `queue` e `rank` sono stringhe R4J;
 - `bans` usa `BLUE` e `RED`, mai `0` e `1`;
-- gli eventi non sono embedded: vengono salvati in `match_events` come Binary `zstd-json` con checksum;
+- gli eventi non sono embedded: vengono salvati come JSON in `match_events`, collection creata con `block_compressor=zstd` e checksum;
 - participant è embedded perché viene letto insieme al match;
 - il documento deve essere controllato prima dell'upsert contro il limite BSON di 16 MB;
 - `findMatch` e le history caricano gli eventi separatamente; le history usano un caricamento batch.

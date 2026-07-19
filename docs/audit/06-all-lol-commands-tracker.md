@@ -63,7 +63,7 @@ Riot match
   → LeagueDB.setSummonerData per participant
   → MongoDB.mirrorParticipant
   → LeagueDB.setMatchRank / setMatchEvent
-  → MongoDB.updateMatchRank / match_events zstd-json
+  → MongoDB.updateMatchRank / match_events WiredTiger Zstandard
 ```
 
 Il documento `match` ora contiene:

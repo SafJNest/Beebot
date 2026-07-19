@@ -4,7 +4,7 @@
 
 Con circa 6 milioni di documenti `summoner` e circa 1 GB di dati contro quasi 2 GB di indici, il primo intervento riguarda gli indici. La compressione applicativa dei documenti base viene rimandata: BSON/WiredTiger comprime già il documento, mentre un campo compresso perde query e proiezioni naturali.
 
-Gli eventi sono l'eccezione: non vengono filtrati direttamente e vengono letti come payload completo. Per questo vengono spostati da `match.events` alla collection `match_events` e compressi con Zstandard.
+Gli eventi sono l'eccezione: non vengono filtrati direttamente e vengono letti come payload completo. Per questo vengono spostati da `match.events` alla collection `match_events`, creata con WiredTiger Zstandard nativo.
 
 ## Documento summoner
 
@@ -53,22 +53,35 @@ L'accettazione richiede `IXSCAN` e assenza di `COLLSCAN` sulle ricerche attive. 
 ```json
 {
   "_id": "EUW1_123",
-  "encoding": "zstd-json",
+  "encoding": "json",
   "uncompressedBytes": 18240,
-  "data": "<Binary>",
+  "data": "<JSON string>",
   "checksum": "<sha256>"
 }
 ```
 
-`MongoDB.upsertMatch()` scrive prima `match`, poi serializza e comprime gli eventi in `match_events`. `MongoDB.findMatch()` carica gli eventi con una seconda query. La history raccoglie gli id e carica gli eventi in una sola query `in`, evitando N+1. Non esiste conversione in-place del vecchio formato: il target viene migrato pulito.
+`MongoDB.upsertMatch()` scrive prima `match`, poi serializza gli eventi in JSON e li salva in `match_events`; la collection usa `block_compressor=zstd` e il server viene configurato con livello 9. `MongoDB.findMatch()` carica gli eventi con una seconda query. La history raccoglie gli id e carica gli eventi in una sola query `in`, evitando N+1. Non esiste conversione in-place del vecchio formato: il target viene migrato pulito.
 
-Il rapporto di compressione è:
+Configurazione server richiesta prima della migrazione:
 
-```text
-1 - compressedBytes / uncompressedBytes
+```yaml
+storage:
+  wiredTiger:
+    collectionConfig:
+      blockCompressor: snappy
+    engineConfig:
+      zstdCompressionLevel: 9
 ```
 
-Va misurato su un campione reale prima di stimare il risparmio totale.
+`match_events` fa override per collection a `block_compressor=zstd`; le altre collection mantengono il compressor globale. Il livello 9 è un'impostazione server-wide per le collection che usano Zstandard.
+
+La misura della compressione nativa va fatta a livello collection:
+
+```text
+storageSize / dataSize
+```
+
+Va misurata dopo la migrazione su un campione reale prima di stimare il risparmio totale. Il livello Zstandard è server-wide: non può essere impostato a 9 solo per `match_events` tramite `createCollection`; la collection può selezionare il compressor, mentre il server determina il livello.
 
 ## Masteries e audit
 

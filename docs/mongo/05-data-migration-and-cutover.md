@@ -7,23 +7,21 @@ Le opzioni controllano dry-run, batch, run id, resume e high-water mark.
 
 ```java
 MongoMigration.migrateAll(new MongoMigration.Options(
-        false, 50_000, "raw-2026-07", true, 0));
+        false, 500_000, "raw-2026-07", true, 0));
 ```
 
-La dimensione massima configurabile è 50.000 righe. La fase `matches` usa comunque pagine da massimo 5.000 match: ogni pagina carica i participant con una query MariaDB bounded, evitando una `SELECT` unica sull'intera tabella e limitando la memoria occupata dai documenti embedded.
+La dimensione massima configurabile per `summoner` è 500.000 righe. Ogni batch summoner carica anche rank e masteries relativi all'intervallo di id e li scrive nello stesso documento. La fase `matches` usa pagine da massimo 100.000 match: ogni pagina carica i participant con una query MariaDB bounded.
 
 ## Ordine e perimetro
 
 Le fasi sono eseguite in questo ordine:
 
-1. `summoners` → collection `summoner`;
-2. `matches` → collection `match`, con `participants[]` flat nel documento;
-3. `ranks` → `summoner.ranks[]`;
-4. `masteries` → `summoner.masteries[]`.
+1. `summoners` → collection `summoner`, con `ranks[]` e `masteries[]` caricati nello stesso batch;
+2. `matches` → collection `match`, con `participants[]` flat nel documento.
 
 Sono dati raw. Il match conserva il riferimento `legacyMatchId` per riconciliazione. Il documento `summoner` usa `_id = puuid`, senza `legacySummonerId` e senza un secondo campo `puuid`. La migrazione viene eseguita su un database Mongo vuoto: non esiste una fase applicativa di cleanup o conversione in-place.
 
-Gli eventi eventualmente presenti nel JSON MariaDB vengono scritti separatamente in `match_events` tramite `MongoDB.upsertMatch()`: prima viene sostituito il documento `match`, poi il payload eventi viene serializzato, compresso e sostituito in `match_events`. Il documento `match` non contiene più `events`.
+Gli eventi eventualmente presenti nel JSON MariaDB vengono scritti separatamente in `match_events` tramite `MongoDB.upsertMatch()`: prima viene sostituito il documento `match`, poi il payload JSON viene sostituito in `match_events`, la cui compressione è delegata a WiredTiger Zstandard livello 9. Il documento `match` non contiene più `events`.
 
 Non vengono migrati:
 
@@ -60,7 +58,7 @@ Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato
 2. confermare che il database Mongo scelto sia `beebot_test`;
 3. eliminare il database/collection target prima del run, così schema, indici e documenti partono puliti;
 4. eseguire un dry-run con un high-water mark piccolo;
-5. eseguire il backfill reale con batch 50.000;
+5. eseguire il backfill reale con batch 500.000 per `summoner` e 100.000 per `match`;
 6. controllare `summoner`, `match`, `match_events`, `ranks[]`, `masteries[]`, `participants[]`;
 7. ripetere con `resume=true` per verificare idempotenza e checksum;
 8. costruire solo dopo build e profile statistics tramite i flussi applicativi.

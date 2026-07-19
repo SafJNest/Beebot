@@ -12,10 +12,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.regex.Pattern;
 
-import com.github.luben.zstd.Zstd;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.types.Binary;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -28,6 +26,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Projections;
@@ -65,6 +64,7 @@ import no.stelar7.api.r4j.basic.constants.types.lol.TierType;
 public final class MongoDB {
 
     private static final int MAX_SEARCH_RESULTS = 25;
+    private static final String EVENTS_STORAGE_ENGINE_CONFIG = "block_compressor=zstd";
     private static final ObjectMapper JSON = new ObjectMapper();
 
 
@@ -99,7 +99,7 @@ public final class MongoDB {
         for (Map.Entry<String, List<IndexSpec>> schema : schemas.entrySet()) {
             if (!existing.contains(schema.getKey())) {
                 try {
-                    database.createCollection(schema.getKey());
+                    database.createCollection(schema.getKey(), collectionOptions(schema.getKey()));
                 } catch (MongoCommandException exception) {
                     if (exception.getCode() != 48 && !"NamespaceExists".equals(exception.getErrorCodeName())) throw exception;
                 }
@@ -119,6 +119,11 @@ public final class MongoDB {
 
     private static IndexSpec partialIndex(String name, Document keys, boolean unique, boolean sparse, Bson partialFilterExpression) {
         return new IndexSpec(name, keys, unique, sparse, partialFilterExpression);
+    }
+
+    private static CreateCollectionOptions collectionOptions(String collection) {
+        if (!"match_events".equals(collection)) return new CreateCollectionOptions();
+        return new CreateCollectionOptions().storageEngineOptions(new Document("wiredTiger", new Document("configString", EVENTS_STORAGE_ENGINE_CONFIG)));
     }
 
     private static record IndexSpec(String name, Document keys, boolean unique, boolean sparse, Bson partialFilterExpression) {
@@ -236,28 +241,19 @@ public final class MongoDB {
     public static Document matchEventsSpaceAudit(int sampleSize) {
         int boundedSample = Math.max(1, Math.min(10_000, sampleSize));
         List<Document> samples = matchEvents().find().limit(boundedSample).into(new ArrayList<>());
-        List<Integer> uncompressed = new ArrayList<>();
-        List<Integer> compressed = new ArrayList<>();
+        List<Integer> payloadBytes = new ArrayList<>();
         for (Document document : samples) {
-            Binary data = document.get("data", Binary.class);
-            uncompressed.add(document.getInteger("uncompressedBytes", 0));
-            compressed.add(data == null ? 0 : data.getData().length);
+            String data = document.getString("data");
+            payloadBytes.add(data == null ? 0 : data.getBytes(StandardCharsets.UTF_8).length);
         }
-        Collections.sort(uncompressed);
-        Collections.sort(compressed);
-        int p95Index = uncompressed.isEmpty() ? 0 : Math.min(uncompressed.size() - 1, (int) Math.ceil(uncompressed.size() * 0.95D) - 1);
-        long totalUncompressed = 0;
-        long totalCompressed = 0;
-        for (int index = 0; index < uncompressed.size(); index++) {
-            totalUncompressed += uncompressed.get(index);
-            totalCompressed += compressed.get(index);
-        }
+        Collections.sort(payloadBytes);
+        int p95Index = payloadBytes.isEmpty() ? 0 : Math.min(payloadBytes.size() - 1, (int) Math.ceil(payloadBytes.size() * 0.95D) - 1);
+        long totalPayloadBytes = 0;
+        for (int size : payloadBytes) totalPayloadBytes += size;
         return new Document("stats", collectionStats("match_events"))
-                .append("sampleDocuments", uncompressed.size())
-                .append("averageUncompressedBytes", uncompressed.isEmpty() ? 0D : (double) totalUncompressed / uncompressed.size())
-                .append("p95UncompressedBytes", uncompressed.isEmpty() ? 0 : uncompressed.get(p95Index))
-                .append("averageCompressedBytes", compressed.isEmpty() ? 0D : (double) totalCompressed / compressed.size())
-                .append("compressionRatio", totalUncompressed == 0 ? 0D : 1D - ((double) totalCompressed / totalUncompressed));
+                .append("sampleDocuments", payloadBytes.size())
+                .append("averagePayloadBytes", payloadBytes.isEmpty() ? 0D : (double) totalPayloadBytes / payloadBytes.size())
+                .append("p95PayloadBytes", payloadBytes.isEmpty() ? 0 : payloadBytes.get(p95Index));
     }
 
     public static MongoRecord findRecord(String collection, Object id) {
@@ -1016,14 +1012,12 @@ public final class MongoDB {
             matchEvents().deleteOne(Filters.eq("_id", id));
             return true;
         }
-        byte[] uncompressed = eventJson(source);
-        byte[] compressed = Zstd.compress(uncompressed, 3);
-        if (compressed == null || compressed.length == 0) throw new IllegalStateException("Unable to compress match events id=" + id);
+        byte[] payload = eventJson(source);
         Document document = new Document("_id", id)
-                .append("encoding", "zstd-json")
-                .append("uncompressedBytes", uncompressed.length)
-                .append("data", new Binary(compressed))
-                .append("checksum", sha256(uncompressed));
+                .append("encoding", "json")
+                .append("uncompressedBytes", payload.length)
+                .append("data", new String(payload, StandardCharsets.UTF_8))
+                .append("checksum", sha256(payload));
         replace(matchEvents(), document);
         return true;
     }
@@ -1506,11 +1500,11 @@ public final class MongoDB {
     private static Map<String, Object> decodeMatchEvents(Document document) {
         if (document == null) return new LinkedHashMap<>();
         String encoding = document.getString("encoding");
-        if (!"zstd-json".equals(encoding)) throw new IllegalStateException("Unsupported match event encoding=" + encoding + " id=" + document.get("_id"));
-        Binary binary = document.get("data", Binary.class);
+        if (!"json".equals(encoding)) throw new IllegalStateException("Unsupported match event encoding=" + encoding + " id=" + document.get("_id"));
+        String data = document.getString("data");
         int size = document.getInteger("uncompressedBytes", 0);
-        if (binary == null || size < 0) throw new IllegalStateException("Invalid compressed match events id=" + document.get("_id"));
-        byte[] decoded = Zstd.decompress(binary.getData(), size);
+        if (data == null || size < 0) throw new IllegalStateException("Invalid match events id=" + document.get("_id"));
+        byte[] decoded = data.getBytes(StandardCharsets.UTF_8);
         if (decoded.length != size) throw new IllegalStateException("Match event size mismatch id=" + document.get("_id"));
         if (!sha256(decoded).equals(document.getString("checksum"))) throw new IllegalStateException("Match event checksum mismatch id=" + document.get("_id"));
         try {

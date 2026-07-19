@@ -10,13 +10,13 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - Un errore del mirror Mongo viene loggato e non annulla il risultato MariaDB.
 - App.isTesting() seleziona beebot_test; altrimenti viene usato beebot.
 - Custom builds e summoner.metrics sono fuori scope.
-- Il backfill iniziale migra solo dati raw: `summoner`, `match` con participant, `rank` e `masteries`.
+- Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks[]` e `masteries[]` nello stesso batch, poi `match` con participant.
 - `profile_statistics`, build e aggregate vengono costruiti successivamente dall'applicazione.
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
 - Il documento `summoner` usa `_id = puuid`; `legacySummonerId` e il campo duplicato `puuid` non vengono scritti.
 - La migrazione parte da un database Mongo vuoto: non esiste un cleanup applicativo di documenti legacy.
 - I reader usano `_id` come fallback solo per compatibilità difensiva con documenti esterni alla migrazione pulita.
-- Gli eventi non sono nel documento `match`: vivono in `match_events` come Binary `zstd-json`.
+- Gli eventi non sono nel documento `match`: vivono in `match_events` come JSON e la collection usa WiredTiger Zstandard nativo.
 
 ## Struttura del codice
 
@@ -48,14 +48,14 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 - Enum R4J: name().
 - Ban: bans.BLUE e bans.RED, sempre presenti anche se vuoti.
 - Participant: campi flat; nessun campo build mega-nested.
-- Eventi: collection `match_events`, Binary Zstandard con checksum e dimensione originale.
+- Eventi: collection `match_events`, payload JSON con checksum e dimensione originale; la collection viene creata con `block_compressor=zstd`.
 - Payload legacy: solo compatibilità temporanea e mai unica sorgente valida.
 
 ## Indici e spazio
 
 L'inizializzazione crea in modo idempotente gli indici dichiarati nel codice. Su `summoner` sono previsti `_id`, `userId` sparse, `region + riotSearch` e `tracking + region` parziale con filtro `tracking=true`. Poiché il target viene ricreato vuoto prima della migrazione, non servono drop o cleanup manuali. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
 
-La compressione applicativa è riservata agli eventi: match e summoner restano BSON normale. Anche `masteries` resta BSON normale nella prima migrazione e va misurato prima di qualunque compressione inline.
+La compressione applicativa è disabilitata: `match_events` usa la compressione nativa WiredTiger. Il server Mongo deve usare `zstdCompressionLevel: 9`; match, summoner e masteries restano documenti BSON normali e vengono compressi dal server.
 
 ## Configurazione
 

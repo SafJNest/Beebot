@@ -13,7 +13,7 @@ La controparte runtime vive in MongoDB.java; non esistono store o repository int
 | match | detail/existence/id | match e full Riot ID | LeagueService |
 | history | all games, history, count | participant/time/queue filter | LeagueMessage |
 | participant | participant update | participant flat in match | Tracker |
-| events | match events | `match_events` con Binary `zstd-json` | Tracker, match detail/history |
+| events | match events | `match_events` con JSON e WiredTiger Zstandard | Tracker, match detail/history |
 | champion | match ids/source/projections | participant/match filters | Champion services |
 | leaderboard | rows/count/distribution | leaderboard collections | LeaderboardService |
 | migration | backfill/checkpoint | MongoMigration e migration_runs | owner job |
