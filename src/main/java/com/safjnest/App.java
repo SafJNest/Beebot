@@ -31,16 +31,16 @@ public class App {
 
         if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
-            runSpring();
+            //runSpring();
         }
         else {
             TwitchClient.init();
-            runSpring();
+            //runSpring();
         }
-        TrackerScheduler.start();
+        //TrackerScheduler.start();
         MongoMigration.migrateAll();
-        bot = new Bot();
-        bot.il_risveglio_della_bestia();
+        //bot = new Bot();
+        //bot.il_risveglio_della_bestia();
     }
 
     public static void runSpring() {
