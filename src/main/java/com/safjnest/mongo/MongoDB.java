@@ -1063,6 +1063,10 @@ public final class MongoDB {
         return upsertMatchEvents(fullGameId(fullGameId, null), events);
     }
 
+    public static boolean upsertMatchEvents(String fullGameId, LeagueShard shard, Map<String, Object> events) {
+        return upsertMatchEvents(fullGameId(fullGameId, shard), events);
+    }
+
     public static boolean upsertMatchEvents(String fullGameId, Map<String, Object> events) {
         String id = fullGameId(fullGameId, null);
         if (matches().countDocuments(Filters.eq("_id", id)) == 0) return false;

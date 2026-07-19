@@ -426,9 +426,10 @@ public final class MongoMigration {
     }
 
     private static String matchIdentity(Match match) {
-        return match.gameId != null && match.gameId.indexOf('_') > 0
-                ? match.gameId
-                : match.leagueShard + "_" + match.gameId;
+        if (match.gameId == null || match.gameId.isBlank()) throw new IllegalArgumentException("Match.gameId is required");
+        if (match.gameId.indexOf('_') > 0) return match.gameId;
+        if (match.leagueShard == null) throw new IllegalArgumentException("Match.leagueShard is required for numeric game ID " + match.gameId);
+        return match.leagueShard.name() + "_" + match.gameId;
     }
 
     private static String matchIdentity(QueryRecord row) {
@@ -441,7 +442,7 @@ public final class MongoMigration {
 
     private static void upsertMatchEvents(String identity, Match match) {
         Map<String, Object> events = match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap();
-        upsertMatchEvents(identity, events);
+        if (!MongoDB.upsertMatchEvents(identity, match.leagueShard, events)) throw new IllegalStateException("Mongo match event upsert failed id=" + identity);
     }
 
     private static void upsertMatchEvents(String identity, Map<String, Object> events) {
