@@ -137,7 +137,7 @@ public final class ChampionStatsService {
         Map<Integer, double[]> metricAccum = new HashMap<>();
         Map<Integer, Map<String, int[]>> powerCurveAccum = new HashMap<>();
 
-        long lastMatchId = 0;
+        String lastMatchId = null;
         long totalMatches = ChampionStatsProvider.loadMatchCount(filter);
         long totalBatches = ChampionStatsProvider.batchCount(totalMatches);
         int batchNumber = 0;
@@ -176,7 +176,7 @@ public final class ChampionStatsService {
                         + " progress: " + processedGames + "/" + batchSize);
             }
 
-            lastMatchId = Long.parseLong(matchIds.get(matchIds.size() - 1));
+            lastMatchId = matchIds.get(matchIds.size() - 1);
             ChampionStatsProvider.clear(batch);
             batch = null;
             matchIds.clear();
@@ -546,7 +546,7 @@ public final class ChampionStatsService {
         if (previousFilter == null) return Map.of();
 
         Map<Integer, int[]> previous = new HashMap<>();
-        long lastMatchId = 0;
+        String lastMatchId = null;
         long previousTotal = ChampionStatsProvider.loadMatchCount(previousFilter);
         long previousBatches = ChampionStatsProvider.batchCount(previousTotal);
         long previousGames = 0;
@@ -561,7 +561,7 @@ public final class ChampionStatsService {
             QueryResult result = ChampionStatsProvider.loadTrendParticipants(matchIds);
             mergePrevious(previous, previousPickWin(result, filter));
             previousGames += batchSize;
-            lastMatchId = Long.parseLong(matchIds.get(matchIds.size() - 1));
+            lastMatchId = matchIds.get(matchIds.size() - 1);
             int resultSize = result.size();
             result.clear();
             matchIds.clear();

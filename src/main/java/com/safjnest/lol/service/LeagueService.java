@@ -421,7 +421,7 @@ public class LeagueService {
         for (MongoRecord summoner : MongoDB.findFocusedSummoners(normalizedQuery, shard, 25)) {
             autocompleteChoices.add(new SummonerAutocompleteChoice(
                 summoner.getAsString("riotId") != null ? summoner.getAsString("riotId") : summoner.getAsString("riot_id"),
-                summoner.getAsString("puuid")
+                summoner.getAsString("puuid") != null ? summoner.getAsString("puuid") : String.valueOf(summoner.getId())
             ));
         }
 

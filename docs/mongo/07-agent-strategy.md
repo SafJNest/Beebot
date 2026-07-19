@@ -11,7 +11,7 @@ Ridurre il rischio dividendo inventario, implementazione, verifica e migrazione 
 | Mongo core | implementa MongoDB, MongoRecord, schema e indici | tre file, test conversione |
 | Write-path | aggiunge il mirror Mongo adiacente a ogni write MariaDB | commit prima del mirror, errore log-only |
 | Read migration | porta i consumer LoL a Mongo-only | nessun fallback MariaDB |
-| Data migration | implementa MongoMigration e checkpoint | dry-run, resume, checksum |
+| Data migration | implementa MongoMigration e checkpoint | dry-run, resume, high-water mark, bulk write |
 | Contract/test | verifica bans, enum, participant flat e API | test mirati e audit finale |
 
 ## Sequenza

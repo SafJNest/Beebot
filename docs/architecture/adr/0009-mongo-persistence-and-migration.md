@@ -20,7 +20,7 @@ La strategia operativa è:
 1. MariaDB primaria;
 2. mirror immediato verso Mongo dopo il commit;
 3. letture applicative Mongo-only;
-4. migrazione batch con checkpoint e checksum;
+4. migrazione batch con checkpoint e high-water mark;
 5. MariaDB resta writer compatibile finché il cutover non viene approvato.
 
 Il mirror fallito viene loggato e non modifica il risultato MariaDB. Non esistono fallback di lettura, outbox o proxy dual-write.
@@ -33,7 +33,7 @@ Mongo userà:
 - champion statistics e build in collection aggregate separate;
 - participant incorporati nel match;
 - collection separate per dati derivati e aggregate;
-- `legacyMatchId` resta solo per backfill e riconciliazione; `legacySummonerId` non viene scritto nei nuovi documenti.
+- nessun identificativo numerico MariaDB viene scritto nei documenti Mongo; le chiavi canoniche sono PUUID, full Riot match ID, queue e championId.
 - gli eventi match sono separati in `match_events` e compressi da WiredTiger con Zstandard; match e masteries restano BSON normale.
 
 ## Boundary
@@ -78,7 +78,7 @@ Il codice possiede anche il bootstrap dello schema: ogni collection dichiara i p
 
 Questa migrazione non modifica implicitamente il contratto HTTP. I modelli canonici restano quelli di `lol.model`.
 
-Gli eventuali campi pubblici numerici legacy restano compatibili fino a una futura ADR API esplicita; internamente non sono più chiavi di lookup.
+I campi numerici dei modelli pubblici restano compatibili per il writer MariaDB, ma non sono persistiti nei documenti Mongo e non sono chiavi di lookup.
 
 ## Conseguenze
 
@@ -95,7 +95,7 @@ Gli eventuali campi pubblici numerici legacy restano compatibili fino a una futu
 
 - durante la transizione esistono due storage da monitorare;
 - alcune projection, come leaderboard, devono essere mantenute;
-- il backfill richiede checkpoint, checksum e gestione dei payload corrotti;
+- il backfill richiede checkpoint, high-water mark e gestione dei payload corrotti;
 - non esiste una transazione atomica MariaDB/Mongo; il mirror è quindi best-effort e osservabile.
 
 ## Gate

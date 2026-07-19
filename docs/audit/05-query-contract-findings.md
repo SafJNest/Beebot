@@ -31,7 +31,7 @@
 ### P2 — osservabilità e cache
 
 1. invalidare le chiavi Redis `ADVANCED_LOL_DATA` e `SUMMONER_DATA` durante i test di riconciliazione;
-2. aggiungere correlation id comune tra comando, task Tracker, legacy match id e `_id` Mongo;
+2. aggiungere correlation id comune tra comando, task Tracker, MariaDB match id e `_id` Mongo;
 3. registrare tempi e conteggi per ogni fase: SQL commit, mirror summoner, mirror match, participant count, rank/event update.
 
 ## Conclusione

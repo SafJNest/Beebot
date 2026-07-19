@@ -104,7 +104,7 @@ Esempio concettuale:
 ### Regole summoner
 
 - `puuid` è `_id` e non viene duplicato in un secondo campo;
-- `legacySummonerId` non viene scritto;
+- gli identificativi numerici MariaDB non vengono scritti;
 - la migrazione usa un database Mongo vuoto e non prevede cleanup applicativi successivi;
 - `tracking=false` e gli altri default/null non vengono persistiti;
 - rank e mastery non hanno collection operative separate;
@@ -119,7 +119,6 @@ Esempio concettuale:
 ```json
 {
   "_id": "EUW1_134131",
-  "legacyMatchId": 1945327,
   "fullGameId": "EUW1_134131",
   "gameId": "134131",
   "leagueShard": "EUW1",
@@ -154,7 +153,6 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 
 ```json
 {
-  "legacyParticipantId": 1,
   "puuid": "participant-puuid",
   "riotId": "GameName",
   "riotTag": "TAG",
@@ -242,8 +240,8 @@ Le collection di statistiche, build e distribution hanno chiavi composte stabili
 
 Per compatibilità, durante la migrazione possono contenere:
 
-- `legacyPayload`;
-- `legacyEncoding`;
+- `legacyPayload` solo nelle collection aggregate di compatibilità;
+- `legacyEncoding` solo nelle collection aggregate di compatibilità;
 - `conversionStatus`;
 - `convertedAt`.
 
@@ -254,7 +252,9 @@ Per compatibilità, durante la migrazione possono contenere:
 - `_id` su `puuid`;
 - `riotSearch + region`;
 - `userId` sparse;
-- `tracking + region`;
+- `tracking + region` parziale con `tracking=true`;
+- `ranks.rank + ranks.lp DESC`;
+- `masteries.level DESC + masteries.points DESC`;
 
 ### `match`
 
@@ -276,9 +276,11 @@ Il registry applicativo deve usare nomi stabili. La lista minima è:
 
 | Collection | Nome indice | Specifica |
 |---|---|---|
-| `summoner` | `summoners_riot_search_region` | `riotSearch ASC, region ASC` |
+| `summoner` | `summoners_region_riot_search` | `region ASC, riotSearch ASC` |
 | `summoner` | `summoners_user_id` | `userId ASC`, sparse |
-| `summoner` | `summoners_tracking_region` | `tracking ASC, region ASC` |
+| `summoner` | `summoners_tracking_region_active` | `tracking ASC, region ASC`, partial `tracking=true` |
+| `summoner` | `summoners_rank_lp` | `ranks.rank ASC, ranks.lp DESC` |
+| `summoner` | `summoners_mastery_level_points` | `masteries.level DESC, masteries.points DESC` |
 | `match` | `matches_participant_time` | `participants.puuid ASC, timeEnd DESC` |
 | `match` | `matches_shard_queue_start` | `leagueShard ASC, queue ASC, timeStart DESC` |
 | `match` | `matches_patch_queue` | `patch ASC, queue ASC` |
@@ -301,7 +303,8 @@ Il bootstrap previsto è:
 ```text
 MongoClient
   -> databaseName = App.isTesting() ? "beebot_test" : "beebot"
-  -> MongoDB.ensureSchema(database)
+  -> MongoDB.ensureCollections(database)
+  -> MongoDB.ensureIndexes(database) dopo la migrazione
   -> MongoDB query/write methods
 ```
 

@@ -55,7 +55,7 @@ Il mirror dell’account è più lineare:
 1. `LeagueDB.addLOLAccount` esegue SQL e commit;
 2. passa il PUUID già presente nel modello Riot;
 3. `MongoDB.mirrorSummoner` rilegge solo i campi compatibili della riga MariaDB;
-4. `MongoDB.upsertSummoner` usa `puuid` come `_id` e non scrive `legacySummonerId`.
+4. `MongoDB.upsertSummoner` usa `puuid` come `_id` e non scrive identificativi numerici MariaDB.
 
 Il replace Mongo è ora verificato tramite `UpdateResult`; una riga MariaDB non riletta o un errore di conversione vengono registrati dal mirror.
 

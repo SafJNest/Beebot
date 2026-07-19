@@ -9,7 +9,7 @@ Riot LOLMatch
   -> Tracker.analyzeMatchHistory(...)
   -> LeagueDB.saveMatch(...)
   -> commit MariaDB
-  -> MongoDB.mirrorMatch(legacyMatchId)
+  -> MongoDB.mirrorMatch(mariaMatchId)
   -> LeagueDB.getMatch(region, gameId)
   -> MongoDB.upsertMatch(fullGameId, Match)
   -> LeagueDB.setSummonerData(...)
@@ -28,7 +28,7 @@ Dopo il commit MariaDB devono esistere:
 
 - `match._id = REGION_gameId`;
 - `region = REGION` e `game_id = gameId` derivati dal full Riot id;
-- `legacyMatchId` valorizzato;
+- nessun identificativo numerico MariaDB nel documento;
 - `bans.BLUE` e `bans.RED` come array BSON;
 - participant flat dentro `participants`, inclusi `rank`, `lp` e `gain`;
 - rank ed eventi aggiornati sullo stesso documento;
@@ -71,7 +71,7 @@ WHERE game_id = '<GAME_ID>' AND region = '<REGION>';
 
 SELECT match_id, summoner_id, puuid, champion, win, rank, lp, gain
 FROM participant
-WHERE match_id = <LEGACY_MATCH_ID>;
+WHERE match_id = <MARIA_MATCH_ID>;
 ```
 
 E poi verificare in Mongo:

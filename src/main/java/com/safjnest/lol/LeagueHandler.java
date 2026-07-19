@@ -723,7 +723,7 @@ import com.safjnest.lol.utils.PatchUtils;
     }
 
     public static boolean isMatchDBCached(String gameId) {
-        return MongoDB.getMatchIdByGameId(gameId.split("_")[1]) != 0;
+        return MongoDB.hasMatchByGameId(gameId);
     }
 
     public static boolean isMatchSomewhereCached(String gameId, LeagueShard shard) {

@@ -23,7 +23,7 @@ Forma target:
 }
 ```
 
-`tracking=false`, `userId=null` e default vuoti non vengono persistiti. `legacySummonerId` e il campo duplicato `puuid` non vengono scritti. Il database target viene cancellato prima della migrazione, quindi non sono previsti cleanup o conversioni manuali dei documenti già presenti.
+`tracking=false`, `userId=null` e default vuoti non vengono persistiti. Gli identificativi numerici MariaDB e il campo duplicato `puuid` del summoner non vengono scritti. Il database target viene cancellato prima della migrazione, quindi non sono previsti cleanup o conversioni manuali dei documenti già presenti.
 
 I consumer ricevono il PUUID già presente nel modello Riot/Summoner. Non esistono collection di mapping e le letture Mongo non eseguono lookup MariaDB per ricostruire un id numerico.
 
@@ -34,9 +34,11 @@ Indice target su `summoner`:
 - `_id`, implicito e non eliminabile;
 - `summoners_user_id`, sparse;
 - `summoners_region_riot_search`, `{ region: 1, riotSearch: 1 }`;
-- `summoners_tracking_region_active`, `{ tracking: 1, region: 1 }`, partial filter `{ tracking: true }`.
+- `summoners_tracking_region_active`, `{ tracking: 1, region: 1 }`, partial filter `{ tracking: true }`;
+- `summoners_rank_lp`, `{ ranks.rank: 1, ranks.lp: -1 }`;
+- `summoners_mastery_level_points`, `{ masteries.level: -1, masteries.points: -1 }`.
 
-`MongoDB.ensureSchema()` crea gli indici mancanti e non esegue drop automatici. Il database target viene ricreato vuoto prima del run, quindi non esistono indici legacy da rimuovere. Dopo la migrazione si eseguono gli `explain("executionStats")` delle tre query principali:
+`MongoDB.ensureIndexes()` crea gli indici mancanti e non esegue drop automatici. Durante il backfill gli indici secondari sono posticipati; vengono creati dopo il completamento di summoner e match. Il database target viene ricreato vuoto prima del run, quindi non esistono indici legacy da rimuovere. Dopo la migrazione si eseguono gli `explain("executionStats")` delle query principali:
 
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}).explain("executionStats")

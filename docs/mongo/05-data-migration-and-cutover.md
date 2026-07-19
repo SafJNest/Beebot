@@ -7,10 +7,10 @@ Le opzioni controllano dry-run, batch, run id, resume e high-water mark.
 
 ```java
 MongoMigration.migrateAll(new MongoMigration.Options(
-        false, 100_000, "raw-2026-07", true, 0));
+        false, 125_000, "raw-2026-07", true, 0));
 ```
 
-La dimensione massima configurabile per `summoner` è 100.000 righe. Ogni batch summoner carica anche rank e masteries relativi all'intervallo di id e li scrive nello stesso documento. La fase `matches` usa pagine da massimo 50.000 match: ogni pagina carica i participant con una query MariaDB bounded.
+La dimensione massima configurabile per `summoner` è 125.000 righe. Ogni batch summoner carica anche rank e masteries relativi all'intervallo di id e li scrive con bulk Mongo da 2.000 documenti. La fase `matches` usa pagine da massimo 10.000 match: ogni pagina carica i participant con una query MariaDB bounded e viene liberata prima del giro successivo.
 
 ## Ordine e perimetro
 
@@ -19,7 +19,7 @@ Le fasi sono eseguite in questo ordine:
 1. `summoners` → collection `summoner`, con `ranks[]` e `masteries[]` caricati nello stesso batch;
 2. `matches` → collection `match`, con `participants[]` flat nel documento.
 
-Sono dati raw. Il match conserva il riferimento `legacyMatchId` per riconciliazione. Il documento `summoner` usa `_id = puuid`, senza `legacySummonerId` e senza un secondo campo `puuid`. La migrazione viene eseguita su un database Mongo vuoto: non esiste una fase applicativa di cleanup o conversione in-place.
+Sono dati raw. Il documento `summoner` usa `_id = puuid`, mentre match, rank, mastery e participant non conservano identificativi numerici MariaDB. La migrazione viene eseguita su un database Mongo vuoto: non esiste una fase applicativa di cleanup o conversione in-place.
 
 Gli eventi eventualmente presenti nel JSON MariaDB vengono scritti separatamente in `match_events` tramite `MongoDB.upsertMatch()`: prima viene sostituito il documento `match`, poi il payload JSON viene sostituito in `match_events`, la cui compressione è delegata a WiredTiger Zstandard livello 9. Il documento `match` non contiene più `events`.
 
@@ -46,9 +46,9 @@ Non viene usato `OFFSET`, non viene materializzato il risultato completo e non v
 
 ## Checkpoint e resume
 
-`migration_runs` contiene run, fase, high-water mark, checksum, numero di righe processate, batch size, stato e timestamp. Gli stati sono `RUNNING`, `PAUSED` e `COMPLETED`.
+`migration_runs` contiene run, fase, high-water mark, numero di righe processate, batch size, stato e timestamp. Gli stati sono `RUNNING`, `PAUSED` e `COMPLETED`.
 
-Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili.
+Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato della versione `raw-v4-bulk-no-checksum`. Gli upsert sono idempotenti; rank e masteries vengono fusi nell'array embedded usando rispettivamente `queue` e `championId` come chiavi stabili. Un checkpoint di una versione precedente non viene riutilizzato.
 
 `highWaterMark > 0` permette di fermare intenzionalmente il backfill a un id. In quel caso il checkpoint resta `PAUSED` e può essere ripreso senza perdere la pagina già completata.
 
@@ -58,9 +58,9 @@ Un rerun con lo stesso `runId` e `resume=true` riparte dall'ultimo id confermato
 2. confermare che il database Mongo scelto sia `beebot_test`;
 3. eliminare il database/collection target prima del run, così schema, indici e documenti partono puliti;
 4. eseguire un dry-run con un high-water mark piccolo;
-5. eseguire il backfill reale con batch 100.000 per `summoner` e 50.000 per `match`;
+5. eseguire il backfill reale con batch 125.000 per `summoner` e 10.000 per `match`;
 6. controllare `summoner`, `match`, `match_events`, `ranks[]`, `masteries[]`, `participants[]`;
-7. ripetere con `resume=true` per verificare idempotenza e checksum;
+7. ripetere con `resume=true` per verificare idempotenza e high-water mark;
 8. costruire solo dopo build e profile statistics tramite i flussi applicativi.
 
 Gli errori del backfill interrompono il run con fase e id espliciti. Gli errori del mirror runtime restano loggati senza falsificare il risultato MariaDB.

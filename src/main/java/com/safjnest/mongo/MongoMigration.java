@@ -1,9 +1,6 @@
 package com.safjnest.mongo;
 
 import java.sql.Timestamp;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,9 +16,11 @@ import com.safjnest.sql.database.LeagueDB;
 public final class MongoMigration {
 
     private static final String CHECKPOINT_COLLECTION = "migration_runs";
-    private static final int DEFAULT_BATCH_SIZE = 100_000;
-    private static final int MAX_BATCH_SIZE = 100_000;
-    private static final int MAX_MATCH_BATCH_SIZE = 50_000;
+    private static final String MIGRATION_VERSION = "raw-v4-bulk-no-checksum";
+    private static final int DEFAULT_BATCH_SIZE = 125_000;
+    private static final int MAX_BATCH_SIZE = 125_000;
+    private static final int MAX_MATCH_BATCH_SIZE = 10_000;
+    private static final int MONGO_WRITE_BATCH_SIZE = 2_000;
     private static final int MAX_REPORT_IDENTITIES = 100;
     private static final List<String> PHASES = List.of("summoners", "matches");
 
@@ -35,8 +34,15 @@ public final class MongoMigration {
     public static MigrationReport migrateAll(Options options) {
         Options effective = options == null ? Options.defaults() : options;
         MigrationReport report = new MigrationReport(effective.dryRun());
-        for (String phase : PHASES) migratePhase(phase, effective, report);
-        return report;
+        MongoDB.beginMigration();
+        boolean completed = false;
+        try {
+            for (String phase : PHASES) migratePhase(phase, effective, report);
+            completed = true;
+            return report;
+        } finally {
+            MongoDB.finishMigration(!effective.dryRun() && completed);
+        }
     }
 
     private static void migratePhase(String phase, Options options, MigrationReport report) {
@@ -47,45 +53,43 @@ public final class MongoMigration {
         }
         long highWaterMark = checkpoint.highWaterMark();
         long processed = checkpoint.processed();
-        String checksum = checkpoint.checksum();
         boolean completed = true;
 
         while (true) {
             List<Match> matches = LeagueDB.get().getMatchesAfterId(asInt(highWaterMark), pageSize(phase, options.batchSize()));
             if (matches.isEmpty()) break;
             boolean stopped = false;
-            for (Match match : matches) {
-                if (match.id <= highWaterMark) continue;
-                if (options.highWaterMark() > 0 && match.id > options.highWaterMark()) {
-                    completed = false;
-                    stopped = true;
-                    break;
+            try {
+                for (Match match : matches) {
+                    if (match.id <= highWaterMark) continue;
+                    if (options.highWaterMark() > 0 && match.id > options.highWaterMark()) {
+                        completed = false;
+                        stopped = true;
+                        break;
+                    }
+                    String identity = matchIdentity(match);
+                    try {
+                        if (!options.dryRun()) MongoDB.upsertMatch(identity, match);
+                        highWaterMark = match.id;
+                        processed++;
+                        report.accept(phase, identity);
+                    } catch (RuntimeException exception) {
+                        throw migrationFailure(phase, identity, exception);
+                    }
                 }
-                String identity = matchIdentity(match);
-                try {
-                    Document document = MongoDB.toDocument(match);
-                    checksum = checksum(checksum, document);
-                    checksum = checksum(checksum, new Document("_id", identity)
-                            .append("events", match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap()));
-                    if (!options.dryRun()) MongoDB.upsertMatch(identity, match);
-                    highWaterMark = match.id;
-                    processed++;
-                    report.accept(phase, identity);
-                } catch (RuntimeException exception) {
-                    throw migrationFailure(phase, identity, exception);
-                }
+                if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, processed, stopped ? "PAUSED" : "RUNNING");
+            } finally {
+                matches.clear();
             }
-            if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, checksum, processed, stopped ? "PAUSED" : "RUNNING");
             if (stopped) break;
         }
 
-        if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, checksum, processed, completed ? "COMPLETED" : "PAUSED");
+        if (!options.dryRun()) writeCheckpoint(options, phase, highWaterMark, processed, completed ? "COMPLETED" : "PAUSED");
     }
 
     private static void migrateSummoners(Options options, MigrationReport report, Checkpoint checkpoint) {
         long highWaterMark = checkpoint.highWaterMark();
         long processed = checkpoint.processed();
-        String checksum = checkpoint.checksum();
         boolean completed = true;
 
         while (true) {
@@ -94,37 +98,42 @@ public final class MongoMigration {
             Map<String, Document> documents = new LinkedHashMap<>();
             long batchHighWaterMark = highWaterMark;
             boolean stopped = false;
-            for (QueryRecord row : rows) {
-                long rowHighWaterMark = row.getAsLong("id");
-                if (rowHighWaterMark <= highWaterMark) continue;
-                if (options.highWaterMark() > 0 && rowHighWaterMark > options.highWaterMark()) {
-                    completed = false;
-                    stopped = true;
-                    break;
+            try {
+                for (QueryRecord row : rows) {
+                    long rowHighWaterMark = row.getAsLong("id");
+                    if (rowHighWaterMark <= highWaterMark) continue;
+                    if (options.highWaterMark() > 0 && rowHighWaterMark > options.highWaterMark()) {
+                        completed = false;
+                        stopped = true;
+                        break;
+                    }
+                    String puuid = required(row, "puuid");
+                    documents.put(puuid, convertSummoner(row));
+                    batchHighWaterMark = rowHighWaterMark;
                 }
-                String puuid = required(row, "puuid");
-                documents.put(puuid, convertSummoner(row));
-                batchHighWaterMark = rowHighWaterMark;
-            }
-            if (documents.isEmpty()) {
-                if (stopped) break;
-                continue;
-            }
 
-            loadEmbeddedRows("ranks", highWaterMark, batchHighWaterMark, documents);
-            loadEmbeddedRows("masteries", highWaterMark, batchHighWaterMark, documents);
-            for (Map.Entry<String, Document> entry : documents.entrySet()) {
-                checksum = checksum(checksum, entry.getValue());
-                if (!options.dryRun()) MongoDB.upsertDocument("summoner", entry.getValue());
-                processed++;
-                report.accept("summoners", entry.getKey());
+                if (documents.isEmpty()) {
+                    if (stopped) break;
+                    continue;
+                }
+
+                loadEmbeddedRows("ranks", highWaterMark, batchHighWaterMark, documents);
+                loadEmbeddedRows("masteries", highWaterMark, batchHighWaterMark, documents);
+                if (!options.dryRun()) MongoDB.bulkUpsertDocuments("summoner", documents.values(), MONGO_WRITE_BATCH_SIZE);
+                for (String puuid : documents.keySet()) {
+                    processed++;
+                    report.accept("summoners", puuid);
+                }
+                highWaterMark = batchHighWaterMark;
+                if (!options.dryRun()) writeCheckpoint(options, "summoners", highWaterMark, processed, stopped ? "PAUSED" : "RUNNING");
+                if (stopped) break;
+            } finally {
+                rows.clear();
+                documents.clear();
             }
-            highWaterMark = batchHighWaterMark;
-            if (!options.dryRun()) writeCheckpoint(options, "summoners", highWaterMark, checksum, processed, stopped ? "PAUSED" : "RUNNING");
-            if (stopped) break;
         }
 
-        if (!options.dryRun()) writeCheckpoint(options, "summoners", highWaterMark, checksum, processed, completed ? "COMPLETED" : "PAUSED");
+        if (!options.dryRun()) writeCheckpoint(options, "summoners", highWaterMark, processed, completed ? "COMPLETED" : "PAUSED");
     }
 
     private static QueryResult querySummonerPage(long highWaterMark, int pageSize) {
@@ -151,11 +160,16 @@ public final class MongoMigration {
     }
 
     private static void loadEmbeddedRows(String phase, long fromSummonerId, long toSummonerId, Map<String, Document> summoners) {
-        for (QueryRecord row : queryEmbeddedRange(phase, fromSummonerId, toSummonerId)) {
-            String puuid = required(row, "puuid");
-            Document summoner = summoners.get(puuid);
-            if (summoner == null) throw new IllegalStateException("Embedded row has no summoner in batch phase=" + phase + " puuid=" + puuid);
-            appendEmbedded(summoner, phase, convertEmbedded(phase, row));
+        QueryResult rows = queryEmbeddedRange(phase, fromSummonerId, toSummonerId);
+        try {
+            for (QueryRecord row : rows) {
+                String puuid = required(row, "puuid");
+                Document summoner = summoners.get(puuid);
+                if (summoner == null) throw new IllegalStateException("Embedded row has no summoner in batch phase=" + phase + " puuid=" + puuid);
+                appendEmbedded(summoner, phase, convertEmbedded(phase, row));
+            }
+        } finally {
+            rows.clear();
         }
     }
 
@@ -195,8 +209,7 @@ public final class MongoMigration {
 
     private static Document convertEmbedded(String phase, QueryRecord row) {
         return switch (phase) {
-            case "ranks" -> new Document("legacyRankId", row.getAsInt("id"))
-                    .append("region", row.get("region"))
+            case "ranks" -> new Document("region", row.get("region"))
                     .append("queue", row.get("queue"))
                     .append("rank", row.get("rank"))
                     .append("lp", row.getAsInt("lp"))
@@ -204,8 +217,7 @@ public final class MongoMigration {
                     .append("wins", row.getAsInt("wins"))
                     .append("losses", row.getAsInt("losses"))
                     .append("lastUpdate", epochMillis(row, "last_update"));
-            case "masteries" -> new Document("legacyMasteryId", row.getAsInt("id"))
-                    .append("championId", row.getAsInt("champion_id"))
+            case "masteries" -> new Document("championId", row.getAsInt("champion_id"))
                     .append("level", row.getAsInt("champion_level"))
                     .append("points", row.getAsInt("champion_points"))
                     .append("lastPlayTime", epochMillis(row, "last_play_time"));
@@ -214,7 +226,7 @@ public final class MongoMigration {
     }
 
     private static int pageSize(String phase, int requested) {
-        return "matches".equals(phase) ? Math.min(requested, MAX_MATCH_BATCH_SIZE) : requested;
+        return "matches".equals(phase) ? Math.min(requested, MAX_MATCH_BATCH_SIZE) : Math.min(requested, MAX_BATCH_SIZE);
     }
 
     private static int asInt(long value) {
@@ -237,16 +249,20 @@ public final class MongoMigration {
     }
 
     private static Checkpoint readCheckpoint(String runId, String phase) {
-        MongoRecord record = MongoDB.findRecord(CHECKPOINT_COLLECTION, runId + ":" + phase);
+        MongoRecord record = MongoDB.findRecord(CHECKPOINT_COLLECTION, checkpointId(runId, phase));
         if (record == null) return Checkpoint.empty();
-        return new Checkpoint(record.getAsLong("highWaterMark"), record.getAsString("checksum"), record.getAsLong("processed"));
+        return new Checkpoint(record.getAsLong("highWaterMark"), record.getAsLong("processed"));
     }
 
-    private static void writeCheckpoint(Options options, String phase, long highWaterMark, String checksum, long processed, String status) {
-        MongoDB.upsertDocument(CHECKPOINT_COLLECTION, new Document("_id", options.runId() + ":" + phase)
-                .append("runId", options.runId()).append("phase", phase).append("status", status)
-                .append("highWaterMark", highWaterMark).append("checksum", checksum).append("processed", processed)
+    private static void writeCheckpoint(Options options, String phase, long highWaterMark, long processed, String status) {
+        MongoDB.upsertDocument(CHECKPOINT_COLLECTION, new Document("_id", checkpointId(options.runId(), phase))
+                .append("runId", options.runId()).append("version", MIGRATION_VERSION).append("phase", phase).append("status", status)
+                .append("highWaterMark", highWaterMark).append("processed", processed)
                 .append("batchSize", options.batchSize()).append("updatedAt", System.currentTimeMillis()));
+    }
+
+    private static String checkpointId(String runId, String phase) {
+        return MIGRATION_VERSION + ":" + runId + ":" + phase;
     }
 
     private static String matchIdentity(Match match) {
@@ -265,22 +281,6 @@ public final class MongoMigration {
         if (value == null) return "";
         String normalized = value.trim().toLowerCase(java.util.Locale.ROOT);
         return normalized.replace("#", "").replace("-", "").replaceAll("\\s+", "");
-    }
-
-    private static String checksum(String previous, Document document) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update((previous == null ? "" : previous).getBytes(StandardCharsets.UTF_8));
-            return hex(digest.digest(document.toJson().getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is not available", exception);
-        }
-    }
-
-    private static String hex(byte[] bytes) {
-        StringBuilder value = new StringBuilder(bytes.length * 2);
-        for (byte item : bytes) value.append(String.format("%02x", item));
-        return value.toString();
     }
 
     private static IllegalStateException migrationFailure(String phase, String identity, RuntimeException exception) {
@@ -317,7 +317,7 @@ public final class MongoMigration {
         public List<String> identities() { return List.copyOf(identities); }
     }
 
-    private record Checkpoint(long highWaterMark, String checksum, long processed) {
-        private static Checkpoint empty() { return new Checkpoint(0, "", 0); }
+    private record Checkpoint(long highWaterMark, long processed) {
+        private static Checkpoint empty() { return new Checkpoint(0, 0); }
     }
 }

@@ -13,7 +13,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - Il backfill iniziale migra solo dati raw: prima `summoner` con `ranks[]` e `masteries[]` nello stesso batch, poi `match` con participant.
 - `profile_statistics`, build e aggregate vengono costruiti successivamente dall'applicazione.
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
-- Il documento `summoner` usa `_id = puuid`; `legacySummonerId` e il campo duplicato `puuid` non vengono scritti.
+- Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
 - La migrazione parte da un database Mongo vuoto: non esiste un cleanup applicativo di documenti legacy.
 - I reader usano `_id` come fallback solo per compatibilità difensiva con documenti esterni alla migrazione pulita.
 - Gli eventi non sono nel documento `match`: vivono in `match_events` come JSON e la collection usa WiredTiger Zstandard nativo.
@@ -53,7 +53,9 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 
 ## Indici e spazio
 
-L'inizializzazione crea in modo idempotente gli indici dichiarati nel codice. Su `summoner` sono previsti `_id`, `userId` sparse, `region + riotSearch` e `tracking + region` parziale con filtro `tracking=true`. Poiché il target viene ricreato vuoto prima della migrazione, non servono drop o cleanup manuali. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
+Durante il backfill le collection vengono create senza indici secondari. I summoner vengono inviati con bulk unordered da 2.000 documenti; al completamento di summoner e match vengono creati gli indici dichiarati nello schema.
+
+L'inizializzazione crea in modo idempotente gli indici dichiarati nel codice. Su `summoner` sono previsti `_id`, `userId` sparse, `region + riotSearch`, `tracking + region` parziale, `ranks.rank + ranks.lp` e `masteries.level + masteries.points`. Poiché il target viene ricreato vuoto prima della migrazione, non servono drop o cleanup manuali. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
 
 La compressione applicativa è disabilitata: `match_events` usa la compressione nativa WiredTiger. Il server Mongo deve usare `zstdCompressionLevel: 9`; match, summoner e masteries restano documenti BSON normali e vengono compressi dal server.
 
@@ -63,4 +65,4 @@ rsc/settings.json contiene una URI server-level. La URI non deve contenere il da
 
 ## Gate
 
-Prima del completamento verificare massimo tre file Java sotto com.safjnest.mongo, nessun vecchio store/infrastructure/codec/mapper/outbox/proxy, letture LoL Mongo-only, chiamata Mongo visibile dopo ogni write MariaDB riuscita e test per database test, indici, bans, enum, participant flat, conversioni e migrazione resume/checksum.
+Prima del completamento verificare massimo tre file Java sotto com.safjnest.mongo, nessun vecchio store/infrastructure/codec/mapper/outbox/proxy, letture LoL Mongo-only, chiamata Mongo visibile dopo ogni write MariaDB riuscita e test per database test, indici, bans, enum, participant flat, conversioni e migrazione resume/high-water mark.

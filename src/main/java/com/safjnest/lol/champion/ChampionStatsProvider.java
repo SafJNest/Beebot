@@ -25,16 +25,16 @@ public final class ChampionStatsProvider {
         return MongoDB.countChampionMatchesByFilter(filter);
     }
 
-    public static List<String> loadMatchIds(Filter filter, long lastId) {
-        return MongoDB.findChampionLegacyMatchIds(filter, lastId, GAME_BATCH_SIZE);
+    public static List<String> loadMatchIds(Filter filter, String lastFullGameId) {
+        return MongoDB.findChampionMatchIds(filter, lastFullGameId, GAME_BATCH_SIZE);
     }
 
     public static ChampionStatsData.RawBatch loadBatch(List<String> matchIds) {
         Map<String, ChampionStatsData.MatchMeta> metadata = new LinkedHashMap<>();
         Map<String, List<ChampionStatsData.RawParticipant>> byMatch = new LinkedHashMap<>();
-        for (MongoRecord record : MongoDB.findChampionRecordsByLegacyIds(matchIds)) {
+        for (MongoRecord record : MongoDB.findChampionRecordsByIds(matchIds)) {
             Match match = MongoDB.read(record, Match.class);
-            String matchId = String.valueOf(match.id);
+            String matchId = String.valueOf(record.getId());
             metadata.put(matchId, new ChampionStatsData.MatchMeta(
                     new JSONObject(match.bans == null ? Map.of() : match.bans).toString(),
                     new JSONObject(match.eventData == null ? Map.of() : match.eventData).toString(),
@@ -47,7 +47,7 @@ public final class ChampionStatsProvider {
                 participants.add(new ChampionStatsData.RawParticipant(
                         participant.champion, participant.lane, participant.win, participant.team,
                         matchId, participant.kda, participant.cs, participant.goldEarned,
-                        participant.summonerId, participant.puuid
+                        participant.puuid
                 ));
             }
         }
@@ -56,7 +56,7 @@ public final class ChampionStatsProvider {
 
     public static QueryResult loadTrendParticipants(List<String> matchIds) {
         QueryResult result = new QueryResult();
-        for (MongoRecord record : MongoDB.findChampionRecordsByLegacyIds(matchIds)) {
+        for (MongoRecord record : MongoDB.findChampionRecordsByIds(matchIds)) {
             Match match = MongoDB.read(record, Match.class);
             if (match.participants == null) continue;
             for (Participant participant : match.participants) {

@@ -12,6 +12,8 @@ import org.junit.Test;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.summoner.Mastery;
+import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -43,15 +45,20 @@ public class MongoDBTest {
         assertEquals("EUW1", document.getString("region"));
         assertEquals("123", document.getString("game_id"));
         assertEquals("EUW1_123", document.getString("_id"));
+        assertFalse(document.containsKey("legacyMatchId"));
         assertEquals(1055, savedParticipant.getInteger("item0").intValue());
         assertEquals("GOLD_II", savedParticipant.getString("rank"));
         assertEquals(73, savedParticipant.getInteger("lp").intValue());
         assertEquals(21, savedParticipant.getInteger("gain").intValue());
         assertFalse(savedParticipant.containsKey("build"));
+        assertFalse(savedParticipant.containsKey("id"));
+        assertFalse(savedParticipant.containsKey("summonerId"));
+        assertFalse(savedParticipant.containsKey("matchId"));
+        assertFalse(savedParticipant.containsKey("legacyParticipantId"));
     }
 
     @Test
-    public void legacyOrdinalBansBecomeBlueAndRed() {
+    public void ordinalBansBecomeBlueAndRed() {
         Match match = new Match();
         match.gameId = "EUW1_789";
         match.leagueShard = LeagueShard.EUW1;
@@ -95,6 +102,17 @@ public class MongoDBTest {
         Summoner decoded = MongoDB.read(new MongoRecord("summoner", "puuid-42", document), Summoner.class);
         assertEquals("puuid-42", decoded.puuid());
         assertEquals(0, decoded.summonerId());
+    }
+
+    @Test
+    public void embeddedRankAndMasteryDoNotPersistMariaDbIds() {
+        Document rank = MongoDB.toDocument(new Rank(null, null, 0, 0, 0));
+        Document mastery = MongoDB.toDocument(new Mastery(157, 30, 250000));
+
+        assertFalse(rank.containsKey("id"));
+        assertFalse(rank.containsKey("legacyRankId"));
+        assertFalse(mastery.containsKey("id"));
+        assertFalse(mastery.containsKey("legacyMasteryId"));
     }
 
     @Test

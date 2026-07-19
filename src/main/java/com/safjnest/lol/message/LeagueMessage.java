@@ -1710,7 +1710,7 @@ public class LeagueMessage {
                 if (parameter.isDuo()) {
                     List<Integer> allyChamps = match.participants.stream()
                         .filter(p -> p.team == team)
-                        .filter(p -> p.id != participant.id)
+                        .filter(p -> !Objects.equals(p.puuid, participant.puuid))
                         .filter(p -> (GameQueueTypeUtils.isCherry(parameter.getQueueType()) && p.subTeam == participant.subTeam) || p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
                         .map(p -> p.champion)
                         .collect(Collectors.toList());
@@ -1892,7 +1892,7 @@ public class LeagueMessage {
                 if (isDuo) {
                     List<Integer> allyChamps = match.participants.stream()
                         .filter(p -> p.team == team)
-                        .filter(p -> p.id != participant.id)
+                        .filter(p -> !Objects.equals(p.puuid, participant.puuid))
                         .filter(p -> p.lane == LaneType.BOT || p.lane == LaneType.UTILITY)
                         .map(p -> p.champion)
                         .collect(Collectors.toList());
