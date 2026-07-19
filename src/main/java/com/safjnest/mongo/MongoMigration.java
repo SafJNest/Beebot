@@ -22,7 +22,7 @@ public final class MongoMigration {
     private static final int MAX_MATCH_BATCH_SIZE = 10_000;
     private static final int MONGO_WRITE_BATCH_SIZE = 2_000;
     private static final int MAX_REPORT_IDENTITIES = 100;
-    private static final List<String> PHASES = List.of("summoners", "matches");
+    private static final List<String> PHASES = List.of("matches");
 
     private MongoMigration() {
     }
