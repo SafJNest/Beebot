@@ -115,6 +115,8 @@ public class LeagueService {
     }
 
     public static String getPuuidByRiotId(String name, String tag, LeagueShard shard) {
+        String databasePuuid = MongoDB.findPuuid(name + "#" + tag, shard);
+        if (databasePuuid != null) return databasePuuid;
         RiotAccount account = getRiotAccountByName(name, tag, shard);
         return account != null ? account.getPUUID() : null;
     }
@@ -124,6 +126,8 @@ public class LeagueService {
     }
 
     public static no.stelar7.api.r4j.pojo.lol.summoner.Summoner getSummonerByName(String name, String tag, LeagueShard shard) {
+        String databasePuuid = MongoDB.findPuuid(name + "#" + tag, shard);
+        if (databasePuuid != null) return getSummonerByPuuid(databasePuuid, shard);
         RiotAccount account = getRiotAccountByName(name, tag, shard);
         return account != null 
             ? getSummonerByPuuid(account.getPUUID(), shard) 
@@ -187,10 +191,8 @@ public class LeagueService {
         Rank cached = RedisClient.get(key, Rank.class);
         if (cached != null) return cached;
 
-        LeagueEntry entry = getLeagueEntry(puuid, shard, "5v5 Ranked Solo");
-        Rank rank = entry != null
-            ? new Rank(entry.getQueueType(), entry.getTierDivisionType(), entry.getLeaguePoints(), entry.getWins(), entry.getLosses())
-            : Rank.unranked();
+        Rank rank = MongoDB.findRank(puuid, shard, GameQueueType.RANKED_SOLO_5X5);
+        if (rank == null) rank = Rank.unranked();
         RedisClient.set(key, rank, TTL_PROFILE_RANK);
         return rank;
     }

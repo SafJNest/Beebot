@@ -1474,9 +1474,11 @@ public class LeagueDB extends AbstractDB {
         match.timeStart = timestamp(result, "time_start");
         match.timeEnd = timestamp(result, "time_end");
         match.patch = result.getString("patch");
-        JSONObject events = jsonObject(result.getString("events"));
-        match.eventData = events.toMap();
-        if (retainEvents) match.events = events;
+        if (retainEvents) {
+            JSONObject events = jsonObject(result.getString("events"));
+            match.eventData = events.toMap();
+            match.events = events;
+        }
         match.participants = new ArrayList<>();
 
         JSONObject bans = jsonObject(result.getString("bans"));

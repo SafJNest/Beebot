@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.bson.Document;
-import org.json.JSONObject;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.sql.QueryRecord;
@@ -20,11 +19,13 @@ public final class MongoMigration {
 
     private static final String CHECKPOINT_COLLECTION = "migration_runs";
     private static final String MIGRATION_VERSION = "raw-v5-missing-only";
-    private static final int DEFAULT_BATCH_SIZE = 125_000;
-    private static final int MAX_BATCH_SIZE = 125_000;
+    private static final int DEFAULT_BATCH_SIZE = 50_000;
+    private static final int MAX_BATCH_SIZE = 50_000;
     private static final int MAX_MATCH_BATCH_SIZE = 10_000;
-    private static final int EMBEDDED_BATCH_SIZE = 25_000;
+    private static final int EMBEDDED_BATCH_SIZE = 5_000;
     private static final int MONGO_WRITE_BATCH_SIZE = 2_000;
+    private static final int MATCH_READ_BATCH_SIZE = 25;
+    private static final int GC_INTERVAL_BATCHES = 10;
     private static final int MAX_REPORT_IDENTITIES = 100;
     private static final List<String> PHASES = List.of("summoners", "matches");
 
@@ -46,6 +47,7 @@ public final class MongoMigration {
             return report;
         } finally {
             MongoDB.finishMigration(!effective.dryRun() && completed);
+            requestCollection();
         }
     }
 
@@ -96,15 +98,14 @@ public final class MongoMigration {
                 Set<String> missingEventIdentities = new HashSet<>();
                 for (Map.Entry<Integer, String> entry : identities.entrySet()) {
                     String identity = entry.getValue();
-                    if (!existingMatches.contains(identity)) {
-                        missingMatchIds.add(entry.getKey());
-                    } else if (!existingEvents.contains(identity)) {
+                    if (!existingMatches.contains(identity)) missingMatchIds.add(entry.getKey());
+                    if (!existingEvents.contains(identity)) {
                         missingEventIds.add(entry.getKey());
                         missingEventIdentities.add(identity);
                     }
                 }
 
-                migrateMissingMatches(options, missingMatchIds, existingEvents);
+                migrateMissingMatches(options, missingMatchIds);
                 migrateMissingEvents(options, missingEventIds, missingEventIdentities);
                 existingMatches.clear();
                 existingEvents.clear();
@@ -120,15 +121,17 @@ public final class MongoMigration {
             } finally {
                 keys.clear();
                 identities.clear();
+                requestCollection();
             }
         }
 
         if (!options.dryRun()) writeCheckpoint(options, "matches", highWaterMark, processed, completed ? "COMPLETED" : "PAUSED");
     }
 
-    private static void migrateMissingMatches(Options options, List<Integer> missingMatchIds, Set<String> existingEvents) {
-        for (int start = 0; start < missingMatchIds.size(); start += MONGO_WRITE_BATCH_SIZE) {
-            int end = Math.min(missingMatchIds.size(), start + MONGO_WRITE_BATCH_SIZE);
+    private static void migrateMissingMatches(Options options, List<Integer> missingMatchIds) {
+        int batchesSinceCollection = 0;
+        for (int start = 0; start < missingMatchIds.size(); start += MATCH_READ_BATCH_SIZE) {
+            int end = Math.min(missingMatchIds.size(), start + MATCH_READ_BATCH_SIZE);
             List<Match> matches = LeagueDB.get().getMatchesByIds(missingMatchIds.subList(start, end));
             try {
                 for (Match match : matches) {
@@ -136,7 +139,6 @@ public final class MongoMigration {
                     try {
                         if (!options.dryRun()) {
                             MongoDB.upsertMatchDocument(identity, match);
-                            if (!existingEvents.contains(identity)) upsertMatchEvents(identity, match);
                         }
                     } catch (RuntimeException exception) {
                         throw migrationFailure("matches", identity, exception);
@@ -147,25 +149,34 @@ public final class MongoMigration {
             } finally {
                 matches.clear();
             }
+            if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
+                requestCollection();
+                batchesSinceCollection = 0;
+            }
         }
     }
 
     private static void migrateMissingEvents(Options options, List<Integer> missingEventIds, Set<String> missingEventIdentities) {
-        for (int start = 0; start < missingEventIds.size(); start += MONGO_WRITE_BATCH_SIZE) {
-            int end = Math.min(missingEventIds.size(), start + MONGO_WRITE_BATCH_SIZE);
+        int batchesSinceCollection = 0;
+        for (int start = 0; start < missingEventIds.size(); start += MATCH_READ_BATCH_SIZE) {
+            int end = Math.min(missingEventIds.size(), start + MATCH_READ_BATCH_SIZE);
             QueryResult rows = queryMatchEventsByIds(missingEventIds.subList(start, end));
             try {
                 for (QueryRecord row : rows) {
                     String identity = matchIdentity(row);
                     if (!missingEventIdentities.contains(identity)) continue;
                     try {
-                        if (!options.dryRun()) upsertMatchEvents(identity, parseEvents(row.get("events")));
+                        if (!options.dryRun()) upsertMatchEvents(identity, row.get("events"));
                     } catch (RuntimeException exception) {
                         throw migrationFailure("match_events", identity, exception);
                     }
                 }
             } finally {
                 rows.clear();
+            }
+            if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
+                requestCollection();
+                batchesSinceCollection = 0;
             }
         }
     }
@@ -219,6 +230,7 @@ public final class MongoMigration {
                 rows.clear();
                 sourceIds.clear();
                 sourcePuuids.clear();
+                requestCollection();
             }
         }
 
@@ -226,6 +238,7 @@ public final class MongoMigration {
     }
 
     private static void migrateMissingSummoners(Options options, List<Long> missingIds, MigrationReport report) {
+        int batchesSinceCollection = 0;
         for (int start = 0; start < missingIds.size(); start += MONGO_WRITE_BATCH_SIZE) {
             int end = Math.min(missingIds.size(), start + MONGO_WRITE_BATCH_SIZE);
             List<Long> batchIds = missingIds.subList(start, end);
@@ -243,6 +256,10 @@ public final class MongoMigration {
             } finally {
                 rows.clear();
                 documents.clear();
+            }
+            if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
+                requestCollection();
+                batchesSinceCollection = 0;
             }
         }
     }
@@ -307,6 +324,7 @@ public final class MongoMigration {
 
     private static void loadEmbeddedRows(String phase, List<Long> summonerIds, Map<String, Document> summoners) {
         long afterId = 0;
+        int batchesSinceCollection = 0;
         while (true) {
             QueryResult rows = queryEmbeddedPage(phase, summonerIds, afterId);
             if (rows.isEmpty()) return;
@@ -322,6 +340,10 @@ public final class MongoMigration {
                 }
             } finally {
                 rows.clear();
+            }
+            if (++batchesSinceCollection >= GC_INTERVAL_BATCHES) {
+                requestCollection();
+                batchesSinceCollection = 0;
             }
         }
     }
@@ -440,22 +462,8 @@ public final class MongoMigration {
         return gameId.indexOf('_') > 0 ? gameId : region + "_" + gameId;
     }
 
-    private static void upsertMatchEvents(String identity, Match match) {
-        Map<String, Object> events = match.eventData != null ? match.eventData : match.events == null ? Map.of() : match.events.toMap();
-        if (!MongoDB.upsertMatchEvents(identity, match.leagueShard, events)) throw new IllegalStateException("Mongo match event upsert failed id=" + identity);
-    }
-
-    private static void upsertMatchEvents(String identity, Map<String, Object> events) {
-        if (!MongoDB.upsertMatchEvents(identity, events)) throw new IllegalStateException("Mongo match event upsert failed id=" + identity);
-    }
-
-    private static Map<String, Object> parseEvents(String value) {
-        if (value == null || value.isBlank()) return Map.of();
-        try {
-            return new JSONObject(value).toMap();
-        } catch (RuntimeException exception) {
-            throw new IllegalArgumentException("Invalid MariaDB match events JSON", exception);
-        }
+    private static void upsertMatchEvents(String identity, String json) {
+        if (!MongoDB.upsertMatchEventsJson(identity, json)) throw new IllegalStateException("Mongo match event upsert failed id=" + identity);
     }
 
     private static String required(QueryRecord row, String field) {
@@ -472,6 +480,10 @@ public final class MongoMigration {
 
     private static IllegalStateException migrationFailure(String phase, String identity, RuntimeException exception) {
         return new IllegalStateException("Mongo migration conversion failed phase=" + phase + " id=" + identity, exception);
+    }
+
+    private static void requestCollection() {
+        System.gc();
     }
 
     public record Options(boolean dryRun, int batchSize, String runId, boolean resume, long highWaterMark) {

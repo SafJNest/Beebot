@@ -355,6 +355,7 @@ public final class MongoDB {
     }
 
     public static QueryResult getAllGamesForAccount(String puuid, long timeStart, long timeEnd) {
+        traceRead("match.getAllGamesForAccount", "puuid=" + puuid + " timeStart=" + timeStart + " timeEnd=" + timeEnd);
         QueryResult result = new QueryResult();
         Summoner summoner = findSummoner(puuid, null);
         if (summoner == null) { result.setSuccess(true); return result; }
@@ -369,6 +370,7 @@ public final class MongoDB {
     }
 
     public static List<Match> getMatchHistory(String puuid, LeagueMessageParameter parameter) {
+        traceRead("match.getMatchHistory", "puuid=" + puuid);
         Summoner summoner = findSummoner(puuid, null);
         if (summoner == null || parameter == null) return List.of();
         LeagueShard shard = parseShard(summoner.region());
@@ -393,6 +395,7 @@ public final class MongoDB {
     }
 
     public static int countMatchHistory(String puuid, LeagueMessageParameter parameter) {
+        traceRead("match.countMatchHistory", "puuid=" + puuid);
         Summoner summoner = findSummoner(puuid, null);
         if (summoner == null || parameter == null) return 0;
         int count = 0;
@@ -532,19 +535,22 @@ public final class MongoDB {
         return database().getCollection("summoner");
     }
 
-        public static String findPuuid(String riotId, LeagueShard shard) {
-        List<Summoner> result = findSummonersByRiotId(riotId, shard, 1);
+    public static String findPuuid(String riotId, LeagueShard shard) {
+        traceRead("summoner.findPuuid", "region=" + shard);
+        List<Summoner> result = findSummonersByRiotId(normalizedRiotId(riotId), shard, 1);
         return result.isEmpty() ? null : result.get(0).puuid();
     }
 
-        public static Summoner findSummoner(String puuid, LeagueShard shard) {
+    public static Summoner findSummoner(String puuid, LeagueShard shard) {
+        traceRead("summoner.find", "puuid=" + puuid + " region=" + shard);
         if (puuid == null || puuid.isBlank()) return null;
         Bson filter = shard == null ? Filters.eq("_id", puuid) : Filters.and(Filters.eq("_id", puuid), Filters.eq("region", shard.name()));
         Document document = summoners().find(filter).first();
         return document == null ? null : record(document).getAs(Summoner.class);
     }
 
-        public static List<Summoner> findSummonersByRiotId(String normalizedQuery, LeagueShard shard, int limit) {
+    public static List<Summoner> findSummonersByRiotId(String normalizedQuery, LeagueShard shard, int limit) {
+        traceRead("summoner.search", "region=" + shard + " limit=" + limit);
         int boundedLimit = Math.max(0, Math.min(MAX_SEARCH_RESULTS, limit));
         if (boundedLimit == 0) return List.of();
         Pattern prefix = Pattern.compile("^" + Pattern.quote(normalizedQuery == null ? "" : normalizedQuery), Pattern.CASE_INSENSITIVE);
@@ -574,7 +580,8 @@ public final class MongoDB {
         return result;
     }
 
-        public static List<MongoRecord> findAccountsByUserId(String userId) {
+    public static List<MongoRecord> findAccountsByUserId(String userId) {
+        traceRead("summoner.findAccountsByUserId", "userId=" + userId);
         List<MongoRecord> result = new ArrayList<>();
         for (Document document : summoners().find(Filters.eq("userId", userId)).sort(Sorts.ascending("_id"))) {
             result.add(record(document));
@@ -594,7 +601,8 @@ public final class MongoDB {
         return document == null ? null : record(document).getAsString("riotId");
     }
 
-        public static Rank findRank(String puuid, LeagueShard shard, GameQueueType queue) {
+    public static Rank findRank(String puuid, LeagueShard shard, GameQueueType queue) {
+        traceRead("summoner.findRank", "puuid=" + puuid + " queue=" + queue);
         MongoRecord summoner = findRecord(puuid, shard);
         if (summoner == null) return null;
         for (MongoRecord rankRecord : summoner.getAsRecords("ranks")) {
@@ -604,7 +612,8 @@ public final class MongoDB {
         return null;
     }
 
-        public static List<Rank> findRanks(String puuid, LeagueShard shard) {
+    public static List<Rank> findRanks(String puuid, LeagueShard shard) {
+        traceRead("summoner.findRanks", "puuid=" + puuid);
         MongoRecord summoner = findRecord(puuid, shard);
         if (summoner == null) return List.of();
         List<Rank> result = new ArrayList<>();
@@ -622,7 +631,8 @@ public final class MongoDB {
         return result;
     }
 
-        public static List<Mastery> findMasteries(String puuid, LeagueShard shard) {
+    public static List<Mastery> findMasteries(String puuid, LeagueShard shard) {
+        traceRead("summoner.findMasteries", "puuid=" + puuid);
         MongoRecord summoner = findRecord(puuid, shard);
         if (summoner == null) return List.of();
         List<Mastery> result = new ArrayList<>();
@@ -630,7 +640,8 @@ public final class MongoDB {
         return result;
     }
 
-        public static com.safjnest.lol.model.match.Match findMatch(String fullGameId) {
+    public static com.safjnest.lol.model.match.Match findMatch(String fullGameId) {
+        traceRead("match.find", "id=" + fullGameId);
         Document document = matches().find(Filters.eq("_id", fullGameId(fullGameId, null))).first();
         if (document == null) return null;
         Match match = matchRecord(document).getAs(com.safjnest.lol.model.match.Match.class);
@@ -646,6 +657,7 @@ public final class MongoDB {
             GameQueueType queue,
             int offset,
             int limit) {
+        traceRead("match.findResults", "puuid=" + puuid + " queue=" + queue + " offset=" + offset + " limit=" + limit);
         List<com.safjnest.lol.model.match.MatchResult> result = new ArrayList<>();
         int boundedOffset = Math.max(0, offset);
         int boundedLimit = Math.max(0, Math.min(100, limit));
@@ -667,6 +679,7 @@ public final class MongoDB {
             long timeStart,
             long timeEnd,
             GameQueueType queue) {
+        traceRead("match.findAnalysis", "puuid=" + puuid + " queue=" + queue);
         List<com.safjnest.lol.model.match.Match> result = new ArrayList<>();
         for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue)).sort(Sorts.descending("timeStart"))) {
             result.add(matchRecord(document).getAs(com.safjnest.lol.model.match.Match.class));
@@ -716,6 +729,7 @@ public final class MongoDB {
             long timeStart,
             long timeEnd,
             GameQueueType queue) {
+        traceRead("match.findAdvancedProfile", "puuid=" + puuid + " queue=" + queue);
         Map<Integer, AdvancedChampionAggregate> aggregates = new HashMap<>();
         for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue))) {
             for (Document participant : documents(document.get("participants"))) {
@@ -753,6 +767,7 @@ public final class MongoDB {
             long timeStart,
             long timeEnd,
             GameQueueType queue) {
+        traceRead("match.findSummonerData", "puuid=" + puuid + " queue=" + queue);
         List<MongoRecord> result = new ArrayList<>();
         for (Document document : matches().find(matchFilter(puuid, shard, timeStart, timeEnd, queue))
                 .sort(Sorts.ascending("timeStart", "game_id"))) {
@@ -937,8 +952,9 @@ public final class MongoDB {
         return result;
     }
 
-        public static boolean upsertSummoner(Summoner summoner, String userId) {
+    public static boolean upsertSummoner(Summoner summoner, String userId) {
         if (summoner == null || summoner.puuid() == null) return false;
+        traceRead("summoner.upsert", "puuid=" + summoner.puuid() + " userId=" + userId);
         Document document = write(summoner).toDocument();
         Document previous = summoners().find(Filters.eq("_id", summoner.puuid())).first();
         preserve(document, previous, "ranks", "masteries", "lastUpdate");
@@ -949,6 +965,11 @@ public final class MongoDB {
         if (!riotSearch.isBlank()) document.put("riotSearch", riotSearch);
         replace(summoners(), document);
         return true;
+    }
+
+    public static boolean upsertSummoner(String puuid, LeagueShard shard, String riotId, int level, int icon, String userId) {
+        if (puuid == null || puuid.isBlank() || shard == null) return false;
+        return upsertSummoner(new Summoner(0, puuid, riotId, shard.name(), level, icon), userId);
     }
 
         public static boolean upsertSummoners(List<Summoner> summoners) {
@@ -1063,10 +1084,6 @@ public final class MongoDB {
         return upsertMatchEvents(fullGameId(fullGameId, null), events);
     }
 
-    public static boolean upsertMatchEvents(String fullGameId, LeagueShard shard, Map<String, Object> events) {
-        return upsertMatchEvents(fullGameId(fullGameId, shard), events);
-    }
-
     public static boolean upsertMatchEvents(String fullGameId, Map<String, Object> events) {
         String id = fullGameId(fullGameId, null);
         if (matches().countDocuments(Filters.eq("_id", id)) == 0) return false;
@@ -1080,6 +1097,24 @@ public final class MongoDB {
                 .append("encoding", "json")
                 .append("uncompressedBytes", payload.length)
                 .append("data", new String(payload, StandardCharsets.UTF_8))
+                .append("checksum", sha256(payload));
+        replace(matchEvents(), document);
+        return true;
+    }
+
+    public static boolean upsertMatchEventsJson(String fullGameId, String json) {
+        String id = fullGameId(fullGameId, null);
+        if (matches().countDocuments(Filters.eq("_id", id)) == 0) return false;
+        String source = json == null ? "" : json.trim();
+        if (source.isEmpty() || "{}".equals(source) || "null".equals(source)) {
+            matchEvents().deleteOne(Filters.eq("_id", id));
+            return true;
+        }
+        byte[] payload = source.getBytes(StandardCharsets.UTF_8);
+        Document document = new Document("_id", id)
+                .append("encoding", "json")
+                .append("uncompressedBytes", payload.length)
+                .append("data", source)
                 .append("checksum", sha256(payload));
         replace(matchEvents(), document);
         return true;
@@ -1617,15 +1652,7 @@ public final class MongoDB {
     public static void mirrorSummoner(String puuid, LeagueShard shard, String riotId, int level, int icon) {
         mirror("summoner", "summoner", puuid, () -> {
             if (puuid == null || shard == null) return;
-            QueryRecord row = LeagueDB.get().lineQuery("SELECT id, user_id, tracking FROM summoner WHERE puuid = '" + sql(puuid) + "' AND region = '" + shard.name() + "'");
-            int id = row == null ? 0 : row.getAsInt("id");
-            String userId = row == null ? null : row.get("user_id");
-            upsertSummoner(new Summoner(id, puuid, riotId, shard.name(), level, icon), userId);
-            if (row != null) {
-                if (row.getAsInt("tracking") != 0) summoners().updateOne(Filters.eq("_id", puuid), Updates.set("tracking", true));
-                else summoners().updateOne(Filters.eq("_id", puuid), Updates.unset("tracking"));
-                if (userId == null) summoners().updateOne(Filters.eq("_id", puuid), Updates.unset("userId"));
-            }
+            upsertSummoner(new Summoner(0, puuid, riotId, shard.name(), level, icon), null);
         });
     }
 
@@ -1729,8 +1756,8 @@ public final class MongoDB {
         }
     }
 
-    private static String sql(String value) {
-        return value == null ? "" : value.replace("'", "''");
+    private static void traceRead(String operation, String details) {
+        if (App.isTesting()) BotLogger.trace("[MONGO] " + operation + " " + details);
     }
 
     private static MongoRecord findRecord(String puuid, LeagueShard shard) {

@@ -10,7 +10,6 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.utils.BuildUtils;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.database.LeagueDB;
 
 import java.util.ArrayList;
 import java.util.Comparator;

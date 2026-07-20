@@ -14,12 +14,12 @@ public class MongoMigrationTest {
         assertEquals(50, options.batchSize());
         assertEquals("run-1", options.runId());
         assertEquals(100, options.highWaterMark());
-        assertEquals(125_000, MongoMigration.Options.defaults().batchSize());
+        assertEquals(50_000, MongoMigration.Options.defaults().batchSize());
     }
 
     @Test
     public void invalidBatchIsRejected() {
         assertThrows(IllegalArgumentException.class, () -> new MongoMigration.Options(false, 0, "run", false, 0));
-        assertThrows(IllegalArgumentException.class, () -> new MongoMigration.Options(false, 125_001, "run", false, 0));
+        assertThrows(IllegalArgumentException.class, () -> new MongoMigration.Options(false, 50_001, "run", false, 0));
     }
 }

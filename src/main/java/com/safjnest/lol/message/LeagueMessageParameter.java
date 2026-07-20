@@ -33,6 +33,7 @@ public class LeagueMessageParameter {
   private int offset;
 
   private LOLMatch match;
+  private String selectedMatchId;
 
   private StringSelectMenu livegameMenu;
   private StringSelectMenu opggMenu;
@@ -54,6 +55,7 @@ public class LeagueMessageParameter {
 
     this.offset = 0;
 
+    this.selectedMatchId = null;
     this.filter = new Filter();
   }
 
@@ -82,6 +84,7 @@ public class LeagueMessageParameter {
     this.offset = offset;
 
     this.match = null;
+    this.selectedMatchId = null;
     this.filter = new Filter();
   }
 
@@ -271,6 +274,14 @@ public class LeagueMessageParameter {
 
   public LOLMatch getMatch() {
     return this.match;
+  }
+
+  public void setSelectedMatchId(String selectedMatchId) {
+    this.selectedMatchId = selectedMatchId;
+  }
+
+  public String getSelectedMatchId() {
+    return this.selectedMatchId;
   }
 
   public StringSelectMenu getLivegameMenu() {

@@ -18,7 +18,6 @@ import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.log.BotLogger;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;

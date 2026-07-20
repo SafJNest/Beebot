@@ -196,10 +196,7 @@ public class LeagueEventHandler extends EventButtonHandler {
                 parameter.setRank(value == null || value.equals("ALL") ? null : TierType.valueOf(value.toUpperCase()));
                 parameter.setOffset(0);
             }
-            case "opggselect" -> parameter.setMatch(
-                LeagueHandler.getRiotApi().getLoLAPI().getMatchAPI()
-                    .getMatch(LeagueShard.valueOf(context.region()).toRegionShard(), value)
-            );
+            case "opggselect" -> parameter.setSelectedMatchId(value == null ? null : value.split("#", 2)[0]);
             case "rankselect" -> {
                 context = context.with(value.split("#")[0], value.split("#")[1]);
                 context.parameter().setMessageType(LeagueMessageType.PROFILE);

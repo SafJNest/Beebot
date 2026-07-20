@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import com.safjnest.core.Bot;
+import com.safjnest.mongo.MongoDB;
+import com.safjnest.mongo.MongoRecord;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
@@ -185,12 +187,12 @@ public class UserData {
 //  ▀                                                                        
 
     private void retriveRiotAccounts() {
-        QueryResult result = LeagueDB.getLOLAccountsByUserId(USER_ID);
-        if (result == null) { return; }
-
         this.riotAccounts = new LinkedHashMap<>();
-        for(QueryRecord row: result){
-            riotAccounts.put(row.get("puuid"), row.get("region"));
+        for (MongoRecord row : MongoDB.findAccountsByUserId(USER_ID)) {
+            String puuid = row.getAsString("puuid");
+            if (puuid == null) puuid = row.getAsString("_id");
+            String region = row.getAsString("region");
+            if (puuid != null && region != null) riotAccounts.put(puuid, region);
         }
     }
 
@@ -207,7 +209,7 @@ public class UserData {
     public boolean addRiotAccount(Summoner s) {
         checkRiotAccounts();
         boolean result = LeagueDB.addLOLAccount(USER_ID, s) > 0;
-        if (result) riotAccounts.put(s.getPUUID(), String.valueOf(s.getPlatform().ordinal()));
+        if (result) riotAccounts.put(s.getPUUID(), s.getPlatform().name());
         
         return result;
     }
