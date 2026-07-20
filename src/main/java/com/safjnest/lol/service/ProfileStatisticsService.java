@@ -31,10 +31,19 @@ public class ProfileStatisticsService {
         Map<String, ProfileStatistics> result = new HashMap<>();
         if (season == null || puuids == null || puuids.isEmpty()) return result;
         List<String> missing = new ArrayList<>();
+        List<String> keys = new ArrayList<>(puuids.size());
+        Map<String, String> keysByPuuid = new HashMap<>();
         for (String puuid : puuids) {
-            ProfileStatistics statistics = loadRedis(puuid, season.start());
-            if (statistics != null) result.put(puuid, statistics);
-            else missing.add(puuid);
+            String key = redisKey(puuid, season.start());
+            keys.add(key);
+            keysByPuuid.put(key, puuid);
+        }
+        for (Map.Entry<String, ProfileStatistics> entry : RedisClient.get(keys, ProfileStatistics.class).entrySet()) {
+            String puuid = keysByPuuid.get(entry.getKey());
+            if (puuid != null) result.put(puuid, entry.getValue());
+        }
+        for (String puuid : puuids) {
+            if (!result.containsKey(puuid)) missing.add(puuid);
         }
         if (!missing.isEmpty()) {
             Map<String, ProfileStatistics> stored = MongoDB.findProfileStatistics(missing, season.start());

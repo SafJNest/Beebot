@@ -11,6 +11,7 @@ import com.safjnest.lol.model.summoner.SummonerView;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.tracker.Tracker;
 import com.safjnest.lol.utils.SeasonUtils;
+import com.safjnest.mongo.MongoDB;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
 
@@ -29,19 +30,18 @@ public class ProfilePageService {
         SummonerView cached = RedisClient.get(key, SummonerView.class);
         if (cached != null && isReady(cached)) return ApiResult.ready(cached);
 
-        Summoner profile = LeagueService.getProfileBaseFromDatabase(puuid, shard);
-        if (profile == null || profile.summonerId() == 0) {
+        MongoDB.ProfileProjection profileProjection = MongoDB.findProfileProjection(puuid, shard);
+        Summoner profile = profileProjection == null ? null : profileProjection.summoner();
+        if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) {
             ProfileBootstrapService.enqueue(shard, puuid);
             return ApiResult.pending();
         }
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         ProfileStatistics databaseStatistics = statisticsService.get(profile.puuid(), season);
-        List<Rank> profileRanks = ranks(profile, shard);
-        List<Mastery> profileMasteries = masteries(profile, shard);
-        ProfileStatistics aggregate = databaseStatistics != null
-            ? databaseStatistics
-            : statisticsService.get(profile.puuid(), season);
+        List<Rank> profileRanks = profileProjection.ranks();
+        List<Mastery> profileMasteries = profileProjection.masteries();
+        ProfileStatistics aggregate = databaseStatistics;
         if (databaseStatistics == null) Tracker.startProfileStatistics(profile, season);
 
         SummonerView page = SummonerView.from(profile, profileRanks, aggregate, profileMasteries);
@@ -60,7 +60,7 @@ public class ProfilePageService {
     public boolean refresh(LeagueShard shard, String puuid, boolean rebuild) {
         Summoner profile = LeagueService.getProfileBaseFromDatabase(puuid, shard);
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
-        if (profile == null || profile.summonerId() == 0) return false;
+        if (profile == null || profile.puuid() == null || profile.puuid().isBlank()) return false;
 
         boolean refreshed = statisticsService.refresh(puuid, shard, season, rebuild);
         if (refreshed) LeagueService.invalidateProfilePage(puuid, shard);
@@ -83,17 +83,10 @@ public class ProfilePageService {
 
     // ============================================================================
 
-    private List<Rank> ranks(Summoner profile, LeagueShard shard) {
-        return LeagueService.getProfileRanks(profile.puuid(), shard);
-    }
-
-    private List<Mastery> masteries(Summoner profile, LeagueShard shard) {
-        return LeagueService.getProfileMasteries(profile.puuid(), shard);
-    }
-
     private boolean isReady(SummonerView page) {
         return page.summoner() != null
-            && page.summoner().summonerId() > 0
+            && page.summoner().puuid() != null
+            && !page.summoner().puuid().isBlank()
             && page.ranks() != null
             && !page.ranks().isEmpty()
             && page.overview() != null

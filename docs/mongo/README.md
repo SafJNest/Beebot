@@ -14,7 +14,7 @@ Questa directory descrive l'implementazione lineare della migrazione MariaDB →
 - `profile_statistics`, build e aggregate vengono costruiti successivamente dall'applicazione.
 - Le collection usano i nomi delle tabelle (`summoner`, `match`, `profile_statistics`, ecc.) senza prefisso `lol_`.
 - Il documento `summoner` usa `_id = puuid`; gli identificativi numerici MariaDB e il campo duplicato `puuid` non vengono scritti.
-- La migrazione parte da un database Mongo vuoto: non esiste un cleanup applicativo di documenti legacy.
+- Il nuovo flusso non esegue cleanup o migrazione automatica di documenti legacy; l'operatore rimuove manualmente i vecchi payload Kryo prima della rigenerazione.
 - I reader usano `_id` come fallback solo per compatibilità difensiva con documenti esterni alla migrazione pulita.
 - Gli eventi non sono nel documento `match`: vivono in `match_events` come JSON e la collection usa WiredTiger Zstandard nativo.
 
@@ -49,15 +49,17 @@ Non introdurre LeagueStore, package store o infrastructure, codec/mapper esterni
 - Ban: bans.BLUE e bans.RED, sempre presenti anche se vuoti.
 - Participant: campi flat; nessun campo build mega-nested.
 - Eventi: collection `match_events`, payload JSON con checksum e dimensione originale; la collection viene creata con `block_compressor=zstd`.
-- Payload legacy: solo compatibilità temporanea e mai unica sorgente valida.
+- Build e statistiche: `build` e `statistics` sono BSON strutturato, mai una stringa opaca e mai `legacyPayload`.
+- MariaDB: `champion_builds.data`, `champion_stats.data` e `profile_statistics.data` contengono JSON UTF-8.
+- Redis: usa lo stesso codec Jackson condiviso e resta cache, senza migrazione dati.
 
 ## Indici e spazio
 
 Durante il backfill le collection vengono create senza indici secondari. Ogni pagina esegue prima un preflight degli `_id` Mongo: i dati completi MariaDB vengono letti solo per i summoner e match mancanti, mentre gli eventi mancanti di match già presenti richiedono solo la colonna `events`. I summoner vengono inviati con bulk unordered da 2.000 documenti; al completamento di summoner e match vengono creati gli indici dichiarati nello schema.
 
-L'inizializzazione crea in modo idempotente gli indici dichiarati nel codice. Su `summoner` sono previsti `_id`, `userId` sparse, `region + riotSearch`, `tracking + region` parziale, `ranks.rank + ranks.lp` e `masteries.level + masteries.points`. Poiché il target viene ricreato vuoto prima della migrazione, non servono drop o cleanup manuali. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
+L'inizializzazione crea in modo idempotente gli indici dichiarati nel codice. Su `summoner` sono previsti `_id`, `userId` sparse, `region + riotSearch`, `tracking + region` parziale, `ranks.rank + ranks.lp` e `masteries.level + masteries.points`; match e leaderboard hanno gli indici composti per participant, tempo e tie-break PUUID. Gli indici obsoleti vengono verificati e rimossi manualmente dopo l'audit. `MongoDB.spaceAudit(sampleSize)` raccoglie `collStats`, `indexSizes`, BSON medio/massimo campionato, presenza di `userId`, tracking e regioni.
 
-La compressione applicativa è disabilitata: `match_events` usa la compressione nativa WiredTiger. Il server Mongo deve usare `zstdCompressionLevel: 9`; match, summoner e masteries restano documenti BSON normali e vengono compressi dal server.
+La compressione applicativa è disabilitata: `match_events` usa la compressione nativa WiredTiger. Il server Mongo deve usare `zstdCompressionLevel: 9`; match, summoner, masteries, build e statistiche restano documenti BSON strutturati e vengono compressi dal server.
 
 ## Configurazione
 

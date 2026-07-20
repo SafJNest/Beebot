@@ -14,7 +14,7 @@ Consolidate complete matches and lightweight match results into one consistent m
 - place `Match` and `Participant` under `lol.model.match`;
 - convert `ProfileMatch` to `MatchResult`;
 - replace profile and DTO-specific recent-match records;
-- migrate Kryo and JSON serialization consumers;
+- migrate JSON serialization consumers and remove Kryo;
 - keep Riot tracker records internal.
 
 ## Out of scope

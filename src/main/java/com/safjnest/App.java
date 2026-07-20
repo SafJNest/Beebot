@@ -8,6 +8,7 @@ import java.util.Properties;
 import com.safjnest.core.Bot;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
+import com.safjnest.mongo.MongoDB;
 import com.safjnest.mongo.MongoMigration;
 import com.safjnest.spring.SpringServer;
 import com.safjnest.sql.database.LeagueDB;
@@ -31,14 +32,14 @@ public class App {
 
         if (isTesting()) {
             BotLogger.info("Beebot is in testing mode");
-            //runSpring();
+            runSpring();
         }
         else {
             TwitchClient.init();
-            //runSpring();
+            runSpring();
         }
-        //TrackerScheduler.start();
-        MongoMigration.migrateAll();
+        TrackerScheduler.start();
+        //MongoMigration.migrateAll();
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }
@@ -73,6 +74,7 @@ public class App {
             }
         }
         bot.distruzione_demoniaca();
+        MongoDB.close();
     }
 
     public static void restart() {

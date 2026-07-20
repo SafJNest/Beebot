@@ -1,6 +1,7 @@
 package com.safjnest.lol.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.List;
 
@@ -11,7 +12,7 @@ import com.safjnest.lol.champion.RuneSignature;
 public class BuildTest {
 
     @Test
-    public void persistsCurrentBuildThroughKryo() {
+    public void persistsCurrentBuildThroughJson() {
         Build source = new Build(
             null,
             List.of(1),
@@ -28,6 +29,9 @@ public class BuildTest {
             0.5
         );
 
-        assertEquals(source, Build.decode(source.encode()));
+        String json = source.toJson();
+        assertEquals('{', json.charAt(0));
+        assertEquals(source, Build.fromJson(json));
+        assertNull(Build.fromJson("not-json"));
     }
 }

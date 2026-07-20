@@ -105,7 +105,7 @@ Esempio concettuale:
 
 - `puuid` è `_id` e non viene duplicato in un secondo campo;
 - gli identificativi numerici MariaDB non vengono scritti;
-- la migrazione usa un database Mongo vuoto e non prevede cleanup applicativi successivi;
+- il nuovo flusso non pulisce automaticamente dati precedenti; l'operatore elimina manualmente i payload obsoleti;
 - `tracking=false` e gli altri default/null non vengono persistiti;
 - rank e mastery non hanno collection operative separate;
 - il rank identifica la coda tramite `queue`, non tramite un ID numerico;
@@ -229,21 +229,16 @@ Il participant mantiene i campi attuali ma senza un oggetto `build` generico:
 
 Indici:
 
-- `queue + region + rank + mmr DESC`;
-- `queue + region + mmr DESC`;
-- `queue + rank + mmr DESC`;
-- `queue + mmr DESC`.
+- `queue + region + rank + mmr DESC + puuid ASC`;
+- `queue + region + mmr DESC + puuid ASC`;
+- `queue + rank + mmr DESC + puuid ASC`;
+- `queue + mmr DESC + puuid ASC`.
 
 ## Collection derivate e aggregate
 
-Le collection di statistiche, build e distribution hanno chiavi composte stabili e payload strutturati: `statistics` per profile/champion statistics e `build` per le build. Le metriche champion appartengono a `champion_stats`; non esiste un campo `metrics` nel documento summoner e non devono contenere stringhe Kryo come unica forma di verità.
+Le collection di statistiche, build e distribution hanno chiavi composte stabili e payload strutturati: `statistics` per profile/champion statistics e `build` per le build. Le metriche champion appartengono a `champion_stats`; non esiste un campo `metrics` nel documento summoner e non esiste una sorgente Kryo o `legacyPayload`.
 
-Per compatibilità, durante la migrazione possono contenere:
-
-- `legacyPayload` solo nelle collection aggregate di compatibilità;
-- `legacyEncoding` solo nelle collection aggregate di compatibilità;
-- `conversionStatus`;
-- `convertedAt`.
+MariaDB conserva gli stessi modelli come JSON UTF-8 in `longtext`. Mongo conserva BSON strutturato per consentire projection e aggregation. I dati precedenti non vengono convertiti automaticamente: l'operatore li rimuove manualmente.
 
 ## Indici minimi
 

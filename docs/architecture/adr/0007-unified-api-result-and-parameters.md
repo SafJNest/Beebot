@@ -40,7 +40,7 @@ build ranking selectors are introduced.
 - HTTP parameter parsing belongs to `spring.controller`.
 - Redis and DB are read once per component before an optional compute fallback.
 - API requests never compute match aggregates.
-- `ChampionStatistics.filter` stays in Redis/Kryo but is ignored by the Spring
+- `ChampionStatistics.filter` stays in Redis/JSON storage but is ignored by the Spring
   Jackson mapper.
 - `GLOBAL` is not a request value; omitted region is the public representation.
 
@@ -49,7 +49,7 @@ build ranking selectors are introduced.
 - Keeping one result class per endpoint would preserve duplicated status logic.
 - Adding a second `read` or lazy method would duplicate Redis/DB access paths.
 - Adding HTTP DTOs for `ChampionStatistics` would split ownership and risk
-  divergence from the Redis/Kryo model.
+  divergence from the Redis/JSON model.
 
 ## Impact
 
@@ -68,4 +68,4 @@ states are meaningful.
 - Missing leaderboard overview returns 202 while the missing profile statistics are generated.
 - Missing profile statistics return the available profile as 200 `PARTIAL` while generation runs immediately.
 - `ChampionStatistics.filter` is absent from HTTP JSON and remains available to
-  Redis/Kryo.
+  Redis/JSON.

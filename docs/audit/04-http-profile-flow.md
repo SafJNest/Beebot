@@ -7,19 +7,17 @@ GET /api/lol/{shard}/profile/{puuid}
   -> LolController
   -> ProfilePageService.get
   -> Redis PROFILE_PAGE
-  -> LeagueService.getProfileBaseFromDatabase
-  -> MongoDB.findSummoner
+  -> MongoDB.findProfileProjection
+     (summoner + ranks + masteries in one projection)
   -> ProfileStatisticsService Redis/Mongo
-  -> LeagueService.getProfileRanks / getProfileMasteries
-  -> MongoDB
   -> SummonerView
 ```
 
-Evidenza: [LolController.java](../../src/main/java/com/safjnest/spring/controller/LolController.java:45), [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:28) e [LeagueService.java](../../src/main/java/com/safjnest/lol/service/LeagueService.java:204).
+Evidenza: [LolController.java](../../src/main/java/com/safjnest/spring/controller/LolController.java:45), [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:28) e [MongoDB.java](../../src/main/java/com/safjnest/mongo/MongoDB.java:665).
 
 ## Parte coerente
 
-Il percorso HTTP usa modelli canonici e, a differenza del vecchio comando Discord, legge profile base, rank, mastery e statistiche da Mongo con cache Redis davanti. Lo stato `PENDING` viene restituito quando il summoner non è ancora presente e il bootstrap viene accodato.
+Il percorso HTTP usa modelli canonici e legge base, rank e mastery con una sola projection Mongo; le statistiche passano prima dalla cache Redis e poi da Mongo. Lo stato `PENDING` viene restituito quando il summoner non è ancora presente e il bootstrap viene accodato. Se il documento esiste ma mancano le statistiche, il refresh viene avviato e il profilo viene restituito come `PARTIAL`.
 
 ## Rilievi
 
@@ -39,9 +37,9 @@ Evidenza: [ProfileStatisticsService.java](../../src/main/java/com/safjnest/lol/s
 
 Il comportamento può essere intenzionale per rendere Mongo il writer delle nuove statistiche, ma è una deviazione architetturale da registrare prima del cutover.
 
-### P1 — risultato `ready` dipende da dati aggregati già validi
+### P1 — cache `ready` dipende da dati aggregati già validi
 
-`ProfilePageService` considera pronto il profilo solo se esistono rank e almeno cinque game nelle statistiche aggregate. Se il flusso `findMatchResults` o `readProfileStatistics` restituisce vuoto per un mapping incompleto, la risposta diventa `PARTIAL`/`PENDING` senza indicare se il problema è assenza dati o errore di persistenza.
+La cache `PROFILE_PAGE` viene riutilizzata solo quando esistono rank e almeno cinque game nelle statistiche aggregate. Il primo caricamento, invece, restituisce `PARTIAL` quando le statistiche non sono ancora disponibili e avvia `Tracker.startProfileStatistics`; un payload corrotto viene trattato come dato assente e rigenerabile.
 
 Evidenza: [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:45) e [ProfilePageService.java](../../src/main/java/com/safjnest/lol/service/ProfilePageService.java:96).
 

@@ -37,7 +37,7 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 - liste build indipendenti con massimo tre opzioni per categoria;
 - augment aggregati per slot, con ordine conservato;
 - chiavi stats Redis/DB con lane quando il ruolo è specificato;
-- rigenerazione dei payload Kryo incompatibili.
+- rigenerazione dei payload JSON/BSON mancanti o corrotti.
 
 ## Invarianti
 
@@ -53,7 +53,7 @@ Esporre statistiche champion e un unico aggregato build/stats in una response HT
 ## Acceptance criteria
 
 - response pronta con stats e build;
-- `ChampionStatistics.filter` escluso dal JSON Spring ma mantenuto per Redis/Kryo;
+- `ChampionStatistics.filter` escluso dal JSON Spring ma mantenuto per Redis e storage interno;
 - cache hit funzionante;
 - refresh asincrono deduplicato e avvio immediato funzionanti;
 - fallimenti che liberano il marker per un nuovo tentativo;

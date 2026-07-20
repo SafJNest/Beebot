@@ -4,6 +4,8 @@
 
 Con circa 6 milioni di documenti `summoner` e circa 1 GB di dati contro quasi 2 GB di indici, il primo intervento riguarda gli indici. La compressione applicativa dei documenti base viene rimandata: BSON/WiredTiger comprime già il documento, mentre un campo compresso perde query e proiezioni naturali.
 
+I payload LoL non usano più Kryo. MariaDB usa JSON UTF-8 come testo (`longtext`) per build, champion statistics e profile statistics; Mongo usa BSON strutturato nei campi `build` e `statistics`, così projection e aggregation restano disponibili. Non vengono convertiti o cancellati automaticamente dati storici: l'operatore rimuove manualmente le righe/documenti Kryo prima della rigenerazione.
+
 Gli eventi sono l'eccezione: non vengono filtrati direttamente e vengono letti come payload completo. Per questo vengono spostati da `match.events` alla collection `match_events`, creata con WiredTiger Zstandard nativo.
 
 ## Documento summoner
@@ -23,7 +25,7 @@ Forma target:
 }
 ```
 
-`tracking=false`, `userId=null` e default vuoti non vengono persistiti. Gli identificativi numerici MariaDB e il campo duplicato `puuid` del summoner non vengono scritti. Il database target viene cancellato prima della migrazione, quindi non sono previsti cleanup o conversioni manuali dei documenti già presenti.
+`tracking=false`, `userId=null` e default vuoti non vengono persistiti. Gli identificativi numerici MariaDB e il campo duplicato `puuid` del summoner non vengono scritti. Il nuovo flusso non esegue cleanup o conversioni automatiche dei documenti già presenti.
 
 I consumer ricevono il PUUID già presente nel modello Riot/Summoner. Non esistono collection di mapping e le letture Mongo non eseguono lookup MariaDB per ricostruire un id numerico.
 
@@ -38,7 +40,9 @@ Indice target su `summoner`:
 - `summoners_rank_lp`, `{ ranks.rank: 1, ranks.lp: -1 }`;
 - `summoners_mastery_level_points`, `{ masteries.level: -1, masteries.points: -1 }`.
 
-`MongoDB.ensureIndexes()` crea gli indici mancanti e non esegue drop automatici. Durante il backfill gli indici secondari sono posticipati; vengono creati dopo il completamento di summoner e match. Il database target viene ricreato vuoto prima del run, quindi non esistono indici legacy da rimuovere. Dopo la migrazione si eseguono gli `explain("executionStats")` delle query principali:
+Per le letture principali sono inoltre dichiarati gli indici `participants.puuid + leagueShard + queue + timeStart`, i quattro indici leaderboard con `mmr + puuid` come ordinamento deterministico e gli indici champion già filtrati per `filterKey`, queue e champion. Gli indici nuovi vengono aggiunti con nomi distinti; non viene eseguito alcun drop automatico.
+
+`MongoDB.ensureIndexes()` crea gli indici mancanti e non esegue drop automatici. Durante il backfill gli indici secondari sono posticipati; vengono creati dopo il completamento di summoner e match. Gli indici obsoleti, se presenti, vengono verificati e rimossi manualmente dopo l'audit. Dopo la migrazione si eseguono gli `explain("executionStats")` delle query principali:
 
 ```javascript
 db.summoner.find({region: "EUW1", riotSearch: /^name/}).explain("executionStats")
@@ -62,7 +66,7 @@ L'accettazione richiede `IXSCAN` e assenza di `COLLSCAN` sulle ricerche attive. 
 }
 ```
 
-`MongoDB.upsertMatch()` scrive prima `match`, poi serializza gli eventi in JSON e li salva in `match_events`; la collection usa `block_compressor=zstd` e il server viene configurato con livello 9. `MongoDB.findMatch()` carica gli eventi con una seconda query. La history raccoglie gli id e carica gli eventi in una sola query `in`, evitando N+1. Non esiste conversione in-place del vecchio formato: il target viene migrato pulito.
+`MongoDB.upsertMatch()` scrive prima `match`, poi serializza gli eventi in JSON e li salva in `match_events`; la collection usa `block_compressor=zstd` e il server viene configurato con livello 9. `MongoDB.findMatch()` carica gli eventi con una seconda query. La history raccoglie gli id e carica gli eventi in una sola query `in`, evitando N+1. Non esiste conversione in-place del vecchio formato: l'operatore rimuove manualmente i dati obsoleti.
 
 Configurazione server richiesta prima della migrazione:
 
@@ -95,4 +99,4 @@ La compressione inline delle masteries si valuta solo dopo un campione reale:
 - sopra il 25% oppure p95 del documento oltre 4 KB aggiuntivi: valutare lo stesso codec Zstandard;
 - nessun indice sui campi embedded `masteries`.
 
-La prima misura da conservare è la baseline del database vuoto con gli indici finali; la seconda è la misura dopo la migrazione raw e dopo la costruzione eventuale delle statistiche derivate.
+La prima misura da conservare è la baseline del database con gli indici finali; la seconda è la misura dopo la rigenerazione degli aggregati e delle statistiche derivate. I risultati `explain("executionStats")` delle query search, history e leaderboard fanno parte dell'audit insieme a `collStats` e `indexSizes`.

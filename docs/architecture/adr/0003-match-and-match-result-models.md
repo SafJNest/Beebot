@@ -35,4 +35,4 @@ Riot-specific tracker records remain internal to the service/tracker boundary. T
 
 - There is one complete match owner and one lightweight result owner.
 - Profile and match list responses no longer define their own recent-match records.
-- Kryo and JSON serialization are migrated explicitly where field names or packages change.
+- JSON serialization is migrated explicitly where field names or packages change; Kryo is not part of the runtime.

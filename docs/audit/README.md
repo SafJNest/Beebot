@@ -25,6 +25,7 @@ La migrazione non è ancora verificabile come funzionante end-to-end. Sono prese
 4. [04-http-profile-flow.md](04-http-profile-flow.md) — endpoint HTTP profile/bootstrap/statistiche;
 5. [05-query-contract-findings.md](05-query-contract-findings.md) — matrice dei contratti e backlog prioritizzato;
 6. [06-all-lol-commands-tracker.md](06-all-lol-commands-tracker.md) — audit completo comandi LoL e Tracker.
+7. [07-champion-stats-build-flow.md](07-champion-stats-build-flow.md) — statistiche globali condivise e build champion lazy.
 
 ## Metodo di verifica runtime
 

@@ -72,7 +72,7 @@ La configurazione Mongo viene letta da `rsc/settings.json` come stringa URI di c
 
 `App.isTesting() == false` usa `beebot`; `App.isTesting() == true` usa `beebot_test`. Le collection usano gli stessi nomi delle tabelle MariaDB, senza prefisso `lol_`, in entrambi i database.
 
-Il codice possiede anche il bootstrap dello schema: ogni collection dichiara i propri indici con nomi e specifiche stabili, li crea se mancanti e fallisce su conflitti incompatibili. Il bootstrap è idempotente e non esegue drop automatici. `summoner` usa un indice `region + riotSearch` e un indice parziale `tracking=true`. La migrazione richiede un database target vuoto, quindi non esistono drop o cleanup manuali nel runbook.
+Il codice possiede anche il bootstrap dello schema: ogni collection dichiara i propri indici con nomi e specifiche stabili, li crea se mancanti e fallisce su conflitti incompatibili. Il bootstrap è idempotente e non esegue drop automatici. `summoner` usa un indice `region + riotSearch` e un indice parziale `tracking=true`. Il nuovo flusso non richiede né esegue cleanup automatici; l'operatore rimuove manualmente i payload obsoleti prima della rigenerazione.
 
 ## Compatibilità API
 

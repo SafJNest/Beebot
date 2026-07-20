@@ -3,7 +3,7 @@ CREATE TABLE `profile_statistics` (
  `summoner_id` int(11) NOT NULL,
  `time_start` datetime(3) NOT NULL,
  `time_end` datetime(3) NOT NULL,
- `data` longblob NOT NULL,
+ `data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
  PRIMARY KEY (`key`),
  UNIQUE KEY `profile_statistics_summoner_time` (`summoner_id`,`time_start`),
  KEY `profile_statistics_time_end` (`time_end`),

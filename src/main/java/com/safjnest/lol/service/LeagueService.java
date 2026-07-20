@@ -157,14 +157,10 @@ public class LeagueService {
         List<SummonerView> cached = RedisClient.get(key, SUMMONER_SEARCH_TYPE);
         if (cached != null) return cached;
 
-        List<Summoner> rows = MongoDB.findSummonersByRiotId(normalizedQuery, shard, 25);
-        List<String> puuids = new ArrayList<>();
-        for (Summoner summoner : rows) puuids.add(summoner.puuid());
-        Map<String, Rank> ranks = MongoDB.findSoloRanksByPuuid(puuids, shard);
-
         List<SummonerView> summoners = new ArrayList<>();
-        for (Summoner summoner : rows) {
-            Rank rank = ranks.getOrDefault(summoner.puuid(), Rank.unranked());
+        for (MongoDB.SummonerSearchResult row : MongoDB.findSummonerSearch(normalizedQuery, shard, 25)) {
+            Rank rank = row.soloRank() != null ? row.soloRank() : Rank.unranked();
+            Summoner summoner = row.summoner();
             summoners.add(SummonerView.from(summoner, List.of(rank), new ProfileStatistics(), List.of()));
         }
         RedisClient.set(key, summoners, TTL_SUMMONER_SEARCH);
@@ -420,11 +416,8 @@ public class LeagueService {
         }
 
         List<SummonerAutocompleteChoice> autocompleteChoices = new ArrayList<>();
-        for (MongoRecord summoner : MongoDB.findFocusedSummoners(normalizedQuery, shard, 25)) {
-            autocompleteChoices.add(new SummonerAutocompleteChoice(
-                summoner.getAsString("riotId") != null ? summoner.getAsString("riotId") : summoner.getAsString("riot_id"),
-                summoner.getAsString("puuid") != null ? summoner.getAsString("puuid") : String.valueOf(summoner.getId())
-            ));
+        for (MongoDB.SummonerSearchResult row : MongoDB.findSummonerSearch(normalizedQuery, shard, 25)) {
+            autocompleteChoices.add(new SummonerAutocompleteChoice(row.summoner().riotId(), row.summoner().puuid()));
         }
 
         RedisClient.set(key, autocompleteChoices, TTL_SUMMONER_AUTOCOMPLETE);

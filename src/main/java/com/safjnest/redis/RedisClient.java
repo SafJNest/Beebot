@@ -1,13 +1,7 @@
 package com.safjnest.redis;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.safjnest.utils.JsonCodec;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -28,15 +22,6 @@ public class RedisClient {
     private static final long RETRY_AFTER_FAILURE_MS = 30_000;
     private static final JedisPool pool;
     private static volatile long disabledUntil;
-
-    private static final ObjectMapper mapper = JsonMapper.builder()
-        .addModule(new JavaTimeModule())
-        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-        .configure(MapperFeature.CAN_OVERRIDE_ACCESS_MODIFIERS, true)
-        .visibility(PropertyAccessor.GETTER, JsonAutoDetect.Visibility.NONE)
-        .visibility(PropertyAccessor.IS_GETTER, JsonAutoDetect.Visibility.NONE)
-        .visibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
-        .build();
 
     static {
         JedisPoolConfig config = new JedisPoolConfig();
@@ -78,9 +63,9 @@ public class RedisClient {
         if (!canUseRedis()) return;
         try (Jedis jedis = pool.getResource()) {
             if (ttlSeconds > 0) {
-                jedis.setex(key, ttlSeconds, mapper.writeValueAsString(value));
+                jedis.setex(key, ttlSeconds, JsonCodec.toJson(value));
             } else {
-                jedis.set(key, mapper.writeValueAsString(value));
+                jedis.set(key, JsonCodec.toJson(value));
             }
             markAvailable();
         } catch (Exception ignored) {
@@ -105,7 +90,7 @@ public class RedisClient {
         try (Jedis jedis = pool.getResource()) {
             String value = jedis.get(key);
             markAvailable();
-            return value != null ? mapper.readValue(value, type) : null;
+            return value != null ? JsonCodec.fromJson(value, type) : null;
         } catch (Exception e) {
             markUnavailable();
             return null;
@@ -117,7 +102,7 @@ public class RedisClient {
         try (Jedis jedis = pool.getResource()) {
             String value = jedis.get(key);
             markAvailable();
-            return value != null ? mapper.readValue(value, type) : null;
+            return value != null ? JsonCodec.fromJson(value, type) : null;
         } catch (Exception e) {
             markUnavailable();
             return null;
@@ -132,7 +117,7 @@ public class RedisClient {
             List<String> values = jedis.mget(keys.toArray(new String[0]));
             for (int i = 0; i < keys.size(); i++) {
                 String value = values.get(i);
-                if (value != null) result.put(keys.get(i), mapper.readValue(value, type));
+                if (value != null) result.put(keys.get(i), JsonCodec.fromJson(value, type));
             }
             markAvailable();
         } catch (Exception exception) {

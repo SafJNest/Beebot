@@ -35,7 +35,7 @@ HTTP controllers unwrap the domain-level `ApiResult<T>` through one shared
 `PENDING` is returned as the standard `LolApiError` envelope with HTTP 202.
 
 `ChampionStatistics.filter` remains part of the canonical object used by Redis
-and Kryo, but the Spring mapper ignores it through a Jackson mixin because it
+and the shared JSON codec, but the Spring mapper ignores it through a Jackson mixin because it
 is an internal storage key and not part of the HTTP contract.
 
 ## Compatibility

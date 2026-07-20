@@ -20,7 +20,7 @@ Le fasi sono eseguite in questo ordine:
 2. `matches` → collection `match`, con `participants[]` flat nel documento;
 3. `match_events` → payload eventi separato, solo quando il documento evento non esiste.
 
-Sono dati raw. Il documento `summoner` usa `_id = puuid`, mentre match, rank, mastery e participant non conservano identificativi numerici MariaDB. La migrazione viene eseguita su un database Mongo vuoto: non esiste una fase applicativa di cleanup o conversione in-place.
+Sono dati raw. Il documento `summoner` usa `_id = puuid`, mentre match, rank, mastery e participant non conservano identificativi numerici MariaDB. Il run non esegue cleanup o conversione in-place: i dati obsoleti vengono rimossi manualmente dall'operatore.
 
 Gli eventi eventualmente presenti nel JSON MariaDB vengono scritti separatamente in `match_events` tramite `MongoDB.upsertMatch()`: prima viene sostituito il documento `match`, poi il payload JSON viene sostituito in `match_events`, la cui compressione è delegata a WiredTiger Zstandard livello 9. Il documento `match` non contiene più `events`.
 

@@ -5,15 +5,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bson.Document;
 import org.json.JSONObject;
 
 import com.safjnest.lol.model.Filter;
-import com.safjnest.lol.model.match.Match;
-import com.safjnest.lol.model.match.Participant;
 import com.safjnest.mongo.MongoDB;
-import com.safjnest.mongo.MongoRecord;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.QueryResult;
+
+import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
+import no.stelar7.api.r4j.basic.constants.types.lol.TeamType;
 
 public final class ChampionStatsProvider {
 
@@ -32,22 +33,18 @@ public final class ChampionStatsProvider {
     public static ChampionStatsData.RawBatch loadBatch(List<String> matchIds) {
         Map<String, ChampionStatsData.MatchMeta> metadata = new LinkedHashMap<>();
         Map<String, List<ChampionStatsData.RawParticipant>> byMatch = new LinkedHashMap<>();
-        for (MongoRecord record : MongoDB.findChampionRecordsByIds(matchIds)) {
-            Match match = MongoDB.read(record, Match.class);
-            String matchId = String.valueOf(record.getId());
+        for (Document document : MongoDB.findChampionRawDocuments(matchIds)) {
+            String matchId = String.valueOf(document.get("_id"));
             metadata.put(matchId, new ChampionStatsData.MatchMeta(
-                    new JSONObject(match.bans == null ? Map.of() : match.bans).toString(),
-                    new JSONObject(match.eventData == null ? Map.of() : match.eventData).toString(),
-                    match.timeStart,
-                    match.timeEnd
+                    json(document.get("bans")), json(document.get("events")),
+                    number(document.get("timeStart")), number(document.get("timeEnd"))
             ));
             List<ChampionStatsData.RawParticipant> participants = byMatch.computeIfAbsent(matchId, ignored -> new ArrayList<>());
-            if (match.participants == null) continue;
-            for (Participant participant : match.participants) {
+            for (Document participant : participants(document.get("participants"))) {
                 participants.add(new ChampionStatsData.RawParticipant(
-                        participant.champion, participant.lane, participant.win, participant.team,
-                        matchId, participant.kda, participant.cs, participant.goldEarned,
-                        participant.puuid
+                        participant.getInteger("champion", 0), lane(participant), participant.getBoolean("win", false),
+                        team(participant), matchId, participant.getString("kda"), participant.getInteger("cs", 0),
+                        participant.getInteger("goldEarned", 0), participant.getString("puuid")
                 ));
             }
         }
@@ -56,14 +53,13 @@ public final class ChampionStatsProvider {
 
     public static QueryResult loadTrendParticipants(List<String> matchIds) {
         QueryResult result = new QueryResult();
-        for (MongoRecord record : MongoDB.findChampionRecordsByIds(matchIds)) {
-            Match match = MongoDB.read(record, Match.class);
-            if (match.participants == null) continue;
-            for (Participant participant : match.participants) {
+        for (Document document : MongoDB.findChampionRawDocuments(matchIds)) {
+            for (Document participant : participants(document.get("participants"))) {
                 QueryRecord row = new QueryRecord();
-                row.put("champion", String.valueOf(participant.champion));
-                row.put("lane", participant.lane == null ? null : participant.lane.name());
-                row.put("win", String.valueOf(participant.win));
+                row.put("champion", String.valueOf(participant.getInteger("champion", 0)));
+                LaneType lane = lane(participant);
+                row.put("lane", lane == null ? null : lane.name());
+                row.put("win", String.valueOf(participant.getBoolean("win", false)));
                 result.add(row);
             }
         }
@@ -82,5 +78,31 @@ public final class ChampionStatsProvider {
     public static void clear(ChampionStatsData.RawBatch batch) {
         batch.metadata().clear();
         batch.participants().clear();
+    }
+
+    private static List<Document> participants(Object value) {
+        if (!(value instanceof List<?> values)) return List.of();
+        List<Document> result = new ArrayList<>(values.size());
+        for (Object item : values) if (item instanceof Document document) result.add(document);
+        return result;
+    }
+
+    private static String json(Object value) {
+        if (!(value instanceof Map<?, ?> map) || map.isEmpty()) return "{}";
+        return new JSONObject(map).toString();
+    }
+
+    private static long number(Object value) {
+        return value instanceof Number number ? number.longValue() : 0;
+    }
+
+    private static LaneType lane(Document participant) {
+        try { return LaneType.valueOf(participant.getString("lane")); }
+        catch (RuntimeException ignored) { return null; }
+    }
+
+    private static TeamType team(Document participant) {
+        try { return TeamType.valueOf(participant.getString("team")); }
+        catch (RuntimeException ignored) { return null; }
     }
 }

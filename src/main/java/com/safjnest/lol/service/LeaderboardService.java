@@ -12,6 +12,7 @@ import com.safjnest.lol.model.leaderboard.LeaderboardDistribution;
 import com.safjnest.lol.model.leaderboard.LeaderboardPage;
 import com.safjnest.lol.model.leaderboard.LeaderboardRow;
 import com.safjnest.lol.model.statistics.ProfileStatistics;
+import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
 import com.safjnest.lol.model.summoner.SummonerLeaderboard;
@@ -71,27 +72,26 @@ public class LeaderboardService {
 
         long total = totalReady ? cachedTotal : 0;
         List<LeaderboardRow> rows = rowsReady ? cachedRows : List.of();
-        if (!totalReady && !rowsReady) {
-            total = MongoDB.countLeaderboard(rank, selectedQueue, selectedRegion);
-            rows = total > offset ? MongoDB.findLeaderboardRows(rank, selectedQueue, selectedRegion, offset, limit) : List.of();
+        Map<String, List<Mastery>> masteriesBySummoner = new HashMap<>();
+        if (!totalReady || !rowsReady) {
+            MongoDB.LeaderboardPageQuery query = MongoDB.findLeaderboardPage(
+                rank, selectedQueue, selectedRegion, offset, limit
+            );
+            total = query.total();
+            rows = query.rows();
+            masteriesBySummoner.putAll(query.masteries());
             cacheLeaderboardComponents(totalKey, rowsKey, total, rows);
-        } else {
-            if (!totalReady) {
-                total = MongoDB.countLeaderboard(rank, selectedQueue, selectedRegion);
-                RedisClient.set(totalKey, total, TTL_LEADERBOARD_COMPONENTS);
-            }
-            if (!rowsReady && total > offset) {
-                rows = MongoDB.findLeaderboardRows(rank, selectedQueue, selectedRegion, offset, limit);
-                RedisClient.set(rowsKey, rows, TTL_LEADERBOARD_COMPONENTS);
-            }
-            if (total <= offset) rows = List.of();
         }
+        if (total <= offset) rows = List.of();
 
         long pages = total == 0 ? 0 : (total + limit - 1) / limit;
 
         SeasonUtils.SeasonRange season = SeasonUtils.getCurrentSeasonRange();
         List<String> puuids = new ArrayList<>(rows.size());
         for (LeaderboardRow row : rows) puuids.add(row.summoner().puuid());
+        if (!puuids.isEmpty() && masteriesBySummoner.isEmpty()) {
+            masteriesBySummoner.putAll(MongoDB.findMasteriesByPuuid(puuids, null));
+        }
         Map<String, ProfileStatistics> statisticsBySummoner = profileStatisticsService.getByPuuid(puuids, season);
         List<SummonerLeaderboard> summoners = new ArrayList<>(rows.size());
         boolean cacheable = true;
@@ -110,7 +110,8 @@ public class LeaderboardService {
         for (int i = 0; i < rows.size(); i++) {
             LeaderboardRow row = rows.get(i);
             SummonerView view = SummonerView.from(
-                row.summoner(), List.of(row.rank()), statisticsBySummoner.get(row.summoner().puuid()), List.of()
+                row.summoner(), List.of(row.rank()), statisticsBySummoner.get(row.summoner().puuid()),
+                masteriesBySummoner.getOrDefault(row.summoner().puuid(), List.of())
             );
             summoners.add(new SummonerLeaderboard(offset + i + 1, view));
         }

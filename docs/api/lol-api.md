@@ -370,7 +370,7 @@ page, pageSize, total, pages,
 summoners[] -> position, summoner
 ```
 
-Ogni `summoner` è lo stesso `SummonerView` usato dal profilo. Se mancano statistiche per una o più righe, il refresh viene avviato immediatamente e l'endpoint restituisce `202 leaderboard_pending`; la pagina completa viene restituita con `200` al retry successivo.
+Ogni `summoner` è lo stesso `SummonerView` usato dal profilo, con `ranks`, `overview.statistics`, `overview.masteries` e i match recenti disponibili nello stesso contratto. Se mancano statistiche per una o più righe, il refresh viene avviato immediatamente e l'endpoint restituisce `202 leaderboard_pending`; la pagina completa viene restituita con `200` al retry successivo.
 
 Se `rank` e `region` sono omessi, la leaderboard restituisce tutti gli utenti in ordine decrescente di `mmr`, con paginazione da 50 righe oppure dal valore di `limit`. Per filtrare uno shard si aggiunge `&region={region}`. Il totale e le righe vengono calcolati lato database, quindi il dataset può contenere anche milioni di utenti senza costruire una risposta unica.
 

@@ -45,6 +45,7 @@ import com.safjnest.lol.model.Filter;
 import com.safjnest.lol.model.leaderboard.LeaderboardRow;
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.statistics.ProfileStatisticsRow;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.utils.ParticipantBuildCodec;
@@ -57,6 +58,7 @@ import com.safjnest.mongo.MongoDB;
 import com.safjnest.sql.AbstractDB;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.utils.SettingsLoader;
+import com.safjnest.utils.JsonCodec;
 import com.safjnest.utils.log.BotLogger;
 import com.safjnest.sql.QueryRecord;
 
@@ -926,19 +928,25 @@ public class LeagueDB extends AbstractDB {
         } catch (SQLException ignored) {}
     }
 
-    public static boolean saveProfileStatistics(String key, String puuid, int summonerId, long timeStart, long timeEnd, byte[] data) {
+    public static boolean saveProfileStatistics(String key, String puuid, int summonerId, long timeStart, long timeEnd, ProfileStatistics statistics) {
+        if (statistics == null) return false;
+        statistics.timeStart = timeStart;
+        statistics.timeEnd = timeEnd;
+        String data = JsonCodec.toJson(statistics);
         String sql = "INSERT INTO profile_statistics (`key`, summoner_id, time_start, time_end, data) VALUES (?, ?, ?, ?, ?) " +
             "ON DUPLICATE KEY UPDATE time_end = VALUES(time_end), data = VALUES(data)";
-        try (Connection conn = instance.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = instance.getConnection()) {
             if (conn == null) return false;
-            pstmt.setString(1, key);
-            pstmt.setInt(2, summonerId);
-            pstmt.setTimestamp(3, new Timestamp(timeStart));
-            pstmt.setTimestamp(4, new Timestamp(timeEnd));
-            pstmt.setBytes(5, data);
-            pstmt.executeUpdate();
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, key);
+                pstmt.setInt(2, summonerId);
+                pstmt.setTimestamp(3, new Timestamp(timeStart));
+                pstmt.setTimestamp(4, new Timestamp(timeEnd));
+                pstmt.setString(5, data);
+                pstmt.executeUpdate();
+            }
             conn.commit();
-            MongoDB.saveProfileStatistics(key, puuid, timeStart, timeEnd, data);
+            MongoDB.saveProfileStatistics(key, puuid, timeStart, timeEnd, statistics);
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -1589,13 +1597,10 @@ public class LeagueDB extends AbstractDB {
 
         QueryResult result = instance.query("SELECT id, data FROM champion_builds WHERE filter = '" + filter.toKey() + "'");
         List<Build> builds = new ArrayList<>();
-        List<Integer> invalidIds = new ArrayList<>();
         for (QueryRecord row : result) {
-            Build build = Build.decode(row.get("data"));
-            if (build == null) invalidIds.add(row.getAsInt("id"));
-            else builds.add(build);
+            Build build = Build.fromJson(row.get("data"));
+            if (build != null) builds.add(build);
         }
-        deleteChampionBuilds(invalidIds);
         return builds;
     }
 
@@ -1608,7 +1613,7 @@ public class LeagueDB extends AbstractDB {
             pstmt.setInt(1, build.games());
             pstmt.setDouble(2, build.winrate());
             pstmt.setString(3, build.filter().toKey());
-            pstmt.setString(4, build.encode());
+            pstmt.setString(4, build.toJson());
             pstmt.executeUpdate();
             conn.commit();
             try {
@@ -1644,7 +1649,7 @@ public class LeagueDB extends AbstractDB {
                 insertStmt.setInt(1, build.games());
                 insertStmt.setDouble(2, build.winrate());
                 insertStmt.setString(3, build.filter().toKey());
-                insertStmt.setString(4, build.encode());
+                insertStmt.setString(4, build.toJson());
                 insertStmt.addBatch();
             }
     
@@ -1673,7 +1678,7 @@ public class LeagueDB extends AbstractDB {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, stats.filter().genericKey());
             pstmt.setInt(2, stats.filter().champion());
-            pstmt.setString(3, stats.encode());
+            pstmt.setString(3, stats.toJson());
             pstmt.executeUpdate();
             conn.commit();
             try {
@@ -1695,7 +1700,7 @@ public class LeagueDB extends AbstractDB {
             for (ChampionStatistics stat : stats.values()) {
                 pstmt.setString(1, stat.filter().genericKey());
                 pstmt.setInt(2, stat.filter().champion());
-                pstmt.setString(3, stat.encode());
+                pstmt.setString(3, stat.toJson());
                 pstmt.addBatch();
             }
             pstmt.executeBatch();
@@ -1716,8 +1721,7 @@ public class LeagueDB extends AbstractDB {
             filter.genericKey() + "' AND champion = '" + champion + "'"
         );
         if (result.isEmpty()) return null;
-        ChampionStatistics statistics = ChampionStatistics.decode(result.get(0).get("data"));
-        if (statistics == null) deleteChampionStats(filter.genericKey(), champion);
+        ChampionStatistics statistics = ChampionStatistics.fromJson(result.get(0).get("data"));
         return statistics;
     }
     
@@ -1728,42 +1732,12 @@ public class LeagueDB extends AbstractDB {
         );
         if (result.isEmpty()) return null;
         Map<Integer, ChampionStatistics> map = new HashMap<>();
-        List<Integer> invalidChampions = new ArrayList<>();
         for (QueryRecord r : result) {
             int champion = r.getAsInt("champion");
-            ChampionStatistics statistics = ChampionStatistics.decode(r.get("data"));
-            if (statistics == null) invalidChampions.add(champion);
-            else map.put(champion, statistics);
+            ChampionStatistics statistics = ChampionStatistics.fromJson(r.get("data"));
+            if (statistics != null) map.put(champion, statistics);
         }
-        for (int champion : invalidChampions) deleteChampionStats(filter.genericKey(), champion);
         return map.isEmpty() ? null : map;
-    }
-
-    private static void deleteChampionStats(String filter, int champion) {
-        String sql = "DELETE FROM champion_stats WHERE filter = ? AND champion = ?";
-        try (Connection conn = instance.getConnection()) {
-            if (conn == null) return;
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setString(1, filter);
-                pstmt.setInt(2, champion);
-                pstmt.executeUpdate();
-            }
-            conn.commit();
-        } catch (SQLException ignored) {}
-    }
-
-    private static void deleteChampionBuilds(List<Integer> ids) {
-        if (ids == null || ids.isEmpty()) return;
-
-        String sql = "DELETE FROM champion_builds WHERE id IN (" + placeholders(ids.size()) + ")";
-        try (Connection conn = instance.getConnection()) {
-            if (conn == null) return;
-            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                for (int i = 0; i < ids.size(); i++) pstmt.setInt(i + 1, ids.get(i));
-                pstmt.executeUpdate();
-            }
-            conn.commit();
-        } catch (SQLException ignored) {}
     }
 
     public static QueryResult getStoredChampionBuildFilters() {

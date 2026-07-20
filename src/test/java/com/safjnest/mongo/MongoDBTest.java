@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import com.safjnest.lol.model.match.Match;
 import com.safjnest.lol.model.match.Participant;
+import com.safjnest.lol.model.statistics.ProfileStatistics;
 import com.safjnest.lol.model.summoner.Mastery;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.model.summoner.Summoner;
@@ -123,5 +124,13 @@ public class MongoDBTest {
         match.eventData = Map.of("champion_kills", List.of(Map.of("timestamp", 1000)));
 
         assertFalse(MongoDB.toDocument(match).containsKey("events"));
+    }
+
+    @Test
+    public void structuredStatisticsDoNotContainLegacyPayload() {
+        Document document = MongoDB.toDocument(new ProfileStatistics());
+
+        assertFalse(document.containsKey("legacyPayload"));
+        assertFalse(document.toJson().contains("legacyPayload"));
     }
 }

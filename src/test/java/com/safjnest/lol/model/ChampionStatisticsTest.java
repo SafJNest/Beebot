@@ -1,13 +1,12 @@
 package com.safjnest.lol.model;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
-
-import com.safjnest.utils.KryoUtils;
 
 import no.stelar7.api.r4j.basic.constants.types.lol.LaneType;
 
@@ -16,7 +15,7 @@ public class ChampionStatisticsTest {
     private static final int THRESH_CHAMPION_ID = 412;
 
     @Test
-    public void persistsMatchupsWithCurrentKryo() {
+    public void persistsMatchupsWithJson() {
         ChampionStatistics source = new ChampionStatistics(
             null,
             100,
@@ -33,8 +32,9 @@ public class ChampionStatisticsTest {
             )
         );
 
-        ChampionStatistics decoded = KryoUtils.decode(KryoUtils.encode(source), ChampionStatistics.class);
+        ChampionStatistics decoded = ChampionStatistics.fromJson(source.toJson());
 
         assertEquals(source, decoded);
+        assertNull(ChampionStatistics.fromJson("not-json"));
     }
 }
