@@ -1,6 +1,8 @@
 package com.safjnest.lol.service;
 
 import com.safjnest.mongo.MongoDB;
+import com.safjnest.sql.database.LeagueDB;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -8,7 +10,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.lol.model.summoner.Rank;
 import com.safjnest.lol.utils.GameQueueTypeUtils;
 import com.safjnest.lol.utils.TierDivisionUtils;

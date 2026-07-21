@@ -10,7 +10,6 @@ import java.util.List;
 import com.safjnest.sql.QueryResult;
 import com.safjnest.sql.QueryRecord;
 import com.safjnest.sql.database.BotDB;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.CommandsLoader;
 import com.safjnest.utils.PermissionHandler;
 import com.safjnest.utils.twitch.TwitchClient;
@@ -182,10 +181,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
             case "summoner":
                 choices = summoner(e);
                 break;
-            case "custom_build":
-                choices = customBuild(e);
-                break;
-                
         }
 
         e.replyChoices(choices).queue();
@@ -531,7 +526,6 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
     private ArrayList<Choice> summoner(CommandAutoCompleteInteractionEvent e) {
         ArrayList<Choice> choices = new ArrayList<>();
 
-        QueryResult summoners = new QueryResult();
         LeagueShard defaultShard = e.isFromGuild() ? GuildCache.getGuildOrPut(e.getGuild().getId()).getLeagueShard(e.getChannelId()) : LeagueShard.EUW1;
         LeagueShard shard = e.getOption("region") != null ? LeagueShard.valueOf(e.getOption("region").getAsString().toUpperCase()) : defaultShard;
         
@@ -693,21 +687,5 @@ public class EventAutoCompleteInteractionHandler extends ListenerAdapter {
         return choices;
 
     }
-
-    private ArrayList<Choice> customBuild(CommandAutoCompleteInteractionEvent e) {
-        ArrayList<Choice> choices = new ArrayList<>();
-
-
-        QueryResult builds = null;
-        if (isFocused) builds = LeagueDB.getFocusedCustomBuild(e.getFocusedOption().getValue());
-        else builds = LeagueDB.getCustomBuildByUser(e.getUser().getId());
-
-        for (QueryRecord build : builds) {
-            choices.add(new Choice(build.get("name"), build.get("id")));
-        }
-
-        return choices;
-    }
-
 }
 

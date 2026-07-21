@@ -9,9 +9,7 @@ import com.safjnest.core.Bot;
 import com.safjnest.lol.tracker.TrackerScheduler;
 import com.safjnest.model.BotSettings.Settings;
 import com.safjnest.mongo.MongoDB;
-import com.safjnest.mongo.MongoMigration;
 import com.safjnest.spring.SpringServer;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 import com.safjnest.utils.log.BotLogger;
@@ -39,7 +37,7 @@ public class App {
             runSpring();
         }
         TrackerScheduler.start();
-        MongoMigration.migrateAll();
+        //MongoMigration.migrateAll();
         bot = new Bot();
         bot.il_risveglio_della_bestia();
     }

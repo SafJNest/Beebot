@@ -1372,7 +1372,7 @@ public class LeagueMessage {
                 if (match.getParticipants().size() == 0) continue;
 
                 ChronoTask MatchTask = (() -> {
-                    LeagueHandler.updateSummonerDB(match);
+                    //LeagueHandler.updateSummonerDB(match);
                 });
                 MatchTask.queue();
                 eb = getOpggEmbedMatch(eb, match, s, result);

@@ -362,7 +362,7 @@ public class Tracker {
             if (isRemake(match)) return;
             
             int summoner_match_id = LeagueDB.saveMatch(match);
-            LeagueHandler.updateSummonerDB(match);
+            //LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
 
@@ -403,7 +403,7 @@ public class Tracker {
                 BotLogger.info("[LPTracker] Match " + match.getGameId() + " already tracked");
                 return;
             }
-            LeagueHandler.updateSummonerDB(match);
+            //LeagueHandler.updateSummonerDB(match);
 
             HashMap<String, HashMap<String, String>> matchData = analyzeMatchBuild(match, match.getParticipants());
 

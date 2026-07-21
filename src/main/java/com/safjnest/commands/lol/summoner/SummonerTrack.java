@@ -6,7 +6,7 @@ import com.jagrosh.jdautilities.command.SlashCommand;
 import com.jagrosh.jdautilities.command.SlashCommandEvent;
 import com.safjnest.core.cache.managers.UserCache;
 import com.safjnest.model.UserData;
-import com.safjnest.sql.database.LeagueDB;
+import com.safjnest.mongo.MongoDB;
 import com.safjnest.utils.BotCommand;
 import com.safjnest.utils.CommandsLoader;
 
@@ -58,7 +58,7 @@ public class SummonerTrack extends SlashCommand {
             return;
         }
 
-        LeagueDB.trackSummoner(event.getMember().getId(), account_id, track);
+        MongoDB.setSummonerTracking(event.getMember().getId(), account_id, track);
         
         String response = track ? "Tracking enabled" : "Tracking disabled";
         event.deferReply(false).addContent(response).queue();

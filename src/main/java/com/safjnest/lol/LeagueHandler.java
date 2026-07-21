@@ -32,7 +32,6 @@ import com.safjnest.model.customemoji.CustomEmojiHandler;
 import com.safjnest.model.guild.GuildData;
 import com.safjnest.redis.RedisClient;
 import com.safjnest.redis.RedisKey;
-import com.safjnest.sql.database.LeagueDB;
 import com.safjnest.utils.SafJNest;
 import com.safjnest.utils.SettingsLoader;
 
@@ -45,7 +44,6 @@ import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
 import no.stelar7.api.r4j.basic.constants.types.lol.GameQueueType;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.league.LeagueEntry;
-import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorGameInfo;
 import no.stelar7.api.r4j.pojo.lol.spectator.SpectatorParticipant;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
@@ -341,24 +339,12 @@ import com.safjnest.lol.utils.PatchUtils;
         return LeagueService.getSummonerByName(name, tag, shard);
     }
 
-    public static int updateSummonerDB(Summoner summoner) {
-        return LeagueDB.addLOLAccount(summoner);
-    }
-
     public static boolean updateSummonerMongo(Summoner summoner) {
         if (summoner == null) return false;
         RiotAccount account = LeagueService.getRiotAccountFromSummoner(summoner);
         String riotId = account == null ? null : account.getName() + "#" + account.getTag();
         return MongoDB.upsertSummoner(summoner.getPUUID(), summoner.getPlatform(), riotId,
                 summoner.getSummonerLevel(), summoner.getProfileIconId(), null);
-    }
-
-    public static void updateSummonerDB(SpectatorGameInfo game) {
-        LeagueDB.addLOLAccount(game);
-    }
-
-    public static void updateSummonerDB(LOLMatch match) {
-        LeagueDB.addLOLAccountFromMatch(match);
     }
 
 //     ▄███████▄  ▄█   ▄████████
@@ -406,16 +392,6 @@ import com.safjnest.lol.utils.PatchUtils;
         return stats.isEmpty()
             ? CustomEmojiHandler.getFormattedEmoji("Unranked") + " Unranked"
             : stats;
-    }
-
-    private static String formatStatsByEntry(LeagueEntry entry) {
-        int wins = entry.getWins();
-        int losses = entry.getLosses();
-        int games = wins + losses;
-        long wrPercent = games > 0 ? (long) Math.ceil((wins * 100.0) / games) : 0;
-        return CustomEmojiHandler.getFormattedEmoji(entry.getTier()) + " " + entry.getTier() + " " + entry.getRank()
-            + " " + entry.getLeaguePoints() + " LP\n"
-            + "`(" + wins + "W/" + losses + "L) - " + wrPercent + "% WR`";
     }
 
     private static String formatStatsByRank(Rank rank) {
