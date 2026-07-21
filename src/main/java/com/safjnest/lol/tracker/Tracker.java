@@ -1,6 +1,7 @@
 package com.safjnest.lol.tracker;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -934,7 +935,9 @@ public class Tracker {
         BotLogger.info("[LPTracker] Pushing all entries");
         for (LeagueShard shard : LeagueShardUtils.getActives()) {
             ChronoTask task = () -> {
-                    for (TierDivisionType tier : TierDivisionType.values()) {
+                    List<TierDivisionType> tiers = new ArrayList<>(List.of(TierDivisionType.values()));
+                    Collections.reverse(tiers);
+                    for (TierDivisionType tier : tiers) {
                         int page = 1;
                         if (tier == TierDivisionType.CHALLENGER_I || tier == TierDivisionType.GRANDMASTER_I
                                 || tier == TierDivisionType.UNRANKED || tier == TierDivisionType.MASTER_I)
